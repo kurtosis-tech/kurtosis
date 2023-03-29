@@ -1,6 +1,5 @@
 name: "Bug Report"
-description: We are always striving to improve Kurtosis. Use this form to report a bug with Kurtosis.
-title: "[bug]: "
+description: Report a bug with Kurtosis
 labels: ["bug"]
 body:
   - type: markdown
