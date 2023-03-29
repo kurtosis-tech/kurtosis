@@ -47,12 +47,12 @@ func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRem
 
 	for localPort, remotePort := range localPortToRemotePortMapping {
 		var transportProtocol portal_generated_api.TransportProtocol
-		if remotePort.GetTransportProtocol() == services.TransportProtocol_UDP {
-			transportProtocol = portal_generated_api.TransportProtocol_UDP
-		} else if remotePort.GetTransportProtocol() == services.TransportProtocol_TCP {
+		if remotePort.GetTransportProtocol() == services.TransportProtocol_TCP {
 			transportProtocol = portal_generated_api.TransportProtocol_TCP
+		} else if remotePort.GetTransportProtocol() == services.TransportProtocol_UDP {
+			transportProtocol = portal_generated_api.TransportProtocol_UDP
 		} else {
-			logrus.Debugf("Mapping other than TCP or UDP port is not supported right now. Will skip port '%d' because protocal is '%v'", remotePort.GetNumber(), remotePort.GetTransportProtocol())
+			logrus.Warnf("Mapping other than TCP or UDP port is not supported right now. Will skip port '%d' because protocal is '%v'", remotePort.GetNumber(), remotePort.GetTransportProtocol())
 		}
 		forwardPortsArgs := portal_constructors.NewForwardPortArgs(uint32(localPort), uint32(remotePort.GetNumber()), &transportProtocol)
 		if _, err := portalManager.portalClientMaybe.ForwardPort(ctx, forwardPortsArgs); err != nil {
