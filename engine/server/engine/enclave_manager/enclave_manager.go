@@ -352,17 +352,16 @@ func (manager *EnclaveManager) GetExistingAndHistoricalEnclaveIdentifiers() ([]*
 	// TODO fix this - this is a hack while we persist enclave identifier information to disk
 	// this is a hack that will only send enclaves that are still registered; removed or destroyed enclaves will not show up
 	ctx := context.Background()
-	allCurrentEnclavesToBackFillRestart, err := manager.kurtosisBackend.GetEnclaves(ctx, getAllEnclavesFilter())
+	allCurrentEnclavesToBackFillRestart, err := manager.getEnclavesWithoutMutex(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Found no registered enclaves in the in memory map; tried fetching them from backend but failed")
 	}
 
 	for _, enclave := range allCurrentEnclavesToBackFillRestart {
-		enclaveUuidStr := string(enclave.GetUUID())
 		identifiers := &kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
-			EnclaveUuid:   enclaveUuidStr,
-			Name:          enclave.GetName(),
-			ShortenedUuid: uuid_generator.ShortenedUUIDString(enclaveUuidStr),
+			EnclaveUuid:   enclave.EnclaveUuid,
+			Name:          enclave.Name,
+			ShortenedUuid: enclave.ShortenedUuid,
 		}
 		enclaveIdentifiersResult = append(enclaveIdentifiersResult, identifiers)
 	}
