@@ -108,7 +108,6 @@ When you ran `main.star`, you got `Created enclave: quickstart`. An [enclave][en
 
 Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other. Use enclaves liberally!
 
-**In this section, you've experienced just how quickly and effortlessly Kurtosis can be used to generate and tear down ephemeral test environments on top of Docker or Kubernetes.**
 
 Run Postgres
 --------------
