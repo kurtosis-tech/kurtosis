@@ -40,7 +40,7 @@ def run(plan, args):
 	plan.render_templates(
 		name = args["name"],
 		config = {
-			args.file_name: struct(
+			args["file_name"]: struct(
 				template = args["template"],
 				data = args["template_data"],
 			),
@@ -52,9 +52,9 @@ def run(plan, args):
 def run(plan, args):
 	plan.render_templates(
 		config = {
-			args.file_name: struct(
-				template = args.template,
-				data = args.template_data,
+			args["file_name"]: struct(
+				template = args["template"],
+				data = args["template_data"],
 			),
 		}
 	)
