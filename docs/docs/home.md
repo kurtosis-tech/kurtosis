@@ -5,35 +5,37 @@ slug: '/'
 sidebar_position: 1
 hide_table_of_contents: true
 ---
-
-[Kurtosis](https://www.kurtosis.com) is a development platform for distributed applications that aims to provide a consistent experience across all stages of distributed app software delivery.
-
-Use cases for Kurtosis include:
-
-- Running a third-party distributed app, without knowing how to set it up
-- Local prototyping & development on distributed apps
-- Writing integration and end-to-end distributed app tests (e.g. happy path & sad path tests, load tests, performance tests, etc.)
-- Running integration/E2E distributed app tests
-- Debugging distributed apps during development
+## What is Kurtosis?
+[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding.
 
 ## Why Kurtosis?
 
-Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for development/testing, Kubernetes for production. However, the separation between the two entails different distributed app definitions, and different tooling. In dev/test, this means Docker Compose and Docker observability tooling. In production, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb.
+Developers usually set up these types of dynamic environments with a free-form scripting language like bash or Python, interacting with the Docker CLI or Docker Compose. Kurtosis is designed to make these setups easier to maintain and reuse in different test scenarios.
 
-![Why Kurtosis](@site/static/img/home/kurtosis-utility.png)
+In Kurtosis, test environments have these properties:
+- Environment-level portability: the entire test environment always runs the same way, regardless of the host machine
+- Composability: environments can be composed and connected together without needing to know the inner details of each setup
+- Parameterizability: environments can be parameterized, so that they're easy to modify for use across different test scenarios
 
-Kurtosis aims at one level of abstraction higher. Developers can define their distributed applications in Kurtosis, and Kurtosis will handle:
+## Architecture
 
-With Kurtosis, developers can build with local sandbox environments that demonstrate how their code will work when integrated with the rest of the system. In addition, advanced end-to-end testing workflows are available to teams using the manipulation tooling in the Kurtosis engine runtime which allow them to do end-to-end testing like fault-tolerance, regression, and performance tests.
+#### Kurtosis has a definition language with:
+- An instruction set of useful primitives for setting up and manipulating environments
+- A scriptable Python-like SDK in Starlark, a build language used by Google’s Bazel
+- A package management system for shareability and composability
 
-- Running on Docker or Kubernetes
-- Reproduceability
-- Safety
-- Port-forwarding & local development hookups
-- Observability
-- Sharing
+#### Kurtosis has a validator with:
+- Compile-time safety to quickly catch errors in test environment definitions
+- The ability to dry-run test environment definitions to verify what will be run, before running
 
-If we succeed in our vision, you will be able to use the same distributed application definition from local dev all the way to prod.
+#### Kurtosis has a runtime to:
+- Run multi-container test environments over Docker or Kubernetes, depending on how you wish to scale
+- Enable debugging and investigation of problems live, as they're happening in your test environment
+- Manage file dependencies to ensure complete portability of test environments across different test runs and backends
+
+#### Try out Kurtosis now
+
+Try Kurtosis now with our [quickstart](./quickstart.md).
 
 :::info
 If you have questions, need help, or simply want to learn more, schedule a live session with us, go [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
