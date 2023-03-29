@@ -17,11 +17,8 @@ var (
 	noKwargs []starlark.Tuple
 )
 
-// DeserializeArgs deserializes the Kurtosis package args, which should be serialized JSON, into a starlark.Value type.
-//
-// It tries to convert starlark.Dict into starlarkstruct.Struct to allow users to do things like `args.my_param`
-// in their code package in place of `args["my_param"]`. See convertValueToDictIfPossible below for more info.
-func DeserializeArgs(thread *starlark.Thread, serializedJsonArgs string) (starlark.Value, *startosis_errors.InterpretationError) {
+// DeserializeArgs deserializes the Kurtosis package args, which should be serialized JSON, into a *starlark.Dict type.
+func DeserializeArgs(thread *starlark.Thread, serializedJsonArgs string) (*starlark.Dict, *startosis_errors.InterpretationError) {
 	if !starlarkjson.Module.Members.Has(decoderKey) {
 		return nil, startosis_errors.NewInterpretationError("Unable to deserialize package input because Starlark deserializer was not found.")
 	}
@@ -35,9 +32,13 @@ func DeserializeArgs(thread *starlark.Thread, serializedJsonArgs string) (starla
 	}
 	deserializedInputValue, err := decoder.CallInternal(thread, args, noKwargs)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to deserialize package input. Is it a valid JSON?")
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to deserialize package input '%v'. Is it a valid JSON?", serializedJsonArgs)
 	}
-	return deserializedInputValue, nil
+	parsedDeserializedInputValue, ok := deserializedInputValue.(*starlark.Dict)
+	if !ok {
+		return nil, startosis_errors.NewInterpretationError("Unable to parse package input '%v' into a dictionary. Is it a valid JSON?", deserializedInputValue)
+	}
+	return parsedDeserializedInputValue, nil
 }
 
 func SerializeOutputObject(thread *starlark.Thread, outputObject starlark.Value) (string, *startosis_errors.InterpretationError) {
