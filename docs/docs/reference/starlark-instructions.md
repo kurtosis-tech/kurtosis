@@ -51,7 +51,7 @@ service = plan.add_service(
     # The service name is a reference to the service, which can be used in the future to refer to the service.
     # Service names of active services are unique per enclave.
     # MANDATORY
-    service_name = "example-datastore-server-1",
+    name = "example-datastore-server-1",
 
     # The configuration for this service. See the 'ServiceConfig' section of 'Starlark Types' from the sidebar for more information.
     # MANDATORY
@@ -76,7 +76,7 @@ The value of the `ports` dictionary is an object with three properties, `number`
 Example:
 ```python
 dependency = plan.add_service(
-    service_name = "dependency",
+    name = "dependency",
     config = ServiceConfig(
         image = "dependency",
         ports = {
@@ -88,7 +88,7 @@ dependency = plan.add_service(
 dependency_http_port = dependency.ports["http"]
 
 plan.add_service(
-    service_name = "dependant",
+    name = "dependant",
     config = ServiceConfig(
         env_vars = {
             "DEPENDENCY_URL": "http://{}:{}".format(dependency.ip_address, dependency_http_port.number),
@@ -282,7 +282,7 @@ The `remove_service` instruction on the [`plan`][plan-reference] object removes 
 plan.remove_service(
     # The service name of the service to be removed.
     # MANDATORY
-    service_name = "my_service",
+    name = "my_service",
 )
 ```
 
@@ -514,7 +514,7 @@ update_service(
     # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
     # MANDATORY
-    service_name = "example-datastore-server-1",
+    name = "example-datastore-server-1",
 
     # The changes to apply to this service. See the 'UpdateServiceConfig' section of 'Starlark Types' from the sidecar for more information.
     # MANDATORY

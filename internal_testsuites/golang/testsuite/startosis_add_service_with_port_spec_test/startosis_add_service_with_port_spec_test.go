@@ -25,7 +25,7 @@ spec = PortSpec(number = 5000, transport_protocol = "UDP")
 
 def run(plan):
     plan.add_service(
-        service_name = SERVICE_NAME, 
+        name = SERVICE_NAME,
         config = ServiceConfig(
             image = DOCKER_GETTING_STARTED_IMAGE, 
             ports = {
