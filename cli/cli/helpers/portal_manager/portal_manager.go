@@ -6,13 +6,8 @@ import (
 	portal_generated_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-)
-
-const (
-	allowNilPortalClientForLocalContext = true
 )
 
 type PortalManager struct {
@@ -25,6 +20,17 @@ func NewPortalManager() *PortalManager {
 	return &PortalManager{
 		portalClientMaybe: nil,
 	}
+}
+
+func (portalManager *PortalManager) IsReachable() bool {
+	if err := portalManager.instantiateClientIfUnset(); err != nil {
+		return false
+	}
+	return true
+}
+
+func (portalManager *PortalManager) GetClient() portal_generated_api.KurtosisPortalClientClient {
+	return portalManager.portalClientMaybe
 }
 
 // MapPorts maps a set of remote ports locally according to the mapping provided
@@ -69,12 +75,7 @@ func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRem
 }
 
 func (portalManager *PortalManager) instantiateClientIfUnset() error {
-	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
-	if err != nil {
-		return stacktrace.Propagate(err, "Unable to retrieve current context")
-	}
-
-	portalDaemonClientMaybe, err := kurtosis_context.CreatePortalDaemonClient(currentContext, allowNilPortalClientForLocalContext)
+	portalDaemonClientMaybe, err := kurtosis_context.CreatePortalDaemonClient(true)
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to build client to Kurtosis Portal Daemon")
 	}
