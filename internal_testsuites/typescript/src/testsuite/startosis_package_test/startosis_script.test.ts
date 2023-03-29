@@ -66,7 +66,7 @@ test("Test valid Starlark package with input - missing key in params", async () 
         }
 
         expect(runResult.value.interpretationError).not.toBeUndefined()
-        expect(runResult.value.interpretationError?.getErrorMessage()).toContain("Evaluation error: struct has no .greetings attribute")
+        expect(runResult.value.interpretationError?.getErrorMessage()).toContain("Evaluation error: key \"greetings\" not in dict")
         expect(runResult.value.validationErrors).toEqual([])
         expect(runResult.value.executionError).toBeUndefined()
 
