@@ -11,7 +11,7 @@ kurtosis dump $OUTPUT_DIRECTORY
 ```
 You will get the container logs & configuration in the output directory for further analysis & sharing. This would contain all engines & enclaves.
 
-If you don't specify the `$OUTPUT_DIRECTORY` Kurtosis will dump it to a directory with the name `kurtosis-dump`.
+If you don't specify the `$OUTPUT_DIRECTORY` Kurtosis will dump it to a directory with a name following the schema `kurtosis-dump--TIMESTAMP`.
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [packages-reference]: ../packages.md
