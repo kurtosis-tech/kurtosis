@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thank you for taking the time to fill out this Feature Request form. We value your feedback.
-        Please make sure to update the title of this Feature Request to concisely describe the request.
+        Please make sure to add a title to this Feature Request to concisely describe your suggestion.
   - type: textarea
     id: background-and-motivation
     attributes:
