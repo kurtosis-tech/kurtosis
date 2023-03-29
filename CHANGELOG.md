@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.71.1](https://github.com/kurtosis-tech/kurtosis/compare/0.71.0...0.71.1) (2023-03-29)
+
+
+### Features
+
+* add a timestamp at the end of dump dir if default is chosen ([#386](https://github.com/kurtosis-tech/kurtosis/issues/386)) ([6e1898e](https://github.com/kurtosis-tech/kurtosis/commit/6e1898e999e22ebb1b893b6e65f44d26d059b9d9))
+* best effort autocomplete for service logs after engine restart ([#374](https://github.com/kurtosis-tech/kurtosis/issues/374)) ([e2fb47c](https://github.com/kurtosis-tech/kurtosis/commit/e2fb47c927ec673afc63308a7eaa688c0c91bb80)), closes [#373](https://github.com/kurtosis-tech/kurtosis/issues/373)
+
+
+### Bug Fixes
+
+* polish Github issue templates ([#380](https://github.com/kurtosis-tech/kurtosis/issues/380)) ([bd9a9d0](https://github.com/kurtosis-tech/kurtosis/commit/bd9a9d05afe5e93c792b8dbfe25e84166f175d65))
+
 ## [0.71.0](https://github.com/kurtosis-tech/kurtosis/compare/0.70.7...0.71.0) (2023-03-29)
 
 
