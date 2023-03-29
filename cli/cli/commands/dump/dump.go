@@ -21,9 +21,9 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	defaultKurtosisDumpDir  = "kurtosis-dump"
-	outputDirIsOptional     = true
-	dumpDirTimeoutDelimiter = "--"
+	defaultKurtosisDumpDir = "kurtosis-dump"
+	outputDirIsOptional    = true
+	dumpDirTimeDelimiter   = "--"
 )
 
 var KurtosisDump = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -58,7 +58,7 @@ func run(
 	}
 
 	if outputDirPath == defaultKurtosisDumpDir {
-		outputDirPath = fmt.Sprintf("%s%s%d", outputDirPath, dumpDirTimeoutDelimiter, time.Now().Unix())
+		outputDirPath = fmt.Sprintf("%s%s%d", outputDirPath, dumpDirTimeDelimiter, time.Now().Unix())
 	}
 
 	if err := kurtosisBackend.DumpKurtosis(ctx, outputDirPath); err != nil {

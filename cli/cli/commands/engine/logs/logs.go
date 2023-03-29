@@ -21,9 +21,9 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	defaultEngineDumpDir    = "kurtosis-engine-logs"
-	outputDirIsOptional     = true
-	dumpDirTimeoutDelimiter = "--"
+	defaultEngineDumpDir = "kurtosis-engine-logs"
+	outputDirIsOptional  = true
+	dumpDirTimeDelimiter = "--"
 )
 
 var EngineLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -58,7 +58,7 @@ func run(
 	}
 
 	if outputDirpath == defaultEngineDumpDir {
-		outputDirpath = fmt.Sprintf("%s%s%d", outputDirpath, dumpDirTimeoutDelimiter, time.Now().Unix())
+		outputDirpath = fmt.Sprintf("%s%s%d", outputDirpath, dumpDirTimeDelimiter, time.Now().Unix())
 	}
 
 	if err := kurtosisBackend.GetEngineLogs(ctx, outputDirpath); err != nil {
