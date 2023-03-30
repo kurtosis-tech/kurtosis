@@ -26,9 +26,6 @@ check_node_version() {
 
   current_version="$(node --version)"
   short_version="${current_version%.*}"
-
-  echo ${short_version}
-
   if [ "${short_version}" != "${NODE_VERSION}" ]; then
     echo "${RED_BG}${WHITE_FG}${BOLD}node "${NODE_VERSION}" should be the one in use but ${short_version} is in use; use the following to install and use "${NODE_VERSION}""
     echo "${RED_BG}${WHITE_FG}nvm install "${NODE_VERSION}"                                ${NORMAL_BG}"
