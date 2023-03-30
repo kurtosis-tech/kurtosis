@@ -23,7 +23,7 @@ const (
 	commandDescription      = "Give feedback, file a bug report or feature request, or get help from the Kurtosis team. " +
 		"See below for the many ways you can get in touch with us.\n\n" +
 		"TIP: You can quickly type and send us feedback directly from the CLI. For example, " +
-		"`kurtosis feedback \"I enjoy the enclave naming theme\"` will open the Kurtosis Github " +
+		"`kurtosis feedback \"I enjoy the enclave naming theme\"` will open the Kurtosis GitHub " +
 		"\"Choose New Issue\" page with the description pre-filled with \"I enjoy the enclave naming theme\"."
 
 	emailFlagKey                       = "email"
@@ -51,7 +51,7 @@ const (
 	defaultFeatureRequest   = "false"
 	defaultDocs             = "false"
 
-	githubLinkText     = "let us know in our Github."
+	gitHubLinkText     = "let us know in our GitHub."
 	emailLinkText      = "click here to email us."
 	onboardingLinkText = "schedule an on-boarding session with us."
 
@@ -60,7 +60,7 @@ const (
 	feedbackMsg = `
 This command can be used to deliver feedback to the Kurtosis team!
 
-* Pass in your feedback as an argument using double quotations (e.g. kurtosis feedback "my feedback"), and press enter; this will open our Github Issues templates, pre-filled with your feedback/arg.
+* Pass in your feedback as an argument using double quotations (e.g. kurtosis feedback "my feedback"), and press enter; this will open our GitHub Issues templates, pre-filled with your feedback/arg.
 * Pass in the --email flag to open a draft email, pre-filled with your feedback/arg, to send to feedback@kurtosistech.com.
 * Pass in the --calendly flag to open our Calendly link to schedule a 1:1 session with us for feedback and questions you may have!
 
@@ -83,7 +83,7 @@ See below for the some direct links as well.
 	notFeedbackTypeSelected    = ""
 	emptyUserMsg               = ""
 
-	defaultDestinationType = "github"
+	defaultDestinationType = "gitHub"
 )
 
 var FeedbackCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -186,14 +186,14 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
 	}
 
-	gitHubIssueURL, err := getGithubIssueURL(selectedFeedbackType, metricsUserId, userMsg)
+	gitHubIssueURL, err := getGitHubIssueURL(selectedFeedbackType, metricsUserId, userMsg)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting Github Issue URL")
+		return stacktrace.Propagate(err, "An error occurred getting GitHub Issue URL")
 	}
 
 	if selectedDestinationType == defaultDestinationType {
 		if err := multi_os_command_executor.OpenFile(gitHubIssueURL); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis Github issue page")
+			return stacktrace.Propagate(err, "An error occurred while opening the Kurtosis GitHub issue page")
 		}
 		return nil
 	}
@@ -222,7 +222,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 
 	fmt.Printf(
 		feedbackMsg,
-		termlink.ColorLink(githubLinkText, gitHubIssueURL, greenColorStr),
+		termlink.ColorLink(gitHubLinkText, gitHubIssueURL, greenColorStr),
 		termlink.ColorLink(emailLinkText, user_support_constants.FeedbackEmailLink, greenColorStr),
 		termlink.ColorLink(onboardingLinkText, user_support_constants.KurtosisOnBoardCalendlyUrl, greenColorStr),
 	)
@@ -296,7 +296,7 @@ func validateUserMsgArg(_ context.Context, _ *flags.ParsedFlags, args *args.Pars
 	return nil
 }
 
-func getGithubIssueURL(
+func getGitHubIssueURL(
 	selectedFeedbackType string,
 	metricsUserId string,
 	userEncodedMsgStr string,
@@ -305,16 +305,16 @@ func getGithubIssueURL(
 	var gitHubIssueBaseUrl string
 	switch selectedFeedbackType {
 	case bugFeedbackFlagKey:
-		gitHubIssueBaseUrl = user_support_constants.GithubBugIssueUrl
+		gitHubIssueBaseUrl = user_support_constants.GitHubBugIssueUrl
 	case featureRequestFeedbackFlagKey:
-		gitHubIssueBaseUrl = user_support_constants.GithubFeatureRequestIssueUrl
+		gitHubIssueBaseUrl = user_support_constants.GitHubFeatureRequestIssueUrl
 	case docsFeedbackFlagKey:
-		gitHubIssueBaseUrl = user_support_constants.GithubDocsIssueUrl
+		gitHubIssueBaseUrl = user_support_constants.GitHubDocsIssueUrl
 	case notFeedbackTypeSelected:
-		gitHubIssueBaseUrl = user_support_constants.GithubChooseNewIssuesUrl
+		gitHubIssueBaseUrl = user_support_constants.GitHubChooseNewIssuesUrl
 	default:
 		return "", stacktrace.NewError(
-			"An error occurred while setting the Github URL, expected "+
+			"An error occurred while setting the GitHub URL, expected "+
 				"to receive a know feedback type but '%v' was received instead; this is a bug in Kurtosis",
 			selectedFeedbackType,
 		)
