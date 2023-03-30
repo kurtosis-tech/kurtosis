@@ -23,7 +23,9 @@ Kurtosis implements environments as a first-class concept using [enclaves][encla
 Example: Some enclaves running in, as displayed by [the Kurtosis CLI][cli-reference]:
 
 ```
-EnclaveUUID                         Name     Status   Creation Time
+UUID           Name      Status     Creation Time
+a72b68e510fe   test      RUNNING    Thu, 30 Mar 2023 09:12:17 -03
+9e8c913754bf   local     RUNNING    Thu, 30 Mar 2023 09:13:04 -03
 a525cee593af4b45aa15785e87d3b7c9    local    RUNNING   Thu, 24 Nov 2022 14:11:27 UTC
 edf36be917504e449a1648cf8d6c78a4    test     RUNNING   Thu, 24 Nov 2022 14:11:34 UTC
 ```
