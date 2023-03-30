@@ -39,18 +39,18 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 			Name: ExecBuiltinName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
-					Name:              RecipeArgName,
-					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*recipe.ExecRecipe],
-					Validator:         nil,
-				},
-				{
 					Name:              ServiceNameArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
 					},
+				},
+				{
+					Name:              RecipeArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*recipe.ExecRecipe],
+					Validator:         nil,
 				},
 				{
 					Name:              AcceptableCodesArgName,
