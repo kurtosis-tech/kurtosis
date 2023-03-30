@@ -95,7 +95,7 @@ To accept parameters to the `run(plan)` function, the function should accept an 
 
 ```python
 def run(plan, args):
-    print("Hello, " + args.name)
+    print("Hello, " + args["name"])
 ```
 
 To pass parameters to the `run(plan, args)` function, a JSON object should be passed as the second positional argument after the script or package path:
