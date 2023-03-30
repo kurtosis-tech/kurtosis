@@ -68,7 +68,4 @@ if "$error"; then
   exit 1
 fi
 
-nvm use $NODE_VERSION &> /dev/null
-
-
 
