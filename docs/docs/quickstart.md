@@ -561,6 +561,11 @@ Error encountered running Starlark code.
 
 Here, Kurtosis is telling us that the `wait` instruction on line `77` of our `main.star` (the one for ensuring PostgREST is up) is timing out.
 
+:::info
+Fun fact: this failure was encountered at the last step in Kurtosis' [multi-phase run approach][multi-phase-runs-reference], which is also called the Execution step that we mentioned earlier [when we got Postgres up and running](#review-run-postgres).
+:::
+
+
 #### Investigating the issue
 The enclave state is usually a good place to start. If we look at the bottom of our output we'll see the following state of the enclave:
 
