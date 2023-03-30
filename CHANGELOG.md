@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.72.1](https://github.com/kurtosis-tech/kurtosis/compare/0.72.0...0.72.1) (2023-03-30)
+
+
+### Features
+
+* Noop when switching to current context ([#390](https://github.com/kurtosis-tech/kurtosis/issues/390)) ([2003df9](https://github.com/kurtosis-tech/kurtosis/commit/2003df912278fe4fd30e29ab9011ebb39834d7b5))
+
+
+### Bug Fixes
+
+* Fix confusing warning about port mapping ([#396](https://github.com/kurtosis-tech/kurtosis/issues/396)) ([2bc2e13](https://github.com/kurtosis-tech/kurtosis/commit/2bc2e13de487be3e4458c2ac2c0d000ce0d12589))
+* fix help text and have flags instead of args for files download ([#395](https://github.com/kurtosis-tech/kurtosis/issues/395)) ([f9083cc](https://github.com/kurtosis-tech/kurtosis/commit/f9083cc34584dd2face61a7165bdfa2b8be2f0ba)), closes [#370](https://github.com/kurtosis-tech/kurtosis/issues/370)
+
 ## [0.72.0](https://github.com/kurtosis-tech/kurtosis/compare/0.71.2...0.72.0) (2023-03-30)
 
 
