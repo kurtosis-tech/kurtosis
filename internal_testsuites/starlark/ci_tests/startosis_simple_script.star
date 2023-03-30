@@ -5,8 +5,8 @@ DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
 
 def run(plan, args):
-    plan.assert(len(args), "==", 0)
-    plan.print("Adding service " + DATASTORE_SERVICE_NAME + ".")
+    plan.assert(str(args), "==", "{}")
+    plan.print("Adding service " + DATASTORE_SERVICE_NAME + ".")[
 
     config = ServiceConfig(
         image = DATASTORE_IMAGE,
