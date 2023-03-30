@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -330,6 +331,21 @@ func run(
 		logrus.Info("Not mapping service ports locally as requested")
 		return nil
 	}
+
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err != nil {
+		logrus.Warnf("Could not retrieve the current context. Kurtosis will assume context is local and not" +
+			"map the enclave service ports. If you're running on a remote context and are seeing this error, then" +
+			"the enclave services will be unreachable locally. Turn on debug logging to see the actual error.")
+		logrus.Debugf("Error was: %v", err.Error())
+		return nil
+	}
+	if !store.IsRemote(currentContext) {
+		logrus.Debugf("Current context is local, not mapping enclave service ports")
+		return nil
+	}
+
+	// Context is remote. All enclave service ports will be mapped locally
 	portalManager := portal_manager.NewPortalManager()
 	portsMapping := map[uint16]*services.PortSpec{}
 	for serviceInEnclaveName, servicesInEnclaveUuid := range servicesInEnclavePostRun {
@@ -351,6 +367,7 @@ func run(
 		logrus.Warnf("The enclave was successfully run but the following port(s) could not be mapped locally: %s. "+
 			"The associated service(s) will not be reachable on the local host",
 			strings.Join(stringifiedPortMapping, portMappingSeparatorForLogs))
+		logrus.Debugf("Error was: %v", err.Error())
 		return nil
 	}
 	logrus.Infof("Successfully mapped %d ports. All services running inside the enclave are reachable locally on"+

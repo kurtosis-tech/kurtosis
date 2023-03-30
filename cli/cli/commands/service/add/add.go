@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -318,6 +319,19 @@ func run(
 	privatePorts := serviceCtx.GetPrivatePorts()
 	publicPorts := serviceCtx.GetPublicPorts()
 	publicIpAddr := serviceCtx.GetMaybePublicIPAddress()
+
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err != nil {
+		logrus.Warnf("Could not retrieve the current context. Kurtosis will assume context is local and not" +
+			"map the service ports. If you're running on a remote context and are seeing this error, then" +
+			"the service will be unreachable locally. Turn on debug logging to see the actual error.")
+		logrus.Debugf("Error was: %v", err.Error())
+		return nil
+	}
+	if !store.IsRemote(currentContext) {
+		logrus.Debugf("Current context is local, not mapping service ports")
+		return nil
+	}
 
 	// Map the service public ports to their local port
 	if mapPorts {
