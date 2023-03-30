@@ -10,7 +10,7 @@ Kurtosis At A Macro Level
 -------------------------
 At a macro level, Kurtosis is an engine (a set of Kurtosis servers) deployed on top of a container orchestrator (e.g. Docker, Kubernetes). All interaction with Kurtosis is done via the Kurtosis APIs. After the Kurtosis engine receives a request, it usually modifies some state inside the container orchestrator. Kurtosis therefore serves as an abstraction layer atop the container orchestrator, so that code written for Kurtosis is orchestrator-agnostic.
 
-To understand what the Kurtosis engine does, we'll need to understand environments. Kurtosis' philosophy is that [the distributed nature of modern software means that modern software development now happens at the environment level][what-is-kurtosis]. To respond to this need, environments are a first-class concept in Kurtosis: easy to create, easy to inspect, easy to modify, and easy to destroy.
+To understand what the Kurtosis engine does, we'll need to understand environments. Kurtosis' philosophy is that [the distributed nature of modern software means that modern software development now happens at the environment level][why-we-built-kurtosis]. To respond to this need, environments are a first-class concept in Kurtosis: easy to create, easy to inspect, easy to modify, and easy to destroy.
 
 Therefore, the job of the Kurtosis engine is to receive requests from the client and translate them to instructions for the underlying container orchestration engine. These requests can be simple commands that map 1:1 to instructions to the underlying container orchestrator (e.g. "add service X to environment Y"), or they can be Kurtosis-only commands that require complex interaction with the container orchestrator (e.g. "divide environment X in two with a simulated network partition").
 
@@ -63,6 +63,6 @@ For a reference list of the available Starlark instructions, [see here][starlark
 [installation]: ../guides/installing-the-cli.md
 [cli-usage]: ../reference/cli/cli.md
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
-[what-is-kurtosis]: ./what-is-kurtosis.md
+[why-we-built-kurtosis]: ./why-we-built-kurtosis.md
 [starlark-explanation]: ./starlark.md
 [starlark-instructions]: ../reference/starlark-instructions.md
