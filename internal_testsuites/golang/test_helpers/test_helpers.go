@@ -87,10 +87,10 @@ const (
 	waitForGetAvaliabilityStalarkScript = `
 def run(plan, args):
 	get_recipe = GetHttpRequestRecipe(
-		port_id = args.port_id,
-		endpoint = args.endpoint,
+		port_id = args["port_id"],
+		endpoint = args["endpoint"],
 	)
-	plan.wait(get_recipe, "code", "==", 200, args.interval, args.timeout, args.service_name)
+	plan.wait(get_recipe, "code", "==", 200, args["interval"], args["timeout"], args["service_name"])
 `
 	waitForGetAvaliabilityStalarkScriptParams = `{ "service_name": "%s", "port_id": "%s", "endpoint": "/%s", "interval": "%dms", "timeout": "%dms"}`
 
