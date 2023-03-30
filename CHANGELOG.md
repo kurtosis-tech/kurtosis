@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.71.2](https://github.com/kurtosis-tech/kurtosis/compare/0.71.1...0.71.2) (2023-03-30)
+
+
+### Bug Fixes
+
+* Fix engine local dependencies replace ([#389](https://github.com/kurtosis-tech/kurtosis/issues/389)) ([99e4160](https://github.com/kurtosis-tech/kurtosis/commit/99e41605b7f5445b453c5d55aeb2f4d043445666))
+
 ## [0.71.1](https://github.com/kurtosis-tech/kurtosis/compare/0.71.0...0.71.1) (2023-03-29)
 
 
