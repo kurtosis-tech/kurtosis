@@ -1006,7 +1006,7 @@ Finally, we'd love to hear from you and engage with our users. Please don't hesi
 [data-package-example-seed-tar]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/dvd-rental-data.tar
 
 <!-- Misc -->
-[homepage]: https://kurtosis.com
+[homepage]: ./explanations/what-is-kurtosis.md
 [kevin-linked]: https://www.linkedin.com/in/kevintoday/
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
