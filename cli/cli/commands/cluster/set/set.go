@@ -16,7 +16,8 @@ import (
 const (
 	clusterNameArgKey = "cluster-name"
 
-	defaultEngineVersion = ""
+	noEngineVersion                        = ""
+	restartEngineOnSameVersionIfAnyRunning = true
 )
 
 var SetCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -82,17 +83,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	logrus.Infof("Clustet set to '%s', Kurtosis engine will now be restarted", clusterName)
 
 	// We try to do our best to restart an engine on the same version the current on is on
-	_, _, currentEngineVersion, err := engineManager.GetEngineStatus(ctx)
-	if err != nil {
-		logrus.Warnf("Error getting current engine informationg before restarting it. A default engine will be started")
-	}
-	var engineClientCloseFunc func() error
-	var restartEngineErr error
-	if currentEngineVersion != defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotentlyWithCustomVersion(ctx, currentEngineVersion, logrus.InfoLevel)
-	} else {
-		_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel)
-	}
+	_, engineClientCloseFunc, restartEngineErr := engineManager.RestartEngineIdempotently(ctx, logrus.InfoLevel, noEngineVersion, restartEngineOnSameVersionIfAnyRunning)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(err, "Engine could not be restarted after cluster was updated. The cluster"+
 			"will be rolled back, but it is possible the engine will remain stopped. Its status can be retrieved "+

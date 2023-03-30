@@ -17,7 +17,8 @@ const (
 	engineVersionArg = "version"
 	logLevelArg      = "log-level"
 
-	defaultEngineVersion = ""
+	defaultEngineVersion                   = ""
+	restartEngineOnSameVersionIfAnyRunning = false
 )
 
 var engineVersion string
@@ -70,11 +71,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	if engineVersion == defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
-	} else {
-		_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel)
-	}
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}
