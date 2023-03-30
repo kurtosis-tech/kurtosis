@@ -215,14 +215,13 @@ They can be chained to [`assert`][assert] and [`wait`][wait]:
 
 ```python
 exec_recipe = ExecRecipe(
-    service_name = "my_service",
     command = ["echo", "Hello, world"],
 )
 
-result = plan.exec(exec_recipe)
+result = plan.exec(service_name="my_service", recipe=exec_recipe)
 plan.assert(result["code"], "==", 0)
 
-plan.wait(exec_recipe, "output", "!=", "Greetings, world")
+plan.wait(service_name="my_service", recipe=exec_recipe, field="output", assertion="!=", target_value="Greetings, world")
 ```
 
 ### import_module
@@ -380,6 +379,7 @@ post_request_recipe = PostHttpRequestRecipe(
     },
 )
 post_response = plan.request(
+    service_name = "my_service",
     recipe = post_request_recipe,
 )
 # response["extract.second-element-from-list-head"] is "world"
@@ -393,6 +393,7 @@ These fields can be used in conjunction with [`assert`][assert] and [`wait`][wai
 ```python
 # Following the example above, response["extract.second-element-from-list-head"] is world
 post_response = plan.request(
+    service_name = "my_service",
     recipe = post_request_recipe,
 )
 
@@ -400,7 +401,7 @@ post_response = plan.request(
 plan.assert(response["extract.second-element-from-list-head"], "==", "world")
 
 # Make a post request and check if the extracted field in the response is world
-plan.wait(post_request_recipe, "extract.second-element-from-list-head", "==", "world")
+plan.wait(service_name="my_service", recipe=post_request_recipe, field="extract.second-element-from-list-head", assertion="==", target_value="world")
 ```
 
 NOTE: `jq` returns a typed output that translates into the correspondent Starlark type. You can cast it using `jq` to match
@@ -416,6 +417,7 @@ post_request_recipe = PostHttpRequestRecipe(
     },
 )
 response = plan.request(
+    service_name = "my_service",
     recipe = post_request_recipe,
 )
 # response["extract.post-number"] is "1" (starlark.String)

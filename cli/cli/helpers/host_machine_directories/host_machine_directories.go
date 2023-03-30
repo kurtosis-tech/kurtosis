@@ -23,8 +23,14 @@ const (
 
 	LastPesteredUserAboutOldVersionFilename = "last-pestered-user-about-old-version"
 
+	portalBinaryFilename  = "kurtosis-portal"
+	portalLogFilename     = "kurtosis-portal.log"
+	portalVersionFilename = "kurtosis-portal.version"
+	portalPidFilename     = "kurtosis-portal.pid"
+
 	// ------------ Names of dirs inside Kurtosis directory --------------
 	engineDataDirname = "engine-data"
+	portalSubDirname  = "portal"
 )
 
 // TODO after 2022-07-08, when we're confident nobody is using engines without engine data directories anymore,
@@ -106,6 +112,42 @@ func GetKurtosisCliLogsFilePath() (string, error) {
 	return kurtosisCliLogFilePath, nil
 }
 
+func GetPortalBinaryFilePath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForPortalForXDG(portalBinaryFilename)
+	portalBinaryFilePath, err := xdg.DataFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal binary file path using '%s'", xdgRelFilepath)
+	}
+	return portalBinaryFilePath, nil
+}
+
+func GetPortalLogFilePath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForPortalForXDG(portalLogFilename)
+	portalBinaryFilePath, err := xdg.DataFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal log file path using '%s'", xdgRelFilepath)
+	}
+	return portalBinaryFilePath, nil
+}
+
+func GetPortalVersionFilePath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForPortalForXDG(portalVersionFilename)
+	portalVersionFilePath, err := xdg.DataFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal version file path using '%s'", xdgRelFilepath)
+	}
+	return portalVersionFilePath, nil
+}
+
+func GetPortalPidFilePath() (string, error) {
+	xdgRelFilepath := getRelativeFilepathForPortalForXDG(portalPidFilename)
+	portalPidFilePath, err := xdg.StateFile(xdgRelFilepath)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal PID file path using '%s'", xdgRelFilepath)
+	}
+	return portalPidFilePath, nil
+}
+
 // ====================================================================================================
 //
 //	Private Helper Functions
@@ -114,4 +156,8 @@ func GetKurtosisCliLogsFilePath() (string, error) {
 // Joins the "kurtosis" app directory in front of whichever filepath
 func getRelativeFilepathForXDG(filepathRelativeToKurtosisDir string) string {
 	return path.Join(applicationDirname, filepathRelativeToKurtosisDir)
+}
+
+func getRelativeFilepathForPortalForXDG(filepathRelativeToKurtosisPortalDir string) string {
+	return path.Join(applicationDirname, portalSubDirname, filepathRelativeToKurtosisPortalDir)
 }
