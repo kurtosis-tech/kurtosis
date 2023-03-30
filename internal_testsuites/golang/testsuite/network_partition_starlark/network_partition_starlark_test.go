@@ -42,14 +42,14 @@ def run(plan, args):
 
 	# adding 2 services to play with, each in their own subnetwork
 	service_1 = plan.add_service(
-		service_name=SERVICE_NAME_1, 
+		name=SERVICE_NAME_1, 
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_1,
 		)
 	)
 	service_2 = plan.add_service(
-		service_name=SERVICE_NAME_2, 
+		name=SERVICE_NAME_2, 
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_2

@@ -35,8 +35,8 @@ def run(plan):
 			"grpc": PortSpec(number = GRPC_PORT, transport_protocol = "TCP")
 		}
 	)
-	datastore_1 = plan.add_service(service_name = SERVICE_NAME, config = config)
-	datastore_2 = plan.add_service(service_name = SERVICE_NAME_2, config = config)
+	datastore_1 = plan.add_service(name = SERVICE_NAME, config = config)
+	datastore_2 = plan.add_service(name = SERVICE_NAME_2, config = config)
 
 	test_hostname_cmd = "nc -zv {0} {1}".format(datastore_1.hostname, GRPC_PORT)
 	connection_result = plan.exec(

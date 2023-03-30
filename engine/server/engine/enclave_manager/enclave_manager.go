@@ -339,11 +339,34 @@ func (manager *EnclaveManager) GetEnclaveUuidForEnclaveIdentifier(ctx context.Co
 	return manager.getEnclaveUuidForIdentifierUnlocked(ctx, enclaveIdentifier)
 }
 
-func (manager *EnclaveManager) GetExistingAndHistoricalEnclaveIdentifiers() []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers {
+func (manager *EnclaveManager) GetExistingAndHistoricalEnclaveIdentifiers() ([]*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	return manager.allExistingAndHistoricalIdentifiers
+	if len(manager.allExistingAndHistoricalIdentifiers) > 0 {
+		return manager.allExistingAndHistoricalIdentifiers, nil
+	}
+	// either the engine got restarted or no enclaves have been created so far
+
+	var enclaveIdentifiersResult []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers
+	// TODO fix this - this is a hack while we persist enclave identifier information to disk
+	// this is a hack that will only send enclaves that are still registered; removed or destroyed enclaves will not show up
+	ctx := context.Background()
+	allCurrentEnclavesToBackFillRestart, err := manager.getEnclavesWithoutMutex(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Found no registered enclaves in the in memory map; tried fetching them from backend but failed")
+	}
+
+	for _, enclave := range allCurrentEnclavesToBackFillRestart {
+		identifiers := &kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
+			EnclaveUuid:   enclave.EnclaveUuid,
+			Name:          enclave.Name,
+			ShortenedUuid: enclave.ShortenedUuid,
+		}
+		enclaveIdentifiersResult = append(enclaveIdentifiersResult, identifiers)
+	}
+
+	return enclaveIdentifiersResult, nil
 }
 
 // ====================================================================================================

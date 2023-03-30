@@ -35,7 +35,7 @@ def run(plan):
         ready_conditions = ready_conditions
 	)
 
-	plan.add_service(service_name = "web-server", config = service_config)
+	plan.add_service(name = "web-server", config = service_config)
 `
 
 	okStatusCode          = 200

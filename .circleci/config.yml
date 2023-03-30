@@ -89,6 +89,7 @@ version: 2.1
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
   kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.4
+  slack: circleci/slack@4.10.1
 
 executors:
   ubuntu_vm:
@@ -685,9 +686,9 @@ jobs:
 
       # File commands
       - run: "${KURTOSIS_BINPATH} files rendertemplate test-enclave << pipeline.parameters.rendertemplate-cli-test-template-relative-path >> << pipeline.parameters.rendertemplate-cli-test-data-json-relative-path >> ./rendered --name rendered-file"
-      - run: "${KURTOSIS_BINPATH} files download test-enclave rendered-file ."
+      - run: "${KURTOSIS_BINPATH} files download --enclave test-enclave rendered-file ."
       - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file"
-      - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
+      - run: "${KURTOSIS_BINPATH} files download --enclave test-enclave stored-file ."
 
       # Module inside an enclave
       - run: "${KURTOSIS_BINPATH} enclave ls"
@@ -803,6 +804,12 @@ jobs:
     docker:
       - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
     steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
       - checkout
       - run: api/typescript/scripts/build.sh
       - npm-publisher/publish-from-package-version:
@@ -813,8 +820,13 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      - checkout
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
 
+      - checkout
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
@@ -840,6 +852,12 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
 
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
@@ -874,6 +892,12 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
 
       - checkout
@@ -909,6 +933,12 @@ jobs:
     docker:
       - image: "docker/tilt-releaser"
     steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
       # Install goreleaser
       - run: |
           echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
@@ -1092,6 +1122,7 @@ workflows:
       - publish_kurtosis_api_typescript:
           context:
             - npmjs-user
+            - slack-secrets
           filters:
             branches:
               ignore: /.*/
@@ -1100,6 +1131,7 @@ workflows:
       - publish_files_artifacts_expander_image:
           context:
             - docker-user
+            - slack-secrets
           filters:
             branches:
               ignore: /.*/
@@ -1108,6 +1140,7 @@ workflows:
       - publish_api_container_server_image:
           context:
             - docker-user
+            - slack-secrets
           filters:
             branches:
               ignore: /.*/
@@ -1117,6 +1150,7 @@ workflows:
       - publish_engine_server_image:
           context:
             - docker-user
+            - slack-secrets
           filters:
             branches:
               ignore: /.*/
@@ -1127,6 +1161,7 @@ workflows:
           context:
             - gemfury-publisher
             - github-user
+            - slack-secrets
           requires:
             - publish_kurtosis_api_typescript
             - publish_api_container_server_image

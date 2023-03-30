@@ -32,7 +32,7 @@ def run(plan, args):
 		entrypoint = ["sleep"],
 		cmd = ["30"]
 	)
-	plan.add_service(service_name = "test", config = service_config)
+	plan.add_service(name = "test", config = service_config)
 `
 	testStarlarkScriptTemplate = `
 def run(plan, args):
