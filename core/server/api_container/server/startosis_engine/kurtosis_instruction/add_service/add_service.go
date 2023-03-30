@@ -21,7 +21,7 @@ import (
 const (
 	AddServiceBuiltinName = "add_service"
 
-	ServiceNameArgName   = "service_name"
+	ServiceNameArgName   = "name"
 	ServiceConfigArgName = "config"
 )
 

@@ -37,7 +37,7 @@ def run(plan):
 	artifact_name = plan.render_templates(config = template_dict, name="rendered-artifact")
 	
 	service = plan.add_service(
-		service_name = "file-server",
+		name = "file-server",
 		config = ServiceConfig(
 			image = "flashspys/nginx-static",
 			ports = {

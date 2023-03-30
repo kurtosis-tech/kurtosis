@@ -32,7 +32,7 @@ const (
 
 	starlarkScript = `
 def run(plan, args):
-	plan.remove_service(service_name=args.service_name)
+	plan.remove_service(name=args.service_name)
 `
 	doNotDryRun        = false
 	defaultParallelism = 4
