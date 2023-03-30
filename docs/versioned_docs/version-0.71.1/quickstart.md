@@ -31,9 +31,7 @@ There are many ways to get help and give feedback. First, every Kurtosis command
 
 ## Setup
 
-Before you proceed, please make sure you have:
-- [Installed and started the Docker engine][installing-docker-guide]
-- [Installed the Kurtosis CLI][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it)
+Before you proceed, make sure you have [Kurtosis installed][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it), Docker is started, and the Docker engine is running.
 
 Hello, World
 ------------
@@ -97,17 +95,16 @@ UUID   Name   Ports   Status
 
 Congratulations - you've written your first Kurtosis code!
 
-### Review: Hello, World
+### Review
 :::info
 We'll use these "Review" sections to explain what happened in the section. If you just want the action, feel free to skip them.
 :::
 
-In this section, we created a `main.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building a distributed application rather than binaries or JARs.
+In this section, we created a `.star` file that prints `Hello, world`. The `.star` extension corresponds to [the Starlark language developed at Google][starlark-github-repo], a dialect of Python for configuring the [Bazel build system][bazel-github]. [Kurtosis uses Starlark for the same purpose of configuring builds][starlark-explanation], except that we're building a distributed application rather than binaries or JARs.
 
-When you ran `main.star`, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. If you'd like, you can tear down your enclave and any of their artifacts by running: `kurtosis clean -a` (more on the `kurtosis clean` command [here][kurtosis-clean-reference]).
+When you ran the Starlark, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. 
 
 Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other. Use enclaves liberally!
-
 
 Run Postgres
 --------------
@@ -139,14 +136,14 @@ def run(plan, args):
     )
 ```
 
-Before you run the above command, remmeber that we still have the `quickstart` enclave hanging around from the previous section. To [clean up the previous enclave][kurtosis-clean-reference] for use with our new `main.star` file above, run:
+You're almost ready to run, but you still have the `quickstart` enclave hanging around from the previous section. [Blow it away][kurtosis-clean-reference] and rerun:
 
 ```bash
 kurtosis clean -a && kurtosis run --enclave quickstart main.star
 ```
 
 :::info
-This "clean-and-run" process will be your dev loop for the rest of the quickstart as we add more services and operations to our distributed application.
+This clean-and-run process will be your dev loop for the rest of the quickstart.
 :::
 
 You'll see in the result that the `quickstart` enclave now contains a Postgres instance:
@@ -165,18 +162,16 @@ UUID           Name       Ports                                                S
 b6fc024deefe   postgres   postgres: 5432/tcp -> postgresql://127.0.0.1:59299   RUNNING
 ```
 
-### Review: Run Postgres
-So what actually happened? Three things actually:
+### Review
+So what actually happened?
 
-1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](https://docs.kurtosis.com/reference/plan) for what you wanted done (in this case, starting a Postgres instance)
-1. **Validation:** Kurtosis then ran several validations against your plan, including validating that the Postgres image exists
-1. **Execution:** Kurtosis finally executed the validated plan inside the enclave to start a Postgres container
+1. **Interpretation:** Kurtosis ran your Starlark to build [a plan](https://docs.kurtosis.com/reference/plan) for what you wanted done (in this case, starting a Postgres instance)
+1. **Validation:** Kurtosis ran several validations against your plan, including validating that the Postgres image exists
+1. **Execution:** Kurtosis executed the validated plan inside the enclave to start a Postgres container
 
-Note that Kurtosis did not execute anything until _after_ Interpretation and Validation completed. You can think of Interpretation and Validation like Kurtosis' "compilation" step for your distributed application: we can catch many errors before any containers run, which shortens the dev loop and reduces the resource burden on your machine.
+Note that Kurtosis did not execute anything until _after_ Interpretation and Validation completed. You can think of Interpretation and Validation like Kurtosis' "compilation" for your distributed system: we can catch many errors before any containers run, which shortens the dev loop and reduces the resource burden on your machine.
 
-We call this approach [multi-phase runs][multi-phase-runs-reference]. While multi-phase runs has powerful benefits over traditional scripting, it also means _you cannot reference Execution values like IP address in Starlark_ because they simply don't exist at Interpretation time. We'll explore how Kurtosis gracefully handles values generated during the Execution phase at the Interpretation phase later on in the quickstart.
-
-**This section introduced Kurtosis' ability to validate that definitions work as intended, _before_ they are run - helping developers catch errors sooner & save resources when configuring multi-container test environments.**
+We call this approach [multi-phase runs][multi-phase-runs-reference]. While it has powerful benefits, the stumbling point for new Kurtosis users is that _you cannot reference Execution values like IP address in Starlark_ because they simply don't exist at Interpretation time. We'll see how to work around this limitation later.
 
 Add some data
 -------------
@@ -187,19 +182,17 @@ Our two options for seeding a Postgres database are:
 1. Making a sequence of PSQL commands via the `psql` binary
 1. Using `pg_restore` to load a package of data
 
-Both are possible in Kurtosis, but for this tutorial we'll use `pg_restore` to seed our database with a TAR of DVD rental information, [courtesy of postgresqltutorial.com](https://www.postgresqltutorial.com/postgresql-getting-started/postgresql-sample-database/). 
+Both are possible in Kurtosis, but for this tutorial we'll do the second one using a seed data TAR of DVD rental information, [courtesy of postgresqltutorial.com](https://www.postgresqltutorial.com/postgresql-getting-started/postgresql-sample-database/). 
 
-#### Without Kurtosis
-Normally going this route (using `pg_restore`) requires downloading the seed data to your local machine, starting Postgres, writing a pile of Bash to copy the seed data to the Postgres server, and then finally running the `pg_restore` command. If you forgot to check if the database is available, you may get flakes when you try to use the seeding logic in a test. 
+Normally seeding a database would require downloading the seed data to your machine, starting Postgres, and writing a pile of Bash to copy the seed data to the Postgres server and run a `pg_restore`. If you forgot to check if the database is available, you may get flakes when you try to use the seeding logic in a test. 
 
-Alternatively, you could use Docker Compose to volume-mount the data TAR into the Postgres server, but you'd still need to handle Postgres availability and sequencing the `pg_restore` afterwards.
+You could try Docker Compose to volume-mount the data TAR into the Postgres server, but you'd still need to handle Postgres availability and sequencing the `pg_restore` afterwards.
 
-#### With Kurtosis
 By contrast, Kurtosis Starlark scripts can use data as a first-class primitive and sequence tasks such as `pg_restore` into the plan. 
 
 Let's see it in action, and we'll explain what's happening afterwards.
 
-First, replace your `main.star` with the following:
+Replace your `main.star` with the following:
 
 ```python
 data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/data-package/main.star")
@@ -256,13 +249,13 @@ def run(plan, args):
     )
 ```
 
-Then, in your working directory (kurtosis-quickstart) next to your `main.star` file, create a file called `kurtosis.yml` with the following contents:
+Next to your `main.star`, add a file called `kurtosis.yml` with the following contents:
 
 ```bash
 name: "github.com/john-snow/kurtosis-quickstart"
 ```
 
-Now, run the following to see what happens:
+Rerun:
 
 ```bash
 kurtosis clean -a && kurtosis run --enclave quickstart .
@@ -282,8 +275,8 @@ INFO[2023-03-15T04:34:06-03:00] Successfully cleaned old Kurtosis engine contain
 INFO[2023-03-15T04:34:06-03:00] Creating a new enclave for Starlark to run inside...
 INFO[2023-03-15T04:34:10-03:00] Enclave 'quickstart' created successfully
 INFO[2023-03-15T04:34:10-03:00] Executing Starlark package at '/tmp/kurtosis-quickstart' as the passed argument '.' looks like a directory
-INFO[2023-03-15T04:34:10-03:00] Compressing package 'github.com/john-snow/kurtosis-quickstart' at '.' for upload
-INFO[2023-03-15T04:34:10-03:00] Uploading and executing package 'github.com/john-snow/kurtosis-quickstart'
+INFO[2023-03-15T04:34:10-03:00] Compressing package 'github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart' at '.' for upload
+INFO[2023-03-15T04:34:10-03:00] Uploading and executing package 'github.com/YOUR-GITHUB-USERNAME/kurtosis-quickstart'
 
 > upload_files src="github.com/kurtosis-tech/awesome-kurtosis/data-package/dvd-rental-data.tar"
 Files with artifact name 'howling-thunder' uploaded with artifact UUID '32810fc8c131414882c52b044318b2fd'
@@ -323,26 +316,26 @@ Creation Time:                        Wed, 15 Mar 2023 04:34:06 -03
 
 ========================================= Files Artifacts =========================================
 UUID           Name
-32810fc8c131   howling-thunder
+323c9a71ebbf   crimson-haze
 
 ========================================== User Services ==========================================
 UUID           Name       Ports                                                Status
 f1d9cab2ca34   postgres   postgres: 5432/tcp -> postgresql://127.0.0.1:62914   RUNNING
 ```
 
-Does our Postgres have data now? Let's find out by opening a shell on the Postgres container and logging into the database:
+Does our Postgres have data now? Let's find out by logging into the database:
 
 ```bash
 kurtosis service shell quickstart postgres
 ```
 
-From there, listing the tables in the Postgres can be done with:
+This will open a shell on the Postgres container. From there, listing the tables in the Postgres...
 
 ``` bash
 psql -U app_user -d app_db -c '\dt'
 ```
 
-...which will reveal that many new tables now exist:
+...will reveal that many new tables now exist:
 
 ```text
              List of relations
@@ -368,45 +361,10 @@ psql -U app_user -d app_db -c '\dt'
 
 Feel free to explore the Postgres container. When you're done run either `exit` or press Ctrl-D.
 
-### Review: Add some data
-So what just happened?
+### Review
+So what did we just do?
 
-#### We created a Kurtosis package
-
-By creating a [`kurtosis.yml`][kurtosis-yml-reference] file in our working directory, we turned our working directory into a [Kurtosis package][packages-reference] (specifically, a [runnable package][runnable-packages-reference]). After we did this, our newly created Kurtosis package could now declare dependencies on external packages using [Kurtosis’ built-in packaging/dependency system][how-do-imports-work-explanation].
-
-To see this in action, the first line in our local `main.star` file was used to import, and therefore declare a dependency on, an external package called `data-package` using a [locator][locators-reference]:
-
-```python
-data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/data-package/main.star")
-```
-... which we then ran locally:
-```python
-data_package_module_result = data_package_module.run(plan, struct())
-```
-
-This external Kurtosis package, named ["data-package"][data-package-example] contains the seed data for our Postgres instance that we [referenced earlier](#add-some-data) as a `.tar` file.
-
-#### We imported seed data into our Kurtosis package
-The [`main.star` file][data-package-example-main.star] in that external "data-package" contained Starlark instructions to store the `.tar` data as a [files artifact][files-artifacts-reference] using the [`files_upload` Starlark instruction][kurtosis-files-upload-reference]:
-
-```python
-TAR_FILENAME = "dvd-rental-data.tar"
-def run(plan, args):
-    dvd_rental_data = plan.upload_files("github.com/kurtosis-tech/awesome-kurtosis/data-package/" + TAR_FILENAME)
-
-    result =  struct(
-        files_artifact = dvd_rental_data, # Needed to mount the data on a service
-        tar_filename = TAR_FILENAME,      # Useful to reference the data TAR contained in the files artifact
-    )
-
-    return result
-```
-
-A [files artifact][files-artifacts-reference] is Kurtosis' first-class data primitive and is a TGZ of arbitrary files living inside an enclave. So long as a files artifact exists, Kurtosis knows how to mount its contents on a service.  
-
-#### We mounted and seeded the data into our Postgres instance
-Next, we mounted the seed data, stored in our enclave now as a files artifact, into our Postgres instance using the `ServiceConfig.files` option:
+Kurtosis' first-class data primitive is called a [files artifact][files-artifacts-reference]. Each files artifact is a TGZ of arbitrary files, living inside the enclave. So long as a files artifact exists, Kurtosis knows how to mount its contents on a service. We used this feature to mount the seed data into the Postgres instance via the `ServiceConfig.files` option:
 
 ```python
 postgres = plan.add_service(
@@ -420,18 +378,32 @@ postgres = plan.add_service(
 )
 ```
 
-Then to seed the data, we used the [`exec` Starlark instruction][exec-reference]:
+But where did the data come from? 
+
+There are many ways to create files artifacts in an enclave. The simplest is to upload files from your local machine using [the `kurtosis files upload` command][kurtosis-files-upload-reference]. A more advanced way is to upload files using [the `upload_files` Starlark instruction][upload-files-reference] on the plan.
+
+But... **you never downloaded the seed data on your local machine. In fact, you didn't need you to because we leveraged one of the most powerful features of Kurtosis: composition.**
+
+Kurtosis has [a built-in packaging/dependency system][how-do-imports-work-explanation] that allows Starlark code to depend on other Starlark code via Github repositories. When you created the `kurtosis.yml` file, you linked your code into the packaging system: you told Kurtosis that your code is a part of a [Kurtosis package][packages-reference], which allowed your code to depend on external Starlark code.
+
+This line at the top of your `main.star`...
+
 ```python
-plan.exec(
-    service_name = "postgres",
-    recipe = ExecRecipe(command = ["pg_restore"] + postgres_flags + [
-        "--no-owner",
-        "--role=" + POSTGRES_USER,
-        SEED_DATA_DIRPATH + "/" + data_package_module_result.tar_filename,
-        ]
-    ),
+data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/data-package/main.star")
 ```
-**Here, we saw one of Kurtosis' most loved features: the ability to modularize and share your distributed application logic using only a Github repository.** We won't dive into all the usecases now, but [the examples here][awesome-kurtosis-repo] can serve as a good source of inspiration.
+
+...created a dependency on [the external Kurtosis package living here][data-package-example]. 
+
+Your code then called that external dependency here...
+
+```python
+data_package_module_result = data_package_module.run(plan, struct())
+```
+
+...which in turn locally ran [the code in the `main.star` of that external package][data-package-example-main.star]. That external Kurtosis package happens to contain [the seed data][data-package-example-seed-tar], and it uses the `upload_data` Starlark instruction on the plan to make the seed data available via a files artifact to your local `main.star` file that we've been editing. From there, all we needed to do was mount it on the `postgres` service.
+
+This ability to modularize your distributed application logic using only a Github repo is one of Kurtosis' most loved features. We won't dive into all the usecases now, but [the examples here][awesome-kurtosis-repo] can serve as a good source of inspiration.
+
 
 Add an API
 ----------
@@ -529,7 +501,7 @@ def run(plan, args):
     )
 ```
 
-Now, run the same dev loop command as before (and don't worry about the result, we'll explain that later):
+Now, run the same dev loop command as before (and don't worry about the result!):
 
 ```bash
 kurtosis clean -a && kurtosis run --enclave quickstart .
@@ -552,7 +524,6 @@ Error encountered running Starlark code.
 
 Here, Kurtosis is telling us that the `wait` instruction on line `77` of our `main.star` (the one for ensuring PostgREST is up) is timing out.
 
-#### Investigating the issue
 The enclave state is usually a good place to start. If we look at the bottom of our output we'll see the following state of the enclave:
 
 ```text
@@ -572,9 +543,7 @@ UUID           Name        Ports                                                
 80987420176f   api         http: 3000/tcp                                       STOPPED
 ```
 
-From the above, the problem is clear now: the PostgREST service (named: `api`) status is `STOPPED`, rather than `RUNNING`. 
-
-When we grab the PostgREST logs...
+The problem is clear now: the PostgREST (we named it `api`) service status is `STOPPED` rather than `RUNNING`. When we grab the PostgREST logs...
 
 ```bash
 kurtosis service logs quickstart api
@@ -590,7 +559,7 @@ kurtosis service logs quickstart api
 postgrest: thread killed
 ```
 
-Looking back to our Starlark code, we can see the problem: we're creating the Postgres database with a user called `app_user`, but we're telling PostgREST to try and connect through a user called `postgres`:
+Looking back to our Starlark, we can see the problem: we're creating the Postgres database with a user called `app_user`, but we're telling PostgREST to try and connect through a user called `postgres`:
 
 ```python
 POSTGRES_USER = "app_user"
@@ -617,7 +586,7 @@ def run(plan, args):
     # ...
 
     postgres_url = "postgresql://{}:{}@{}:{}/{}".format(
-        "postgres",   # <---------- THE PROBLEM IS HERE
+        "postgres",   # <---------- THE PROBLEM 
         POSTGRES_PASSWORD,
         postgres.ip_address,
         postgres.ports[POSTGRES_PORT_ID].number,
@@ -625,7 +594,7 @@ def run(plan, args):
     )
 ```
 
-In the line declaring the `postgres_url` variable in your `main.star` file, replace the `"postgres",` string with `POSTGRES_USER,` to use the correct username we specified at the beginning of our file. Then re-run your dev loop:
+In the line declaring the `postgres_url` variable in your `main.star` file, replace the `"postgres"` string with `POSTGRES_USER` to use the correct username we specified at the beginning of our file. Then rerun your dev loop:
 
 ```bash
 kurtosis clean -a && kurtosis run --enclave quickstart .
@@ -649,10 +618,10 @@ ce90b471a982   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59883   
 98094b33cd9a   api         http: 3000/tcp -> http://127.0.0.1:59887             RUNNING
 ```
 
-### Review: Add an API
-In this section, we spun up a new PostgREST service (that we named `api` for readability) with a dependency on the Postgres service. Normally, PostgREST needs to know the IP address or hostname of the Postgres service, and we said earlier that Starlark (the Interpretation phase) can never know Execution values. 
+### Review
+In this section, we declared a new PostgREST service (that we named `api` for readability) with a dependency on the Postgres service.
 
-So how did the services get connected?
+Yet... PostgREST needs to know the IP address or hostname of the Postgres service, and we said earlier that Starlark (the Interpretation phase) can never know Execution values. How can this be?
 
 Answer: Execution-time values are represented at Interpretation time as [future references][future-references-reference] - special Starlark strings like `{{kurtosis:6670e781977d41409f9eb2833977e9df:ip_address.runtime_value}}` that Kurtosis will replace at Execution time with the actual value. In this case, the `postgres_url` variable here...
 
@@ -683,8 +652,6 @@ api = plan.add_service(
 ```
 
 ...Kurtosis simply swapped in the correct Postgres container Execution-time values. While future references take some getting used to, [we've found the feedback loop speedup to be very worth it][why-multi-phase-runs-explanation].
-
-**What you've just seen is Kurtosis' powerful ability to data generated at runtime to set up service dependencies in multi-container test environments. We also saw how seamless it was to to run on-box CLI commands on a container.**
 
 Modifying data
 --------------
@@ -879,9 +846,6 @@ At a higher level, Kurtosis automatically deserialized the `[{"first_name":"Kevi
 def run(plan, args):
 ```
 
-**This section showed us how we can interact with the test environment we set up and also how to parametrize our distributed application for others to re-use.**
-
-
 <!-- 
 // NOTE(ktoday): We commented this out because the Git publishing aspect was giving people trouble (needed to have Git set up, 'git init' was hard, etc.
 // I still think that publishing/shareability is a large part of Kurtosis, but there's probably a better way to highlight this
@@ -939,27 +903,63 @@ And that's it - you've written your very first distributed application in Kurtos
 
 Let's review. In this tutorial you have:
 
-- Started a Postgres database in an ephemeral, isolated test environment
-- Seeded your database by importing an external Starlark package from the internet
-- Set up an API server for our database and gracefully handled dynamically generated dependency data
+- Started a Postgres database
+- Seeded it by importing a third-party Starlark package
+- Added an API server
 - Inserted & queried data via the API
-- Parameterized data insertion for future use
+- Parameterized data insertion
 
-Thank you for trying our quickstart. We hope you enjoyed it. 
+Along the way you've learned about several Kurtosis concepts:
 
-This was still just an intro to Kurtosis. To see examples that you can easily modify to be relevant to you, [check out our `awesome-kurtosis` repo][awesome-kurtosis-repo]. To explore real-scale Kurtosis packages delivering value, see the [Ethereum package][ethereum-package], [Waku package][waku-package], or [NEAR package][near-package] as well as our list of [Kurtosis-provided packages being used in production][kurtosis-managed-packages] and [Kurtosis packages in the wild][wild-kurtosis-packages].
+- [The CLI][cli-reference]
+- [Enclaves][enclaves-explanation]
+- [Starlark][starlark-explanation]
+- [Multi-phase runs][multi-phase-runs-reference]
+- [The plan][plan-reference]
+- [Files artifacts][files-artifacts-reference]
+- [Kurtosis packages][packages-reference]
+- [Future references][future-references-reference]
 
-Finally, we'd love to hear from you and engage with our users. Please don't hesitate to:
-- Share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), to [email us](mailto:feedback@kurtosistech.com), or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
+But this was still just the intro to Kurtosis. To see examples that you can easily modify to be relevant to you, [check out our `awesome-kurtosis` repo][awesome-kurtosis-repo]. To explore real-scale Kurtosis packages delivering value, see [the Ethereum package][ethereum-package], [Waku package][waku-package], or [NEAR package][near-package].
+
+And now that you've reached the end, we'd love to hear from you - what went well for you, and what didn't? You can file issues and feature requests on Github...
+
+```bash
+kurtosis feedback --github
+```
+
+...or you can email us via the CLI...
+
+```bash
+kurtosis feedback --email
+```
+
+...and you can even schedule a personal session with [our cofounder Kevin][kevin-linked] via:
+
+```bash
+kurtosis feedback --calendly
+```
+
+We use all feedback to fuel product development, so please don't hesitate to get in touch!
+
+Finally, if liked what you saw and want to engage with us, you can:
+
 - [Star us on Github](https://github.com/kurtosis-tech/kurtosis) (this helps a lot!)
 - [Join our Discord](https://discord.com/channels/783719264308953108/783719264308953111) (also available with the `kurtosis discord` CLI command)
-- [Reach out to us on Twitter](https://twitter.com/KurtosisTech) (also available with the `kurtosis twitter` CLI command)
+- [Reach out to us on Twitter](https://twitter.com/KurtosisTech)
+
+Or you can simply dive deeper into the docs:
+
+- [Read about the architecture][architecture-explanation]
+- [Explore the full catalog of Starlark commands][starlark-instructions-reference]
+- [Explore the various CLI commands][cli-reference]
+- Explore [Kurtosis-provided packages being used in production][kurtosis-managed-packages]
+- [Search GitHub for Kurtosis packages in the wild][wild-kurtosis-packages]
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
 <!--------------------------- Guides ------------------------------------>
-[installing-kurtosis-guide]: ./guides/installing-the-cli.md#ii-install-the-cli
-[installing-docker-guide]: ./guides/installing-the-cli.md#i-install--start-docker
+[installing-kurtosis-guide]: ./guides/installing-the-cli.md
 [upgrading-kurtosis-guide]: ./guides/upgrading-the-cli.md
 
 <!--------------------------- Explanations ------------------------------------>
@@ -977,6 +977,7 @@ Finally, we'd love to hear from you and engage with our users. Please don't hesi
 [cli-reference]: ./reference/cli/cli.md
 [kurtosis-run-reference]: ./reference/cli/run-starlark.md
 [kurtosis-clean-reference]: ./reference/cli/clean.md
+[kurtosis-clean-reference]: ./reference/cli/clean.md
 [kurtosis-enclave-inspect-reference]: ./reference/cli/enclave-inspect.md
 [kurtosis-files-upload-reference]: ./reference/cli/files-upload.md
 [kurtosis-feedback-reference]: ./reference/cli/feedback.md
@@ -986,7 +987,6 @@ Finally, we'd love to hear from you and engage with our users. Please don't hesi
 [starlark-instructions-reference]: ./reference/starlark-instructions.md
 [upload-files-reference]: ./reference/starlark-instructions.md#upload_files
 [request-reference]: ./reference/starlark-instructions.md#request
-[exec-reference]: ./reference/starlark-instructions.md#exec
 
 <!-- Reference -->
 [multi-phase-runs-reference]: ./reference/multi-phase-runs.md
