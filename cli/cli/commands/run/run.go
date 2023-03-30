@@ -318,7 +318,8 @@ func run(
 		// This error thrown by the APIC is not informative right now as it just tells the user to look at errors
 		// in the above log. For this reason we're ignoring it and returning nil. This is exceptional to not clutter
 		// the CLI output. We should still use stacktrace.Propagate for other errors.
-		return nil
+		// TODO: will do it another way in next PR. Returning the error for now as it broke CI pipeline
+		return errRunningKurtosis
 	}
 
 	if servicesInEnclaveForMetricsError != nil {
