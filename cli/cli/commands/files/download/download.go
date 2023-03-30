@@ -22,8 +22,8 @@ import (
 
 const (
 	enclaveIdentifierFlagKey = "enclave"
-	// Signifies that an enclave ID should be auto-generated
-	autogenerateEnclaveIdentifierKeyword = ""
+	// Signifies that enclave identifier hasn't been passed
+	defaultEnclaveIdentifierKeyword = ""
 
 	artifactIdentifierArgKey        = "artifact-identifier"
 	emptyArtifactIdentifier         = ""
@@ -57,11 +57,10 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
-			Key: enclaveIdentifierFlagKey,
-			Usage: "The enclave identifier of the enclave in which the script or package will be ran. " +
-				"An enclave with this name will be created if it doesn't exist.",
+			Key:     enclaveIdentifierFlagKey,
+			Usage:   "The enclave from which the file will be downloaded. This is a required flag.",
 			Type:    flags.FlagType_String,
-			Default: autogenerateEnclaveIdentifierKeyword,
+			Default: defaultEnclaveIdentifierKeyword,
 		},
 		{
 			Key:     noExtractFlagKey,
@@ -102,6 +101,10 @@ func run(
 	enclaveIdentifier, err := flags.GetString(enclaveIdentifierFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using flag key '%s'", enclaveIdentifierFlagKey)
+	}
+
+	if enclaveIdentifier == defaultEnclaveIdentifierKeyword {
+		return stacktrace.NewError("Enclave identifier is a required flag; please pass a valid value using the '--%s' flag", enclaveIdentifierFlagKey)
 	}
 
 	artifactIdentifier, err := args.GetNonGreedyArg(artifactIdentifierArgKey)
