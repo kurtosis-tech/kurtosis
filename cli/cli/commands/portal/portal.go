@@ -8,12 +8,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ContextCmd Suppressing exhaustruct requirement because this struct has ~40 properties
+// PortalCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
 var PortalCmd = &cobra.Command{
 	Use:   command_str_consts.PortalCmdStr,
-	Short: "Manage lifecycle of Kurtosis Portal",
-	RunE:  nil,
+	Short: "Manages lifecycle of Kurtosis Portal",
+	Long: "Manages the lifecycle of Kurtosis Portal. Kurtosis Portal is a lightweight daemon running locally to " +
+		"enable seamless communication with Kurtosis enclaves that are running on a remote Kurtosis server. The " +
+		"Portal is tightly coupled to the concept of remote Kurtosis contexts. On a local context, the portal is not " +
+		"needed.",
+	RunE: nil,
 }
 
 func init() {

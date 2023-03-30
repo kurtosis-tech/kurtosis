@@ -116,7 +116,7 @@ func GetPortalBinaryFilePath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForPortalForXDG(portalBinaryFilename)
 	portalBinaryFilePath, err := xdg.DataFile(xdgRelFilepath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the last pestered user about old version file path using '%v'", xdgRelFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal binary file path using '%s'", xdgRelFilepath)
 	}
 	return portalBinaryFilePath, nil
 }
@@ -125,7 +125,7 @@ func GetPortalLogFilePath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForPortalForXDG(portalLogFilename)
 	portalBinaryFilePath, err := xdg.DataFile(xdgRelFilepath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the last pestered user about old version file path using '%v'", xdgRelFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal log file path using '%s'", xdgRelFilepath)
 	}
 	return portalBinaryFilePath, nil
 }
@@ -134,7 +134,7 @@ func GetPortalVersionFilePath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForPortalForXDG(portalVersionFilename)
 	portalVersionFilePath, err := xdg.DataFile(xdgRelFilepath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the last pestered user about old version file path using '%v'", xdgRelFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal version file path using '%s'", xdgRelFilepath)
 	}
 	return portalVersionFilePath, nil
 }
@@ -143,7 +143,7 @@ func GetPortalPidFilePath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForPortalForXDG(portalPidFilename)
 	portalPidFilePath, err := xdg.StateFile(xdgRelFilepath)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the last pestered user about old version file path using '%v'", xdgRelFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal PID file path using '%s'", xdgRelFilepath)
 	}
 	return portalPidFilePath, nil
 }

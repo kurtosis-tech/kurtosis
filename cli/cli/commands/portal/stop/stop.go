@@ -14,7 +14,7 @@ import (
 var PortalStopCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.PortalStopCmdStr,
 	ShortDescription:         "Stops Kurtosis Portal",
-	LongDescription:          "Stops Kurtosis Portal if it is currently running",
+	LongDescription:          "Stops Kurtosis Portal daemon if one is currently running locally",
 	Flags:                    []*flags.FlagConfig{},
 	Args:                     []*args.ArgConfig{},
 	PreValidationAndRunFunc:  nil,
@@ -23,11 +23,11 @@ var PortalStopCmd = &lowlevel.LowlevelKurtosisCommand{
 }
 
 func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
-	logrus.Infof("Stopping Kurtosis Portal")
+	logrus.Infof("Stopping the Kurtosis Portal")
 	portalManager := portal_manager.NewPortalManager()
 	if err := portalManager.StopExisting(ctx); err != nil {
-		return stacktrace.Propagate(err, "Error stopping portal")
+		return stacktrace.Propagate(err, "Error stopping Kurtosis Portal")
 	}
-	logrus.Infof("Kurtosis portal stopped")
+	logrus.Infof("Kurtosis Portal stopped")
 	return nil
 }
