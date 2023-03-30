@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.72.0](https://github.com/kurtosis-tech/kurtosis/compare/0.71.2...0.72.0) (2023-03-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* Change starlark args from struct to dict ([#376](https://github.com/kurtosis-tech/kurtosis/issues/376))
+
+### Features
+
+* Restart engine post cluster set ([#393](https://github.com/kurtosis-tech/kurtosis/issues/393)) ([be82680](https://github.com/kurtosis-tech/kurtosis/commit/be82680880552add195954d2962c74e9fecefed0))
+
+
+### Code Refactoring
+
+* Change starlark args from struct to dict ([#376](https://github.com/kurtosis-tech/kurtosis/issues/376)) ([f350621](https://github.com/kurtosis-tech/kurtosis/commit/f350621f4080514caa96b93a0581186d07a306a6))
+
 ## [0.71.2](https://github.com/kurtosis-tech/kurtosis/compare/0.71.1...0.71.2) (2023-03-30)
 
 
