@@ -75,8 +75,20 @@
         {
           "name": "service_name",
           "type": "string",
-          "content": "service_name?",
+          "content": "service_name",
           "detail": "A service name designating a service that already exists inside the enclave"
+        },
+        {
+          "name": "acceptable_codes",
+          "type": "list",
+          "content": "acceptable_codes?",
+          "detail": "If the recipe returns a code that does not belong on this list, this instruction will fail. The default value is [0,0]"
+        },
+        {
+          "name": "skip_code_check",
+          "type": "bool",
+          "content": "skip_code_check?",
+          "detail": "If False, instruction will never fail based on code (acceptable codes will be ignored"
         }
       ]
     },
@@ -129,8 +141,20 @@
         {
           "name": "service_name",
           "type": "string",
-          "content": "service_name?",
+          "content": "service_name",
           "detail": "A service name designating a service that already exists inside the enclave"
+        },
+        {
+          "name": "acceptable_codes",
+          "type": "list",
+          "content": "acceptable_codes?",
+          "detail": "If the recipe returns a code that does not belong on this list, this instruction will fail. The default value is [0,0]"
+        },
+        {
+          "name": "skip_code_check",
+          "type": "bool",
+          "content": "skip_code_check?",
+          "detail": "If False, instruction will never fail based on code (acceptable codes will be ignored"
         }
       ]
     },
@@ -141,9 +165,9 @@
       "returnType": "",
       "params": [
         {
-          "name": "service_name",
+          "name": "name",
           "type": "string",
-          "content": "service_name",
+          "content": "name",
           "detail": "The service name of the service to be removed."
         }
       ]
@@ -193,7 +217,7 @@
         {
           "name": "service_name",
           "type": "string",
-          "content": "service_name?",
+          "content": "service_name",
           "detail": "A service name designating a service that already exists inside the enclave"
         }
       ]
@@ -225,9 +249,9 @@
       "returnType": "",
       "params": [
         {
-          "name": "service_name",
+          "name": "name",
           "type": "string",
-          "content": "service_name",
+          "content": "name",
           "detail": "A service name designating a service that already exists inside the enclave."
         },
         {
@@ -265,6 +289,26 @@
       ]
     },
     {
+      "name": "render_templates",
+      "detail": "render_templates on the plan object combines a template and data to produce a files artifact. Files artifacts can be used with the files property in the service config of add_service, allowing for reuse of config files across services.",
+      "documentation": "",
+      "returnType": "",
+      "params": [
+        {
+          "name": "config",
+          "type": "dict(string, struct)",
+          "content": "config",
+          "detail": "Its a dict where `key` is the filepath that will be produced within the file-artifact and value is the struct that contains template and data to produce the file artifact"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "content": "name?",
+          "detail": "The name to give the files artifact that will be produced, or will be auto generated"
+        }
+      ]
+    },
+    {
       "name": "print",
       "detail": "print on the plan object will add an instruction to the plan to print the string. When the print instruction is executed during the Execution Phase, future references will be replaced with their execution-time values.",
       "documentation": "",
@@ -282,7 +326,7 @@
         {
           "name": "packet_loss_percentage",
           "type": "float",
-          "content": "packet_loss_percentage",
+          "content": "packet_loss_percentage?",
           "detail": "The percentage of packets that will be dropped between the two designated subnetworks"
         },
         {
@@ -302,7 +346,7 @@
         {
           "name": "command",
           "type": "list<string>",
-          "content": "command?",
+          "content": "command",
           "detail": "The actual command to execute. Each item corresponds to one shell argument, so [\"echo\", \"Hello world\"] behaves as if you ran \"echo 'Hello World'\" in the shell."
         }
       ]
@@ -354,14 +398,14 @@
         {
           "name": "content_type",
           "type": "string",
-          "content": "content_type?",
+          "content": "content_type",
           "detail": "The content type header of the request (e.g. application/json, text/plain, etc)"
         },
         {
           "name": "body",
           "type": "string",
-          "content": "body?",
-          "detail": "The body of the request\n"
+          "content": "body",
+          "detail": "The body of the request"
         },
         {
           "name": "extract",
@@ -380,7 +424,7 @@
         {
           "name": "ms",
           "type": "number",
-          "content": "port_id",
+          "content": "ms",
           "detail": "Amount of constant delay added to outgoing packets from the subnetwork"
         }
       ]
@@ -502,12 +546,18 @@
           "type": "number",
           "content": "cpu_allocation?",
           "detail": "The maximum amount of CPUs the service can use, in millicpu/millicore."
+        },
+        {
+          "name": "ready_conditions",
+          "type": "ReadyConditions",
+          "content": "ready_conditions?",
+          "detail": "This field can be used to check the service's readiness after this is started to confirm that it is ready to receive connections and traffic"
         }
       ]
     },
     {
       "name": "UpdateServiceConfig",
-      "detail": "The UpdateServiceConfig contains the attributes of ServiceConfig that are live-updatable. For now, only the subnetworksubnetworks-reference attribute of a service can be updated once the service is started.",
+      "detail": "The UpdateServiceConfig contains the attributes of ServiceConfig that are live-updatable. For now, only the subnetwork attribute of a service can be updated once the service is started.",
       "documentation": "",
       "returnType": "UpdateServiceConfig",
       "params": [
@@ -515,7 +565,7 @@
           "name": "subnetwork",
           "type": "string",
           "content": "subnetwork",
-          "detail": "The subnetwork to which the service will be moved."
+          "detail": "The subnetwork to which the service will be moved. default can be used to move the service to the default subnetwork"
         }
       ]
     },
@@ -525,6 +575,50 @@
       "name": "import_module",
       "params": [],
       "returnType": ""
+    },
+    {
+      "detail": "This can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic",
+      "documentation": "",
+      "name": "ReadyConditions",
+      "params": [
+        {
+          "name": "recipe",
+          "type": "GetHttpRequestRecipe|PostHttpRequestRecipe|ExecRecipe",
+          "content": "recipe",
+          "detail": "The recipe that will be run until assert passes"
+        },
+        {
+          "name": "field",
+          "type": "string",
+          "content": "field",
+          "detail": "The field of the recipe's result that will be asserted"
+        },
+        {
+          "name": "assertion",
+          "type": "string",
+          "content": "assertion",
+          "detail": "The assertion is the comparison operation between value and target_value. Valid values are \"==\", \"!=\", \">=\", \"<=\", \">\", \"<\" or \"IN\" and \"NOT_IN\" (if target_value is list)."
+        },
+        {
+          "name": "target_value",
+          "type": "number",
+          "content": "target_value",
+          "detail": "The target value that value will be compared against"
+        },
+        {
+          "name": "interval",
+          "type": "string",
+          "content": "interval?",
+          "detail": "# The interval value is the initial interval suggestion for the command to wait between calls\n It follows a exponential backoff process, where the i-th backoff interval is rand(0.5, 1.5)*interval*2^i\n Follows Go \"time.Duration\" format https://pkg.go.dev/time#ParseDuration"
+        },
+        {
+          "name": "timeout",
+          "type": "string",
+          "content": "timeout?",
+          "detail": "# The timeout value is the maximum time that the command waits for the assertion to be true\n Follows Go \"time.Duration\" format https://pkg.go.dev/time#ParseDuration"
+        }
+      ],
+      "returnType": "ReadyConditions"
     },
     {
       "detail": "The read_file function reads the contents of a file specified by the given locator, and requires that the Starlark script is part of a package. read_file executes at interpretation time so the file contents won't be displayed in the preview",
