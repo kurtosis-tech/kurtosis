@@ -23,6 +23,9 @@ const (
 
 	separator                      = "---"
 	removeTrailingSpecialCharacter = "\n"
+	errorNotCreatedFromStacktrace  = 1
+	errorPrefix                    = "Error: "
+	commandNotFound                = "unknown command"
 )
 
 func main() {
@@ -47,9 +50,15 @@ func main() {
 
 	if err := commands.RootCmd.Execute(); err != nil {
 		maybeCleanedError := getErrorMessageToBeDisplayedOnCli(err)
+		errorMessageFromCli := maybeCleanedError.Error()
 		// cobra uses this method underneath as well to print errors
 		// so just used it directly.
-		commands.RootCmd.PrintErrln("Error: ", maybeCleanedError.Error())
+		commands.RootCmd.PrintErrln(errorPrefix, errorMessageFromCli)
+
+		// if unknown command is entered - display help command
+		if strings.Contains(errorMessageFromCli, commandNotFound) {
+			commands.RootCmd.PrintErrf("Run '%v --help' for usage.\n", commands.RootCmd.CommandPath())
+		}
 		os.Exit(errorExitCode)
 	}
 	os.Exit(successExitCode)
@@ -80,7 +89,7 @@ func getErrorMessageToBeDisplayedOnCli(errorWithStacktrace error) error {
 func removeFilePathFromErrorMessage(errorMessage string) error {
 	errorMessageConvertedInList := strings.Split(errorMessage, separator)
 	// safe to assume that the error was not generated using stacktrace package
-	if len(errorMessageConvertedInList) == 1 {
+	if len(errorMessageConvertedInList) == errorNotCreatedFromStacktrace {
 		return errors.New(errorMessage)
 	}
 
@@ -88,9 +97,11 @@ func removeFilePathFromErrorMessage(errorMessage string) error {
 	var cleanErrorList []string
 	for index, line := range errorMessageConvertedInList {
 		if index%2 == 0 {
-			cleanErrorList = append(cleanErrorList, strings.Trim(line, removeTrailingSpecialCharacter))
+			cleanErrorMsgLine := strings.Trim(line, removeTrailingSpecialCharacter)
+			cleanErrorList = append(cleanErrorList, cleanErrorMsgLine)
 		}
 	}
 
-	return errors.New(strings.Join(cleanErrorList, ""))
+	cleanErrorMessage := strings.Join(cleanErrorList, "")
+	return errors.New(cleanErrorMessage)
 }
