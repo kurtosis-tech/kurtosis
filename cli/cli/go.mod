@@ -45,13 +45,12 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230328194643-b4dea3081e25
 	github.com/kurtosis-tech/kurtosis/lsp v0.0.0-00010101000000-000000000000
-	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230324071217-6348e066f3e5
+	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230330124246-9ac7907a7555
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/savioxavier/termlink v1.2.1
 )
 
 require (
-	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
