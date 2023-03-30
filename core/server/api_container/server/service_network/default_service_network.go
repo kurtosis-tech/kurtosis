@@ -27,7 +27,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 	"io"
+	"log"
 	"math"
 	"net"
 	"net/http"
@@ -62,7 +64,7 @@ const (
 	//The most demanding was the eth2-package which took around 4 min to check the HTTP TCP port for the lighthouse validator service
 	//This configuration duplicates that time
 	waitForPortsOpenMaxRetries               = uint16(1)
-	waitForPortsOpenTimeOut                  = 5 * time.Minute
+	waitForPortsOpenTimeOut                  = 15 * time.Second
 	waitForPortsOpenRetriesDelayMilliseconds = uint16(500)
 )
 
@@ -1302,6 +1304,8 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		waitForPortsOpenRetriesDelayMilliseconds,
 		waitForPortsOpenTimeOut,
 	); err != nil {
+		//TODO add service logs in the error
+
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'",
@@ -1332,35 +1336,73 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 func waitUntilAllTCPAndUDPPortsAreOpen(
 	ipAddr net.IP,
 	ports map[string]*port_spec.PortSpec,
-	retries uint16,
-	retriesDelayMilliseconds uint16,
-	scanPortTimeOut time.Duration,
 ) error {
 
-	startTime := time.Now()
-	var err error
-	var successfulRetry uint16
-	for i := uint16(0); i < retries; i++ {
-		for _, portSpec := range ports {
-			if err = scanPort(ipAddr, portSpec, scanPortTimeOut); err != nil {
+	var portCheckErrorGroup errgroup.Group
+
+	for _, portSpec := range ports {
+		//TODO get this value from the portSpec configuration
+		timeout := 1 * time.Minute
+		wrapFunc := func() error {
+			return waitUntilPortIsOpenWithTimeout(ipAddr, portSpec, timeout)
+		}
+		portCheckErrorGroup.Go(wrapFunc)
+	}
+	if err := portCheckErrorGroup.Wait(); err != nil {
+		log.Fatal(err) //TODO add stack-trace here
+	}
+
+	return nil
+}
+
+func waitUntilPortIsOpenWithTimeout(
+	ipAddr net.IP,
+	portSpec *port_spec.PortSpec,
+	timeout time.Duration,
+) error {
+	var (
+		ticker                  = time.NewTicker(timeout)
+		startTime               = time.Now()
+		shouldContinueInTheLoop = true
+		retries                 = 0
+		err                     error
+	)
+
+	for shouldContinueInTheLoop {
+		select {
+		case <-ticker.C:
+			return stacktrace.NewError("Scanning ports has reached the '%v' time out", timeout.String())
+		default:
+			//TODO review this time out, it's tricky
+			//TODO tomar el start time e ir restando el timeout cada vez que llamamos a scanport
+			//TODO colocar un comentario de porque tenemos 2 timeouts
+			if err = scanPort(ipAddr, portSpec, timeout); err == nil {
+				shouldContinueInTheLoop = false
 				break
 			}
+			time.Sleep(time.Duration(waitForPortsOpenRetriesDelayMilliseconds) * time.Millisecond)
+			retries++
 		}
-		if err == nil {
-			successfulRetry = i
-			break
-		}
-		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
 	}
+
 	if err != nil {
-		return stacktrace.Propagate(err, "Unsuccessful all TCP and UDP open ports check, even after "+
-			"'%v' retries with '%v' milliseconds in between retries",
+		return stacktrace.Propagate(err, "Unsuccessful ports check for IP '%s' and port spec '%+v', "+
+			"even after '%v' retries with '%v' milliseconds in between retries",
+			ipAddr,
+			portSpec,
 			retries,
-			retriesDelayMilliseconds,
+			waitForPortsOpenRetriesDelayMilliseconds,
 		)
 	}
-	logrus.Debugf("Successful ports open check after retry number '%v', with '%v' milliseconds between retries and it took '%v'", successfulRetry, retriesDelayMilliseconds, time.Since(startTime))
-
+	logrus.Debugf(
+		"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
+			"with '%v' milliseconds between retries and it took '%v'",
+		ipAddr,
+		portSpec,
+		retries,
+		waitForPortsOpenRetriesDelayMilliseconds,
+		time.Since(startTime),
+	)
 	return nil
 }
 
