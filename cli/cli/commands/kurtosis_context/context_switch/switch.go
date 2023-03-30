@@ -69,6 +69,11 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		return stacktrace.NewError("No context matching identifier '%s' could be found", contextIdentifier)
 	}
 
+	if contextUuidToSwitchTo.GetValue() == contextPriorToSwitch.GetUuid().GetValue() {
+		logrus.Infof("Already on context '%s'", contextPriorToSwitch.GetName())
+		return nil
+	}
+
 	if err = contextsConfigStore.SwitchContext(contextUuidToSwitchTo); err != nil {
 		return stacktrace.Propagate(err, "An error occurred switching to context '%s' with UUID '%s'", contextIdentifier, contextUuidToSwitchTo.GetValue())
 	}
