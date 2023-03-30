@@ -6,10 +6,10 @@
       "name": "add_service",
       "params": [
         {
-          "name": "service_id",
+          "name": "service_name",
           "type": "string",
-          "content": "service_id",
-          "detail": "The service ID of the service being created. The service ID is a reference to the service, which can be used in the future to refer to the service. Service IDs are unique per enclave."
+          "content": "service_name",
+          "detail": "The service name of the service being created. The service name is a reference to the service, which can be used in the future to refer to the service. Service names are unique per enclave."
         },
         {
           "name": "config",
@@ -19,6 +19,20 @@
         }
       ],
       "returnType": "ServiceConfig"
+    },
+    {
+      "detail": "The add_services instruction on the plan object adds multiple services all at once.\n",
+      "documentation": "",
+      "name": "add_services",
+      "params": [
+        {
+          "name": "configs",
+          "type": "dict<string, ServiceConfig>",
+          "content": "service_name",
+          "detail": "A map of service_name -> ServiceConfig for all services that needs to be added."
+        }
+      ],
+      "returnType": "list<ServiceConfig>"
     },
     {
       "name": "assert",
@@ -47,6 +61,26 @@
       ]
     },
     {
+      "name": "exec",
+      "detail": "The exec instruction on the plan object executes commands on a given service as if they were running in a shell on the container.",
+      "documentation": "",
+      "returnType": "ExecRecipe",
+      "params": [
+        {
+          "name": "recipe",
+          "type": "ExecRecipe",
+          "content": "recipe",
+          "detail": "The exec recipe creates commands that will be executed by exec instruction."
+        },
+        {
+          "name": "service_name",
+          "type": "string",
+          "content": "service_name?",
+          "detail": "A service name designating a service that already exists inside the enclave"
+        }
+      ]
+    },
+    {
       "name": "remove_connection",
       "detail": "The remove_connection function removes a connection override between two subnetworks. The default connection cannot be removed; it can only be updated using set_connection",
       "documentation": "",
@@ -70,7 +104,7 @@
           "name": "config",
           "type": "ConnectionConfig",
           "content": "config",
-          "detail": ""
+          "detail": "The configuration for this connection."
         },
         {
           "name": "subnetworks",
@@ -84,13 +118,19 @@
       "name": "request",
       "detail": "The request instruction on the plan object executes either a POST or GET HTTP request, saving its result in a future references.",
       "documentation": "",
-      "returnType": "",
+      "returnType": "GetHttpRequestRecipe | PostHttpRequestRecipe",
       "params": [
         {
           "name": "recipe",
-          "type": "HttpRequestRecipe",
+          "type": "GetHttpRequestRecipe | PostHttpRequestRecipe",
           "content": "recipe",
-          "detail": ""
+          "detail": "These recipes are executed by request instruction to make either Get or Post request"
+        },
+        {
+          "name": "service_name",
+          "type": "string",
+          "content": "service_name?",
+          "detail": "A service name designating a service that already exists inside the enclave"
         }
       ]
     },
@@ -101,22 +141,22 @@
       "returnType": "",
       "params": [
         {
-          "name": "service_id",
+          "name": "service_name",
           "type": "string",
-          "content": "service_id",
-          "detail": "service_id"
+          "content": "service_name",
+          "detail": "The service name of the service to be removed."
         }
       ]
     },
     {
       "name": "wait",
-      "detail": "he wait instruction on the plan object fails the Starlark script or package with an execution error if the assertion does not succeed in a given period of time. If it succedes, it returns a future references with the last recipe run",
+      "detail": "The wait instruction on the plan object fails the Starlark script or package with an execution error if the assertion does not succeed in a given period of time. If it succeeds, it returns a future references with the last recipe run",
       "documentation": "",
-      "returnType": "",
+      "returnType": "GetHttpRequestRecipe|PostHttpRequestRecipe|ExecRecipe",
       "params": [
         {
           "name": "recipe",
-          "type": "HttpRequestRecipe|ExecRecipe",
+          "type": "GetHttpRequestRecipe|PostHttpRequestRecipe|ExecRecipe",
           "content": "recipe",
           "detail": "The recipe that will be run until assert passes"
         },
@@ -149,6 +189,12 @@
           "type": "string",
           "content": "timeout?",
           "detail": "# The timeout value is the maximum time that the command waits for the assertion to be true\n Follows Go \"time.Duration\" format https://pkg.go.dev/time#ParseDuration"
+        },
+        {
+          "name": "service_name",
+          "type": "string",
+          "content": "service_name?",
+          "detail": "A service name designating a service that already exists inside the enclave"
         }
       ]
     },
@@ -167,8 +213,8 @@
         {
           "name": "name",
           "type": "string",
-          "content": "name",
-          "detail": "The name to give the files artifact that will be produced."
+          "content": "name?",
+          "detail": "The name to give the files artifact that will be produced, or else will be generated"
         }
       ]
     },
@@ -179,30 +225,30 @@
       "returnType": "",
       "params": [
         {
-          "name": "service_id",
+          "name": "service_name",
           "type": "string",
-          "content": "service_id",
-          "detail": "A Service ID designating a service that already exists inside the enclave\n If it does not, a validation error will be thrown"
+          "content": "service_name",
+          "detail": "A service name designating a service that already exists inside the enclave."
         },
         {
           "name": "config",
           "type": "UpdateServiceConfig",
           "content": "config",
-          "detail": ""
+          "detail": "The changes to apply to this service."
         }
       ]
     },
     {
       "name": "store_service_files",
-      "detail": "The update_service instruction updates an existing service without restarting it. For now, only the service subnetwork can be updated live. In this case, the service will be moved to the corresponding subnetwork.",
+      "detail": "store_service_files on the plan object copies files or directories from an existing service in the enclave into a files artifact. This is useful when work produced on one container is needed elsewhere.",
       "documentation": "",
       "returnType": "",
       "params": [
         {
-          "name": "service_id",
+          "name": "service_name",
           "type": "string",
-          "content": "service_id",
-          "detail": "The service ID of a preexisting service from which the file will be copied."
+          "content": "service_name",
+          "detail": "The service name of a preexisting service from which the file will be copied."
         },
         {
           "name": "src",
@@ -213,40 +259,20 @@
         {
           "name": "name",
           "type": "string",
-          "content": "name",
-          "detail": "The name to give the files artifact that will be produced"
+          "content": "name?",
+          "detail": "The name to give the files artifact that will be produced, or will be auto generated"
         }
       ]
     },
     {
       "name": "print",
-      "detail": "print on the plan object will add an instruction to the plan to print the string. When the print instruction is executed during the [Execution Phase][multi-phase-runs], future references will be replaced with their execution-time values.",
+      "detail": "print on the plan object will add an instruction to the plan to print the string. When the print instruction is executed during the Execution Phase, future references will be replaced with their execution-time values.",
       "documentation": "",
       "returnType": "",
       "params": []
     }
   ],
   "type_builtins": [
-    {
-      "detail": "The read_file function reads the contents of a file specified by the given locator, and requires that the Starlark script is part of a package. read_file executes at interpretation time so the file contents won't be displayed in the preview",
-      "documentation": "",
-      "name": "read_file",
-      "params": [
-        {
-          "name": "src",
-          "type": "string",
-          "content": "src",
-          "detail": "The Kurtosis locator of the file to read"
-        }
-      ],
-      "returnType": ""
-    },
-    {
-      "name": "import_module",
-      "detail": "The import_module function imports the symbols from a Starlark script specified by the given locator, and requires that the calling Starlark script is part of a package.",
-      "documentation": "",
-      "returnType": ""
-    },
     {
       "name": "ConnectionConfig",
       "detail": "The ConnectionConfig is used to configure a connection between two subnetworks (see set_connection)",
@@ -258,6 +284,130 @@
           "type": "float",
           "content": "packet_loss_percentage",
           "detail": "The percentage of packets that will be dropped between the two designated subnetworks"
+        },
+        {
+          "name": "packet_delay_distribution",
+          "type": "UniformPacketDelayDistribution|NormalPacketDelayDistribution",
+          "content": "packet_delay_distribution?",
+          "detail": "Amount of delay added to packets each way between subnetworks"
+        }
+      ]
+    },
+    {
+      "name": "ExecRecipe",
+      "detail": "The ExecRecipe can be used to run the command on the service",
+      "documentation": "",
+      "returnType": "ExecRecipe",
+      "params": [
+        {
+          "name": "command",
+          "type": "list<string>",
+          "content": "command?",
+          "detail": "The actual command to execute. Each item corresponds to one shell argument, so [\"echo\", \"Hello world\"] behaves as if you ran \"echo 'Hello World'\" in the shell."
+        }
+      ]
+    },
+    {
+      "name": "GetHttpRequestRecipe",
+      "detail": "The GetHttpRequestRecipe can be used to make GET requests.",
+      "documentation": "",
+      "returnType": "GetHttpRequestRecipe",
+      "params": [
+        {
+          "name": "port_id",
+          "type": "string",
+          "content": "port_id",
+          "detail": "The port ID that is the server port for the request"
+        },
+        {
+          "name": "endpoint",
+          "type": "string",
+          "content": "endpoint",
+          "detail": "The endpoint for the request"
+        },
+        {
+          "name": "extract",
+          "type": "string",
+          "content": "extract?",
+          "detail": "The extract dictionary takes in key-value pairs where: key is a way you refer to the extraction later on value is a 'jq' string that contains logic to extract from response body"
+        }
+      ]
+    },
+    {
+      "name": "PostHttpRequestRecipe",
+      "detail": "The PostHttpRequestRecipe can be used to make POST requests.",
+      "documentation": "",
+      "returnType": "PostHttpRequestRecipe",
+      "params": [
+        {
+          "name": "port_id",
+          "type": "string",
+          "content": "port_id",
+          "detail": "The port ID that is the server port for the request"
+        },
+        {
+          "name": "endpoint",
+          "type": "string",
+          "content": "endpoint",
+          "detail": "The endpoint for the request"
+        },
+        {
+          "name": "content_type",
+          "type": "string",
+          "content": "content_type?",
+          "detail": "The content type header of the request (e.g. application/json, text/plain, etc)"
+        },
+        {
+          "name": "body",
+          "type": "string",
+          "content": "body?",
+          "detail": "The body of the request\n"
+        },
+        {
+          "name": "extract",
+          "type": "string",
+          "content": "extract?",
+          "detail": "The extract dictionary takes in key-value pairs where: key is a way you refer to the extraction later on value is a 'jq' string that contains logic to extract from response body"
+        }
+      ]
+    },
+    {
+      "name": "UniformPacketDelayDistribution",
+      "detail": "The UniformPacketDelayDistribution can be used to introduce uniform latency between two subnetworks",
+      "documentation": "",
+      "returnType": "UniformPacketDelayDistribution",
+      "params": [
+        {
+          "name": "ms",
+          "type": "number",
+          "content": "port_id",
+          "detail": "Amount of constant delay added to outgoing packets from the subnetwork"
+        }
+      ]
+    },
+    {
+      "name": "NormalPacketDelayDistribution",
+      "detail": "The NormalPacketDelayDistribution can be used to introduce normally distributed latency between two subnetworks",
+      "documentation": "",
+      "returnType": "NormalPacketDelayDistribution",
+      "params": [
+        {
+          "name": "mean_ms",
+          "type": "number",
+          "content": "mean_ms",
+          "detail": "Amount of mean delay added to outgoing packets from the subnetwork"
+        },
+        {
+          "name": "std_dev_ms",
+          "type": "number",
+          "content": "std_dev_ms",
+          "detail": "Amount of variance (jitter) added to outgoing packets from the subnetwork"
+        },
+        {
+          "name": "correlation",
+          "type": "float",
+          "content": "correlation?",
+          "detail": "Percentage of correlation observed among packets. It means that the delay observed in next packet will exhibit a corrlation factor of 10.0% with the previous packet"
         }
       ]
     },
@@ -268,9 +418,9 @@
       "returnType": "PortSpec",
       "params": [
         {
-          "name": "port_id",
+          "name": "number",
           "type": "number",
-          "content": "port_id",
+          "content": "number",
           "detail": "The port number which we want to expose"
         },
         {
@@ -340,6 +490,18 @@
           "type": "string",
           "content": "subnetwork?",
           "detail": "Defines the subnetwork in which the service will be started"
+        },
+        {
+          "name": "memory_allocation",
+          "type": "number",
+          "content": "memory_allocation?",
+          "detail": "The maximum amount of memory, in megabytes, the service can use."
+        },
+        {
+          "name": "cpu_allocation",
+          "type": "number",
+          "content": "cpu_allocation?",
+          "detail": "The maximum amount of CPUs the service can use, in millicpu/millicore."
         }
       ]
     },
@@ -353,9 +515,30 @@
           "name": "subnetwork",
           "type": "string",
           "content": "subnetwork",
-          "detail": "Defines the subnetwork in which the service will be started"
+          "detail": "The subnetwork to which the service will be moved."
         }
       ]
+    },
+    {
+      "detail": "The import_module function imports the symbols from a Starlark script specified by the given locator, and requires that the calling Starlark script is part of a package",
+      "documentation": "",
+      "name": "import_module",
+      "params": [],
+      "returnType": ""
+    },
+    {
+      "detail": "The read_file function reads the contents of a file specified by the given locator, and requires that the Starlark script is part of a package. read_file executes at interpretation time so the file contents won't be displayed in the preview",
+      "documentation": "",
+      "name": "read_file",
+      "params": [
+        {
+          "name": "src",
+          "type": "string",
+          "content": "src",
+          "detail": "The Kurtosis locator of the file to read"
+        }
+      ],
+      "returnType": ""
     }
   ]
 }
