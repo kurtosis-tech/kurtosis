@@ -787,7 +787,7 @@ jobs:
       - run: "! ${KURTOSIS_BINPATH} service add --name test-encalve"
 
     # running a broken package fails
-      - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/cassandra-package@2bd98f672c46f51d1a31202b763d574acb45eadb"
+      - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
 
     # running service logs for a non existing enclave fails
       - run: "! ${KURTOSIS_BINPATH} service logs non-existent-enclave non-existent-service"
