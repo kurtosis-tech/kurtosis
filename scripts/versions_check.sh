@@ -5,8 +5,8 @@ set -euo pipefail   # Bash "strict mode"
 # FOR GO WE EXPECT _AT LEAST_ THIS VERSION, BUT WE ARE OK WITH SUPERIOR VERSIONS
 GO_VERSION=1.18
 
-# FOR NODE, WE PIN THE MINOR VERSION
-NODE_VERSION="v16.14"
+# FOR NODE, WE PIN THE EXACT VERSION NUMBER
+NODE_VERSION=16.14
 
 
 RED_BG=$(tput setab 1)
@@ -19,11 +19,6 @@ error=false;
 echo "${BLUE_BG}${WHITE_FG}${BOLD}Starting Kurtosis Build...              ${NORMAL_BG}"
 
 check_node_version() {
-  if ! command -v node &> /dev/null ; then
-    echo "ERROR: unable to configure node"
-    exit 1
-  fi
-
   if [ -f ~/.nvm/nvm.sh ]; then
     source ~/.nvm/nvm.sh
   elif command -v brew; then
@@ -39,10 +34,9 @@ check_node_version() {
     exit 1
   fi
 
-  current_version="$(node --version)"
-  short_version="${current_version%.*}"
-  if [ "${short_version}" != "${NODE_VERSION}" ]; then
-    echo "${RED_BG}${WHITE_FG}${BOLD}node "${NODE_VERSION}" should be the one in use but ${short_version} is in use; use the following to install and use "${NODE_VERSION}""
+
+  if ! nvm list "${NODE_VERSION}" &> /dev/null; then
+    echo "${RED_BG}${WHITE_FG}${BOLD}node "${NODE_VERSION}" not installed. Please install it with ${NORMAL_BG}"
     echo "${RED_BG}${WHITE_FG}nvm install "${NODE_VERSION}"                                ${NORMAL_BG}"
     echo  ""
     error=true
