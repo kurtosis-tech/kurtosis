@@ -7,7 +7,9 @@ slug: /quickstart
 Introduction
 ------------
 
-Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. If you don't know what Kurtosis is and how you might use Kurtosis yet, our [introduction page][homepage] will give you a great starting point, alongside [our motiviations for starting Kurtosis][why-we-built-kurtosis-explanation].
+Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, which assumes that you are following along our code examples and running Kurtosis CLI commands on your local machine. Everything you will use in this guide is free, public, and does not contain sensitive information or data.
+
+If you don't know what Kurtosis is or how you might use Kurtosis yet, our [introduction page][homepage] will give you a great starting point, alongside [our motiviations for starting Kurtosis][why-we-built-kurtosis-explanation].
 
 :::tip What You Will Do
 
