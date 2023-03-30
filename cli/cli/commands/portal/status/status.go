@@ -38,7 +38,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		out.PrintOutLn(fmt.Sprintf("Kurtosis Portal process is on PID %d but it is unreachable", pid))
 		return nil
 	} else if pid != 0 {
-		out.PrintOutLn(fmt.Sprintf("Kurtosis Portal PID file exits but process is dead"))
+		out.PrintOutLn("Kurtosis Portal PID file exits but process is dead")
 		return nil
 	}
 	out.PrintOutLn("Kurtosis Portal is not running")

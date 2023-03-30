@@ -46,7 +46,7 @@ require (
 	github.com/google/go-github/v50 v50.2.0
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230328194643-b4dea3081e25
 	github.com/kurtosis-tech/kurtosis/lsp v0.0.0-00010101000000-000000000000
-	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230324071217-6348e066f3e5
+	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230330124246-9ac7907a7555
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/savioxavier/termlink v1.2.1
 )
