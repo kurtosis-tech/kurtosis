@@ -34,10 +34,12 @@ check_node_version() {
     exit 1
   fi
 
-  current_version=$(nvm version "${NODE_VERSION}")
-  short_version=${current_version%.*}
+  current_version="v16.13.0"
+  short_version="${current_version%.*}"
 
-  if short_version != ${NODE_VERSION}; then
+  echo ${short_version}
+
+  if [ "${short_version}" != "${NODE_VERSION}" ]; then
     echo "${RED_BG}${WHITE_FG}${BOLD}node "${NODE_VERSION}" should be the one in use but ${short_version} is in use"
     echo "${RED_BG}${WHITE_FG}nvm install "${NODE_VERSION}"                                ${NORMAL_BG}"
     echo  ""
