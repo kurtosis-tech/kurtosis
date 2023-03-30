@@ -7,9 +7,9 @@ slug: /quickstart
 Introduction
 ------------
 
-Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
+Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. If you don't know what Kurtosis is and how you might use Kurtosis yet, our [introduction page][homepage] will give you a great starting point, alongside [our motiviations for starting Kurtosis][why-we-built-kurtosis-explanation].
 
-:::tip What You'll Do
+:::tip What You Will Do
 
 - Start a containerized Postgres database in Kurtosis
 - Seed your database with test data using task sequencing
@@ -29,9 +29,10 @@ There are many ways to get help and give feedback. First, every Kurtosis command
 
 </details>
 
-## Setup
+Setup
+-----
 
-Before you proceed, please make sure you have:
+### Before you proceed, please make sure you have:
 - [Installed and started the Docker engine][installing-docker-guide]
 - [Installed the Kurtosis CLI][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it)
 
@@ -968,7 +969,7 @@ Finally, we'd love to hear from you and engage with our users. Please don't hesi
 [services-explanation]: ./explanations/architecture.md#services
 [starlark-explanation]: ./explanations/starlark.md
 [reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
-[what-is-kurtosis-explanation]: ./explanations/what-is-kurtosis.md
+[why-we-built-kurtosis-explanation]: ./explanations/why-we-built-kurtosis.md
 [how-do-imports-work-explanation]: ./explanations/how-do-kurtosis-imports-work.md
 [why-multi-phase-runs-explanation]: ./explanations/why-multi-phase-runs.md
 
@@ -1006,7 +1007,7 @@ Finally, we'd love to hear from you and engage with our users. Please don't hesi
 [data-package-example-seed-tar]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/dvd-rental-data.tar
 
 <!-- Misc -->
-[homepage]: ./explanations/what-is-kurtosis.md
+[homepage]: ./home.md
 [kevin-linked]: https://www.linkedin.com/in/kevintoday/
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
