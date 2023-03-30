@@ -68,19 +68,15 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 
-	if err := engineManager.StopEngineIdempotently(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping the Kurtosis engine")
-	}
-
 	var engineClientCloseFunc func() error
-	var startEngineErr error
+	var restartEngineErr error
 	if engineVersion == defaultEngineVersion {
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
+		_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
 	} else {
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel)
+		_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel)
 	}
-	if startEngineErr != nil {
-		return stacktrace.Propagate(startEngineErr, "An error occurred starting the Kurtosis engine")
+	if restartEngineErr != nil {
+		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}
 	defer func() {
 		if err = engineClientCloseFunc(); err != nil {
@@ -89,6 +85,5 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 
 	logrus.Infof("Engine restarted successfully")
-
 	return nil
 }

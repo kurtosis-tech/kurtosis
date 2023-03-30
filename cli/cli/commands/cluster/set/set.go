@@ -6,12 +6,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
-const clusterNameArgKey = "cluster-name"
+const (
+	clusterNameArgKey = "cluster-name"
+
+	defaultEngineVersion = ""
+)
 
 var SetCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.ClusterSetCmdStr,
@@ -20,12 +26,12 @@ var SetCmd = &lowlevel.LowlevelKurtosisCommand{
 	Flags:            nil,
 	Args: []*args.ArgConfig{
 		{
-			Key:             clusterNameArgKey,
-			IsOptional:      false,
-			DefaultValue:    nil,
-			IsGreedy:        false,
+			Key:                   clusterNameArgKey,
+			IsOptional:            false,
+			DefaultValue:          nil,
+			IsGreedy:              false,
 			ArgCompletionProvider: nil,
-			ValidationFunc:  nil,
+			ValidationFunc:        nil,
 		},
 	},
 	PreValidationAndRunFunc:  nil,
@@ -38,15 +44,68 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to read user input.")
 	}
-	if err := validateClusterName(clusterName); err != nil {
-		return stacktrace.Propagate(err, "An error occurred validating cluster '%v'", clusterName)
+	if err = validateClusterName(clusterName); err != nil {
+		return stacktrace.Propagate(err, "'%s' is not a valid name for Kurtosis cluster", clusterName)
 	}
 
-	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
-	err = clusterSettingStore.SetClusterSetting(clusterName)
+	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
+	}
+
+	clusterUpdateSuccessful := false
+	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
+	clusterPriorToUpdate, err := clusterSettingStore.GetClusterSetting()
+	if err != nil {
+		return stacktrace.Propagate(err, "Error getting current cluster")
+	}
+
+	if clusterName == clusterPriorToUpdate {
+		logrus.Infof("Kurtosis cluster already set to '%s'", clusterName)
+		return nil
+	}
+
+	if err = clusterSettingStore.SetClusterSetting(clusterName); err != nil {
 		return stacktrace.Propagate(err, "Failed to set cluster name to '%v'.", clusterName)
 	}
+	defer func() {
+		if clusterUpdateSuccessful {
+			return
+		}
+		if err = clusterSettingStore.SetClusterSetting(clusterName); err != nil {
+			logrus.Errorf("An error happened updating cluster to '%s'. KUrtosis tried to roll back to the "+
+				"previous value '%s' but the roll back failed. You have to roll back manually running "+
+				"'kurtosis %s %s %s'", clusterName, clusterPriorToUpdate, command_str_consts.ClusterCmdStr,
+				command_str_consts.ClusterSetCmdStr, clusterPriorToUpdate)
+		}
+	}()
+	logrus.Infof("Clustet set to '%s', Kurtosis engine will now be restarted", clusterName)
+
+	// We try to do our best to restart an engine on the same version the current on is on
+	_, _, currentEngineVersion, err := engineManager.GetEngineStatus(ctx)
+	if err != nil {
+		logrus.Warnf("Error getting current engine informationg before restarting it. A default engine will be started")
+	}
+	var engineClientCloseFunc func() error
+	var restartEngineErr error
+	if currentEngineVersion != defaultEngineVersion {
+		_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotentlyWithCustomVersion(ctx, currentEngineVersion, logrus.InfoLevel)
+	} else {
+		_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel)
+	}
+	if restartEngineErr != nil {
+		return stacktrace.Propagate(err, "Engine could not be restarted after cluster was updated. The cluster"+
+			"will be rolled back, but it is possible the engine will remain stopped. Its status can be retrieved "+
+			"running 'kurtosis %s %s' and it can potentially be restarted running 'kurtosis %s %s'",
+			command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,
+			command_str_consts.EngineStartCmdStr)
+	}
+	defer func() {
+		if err = engineClientCloseFunc(); err != nil {
+			logrus.Warnf("Error closing the engine client:\n'%v'", err)
+		}
+	}()
+	clusterUpdateSuccessful = true
 	return nil
 }
 

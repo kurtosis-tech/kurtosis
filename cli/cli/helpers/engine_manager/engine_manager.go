@@ -222,6 +222,27 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 
 	return nil
 }
+func (manager *EngineManager) RestartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	if err := manager.StopEngineIdempotently(ctx); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping the engine currently running")
+	}
+	engineClient, engineClientCloseFunc, err := manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting a new engine")
+	}
+	return engineClient, engineClientCloseFunc, nil
+}
+
+func (manager *EngineManager) RestartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	if err := manager.StopEngineIdempotently(ctx); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping the engine currently running")
+	}
+	engineClient, engineClientCloseFunc, err := manager.StartEngineIdempotentlyWithCustomVersion(ctx, engineImageVersionTag, logLevel)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting a new engine")
+	}
+	return engineClient, engineClientCloseFunc, nil
+}
 
 // ====================================================================================================
 //
