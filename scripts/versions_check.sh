@@ -24,6 +24,21 @@ check_node_version() {
     exit 1
   fi
 
+  if [ -f ~/.nvm/nvm.sh ]; then
+    source ~/.nvm/nvm.sh
+  elif command -v brew; then
+    # https://docs.brew.sh/Manpage#--prefix-formula
+    BREW_PREFIX=$(brew --prefix nvm)
+    if [ -f "${BREW_PREFIX}/nvm.sh" ]; then
+      source "${BREW_PREFIX}"/nvm.sh
+    fi
+  fi
+
+  if ! command -v nvm &> /dev/null ; then
+    echo "ERROR: unable to configure nvm"
+    exit 1
+  fi
+
   current_version="$(node --version)"
   short_version="${current_version%.*}"
   if [ "${short_version}" != "${NODE_VERSION}" ]; then
@@ -67,5 +82,8 @@ if "$error"; then
   echo exiting...
   exit 1
 fi
+
+nvm use $NODE_VERSION &> /dev/null
+
 
 
