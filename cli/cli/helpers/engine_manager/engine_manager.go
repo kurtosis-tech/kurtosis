@@ -23,6 +23,8 @@ import (
 const (
 	waitForEngineResponseTimeout = 5 * time.Second
 	defaultClusterName           = resolved_config.DefaultDockerClusterName
+
+	defaultEngineVersion = ""
 )
 
 type EngineManager struct {
@@ -91,12 +93,10 @@ func (manager *EngineManager) GetKurtosisBackend() backend_interface.KurtosisBac
 	return manager.kurtosisBackend
 }
 
-/*
-Returns:
-  - The engine status
-  - The host machine port bindings (not present if the engine is stopped)
-  - The engine version (only present if the engine is running)
-*/
+// GetEngineStatus Returns:
+//   - The engine status
+//   - The host machine port bindings (not present if the engine is stopped)
+//   - The engine version (only present if the engine is running)
 func (manager *EngineManager) GetEngineStatus(
 	ctx context.Context,
 ) (EngineStatus, *hostMachineIpAndPort, string, error) {
@@ -133,7 +133,7 @@ func (manager *EngineManager) GetEngineStatus(
 	return EngineStatus_Running, runningEngineIpAndPort, engineInfo.GetEngineVersion(), nil
 }
 
-// Starts an engine if one doesn't exist already, and returns a client to it
+// StartEngineIdempotentlyWithDefaultVersion Starts an engine if one doesn't exist already, and returns a client to it
 func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
@@ -160,7 +160,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 	return engineClient, engineClientCloseFunc, nil
 }
 
-// Starts an engine if one doesn't exist already, and returns a client to it
+// StartEngineIdempotentlyWithCustomVersion Starts an engine if one doesn't exist already, and returns a client to it
 func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
@@ -187,7 +187,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 	return engineClient, engineClientCloseFunc, nil
 }
 
-// Stops the engine if it's running, doing nothing if not
+// StopEngineIdempotently Stops the engine if it's running, doing nothing if not
 func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error {
 
 	// TODO after 2022-07-08, when we're confident nobody is running enclaves/engines that use the bindmounted directory,
@@ -221,6 +221,45 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 	}
 
 	return nil
+}
+
+// RestartEngineIdempotently restart the currently running engine.
+// If a optionalVersionToUse string is passed, the new engine will be started on this version.
+// If no optionalVersionToUse is passed, then the new engine will take the default version, unless
+// restartEngineOnSameVersionIfAnyRunning is set to true in which case it will take the version of the currently
+// running engine
+func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, logLevel logrus.Level, optionalVersionToUse string, restartEngineOnSameVersionIfAnyRunning bool) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+	var versionOfNewEngine string
+	if optionalVersionToUse != defaultEngineVersion || !restartEngineOnSameVersionIfAnyRunning {
+		versionOfNewEngine = optionalVersionToUse
+	} else {
+		// We try to do our best to restart an engine on the same version the current on is on
+		_, _, currentEngineVersion, err := manager.GetEngineStatus(ctx)
+		if err != nil {
+			logrus.Warnf("Error getting current engine information before restarting it. A default engine will be started")
+			// if useDefaultVersion = true, we were going to use the default version anyway
+			versionOfNewEngine = defaultEngineVersion
+		} else {
+			versionOfNewEngine = currentEngineVersion
+		}
+	}
+
+	if err := manager.StopEngineIdempotently(ctx); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping the engine currently running")
+	}
+
+	var engineClient kurtosis_engine_rpc_api_bindings.EngineServiceClient
+	var engineClientCloseFunc func() error
+	var restartEngineErr error
+	if versionOfNewEngine != defaultEngineVersion {
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel)
+	} else {
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
+	}
+	if restartEngineErr != nil {
+		return nil, nil, stacktrace.Propagate(restartEngineErr, "An error occurred starting a new engine")
+	}
+	return engineClient, engineClientCloseFunc, nil
 }
 
 // ====================================================================================================

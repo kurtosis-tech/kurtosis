@@ -17,7 +17,8 @@ const (
 	engineVersionArg = "version"
 	logLevelArg      = "log-level"
 
-	defaultEngineVersion = ""
+	defaultEngineVersion                   = ""
+	restartEngineOnSameVersionIfAnyRunning = false
 )
 
 var engineVersion string
@@ -68,19 +69,11 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 
-	if err := engineManager.StopEngineIdempotently(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping the Kurtosis engine")
-	}
-
 	var engineClientCloseFunc func() error
-	var startEngineErr error
-	if engineVersion == defaultEngineVersion {
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
-	} else {
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel)
-	}
-	if startEngineErr != nil {
-		return stacktrace.Propagate(startEngineErr, "An error occurred starting the Kurtosis engine")
+	var restartEngineErr error
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning)
+	if restartEngineErr != nil {
+		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}
 	defer func() {
 		if err = engineClientCloseFunc(); err != nil {
@@ -89,6 +82,5 @@ func run(cmd *cobra.Command, args []string) error {
 	}()
 
 	logrus.Infof("Engine restarted successfully")
-
 	return nil
 }
