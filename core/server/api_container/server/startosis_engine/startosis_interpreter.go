@@ -82,7 +82,7 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
-
+	logrus.Debugf("Interpreting package '%v' with contents '%v' and params '%v'", packageId, serializedStarlark, serializedJsonParams)
 	globalVariables, interpretationErr := interpreter.interpretInternal(packageId, serializedStarlark, &instructionsQueue)
 	if interpretationErr != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
@@ -204,9 +204,6 @@ func (interpreter *StartosisInterpreter) buildBindings(instructionsQueue *[]kurt
 // - If input args are empty it uses empty JSON ({}) as the input args
 // - If input args aren't empty it tries to deserialize them
 func (interpreter *StartosisInterpreter) parseInputArgs(thread *starlark.Thread, serializedJsonArgs string) (starlark.Value, *startosis_errors.InterpretationError) {
-	if serializedJsonArgs == startosis_constants.EmptyInputArgs {
-		return starlark.None, nil
-	}
 	// it is a module, and it has input args -> deserialize the JSON input and add it as a struct to the predeclared
 	deserializedArgs, interpretationError := package_io.DeserializeArgs(thread, serializedJsonArgs)
 	if interpretationError != nil {
