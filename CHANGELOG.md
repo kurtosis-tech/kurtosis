@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.72.2](https://github.com/kurtosis-tech/kurtosis/compare/0.72.1...0.72.2) (2023-03-30)
+
+
+### Bug Fixes
+
+* Make GetCluster non fatal if it is unset ([#403](https://github.com/kurtosis-tech/kurtosis/issues/403)) ([3e9db8f](https://github.com/kurtosis-tech/kurtosis/commit/3e9db8f736c8d25f513d080c367f30011d5da511))
+
 ## [0.72.1](https://github.com/kurtosis-tech/kurtosis/compare/0.72.0...0.72.1) (2023-03-30)
 
 
