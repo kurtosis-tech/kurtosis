@@ -29,7 +29,7 @@ func createDict(t *testing.T) *starlark.Dict {
 }
 
 func TestPackageIo_DeserializeArgs(t *testing.T) {
-	result, interpretationErr := DeserializeArgs(&starlark.Thread{}, complexInputJson)
+	result, interpretationErr := DeserializeArgs(&starlark.Thread{}, complexInputJson) //nolint:exhaustruct
 	require.Nil(t, interpretationErr)
 	equal, err := starlark.Equal(createDict(t), result)
 	require.Nil(t, err)
@@ -37,7 +37,7 @@ func TestPackageIo_DeserializeArgs(t *testing.T) {
 }
 
 func TestPackageIo_SerializeOutputObject(t *testing.T) {
-	result, interpretationErr := SerializeOutputObject(&starlark.Thread{}, createDict(t))
+	result, interpretationErr := SerializeOutputObject(&starlark.Thread{}, createDict(t)) //nolint:exhaustruct
 	require.Nil(t, interpretationErr)
 
 	require.Equal(t, result, complexInputJson)
