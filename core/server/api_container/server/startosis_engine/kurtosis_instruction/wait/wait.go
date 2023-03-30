@@ -41,6 +41,14 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
+					Name:              ServiceNameArgName,
+					IsOptional:        false,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
+					},
+				},
+				{
 					Name:              RecipeArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
@@ -75,14 +83,6 @@ func NewWait(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator:         nil,
-				},
-				{
-					Name:              ServiceNameArgName,
-					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
-					},
 				},
 			},
 		},
