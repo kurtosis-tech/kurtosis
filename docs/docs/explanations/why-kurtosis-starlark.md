@@ -46,7 +46,7 @@ When we discovered Starlark, the fit was obvious. Starlark:
 
 Conclusion
 ----------
-So far we've been very happy with our Starlark decision. If you've never used Starlark before, you might enjoy [the quickstart][quickstart] for an introduction.
+So far, both our users and our team have been very happy with our decision to go with Starlark. If you've never used Starlark before, [the quickstart][quickstart]  will be a good introduction.
 
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
 [what-is-kurtosis]: ./what-is-kurtosis.md

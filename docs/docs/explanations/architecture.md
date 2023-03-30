@@ -26,8 +26,6 @@ Example: Some enclaves running in, as displayed by [the Kurtosis CLI][cli-refere
 UUID           Name      Status     Creation Time
 a72b68e510fe   test      RUNNING    Thu, 30 Mar 2023 09:12:17 -03
 9e8c913754bf   local     RUNNING    Thu, 30 Mar 2023 09:13:04 -03
-a525cee593af4b45aa15785e87d3b7c9    local    RUNNING   Thu, 24 Nov 2022 14:11:27 UTC
-edf36be917504e449a1648cf8d6c78a4    test     RUNNING   Thu, 24 Nov 2022 14:11:34 UTC
 ```
 
 Engine Container
@@ -70,7 +68,7 @@ Example: a Kurtosis API container running in Docker:
 
 Starlark
 --------
-Distributed system definitions are complex. Therefore, there are many, many ways to instantiate, configure, and manipulate an enclave. To provide the required power, manipulations to an enclave are expressed in the form of [Starlark programs][starlark-reference]. 
+Distributed system definitions are complex. Therefore, there are many, many ways to instantiate, configure, and manipulate an enclave. To provide the required power, manipulations to an enclave are expressed using [Starlark][starlark-reference] scripts.
 
 To manipulate an enclave, users upload Starlark scripts to the API container. The API container executes the instructions in the script, and the enclave's contents will be mutated.
 
