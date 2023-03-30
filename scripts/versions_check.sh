@@ -19,28 +19,18 @@ error=false;
 echo "${BLUE_BG}${WHITE_FG}${BOLD}Starting Kurtosis Build...              ${NORMAL_BG}"
 
 check_node_version() {
-  if [ -f ~/.nvm/nvm.sh ]; then
-    source ~/.nvm/nvm.sh
-  elif command -v brew; then
-    # https://docs.brew.sh/Manpage#--prefix-formula
-    BREW_PREFIX=$(brew --prefix nvm)
-    if [ -f "${BREW_PREFIX}/nvm.sh" ]; then
-      source "${BREW_PREFIX}"/nvm.sh
-    fi
-  fi
-
-  if ! command -v nvm &> /dev/null ; then
-    echo "ERROR: unable to configure nvm"
+  if ! command -v node &> /dev/null ; then
+    echo "ERROR: unable to configure node"
     exit 1
   fi
 
-  current_version="v16.13.0"
+  current_version="$(node --version)"
   short_version="${current_version%.*}"
 
   echo ${short_version}
 
   if [ "${short_version}" != "${NODE_VERSION}" ]; then
-    echo "${RED_BG}${WHITE_FG}${BOLD}node "${NODE_VERSION}" should be the one in use but ${short_version} is in use"
+    echo "${RED_BG}${WHITE_FG}${BOLD}node "${NODE_VERSION}" should be the one in use but ${short_version} is in use; use the following to install and use "${NODE_VERSION}""
     echo "${RED_BG}${WHITE_FG}nvm install "${NODE_VERSION}"                                ${NORMAL_BG}"
     echo  ""
     error=true
