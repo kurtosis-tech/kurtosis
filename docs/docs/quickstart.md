@@ -14,10 +14,10 @@ For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, o
 :::tip What You'll Do
 
 - Start a containerized Postgres database in Kurtosis
-- Seed our database with test data using task sequencing
-- Connect an API server to our database using dynamic service dependencies
-- Parameterize our application setup in order to automate loading data into our API
-:::a
+- Seed your database with test data using task sequencing
+- Connect an API server to your database using dynamic service dependencies
+- Parameterize your application setup in order to automate loading data into your API
+:::
 
 <details><summary>Getting help and giving feedback</summary>
 
@@ -74,7 +74,7 @@ Finally, [run][kurtosis-run-reference] the script (we'll explain enclaves in the
 kurtosis run --enclave quickstart main.star
 ```
 
-Kurtosis will work for a bit, and then deliver us the following result:
+Kurtosis will work for a bit, and then deliver you the following result:
 
 ```text
 INFO[2023-03-15T04:27:01-03:00] Creating a new enclave for Starlark to run inside...
@@ -204,7 +204,7 @@ By contrast, Kurtosis Starlark scripts can use data as a first-class primitive a
 
 Let's see it in action, and we'll explain what's happening afterwards.
 
-First, in your working directory (kurtosis-quickstart) next to your `main.star` file, create a file called `kurtosis.yml` with the following contents:
+First, in your working directory (`kurtosis-quickstart`), next to your `main.star` file, create a file called `kurtosis.yml` with the following contents:
 
 ```bash
 name: "github.com/john-snow/kurtosis-quickstart"
@@ -396,7 +396,7 @@ This external Kurtosis package, named ["data-package"][data-package-example] con
 Special note here that we used a locator to import an external package from your [`awesome-kurtosis` repository][awesome-kurtosis-repo] and _not_ a regular URL. Learn more about how they differ [here][locators-reference].
 :::
 
-#### We imported seed data into your Kurtosis package
+#### You imported seed data into your Kurtosis package
 The [`main.star` file][data-package-example-main.star] in that external "data-package" contained Starlark instructions to store the `.tar` data as a [files artifact][files-artifacts-reference] using the [`files_upload` Starlark instruction][kurtosis-files-upload-reference]:
 
 ```python
@@ -414,7 +414,7 @@ def run(plan, args):
 
 A [files artifact][files-artifacts-reference] is Kurtosis' first-class data primitive and is a TGZ of arbitrary files living inside an enclave. So long as a files artifact exists, Kurtosis knows how to mount its contents on a service.  
 
-#### We mounted and seeded the data into your Postgres instance
+#### You mounted and seeded the data into your Postgres instance
 Next, you mounted the seed data, stored in your enclave now as a files artifact, into your Postgres instance using the `ServiceConfig.files` option:
 
 ```python
@@ -604,7 +604,7 @@ kurtosis service logs quickstart api
 postgrest: thread killed
 ```
 
-Looking back to your Starlark code, we can see the problem: we're creating the Postgres database with a user called `app_user`, but we're telling PostgREST to try and connect through a user called `postgres`:
+Looking back to your Starlark code, you can see the problem: it's creating the Postgres database with a user called `app_user`, but it's telling PostgREST to try and connect through a user called `postgres`:
 
 ```python
 POSTGRES_USER = "app_user"
@@ -698,11 +698,11 @@ api = plan.add_service(
 
 ...Kurtosis simply swapped in the correct Postgres container Execution-time values. While future references take some getting used to, [we've found the feedback loop speedup to be very worth it][why-multi-phase-runs-explanation].
 
-**What we've just seen is Kurtosis' powerful ability to data generated at runtime to set up service dependencies in multi-container test environments. We also saw how seamless it was to to run on-box CLI commands on a container.**
+**What you've just seen is Kurtosis' powerful ability to data generated at runtime to set up service dependencies in multi-container test environments. You also saw how seamless it was to to run on-box CLI commands on a container.**
 
 Modifying data
 --------------
-Now that you have an API, we should be able to interact with the data.
+Now that you have an API, you should be able to interact with the data.
 
 [Inspect][kurtosis-enclave-inspect-reference] your enclave:
 
@@ -893,7 +893,7 @@ At a higher level, Kurtosis automatically deserialized the `[{"first_name":"Kevi
 def run(plan, args):
 ```
 
-**This section showed us how we can interact with the test environment we set up and also how to parametrize your distributed application for others to re-use.**
+**This section showed how to interact with your test environment, and also how to parametrize it for others to easily modify and re-use.**
 
 
 <!-- 
@@ -959,14 +959,14 @@ Let's review. In this tutorial you have:
 - Inserted & queried data via the API
 - Parameterized data insertion for future use
 
-This was still just an introduction to Kurtosis. Feel read about these topics (and more) further in our docs where you can learn [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
+This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
 
-To keep exploring the world of Kurtosis beyond our docs, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of how Kurtosis can be used, including:
+To learn more about how Kurtosis is used, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of Kurtosis in action, including:
 - The [Ethereum package][ethereum-package], used by the Ethereum Foundation, which can be used to set up local testnets 
-- A powerful, paramterized package for standing up a local [Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
+- A parameterized package for standing up an [n-node Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
 - The [NEAR package][near-package] for local dApp development in the NEAR ecosystem
 
-Finally, we'd love to hear from you and engage with our users. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), to [email us](mailto:feedback@kurtosistech.com), or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
+Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), to [email us](mailto:feedback@kurtosistech.com), or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
 
 Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), [join the community in our Discord](https://discord.com/channels/783719264308953108/783719264308953111), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
 
