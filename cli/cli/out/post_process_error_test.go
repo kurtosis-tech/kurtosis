@@ -1,4 +1,4 @@
-package main
+package out
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
@@ -9,12 +9,12 @@ import (
 func TestRemoveFilePathFromErrorMessage(t *testing.T) {
 	stacktraceErr := createDummyStackTraceWithNonEmptyMsg()
 	errorClean := removeFilePathFromErrorMessage(stacktraceErr.Error())
-	expectedValue := "this is propagated error\n Caused by: Error: this is base error\n "
+	expectedValue := "this is propagated error\nCaused by: Error: this is base error"
 	require.Equal(t, expectedValue, errorClean.Error())
 
 	stacktraceErrEmpty := createDummyStackTraceWithEmptyMsg()
 	errorClean = removeFilePathFromErrorMessage(stacktraceErrEmpty.Error())
-	expectedValue = " Caused by: Error: this is base error\n "
+	expectedValue = "Caused by: Error: this is base error"
 	require.Equal(t, expectedValue, errorClean.Error())
 }
 
