@@ -104,7 +104,8 @@ func run(
 	}
 
 	if enclaveIdentifier == defaultEnclaveIdentifierKeyword {
-		return stacktrace.NewError("Enclave identifier is a required flag; please pass a valid value using the '--%s' flag", enclaveIdentifierFlagKey)
+		// we don't use stack trace as its too much to read
+		return fmt.Errorf("Enclave identifier is a required flag; please pass a valid value using the '--%s' flag", enclaveIdentifierFlagKey)
 	}
 
 	artifactIdentifier, err := args.GetNonGreedyArg(artifactIdentifierArgKey)
