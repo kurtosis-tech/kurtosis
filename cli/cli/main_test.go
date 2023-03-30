@@ -1,4 +1,4 @@
-package lowlevel
+package main
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
