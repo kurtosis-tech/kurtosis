@@ -152,8 +152,8 @@ func printKurtosisCommandToFile(cmd *cobra.Command, args []string) {
 		flagsSetByUsers := getFlagsSetByUsers(cmd.Flags())
 		fileLogger.Infof("===== Executing Command: kurtosis %v %v %v =====",
 			cmd.Name(),
-			strings.Join(args, " "),
 			strings.Join(flagsSetByUsers, " "),
+			strings.Join(args, " "),
 		)
 	}
 

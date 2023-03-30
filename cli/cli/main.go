@@ -75,7 +75,7 @@ func getErrorMessageToBeDisplayedOnCli(errorWithStacktrace error) error {
 	// downside is that we may lose stack-traces during file logger failures
 	fileLogger, err := out.GetFileLogger()
 	if err != nil {
-		logrus.Debugf("Error occurred while getting the file logger %+v", err)
+		logrus.Warnf("Error occurred while getting the file logger %+v", err)
 	} else {
 		fileLogger.Errorln(errorWithStacktrace.Error())
 	}
