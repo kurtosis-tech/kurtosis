@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lsp"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/portal"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/twitter"
@@ -109,6 +110,7 @@ func init() {
 	RootCmd.AddCommand(feedback.FeedbackCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(files.FilesCmd)
 	RootCmd.AddCommand(gateway.GatewayCmd)
+	RootCmd.AddCommand(portal.PortalCmd)
 	RootCmd.AddCommand(run.StarlarkRunCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(service.ServiceCmd)
 	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
