@@ -40,13 +40,25 @@ func GetErr() io.Writer {
 }
 
 func PrintOutLn(msg string) {
+	printLogsToFile(msg)
 	if _, printErr := fmt.Fprintln(std.out, msg); printErr != nil {
 		logrus.Errorf("Error printing message to StdOut. Message was:\n%s\nError was:\n%v", msg, printErr.Error())
 	}
 }
 
 func PrintErrLn(msg string) {
+	printLogsToFile(msg)
 	if _, printErr := fmt.Fprintln(std.err, msg); printErr != nil {
 		logrus.Errorf("Error printing message to StdErr. Message was:\n%s\nError was:\n%v", msg, printErr.Error())
+	}
+}
+
+func printLogsToFile(msg string) {
+	fileLogger, err := GetFileLogger()
+	if err != nil {
+		logrus.StandardLogger().Warnf("Error using the file logger as it failed with following error: %v. "+
+			"This is a bug where logs are not being collected properly, please file an issue using kurtosis feedback.", err)
+	} else {
+		fileLogger.Println(msg)
 	}
 }
