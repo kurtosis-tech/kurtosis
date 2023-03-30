@@ -3,7 +3,7 @@ title: Plan
 sidebar_label: Plan
 ---
 
-The `plan` object contains all enclave-modifying methods like `add_service`, `remove_service`, `upload_files` etc; for more look into [Starlark instructions][starlark-instructions]. All of the methods that come with the `plan` add to the list of instructions that Kurtosis would eventually execute in the Execution phase of [the multi-phase run][multi-phase-runs].
+The plan is a representation of the manipulations that Kurtosis should execute within an enclave. It is central to the [multi-phase run design of Kurtosis][multi-phase-runs]. Plans are built via [Starlark][starlark-reference] by calling functions like `add_service`, `remove_service`, or `upload_files` on [the Starlark `plan` object][plan-starlark-reference].
 
 The `plan` object is the first object that gets injected into the `run` method in the `main.star` of your package or your standalone script. The package or script author must ensure that the first argument is an argument called `plan`, and then use the enclave-modifying functions from it. The author also must pass the `plan` methods down to any other scripts or packages that require enclave-modifying functions.
 
@@ -49,3 +49,5 @@ Any value returned by a `plan` function is a [future-reference][future-reference
 [starlark-instructions]: ./starlark-instructions.md
 [arguments]: ./packages.md#arguments
 [multi-phase-runs]: ./multi-phase-runs.md
+[starlark-reference]: ./starlark.md
+[plan-starlark-reference]: ../starlark-reference/plan.md
