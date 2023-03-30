@@ -7,7 +7,9 @@ slug: /quickstart
 Introduction
 ------------
 
-Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package.
+Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you will run in this guide is free, public, and does not contain any sensitive data.
+
+For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, our [introduction page][homepage] will be a great starting point, alongside our [motivations behind starting Kurtosis][why-we-built-kurtosis-explanation].
 
 :::tip What You'll Do
 
@@ -15,7 +17,7 @@ Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes
 - Seed your database with test data using task sequencing
 - Connect an API server to your database using dynamic service dependencies
 - Parameterize your application setup in order to automate loading data into your API
-:::
+:::a
 
 <details><summary>Getting help and giving feedback</summary>
 
@@ -29,8 +31,10 @@ There are many ways to get help and give feedback. First, every Kurtosis command
 
 </details>
 
-## Setup
+Setup
+-----
 
+#### Requirements
 Before you proceed, please make sure you have:
 - [Installed and started the Docker engine][installing-docker-guide]
 - [Installed the Kurtosis CLI][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it)
@@ -945,15 +949,18 @@ Let's review. In this tutorial you have:
 - Inserted & queried data via the API
 - Parameterized data insertion for future use
 
+This was still just an introduction to Kurtosis. Feel read about these topics (and more) further in our docs where you can learn [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
+
+To keep exploring the world of Kurtosis beyond our docs, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of how Kurtosis can be used, including:
+- The [Ethereum package][ethereum-package], used by the Ethereum Foundation, which can be used to set up local testnets 
+- A powerful, paramterized package for standing up a local [Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
+- The [NEAR package][near-package] for local dApp development in the NEAR ecosystem
+
+Finally, we'd love to hear from you and engage with our users. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), to [email us](mailto:feedback@kurtosistech.com), or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
+
+Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), [join the community in our Discord](https://discord.com/channels/783719264308953108/783719264308953111), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
+
 Thank you for trying our quickstart. We hope you enjoyed it. 
-
-This was still just an intro to Kurtosis. To see examples that you can easily modify to be relevant to you, [check out our `awesome-kurtosis` repo][awesome-kurtosis-repo]. To explore real-scale Kurtosis packages delivering value, see the [Ethereum package][ethereum-package], [Waku package][waku-package], or [NEAR package][near-package] as well as our list of [Kurtosis-provided packages being used in production][kurtosis-managed-packages] and [Kurtosis packages in the wild][wild-kurtosis-packages].
-
-Finally, we'd love to hear from you and engage with our users. Please don't hesitate to:
-- Share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), to [email us](mailto:feedback@kurtosistech.com), or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
-- [Star us on Github](https://github.com/kurtosis-tech/kurtosis) (this helps a lot!)
-- [Join our Discord](https://discord.com/channels/783719264308953108/783719264308953111) (also available with the `kurtosis discord` CLI command)
-- [Reach out to us on Twitter](https://twitter.com/KurtosisTech) (also available with the `kurtosis twitter` CLI command)
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
@@ -968,7 +975,7 @@ Finally, we'd love to hear from you and engage with our users. Please don't hesi
 [services-explanation]: ./explanations/architecture.md#services
 [starlark-explanation]: ./explanations/starlark.md
 [reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
-[what-is-kurtosis-explanation]: ./explanations/what-is-kurtosis.md
+[why-we-built-kurtosis-explanation]: ./explanations/why-we-built-kurtosis.md
 [how-do-imports-work-explanation]: ./explanations/how-do-kurtosis-imports-work.md
 [why-multi-phase-runs-explanation]: ./explanations/why-multi-phase-runs.md
 
@@ -1004,9 +1011,10 @@ Finally, we'd love to hear from you and engage with our users. Please don't hesi
 [data-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/data-package
 [data-package-example-main.star]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/main.star
 [data-package-example-seed-tar]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/dvd-rental-data.tar
+[cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
 
 <!-- Misc -->
-[homepage]: https://kurtosis.com
+[homepage]: home.md
 [kevin-linked]: https://www.linkedin.com/in/kevintoday/
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
