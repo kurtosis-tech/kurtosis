@@ -106,7 +106,7 @@ Congratulations - you've written your first Kurtosis code!
 We'll use these "Review" sections to explain what happened in the section. 
 :::
 
-In this section, we created a `main.star` file that simply told Kurtosis to print `Hello, world`. The `.star` extension corresponds to [Starlark][starlark-explanation], a configuration language for build systems at Google and Meta.
+In this section, we created a `main.star` file that simply told Kurtosis to print `Hello, world`. The `.star` extension corresponds to [Starlark][starlark-explanation], which is also used by Google and Meta as a build system configuration language.
 
 When you ran `main.star`, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. If you'd like, you can tear down your enclave and any of their artifacts by running: `kurtosis clean -a` (more on the `kurtosis clean` command [here][kurtosis-clean-reference]).
 
