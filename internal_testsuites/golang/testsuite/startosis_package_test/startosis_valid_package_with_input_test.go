@@ -12,6 +12,7 @@ import (
 
 const (
 	validPackageWithInputTestName = "valid-module-with-input"
+	missingKeyParamsTestName      = "missing-key-in-params"
 	validPackageWithInputRelPath  = "../../../starlark/valid-kurtosis-package-with-input"
 )
 
@@ -54,7 +55,7 @@ func TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams(t *testing.T)
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validPackageWithInputTestName, isPartitioningEnabled)
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, missingKeyParamsTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
