@@ -1016,7 +1016,7 @@ func TestStartosisInterpreter_RunWithArgsArgsPassed(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	script := `
 def run(plan, args):
-	plan.print("My favorite number is {0}".format(args.number))
+	plan.print("My favorite number is {0}".format(args["number"]))
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, `{"number": 4}`)
