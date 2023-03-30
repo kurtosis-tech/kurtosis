@@ -5,8 +5,8 @@ set -euo pipefail   # Bash "strict mode"
 # FOR GO WE EXPECT _AT LEAST_ THIS VERSION, BUT WE ARE OK WITH SUPERIOR VERSIONS
 GO_VERSION=1.18
 
-# FOR NODE, WE PIN THE EXACT VERSION NUMBER
-NODE_VERSION=16.14.0
+# FOR NODE, WE PIN THE MINOR VERSION
+NODE_VERSION="v16.14"
 
 
 RED_BG=$(tput setab 1)
@@ -34,9 +34,11 @@ check_node_version() {
     exit 1
   fi
 
+  current_version=$(nvm version "${NODE_VERSION}")
+  short_version=${current_version%.*}
 
-  if ! nvm list "${NODE_VERSION}" &> /dev/null; then
-    echo "${RED_BG}${WHITE_FG}${BOLD}node "${NODE_VERSION}" not installed. Please install it with ${NORMAL_BG}"
+  if short_version != ${NODE_VERSION}; then
+    echo "${RED_BG}${WHITE_FG}${BOLD}node "${NODE_VERSION}" should be the one in use but ${short_version} is in use"
     echo "${RED_BG}${WHITE_FG}nvm install "${NODE_VERSION}"                                ${NORMAL_BG}"
     echo  ""
     error=true
