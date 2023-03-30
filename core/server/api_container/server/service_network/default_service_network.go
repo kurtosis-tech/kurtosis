@@ -29,7 +29,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 	"io"
-	"log"
 	"math"
 	"net"
 	"net/http"
@@ -66,6 +65,8 @@ const (
 	waitForPortsOpenMaxRetries               = uint16(1)
 	waitForPortsOpenTimeOut                  = 15 * time.Second
 	waitForPortsOpenRetriesDelayMilliseconds = uint16(500)
+
+	shouldFollowLogs = false
 )
 
 var (
@@ -1300,17 +1301,15 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	if err := waitUntilAllTCPAndUDPPortsAreOpen(
 		startedService.GetRegistration().GetPrivateIP(),
 		startedService.GetPrivatePorts(),
-		waitForPortsOpenMaxRetries,
-		waitForPortsOpenRetriesDelayMilliseconds,
-		waitForPortsOpenTimeOut,
 	); err != nil {
-		//TODO add service logs in the error
-
+		serviceLogs, err := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'",
+			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
+				"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
 			startedService.GetRegistration().GetName(),
 			startedService.GetRegistration().GetPrivateIP(),
+			serviceLogs,
 		)
 	}
 
@@ -1333,6 +1332,7 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	return startedService, nil
 }
 
+//TODO move these method to the bottom
 func waitUntilAllTCPAndUDPPortsAreOpen(
 	ipAddr net.IP,
 	ports map[string]*port_spec.PortSpec,
@@ -1342,14 +1342,17 @@ func waitUntilAllTCPAndUDPPortsAreOpen(
 
 	for _, portSpec := range ports {
 		//TODO get this value from the portSpec configuration
-		timeout := 1 * time.Minute
-		wrapFunc := func() error {
+		timeout := 5 * time.Second
+		wrappedWaitFunc := func() error {
 			return waitUntilPortIsOpenWithTimeout(ipAddr, portSpec, timeout)
 		}
-		portCheckErrorGroup.Go(wrapFunc)
+		portCheckErrorGroup.Go(wrappedWaitFunc)
 	}
+	//This error group pattern allow us to reject early if at least one of the ports check fails
+	//in this opportunity we want to reject early because the main user pain that we want to handle
+	//is a wrong service configuration
 	if err := portCheckErrorGroup.Wait(); err != nil {
-		log.Fatal(err) //TODO add stack-trace here
+		return stacktrace.Propagate(err, "An error occurred while waiting for all TCP and UDP ports to be open")
 	}
 
 	return nil
@@ -1802,6 +1805,64 @@ func (network *DefaultServiceNetwork) getServiceNameForIdentifierUnlocked(servic
 	}
 
 	return "", stacktrace.NewError("Couldn't find a matching service name for identifier '%v'", serviceIdentifier)
+}
+
+func (network *DefaultServiceNetwork) getServiceLogs(
+	ctx context.Context,
+	serviceObj *service.Service,
+	shouldFollowLogs bool,
+) (string, error) {
+	enclaveUuid := serviceObj.GetRegistration().GetEnclaveID()
+	serviceUUID := serviceObj.GetRegistration().GetUUID()
+	userServiceFilters := &service.ServiceFilters{
+		Names: nil,
+		UUIDs: map[service.ServiceUUID]bool{
+			serviceUUID: true,
+		},
+		Statuses: nil,
+	}
+
+	successfulUserServiceLogs, erroredUserServiceUuids, err := network.kurtosisBackend.GetUserServiceLogs(ctx, enclaveUuid, userServiceFilters, shouldFollowLogs)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", userServiceFilters)
+	}
+	defer func() {
+		for _, userServiceLogsReadCloser := range successfulUserServiceLogs {
+			if err := userServiceLogsReadCloser.Close(); err != nil {
+				logrus.Warnf("We tried to close the user service logs read-closer-objects after we're done using it, but doing so threw an error:\n%v", err)
+			}
+		}
+	}()
+
+	if len(erroredUserServiceUuids) > 0 {
+		err, found := erroredUserServiceUuids[serviceUUID]
+		if !found {
+			return "", stacktrace.NewError(
+				"Expected to find an error for user service with UUID '%v' on user service error map '%+v' "+
+					"but was not found; this should never happen, and is a bug in Kurtosis",
+				serviceUUID,
+				erroredUserServiceUuids,
+			)
+		}
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred getting user service logs for user service with UUID '%v'", serviceUUID)
+	}
+
+	userServiceReadCloserLog, found := successfulUserServiceLogs[serviceUUID]
+	if !found {
+		return "", stacktrace.NewError(
+			"Expected to find logs for user service with UUID '%v' on user service logs map '%+v' "+
+				"but was not found; this should never happen, and is a bug "+
+				"in Kurtosis", serviceUUID, userServiceReadCloserLog)
+	}
+
+	copyBuf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(copyBuf, userServiceReadCloserLog); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying the service logs to a buffer")
+	}
+
+	return copyBuf.String(), nil
 }
 
 func convertAPIPortsToPortSpecs(

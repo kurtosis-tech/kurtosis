@@ -34,7 +34,6 @@ import (
 	"os"
 	"strconv"
 	"testing"
-	"time"
 )
 
 const (
@@ -1454,34 +1453,38 @@ func TestWaitUntilAllTCPAndUDPPortsAreOpen_Success(t *testing.T) {
 		udpPortId: udpPortSpec,
 	}
 
-	err = waitUntilAllTCPAndUDPPortsAreOpen(localhost, ports, waitForPortsOpenMaxRetries, waitForPortsOpenRetriesDelayMilliseconds, waitForPortsOpenTimeOut)
+	err = waitUntilAllTCPAndUDPPortsAreOpen(localhost, ports)
 	require.NoError(t, err)
 }
 
 func TestWaitUntilAllTCPAndUDPPortsAreOpen_Fails(t *testing.T) {
 	localhost := net.ParseIP(localhostIPAddrStr)
 
+	closedPortId := "closed-port-for-testing"
 	closedPortNumber := uint16(42821)
 
-	tcpPortSpec, err := port_spec.NewPortSpec(closedPortNumber, port_spec.TransportProtocol_TCP, "")
+	tcpAddrPort, udpAddrPort, closeOpenedPortsFunc, err := openFreeTCPAndUDPLocalHostPortAddressesForTesting()
+	require.NoError(t, err)
+	defer closeOpenedPortsFunc()
+
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "")
+	require.NoError(t, err)
+
+	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "")
+	require.NoError(t, err)
+
+	closedPortSpec, err := port_spec.NewPortSpec(closedPortNumber, port_spec.TransportProtocol_TCP, "")
 	require.NoError(t, err)
 
 	ports := map[string]*port_spec.PortSpec{
-		tcpPortId: tcpPortSpec,
+		tcpPortId:    tcpPortSpec,
+		udpPortId:    udpPortSpec,
+		closedPortId: closedPortSpec,
 	}
 
-	maxRetries := uint16(2)
-	retriesDelayMilliseconds := uint16(50)
-	timeout := 10 * time.Millisecond
+	expectedErrorMsg := "An error occurred while waiting for all TCP and UDP ports to be open"
 
-	expectedErrorMsg := fmt.Sprintf(
-		"Unsuccessful all TCP and UDP open ports check, even after '%v' retries with '%v'"+
-			" milliseconds in between retries",
-		maxRetries,
-		retriesDelayMilliseconds,
-	)
-
-	err = waitUntilAllTCPAndUDPPortsAreOpen(localhost, ports, maxRetries, retriesDelayMilliseconds, timeout)
+	err = waitUntilAllTCPAndUDPPortsAreOpen(localhost, ports)
 	require.Error(t, err)
 	require.ErrorContains(t, err, expectedErrorMsg)
 }
