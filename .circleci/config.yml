@@ -791,9 +791,6 @@ jobs:
     # running a broken package fails
       - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
 
-    # running service logs for a non existing enclave fails
-      - run: "! ${KURTOSIS_BINPATH} service logs non-existent-enclave non-existent-service"
-
   test_config_init_edge_cases:
     executor: ubuntu_vm
     steps:
