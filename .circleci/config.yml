@@ -755,6 +755,8 @@ jobs:
 
   test_ci_for_failure:
     executor: ubuntu_vm
+    parameters:
+      <<: *param_cli_cluster_backend
     steps:
       - checkout
 
