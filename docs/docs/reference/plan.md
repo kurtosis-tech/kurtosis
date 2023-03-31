@@ -3,9 +3,9 @@ title: Plan
 sidebar_label: Plan
 ---
 
-The plan is a representation of the manipulations that Kurtosis should execute within an enclave. It is central to the [multi-phase run design of Kurtosis][multi-phase-runs]. Plans are built via [Starlark][starlark-reference] by calling functions like `add_service`, `remove_service`, or `upload_files` on [the Starlark `plan` object][plan-starlark-reference].
+The plan is a representation of the manipulations that Kurtosis should execute within an enclave. It is central to the [multi-phase run design of Kurtosis][multi-phase-runs]. Plans are built via [Starlark][starlark-reference] by calling [functions on the `Plan` object][plan-starlark-reference] like `add_service`, `remove_service`, or `upload_files`.
 
-The `plan` object is the first object that gets injected into the `run` method in the `main.star` of your package or your standalone script. The package or script author must ensure that the first argument is an argument called `plan`, and then use the enclave-modifying functions from it. The author also must pass the `plan` methods down to any other scripts or packages that require enclave-modifying functions.
+Kurtosis injects the `Plan` object into the `run` method in the `main.star` of your package or your standalone script. The package or script author must ensure that the first argument is an argument called `plan`, and then use the enclave-modifying functions from it. The author also must pass the `plan` methods down to any other scripts or packages that require enclave-modifying functions.
 
 Here's an example :-
 
@@ -46,7 +46,6 @@ Any value returned by a `plan` function is a [future-reference][future-reference
 
 <!------------------ ONLY LINKS BELOW HERE -------------------->
 [future-reference]: ./future-references.md
-[starlark-instructions]: ./starlark-instructions.md
 [arguments]: ./packages.md#arguments
 [multi-phase-runs]: ./multi-phase-runs.md
 [starlark-reference]: ./starlark.md

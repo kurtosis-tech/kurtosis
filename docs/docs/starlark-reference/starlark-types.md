@@ -35,7 +35,7 @@ See [kurtosis.connection][connection-config-prebuilt] for pre-built [ConnectionC
 ### ExecRecipe
 
 The ExecRecipe can be used to run the `command` on the service (see [exec][exec-reference]
-or [wait][starlark-instructions-wait])
+or [wait][wait-reference])
 
 ```python
 exec_recipe = ExecRecipe(
@@ -384,6 +384,7 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 [add-service-reference]: ./plan.md#add_service
 [set-connection-reference]: ./plan.md#set_connection
 [exec-reference]: ./plan.md#exec
+[wait-reference]: ./plan.md#wait
 [upload-files-reference]: ./plan.md#upload_files
 [store-service-reference]: ./plan.md#store_service_files
 [render-templates-reference]: ./plan.md#render_templates
