@@ -17,4 +17,4 @@ If you don't specify the `$OUTPUT_DIRECTORY` Kurtosis will dump it to a director
 current working directory.
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[packages-reference]: ../packages.md
+[packages-reference]: ../reference/packages.md

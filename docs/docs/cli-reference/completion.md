@@ -17,4 +17,4 @@ The available commands are as follows:
 * `powershell`: Generates the autocompletion script for powershell
 * `zsh`: Generates the autocompletion script for zsh
 
-Instructions for how to install command-line completion on your shell can be found [here](../../guides/adding-command-line-completion.md) in our Guides section.
+Instructions for how to install command-line completion on your shell can be found [here](../guides/adding-command-line-completion.md) in our Guides section.

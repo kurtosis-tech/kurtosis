@@ -50,4 +50,4 @@ This command has options available to customize its execution:
 1. The `--verbosity` flag can be used to set the verbosity of the command output. The options include `BRIEF`, `DETAILED`, or `EXECUTABLE`. If unset, this flag defaults to `BRIEF` for a concise and explicit output. Use `DETAILED` to display the exhaustive list of arguments for each command. Meanwhile, `EXECUTABLE` will generate executable Starlark instructions. 
 
 <!--------------------------------------- ONLY LINKS BELOW HERE -------------------------------->
-[add-services-reference]: ../../starlark-reference/plan.md#add-services
+[add-services-reference]: ../starlark-reference/plan.md#add-services

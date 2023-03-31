@@ -34,5 +34,5 @@ kurtosis version
 ```
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[adding-command-line-completion]: ../../guides/adding-command-line-completion.md
-[installing-the-cli]: ../../guides/installing-the-cli.md
+[adding-command-line-completion]: ../guides/adding-command-line-completion.md
+[installing-the-cli]: ../guides/installing-the-cli.md
