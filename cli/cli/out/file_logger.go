@@ -11,23 +11,23 @@ import (
 
 var once sync.Once
 
-// FileLogger this logger will only log to a file
 // TODO: In commands like inspect we use out.PrintOutLn - will need to add this fileLogger
 //  to print commands' output as well.
-var fileLogger = logrus.New()
+// fileLogger this logger will only log to a file
+var fileLogger *logrus.Logger
 var permission = fs.FileMode(0666)
 
-func SetupFileLogger() error {
-	var err error
-	once.Do(func() {
-		err = setupFileLogger()
-	})
-	return err
-}
-
 func GetFileLogger() (*logrus.Logger, error) {
+	var err error
+
 	if fileLogger == nil {
-		return nil, stacktrace.NewError("File logger is not initialized. This error most likely represents that there is a bug with kurtosis; please use kurtosis feedback to report it.")
+		once.Do(func() {
+			err = setupFileLogger()
+		})
+	}
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error occurred while getting the file logger")
 	}
 	return fileLogger, nil
 }
@@ -51,12 +51,11 @@ func setupFileLogger() error {
 	}
 
 	// this is the formatter using for fileLogger
-	// TODO: Seeing weird characters in the log file - will look into fixing it in next PR
 	textFormatter := &logrus.TextFormatter{
 		ForceColors:               false,
 		DisableColors:             true,
 		ForceQuote:                false,
-		DisableQuote:              false,
+		DisableQuote:              true,
 		EnvironmentOverrideColors: false,
 		DisableTimestamp:          false,
 		FullTimestamp:             false,
@@ -70,6 +69,7 @@ func setupFileLogger() error {
 		CallerPrettyfier:          nil,
 	}
 
+	fileLogger = logrus.New()
 	fileLogger.SetOutput(logFile)
 	fileLogger.SetLevel(logrus.InfoLevel)
 	fileLogger.SetFormatter(textFormatter)
@@ -80,10 +80,10 @@ func setupFileLogger() error {
 		logrus.DebugLevel,
 		logrus.ErrorLevel,
 	}
+
 	// added logrus hook which automatically make sure that all the logging is being done in the file as well
 	// currently only info, warn, debug and error level logs are added to the file but we can add more later.
 	logsHook := NewHook(logFile, logLevels, textFormatter)
 	logrus.AddHook(&logsHook)
-
 	return nil
 }

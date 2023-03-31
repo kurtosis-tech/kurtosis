@@ -381,7 +381,7 @@ jobs:
 
   build_cli:
     docker:
-      - image: "docker/tilt-releaser"
+      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
     resource_class: large
     steps:
       - checkout
@@ -969,7 +969,7 @@ jobs:
 
   push_cli_artifacts:
     docker:
-      - image: "docker/tilt-releaser"
+      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
     steps:
       - slack/notify:
           channel: engineering

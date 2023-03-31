@@ -551,10 +551,8 @@ We just got a failure, just like we might when building a real system!
 There was an error executing Starlark code
 An error occurred executing instruction (number 6) at github.com/ME/kurtosis-quickstart[77:14]:
 wait(recipe=GetHttpRequestRecipe(port_id="http", endpoint="/actor", extract=""), field="code", assertion="==", target_value=200, timeout="5s", service_name="api")
- --- at /home/circleci/project/core/server/api_container/server/startosis_engine/startosis_executor.go:62 (StartosisExecutor.Execute.func1) ---
-Caused by: Wait timed-out waiting for the assertion to become valid. Waited for '8.183602629s'. Last assertion error was:
+Caused by: Wait timed-out waiting for the assertion to become valid. Waited for '8.183602629s'. Last assertion error was: 
 <nil>
- --- at /home/circleci/project/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait/wait.go:263 (WaitCapabilities.Execute) ---
 
 Error encountered running Starlark code.
 ```
