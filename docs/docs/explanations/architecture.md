@@ -12,7 +12,7 @@ At a macro level, Kurtosis is a set of containers, deployed on top of a containe
 
 One Layer Deeper
 ----------------
-To understand what Kurtosis itself does, we'll need to understand environments. Kurtosis' philosophy is that [the distributed nature of modern software means that modern software development now happens at the environment level][what-is-kurtosis]. To respond to this need, environments are a first-class concept in Kurtosis: easy to create, easy to inspect, easy to modify, and easy to destroy.
+To understand what Kurtosis itself does, we'll need to understand environments. Kurtosis' philosophy is that [the distributed nature of modern software means that modern software development now happens at the environment level][why-we-built-kurtosis]. To respond to this need, environments are a first-class concept in Kurtosis: easy to create, easy to inspect, easy to modify, and easy to destroy.
 
 Therefore, the job of Kurtosis is to receive requests from the user and translate them to instructions for the underlying container orchestration engine. These requests can be simple commands that map one-to-one to instructions to the underlying container orchestrator (e.g. "add service X to environment Y"), or they can be Kurtosis-only commands that require complex interaction with the container orchestrator (e.g. "create a simulated network partition in environment X").
 
@@ -103,15 +103,6 @@ For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply
 <!-------------- ONLY LINKS BELOW HERE --------------------->
 [cli-reference]: ../reference/cli/cli.md
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
-[what-is-kurtosis]: ./what-is-kurtosis.md
-[starlark-reference]: ../reference/starlark.md
+[why-we-built-kurtosis]: ./why-we-built-kurtosis.md
+[starlark-explanation]: ./starlark.md
 [starlark-instructions]: ../reference/starlark-instructions.md
-[enclaves-reference]: ../reference/enclaves.md
-
-[enclave-add-reference]: ../reference/cli/enclave-add.md
-[enclave-ls-reference]: ../reference/cli/enclave-ls.md
-[enclave-inspect-reference]: ../reference/cli/enclave-inspect.md
-[enclave-rm-reference]: ../reference/cli/enclave-rm.md
-
-[quickstart]: ../quickstart.md
-[sdk-reference]: ../reference/sdk.md

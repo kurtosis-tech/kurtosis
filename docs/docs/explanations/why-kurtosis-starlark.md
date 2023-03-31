@@ -7,7 +7,7 @@ Background
 ----------
 Distributed systems are very complex, and made up of many components. This means there are many, many instantiation, configuration, and manipulation actions possible with a distributed system.
 
-Kurtosis [aims to provide a single solution across Dev, Test, and Prod][what-is-kurtosis]. We therefore needed a consistent way to represent all the various ways to manipulate a distributed system across Dev, Test, and Prod.
+Kurtosis [aims to provide a single solution across Dev, Test, and Prod][what-we-built-kurtosis]. We therefore needed a consistent way to represent all the various ways to manipulate a distributed system across Dev, Test, and Prod.
 
 Additionally, we believe that [anything intended to work across Dev, Test, and Prod must have certain properties][reusable-environment-definitions]. We therefore needed something that would fulfill these properties.
 
@@ -49,7 +49,7 @@ Conclusion
 So far, both our users and our team have been very happy with our decision to go with Starlark. If you've never used Starlark before, [the quickstart][quickstart]  will be a good introduction.
 
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
-[what-is-kurtosis]: ./what-is-kurtosis.md
+[what-we-built-kurtosis]: ./why-we-built-kurtosis.md
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [starlark-differences-with-python]: https://bazel.build/rules/language#differences_with_python
 
