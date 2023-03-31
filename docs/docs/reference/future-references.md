@@ -3,7 +3,7 @@ title: Future References
 sidebar_label: Future References
 ---
 
-Kurtosis uses [a multi-phase approach][multi-phase-runs-reference] when running [Starlark scripts][starlark-explanation].
+Kurtosis uses [a multi-phase approach][multi-phase-runs-reference] when running [Starlark scripts][starlark-reference].
 
 For the user, the important thing to remember is that [any value returned by a Kurtosis Starlark instruction][starlark-instructions-reference] is not the actual value - it is a special string referencing the _future_ value that will exist during the Execution Phase.
 
@@ -44,5 +44,5 @@ All values that are available exclusively during the Execution Phase will be han
 
 <!----------- ONLY LINKS BELOW HERE ----------------------->
 [multi-phase-runs-reference]: ./multi-phase-runs.md
-[starlark-explanation]: ../explanations/starlark.md
+[starlark-reference]: ./starlark.md
 [starlark-instructions-reference]: ./starlark-instructions.md

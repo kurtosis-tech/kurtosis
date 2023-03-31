@@ -5,7 +5,7 @@ sidebar_label: Starlark
 
 What is Starlark?
 -----------------
-[Starlark](https://github.com/bazelbuild/starlark) is a minimal programming language, halfway between a configuration language and a general-purpose programming language. It was developed by Google to do configurations for the [Bazel build tool](https://bazel.build/rules/language), and has since [been adopted by Facebook for the Buck build system as well](https://github.com/facebookexperimental/starlark-rust). Starlark's syntax is a minimal subset of of Python, with a focus on readability. [This page][starlark-differences-with-python] lists the differences between Starlark and Python.
+[Starlark](https://github.com/bazelbuild/starlark) is a minimal programming language, halfway between a configuration language and a general-purpose programming language. It was developed by Google to do configurations for the [Bazel build tool](https://bazel.build/rules/language), and has since [been adopted by Meta for the Buck build system as well](https://github.com/facebookexperimental/starlark-rust). Starlark's syntax is a minimal subset of of Python, with a focus on readability. [This page][starlark-differences-with-python] lists the differences between Starlark and Python.
 
 How is Starlark used with Kurtosis?
 -----------------------------------
@@ -15,7 +15,7 @@ Starlark is also the way Kurtosis environment definitions are shared. If a user 
 
 Why did Kurtosis choose Starlark for its environment definitions?
 -----------------------------------------------------------------
-Kurtosis [aims to provide a single distributed application development tool across Dev, Test, and Prod][what-is-kurtosis]. We believe that [any reusable environment definition must have certain characteristics][reusable-environment-definitions]. With these properties in mind, we searched for tools that could fulfill our needs.
+Kurtosis [aims to provide a single distributed application development tool across Dev, Test, and Prod][why-we-built-kurtosis-reference]. We believe that [any reusable environment definition must have certain characteristics][reusable-environment-definitions]. With these properties in mind, we searched for tools that could fulfill our needs.
 
 We first looked at pure configuration languages like YAML, Jsonnet, Dhall, and CUE. To use them, we'd need to write our own DSL (and accompanying parser) on top of the language to do what we needed. We knew that the parameterizability requirement meant users would need conditional/looping logic, but we were unhappy with how we'd have to invent conditionals, loops, and parameters from scratch. The conditionals and parameters in the CircleCI YAML DSL seem to be a cautionary tale of starting with a declarative language and adding logic constructs later, and [others](https://github.com/tektoncd/experimental/issues/185#issuecomment-535338943) seemed [to agree](https://solutionspace.blog/2021/12/04/every-simple-language-will-eventually-end-up-turing-complete/): when dealing with configuration, start with a Turing-complete language because you will eventually need it.
 
@@ -48,7 +48,7 @@ Additionally, we built a [multi-phase engine][multi-phase-runs-reference] around
 The [quickstart][quickstart] section for Starlark should get you up and running quickly.
 
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
-[what-is-kurtosis]: ./what-is-kurtosis.md
+[why-we-built-kurtosis-reference]: ./why-we-built-kurtosis.md
 [enclaves]: ./architecture.md#enclaves
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [starlark-differences-with-python]: https://bazel.build/rules/language#differences_with_python
@@ -60,4 +60,4 @@ The [quickstart][quickstart] section for Starlark should get you up and running 
 [multi-phase-runs-reference]: ../reference/multi-phase-runs.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
 [plan-reference]: ../reference/plan.md
-[quickstart]: ../quickstart.md#write-a-simple-starlark-script
+[quickstart]: ../quickstart.md
