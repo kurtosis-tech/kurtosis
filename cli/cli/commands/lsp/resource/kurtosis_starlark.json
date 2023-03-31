@@ -6,9 +6,9 @@
       "name": "add_service",
       "params": [
         {
-          "name": "service_name",
+          "name": "name",
           "type": "string",
-          "content": "service_name",
+          "content": "name",
           "detail": "The service name of the service being created. The service name is a reference to the service, which can be used in the future to refer to the service. Service names are unique per enclave."
         },
         {
@@ -32,7 +32,7 @@
           "detail": "A map of service_name -> ServiceConfig for all services that needs to be added."
         }
       ],
-      "returnType": "list<ServiceConfig>"
+      "returnType": "dict<string, ServiceConfig>"
     },
     {
       "name": "assert",
@@ -67,16 +67,16 @@
       "returnType": "ExecRecipe",
       "params": [
         {
-          "name": "recipe",
-          "type": "ExecRecipe",
-          "content": "recipe",
-          "detail": "The exec recipe creates commands that will be executed by exec instruction."
-        },
-        {
           "name": "service_name",
           "type": "string",
           "content": "service_name",
           "detail": "A service name designating a service that already exists inside the enclave"
+        },
+        {
+          "name": "recipe",
+          "type": "ExecRecipe",
+          "content": "recipe",
+          "detail": "The exec recipe creates commands that will be executed by exec instruction."
         },
         {
           "name": "acceptable_codes",
@@ -93,6 +93,13 @@
       ]
     },
     {
+      "name": "print",
+      "detail": "print on the plan object will add an instruction to the plan to print the string. When the print instruction is executed during the Execution Phase, future references will be replaced with their execution-time values.",
+      "documentation": "",
+      "returnType": "",
+      "params": []
+    },
+    {
       "name": "remove_connection",
       "detail": "The remove_connection function removes a connection override between two subnetworks. The default connection cannot be removed; it can only be updated using set_connection",
       "documentation": "",
@@ -103,6 +110,72 @@
           "type": "tuple<string>",
           "content": "subnetworks",
           "detail": "The subnetwork connection that will be removed. If any of those two subnetworks does not currently have services, this instruction will not do anything"
+        }
+      ]
+    },
+    {
+      "name": "remove_service",
+      "detail": "The remove_service instruction on the plan object removes a service from the enclave in which the instruction executes in",
+      "documentation": "",
+      "returnType": "",
+      "params": [
+        {
+          "name": "name",
+          "type": "string",
+          "content": "name",
+          "detail": "The service name of the service to be removed."
+        }
+      ]
+    },
+    {
+      "name": "render_templates",
+      "detail": "render_templates on the plan object combines a template and data to produce a files artifact. Files artifacts can be used with the files property in the service config of add_service, allowing for reuse of config files across services.",
+      "documentation": "",
+      "returnType": "",
+      "params": [
+        {
+          "name": "config",
+          "type": "dict(string, struct)",
+          "content": "config",
+          "detail": "It is a dict where `key` is the filepath that will be produced within the file-artifact and value is the struct that contains template and data to produce the file artifact"
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "content": "name?",
+          "detail": "The name to give the files artifact that will be produced, or will be auto generated"
+        }
+      ]
+    },
+    {
+      "name": "request",
+      "detail": "The request instruction on the plan object executes either a POST or GET HTTP request, saving its result in a future references.",
+      "documentation": "",
+      "returnType": "GetHttpRequestRecipe | PostHttpRequestRecipe",
+      "params": [
+        {
+          "name": "service_name",
+          "type": "string",
+          "content": "service_name",
+          "detail": "A service name designating a service that already exists inside the enclave"
+        },
+        {
+          "name": "recipe",
+          "type": "GetHttpRequestRecipe | PostHttpRequestRecipe",
+          "content": "recipe",
+          "detail": "These recipes are executed by request instruction to make either Get or Post request"
+        },
+        {
+          "name": "acceptable_codes",
+          "type": "list",
+          "content": "acceptable_codes?",
+          "detail": "If the recipe returns a code that does not belong on this list, this instruction will fail. The default value is [0,0]"
+        },
+        {
+          "name": "skip_code_check",
+          "type": "bool",
+          "content": "skip_code_check?",
+          "detail": "If False, instruction will never fail based on code (acceptable codes will be ignored"
         }
       ]
     },
@@ -127,40 +200,34 @@
       ]
     },
     {
-      "name": "request",
-      "detail": "The request instruction on the plan object executes either a POST or GET HTTP request, saving its result in a future references.",
+      "name": "store_service_files",
+      "detail": "store_service_files on the plan object copies files or directories from an existing service in the enclave into a files artifact. This is useful when work produced on one container is needed elsewhere.",
       "documentation": "",
-      "returnType": "GetHttpRequestRecipe | PostHttpRequestRecipe",
+      "returnType": "",
       "params": [
-        {
-          "name": "recipe",
-          "type": "GetHttpRequestRecipe | PostHttpRequestRecipe",
-          "content": "recipe",
-          "detail": "These recipes are executed by request instruction to make either Get or Post request"
-        },
         {
           "name": "service_name",
           "type": "string",
           "content": "service_name",
-          "detail": "A service name designating a service that already exists inside the enclave"
+          "detail": "The service name of a preexisting service from which the file will be copied."
         },
         {
-          "name": "acceptable_codes",
-          "type": "list",
-          "content": "acceptable_codes?",
-          "detail": "If the recipe returns a code that does not belong on this list, this instruction will fail. The default value is [0,0]"
+          "name": "src",
+          "type": "string",
+          "content": "src",
+          "detail": "The path on the service's container that will be copied into a files artifact"
         },
         {
-          "name": "skip_code_check",
-          "type": "bool",
-          "content": "skip_code_check?",
-          "detail": "If False, instruction will never fail based on code (acceptable codes will be ignored"
+          "name": "name",
+          "type": "string",
+          "content": "name?",
+          "detail": "The name to give the files artifact that will be produced, or will be auto generated"
         }
       ]
     },
     {
-      "name": "remove_service",
-      "detail": "The remove_service instruction on the plan object removes a service from the enclave in which the instruction executes in",
+      "name": "update_service",
+      "detail": "The update_service instruction updates an existing service without restarting it. For now, only the service subnetwork can be updated live. In this case, the service will be moved to the corresponding subnetwork.",
       "documentation": "",
       "returnType": "",
       "params": [
@@ -168,7 +235,33 @@
           "name": "name",
           "type": "string",
           "content": "name",
-          "detail": "The service name of the service to be removed."
+          "detail": "A service name designating a service that already exists inside the enclave."
+        },
+        {
+          "name": "config",
+          "type": "UpdateServiceConfig",
+          "content": "config",
+          "detail": "The changes to apply to this service."
+        }
+      ]
+    },
+    {
+      "name": "upload_files",
+      "detail": "upload_files on the plan object packages the files specified by the locator into a files artifact that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container",
+      "documentation": "",
+      "returnType": "",
+      "params": [
+        {
+          "name": "src",
+          "type": "string",
+          "content": "src",
+          "detail": "The file to upload into a files a files artifact\n Must be a Kurtosis locator."
+        },
+        {
+          "name": "name",
+          "type": "string",
+          "content": "name?",
+          "detail": "The name to give the files artifact that will be produced, or else will be generated"
         }
       ]
     },
@@ -178,6 +271,12 @@
       "documentation": "",
       "returnType": "GetHttpRequestRecipe|PostHttpRequestRecipe|ExecRecipe",
       "params": [
+        {
+          "name": "service_name",
+          "type": "string",
+          "content": "service_name",
+          "detail": "A service name designating a service that already exists inside the enclave"
+        },
         {
           "name": "recipe",
           "type": "GetHttpRequestRecipe|PostHttpRequestRecipe|ExecRecipe",
@@ -213,107 +312,8 @@
           "type": "string",
           "content": "timeout?",
           "detail": "# The timeout value is the maximum time that the command waits for the assertion to be true\n Follows Go \"time.Duration\" format https://pkg.go.dev/time#ParseDuration"
-        },
-        {
-          "name": "service_name",
-          "type": "string",
-          "content": "service_name",
-          "detail": "A service name designating a service that already exists inside the enclave"
         }
       ]
-    },
-    {
-      "name": "upload_files",
-      "detail": "upload_files on the plan object packages the files specified by the locator into a files artifact that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container",
-      "documentation": "",
-      "returnType": "",
-      "params": [
-        {
-          "name": "src",
-          "type": "string",
-          "content": "src",
-          "detail": "The file to upload into a files a files artifact\n Must be a Kurtosis locator."
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "content": "name?",
-          "detail": "The name to give the files artifact that will be produced, or else will be generated"
-        }
-      ]
-    },
-    {
-      "name": "update_service",
-      "detail": "The update_service instruction updates an existing service without restarting it. For now, only the service subnetwork can be updated live. In this case, the service will be moved to the corresponding subnetwork.",
-      "documentation": "",
-      "returnType": "",
-      "params": [
-        {
-          "name": "name",
-          "type": "string",
-          "content": "name",
-          "detail": "A service name designating a service that already exists inside the enclave."
-        },
-        {
-          "name": "config",
-          "type": "UpdateServiceConfig",
-          "content": "config",
-          "detail": "The changes to apply to this service."
-        }
-      ]
-    },
-    {
-      "name": "store_service_files",
-      "detail": "store_service_files on the plan object copies files or directories from an existing service in the enclave into a files artifact. This is useful when work produced on one container is needed elsewhere.",
-      "documentation": "",
-      "returnType": "",
-      "params": [
-        {
-          "name": "service_name",
-          "type": "string",
-          "content": "service_name",
-          "detail": "The service name of a preexisting service from which the file will be copied."
-        },
-        {
-          "name": "src",
-          "type": "string",
-          "content": "src",
-          "detail": "The path on the service's container that will be copied into a files artifact"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "content": "name?",
-          "detail": "The name to give the files artifact that will be produced, or will be auto generated"
-        }
-      ]
-    },
-    {
-      "name": "render_templates",
-      "detail": "render_templates on the plan object combines a template and data to produce a files artifact. Files artifacts can be used with the files property in the service config of add_service, allowing for reuse of config files across services.",
-      "documentation": "",
-      "returnType": "",
-      "params": [
-        {
-          "name": "config",
-          "type": "dict(string, struct)",
-          "content": "config",
-          "detail": "Its a dict where `key` is the filepath that will be produced within the file-artifact and value is the struct that contains template and data to produce the file artifact"
-        },
-        {
-          "name": "name",
-          "type": "string",
-          "content": "name?",
-          "detail": "The name to give the files artifact that will be produced, or will be auto generated"
-        }
-      ]
-    },
-    {
-      "name": "print",
-      "detail": "print on the plan object will add an instruction to the plan to print the string. When the print instruction is executed during the Execution Phase, future references will be replaced with their execution-time values.",
-      "documentation": "",
-      "returnType": "",
-      "params": []
     }
   ],
   "type_builtins": [
@@ -482,101 +482,6 @@
       ]
     },
     {
-      "name": "ServiceConfig",
-      "detail": "The ServiceConfig is used to configure a service when it is added to an enclave.",
-      "documentation": "",
-      "returnType": "ServiceConfig",
-      "params": [
-        {
-          "name": "image",
-          "type": "string",
-          "content": "image",
-          "detail": "The name of the container image that Kurtosis should use when creating the service’s container"
-        },
-        {
-          "name": "ports",
-          "type": "dict<string, PortSpec>",
-          "content": "ports?",
-          "detail": "The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.\n If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile"
-        },
-        {
-          "name": "files",
-          "type": "dict<string, string>",
-          "content": "files?",
-          "detail": "A mapping of path_on_container_where_contents_will_be_mounted -> files_artifact_id_to_mount"
-        },
-        {
-          "name": "entrypoint",
-          "type": "list<string>",
-          "content": "entrypoint?",
-          "files": "The ENTRYPOINT statement hardcoded in a container image's Dockerfile might not be suitable for your needs.\n This field allows you to override the ENTRYPOINT when the container starts"
-        },
-        {
-          "name": "cmd",
-          "type": "list<string>",
-          "content": "cmd?",
-          "detail": "The CMD statement hardcoded in a container image's Dockerfile might not be suitable for your needs.\n This field allows you to override the CMD when the container starts."
-        },
-        {
-          "name": "env_vars",
-          "type": "list<string>",
-          "content": "env_vars?",
-          "detail": "Defines environment variables that should be set inside the Docker container running the service.\n This can be necessary for starting containers from Docker images you don’t control, as they’ll often be parameterized with environment variables."
-        },
-        {
-          "name": "private_ip_address_placeholder",
-          "type": "string",
-          "content": "private_ip_address_placeholder?",
-          "detail": "ENTRYPOINT, CMD, and ENV variables sometimes need to refer to the container's own IP address. \n If this placeholder string is referenced inside the 'entrypoint', 'cmd', or 'env_vars' properties, the Kurtosis engine will replace it at launch time\n with the container's actual IP address."
-        },
-        {
-          "name": "subnetwork",
-          "type": "string",
-          "content": "subnetwork?",
-          "detail": "Defines the subnetwork in which the service will be started"
-        },
-        {
-          "name": "memory_allocation",
-          "type": "number",
-          "content": "memory_allocation?",
-          "detail": "The maximum amount of memory, in megabytes, the service can use."
-        },
-        {
-          "name": "cpu_allocation",
-          "type": "number",
-          "content": "cpu_allocation?",
-          "detail": "The maximum amount of CPUs the service can use, in millicpu/millicore."
-        },
-        {
-          "name": "ready_conditions",
-          "type": "ReadyConditions",
-          "content": "ready_conditions?",
-          "detail": "This field can be used to check the service's readiness after this is started to confirm that it is ready to receive connections and traffic"
-        }
-      ]
-    },
-    {
-      "name": "UpdateServiceConfig",
-      "detail": "The UpdateServiceConfig contains the attributes of ServiceConfig that are live-updatable. For now, only the subnetwork attribute of a service can be updated once the service is started.",
-      "documentation": "",
-      "returnType": "UpdateServiceConfig",
-      "params": [
-        {
-          "name": "subnetwork",
-          "type": "string",
-          "content": "subnetwork",
-          "detail": "The subnetwork to which the service will be moved. default can be used to move the service to the default subnetwork"
-        }
-      ]
-    },
-    {
-      "detail": "The import_module function imports the symbols from a Starlark script specified by the given locator, and requires that the calling Starlark script is part of a package",
-      "documentation": "",
-      "name": "import_module",
-      "params": [],
-      "returnType": ""
-    },
-    {
       "detail": "This can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic",
       "documentation": "",
       "name": "ReadyConditions",
@@ -619,6 +524,101 @@
         }
       ],
       "returnType": "ReadyConditions"
+    },
+    {
+      "name": "ServiceConfig",
+      "detail": "The ServiceConfig is used to configure a service when it is added to an enclave.",
+      "documentation": "",
+      "returnType": "ServiceConfig",
+      "params": [
+        {
+          "name": "image",
+          "type": "string",
+          "content": "image",
+          "detail": "The name of the container image that Kurtosis should use when creating the service’s container"
+        },
+        {
+          "name": "ports",
+          "type": "dict<string, PortSpec>",
+          "content": "ports?",
+          "detail": "The ports that the container should listen on, identified by a user-friendly ID that can be used to select the port again in the future.\n If no ports are provided, no ports will be exposed on the host machine, unless there is an EXPOSE in the Dockerfile"
+        },
+        {
+          "name": "files",
+          "type": "dict<string, string>",
+          "content": "files?",
+          "detail": "A mapping of path_on_container_where_contents_will_be_mounted -> files_artifact_id_to_mount"
+        },
+        {
+          "name": "entrypoint",
+          "type": "list<string>",
+          "content": "entrypoint?",
+          "files": "The ENTRYPOINT statement hardcoded in a container image's Dockerfile might not be suitable for your needs.\n This field allows you to override the ENTRYPOINT when the container starts"
+        },
+        {
+          "name": "cmd",
+          "type": "list<string>",
+          "content": "cmd?",
+          "detail": "The CMD statement hardcoded in a container image's Dockerfile might not be suitable for your needs.\n This field allows you to override the CMD when the container starts."
+        },
+        {
+          "name": "env_vars",
+          "type": "dict<string, string>",
+          "content": "env_vars?",
+          "detail": "Defines environment variables that should be set inside the Docker container running the service.\n This can be necessary for starting containers from Docker images you don’t control, as they’ll often be parameterized with environment variables."
+        },
+        {
+          "name": "private_ip_address_placeholder",
+          "type": "string",
+          "content": "private_ip_address_placeholder?",
+          "detail": "ENTRYPOINT, CMD, and ENV variables sometimes need to refer to the container's own IP address. \n If this placeholder string is referenced inside the 'entrypoint', 'cmd', or 'env_vars' properties, the Kurtosis engine will replace it at launch time\n with the container's actual IP address."
+        },
+        {
+          "name": "cpu_allocation",
+          "type": "number",
+          "content": "cpu_allocation?",
+          "detail": "The maximum amount of CPUs the service can use, in millicpu/millicore."
+        },
+        {
+          "name": "memory_allocation",
+          "type": "number",
+          "content": "memory_allocation?",
+          "detail": "The maximum amount of memory, in megabytes, the service can use."
+        },
+        {
+          "name": "subnetwork",
+          "type": "string",
+          "content": "subnetwork?",
+          "detail": "Defines the subnetwork in which the service will be started"
+        },
+        {
+          "name": "ready_conditions",
+          "type": "ReadyConditions",
+          "content": "ready_conditions?",
+          "detail": "This field can be used to check the service's readiness after this is started to confirm that it is ready to receive connections and traffic"
+        }
+      ]
+    },
+    {
+      "name": "UpdateServiceConfig",
+      "detail": "The UpdateServiceConfig contains the attributes of ServiceConfig that are live-updatable. For now, only the subnetwork attribute of a service can be updated once the service is started.",
+      "documentation": "",
+      "returnType": "UpdateServiceConfig",
+      "params": [
+        {
+          "name": "subnetwork",
+          "type": "string",
+          "content": "subnetwork",
+          "detail": "The subnetwork to which the service will be moved. default can be used to move the service to the default subnetwork"
+        }
+      ]
+    },
+    {
+      "detail": "The import_module function imports the symbols from a Starlark script specified by the given locator, and requires that the calling Starlark script is part of a package",
+      "documentation": "",
+      "name": "import_module",
+      "params": [],
+      "returnType": ""
     },
     {
       "detail": "The read_file function reads the contents of a file specified by the given locator, and requires that the Starlark script is part of a package. read_file executes at interpretation time so the file contents won't be displayed in the preview",
