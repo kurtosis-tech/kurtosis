@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp/pkg/analysis"
 	"github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp/pkg/docstring"
 	"github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp/pkg/query"
+	"github.com/sirupsen/logrus"
 	"sync"
 )
 
@@ -52,6 +53,7 @@ func (definition *KurtosisBuiltinProvider) convertJsonToKurotisWrapper() Kurtosi
 
 	for _, plugin := range definition.kurtosisBuiltins.TypeBuiltIns {
 		// query symbol
+		// nolint:exhaustruct
 		symbol := query.Symbol{
 			Name:          plugin.Name,
 			Detail:        plugin.Detail,
@@ -63,6 +65,7 @@ func (definition *KurtosisBuiltinProvider) convertJsonToKurotisWrapper() Kurtosi
 		var docStringFields []docstring.Field
 
 		for _, param := range plugin.Params {
+			// nolint:exhaustruct
 			signatureParam := query.Parameter{
 				Name:         param.Name,
 				TypeHint:     param.Type,
@@ -75,6 +78,7 @@ func (definition *KurtosisBuiltinProvider) convertJsonToKurotisWrapper() Kurtosi
 			docStringFields = append(docStringFields, docstringField)
 		}
 
+		// nolint:exhaustruct
 		parsed := docstring.Parsed{
 			Description: "",
 			Fields: []docstring.FieldsBlock{
@@ -85,6 +89,7 @@ func (definition *KurtosisBuiltinProvider) convertJsonToKurotisWrapper() Kurtosi
 			},
 		}
 
+		// nolint:exhaustruct
 		signature := query.Signature{
 			Name:       plugin.Name,
 			Params:     signatureParams,
@@ -99,6 +104,7 @@ func (definition *KurtosisBuiltinProvider) convertJsonToKurotisWrapper() Kurtosi
 	methods := make(map[string]query.Signature)
 	for _, plugin := range definition.kurtosisBuiltins.MethodBuiltIns {
 		// query symbol
+		// nolint:exhaustruct
 		member := query.Symbol{
 			Name:          plugin.Name,
 			Detail:        plugin.Detail,
@@ -110,6 +116,7 @@ func (definition *KurtosisBuiltinProvider) convertJsonToKurotisWrapper() Kurtosi
 		var docStringFields []docstring.Field
 
 		for _, param := range plugin.Params {
+			// nolint:exhaustruct
 			signatureParam := query.Parameter{
 				Name:         param.Name,
 				TypeHint:     param.Type,
@@ -122,6 +129,7 @@ func (definition *KurtosisBuiltinProvider) convertJsonToKurotisWrapper() Kurtosi
 			docStringFields = append(docStringFields, docstringField)
 		}
 
+		// nolint:exhaustruct
 		parsed := docstring.Parsed{
 			Description: "",
 			Fields: []docstring.FieldsBlock{
@@ -132,6 +140,7 @@ func (definition *KurtosisBuiltinProvider) convertJsonToKurotisWrapper() Kurtosi
 			},
 		}
 
+		// nolint:exhaustruct
 		method := query.Signature{
 			Name:       plugin.Name,
 			Params:     signatureParams,
@@ -164,16 +173,22 @@ func (definition *KurtosisBuiltinProvider) ReadJsonFile() error {
 }
 
 func GetKurtosisBuiltIn() *analysis.Builtins {
+	// nolint:exhaustruct
 	kurtosisProvider := KurtosisBuiltinProvider{}
-
-	kurtosisProvider.ReadJsonFile()
-	converted := kurtosisProvider.convertJsonToKurotisWrapper()
-
 	builtIn := analysis.NewBuiltins()
+
+	err := kurtosisProvider.ReadJsonFile()
+
+	// silently logging the failure so that lsp server still works even without kurtosis builtins
+	if err != nil {
+		logrus.Debugf("Error occurred while getting kurtosis builtins - %+v", err)
+		return builtIn
+	}
+
+	converted := kurtosisProvider.convertJsonToKurotisWrapper()
 	builtIn.Symbols = converted.symbols
 	builtIn.Functions = converted.signatures
 	builtIn.Methods = converted.methods
 	builtIn.Members = converted.members
 	return builtIn
 }
-
