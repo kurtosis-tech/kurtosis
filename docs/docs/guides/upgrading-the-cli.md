@@ -85,4 +85,4 @@ kurtosis engine restart
 [release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases
 [windows-susbsystem-for-linux]: https://learn.microsoft.com/en-us/windows/wsl/
 
-[kurtosis-engine-restart]: ../reference/cli/engine-restart.md
+[kurtosis-engine-restart]: ../cli-reference/engine-restart.md

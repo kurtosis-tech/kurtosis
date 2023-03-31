@@ -12,7 +12,7 @@ You'll need the Kurtosis CLI inside your CI environment. This can be accomplishe
 
 II. Start The Engine
 ----------------------------
-You'll need the Kurtosis engine to be running to interact with Kurtosis, both via the [CLI](../reference/cli/cli.md) and the [SDK](../reference/sdk.md). Add `kurtosis engine start` in your CI config file after the CLI installation commands so that your Kurtosis commands work.
+You'll need the Kurtosis engine to be running to interact with Kurtosis, both via the [CLI](../cli-reference/cli.md) and the [SDK](../reference/sdk.md). Add `kurtosis engine start` in your CI config file after the CLI installation commands so that your Kurtosis commands work.
 
 III. Run Your Custom Logic
 ---------------------------------

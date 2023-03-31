@@ -564,7 +564,7 @@ plan.print(response["code"])
 [assert]: #assert
 [extract]: #extract
 
-[cli-run-reference]: ../reference/cli/run-starlark.md
+[cli-run-reference]: ../cli-reference/run-starlark.md
 
 [files-artifacts-reference]: ../reference/files-artifacts.md
 [future-references-reference]: ../reference/future-references.md

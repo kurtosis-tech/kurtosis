@@ -101,7 +101,7 @@ To see the SDK reference, [go here][sdk-reference].
 For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply a Go CLI wrapped around the Go Kurtosis SDK.
 
 <!-------------- ONLY LINKS BELOW HERE --------------------->
-[cli-reference]: ../reference/cli/cli.md
+[cli-reference]: ../cli-reference/cli.md
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [why-we-built-kurtosis]: ./why-we-built-kurtosis.md
 [starlark-reference]: ../reference/starlark.md
