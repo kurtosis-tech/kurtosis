@@ -15,7 +15,7 @@ This quickstart is in a "code along" format. If you'd prefer to dive straight in
 cd awesome-kurtosis/quickstart && kurtosis run --enclave quickstart main.star 
 ```
 
-Once you've got your test environment up and running, `cd` into [`go-test`][go-test-example] to run a simple Go unit test against your app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
+Once you've got your test environment up and running, `cd` into [`go-test`][go-test-example] or [`ts-test`][ts-test-example] to run a simple Go or Typescript unit test against your app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
 </details>
 
 Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you will run in this guide is free, public, and does not contain any sensitive data.
@@ -957,7 +957,7 @@ Let's review. In this tutorial you have:
 This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
 
 To learn more about how Kurtosis is used, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of Kurtosis in action, including:
-- How to run a simple [Go test][go-test-example] against the app we just built
+- How to run a simple [Go test][go-test-example] or [Typescript][ts-test-example ]against the app we just built
 - The [Ethereum package][ethereum-package], used by the Ethereum Foundation, which can be used to set up local testnets 
 - A parameterized package for standing up an [n-node Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
 - The [NEAR package][near-package] for local dApp development in the NEAR ecosystem
@@ -1017,6 +1017,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [data-package-example-seed-tar]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/dvd-rental-data.tar
 [cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
 [go-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/go-test
+[ts-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/ts-test
 
 <!-- Misc -->
 [homepage]: home.md
