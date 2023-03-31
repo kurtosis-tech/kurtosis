@@ -94,7 +94,7 @@ For a list of all the possible operations on an enclave, [see this reference][st
 
 SDKs
 ----
-All interactions with Kurtosis happen through API requests to the Kurtosis containers. To assist with calling the API, [we provide SDKs in various languages](https://github.com/kurtosis-tech/kurtosis-sdk). Anything the Kurtosis can do will be available via the API and, therefore, via the SDKs.
+All interactions with Kurtosis happen through API requests to the Kurtosis containers. To assist with calling the API, [we provide SDKs in various languages](https://github.com/kurtosis-tech/kurtosis/tree/main/api). Anything the Kurtosis can do will be available via the API and, therefore, via the SDKs.
 
 To see the SDK reference, [go here][sdk-reference].
 
