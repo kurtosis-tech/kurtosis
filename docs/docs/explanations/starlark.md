@@ -60,4 +60,4 @@ The [quickstart][quickstart] section for Starlark should get you up and running 
 [multi-phase-runs-reference]: ../reference/multi-phase-runs.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
 [plan-reference]: ../reference/plan.md
-[quickstart]: ../quickstart.md#write-a-simple-starlark-script
+[quickstart]: ../quickstart.md
