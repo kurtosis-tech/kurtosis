@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	ReadyConditionsTypeName = "ReadyConditions"
+	ReadyConditionTypeName = "ReadyCondition"
 
 	RecipeAttr    = "recipe"
 	FieldAttr     = "field"
@@ -26,10 +26,10 @@ const (
 	defaultTimeout  = 15 * time.Minute //TODO we could move these two to the service helpers method
 )
 
-func NewReadyConditionsType() *kurtosis_type_constructor.KurtosisTypeConstructor {
+func NewReadyConditionType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 	return &kurtosis_type_constructor.KurtosisTypeConstructor{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
-			Name: ReadyConditionsTypeName,
+			Name: ReadyConditionTypeName,
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
 					Name:              RecipeAttr,
@@ -77,47 +77,47 @@ func NewReadyConditionsType() *kurtosis_type_constructor.KurtosisTypeConstructor
 				},
 			},
 		},
-		Instantiate: instantiateReadyConditions,
+		Instantiate: instantiateReadyCondition,
 	}
 }
 
-func instantiateReadyConditions(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
-	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ReadyConditionsTypeName, arguments)
+func instantiateReadyCondition(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
+	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ReadyConditionTypeName, arguments)
 	if err != nil {
 		return nil, err
 	}
-	return &ReadyConditions{
+	return &ReadyCondition{
 		KurtosisValueTypeDefault: kurtosisValueType,
 	}, nil
 }
 
-// ReadyConditions is a starlark.Value that holds all the information needed for ensuring service readiness
-type ReadyConditions struct {
+// ReadyCondition is a starlark.Value that holds all the information needed for ensuring service readiness
+type ReadyCondition struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
 }
 
-func (readyConditions *ReadyConditions) Copy() (builtin_argument.KurtosisValueType, error) {
-	copiedValueType, err := readyConditions.KurtosisValueTypeDefault.Copy()
+func (readyCondition *ReadyCondition) Copy() (builtin_argument.KurtosisValueType, error) {
+	copiedValueType, err := readyCondition.KurtosisValueTypeDefault.Copy()
 	if err != nil {
 		return nil, err
 	}
-	return &ReadyConditions{
+	return &ReadyCondition{
 		KurtosisValueTypeDefault: copiedValueType,
 	}, nil
 }
 
-func (readyConditions *ReadyConditions) GetRecipe() (recipe.Recipe, *startosis_errors.InterpretationError) {
+func (readyCondition *ReadyCondition) GetRecipe() (recipe.Recipe, *startosis_errors.InterpretationError) {
 	var genericRecipe recipe.Recipe
 
-	httpRecipe, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.HttpRequestRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
+	httpRecipe, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.HttpRequestRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
 	genericRecipe = httpRecipe
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			RecipeAttr, ReadyConditionsTypeName)
+			RecipeAttr, ReadyConditionTypeName)
 	}
 	//TODO we should rework the recipe types to inherit a single common type, this will avoid the double parsing here.
 	if interpretationErr != nil {
-		execRecipe, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyConditions.KurtosisValueTypeDefault, RecipeAttr)
+		execRecipe, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -127,51 +127,51 @@ func (readyConditions *ReadyConditions) GetRecipe() (recipe.Recipe, *startosis_e
 	return genericRecipe, nil
 }
 
-func (readyConditions *ReadyConditions) GetField() (string, *startosis_errors.InterpretationError) {
-	field, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](readyConditions.KurtosisValueTypeDefault, FieldAttr)
+func (readyCondition *ReadyCondition) GetField() (string, *startosis_errors.InterpretationError) {
+	field, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](readyCondition.KurtosisValueTypeDefault, FieldAttr)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if !found {
 		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			FieldAttr, ReadyConditionsTypeName)
+			FieldAttr, ReadyConditionTypeName)
 	}
 	fieldStr := field.GoString()
 
 	return fieldStr, nil
 }
 
-func (readyConditions *ReadyConditions) GetAssertion() (string, *startosis_errors.InterpretationError) {
-	assertion, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](readyConditions.KurtosisValueTypeDefault, AssertionAttr)
+func (readyCondition *ReadyCondition) GetAssertion() (string, *startosis_errors.InterpretationError) {
+	assertion, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](readyCondition.KurtosisValueTypeDefault, AssertionAttr)
 	if interpretationErr != nil {
 		return "", interpretationErr
 	}
 	if !found {
 		return "", startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			AssertionAttr, ReadyConditionsTypeName)
+			AssertionAttr, ReadyConditionTypeName)
 	}
 	assertionStr := assertion.GoString()
 
 	return assertionStr, nil
 }
 
-func (readyConditions *ReadyConditions) GetTarget() (starlark.Comparable, *startosis_errors.InterpretationError) {
-	target, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Comparable](readyConditions.KurtosisValueTypeDefault, TargetAttr)
+func (readyCondition *ReadyCondition) GetTarget() (starlark.Comparable, *startosis_errors.InterpretationError) {
+	target, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Comparable](readyCondition.KurtosisValueTypeDefault, TargetAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			TargetAttr, ReadyConditionsTypeName)
+			TargetAttr, ReadyConditionTypeName)
 	}
 
 	return target, nil
 }
 
-func (readyConditions *ReadyConditions) GetInterval() (time.Duration, *startosis_errors.InterpretationError) {
+func (readyCondition *ReadyCondition) GetInterval() (time.Duration, *startosis_errors.InterpretationError) {
 	interval := defaultInterval
 
-	intervalStr, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](readyConditions.KurtosisValueTypeDefault, IntervalAttr)
+	intervalStr, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](readyCondition.KurtosisValueTypeDefault, IntervalAttr)
 	if interpretationErr != nil {
 		return interval, interpretationErr
 	}
@@ -186,10 +186,10 @@ func (readyConditions *ReadyConditions) GetInterval() (time.Duration, *startosis
 	return interval, nil
 }
 
-func (readyConditions *ReadyConditions) GetTimeout() (time.Duration, *startosis_errors.InterpretationError) {
+func (readyCondition *ReadyCondition) GetTimeout() (time.Duration, *startosis_errors.InterpretationError) {
 	timeout := defaultTimeout
 
-	timeoutStr, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](readyConditions.KurtosisValueTypeDefault, TimeoutAttr)
+	timeoutStr, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](readyCondition.KurtosisValueTypeDefault, TimeoutAttr)
 	if interpretationErr != nil {
 		return timeout, interpretationErr
 	}

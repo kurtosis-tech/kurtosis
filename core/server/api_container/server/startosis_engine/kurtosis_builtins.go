@@ -90,6 +90,6 @@ func KurtosisTypeConstructors() []*starlark.Builtin {
 		starlark.NewBuiltin(port_spec.PortSpecTypeName, port_spec.NewPortSpecType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ServiceConfigTypeName, service_config.NewServiceConfigType().CreateBuiltin()),
 		starlark.NewBuiltin(update_service_config.UpdateServiceConfigTypeName, update_service_config.NewUpdateServiceConfigType().CreateBuiltin()),
-		starlark.NewBuiltin(service_config.ReadyConditionsTypeName, service_config.NewReadyConditionsType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.ReadyConditionTypeName, service_config.NewReadyConditionType().CreateBuiltin()),
 	}
 }

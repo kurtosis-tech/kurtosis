@@ -121,7 +121,7 @@ func (t *addServiceTestCase) GetStarlarkCode() string {
 		"subnetwork=%q, " +
 		"cpu_allocation=%d, " +
 		"memory_allocation=%d, " +
-		"ready_conditions=ReadyConditions(" +
+		"ready_conditions=ReadyCondition(" +
 		"recipe=GetHttpRequestRecipe(port_id=%q, endpoint=%q, extract={})," +
 		" field=%q," +
 		" assertion=%q," +

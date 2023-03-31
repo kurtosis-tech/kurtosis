@@ -76,7 +76,7 @@ type AddServicesCapabilities struct {
 
 	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig
 
-	readyConditions map[service.ServiceName]*service_config.ReadyConditions
+	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
 	resultUuids map[service.ServiceName]string
 }
@@ -254,7 +254,7 @@ func validateAndConvertConfigsAndReadyConditions(
 	configs starlark.Value,
 ) (
 	map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
-	map[service.ServiceName]*service_config.ReadyConditions,
+	map[service.ServiceName]*service_config.ReadyCondition,
 	*startosis_errors.InterpretationError,
 ) {
 	configsDict, ok := configs.(*starlark.Dict)
@@ -265,7 +265,7 @@ func validateAndConvertConfigsAndReadyConditions(
 		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument should be a non empty dictionary", ConfigsArgName)
 	}
 	convertedServiceConfigs := map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
-	readyConditionsByServiceName := map[service.ServiceName]*service_config.ReadyConditions{}
+	readyConditionsByServiceName := map[service.ServiceName]*service_config.ReadyCondition{}
 	for _, serviceName := range configsDict.Keys() {
 		serviceNameStr, isServiceNameAString := serviceName.(starlark.String)
 		if !isServiceNameAString {
@@ -286,7 +286,7 @@ func validateAndConvertConfigsAndReadyConditions(
 		}
 		convertedServiceConfigs[service.ServiceName(serviceNameStr.GoString())] = apiServiceConfig
 
-		readyConditions, interpretationErr := serviceConfig.GetReadyConditions()
+		readyConditions, interpretationErr := serviceConfig.GetReadyCondition()
 		if interpretationErr != nil {
 			return nil, nil, interpretationErr
 		}
