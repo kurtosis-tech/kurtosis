@@ -1,11 +1,11 @@
 {
   "name": "kurtosis-docs",
-  "version": "0.0.0",
+  "version": "1.22.19",
   "private": true,
   "scripts": {
     "docusaurus": "docusaurus",
-    "start": "docusaurus start",
-    "build": "docusaurus build",
+    "start": "concurrently \"npm run remark:watch\" \"npm run typecheck:watch\" \"docusaurus start\"",
+    "build": "npm run remark:once && npm run typecheck && docusaurus build",
     "swizzle": "docusaurus swizzle",
     "clear": "docusaurus clear",
     "serve": "docusaurus serve",
@@ -14,9 +14,7 @@
     "typecheck": "tsc",
     "remark": "remark",
     "remark:once": "npm run remark -- --quiet --frail --use remark-validate-links docs/",
-    "remark:watch": "npm run remark -- --quiet --frail --use remark-validate-links --watch docs/",
-    "start": "concurrently \"npm run remark:watch\" \"npm run typecheck:watch\" \"docusaurus start\"",
-    "build": "npm run remark:once && npm run typecheck && docusaurus build"
+    "remark:watch": "npm run remark -- --quiet --frail --use remark-validate-links --watch docs/"
   },
   "dependencies": {
     "@docusaurus/core": "^2.3.1",
