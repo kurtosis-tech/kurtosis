@@ -209,12 +209,12 @@ port_spec = PortSpec(
 The above constructor returns a `PortSpec` object that contains port information in the form of a [future reference][future-references-reference] and can be used with
 [add_service][add-service-reference] to create services.
 
-### ReadyConditions
+### ReadyCondition
 
-The `ReadyConditions` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic 
+The `ReadyCondition` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic 
 
 ```python
-ready_conditions = ReadyConditions(
+ready_conditions = ReadyCondition(
 
     # The recipe that will be used to check service's readiness.
     # Valid values are of the following types: (ExecRecipe, GetHttpRequestRecipe or PostHttpRequestRecipe)
@@ -332,7 +332,7 @@ config = ServiceConfig(
     # This field can be used to check the service's readiness after this is started
     # to confirm that it is ready to receive connections and traffic
     # OPTIONAL (Default: no ready conditions)
-    ready_conditions = ReadyConditions(...)
+    ready_conditions = ReadyCondition(...)
 )
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
@@ -341,7 +341,7 @@ The `files` dictionary argument accepts a key value pair, where `key` is the pat
 
 For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
 
-You can see how to configure the [`ReadyConditions` type here][ready-conditions]. 
+You can see how to configure the [`ReadyCondition` type here][ready-condition]. 
 
 ### UpdateServiceConfig
 
@@ -374,7 +374,7 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 [connection-config]: #connectionconfig
 [service-config]: #serviceconfig
 [port-spec]: #portspec
-[ready-conditions]: #readyconditions
+[ready-condition]: #readycondition
 
 [connection-config-prebuilt]: #connection
 
