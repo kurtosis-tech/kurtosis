@@ -8,6 +8,7 @@ Introduction
 ------------
 
 <details><summary>TL;DR Version</summary>
+
 This quickstart is in a "code along" format. If you'd prefer to dive straight into the code and inner workings of the distributed app we build here, clone the [`awesome-kurtosis` repository][awesome-kurtosis-repo], get [set up](#setup), and then run:
 
 ```bash
