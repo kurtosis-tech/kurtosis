@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.73.0](https://github.com/kurtosis-tech/kurtosis/compare/0.72.2...0.73.0) (2023-03-31)
+
+
+### ⚠ BREAKING CHANGES
+
+* Moved the `sevice_name` argument to the first position in the `exec`, `request`, and `wait` instructions, users will have to adapt these instructions calls if where using positional arguments. ([#412](https://github.com/kurtosis-tech/kurtosis/issues/412))
+
+### Features
+
+* Add portal `status`, `start` and `stop` command ([#334](https://github.com/kurtosis-tech/kurtosis/issues/334)) ([beec527](https://github.com/kurtosis-tech/kurtosis/commit/beec5275f3344d81ea4c30553743d7524857ccf5))
+* clean the error for starlark output as well ([#413](https://github.com/kurtosis-tech/kurtosis/issues/413)) ([5953a23](https://github.com/kurtosis-tech/kurtosis/commit/5953a23413ec6ee07790e1330dd6f0389e959b6c))
+
+
+### Bug Fixes
+
+* clean error paths for users ([#369](https://github.com/kurtosis-tech/kurtosis/issues/369)) ([fedc8d0](https://github.com/kurtosis-tech/kurtosis/commit/fedc8d0a82b387498e00f5dabf40c7fbf40247f8))
+
+
+### Code Refactoring
+
+* Moved the `sevice_name` argument to the first position in the `exec`, `request`, and `wait` instructions, users will have to adapt these instructions calls if where using positional arguments. ([#412](https://github.com/kurtosis-tech/kurtosis/issues/412)) ([126ccbc](https://github.com/kurtosis-tech/kurtosis/commit/126ccbcc5920714af14bc47bc7190867d6279803))
+
 ## [0.72.2](https://github.com/kurtosis-tech/kurtosis/compare/0.72.1...0.72.2) (2023-03-30)
 
 
