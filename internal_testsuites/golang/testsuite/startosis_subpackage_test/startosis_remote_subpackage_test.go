@@ -15,8 +15,8 @@ const (
 	emptyParams          = "{}"
 	expectedOutputLength = 22
 
-	expectedArtifactName = "nginx-artifact"
-	expectedServiceName  = "my-nginx-0"
+	expectedActorName   = "Chase"
+	expectedServiceName = "postgres"
 )
 
 func TestStarlarkRemotePackage(t *testing.T) {
@@ -43,6 +43,6 @@ func TestStarlarkRemotePackage(t *testing.T) {
 	runOutputList := strings.Split(runOutputTrimmedString, "\n")
 
 	require.Equal(t, expectedOutputLength, len(runOutputList))
-	require.Contains(t, runOutputTrimmedString, expectedArtifactName)
+	require.Contains(t, runOutputTrimmedString, expectedActorName)
 	require.Contains(t, runOutputTrimmedString, expectedServiceName)
 }
