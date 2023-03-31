@@ -573,9 +573,9 @@ plan.print(response["code"])
 [multi-phase-runs-reference]: ../reference/multi-phase-runs.md
 [subnetworks-reference]: ../reference/subnetworks.md
 
-[starlark-types-connection-config]: ./starlark-types.md#connectionconfig
-[starlark-types-service-config]: ./starlark-types.md#serviceconfig
-[starlark-types-update-service-config]: ./starlark-types.md#updateserviceconfig
-[starlark-types-exec-recipe]: ./starlark-types.md#execrecipe
-[starlark-types-post-http-recipe]: ./starlark-types.md#posthttprequestrecipe
-[starlark-types-get-http-recipe]: ./starlark-types.md#gethttprequestrecipe
+[starlark-types-connection-config]: ./connection-config.md
+[starlark-types-service-config]: ./service-config.md
+[starlark-types-update-service-config]: ./update-service-config.md
+[starlark-types-exec-recipe]: ./exec-recipe.md
+[starlark-types-post-http-recipe]: ./post-http-request-recipe.md
+[starlark-types-get-http-recipe]: ./get-http-request-recipe.md
