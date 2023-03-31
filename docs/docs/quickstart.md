@@ -9,13 +9,13 @@ Introduction
 
 <details><summary>TL;DR Version</summary>
 
-This quickstart is in a "code along" format. If you'd prefer to dive straight into the code and inner workings of the distributed app we build here, clone the [`awesome-kurtosis` repository][awesome-kurtosis-repo], get [set up](#setup), and then run:
+This quickstart is in a "code along" format. If you'd prefer to dive straight into running the end results and exploring the code, [install Kurtosis](#setup), clone the [`awesome-kurtosis` repository][awesome-kurtosis-repo], and then run:
 
 ```bash
 cd awesome-kurtosis/quickstart && kurtosis run --enclave quickstart main.star 
 ```
 
-Once you've got the app up and running, `cd` into [`go-test`][go-test-example] to run a simple Go unit test against your app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
+Once you've got your test environment up and running, `cd` into [`go-test`][go-test-example] to run a simple Go unit test against your app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
 </details>
 
 Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you will run in this guide is free, public, and does not contain any sensitive data.
