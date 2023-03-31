@@ -49,6 +49,17 @@ function deserialize_api_container_api_ExecCommandResponse(buffer_arg) {
   return api_container_service_pb.ExecCommandResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_FileArtifactChunk(arg) {
+  if (!(arg instanceof api_container_service_pb.FileArtifactChunk)) {
+    throw new Error('Expected argument of type api_container_api.FileArtifactChunk');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_FileArtifactChunk(buffer_arg) {
+  return api_container_service_pb.FileArtifactChunk.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_GetExistingAndHistoricalServiceIdentifiersResponse(arg) {
   if (!(arg instanceof api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse)) {
     throw new Error('Expected argument of type api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse');
@@ -479,6 +490,18 @@ uploadFilesArtifact: {
     responseType: api_container_service_pb.UploadFilesArtifactResponse,
     requestSerialize: serialize_api_container_api_UploadFilesArtifactArgs,
     requestDeserialize: deserialize_api_container_api_UploadFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
+  },
+  // Uploads a files artifact to the Kurtosis File System
+uploadFilesArtifactV2: {
+    path: '/api_container_api.ApiContainerService/UploadFilesArtifactV2',
+    requestStream: true,
+    responseStream: false,
+    requestType: api_container_service_pb.FileArtifactChunk,
+    responseType: api_container_service_pb.UploadFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_FileArtifactChunk,
+    requestDeserialize: deserialize_api_container_api_FileArtifactChunk,
     responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
   },

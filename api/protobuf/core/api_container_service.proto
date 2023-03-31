@@ -47,6 +47,9 @@ service ApiContainerService {
   // Uploads a files artifact to the Kurtosis File System
   rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
 
+  // Uploads a files artifact to the Kurtosis File System
+  rpc UploadFilesArtifactV2(stream FileArtifactChunk) returns (UploadFilesArtifactResponse) {};
+
   // TODO Make this a server-side streaming method so the client can download large files
   // Downloads a files artifact from the Kurtosis File System
   rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (DownloadFilesArtifactResponse) {};
@@ -425,6 +428,17 @@ message WaitForHttpPostEndpointAvailabilityArgs {
 // ==============================================================================================
 //                                          Upload Files Artifact
 // ==============================================================================================
+message FileArtifactChunk {
+  // Bytes for this chunk
+  bytes data = 1;
+
+  // Name of the files artifact this chunk is part of
+  string name = 2;
+
+  // Hash of the PREVIOUS current chunk
+  string previous_chunk_hash = 3;
+}
+
 message UploadFilesArtifactArgs {
   // Bytes of the files artifact to store
   bytes data = 1;

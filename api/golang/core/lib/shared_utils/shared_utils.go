@@ -59,11 +59,11 @@ func CompressPath(pathToCompress string, accountForGRPCLimit bool) ([]byte, erro
 			tempDir, pathToCompress)
 	}
 
-	if accountForGRPCLimit && compressedFileInfo.Size() >= grpcDataTransferLimit {
-		return nil, stacktrace.NewError(
-			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
-				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
-	}
+	//if accountForGRPCLimit && compressedFileInfo.Size() >= grpcDataTransferLimit {
+	//	return nil, stacktrace.NewError(
+	//		"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
+	//			"Please reduce the total file size and ensure it can compress to a size below 4mb.")
+	//}
 	content, err := ioutil.ReadFile(compressedFilePath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,

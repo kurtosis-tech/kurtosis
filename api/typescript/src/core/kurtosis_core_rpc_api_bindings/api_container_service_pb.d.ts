@@ -1005,6 +1005,34 @@ export namespace WaitForHttpPostEndpointAvailabilityArgs {
   }
 }
 
+export class FileArtifactChunk extends jspb.Message {
+  getData(): Uint8Array | string;
+  getData_asU8(): Uint8Array;
+  getData_asB64(): string;
+  setData(value: Uint8Array | string): FileArtifactChunk;
+
+  getName(): string;
+  setName(value: string): FileArtifactChunk;
+
+  getPreviousChunkHash(): string;
+  setPreviousChunkHash(value: string): FileArtifactChunk;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FileArtifactChunk.AsObject;
+  static toObject(includeInstance: boolean, msg: FileArtifactChunk): FileArtifactChunk.AsObject;
+  static serializeBinaryToWriter(message: FileArtifactChunk, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FileArtifactChunk;
+  static deserializeBinaryFromReader(message: FileArtifactChunk, reader: jspb.BinaryReader): FileArtifactChunk;
+}
+
+export namespace FileArtifactChunk {
+  export type AsObject = {
+    data: Uint8Array | string,
+    name: string,
+    previousChunkHash: string,
+  }
+}
+
 export class UploadFilesArtifactArgs extends jspb.Message {
   getData(): Uint8Array | string;
   getData_asU8(): Uint8Array;

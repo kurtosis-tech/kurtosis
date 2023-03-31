@@ -7,6 +7,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
 )
@@ -14,6 +15,7 @@ replace (
 require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
@@ -22,8 +24,8 @@ require (
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.1
-	google.golang.org/grpc v1.40.0
-	google.golang.org/protobuf v1.27.1
+	google.golang.org/grpc v1.41.0
+	google.golang.org/protobuf v1.29.1
 	gotest.tools v2.2.0+incompatible
 )
 
@@ -76,9 +78,9 @@ require (
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
