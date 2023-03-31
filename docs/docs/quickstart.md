@@ -27,7 +27,9 @@ This quickstart is in a "code along" format. If you'd prefer to dive straight in
 cd awesome-kurtosis/quickstart && kurtosis run --enclave quickstart main.star 
 ```
 
-Once you've got your test environment up and running, `cd` into [`go-test`][go-test-example] or [`ts-test`][ts-test-example] and refer to the README to run a simple Go or Typescript test against your app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
+Now you're running the application in this quickstart on your laptop.
+
+If you want to see how to run tests over Kurtosis environments, `cd` into [`go-test`][go-test-example] or [`ts-test`][ts-test-example] and refer to the README to run a simple Go or Typescript test against this app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
 </details>
 
 If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us on our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111) or [email us](mailto:feedback@kurtosistech.com)!
