@@ -840,7 +840,7 @@ def insert_data(plan, data):
 Now clean and run, only this time with extra args to `kurtosis run`:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave quickstart . '{"data": [{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]}'
+kurtosis clean -a && kurtosis run --enclave quickstart . '{"actors": [{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]}'
 ```
 
 Using the new `http` URL on the `api` service in the output, query for the rows you just added (replacing `$YOUR_PORT` with your correct PostgREST `http` port number)...
