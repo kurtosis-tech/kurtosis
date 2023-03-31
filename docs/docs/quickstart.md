@@ -983,10 +983,8 @@ Finally, we'd love to hear from you and engage with our users. Please don't hesi
 [kurtosis-twitter]: ./reference/cli/twitter.md
 
 <!-- SL Instructions Reference-->
-[starlark-instructions-reference]: ./reference/starlark-instructions.md
-[upload-files-reference]: ./reference/starlark-instructions.md#upload_files
-[request-reference]: ./reference/starlark-instructions.md#request
-[exec-reference]: ./reference/starlark-instructions.md#exec
+[request-reference]: ./starlark-reference/plan.md#request
+[exec-reference]: ./starlark-reference/plan.md#exec
 
 <!-- Reference -->
 [multi-phase-runs-reference]: ./reference/multi-phase-runs.md
