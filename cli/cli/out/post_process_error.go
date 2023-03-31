@@ -24,11 +24,11 @@ func GetErrorMessageToBeDisplayedOnCli(errorWithStacktrace error) error {
 	// silently catch the file logger error and print it in the debug mode
 	// users should not worry about this error
 	// downside is that we may lose stack-traces during file logger failures
-	fileLogger, err := GetFileLogger()
+	loggerToFile, err := GetFileLogger()
 	if err != nil {
 		logrus.Warnf("Error occurred while getting the file logger %+v", err)
 	} else {
-		fileLogger.Errorln(errorWithStacktrace.Error())
+		loggerToFile.Errorln(errorWithStacktrace.Error())
 	}
 
 	errorMessage := errorWithStacktrace.Error()
@@ -48,9 +48,9 @@ func removeFilePathFromErrorMessage(errorMessage string) error {
 	var cleanErrorList []string
 	for _, line := range errorMessageConvertedInList {
 		// this only cleans spaces for the lines that contains the stack-trace information
-		cleanLine := strings.TrimSpace(line)
-		if !lineWithStacktrace.MatchString(cleanLine) {
-			cleanErrorList = append(cleanErrorList, cleanLine)
+		trimmedLine := strings.TrimSpace(line)
+		if !lineWithStacktrace.MatchString(trimmedLine) {
+			cleanErrorList = append(cleanErrorList, line) //
 		}
 	}
 
