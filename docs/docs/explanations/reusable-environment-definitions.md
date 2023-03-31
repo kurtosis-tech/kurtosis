@@ -53,5 +53,5 @@ Kurtosis believes that any environment definition that aims to be reusable acros
 
 
 <!--------------------- ONLY LINKS BELOW HERE ------------------------->
-[starlark]: ./starlark.md
+[starlark]: ../reference/starlark.md
 [what-is-kurtosis]: ./what-is-kurtosis.md

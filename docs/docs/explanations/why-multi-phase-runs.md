@@ -3,7 +3,7 @@ title: Why Multi-Phase Runs?
 sidebar_label: Why Multi-Phase Runs?
 ---
 
-Kurtosis runs its [Starlark environment definitions][starlark-explanation] in [multiple phases][multi-phase-runs-reference].
+Kurtosis runs its [Starlark environment definitions][starlark-reference] in [multiple phases][multi-phase-runs-reference].
 
 This can create pitfalls for users not accustomed to the multi-phase idea. For example, the following code has a bug:
 
@@ -35,6 +35,6 @@ In the future, the multi-phase approach will also:
 - Permit compiling a Kurtosis plan down to an idempotent, declarative format (e.g. Helm, Terraform, or Docker Compose).
 
 <!----------------- ONLY LINKS BELOW HERE ----------------->
-[starlark-explanation]: ./starlark.md
+[starlark-reference]: ../reference/starlark.md
 [multi-phase-runs-reference]: ../reference/multi-phase-runs.md
 [future-references-reference]: ../reference/future-references.md
