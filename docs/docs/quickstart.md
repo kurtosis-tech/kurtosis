@@ -106,9 +106,9 @@ Congratulations - you've written your first Kurtosis code!
 You'll use these "Review" sections to explain what happened in the section. 
 :::
 
-In this section, you created a `main.star` file that simply told Kurtosis to print `Hello, world`. The `.star` extension corresponds to [Starlark][starlark-explanation], which is also used by Google and Meta as a build system configuration language.
+In this section, you created a `main.star` file that simply told Kurtosis to print `Hello, world`. The `.star` extension corresponds to [Starlark][starlark-explanation], a Python dialect also used by Google and Meta for configuring build systems.
 
-When you ran `main.star`, you got `Created enclave: quickstart`. An [enclave][enclaves-explanation] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. If you'd like, you can tear down your enclave and any of their artifacts by running: `kurtosis clean -a` (more on the `kurtosis clean` command [here][kurtosis-clean-reference]).
+When you ran `main.star`, you got `Created enclave: quickstart`. An [enclave][enclaves-reference] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. If you'd like, you can tear down your enclave and any of their artifacts by running: `kurtosis clean -a` (more on the `kurtosis clean` command [here][kurtosis-clean-reference]).
 
 Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other. Use enclaves liberally!
 
@@ -127,7 +127,7 @@ POSTGRES_PASSWORD = "password"
 def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
-        service_name = "postgres",
+        name = "postgres",
         config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
@@ -834,8 +834,8 @@ def run(plan, args):
     )
 
     # Insert data
-    if args != None:
-        insert_data(plan, args)
+    if "actors" in args:
+        insert_data(plan, args["actors"])
 
 def insert_data(plan, data):
     plan.request(
@@ -852,7 +852,7 @@ def insert_data(plan, data):
 Now clean and run, only this time with extra args to `kurtosis run`:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave quickstart . '[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]'
+kurtosis clean -a && kurtosis run --enclave quickstart . '{"actors": [{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]}'
 ```
 
 Using the new `http` URL on the `api` service in the output, query for the rows you just added (replacing `$YOUR_PORT` with your correct PostgREST `http` port number)...
@@ -885,7 +885,7 @@ plan.request(
 )
 ```
 
-At a higher level, Kurtosis automatically deserialized the `[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]` string passed as a parameter to `kurtosis run`, and put the deserialized object in the `args` parameter to the `run` function in `main.star`:
+At a higher level, Kurtosis automatically deserialized the `{"actors": [{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]}` string passed as a parameter to `kurtosis run`, and put the deserialized object in the `args` parameter to the `run` function in `main.star`:
 
 ```python
 def run(plan, args):
@@ -979,9 +979,8 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 
 <!--------------------------- Explanations ------------------------------------>
 [architecture-explanation]: ./explanations/architecture.md
-[enclaves-explanation]: ./explanations/architecture.md#enclaves
+[enclaves-reference]: ./reference/enclaves.md
 [services-explanation]: ./explanations/architecture.md#services
-[starlark-explanation]: ./explanations/starlark.md
 [reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
 [why-we-built-kurtosis-explanation]: ./explanations/why-we-built-kurtosis.md
 [how-do-imports-work-explanation]: ./explanations/how-do-kurtosis-imports-work.md
@@ -996,6 +995,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [kurtosis-files-upload-reference]: ./reference/cli/files-upload.md
 [kurtosis-feedback-reference]: ./reference/cli/feedback.md
 [kurtosis-twitter]: ./reference/cli/twitter.md
+[starlark-reference]: ./reference/starlark.md
 
 <!-- SL Instructions Reference-->
 [starlark-instructions-reference]: ./reference/starlark-instructions.md

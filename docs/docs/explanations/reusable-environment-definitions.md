@@ -5,7 +5,7 @@ sidebar_label: Reusable Environment Definitions
 
 Why are reusable environment definitions hard?
 ----------------------------------------------
-We have many tools for defining and modifying environments: Bash/Python scripts, Ansible, Docker Compose, Helm, and Terraform. Yet, none have proven successful at reuse across [the plethora of environments in today's world][why-we-built-kurtosis-reference]. To see why, we'll focus on the three most common environment types: local Dev, ephemeral Test in CI, and Prod.
+We have many tools for defining and modifying environments: Bash/Python scripts, Ansible, Docker Compose, Helm, and Terraform. Yet, none have proven successful at reuse across [the plethora of environments in today's world][why-we-built-kurtosis]. To see why, we'll focus on the three most common environment types: local Dev, ephemeral Test in CI, and Prod.
 
 Environment definitions in Dev, Test, and Prod share some common requirements:
 
@@ -54,4 +54,4 @@ Kurtosis believes that any environment definition that aims to be reusable acros
 
 <!--------------------- ONLY LINKS BELOW HERE ------------------------->
 [starlark]: ./starlark.md
-[why-we-built-kurtosis-reference]: ./why-we-built-kurtosis.md
+[why-we-built-kurtosis]: ./why-we-built-kurtosis.md
