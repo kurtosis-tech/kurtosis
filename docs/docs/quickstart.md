@@ -7,6 +7,17 @@ slug: /quickstart
 Introduction
 ------------
 
+<details><summary>TL;DR Version</summary>
+
+This quickstart is in a "code along" format. If you'd prefer to dive straight into running the end results and exploring the code, [install Kurtosis](#setup), clone the [`awesome-kurtosis` repository][awesome-kurtosis-repo], and then run:
+
+```bash
+cd awesome-kurtosis/quickstart && kurtosis run --enclave quickstart main.star 
+```
+
+Once you've got your test environment up and running, `cd` into [`go-test`][go-test-example] or [`ts-test`][ts-test-example] to run a simple Go or Typescript unit test against your app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
+</details>
+
 Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you will run in this guide is free, public, and does not contain any sensitive data.
 
 For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, our [introduction page][homepage] will be a great starting point, alongside our [motivations behind starting Kurtosis][why-we-built-kurtosis-explanation].
@@ -19,17 +30,7 @@ For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, o
 - Parameterize your application setup in order to automate loading data into your API
 :::
 
-<details><summary>Getting help and giving feedback</summary>
-
-There are many ways to get help and give feedback. First, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, here are some ways to get support:
-
-- `kurtosis feedback "my feedback"` will take you to our [Github issue creation page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) to file an issue with pre-filled text `my feedback`.  Passing in `--bug` or `--docs` will take you to the specific Issue template for bug reports or docs issues, respectively
-- `kurtosis feedback --calendly` opens a calendly link for a personal help session with [our cofounder Kevin][kevin-linked].
-- `kurtosis discord` command will open up our [Discord](https://discord.com/channels/783719264308953108/783719264308953111), where you can get live support via chat with our team.
-
-**Don't suffer in silence - we want to help and hear from you!**
-
-</details>
+If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us on our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111) or [email us](mailto:feedback@kurtosistech.com)!
 
 Setup
 -----
@@ -46,10 +47,6 @@ First, create and `cd` into a directory to hold the project you'll be working on
 ```bash
 mkdir kurtosis-quickstart && cd kurtosis-quickstart
 ```
-
-:::tip
-All code blocks in this quickstart can be copied by hovering over the block and clicking the clipboard that appears in the right.
-:::
 
 Next, create a Starlark file called `main.star` inside your new directory with the following contents (more on Starlark in the "Review" section coming up soon):
 
@@ -960,6 +957,7 @@ Let's review. In this tutorial you have:
 This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
 
 To learn more about how Kurtosis is used, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of Kurtosis in action, including:
+- How to run a simple [Go test][go-test-example] or [Typescript][ts-test-example ]against the app we just built
 - The [Ethereum package][ethereum-package], used by the Ethereum Foundation, which can be used to set up local testnets 
 - A parameterized package for standing up an [n-node Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
 - The [NEAR package][near-package] for local dApp development in the NEAR ecosystem
@@ -1018,6 +1016,8 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [data-package-example-main.star]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/main.star
 [data-package-example-seed-tar]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/dvd-rental-data.tar
 [cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
+[go-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/go-test
+[ts-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/ts-test
 
 <!-- Misc -->
 [homepage]: home.md

@@ -642,8 +642,6 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 
 [enclavecontext]: #enclavecontext
 [enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
-[enclavecontext_addservice]: #addserviceserviceid-serviceid--funcstring-ipaddr---containerconfigcontainerconfig-containerconfigsupplier---servicecontextservicecontext-servicecontext
-[enclavecontext_unpauseservice]: #unpauseserviceserviceid-serviceid
 
 [partitionconnection]: #partitionconnection
 
@@ -661,8 +659,6 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
   
 [templateanddata]: #templateanddata
-
-[kurtosiscontext_createenclave]: #createenclavestring-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
 
 [loglinefilter]: #loglinefilter
 [google_re2_syntax_docs]: https://github.com/google/re2/wiki/Syntax

@@ -84,12 +84,6 @@ const config = {
             activeBasePath: '/cli'
           },
           {
-            to: '/starlark-reference',
-            position: 'left',
-            label: 'Starlark',
-            activeBasePath: '/starlark-reference'
-          },
-          {
             to: '/sdk',
             position: 'left',
             label: 'SDK',
