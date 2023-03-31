@@ -105,7 +105,6 @@ For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [what-is-kurtosis]: ./what-is-kurtosis.md
 [starlark-reference]: ../reference/starlark.md
-[starlark-explanation]: ./starlark.md
 [starlark-instructions]: ../reference/starlark-instructions.md
 [enclaves-reference]: ../reference/enclaves.md
 
