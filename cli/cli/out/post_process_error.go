@@ -2,6 +2,7 @@ package out
 
 import (
 	"errors"
+	"fmt"
 	"github.com/sirupsen/logrus"
 	"regexp"
 	"strings"
@@ -10,6 +11,7 @@ import (
 const (
 	lineWithStacktraceRegex       = "^--- at\\s*(.*?):([\\d]*)\\s*\\((.*?)\\)\\s*---$"
 	separator                     = "\n"
+	indentation                   = "  "
 	errorNotCreatedFromStacktrace = 1
 )
 
@@ -46,11 +48,17 @@ func removeFilePathFromErrorMessage(errorMessage string) error {
 
 	// only the even numbered elements needs to be picked.
 	var cleanErrorList []string
-	for _, line := range errorMessageConvertedInList {
+	for idx, line := range errorMessageConvertedInList {
 		// this only cleans spaces for the lines that contains the stack-trace information
 		trimmedLine := strings.TrimSpace(line)
 		if !lineWithStacktrace.MatchString(trimmedLine) {
-			cleanErrorList = append(cleanErrorList, line) //
+			var maybeIndentedLine string
+			if idx > 0 {
+				maybeIndentedLine = fmt.Sprintf("%s%s", indentation, line)
+			} else {
+				maybeIndentedLine = line
+			}
+			cleanErrorList = append(cleanErrorList, maybeIndentedLine)
 		}
 	}
 
