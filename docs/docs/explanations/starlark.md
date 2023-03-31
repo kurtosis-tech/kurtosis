@@ -5,7 +5,7 @@ sidebar_label: Starlark
 
 What is Starlark?
 -----------------
-[Starlark](https://github.com/bazelbuild/starlark) is a minimal programming language, halfway between a configuration language and a general-purpose programming language. It was developed by Google to do configurations for the [Bazel build tool](https://bazel.build/rules/language), and has since [been adopted by Facebook for the Buck build system as well](https://github.com/facebookexperimental/starlark-rust). Starlark's syntax is a minimal subset of of Python, with a focus on readability. [This page][starlark-differences-with-python] lists the differences between Starlark and Python.
+Starlark is a minimal programming language, halfway between a configuration language and a general-purpose programming language. It was developed by Google to do configurations for Google's Bazel build tool, and has since been adopted by Meta for their Buck build system as well. Starlark's syntax is a minimal subset of of Python, with a focus on readability. [This page][starlark-differences-with-python] lists the differences between Starlark and Python.
 
 How is Starlark used with Kurtosis?
 -----------------------------------
@@ -38,7 +38,7 @@ How is Starlark implemented at Kurtosis?
 ----------------------------------------
 Starlark itself is very basic; Google designed it to be extended to fulfill a given usecase (e.g. the Bazel build language is actually an extension built on top of Starlark). We extended basic Starlark with several features so that it could [fulfill the properties of reusable environment definitions][reusable-environment-definitions]:
 
-- A [list of Kurtosis-specific functions][starlark-instructions-reference] for working with an environment
+- A [list of Kurtosis-specific functions][starlark-reference] for working with an environment
 - The [ability to accept parameters][run-args-reference]
 - Dependencies, so Kurtosis scripts can [import other scripts][locators-reference]
 - A [GitHub-based packaging system][packages-reference], so environment definitions can be shared with each other
@@ -56,7 +56,7 @@ The [quickstart][quickstart] section for Starlark should get you up and running 
 [locators-reference]: ../reference/locators.md
 [packages-reference]: ../reference/packages.md
 [run-args-reference]: ../reference/packages.md#arguments
-[starlark-instructions-reference]: ../reference/starlark-instructions.md
+[starlark-reference]: ../starlark-reference/starlark-reference.md
 [multi-phase-runs-reference]: ../reference/multi-phase-runs.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
 [plan-reference]: ../reference/plan.md

@@ -55,9 +55,9 @@ For day-to-day operation, we also provide [a CLI ][installation] (usage guide [h
 
 Kurtosis Instruction Language
 -----------------------------
-Distributed system definitions are complex. To allow users to express their system in the simplest way possible while still fulfilling the required [properties of a reusable environment definition][reusable-environment-definitions], the Kurtosis engine provides users with the ability [to define and manipulate enclaves using Google's Starlark configuration language][starlark-explanation]. The Kurtosis engine contains a Starlark interpreter, and users can [send Starlark instructions][starlark-instructions] via the Kurtosis SDK to tell the engine what to do with an enclave. This allows users to define their environments as code.
+Distributed system definitions are complex. To allow users to express their system in the simplest way possible while still fulfilling the required [properties of a reusable environment definition][reusable-environment-definitions], the Kurtosis engine provides users with the ability [to define and manipulate enclaves using Google's Starlark configuration language][starlark-explanation]. The Kurtosis engine contains a Starlark interpreter, and users can send [Starlark instructions][starlark-reference] via the Kurtosis SDK to tell the engine what to do with an enclave. This allows users to define their environments as code.
 
-For a reference list of the available Starlark instructions, [see here][starlark-instructions].
+For a reference list of the available Starlark instructions, [see here][starlark-reference].
 
 <!-------------- ONLY LINKS BELOW HERE --------------------->
 [installation]: ../guides/installing-the-cli.md
@@ -65,4 +65,4 @@ For a reference list of the available Starlark instructions, [see here][starlark
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [what-is-kurtosis]: ./what-is-kurtosis.md
 [starlark-explanation]: ./starlark.md
-[starlark-instructions]: ../reference/starlark-instructions.md
+[starlark-reference]: ../reference/starlark.md
