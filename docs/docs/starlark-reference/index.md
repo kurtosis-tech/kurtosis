@@ -1,7 +1,7 @@
 ---
-title: Starlark
-sidebar_label: Starlark Reference
-slug: /starlark-reference
+id: index
+title: Starlark Introduction
+sidebar_label: Introduction
 sidebar_position: 1
 ---
 
