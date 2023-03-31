@@ -8,181 +8,17 @@ This page lists out the Kurtosis types that are available in Starlark.
 
 ## Type definitions
 
-### ConnectionConfig
-
-The `ConnectionConfig` is used to configure a connection between two [subnetworks][subnetworks-reference] (see [set_connection][set-connection-reference]).
-
-```python
-connection_config = ConnectionConfig(
-    # Percentage of packet lost each way between subnetworks 
-    # OPTIONAL
-    # DEFAULT: 0.0
-    packet_loss_percentage = 50.0,
-
-    # Amount of delay added to packets each way between subnetworks
-    # OPTIONAL: Valid value are UniformPacketDelayDistribution or NormalPacketDelayDistribution
-    packet_delay_distribution = UniformPacketDelayDistribution(
-        # Delay in ms
-        ms = 500,
-    ),
-)
-```
-
-:::tip
-See [kurtosis.connection][connection-config-prebuilt] for pre-built [ConnectionConfig][connection-config] objects
-:::
-
-### ExecRecipe
-
-The ExecRecipe can be used to run the `command` on the service (see [exec][exec-reference]
-or [wait][wait-reference])
-
-```python
-exec_recipe = ExecRecipe(
-    # The actual command to execute. 
-    # Each item corresponds to one shell argument, so ["echo", "Hello world"] behaves as if you ran "echo 'Hello World'" in the shell.
-    # MANDATORY
-    command = ["echo", "Hello, World"],
-)
-```
-
 ### GetHttpRequestRecipe
 
-The `GetHttpRequestRecipe` can be used to make `GET` requests to an endpoint, filter for the specific part of the response you care about, and assign that specific output to a key for later use. This can be useful for writing assertions, for example (i.e. validating the response you end up receiving looks the way you expect/intended).
-
-```python
-get_request_recipe = GetHttpRequestRecipe(
-    # The port ID that is the server port for the request
-    # MANDATORY
-    port_id = "my_port",
-
-    # The endpoint for the request
-    # MANDATORY
-    endpoint = "/endpoint?input=data",
-
-    # The extract dictionary can be used for filtering specific parts of a HTTP GET
-    # request and assigning that output to a key-value pair, where the key is the
-    # reference variable and the value is the specific output. 
-    # 
-    # Specifcally: the key is the way you refer to the extraction later on and
-    # the value is a 'jq' string that contains logic to extract parts from response 
-    # body that you get from the HTTP GET request.
-    # 
-    # To lean more about jq, please visit https://devdocs.io/jq/
-    # OPTIONAL
-    extract = {
-        "extractfield" : ".name.id",
-    },
-)
-```
-
-:::info
-Important - the `port_id` field accepts user-defined port IDs that are assigned to a port in a service's port map, using `ServiceConfig`. For example, if our service's `ServiceConfig` has the following port mappings:
-
-```
-    test-service-config = ServiceConfig(
-        ports = {
-            // "port_id": port_number
-            "http": 5000,
-            "grpc": 3000,
-            ...
-        },
-        ...
-    )
-```
-
-The user-defined port IDs in the above `ServiceConfig` are: `http` and `grpc`. Both of these user-defined port IDs can therefore be used to create http request recipes (`GET` OR `POST`), such as:
-
-```
-    recipe = GetHttpRequestRecipe(
-        port_id = "http",
-        service_name = "service-using-test-service-config",
-        endpoint = "/ping",
-        ...
-    )
-```
-
-The above recipe, when used with `request` or `wait` instruction, will make a `GET` request to a service (the `service_name` field must be passed as an instruction's argument) on port `5000` with the path `/ping`.
-:::
 
 ### PostHttpRequestRecipe
 
-The `PostHttpRequestRecipe` can be used to make `POST` requests to an endpoint.
-
-```python
-post_request_recipe = PostHttpRequestRecipe(
-    # The port ID that is the server port for the request
-    # MANDATORY
-    port_id = "my_port",
-
-    # The endpoint for the request
-    # MANDATORY
-    endpoint = "/endpoint",
-
-    # The content type header of the request (e.g. application/json, text/plain, etc)
-    # MANDATORY
-    content_type = "application/json",
-
-    # The body of the request
-    # MANDATORY
-    body = "{\"data\": \"this is sample body for POST\"}",
-    
-    # The extract dictionary takes in key-value pairs where:
-    # Key is a way you refer to the extraction later on
-    # Value is a 'jq' string that contains logic to extract from response body
-    # # To lean more about jq, please visit https://devdocs.io/jq/
-    # OPTIONAL
-    extract = {
-        "extractfield" : ".name.id",
-    },
-)
-```
-
-:::caution
-
-Make sure that the endpoint returns valid JSON response for both POST and GET requests.
-
-:::
 
 ### UniformPacketDelayDistribution
 
-The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][set-connection-reference] instruction to learn more about its usage.
-
-```python
-
-delay  = UniformPacketDelayDistribution(
-    # Non-Negative Integer
-    # Amount of constant delay added to outgoing packets from the subnetwork
-    # MANDATORY
-    ms = 1000,
-)
-```
 
 ### NormalPacketDelayDistribution
 
-The `NormalPacketDelayDistribution` creates a packet delay distirbution that follows a normal distribution. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][set-connection-reference] instruction to learn more about its usage.
-
-```python
-
-delay  = NormalPacketDelayDistribution(
-    # Non-Negative Integer
-    # Amount of mean delay added to outgoing packets from the subnetwork
-    # MANDATORY
-    mean_ms = 1000,
-
-    # Non-Negative Integer
-    # Amount of variance (jitter) added to outgoing packets from the subnetwork
-    # MANDATORY
-    std_dev_ms = 10,
-    
-    # Non-Negative Float
-    # Percentage of correlation observed among packets. It means that the delay observed in next packet
-    # will exhibit a corrlation factor of 10.0% with the previous packet. 
-    # OPTIONAL
-    # DEFAULT = 0.0
-    correlation = 10.0,
-)   
-```
 
 ### PortSpec
 
@@ -355,20 +191,6 @@ update_service_config = UpdateServiceConfig(
     subnetwork = "subnetwork_1",
 )
 ```
-
-## The global `kurtosis` object
-
-Kurtosis provides "pre-built" values for types that will be broadly used. Those values are provided through the `kurtosis` object. It is available globally and doesn't need to be imported.
-
-### `connection`
-
-#### `ALLOWED`
-
-`kurtosis.connection.ALLOWED` is equivalent to [ConnectionConfig][connection-config] with `packet_loss_percentage` set to `0` and `packet_delay` set to `PacketDelay(delay_ms=0)`. It represents a [ConnectionConfig][connection-config] that _allows_ all connection between two subnetworks with no delay and packet loss.
-
-#### `BLOCKED`
-
-`kurtosis.connection.BLOCKED` is equivalent to [ConnectionConfig][connection-config] with `packet_loss_percentage` set to `100` and `packet_delay` set to `PacketDelay(delay_ms=0)`. It represents a [ConnectionConfig][connection-config] that _blocks_ all connection between two subnetworks.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [connection-config]: #connectionconfig
