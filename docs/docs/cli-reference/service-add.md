@@ -10,7 +10,7 @@ To add a service to an enclave, run:
 kurtosis service add $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER $CONTAINER_IMAGE
 ```
 
-where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../resource-identifier.md) for the enclave and service, respectively. 
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../reference/resource-identifier.md) for the enclave and service, respectively. 
 
 Much like `docker run`, this command has multiple options available to customize the service that's started:
 

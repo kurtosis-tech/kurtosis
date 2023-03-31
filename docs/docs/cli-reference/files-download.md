@@ -9,7 +9,7 @@ To download a [files artifact](../files-artifacts.md) using a resource identifie
 ```bash
 kurtosis files download --enclave $THE_ENCLAVE_IDENTIFIER $THE_ARTIFACT_IDENTIFIER $FILE_DESTINATION_PATH
 ```
-where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_ARTIFACT_IDENTIFIER` are [resource identifiers](../resource-identifier.md) for the enclave and file artifact, respectively. 
+where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_ARTIFACT_IDENTIFIER` are [resource identifiers](../reference/resource-identifier.md) for the enclave and file artifact, respectively. 
 
 :::tip
 The file downloaded will be extracted by default. If you would prefer the file not to be extracted upon download, pass in the `--no-extract` flag.

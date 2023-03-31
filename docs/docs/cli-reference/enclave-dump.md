@@ -9,7 +9,7 @@ You will likely need to store enclave logs to disk at some point. You may want t
 ```bash
 kurtosis enclave dump $THE_ENCLAVE_IDENTIFIER $OUTPUT_DIRECTORY
 ```
-where the `$THE_ENCLAVE_IDENTIFIER` is the [resource identifier](../resource-identifier.md) for an enclave.
+where the `$THE_ENCLAVE_IDENTIFIER` is the [resource identifier](../reference/resource-identifier.md) for an enclave.
 
 You will get the container logs & configuration in the output directory for further analysis & sharing.
 
