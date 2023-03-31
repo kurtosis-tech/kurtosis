@@ -124,7 +124,7 @@ POSTGRES_PASSWORD = "password"
 def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
-        service_name = "postgres",
+        name = "postgres",
         config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
@@ -822,8 +822,8 @@ def run(plan, args):
     )
 
     # Insert data
-    if args != None:
-        insert_data(plan, args)
+    if "actors" in args:
+        insert_data(plan, args["actors"])
 
 def insert_data(plan, data):
     plan.request(
@@ -840,7 +840,7 @@ def insert_data(plan, data):
 Now clean and run, only this time with extra args to `kurtosis run`:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave quickstart . '[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]'
+kurtosis clean -a && kurtosis run --enclave quickstart . '{"actors": [{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]}'
 ```
 
 Using the new `http` URL on the `api` service in the output, query for the rows you just added (replacing `$YOUR_PORT` with your correct PostgREST `http` port number)...
@@ -873,7 +873,7 @@ plan.request(
 )
 ```
 
-At a higher level, Kurtosis automatically deserialized the `[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]` string passed as a parameter to `kurtosis run`, and put the deserialized object in the `args` parameter to the `run` function in `main.star`:
+At a higher level, Kurtosis automatically deserialized the `{"actors": [{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]}` string passed as a parameter to `kurtosis run`, and put the deserialized object in the `args` parameter to the `run` function in `main.star`:
 
 ```python
 def run(plan, args):
