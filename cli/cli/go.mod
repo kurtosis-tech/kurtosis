@@ -44,7 +44,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230328194643-b4dea3081e25
-	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230330124246-9ac7907a7555
+	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230331162141-5ee399f5426b
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/savioxavier/termlink v1.2.1
 )
