@@ -99,7 +99,7 @@ services will be rolled back and the instruction will return an execution error.
 
 :::
 
-The number of services being added concurrently is tunable by the `--parallelism` flag of the run command (see more on the [`run`](./cli/run-starlark.md) reference).
+The number of services being added concurrently is tunable by the `--parallelism` flag of the run command (see more on the [`kurtosis run`][cli-run-reference] reference).
 
 assert
 ------
@@ -563,6 +563,8 @@ plan.print(response["code"])
 [wait]: #wait
 [assert]: #assert
 [extract]: #extract
+
+[cli-run-reference]: ../reference/cli/run-starlark.md
 
 [files-artifacts-reference]: ../reference/files-artifacts.md
 [future-references-reference]: ../reference/future-references.md

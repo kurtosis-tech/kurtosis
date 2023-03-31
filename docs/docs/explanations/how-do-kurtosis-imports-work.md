@@ -4,7 +4,7 @@ sidebar_label: How Do Kurtosis Imports Work?
 ---
 
 ### Background
-Kurtosis allows a [Starlark script][starlark-explanation] to use content from other files. This might be importing code from another Starlark file (via [the `import_module` instruction][import-module-starlark-reference]), or using contents of a static file (via [the `read_file` instruction][read-file-starlark-reference]).
+Kurtosis allows a [Starlark script][starlark-reference] to use content from other files. This might be importing code from another Starlark file (via [the `import_module` instruction][import-module-starlark-reference]), or using contents of a static file (via [the `read_file` instruction][read-file-starlark-reference]).
 
 In both cases, the Kurtosis engine needs to know where to find the external file. There are two cases where external files might live:
 
@@ -136,7 +136,7 @@ Once you push to GitHub, however, your package `name` will need to match the aut
 :::
 
 <!---------------------- ONLY LINKS BELOW HERE ---------------------------->
-[starlark-explanation]: ./starlark.md
+[starlark-reference]: ../reference/starlark.md
 [kurtosis-yml-reference]: ../reference/kurtosis-yml.md
 [packages-reference]: ../reference/packages.md
 [locators-reference]: ../reference/locators.md

@@ -378,8 +378,8 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 
 [connection-config-prebuilt]: #connection
 
-[future-references-reference]: ./future-references.md
-[subnetworks-reference]: ./subnetworks.md
+[future-references-reference]: ../reference/future-references.md
+[subnetworks-reference]: ../reference/subnetworks.md
 
 [add-service-reference]: ./plan.md#add_service
 [set-connection-reference]: ./plan.md#set_connection
