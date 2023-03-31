@@ -7,17 +7,6 @@ slug: /quickstart
 Introduction
 ------------
 
-<details><summary>TL;DR Version</summary>
-
-This quickstart is in a "code along" format. If you'd prefer to dive straight into running the end results and exploring the code, [install Kurtosis](#setup), clone the [`awesome-kurtosis` repository][awesome-kurtosis-repo], and then run:
-
-```bash
-cd awesome-kurtosis/quickstart && kurtosis run --enclave quickstart main.star 
-```
-
-Once you've got your test environment up and running, `cd` into [`go-test`][go-test-example] or [`ts-test`][ts-test-example] to run a simple Go or Typescript unit test against your app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
-</details>
-
 Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you will run in this guide is free, public, and does not contain any sensitive data.
 
 For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, our [introduction page][homepage] will be a great starting point, alongside our [motivations behind starting Kurtosis][why-we-built-kurtosis-explanation].
@@ -29,6 +18,17 @@ For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, o
 - Connect an API server to your database using dynamic service dependencies
 - Parameterize your application setup in order to automate loading data into your API
 :::
+
+<details><summary>*TL;DR Version*</summary>
+
+This quickstart is in a "code along" format. If you'd prefer to dive straight into running the end results and exploring the code, [install Kurtosis](#setup), clone the [`awesome-kurtosis` repository][awesome-kurtosis-repo], and then run:
+
+```bash
+cd awesome-kurtosis/quickstart && kurtosis run --enclave quickstart main.star 
+```
+
+Once you've got your test environment up and running, `cd` into [`go-test`][go-test-example] or [`ts-test`][ts-test-example] and refer to the README to run a simple Go or Typescript test against your app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
+</details>
 
 If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us on our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111) or [email us](mailto:feedback@kurtosistech.com)!
 
