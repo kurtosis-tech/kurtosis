@@ -4,7 +4,7 @@ sidebar_label: Architecture
 sidebar_position: 2
 ---
 
-![Kurtosis Architecture](../../static/img/explanations/kurtosis-architecture.png)
+![Kurtosis Architecture](/img/explanations/kurtosis-architecture.png)
 
 Kurtosis At A Macro Level
 -------------------------
@@ -90,7 +90,7 @@ def run(plan, args):
     )
 ```
 
-For a list of all the possible operations on an enclave, [see this reference][starlark-instructions].
+For a list of all the Kurtosis Starlark instructions, [see here][starlark-code-reference].
 
 SDKs
 ----
@@ -104,5 +104,5 @@ For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply
 [cli-reference]: ../reference/cli/cli.md
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [why-we-built-kurtosis]: ./why-we-built-kurtosis.md
-[starlark-explanation]: ./starlark.md
-[starlark-instructions]: ../reference/starlark-instructions.md
+[starlark-reference]: ../reference/starlark.md
+[starlark-code-reference]: ../starlark-reference/starlark-reference.md
