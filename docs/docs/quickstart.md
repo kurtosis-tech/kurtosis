@@ -124,7 +124,7 @@ POSTGRES_PASSWORD = "password"
 def run(plan, args):
     # Add a Postgres server
     postgres = plan.add_service(
-        service_name = "postgres",
+        name = "postgres",
         config = ServiceConfig(
             image = "postgres:15.2-alpine",
             ports = {
@@ -542,10 +542,8 @@ We just got a failure, just like we might when building a real system!
 There was an error executing Starlark code
 An error occurred executing instruction (number 6) at github.com/ME/kurtosis-quickstart[77:14]:
 wait(recipe=GetHttpRequestRecipe(port_id="http", endpoint="/actor", extract=""), field="code", assertion="==", target_value=200, timeout="5s", service_name="api")
- --- at /home/circleci/project/core/server/api_container/server/startosis_engine/startosis_executor.go:62 (StartosisExecutor.Execute.func1) ---
-Caused by: Wait timed-out waiting for the assertion to become valid. Waited for '8.183602629s'. Last assertion error was:
+Caused by: Wait timed-out waiting for the assertion to become valid. Waited for '8.183602629s'. Last assertion error was: 
 <nil>
- --- at /home/circleci/project/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait/wait.go:263 (WaitCapabilities.Execute) ---
 
 Error encountered running Starlark code.
 ```
@@ -822,8 +820,8 @@ def run(plan, args):
     )
 
     # Insert data
-    if args != None:
-        insert_data(plan, args)
+    if "actors" in args:
+        insert_data(plan, args["actors"])
 
 def insert_data(plan, data):
     plan.request(
@@ -840,7 +838,7 @@ def insert_data(plan, data):
 Now clean and run, only this time with extra args to `kurtosis run`:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave quickstart . '[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]'
+kurtosis clean -a && kurtosis run --enclave quickstart . '{"actors": [{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]}'
 ```
 
 Using the new `http` URL on the `api` service in the output, query for the rows you just added (replacing `$YOUR_PORT` with your correct PostgREST `http` port number)...
@@ -873,7 +871,7 @@ plan.request(
 )
 ```
 
-At a higher level, Kurtosis automatically deserialized the `[{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]` string passed as a parameter to `kurtosis run`, and put the deserialized object in the `args` parameter to the `run` function in `main.star`:
+At a higher level, Kurtosis automatically deserialized the `{"actors": [{"first_name":"Kevin", "last_name": "Bacon"}, {"first_name":"Steve", "last_name":"Buscemi"}]}` string passed as a parameter to `kurtosis run`, and put the deserialized object in the `args` parameter to the `run` function in `main.star`:
 
 ```python
 def run(plan, args):

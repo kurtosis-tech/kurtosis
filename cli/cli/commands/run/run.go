@@ -315,10 +315,6 @@ func run(
 	}
 
 	if errRunningKurtosis != nil {
-		// This error thrown by the APIC is not informative right now as it just tells the user to look at errors
-		// in the above log. For this reason we're ignoring it and returning nil. This is exceptional to not clutter
-		// the CLI output. We should still use stacktrace.Propagate for other errors.
-		// TODO: will do it another way in next PR. Returning the error for now as it broke CI pipeline
 		return errRunningKurtosis
 	}
 
@@ -424,7 +420,10 @@ func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 		case responseLine, isChanOpen := <-responseLineChan:
 			if !isChanOpen {
 				if !isRunSuccessful {
-					return stacktrace.NewError("Kurtosis execution threw an error. See output above for more details")
+					// This error thrown by the APIC is not informative right now as it just tells the user to look at errors
+					// in the above log. For this reason we're ignoring it and returning nil. This is exceptional to not clutter
+					// the CLI output. We should still use stacktrace.Propagate for other errors.
+					return stacktrace.Propagate(command_str_consts.ErrorMessageDueToStarlarkFailure, "Error occurred while running kurtosis package")
 				}
 				return nil
 			}
