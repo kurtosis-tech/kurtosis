@@ -92,13 +92,13 @@ def run(plan, args):
 
 For a list of all the Kurtosis Starlark instructions, [see here][starlark-code-reference].
 
-SDKs
-----
-All interactions with Kurtosis happen through API requests to the Kurtosis containers. To assist with calling the API, [we provide SDKs in various languages](https://github.com/kurtosis-tech/kurtosis/tree/main/api). Anything the Kurtosis can do will be available via the API and, therefore, via the SDKs.
+Client Libraries
+----------------
+All interactions with Kurtosis happen through API requests to the Kurtosis containers. To assist with calling the API, [we provide client libraries in various languages](https://github.com/kurtosis-tech/kurtosis/tree/main/api). Anything the Kurtosis can do will be available via the API and, therefore, via the client libraries.
 
-To see the SDK reference, [go here][sdk-reference].
+To see documentation for the client libraries, [go here][client-libs-reference].
 
-For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply a Go CLI wrapped around the Go Kurtosis SDK.
+For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply a Go CLI wrapped around the Go Kurtosis client library.
 
 <!-------------- ONLY LINKS BELOW HERE --------------------->
 [cli-reference]: ../cli-reference/index.md
@@ -106,3 +106,4 @@ For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply
 [why-we-built-kurtosis]: ./why-we-built-kurtosis.md
 [starlark-reference]: ../reference/starlark.md
 [starlark-code-reference]: ../starlark-reference/index.md
+[client-libs-reference]: ../client-libs-reference.md

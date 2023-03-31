@@ -10,4 +10,4 @@ To open our documentation in the browser from the CLI, run:
 kurtosis docs
 ```
 
-where you can learn more about Kurtosis' architecture, our SDK, and much more.
+where you can learn more about Kurtosis' architecture, APIs, Starlark, and much more.

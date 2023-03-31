@@ -23,7 +23,7 @@ The conditionals and parameters in the CircleCI YAML DSL seem to be a cautionary
 
 Attempt 2: General-Purpose Languages
 ------------------------------------
-We next looked at letting users declare environment definitions in their preferred general-purpose language, like Pulumi. This would require a large effort from our side to support many different SDKs, but we would do it if it was the right choice. 
+We next looked at letting users declare environment definitions in their preferred general-purpose language, like Pulumi. This would require a large effort from our side to support many different languages, but we would do it if it was the right choice. 
 
 However, we ultimately rejected this option. We found that general-purpose programming languages:
 
