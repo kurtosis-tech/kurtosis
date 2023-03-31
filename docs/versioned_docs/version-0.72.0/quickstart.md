@@ -823,7 +823,7 @@ def run(plan, args):
 
     # Insert data
     if "data" in args:
-        insert_data(plan, args)
+        insert_data(plan, args["data"])
 
 def insert_data(plan, data):
     plan.request(
