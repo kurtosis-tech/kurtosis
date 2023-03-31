@@ -20,7 +20,7 @@ import TabItem from '@theme/TabItem';
 
 <!---------- END IMPORTS ------------>
 
-[The Kurtosis CLI](../cli-reference/cli.md) supports command-line completion for `bash`, `zsh`, and `fish`. With completion installed, you will be able to:
+[The Kurtosis CLI](../cli-reference/index.md) supports command-line completion for `bash`, `zsh`, and `fish`. With completion installed, you will be able to:
 
 - Complete subcommands (e.g. typing `kurtosis` and pressing TAB will suggest subcommands)
 - Complete dynamic arguments (e.g. typing `kurtosis enclave inspect` and pressing TAB will list the names of existing enclaves if any)
