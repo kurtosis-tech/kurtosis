@@ -1,6 +1,6 @@
 ---
-title: Why We Built Kurtosis?
-sidebar_label: Why We Built Kurtosis?
+title: Why We Built Kurtosis
+sidebar_label: Why We Built Kurtosis
 sidebar_position: 1
 ---
 
@@ -14,9 +14,9 @@ The problem is that our tools are woefully outdated. The term "DevOps" was coine
 
 Docker and Kubernetes are each great at serving developers in different parts of the development cycle: Docker for development/testing, Kubernetes for production. However, the separation between the two entails different distributed app definitions, and different tooling. In dev/test, this means Docker Compose and Docker observability tooling. In production, this means Helm definitions and manually-configured observability tools like Istio, Datadog, or Honeycomb.
 
-![Why Kurtosis](@site/static/img/home/kurtosis-utility.png)
-
 Kurtosis aims to be at one level of abstraction higher. 
+
+![Why Kurtosis](@site/static/img/home/kurtosis-utility.png)
 
 In our vision, a developer should have a single platform for prototyping, testing, debugging, deploying to Prod, and observing the live system. Our goal with Kurtosis is to bring DevOps back.
 
