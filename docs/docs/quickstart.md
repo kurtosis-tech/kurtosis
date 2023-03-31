@@ -7,12 +7,12 @@ slug: /quickstart
 Introduction
 ------------
 
-<details><summary>###TL;DR Version</summary>
+<details><summary>TL;DR Version</summary>
 This quickstart is in a "code along" format. If you'd prefer to dive straight into the code and inner workings of the distributed application we build with Kurtosis here, get [set up](#setup) and then run:
 
-:::bash
+```bash
 kurtosis run --enclave quickstart github.com/kurtosis-tech/awesome-kurtosis/quickstart
-:::
+```
 
 Then, you can refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
 
@@ -30,17 +30,7 @@ For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, o
 - Parameterize your application setup in order to automate loading data into your API
 :::
 
-<details><summary>Getting help and giving feedback</summary>
-
-There are many ways to get help and give feedback. First, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, here are some ways to get support:
-
-- `kurtosis feedback "my feedback"` will take you to our [Github issue creation page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) to file an issue with pre-filled text `my feedback`.  Passing in `--bug` or `--docs` will take you to the specific Issue template for bug reports or docs issues, respectively
-- `kurtosis feedback --calendly` opens a calendly link for a personal help session with [our cofounder Kevin][kevin-linked].
-- `kurtosis discord` command will open up our [Discord](https://discord.com/channels/783719264308953108/783719264308953111), where you can get live support via chat with our team.
-
-**Don't suffer in silence - we want to help and hear from you!**
-
-</details>
+If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us on our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111) or [email us](mailto:feedback@kurtosistech.com)!
 
 Setup
 -----
