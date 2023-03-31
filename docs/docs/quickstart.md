@@ -19,7 +19,7 @@ For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, o
 - Parameterize your application setup in order to automate loading data into your API
 :::
 
-<details><summary>*TL;DR Version*</summary>
+<details><summary>TL;DR Version</summary>
 
 This quickstart is in a "code along" format. If you'd prefer to dive straight into running the end results and exploring the code, [install Kurtosis](#setup), clone the [`awesome-kurtosis` repository][awesome-kurtosis-repo], and then run:
 
