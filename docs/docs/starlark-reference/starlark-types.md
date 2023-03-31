@@ -10,7 +10,7 @@ This page lists out the Kurtosis types that are available in Starlark.
 
 ### ConnectionConfig
 
-The `ConnectionConfig` is used to configure a connection between two [subnetworks][subnetworks-reference] (see [set_connection][starlark-instructions-set-connection]).
+The `ConnectionConfig` is used to configure a connection between two [subnetworks][subnetworks-reference] (see [set_connection][set-connection-reference]).
 
 ```python
 connection_config = ConnectionConfig(
@@ -34,8 +34,8 @@ See [kurtosis.connection][connection-config-prebuilt] for pre-built [ConnectionC
 
 ### ExecRecipe
 
-The ExecRecipe can be used to run the `command` on the service (see [exec][starlark-instructions-exec]
-or [wait][starlark-instructions-wait])
+The ExecRecipe can be used to run the `command` on the service (see [exec][exec-reference]
+or [wait][wait-reference])
 
 ```python
 exec_recipe = ExecRecipe(
@@ -146,7 +146,7 @@ Make sure that the endpoint returns valid JSON response for both POST and GET re
 
 ### UniformPacketDelayDistribution
 
-The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
+The `UniformPacketDelayDistribution` creates a packet delay distribution with constant delay in `ms`. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][set-connection-reference] instruction to learn more about its usage.
 
 ```python
 
@@ -160,7 +160,7 @@ delay  = UniformPacketDelayDistribution(
 
 ### NormalPacketDelayDistribution
 
-The `NormalPacketDelayDistribution` creates a packet delay distirbution that follows a normal distribution. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][starlark-instructions-set-connection] instruction to learn more about its usage.
+The `NormalPacketDelayDistribution` creates a packet delay distirbution that follows a normal distribution. This can be used in conjuction with [`ConnectionConfig`][connection-config] to introduce latency between two [`subnetworks`][subnetworks-reference]. See [`set_connection`][set-connection-reference] instruction to learn more about its usage.
 
 ```python
 
@@ -207,7 +207,7 @@ port_spec = PortSpec(
 )
 ```
 The above constructor returns a `PortSpec` object that contains port information in the form of a [future reference][future-references-reference] and can be used with
-[add_service][starlark-instructions-add-service] to create services.
+[add_service][add-service-reference] to create services.
 
 ### ReadyConditions
 
@@ -253,7 +253,7 @@ ready_conditions = ReadyConditions(
 
 ### ServiceConfig
 
-The `ServiceConfig` is used to configure a service when it is added to an enclave (see [add_service][starlark-instructions-add-service]).
+The `ServiceConfig` is used to configure a service when it is added to an enclave (see [add_service][add-service-reference]).
 
 ```python
 config = ServiceConfig(
@@ -337,7 +337,7 @@ config = ServiceConfig(
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
   
-The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][starlark-instructions-upload-files], [render_templates][starlark-instructions-render-templates] and [store_service_files][starlark-instructions-store-service-files] to learn more about on how to create file artifacts)
+The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][upload-files-reference], [render_templates][render-templates-reference] and [store_service_files][store-service-reference] to learn more about on how to create file artifacts)
 
 For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
 
@@ -378,15 +378,14 @@ Kurtosis provides "pre-built" values for types that will be broadly used. Those 
 
 [connection-config-prebuilt]: #connection
 
-[future-references-reference]: ./future-references.md
-[subnetworks-reference]: ./subnetworks.md
+[future-references-reference]: ../reference/future-references.md
+[subnetworks-reference]: ../reference/subnetworks.md
 
-[starlark-instructions-add-service]: ./starlark-instructions.md#add_service
-[starlark-instructions-set-connection]: ./starlark-instructions.md#set_connection
-[starlark-instructions-request]: ./starlark-instructions.md#request
-[starlark-instructions-wait]: ./starlark-instructions.md#wait
-[starlark-instructions-exec]: ./starlark-instructions.md#exec
-[starlark-instructions-upload-files]: ./starlark-instructions.md#upload_files
-[starlark-instructions-store-service-files]: ./starlark-instructions.md#store_service_files
-[starlark-instructions-render-templates]: ./starlark-instructions.md#render_templates
+[add-service-reference]: ./plan.md#add_service
+[set-connection-reference]: ./plan.md#set_connection
+[exec-reference]: ./plan.md#exec
+[wait-reference]: ./plan.md#wait
+[upload-files-reference]: ./plan.md#upload_files
+[store-service-reference]: ./plan.md#store_service_files
+[render-templates-reference]: ./plan.md#render_templates
 

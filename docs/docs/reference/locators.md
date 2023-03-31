@@ -16,7 +16,7 @@ github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml/some-
 references a file inside a GitHub repo called `package-repo`, owned by `package-author`, that lives at the path `/path/to/directory-with-kurtosis.yml/some-file.star` relative to the root of the repo.
 
 
-Locators are used for identifying resources that will be used inside a Starlark script - namely by [`import_module`](./starlark-instructions.md#import_module) and [`read_file`](./starlark-instructions.md#read_file).
+Locators are used for identifying resources that will be used inside a Starlark script - namely by [`import_module`](../starlark-reference/import-module.md) and [`read_file`](../starlark-reference/read-file.md).
 
 :::caution
 A GitHub URL is **not** a valid locator, because GitHub adds extra `/blob/main` paths to the URL that don't reflect the file's path in the repo. For example, a GitHub URL of:

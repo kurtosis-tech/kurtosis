@@ -49,9 +49,9 @@ Kurtosis believes that any environment definition that aims to be reusable acros
     - In Dev, Test, and Prod, this allows for reuse of definitions
     - In Test, test cases that failed on a CI machine can be reproduced on a developer's machine
 
-[Kurtosis environment definitions][starlark] are designed with these six properties in mind.
+Kurtosis environment definitions (written in [Starlark][starlark-reference]) are designed with these six properties in mind.
 
 
 <!--------------------- ONLY LINKS BELOW HERE ------------------------->
-[starlark]: ./starlark.md
+[starlark-reference]: ../reference/starlark.md
 [why-we-built-kurtosis]: ./why-we-built-kurtosis.md

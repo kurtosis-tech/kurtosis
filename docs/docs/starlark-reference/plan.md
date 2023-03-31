@@ -1,49 +1,20 @@
 ---
-title: Starlark Instructions
-sidebar_label: Starlark Instructions
-sidebar_position: 3
+title: Plan
+sidebar_label: Plan
 ---
 
-This page lists out the Kurtosis instructions that are available in Starlark.
+The `Plan` object is an object representing the steps that Kurtosis will take inside the enclave during [the Execution phase][multi-phase-runs-reference]. 
 
-**GENERAL NOTE:** In Python, it is very common to name function parameters that are optional. E.g.:
+Kurtosis injects a `Plan` object into the `run` function in the `main.star` of your Starlark script. Kurtosis relies on the first argument of your `run` function being named `plan` (lowercase); all your Starlark scripts must follow this convention.
 
-```python
-def do_something(required_arg, optional_arg="default_value")
-```
+To use the `Plan` object in inner functions, simply pass the variable down.
 
-In Kurtosis Starlark, all parameters can be referenced by name regardless of whether they are required or not. We do this to allow for ease-of-reading clarity. Mandatory and optional parameters will be indicated in the comment above the field.
+Note that the function calls listed here merely add a step to the plan. They do _not_ run the actual execution. Per Kurtosis' [multi-phase run design][multi-phase-runs-reference], this will only happen during the Execution phase. Therefore, all plan functions will return [future references][future-references-reference].
 
-Similarly, all function arguments can be provided either positionally or by name. E.g. a function signature of:
+add_service
+-----------
 
-```python
-def make_pizza(size, topping = "pepperoni")
-```
-
-Can be called in any of the following ways:
-
-```python
-# 1. Only the required argument filled, positionally
-make_pizza("16cm")
-
-# 2. Only the required argument filled, by name 
-make_pizza(size = "16cm")
-
-# 3. Both arguments filled, positionally
-make_pizza("16cm", "mushroom")
-
-# 4. Both arguments filled, mixing position and name
-make_pizza("16cm", topping = "mushroom")
-
-# 5. Both arguments filled, by name
-make_pizza(size = "16cm", topping = "mushroom")
-```
-
-We recommend the last style (naming both positional and optional args), for reading clarity.
-
-### add_service
-
-The `add_service` instruction on the [`plan`][plan-reference] object adds a service to the Kurtosis enclave within which the script executes.
+The `add_service` instruction adds a service to the Kurtosis enclave within which the script executes.
 
 ```python
 service = plan.add_service(
@@ -97,9 +68,10 @@ plan.add_service(
 )
 ```
 
-### add_services
+add_services
+------------
 
-The `add_services` instruction on the [`plan`][plan-reference] object adds multiple services all at once.
+The `add_services` instruction adds multiple services all at once.
 
 The main advantage compared to calling [add_service][add-service] multiple times is that one call to `add_services` 
 will add multiple services at once. Currently, it can process up to 4 services concurrently, therefore reducing the
@@ -127,11 +99,12 @@ services will be rolled back and the instruction will return an execution error.
 
 :::
 
-The number of services being added concurrently is tunable by the `--parallelism` flag of the run command (see more on the [`run`](./cli/run-starlark.md) reference).
+The number of services being added concurrently is tunable by the `--parallelism` flag of the run command (see more on the [`kurtosis run`][cli-run-reference] reference).
 
-### assert
+assert
+------
 
-The `assert` on the [`plan`][plan-reference] object instruction fails the Starlark script or package with an execution error if the assertion defined fails.
+The `assert` instruction throws an [Execution phase error][multi-phase-runs-reference] if the defined assertion fails.
 
 ```python
 plan.assert(
@@ -172,9 +145,10 @@ plan.assert(
 Will fail. If needed, you can use the `extract` feature to parse the types of your outputs.
 :::
 
-### exec
+exec
+----
 
-The `exec` instruction on the [`plan`][plan-reference] object executes commands on a given service as if they were running in a shell on the container.
+The `exec` instruction executes a command on a container as if they were running in a shell on the container.
 
 ```python
 exec_recipe = ExecRecipe(
@@ -224,42 +198,18 @@ plan.assert(result["code"], "==", 0)
 plan.wait(service_name="my_service", recipe=exec_recipe, field="output", assertion="!=", target_value="Greetings, world")
 ```
 
-### import_module
+print
+-----
 
-The `import_module` function imports the symbols from a Starlark script specified by the given [locator][locators-reference], and requires that the calling Starlark script is part of a [package][packages-reference].
-
-```python
-# Import the code to namespaced object
-lib = import_module("github.com/foo/bar/src/lib.star")
-
-# Use code from the imported module
-lib.some_function()
-lib.some_variable
-```
-
-NOTE: We chose not to use the normal Starlark `load` primitive due to its lack of namespacing. By default, the symbols imported by `load` are imported to the global namespace of the script that's importing them. We preferred module imports to be namespaced, in the same way that Python does by default with its `import` statement.
-
-### print
-
-`print` on the [`plan`][plan-reference] object will add an instruction to the plan to print the string. When the `print` instruction is executed during the [Execution Phase][multi-phase-runs-reference], [future references][future-references-reference] will be replaced with their execution-time values.
+The `print` instruction will print a value during [the Execution phase][multi-phase-runs-reference]. When the `print` instruction is executed during the Execution Phase, [future references][future-references-reference] will be replaced with their execution-time values.
 
 ```
 plan.print("Any string here")
 ```
 
-### read_file
 
-The `read_file` function reads the contents of a file specified by the given [locator][locators-reference], and requires that the Starlark script is part of a [package][packages-reference]. `read_file` executes [at interpretation time][multi-phase-runs-reference] so the file contents won't be displayed in the preview.
-
- ```python
-contents = read_file(
-    # The Kurtosis locator of the file to read.
-    # MANDATORY
-    src = "github.com/kurtosis-tech/datastore-army-package/README.md",
-)
- ```
-
-### remove_connection
+remove_connection
+-----------------
 
 As opposed to `set_connection`, `remove_connection` removes a connection override between two [subnetworks][subnetworks-reference]. The default connection cannot be removed; it can only be updated using [set_connection][set-connection].
 
@@ -273,9 +223,10 @@ remove_connection(
 )
 ```
 
-### remove_service
+remove_service
+--------------
 
-The `remove_service` instruction on the [`plan`][plan-reference] object removes a service from the enclave in which the instruction executes in.
+The `remove_service` instruction removes a service from the enclave in which the instruction executes in.
 
 ```python
 plan.remove_service(
@@ -285,9 +236,10 @@ plan.remove_service(
 )
 ```
 
-### render_templates
+render_templates
+----------------
 
-`render_templates` on the [`plan`][plan-reference] object combines a template and data to produce a [files artifact][files-artifacts-reference]. Files artifacts can be used with the `files` property in the service config of `add_service`, allowing for reuse of config files across services.
+The `render_templates` instruction combines a template and data to produce a [files artifact][files-artifacts-reference]. Files artifacts can be used with the `files` property of the `ServiceConfig` object, allowing for reuse of config files across services.
 
 ```python
 # Example data to slot into the template
@@ -329,9 +281,10 @@ artifact_name = plan.render_templates(
 
 The return value is a [future reference][future-references-reference] to the name of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
 
-### request
+request
+-------
 
-The `request` instruction on the [`plan`][plan-reference] object executes either a POST or GET HTTP request, saving its result in a [future references][future-references-reference].
+The `request` instruction executes either a POST or GET HTTP request, saving its result in a [future references][future-references-reference].
 
 To make a GET or POST request, simply set the `recipe` field to use the specified [GetHttpRequestRecipe][starlark-types-get-http-recipe] or the [PostHttpRequestRecipe][starlark-types-post-http-recipe]. 
 
@@ -426,12 +379,14 @@ response = plan.request(
 
 For more details see [ `jq`'s builtin operators and functions](https://stedolan.github.io/jq/manual/#Builtinoperatorsandfunctions)
 
-### set_connection
+set_connection
+--------------
 
 Kurtosis uses a *default connection* to configure networking for any created subnetwork.
 The `set_connection` can be used for two purposes:
 
 1. Used with the `subnetworks` argument, it will override the default connection between the two specified [subnetworks][subnetworks-reference].
+
 ```python
 set_connection(
     # The subnetwork connection that will be be overridden
@@ -484,9 +439,10 @@ If serviceA is in subnetworkA and serviceB is in subnetworkB, the effective late
 :::
 
 
-### store_service_files
+store_service_files
+-------------------
 
-`store_service_files` on the [`plan`][plan-reference] object copies files or directories from an existing service in the enclave into a [files artifact][files-artifacts-reference]. This is useful when work produced on one container is needed elsewhere.
+The `store_service_files` instruction copies files or directories from an existing service in the enclave into a [files artifact][files-artifacts-reference]. This is useful when work produced on one container is needed elsewhere.
 
 ```python
 artifact_name = plan.store_service_files(
@@ -507,7 +463,8 @@ artifact_name = plan.store_service_files(
 
 The return value is a [future reference][future-references-reference] to the name of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
 
-### update_service
+update_service
+--------------
 
 The `update_service` instruction updates an existing service without restarting it. For now, only the [service subnetwork][subnetworks-reference] can be updated live. In this case, the service will be moved to the corresponding subnetwork.
 
@@ -526,9 +483,10 @@ update_service(
 
 See [UpdateServiceConfig][starlark-types-update-service-config] for more information on the mandatory `config` argument.
 
-### upload_files
+upload_files
+------------
 
-`upload_files` on the [`plan`][plan-reference] object packages the files specified by the [locator][locators-reference] into a [files artifact][files-artifacts-reference] that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container.
+`upload_files` instruction packages the files specified by the [locator][locators-reference] into a [files artifact][files-artifacts-reference] that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container.
 
 ```python
 artifact_name = plan.upload_files(
@@ -546,9 +504,10 @@ artifact_name = plan.upload_files(
 
 The return value is a [future reference][future-references-reference] to the name of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
 
-### wait
+wait
+----
 
-The `wait` instruction on the [`plan`][plan-reference] object fails the Starlark script or package with an execution error if the [assertion][assert] does not succeed in a given period of time.
+The `wait` instruction fails the Starlark script or package with an execution error if the [assertion][assert] does not succeed in a given period of time.
 
 To learn more about the accepted recipe types, please checkout [ExecRecipe][starlark-types-exec-recipe], [GetHttpRequestRecipe][starlark-types-get-http-recipe] or [PostHttpRequestRecipe][starlark-types-post-http-recipe].
 
@@ -597,16 +556,6 @@ response = plan.wait(
 plan.print(response["code"])
 ```
 
-Starlark Standard Libraries
----------------------------
-
-The following Starlark libraries that ship with the `starlark-go` are included
-in Kurtosis Starlark by default
-
-1. The Starlark [time](https://github.com/google/starlark-go/blob/master/lib/time/time.go#L18-L52) is a collection of time-related functions
-2. The Starlark [json](https://github.com/google/starlark-go/blob/master/lib/json/json.go#L28-L74) module allows you `encode`, `decode` and `indent` JSON
-4. The Starlark [struct](https://github.com/google/starlark-go/blob/master/starlarkstruct/struct.go) builtin allows you to create `structs` like the one used in [`add_service`](#add_service)
-
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [set-connection]: #set_connection
@@ -615,13 +564,14 @@ in Kurtosis Starlark by default
 [assert]: #assert
 [extract]: #extract
 
-[files-artifacts-reference]: ./files-artifacts.md
-[future-references-reference]: ./future-references.md
-[packages-reference]: ./packages.md
-[locators-reference]: ./locators.md
-[multi-phase-runs-reference]: ./multi-phase-runs.md
-[plan-reference]: ./plan.md
-[subnetworks-reference]: ./subnetworks.md
+[cli-run-reference]: ../reference/cli/run-starlark.md
+
+[files-artifacts-reference]: ../reference/files-artifacts.md
+[future-references-reference]: ../reference/future-references.md
+[packages-reference]: ../reference/packages.md
+[locators-reference]: ../reference/locators.md
+[multi-phase-runs-reference]: ../reference/multi-phase-runs.md
+[subnetworks-reference]: ../reference/subnetworks.md
 
 [starlark-types-connection-config]: ./starlark-types.md#connectionconfig
 [starlark-types-service-config]: ./starlark-types.md#serviceconfig

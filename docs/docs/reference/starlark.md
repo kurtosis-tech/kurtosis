@@ -15,7 +15,7 @@ Starlark itself is very basic; Google designed it to be extended to fulfill a gi
 
 We extended basic Starlark with [our own DSL][starlark-instructions-reference] so that it could [fulfill the properties of reusable environment definitions][reusable-environment-definitions]. This gave us:
 
-- A [list of Kurtosis-specific functions][starlark-instructions-reference] for working with an environment
+- A [list of Kurtosis-specific functions][starlark-reference] for working with an environment
 - The [ability to accept parameters][run-args-reference]
 - Dependencies, so Kurtosis scripts can [import other scripts][locators-reference]
 - A [GitHub-based packaging system][packages-reference], so environment definitions can be shared with each other
@@ -25,8 +25,8 @@ Additionally, we built a [multi-phase engine][multi-phase-runs-reference] around
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
 [enclaves-reference]: ./enclaves.md
 [why-kurtosis-starlark]: ../explanations/why-kurtosis-starlark.md
-[starlark-instructions-reference]: ../reference/starlark-instructions.md
-[run-args-reference]: ../reference/packages.md#arguments
-[locators-reference]: ../reference/locators.md
+[starlark-reference]: ../starlark-reference/starlark-reference.md
+[run-args-reference]: ./packages.md#arguments
+[locators-reference]: ./locators.md
 [multi-phase-runs-reference]: ../reference/multi-phase-runs.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md

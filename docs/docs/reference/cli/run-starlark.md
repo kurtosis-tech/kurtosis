@@ -44,7 +44,10 @@ kurtosis run github.com/package-author/package-repo '{"company":"Kurtosis"}'
 This command has options available to customize its execution:
 
 1. The `--dry-run` flag can be used to print the changes proposed by the script without executing them
-1. The `--parallelism` flag can be used to specify to what degree of parallelism certain commands can be run. For example: If the script contains [`add_services`](../starlark-instructions.md#add_service) and is run with `--parallelism 100`, up to 100 services will be run at one time.
+1. The `--parallelism` flag can be used to specify to what degree of parallelism certain commands can be run. For example: if the script contains an [`add_services`][add-services-reference] instruction and is run with `--parallelism 100`, up to 100 services will be run at one time.
 1. The `--enclave-id` flag can be used to instruct Kurtosis to run the script inside the specified enclave or create a new enclave (with the given enclave [identifier](../resource-identifier.md)) if one does not exist. If this flag is not used, Kurtosis will create a new enclave with an auto-generated name, and run the script or package inside it.
 1. The `--with-subnetworks` flag can be used to enable [subnetwork capabilties](../subnetworks.md) within the specified enclave that the script or package is instructed to run within. This flag is false by default.
 1. The `--verbosity` flag can be used to set the verbosity of the command output. The options include `BRIEF`, `DETAILED`, or `EXECUTABLE`. If unset, this flag defaults to `BRIEF` for a concise and explicit output. Use `DETAILED` to display the exhaustive list of arguments for each command. Meanwhile, `EXECUTABLE` will generate executable Starlark instructions. 
+
+<!--------------------------------------- ONLY LINKS BELOW HERE -------------------------------->
+[add-services-reference]: ../../starlark-reference/plan.md#add_services
