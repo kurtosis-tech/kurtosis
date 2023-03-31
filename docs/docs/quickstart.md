@@ -7,6 +7,17 @@ slug: /quickstart
 Introduction
 ------------
 
+<details><summary>###TL;DR Version</summary>
+This quickstart is in a "code along" format. If you'd prefer to dive straight into the code and inner workings of the distributed application we build with Kurtosis here, get [set up](#setup) and then run:
+
+:::bash
+kurtosis run --enclave quickstart github.com/kurtosis-tech/awesome-kurtosis/quickstart
+:::
+
+Then, you can refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
+
+</details>
+
 Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you will run in this guide is free, public, and does not contain any sensitive data.
 
 For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, our [introduction page][homepage] will be a great starting point, alongside our [motivations behind starting Kurtosis][why-we-built-kurtosis-explanation].
@@ -46,10 +57,6 @@ First, create and `cd` into a directory to hold the project you'll be working on
 ```bash
 mkdir kurtosis-quickstart && cd kurtosis-quickstart
 ```
-
-:::tip
-All code blocks in this quickstart can be copied by hovering over the block and clicking the clipboard that appears in the right.
-:::
 
 Next, create a Starlark file called `main.star` inside your new directory with the following contents (more on Starlark in the "Review" section coming up soon):
 
