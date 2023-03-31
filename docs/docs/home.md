@@ -8,7 +8,9 @@ hide_table_of_contents: true
 ## What is Kurtosis?
 [Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding.
 
-## Why Kurtosis?
+Go [here](./explanations/why-we-built-kurtosis.md) to learn more what inspired us to build Kurtosis.
+
+## Why use Kurtosis?
 
 Developers usually set up these types of dynamic environments with a free-form scripting language like bash or Python, interacting with the Docker CLI or Docker Compose. Kurtosis is designed to make these setups easier to maintain and reuse in different test scenarios.
 

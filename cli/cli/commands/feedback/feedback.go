@@ -291,7 +291,7 @@ func validateUserMsgArg(_ context.Context, _ *flags.ParsedFlags, args *args.Pars
 	}
 
 	if userMsgArg == "" {
-		return stacktrace.Propagate(err, "Error validating the user message argument, it can be an empty string")
+		return stacktrace.NewError("Error validating the user message argument, it can not be an empty string")
 	}
 	return nil
 }

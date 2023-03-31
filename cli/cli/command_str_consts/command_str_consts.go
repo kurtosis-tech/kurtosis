@@ -1,6 +1,7 @@
 package command_str_consts
 
 import (
+	"errors"
 	"os"
 	"path"
 )
@@ -45,6 +46,10 @@ const (
 	FilesStoreServiceCmdStr = "storeservice"
 	FilesRenderTemplate     = "rendertemplate"
 	KurtosisDumpCmdStr      = "dump"
+	PortalCmdStr            = "portal"
+	PortalStartCmdStr       = "start"
+	PortalStatusCmdStr      = "status"
+	PortalStopCmdStr        = "stop"
 	ServiceCmdStr           = "service"
 	ServiceAddCmdStr        = "add"
 	ServiceLogsCmdStr       = "logs"
@@ -57,5 +62,7 @@ const (
 	PathCmdStr              = "path"
 	VersionCmdStr           = "version"
 	GatewayCmdStr           = "gateway"
-	LspCmdStr               = "lsp"
 )
+
+// TODO: added constant error message here, can we move to another file later.
+var ErrorMessageDueToStarlarkFailure = errors.New("Kurtosis execution threw an error. See output above for more details")

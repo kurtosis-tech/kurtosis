@@ -6,9 +6,14 @@
 package main
 
 import (
+	"errors"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"os"
+	"strings"
 )
 
 const (
@@ -17,6 +22,9 @@ const (
 
 	forceColors   = true
 	fullTimestamp = true
+
+	errorPrefix     = "Error: "
+	commandNotFound = "unknown command"
 )
 
 func main() {
@@ -40,8 +48,24 @@ func main() {
 	})
 
 	if err := commands.RootCmd.Execute(); err != nil {
-		// We don't actually need to print the error because Cobra will do it for us
+		if !displayErrorMessageToCli(err) {
+			os.Exit(errorExitCode)
+		}
+
+		maybeCleanedError := out.GetErrorMessageToBeDisplayedOnCli(err)
+		errorMessageFromCli := maybeCleanedError.Error()
+
+		commands.RootCmd.PrintErrln(errorPrefix, errorMessageFromCli)
+		// if unknown command is entered - display help command
+		if strings.Contains(errorMessageFromCli, commandNotFound) {
+			commands.RootCmd.PrintErrf("Run '%v --help' for usage.\n", commands.RootCmd.CommandPath())
+		}
 		os.Exit(errorExitCode)
 	}
 	os.Exit(successExitCode)
+}
+
+func displayErrorMessageToCli(err error) bool {
+	rootCause := stacktrace.RootCause(err)
+	return !errors.Is(rootCause, command_str_consts.ErrorMessageDueToStarlarkFailure)
 }

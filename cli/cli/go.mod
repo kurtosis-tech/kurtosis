@@ -8,7 +8,6 @@ replace (
 	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
-	github.com/kurtosis-tech/kurtosis/lsp => ../../lsp
 )
 
 require (
@@ -31,7 +30,7 @@ require (
 	github.com/spf13/cobra v1.6.1-0.20230225213037-567ea8ebc9b4
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.7.4
-	golang.org/x/crypto v0.0.0-20220214200702-86341886e292
+	golang.org/x/crypto v0.7.0
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.29.1
 	k8s.io/apimachinery v0.24.0 // indirect
@@ -43,17 +42,18 @@ require github.com/bazelbuild/buildtools v0.0.0-20221110131218-762712d8ce3f
 require (
 	github.com/briandowns/spinner v1.20.0
 	github.com/fatih/color v1.13.0
+	github.com/google/go-github/v50 v50.2.0
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230328194643-b4dea3081e25
-	github.com/kurtosis-tech/kurtosis/lsp v0.0.0-00010101000000-000000000000
-	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230324071217-6348e066f3e5
+	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230330124246-9ac7907a7555
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/savioxavier/termlink v1.2.1
 )
 
 require (
-	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
+	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8 // indirect
 	github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e // indirect
+	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/docker/docker v20.10.16+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
@@ -66,6 +66,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.11 // indirect
@@ -97,15 +98,15 @@ require (
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.20.0 // indirect
-	golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8 // indirect
-	golang.org/x/sync v0.0.0-20220722155255-886fb9371eb4 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/term v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
+	golang.org/x/mod v0.8.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
+	golang.org/x/oauth2 v0.6.0 // indirect
+	golang.org/x/sync v0.1.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
+	golang.org/x/term v0.6.0 // indirect
+	golang.org/x/text v0.8.0 // indirect
 	golang.org/x/time v0.0.0-20220210224613-90d013bbcef8 // indirect
-	golang.org/x/tools v0.1.12 // indirect
+	golang.org/x/tools v0.6.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20210602131652-f16073e35f0c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect

@@ -159,6 +159,11 @@ exec_recipe = ExecRecipe(
 )
 
 result = plan.exec(
+    # A Service name designating a service that already exists inside the enclave
+    # If it does not, a validation error will be thrown
+    # MANDATORY
+    service_name = "my-service",
+    
     # The recipe that will determine the exec to be performed.
     # Valid values are of the following types: (ExecRecipe)
     # MANDATORY
@@ -172,11 +177,6 @@ result = plan.exec(
     # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (Defaults to False)
     skip_code_check = False,
-
-    # A Service name designating a service that already exists inside the enclave
-    # If it does not, a validation error will be thrown
-    # MANDATORY
-    service_name = "my-service",
 )
 
 plan.print(result["output"])
@@ -189,14 +189,13 @@ They can be chained to [`assert`][assert] and [`wait`][wait]:
 
 ```python
 exec_recipe = ExecRecipe(
-    service_name = "my_service",
     command = ["echo", "Hello, world"],
 )
 
-result = plan.exec(exec_recipe)
+result = plan.exec(service_name="my_service", recipe=exec_recipe)
 plan.assert(result["code"], "==", 0)
 
-plan.wait(exec_recipe, "output", "!=", "Greetings, world")
+plan.wait(service_name="my_service", recipe=exec_recipe, field="output", assertion="!=", target_value="Greetings, world")
 ```
 
 print
@@ -291,6 +290,11 @@ To make a GET or POST request, simply set the `recipe` field to use the specifie
 
 ```python
 http_response = plan.request(
+    # A service name designating a service that already exists inside the enclave
+    # If it does not, a validation error will be thrown
+    # MANDATORY
+    service_name = "my_service",
+    
     # The recipe that will determine the request to be performed.
     # Valid values are of the following types: (GetHttpRequestRecipe, PostHttpRequestRecipe)
     # MANDATORY
@@ -304,11 +308,6 @@ http_response = plan.request(
     # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (defaults to False)
     skip_code_check = false,
-    
-    # A service name designating a service that already exists inside the enclave
-    # If it does not, a validation error will be thrown
-    # MANDATORY
-    service_name = "my_service",
 )
 plan.print(get_response["body"]) # Prints the body of the request
 plan.print(get_response["code"]) # Prints the result code of the request (e.g. 200, 500)
@@ -333,6 +332,7 @@ post_request_recipe = PostHttpRequestRecipe(
     },
 )
 post_response = plan.request(
+    service_name = "my_service",
     recipe = post_request_recipe,
 )
 # response["extract.second-element-from-list-head"] is "world"
@@ -346,6 +346,7 @@ These fields can be used in conjunction with [`assert`][assert] and [`wait`][wai
 ```python
 # Following the example above, response["extract.second-element-from-list-head"] is world
 post_response = plan.request(
+    service_name = "my_service",
     recipe = post_request_recipe,
 )
 
@@ -353,7 +354,7 @@ post_response = plan.request(
 plan.assert(response["extract.second-element-from-list-head"], "==", "world")
 
 # Make a post request and check if the extracted field in the response is world
-plan.wait(post_request_recipe, "extract.second-element-from-list-head", "==", "world")
+plan.wait(service_name="my_service", recipe=post_request_recipe, field="extract.second-element-from-list-head", assertion="==", target_value="world")
 ```
 
 NOTE: `jq` returns a typed output that translates into the correspondent Starlark type. You can cast it using `jq` to match
@@ -369,6 +370,7 @@ post_request_recipe = PostHttpRequestRecipe(
     },
 )
 response = plan.request(
+    service_name = "my_service",
     recipe = post_request_recipe,
 )
 # response["extract.post-number"] is "1" (starlark.String)
@@ -515,6 +517,11 @@ If it succeeds, it returns a [future references][future-references-reference] wi
 ```python
 # This fails in runtime if response["code"] != 200 for each request in a 5 minute time span
 response = plan.wait(
+    # A Service name designating a service that already exists inside the enclave
+    # If it does not, a validation error will be thrown
+    # MANDATORY
+    service_name = "example-datastore-server-1",
+    
     # The recipe that will be run until assert passes.
     # Valid values are of the following types: (ExecRecipe, GetHttpRequestRecipe, PostHttpRequestRecipe)
     # MANDATORY
@@ -544,11 +551,6 @@ response = plan.wait(
     # Follows Go "time.Duration" format https://pkg.go.dev/time#ParseDuration
     # OPTIONAL (Default: "10s")
     timeout = "5m",
-
-    # A Service name designating a service that already exists inside the enclave
-    # If it does not, a validation error will be thrown
-    # MANDATORY
-    service_name = "example-datastore-server-1",
 )
 # If this point of the code is reached, the assertion has passed therefore the print statement will print "200"
 plan.print(response["code"])

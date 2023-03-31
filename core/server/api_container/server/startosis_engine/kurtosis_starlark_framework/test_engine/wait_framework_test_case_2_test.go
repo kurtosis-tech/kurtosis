@@ -68,12 +68,12 @@ func (t *waitTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlan
 
 func (t *waitTestCase2) GetStarlarkCode() string {
 	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
-	return fmt.Sprintf("%s(%s, %q, %q, %s, %q, %q, %q)", wait.WaitBuiltinName, recipeStr, waitValueField, waitAssertion, waitTargetValue, waitInterval, waitTimeout, waitRecipeTestCaseServiceName)
+	return fmt.Sprintf("%s(%q, %s, %q, %q, %s, %q, %q)", wait.WaitBuiltinName, waitRecipeTestCaseServiceName, recipeStr, waitValueField, waitAssertion, waitTargetValue, waitInterval, waitTimeout)
 }
 
 func (t *waitTestCase2) GetStarlarkCodeForAssertion() string {
 	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
-	return fmt.Sprintf("%s(%s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout, wait.ServiceNameArgName, waitRecipeTestCaseServiceName)
+	return fmt.Sprintf("%s(%s=%q, %s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.ServiceNameArgName, waitRecipeTestCaseServiceName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout)
 }
 
 func (t *waitTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {

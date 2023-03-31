@@ -5,7 +5,7 @@ sidebar_label: Multi-Phase Runs
 
 <!-- TODO Refactor this a bit when we have a 'plan' object -->
 
-Kurtosis environment definitions are encapsulated inside [Starlark scripts][starlark-explanation], and these scripts can be bundled into [packages][packages].
+Kurtosis environment definitions are encapsulated inside [Starlark scripts][starlark-reference], and these scripts can be bundled into [packages][packages].
 
 Much like Spark, Gradle, Cypress, and Flink, a multi-phase approach is used when Kurtosis runs Starlark:
 
@@ -22,7 +22,7 @@ Practically, the user should be aware that:
 To read about why Kurtosis uses this multi-phase approach, [see here][multi-phase-runs-explanation].
 
 <!---------------- ONLY LINKS BELOW HERE ------------------------->
-[starlark-explanation]: ../explanations/starlark.md
+[starlark-reference]: ./starlark.md
 [plan-starlark-reference]: ../starlark-reference/plan.md
 [packages]: ./packages.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md

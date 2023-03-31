@@ -58,7 +58,8 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	clusterPriorToUpdate, err := clusterSettingStore.GetClusterSetting()
 	if err != nil {
-		return stacktrace.Propagate(err, "Error getting current cluster")
+		logrus.Debugf("Unable to get current cluster set. If this is a fresh Kurtosis install, it's fine "+
+			"as the cluster config might not be set yet. Error was: %v", err.Error())
 	}
 
 	if clusterName == clusterPriorToUpdate {
