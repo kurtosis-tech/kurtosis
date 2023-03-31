@@ -12,4 +12,4 @@ However, if you previously disabled the sending of product analytics metrics usi
 kurtosis analytics enable
 ``` 
 
-This data is private, anonymized, obfuscated, and can be opted-out from. To learn more, we encourage you to read more about our [metrics philosophy](../../explanations/metrics-philosophy.md).
+This data is private, anonymized, obfuscated, and can be opted-out from. To learn more, we encourage you to read more about our [metrics philosophy](../explanations/metrics-philosophy.md).
