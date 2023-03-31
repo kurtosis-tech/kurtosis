@@ -36,7 +36,8 @@ func DeserializeArgs(thread *starlark.Thread, serializedJsonArgs string) (*starl
 	}
 	parsedDeserializedInputValue, ok := deserializedInputValue.(*starlark.Dict)
 	if !ok {
-		return nil, startosis_errors.NewInterpretationError("Unable to parse package input '%v' into a dictionary. Is it a valid JSON?", deserializedInputValue)
+		// TODO: we could easily support any kind of starlark.Value here
+		return nil, startosis_errors.NewInterpretationError("Unable to parse package input '%v' into a dictionary. JSON other than dictionaries aren't support right now.", deserializedInputValue)
 	}
 	return parsedDeserializedInputValue, nil
 }
