@@ -4,7 +4,7 @@ sidebar_label: files download
 slug: /files-download
 ---
 
-To download a [files artifact](../files-artifacts.md) using a resource identifier (e.g. name, UUID, shortened UUID) from an enclave to the host machine, use:
+To download a [files artifact](../reference/files-artifacts.md) using a resource identifier (e.g. name, UUID, shortened UUID) from an enclave to the host machine, use:
 
 ```bash
 kurtosis files download --enclave $THE_ENCLAVE_IDENTIFIER $THE_ARTIFACT_IDENTIFIER $FILE_DESTINATION_PATH

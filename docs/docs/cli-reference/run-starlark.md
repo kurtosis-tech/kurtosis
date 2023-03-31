@@ -4,7 +4,7 @@ sidebar_label: run
 slug: /run-starlark
 ---
 
-Kurtosis can be used to run a Starlark script or a [runnable package](../packages.md) in an enclave. 
+Kurtosis can be used to run a Starlark script or a [runnable package](../reference/packages.md) in an enclave. 
 
 A single Starlark script can be ran with:
 
@@ -14,13 +14,13 @@ kurtosis run script.star
 
 Adding the `--dry-run` flag will print the changes without executing them. 
 
-A [Kurtosis package](../packages.md) on your local machine can be run with:
+A [Kurtosis package](../reference/packages.md) on your local machine can be run with:
 
 ```bash
 kurtosis run /path/to/package/on/your/machine
 ```
 
-A [runnable Kurtosis package](../packages.md) published to GitHub can be run like so:
+A [runnable Kurtosis package](../reference/packages.md) published to GitHub can be run like so:
 
 ```bash
 kurtosis run github.com/package-author/package-repo

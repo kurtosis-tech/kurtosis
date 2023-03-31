@@ -11,4 +11,4 @@ kurtosis files upload $PATH_TO_FILES
 ```
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[files-artifacts]: ../files-artifacts.md
+[files-artifacts]: ../reference/files-artifacts.md
