@@ -822,8 +822,8 @@ def run(plan, args):
     )
 
     # Insert data
-    if "data" in args:
-        insert_data(plan, args["data"])
+    if "actors" in args:
+        insert_data(plan, args["actors"])
 
 def insert_data(plan, data):
     plan.request(
