@@ -176,6 +176,6 @@ The result is the following: `cassandra_node_2` and `app_service_2` are partiall
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 
-[subnetworks-reference]: ../reference/subnetworks.md
+[subnetworks-reference]: ../concepts-reference/subnetworks.md
 
 [cap-theorem]: https://en.wikipedia.org/wiki/CAP_theorem

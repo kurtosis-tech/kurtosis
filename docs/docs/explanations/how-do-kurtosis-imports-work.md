@@ -31,7 +31,7 @@ This external files problem is not unique to Kurtosis. Every programming languag
   import some-package
   ```
 
-- In Python, local files are handled via the [relative import syntax](https://docs.python.org/3/reference/import.html#package-relative-imports):
+- In Python, local files are handled via the [relative import syntax](https://docs.python.org/3/concepts-reference/import.html#package-relative-imports):
 
   ```python
   from .moduleY import spam
@@ -60,7 +60,7 @@ Remote file imports in any language are always handled through a packaging syste
 
 Of all the languages, we have been most impressed by [Go's packaging system (which Go calls "modules")](https://go.dev/blog/using-go-modules). In Go:
 
-- Modules are easy to create by adding a `go.mod` manifest file to a directory ([example](https://github.com/kurtosis-tech/kurtosis-sdk/blob/main/api/golang/go.mod))
+- Modules are easy to create by adding a `go.mod` manifest file to a directory ([example](https://github.com/kurtosis-tech/kurtosis/blob/main/cli/cli/go.mod))
 - Dependencies are easy to declare in the `go.mod` file
 - Modules are published to the world simply by pushing up to GitHub
 
@@ -136,9 +136,9 @@ Once you push to GitHub, however, your package `name` will need to match the aut
 :::
 
 <!---------------------- ONLY LINKS BELOW HERE ---------------------------->
-[starlark-reference]: ../reference/starlark.md
-[kurtosis-yml-reference]: ../reference/kurtosis-yml.md
-[packages-reference]: ../reference/packages.md
-[locators-reference]: ../reference/locators.md
+[starlark-reference]: ../concepts-reference/starlark.md
+[kurtosis-yml-reference]: ../concepts-reference/kurtosis-yml.md
+[packages-reference]: ../concepts-reference/packages.md
+[locators-reference]: ../concepts-reference/locators.md
 [import-module-starlark-reference]: ../starlark-reference/import-module.md
 [read-file-starlark-reference]: ../starlark-reference/read-file.md

@@ -1,13 +1,14 @@
 ---
-title: SDK
-sidebar_label: SDK
-slug: /sdk
-sidebar_position: 2
+title: Client Libraries
+sidebar_label: Client Libraries Reference
+slug: /client-libs-reference
 toc_min_heading_level: 2
 toc_max_heading_level: 2
 ---
 
-This page documents the objects and functions contained in [the Kurtosis SDK][kurtosis-sdk-repo].
+Interactions with Kurtosis happen via API. To facilitate interaction with Kurtosis, we provide [client libraries][kurtosis-client-libs] for interacting with the Kurtosis API. These can be used to, for example, write Kurtosis tests using your test framework of choice.
+
+This page documents the objects and functions in the client libraries.
 
 :::tip
 The sidebar on the right can be used to quickly navigate classes.
@@ -595,7 +596,7 @@ Gets the ports that the service is reachable at from _outside_ the enclave that 
 The ports (if any) that the service is reachable at from outside the enclave, identified by the user-chosen ID set in [ContainerConfig.usedPorts][containerconfig_usedports] when the service was created.
 
 ### `execCommand(List<String> command) -> (int exitCode, String logs)`
-Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) functionality to execute a command inside the service's running Docker container.
+Uses [Docker exec](https://docs.docker.com/engine/concepts-reference/commandline/exec/) functionality to execute a command inside the service's running Docker container.
 
 **Args**
 
@@ -627,7 +628,7 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 <!-- TODO Make the function definition not include args or return values, so we don't get these huge ugly links that break if we change the function signature -->
 <!-- TODO make the reference names a) be properly-cased (e.g. "Service.isAvailable" rather than "service_isavailable") and b) have an underscore in front of them, so they're easy to find-replace without accidentally over-replacing -->
 
-[kurtosis-sdk-repo]: https://github.com/kurtosis-tech/kurtosis/tree/main/api
+[kurtosis-client-libs]: https://github.com/kurtosis-tech/kurtosis/tree/main/api
 
 [servicelogsstreamcontent]: #servicelogsstreamcontent
 [servicelog]: #servicelog
@@ -666,6 +667,6 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 [enclaveinfo]: #enclaveinfo
 [enclaves]: #enclaves
 
-[identifier]: ../reference/resource-identifier.md
+[identifier]: ./concepts-reference/resource-identifier.md
 [enclave-identifiers]: #enclaveidentifiers
 [service-identifiers]: #serviceidentifiers

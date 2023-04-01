@@ -17,7 +17,7 @@ Much like Spark, Gradle, Cypress, and Flink, a multi-phase approach is used when
 Practically, the user should be aware that:
 
 - Running [a function on the `Plan` object][plan-starlark-reference] does not execute the instruction on-the-spot; it instead adds the instruction to a plan of instructions to execute during the Execution Phase.
-- Any value returned by a function in Starlark is not the actual value - it is [a future reference that Kurtosis will replace during the Execution Phase when the value actually exists][future-references-reference].
+- Any value returned by a `Plan` function in Starlark is not the actual value - it is [a future reference that Kurtosis will replace during the Execution Phase when the value actually exists][future-references-reference].
 
 To read about why Kurtosis uses this multi-phase approach, [see here][multi-phase-runs-explanation].
 

@@ -14,6 +14,6 @@ contents = read_file(
 ```
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
-[locators-reference]: ../reference/locators.md
-[multi-phase-runs-reference]: ../reference/multi-phase-runs.md
-[packages-reference]: ../reference/packages.md
+[locators-reference]: ../concepts-reference/locators.md
+[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
+[packages-reference]: ../concepts-reference/packages.md

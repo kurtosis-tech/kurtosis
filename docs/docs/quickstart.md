@@ -2,6 +2,7 @@
 title: Quickstart
 sidebar_label: Quickstart
 slug: /quickstart
+toc_max_heading_level: 2
 ---
 
 Introduction
@@ -172,7 +173,7 @@ b6fc024deefe   postgres   postgres: 5432/tcp -> postgresql://127.0.0.1:59299   R
 ### Review: Run Postgres
 So what actually happened? Three things actually:
 
-1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](https://docs.kurtosis.com/reference/plan) for what you wanted done (in this case, starting a Postgres instance)
+1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](https://docs.kurtosis.com/concepts-reference/plan) for what you wanted done (in this case, starting a Postgres instance)
 1. **Validation:** Kurtosis then ran several validations against your plan, including validating that the Postgres image exists
 1. **Execution:** Kurtosis finally executed the validated plan inside the enclave to start a Postgres container
 
@@ -979,7 +980,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 
 <!--------------------------- Explanations ------------------------------------>
 [architecture-explanation]: ./explanations/architecture.md
-[enclaves-reference]: ./reference/enclaves.md
+[enclaves-reference]: ./concepts-reference/enclaves.md
 [services-explanation]: ./explanations/architecture.md#services
 [reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
 [why-we-built-kurtosis-explanation]: ./explanations/why-we-built-kurtosis.md
@@ -995,21 +996,21 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [kurtosis-files-upload-reference]: ./cli-reference/files-upload.md
 [kurtosis-feedback-reference]: ./cli-reference/feedback.md
 [kurtosis-twitter]: ./cli-reference/twitter.md
-[starlark-reference]: ./reference/starlark.md
+[starlark-reference]: ./concepts-reference/starlark.md
 
 <!-- SL Instructions Reference-->
 [request-reference]: ./starlark-reference/plan.md#request
 [exec-reference]: ./starlark-reference/plan.md#exec
 
 <!-- Reference -->
-[multi-phase-runs-reference]: ./reference/multi-phase-runs.md
-[kurtosis-yml-reference]: ./reference/kurtosis-yml.md
-[packages-reference]: ./reference/packages.md
-[runnable-packages-reference]: ./reference/packages.md#runnable-packages
-[locators-reference]: ./reference/locators.md
-[plan-reference]: ./reference/plan.md
-[future-references-reference]: ./reference/future-references.md
-[files-artifacts-reference]: ./reference/files-artifacts.md
+[multi-phase-runs-reference]: ./concepts-reference/multi-phase-runs.md
+[kurtosis-yml-reference]: ./concepts-reference/kurtosis-yml.md
+[packages-reference]: ./concepts-reference/packages.md
+[runnable-packages-reference]: ./concepts-reference/packages.md#runnable-packages
+[locators-reference]: ./concepts-reference/locators.md
+[plan-reference]: ./concepts-reference/plan.md
+[future-references-reference]: ./concepts-reference/future-references.md
+[files-artifacts-reference]: ./concepts-reference/files-artifacts.md
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->

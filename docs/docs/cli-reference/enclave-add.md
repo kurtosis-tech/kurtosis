@@ -13,5 +13,5 @@ kurtosis enclave add
 To create enclaves that support [subnetworks][subnetworks] use the `--with-subnetworks` flag.
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[enclaves-reference]: ../reference/enclaves.md
-[subnetworks]: ../reference/subnetworks.md
+[enclaves-reference]: ../concepts-reference/enclaves.md
+[subnetworks]: ../concepts-reference/subnetworks.md
