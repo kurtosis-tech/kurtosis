@@ -2,39 +2,32 @@ name: "Feature Request"
 description: Suggest a new feature, improvement, or change 
 labels: ["feature request"]
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thank you for taking the time to fill out this Feature Request form. We value your feedback.
-        Please make sure to add a title to this Feature Request to concisely describe your suggestion.
   - type: textarea
     id: background-and-motivation
     attributes:
-      label: Background & current behavior
-      placeholder: Please share with us what happens today and what you are trying to accomplish with Kurtosis. 
+      label: Motivation & background
+      placeholder: Code examples, screenshots, and references are very helpful here
       description: |
-        Consider adding code examples, screenshots, or references. Doing so helps our team better understand what is happening and build more robust solutions for users like yourself.
+        What problem are you trying to solve? What are you looking to accomplish? What pain are you hitting?
     validations:
       required: true
   - type: textarea
     id: desired-behavior
     attributes:
-      label: Desired behavior
-      placeholder: Share with us what you would like have happen instead.
+      label: Desired behaviour
+      placeholder: Code examples, screenshots, and references are very helpful here
       description: |
-        Consider adding code examples, screenshots, or references. Doing so helps our team better understand the desired end state of your request.
+        What would you like to happen?
     validations:
       required: true
   - type: dropdown
     id: priority
     attributes:
-      label: How important is this feature or improvement to you?
+      label: How important is this to you?
       multiple: false
       options:
-      - Critical, Kurtosis is unusable for us without it.
-      - Painful, the lack of this feature makes using Kurtosis frictionful.
-      - Nice to have, this feature would make using Kurtosis more enjoyable.
-      description: |
-        This information helps us with prioritization.
+      - Critical; Kurtosis is unusable for us without it.
+      - Painful; the lack of this feature makes using Kurtosis frictionful.
+      - Nice to have; this feature would make using Kurtosis more enjoyable.
     validations:
       required: true
