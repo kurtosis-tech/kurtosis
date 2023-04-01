@@ -21,7 +21,7 @@ In Kurtosis, test environments have these properties:
 
 ## Architecture
 
-#### Kurtosis has a definition language with:
+#### Kurtosis has a definition language of:
 - An instruction set of useful primitives for setting up and manipulating environments
 - A scriptable Python-like SDK in Starlark, a build language used by Google’s Bazel
 - A package management system for shareability and composability
