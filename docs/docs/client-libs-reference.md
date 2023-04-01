@@ -667,6 +667,6 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 [enclaveinfo]: #enclaveinfo
 [enclaves]: #enclaves
 
-[identifier]: ../reference/resource-identifier.md
+[identifier]: ./reference/resource-identifier.md
 [enclave-identifiers]: #enclaveidentifiers
 [service-identifiers]: #serviceidentifiers
