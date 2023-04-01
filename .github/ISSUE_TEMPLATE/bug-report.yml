@@ -18,7 +18,7 @@ body:
       placeholder: e.g. 07d1472497dg44593e5520436603ca4c3423423bd608bec371f9343dxcf4b
       description: |
         Print your metrics user ID with `kurtosis analytics id`. This information helps us debug and fix issues quicker.
-        Read more about [our metrics philosophy here](https://docs.kurtosis.com/explanations/metrics-philosophy).
+        [Read our metrics philosophy here](https://docs.kurtosis.com/explanations/metrics-philosophy).
     validations:
       required: false
   - type: dropdown
@@ -30,8 +30,6 @@ body:
       - Critical; I am blocked and Kurtosis is unusable to us because of this bug.
       - Painful; this is causing significant friction in my workflow.
       - Papercut; this bug is frustrating, but I have a workaround.
-      description: |
-        This information helps us with prioritization.
     validations:
       required: true
   - type: textarea
@@ -39,7 +37,7 @@ body:
     attributes:
       label: Description & steps to reproduce
       description: |
-        We can help you better if you provide logs, error text, screenshots, reproduction steps, [`kurtosis enclave dump`](https://docs.kurtosis.com/next/enclave-dump) or [`kurtosis dump`](https://docs.kurtosis.com/dump) outputs, etc.
+        We can solve your issue faster when you provide logs, error text, screenshots, reproduction steps, [`kurtosis enclave dump`](https://docs.kurtosis.com/enclave-dump) output, [`kurtosis dump`](https://docs.kurtosis.com/dump) output, etc.
       placeholder: |
         When I run command '...' then the following error appears...
 
@@ -55,7 +53,7 @@ body:
     id: desired-behavior
     attributes:
       label: Desired behavior
-      description: |
+      placeholder: |
          What should happen?
     validations:
       required: true

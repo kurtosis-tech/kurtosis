@@ -15,8 +15,9 @@ body:
     id: description
     attributes:
       label: Issue description
-      placeholder: What is the issue you found in our documentation?
+      placeholder: |
+        e.g. There is a typo in the sentence 'Kurtosis can be run as...' because...
       description: |
-        Consider adding screenshots or the exact part of the documentation language that you're filing this issue on.
+        We can resolve your issue quicker if you add screenshots or copy-paste the problematic text.
     validations:
       required: true
