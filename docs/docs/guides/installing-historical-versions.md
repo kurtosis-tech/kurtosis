@@ -12,7 +12,7 @@ import TabItem from '@theme/TabItem';
 
 <!---------- END IMPORTS ------------>
 
-Occasionally, using historical versions of Kurtosis is necessary. For example, when working with a [Starlark](../reference/starlark.md) Kurtosis package that was initially developed with an older version of Kurtosis, we might want rollback our Kurtosis version to ensure the version of Kurtosis we are running is compatible with the Kurtosis package.
+Occasionally, using historical versions of Kurtosis is necessary. For example, when working with a [Starlark](../concepts-reference/starlark.md) Kurtosis package that was initially developed with an older version of Kurtosis, we might want rollback our Kurtosis version to ensure the version of Kurtosis we are running is compatible with the Kurtosis package.
 
 The instructions in this guide will walk you through installing and using a historical version of Kurtosis. To see what versions are available, reference our [changelog](../changelog.md).
 

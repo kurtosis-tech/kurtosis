@@ -10,7 +10,7 @@ To view detailed information about a given enclave, including its status and con
 kurtosis enclave inspect $THE_ENCLAVE_IDENTIFIER 
 ```
 
-where `$THE_ENCLAVE_IDENTIFIER` is the [resource identifier](../reference/resource-identifier.md) for the enclave.
+where `$THE_ENCLAVE_IDENTIFIER` is the [resource identifier](../concepts-reference/resource-identifier.md) for the enclave.
 
 Running the above command will print detailed information about:
 

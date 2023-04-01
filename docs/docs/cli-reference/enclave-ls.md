@@ -10,4 +10,4 @@ To print all enclaves (both stopped and running) inside of your Kurtosis engine,
 kurtosis enclave ls
 ```
 
-The enclave UUIDs and names that are printed will be used in enclave manipulation commands and are refered to as [resource identifiers](../reference/resource-identifier.md).
+The enclave UUIDs and names that are printed will be used in enclave manipulation commands and are refered to as [resource identifiers](../concepts-reference/resource-identifier.md).

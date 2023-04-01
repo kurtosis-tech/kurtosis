@@ -31,7 +31,7 @@ This external files problem is not unique to Kurtosis. Every programming languag
   import some-package
   ```
 
-- In Python, local files are handled via the [relative import syntax](https://docs.python.org/3/reference/import.html#package-relative-imports):
+- In Python, local files are handled via the [relative import syntax](https://docs.python.org/3/concepts-reference/import.html#package-relative-imports):
 
   ```python
   from .moduleY import spam
@@ -136,9 +136,9 @@ Once you push to GitHub, however, your package `name` will need to match the aut
 :::
 
 <!---------------------- ONLY LINKS BELOW HERE ---------------------------->
-[starlark-reference]: ../reference/starlark.md
-[kurtosis-yml-reference]: ../reference/kurtosis-yml.md
-[packages-reference]: ../reference/packages.md
-[locators-reference]: ../reference/locators.md
+[starlark-reference]: ../concepts-reference/starlark.md
+[kurtosis-yml-reference]: ../concepts-reference/kurtosis-yml.md
+[packages-reference]: ../concepts-reference/packages.md
+[locators-reference]: ../concepts-reference/locators.md
 [import-module-starlark-reference]: ../starlark-reference/import-module.md
 [read-file-starlark-reference]: ../starlark-reference/read-file.md

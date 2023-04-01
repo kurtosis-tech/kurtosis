@@ -53,5 +53,5 @@ Kurtosis environment definitions (written in [Starlark][starlark-reference]) are
 
 
 <!--------------------- ONLY LINKS BELOW HERE ------------------------->
-[starlark-reference]: ../reference/starlark.md
+[starlark-reference]: ../concepts-reference/starlark.md
 [why-we-built-kurtosis]: ./why-we-built-kurtosis.md

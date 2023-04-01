@@ -596,7 +596,7 @@ Gets the ports that the service is reachable at from _outside_ the enclave that 
 The ports (if any) that the service is reachable at from outside the enclave, identified by the user-chosen ID set in [ContainerConfig.usedPorts][containerconfig_usedports] when the service was created.
 
 ### `execCommand(List<String> command) -> (int exitCode, String logs)`
-Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) functionality to execute a command inside the service's running Docker container.
+Uses [Docker exec](https://docs.docker.com/engine/concepts-reference/commandline/exec/) functionality to execute a command inside the service's running Docker container.
 
 **Args**
 
@@ -667,6 +667,6 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 [enclaveinfo]: #enclaveinfo
 [enclaves]: #enclaves
 
-[identifier]: ./reference/resource-identifier.md
+[identifier]: ./concepts-reference/resource-identifier.md
 [enclave-identifiers]: #enclaveidentifiers
 [service-identifiers]: #serviceidentifiers

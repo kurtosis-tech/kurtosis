@@ -99,5 +99,5 @@ You can see how to configure the [`ReadyConditions` type here][ready-conditions]
 [upload-files-reference]: ./plan.md#upload_files
 [render-templates-reference]: ./plan.md#render_templates
 [store-service-reference]: ./plan.md#store_service_files
-[subnetworks-reference]: ../reference/subnetworks.md
+[subnetworks-reference]: ../concepts-reference/subnetworks.md
 [ready-conditions]: ./ready-conditions.md

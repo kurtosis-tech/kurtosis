@@ -29,5 +29,5 @@ delay  = NormalPacketDelayDistribution(
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [connection-config]: ./connection-config.md
-[subnetworks-reference]: ../reference/subnetworks.md
+[subnetworks-reference]: ../concepts-reference/subnetworks.md
 [set-connection-reference]: ./plan.md#set_connection

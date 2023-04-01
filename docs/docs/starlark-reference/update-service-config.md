@@ -16,4 +16,4 @@ update_service_config = UpdateServiceConfig(
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [service-config]: ./service-config.md
-[subnetworks-reference]: ../reference/subnetworks.md
+[subnetworks-reference]: ../concepts-reference/subnetworks.md
