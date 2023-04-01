@@ -3,7 +3,7 @@ title: ExecRecipe
 sidebar_label: ExecRecipe
 ---
 
-The ExecRecipe can be used to run the `command` on the service (see [exec][exec-reference]
+The `ExecRecipe` object defines a command that will be run on can be used to run the `command` on the service (see [exec][exec-reference]
 or [wait][wait-reference])
 
 ```python

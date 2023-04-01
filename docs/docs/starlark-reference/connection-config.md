@@ -3,17 +3,22 @@ title: ConnectionConfig
 sidebar_label: ConnectionConfig
 ---
 
-The `ConnectionConfig` is used to configure a connection between two [subnetworks][subnetworks-reference] (see [set_connection][set-connection-reference]).
+The `ConnectionConfig` object is used to configure a connection between two [subnetworks][subnetworks-reference] (see also, [set_connection][set-connection-reference]).
 
 ```python
 connection_config = ConnectionConfig(
-    # Percentage of packet lost each way between subnetworks 
-    # OPTIONAL
-    # DEFAULT: 0.0
+    # Percentage of packets dropped *each way* between two subnetworks
+    # NOTE: for two-way connections like TCP, be conscious that both outbound
+    #  and inbound packets will have the drop percentage applied (just like in a real, lossy network link)
+    # OPTIONAL (default: 0.0)
     packet_loss_percentage = 50.0,
 
-    # Amount of delay added to packets each way between subnetworks
-    # OPTIONAL: Valid value are UniformPacketDelayDistribution or NormalPacketDelayDistribution
+    # Amount of delay added to packets *each way* between subnetworks
+    # Valid values are:
+    #  - None
+    #  - An instance of UniformPacketDelayDistribution
+    #  - An instance of NormalPacketDelayDistribution
+    # OPTIONAL (default: None)
     packet_delay_distribution = UniformPacketDelayDistribution(
         # Delay in ms
         ms = 500,
