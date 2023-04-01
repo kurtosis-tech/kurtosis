@@ -1,6 +1,6 @@
 ---
-title: Resource Identifier
-sidebar_label: Resource Identifier
+title: Resource Identifiers
+sidebar_label: Resource Identifiers
 ---
 
 Kurtosis has multiple ways to identify a given resource within Kurtosis. These include UUIDs, shortened UUIDs and names. Together these are called resource identifiers.

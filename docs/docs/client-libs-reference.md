@@ -6,6 +6,8 @@ toc_min_heading_level: 2
 toc_max_heading_level: 2
 ---
 
+<!-- TODO TODO TODO Make the headers in this section ONLY the method names, so that we can easily anchor-reference them from other parts in the docs -->
+
 Interactions with Kurtosis happen via API. To facilitate interaction with Kurtosis, we provide [client libraries][kurtosis-client-libs] for interacting with the Kurtosis API. These can be used to, for example, write Kurtosis tests using your test framework of choice.
 
 This page documents the objects and functions in the client libraries.
