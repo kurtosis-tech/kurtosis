@@ -18,4 +18,4 @@ connection
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [connection-config]: ./connection-config.md
-[subnetworks-reference]: ../reference/subnetworks.md
+[subnetworks-reference]: ../concepts-reference/subnetworks.md

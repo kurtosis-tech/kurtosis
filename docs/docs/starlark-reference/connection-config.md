@@ -26,6 +26,6 @@ See [`kurtosis.connection`][connection-prebuilt-enums] for pre-built `Connection
 :::
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
-[subnetworks-reference]: ../reference/subnetworks.md
+[subnetworks-reference]: ../concepts-reference/subnetworks.md
 [set-connection-reference]: ./plan.md#set_connection
 [connection-prebuilt-enums]: ./kurtosis.md#connection

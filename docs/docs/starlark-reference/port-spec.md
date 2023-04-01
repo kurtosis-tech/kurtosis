@@ -26,5 +26,5 @@ port_spec = PortSpec(
 The above constructor returns a `PortSpec` object that defines information about a port for use in [`add_service`][subnetworks-reference].
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
-[future-references-reference]: ../reference/future-references.md
+[future-references-reference]: ../concepts-reference/future-references.md
 [add-service-reference]: ./plan.md#add_service

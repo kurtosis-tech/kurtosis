@@ -28,5 +28,5 @@ Additionally, we built a [multi-phase engine][multi-phase-runs-reference] around
 [starlark-reference]: ../starlark-reference/index.md
 [run-args-reference]: ./packages.md#arguments
 [locators-reference]: ./locators.md
-[multi-phase-runs-reference]: ../reference/multi-phase-runs.md
+[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md

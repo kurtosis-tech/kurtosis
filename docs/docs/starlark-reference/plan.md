@@ -566,12 +566,12 @@ plan.print(response["code"])
 
 [cli-run-reference]: ../cli-reference/run-starlark.md
 
-[files-artifacts-reference]: ../reference/files-artifacts.md
-[future-references-reference]: ../reference/future-references.md
-[packages-reference]: ../reference/packages.md
-[locators-reference]: ../reference/locators.md
-[multi-phase-runs-reference]: ../reference/multi-phase-runs.md
-[subnetworks-reference]: ../reference/subnetworks.md
+[files-artifacts-reference]: ../concepts-reference/files-artifacts.md
+[future-references-reference]: ../concepts-reference/future-references.md
+[packages-reference]: ../concepts-reference/packages.md
+[locators-reference]: ../concepts-reference/locators.md
+[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
+[subnetworks-reference]: ../concepts-reference/subnetworks.md
 
 [starlark-types-connection-config]: ./connection-config.md
 [starlark-types-service-config]: ./service-config.md
