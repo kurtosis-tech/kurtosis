@@ -10,11 +10,11 @@ Each enclave houses an arbitrary number of services and [files artifacts][files-
 When an enclave is removed via [`kurtosis enclave rm`][enclave-rm-reference] or [`kurtosis clean`][clean-reference], everything inside of it is destroyed as well.
 
 <!----------------- ONLY LINKS BELOW HERE ------------------------------>
-[enclave-add-reference]: ./cli/enclave-add.md
-[enclave-ls-reference]: ./cli/enclave-ls.md
-[enclave-inspect-reference]: ./cli/enclave-inspect.md
-[enclave-rm-reference]: ./cli/enclave-rm.md
-[clean-reference]: ./cli/clean.md
+[enclave-add-reference]: ../cli-reference/enclave-add.md
+[enclave-ls-reference]: ../cli-reference/enclave-ls.md
+[enclave-inspect-reference]: ../cli-reference/enclave-inspect.md
+[enclave-rm-reference]: ../cli-reference/enclave-rm.md
+[clean-reference]: ../cli-reference/clean.md
 [files-artifacts-reference]: ./files-artifacts.md
 [plan-starlark-reference]: ../starlark-reference/plan.md
 [starlark-reference]: ./starlark.md

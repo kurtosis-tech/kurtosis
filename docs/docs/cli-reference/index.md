@@ -1,6 +1,7 @@
 ---
-title: Getting Started
-sidebar_label: CLI
+id: index
+title: CLI Introduction
+sidebar_label: Introduction
 slug: /cli
 sidebar_position: 1
 ---
@@ -34,5 +35,5 @@ kurtosis version
 ```
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[adding-command-line-completion]: ../../guides/adding-command-line-completion.md
-[installing-the-cli]: ../../guides/installing-the-cli.md
+[adding-command-line-completion]: ../guides/adding-command-line-completion.md
+[installing-the-cli]: ../guides/installing-the-cli.md

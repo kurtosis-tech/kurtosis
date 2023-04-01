@@ -44,4 +44,4 @@ All values that are available exclusively during the Execution Phase will be han
 
 <!----------- ONLY LINKS BELOW HERE ----------------------->
 [multi-phase-runs-reference]: ./multi-phase-runs.md
-[starlark-reference]: ../starlark-reference/starlark-reference.md
+[starlark-reference]: ../starlark-reference/index.md
