@@ -4,10 +4,10 @@ sidebar_label: analytics disable
 slug: /analytics-disable
 ---
 
-Kurtosis has the ability to send product analytics metrics, enabling us to understand our users better so that we can improve the product over time. While this capability is enabled by default, you may choose to opt-out by running the following command:
+Kurtosis has functionality to collect product analytics metrics so we can make data-driven product decisions. These metrics are [anonymized, obfuscated, and never given to third parties](../explanations/metrics-philosophy.md)).
+
+Anonymous metrics collection is enabled by default, but you can turn it off by running:
 
 ```bash
 kurtosis analytics disable
 ``` 
-
-This data is private, anonymized, obfuscated, and can be opted-out from. To learn more, we encourage you to read more about our [metrics philosophy](../explanations/metrics-philosophy.md).

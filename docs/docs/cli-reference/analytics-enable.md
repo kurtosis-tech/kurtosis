@@ -4,12 +4,10 @@ sidebar_label: analytics enable
 slug: /analytics-enable
 ---
 
-Kurtosis has the ability to send product analytics metrics, enabling us to understand our users better so that we can improve the product over time. This capability is enabled by default. 
+Kurtosis has functionality to collect product analytics metrics so we can make data-driven product decisions. These metrics are [anonymized, obfuscated, and never given to third parties](../explanations/metrics-philosophy.md)).
 
-However, if you previously disabled the sending of product analytics metrics using `[kurtosis analytics disable](./analytics-disable.md)` and wish to re-enable this capability, run:
+If you previously disabled metrics collection, you can re-enable it via:
 
 ```bash
 kurtosis analytics enable
 ``` 
-
-This data is private, anonymized, obfuscated, and can be opted-out from. To learn more, we encourage you to read more about our [metrics philosophy](../explanations/metrics-philosophy.md).
