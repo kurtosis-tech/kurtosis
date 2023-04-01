@@ -25,7 +25,7 @@ Additionally, we built a [multi-phase engine][multi-phase-runs-reference] around
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
 [enclaves-reference]: ./enclaves.md
 [why-kurtosis-starlark]: ../explanations/why-kurtosis-starlark.md
-[starlark-reference]: ../starlark-reference/index.md
+[starlark-reference]: ../starlark-reference/introduction.md
 [run-args-reference]: ./packages.md#arguments
 [locators-reference]: ./locators.md
 [multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md

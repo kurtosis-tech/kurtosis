@@ -1,5 +1,5 @@
 ---
-id: index
+id: introduction
 title: Starlark Introduction
 sidebar_label: Introduction
 sidebar_position: 1

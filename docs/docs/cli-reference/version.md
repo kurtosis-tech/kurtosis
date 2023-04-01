@@ -4,7 +4,7 @@ sidebar_label: version
 slug: /version
 ---
 
-The `kurtosis version` command displays version information about the [CLI](./index.md) and the Kurtosis engine container.
+The `kurtosis version` command displays version information about the [CLI](./introduction.md) and the Kurtosis engine container.
 
 Example:
 

@@ -101,8 +101,8 @@ To see documentation for the client libraries, [go here][client-libs-reference].
 For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply a Go CLI wrapped around the Go Kurtosis client library.
 
 <!-------------- ONLY LINKS BELOW HERE --------------------->
-[cli-reference]: ../cli-reference/index.md
+[cli-reference]: ../cli-reference/introduction.md
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [why-we-built-kurtosis]: ./why-we-built-kurtosis.md
 [starlark-reference]: ../concepts-reference/starlark.md
-[starlark-code-reference]: ../starlark-reference/index.md
+[starlark-code-reference]: ../starlark-reference/introduction.md

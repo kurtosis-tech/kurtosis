@@ -1,5 +1,5 @@
 ---
-id: index
+id: introduction
 title: CLI Introduction
 sidebar_label: Introduction
 slug: /cli
