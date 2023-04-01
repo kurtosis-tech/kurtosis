@@ -3,7 +3,7 @@ title: Services
 sidebar_label: Services
 ---
 
-A service is a user-created container running inside an enclave, which may or may not . 
+A service is a user-created container running inside an enclave, which may or may not have ports exposed. 
 
 They are added to an enclave with [Starlark](./starlark.md) using [`Plan.add_service`](../starlark-reference/plan.md#add_service), configured via [`ServiceConfig`](../starlark-reference/service-config.md), and removed from an enclave using [`Plan.remove_service`](../starlark-reference/plan.md#remove_service).
 
