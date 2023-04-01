@@ -4,22 +4,17 @@ labels: ["docs"]
 assignees:
   - leeederek
 body:
-  - type: markdown
-    attributes:
-      value: |
-        Thank you for taking the time to help us improve our documentation. We value your feedback.
-        Please make sure to update the title of this Docs Issue to concisely describe the issue.
   - type: input
     id: url-link
     attributes:
-      label: Where did you see an issue in our documentation? 
+      label: Where did you see the issue in our documentation? 
       placeholder: e.g. https://docs.kurtosis.com/explanations/architecture
     validations:
       required: true
   - type: textarea
     id: description
     attributes:
-      label: Description of the issue
+      label: Issue description
       placeholder: What is the issue you found in our documentation?
       description: |
         Consider adding screenshots or the exact part of the documentation language that you're filing this issue on.
