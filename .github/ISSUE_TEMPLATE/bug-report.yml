@@ -11,6 +11,15 @@ body:
         View the version of your Kurtosis CLI with `kurtosis version`.
     validations:
       required: true
+  - type: checkboxes
+    id: engine-matches
+    attributes:
+      label: Do your CLI and engine versions match?
+      description: |
+        You can verify the versions with `kurtosis version`, and restart your engine with `kurtosis engine restart` if they don't match
+      options:
+        - label: My `kurtosis versions` reports matching CLI and engine versions
+          required: true
   - type: input
     id: metrics-user-id
     attributes:
@@ -21,17 +30,6 @@ body:
         [Read our metrics philosophy here](https://docs.kurtosis.com/explanations/metrics-philosophy).
     validations:
       required: false
-  - type: dropdown
-    id: priority
-    attributes:
-      label: What is the severity of this bug?
-      multiple: false
-      options:
-      - Critical; I am blocked and Kurtosis is unusable to us because of this bug.
-      - Painful; this is causing significant friction in my workflow.
-      - Papercut; this bug is frustrating, but I have a workaround.
-    validations:
-      required: true
   - type: textarea
     id: description
     attributes:
@@ -55,5 +53,16 @@ body:
       label: Desired behavior
       placeholder: |
          What should happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: What is the severity of this bug?
+      multiple: false
+      options:
+      - Critical; I am blocked and Kurtosis is unusable to us because of this bug.
+      - Painful; this is causing significant friction in my workflow.
+      - Papercut; this bug is frustrating, but I have a workaround.
     validations:
       required: true
