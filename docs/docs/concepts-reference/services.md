@@ -33,7 +33,7 @@ bb85411905d7   indexer-node                gossip: 24567/tcp -> 127.0.0.1:8333  
 3a7db4c1e5b2   wallet                      http: 3004/tcp -> http://127.0.0.1:8334    RUNNING
 ```
 
-Services, like other Kurtosis resources, are identified by [resource identifiers][resource-identifiers].
+Services, like other Kurtosis resources, have names and are identified by [resource identifiers][resource-identifiers].
 
 <!------------------ ONLY LINKS BELOW HERE -------------------->
 [resource-identifiers]: ./resource-identifier.md
