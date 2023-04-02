@@ -304,8 +304,8 @@ Gets the Name and UUID of the current services in the enclave.
 
 * `serviceIdentifiers`: A map of objects containing a mapping of Name -> UUID for all the services inside the enclave
 
-### `uploadFiles(String pathToUpload, String artifactName) -> FileArtifactUUID, FileArtifactName, Error`
-Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+### `uploadFiles(String pathToUpload, String artifactName) -> FilesArtifactUUID, FilesArtifactName, Error`
+Uploads a filepath or directory path as a [files artifact](./concepts-reference/files-artifacts.md). The resulting files artifact can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md) when adding a service.
 
 If a directory is specified, the contents of the directory will be uploaded to the archive without additional nesting. Empty directories cannot be uploaded.
 
@@ -316,11 +316,11 @@ If a directory is specified, the contents of the directory will be uploaded to t
 
 **Returns**
 
-* `FileArtifactUUID`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
-* `FileArtifactName`: The name of the file-artifact, it is auto-generated if `artitfactName` is an empty string.
+* `FilesArtifactUUID`: A UUID identifying the new files artifact, which can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md).
+* `FilesArtifactName`: The name of the file-artifact, it is auto-generated if `artitfactName` is an empty string.
 
 ### `storeWebFiles(String urlToDownload, String artifactName)`
-Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, so that the files inside can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+Downloads a files-containing `.tgz` from the given URL as a [files artifact](./concepts-reference/files-artifacts.md). The resulting files artifact can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md) when adding a service.
 
 **Args**
 
@@ -329,7 +329,7 @@ Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, s
 
 **Returns**
 
-* `UUID`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `UUID`: A UUID identifying the new files artifact, which can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md).
 
 ### `getExistingAndHistoricalServiceIdentifiers() -> ServiceIdentifiers serviceIdentifiers`
 
@@ -471,21 +471,21 @@ Gets the ports that the service is reachable at from _inside_ the enclave that t
 
 **Returns**
 
-The ports that the service is reachable at from inside the enclave, identified by the user-chosen ID set in [ContainerConfig.usedPorts][containerconfig_usedports] when the service was created.
+The ports that the service is reachable at from inside the enclave, identified by the user-chosen port ID set in [`ServiceConfig.ports`](./starlark-reference/service-config.md) when the service was created.
 
 ### `getMaybePublicIpAddress() -> String`
-If the service declared used ports in [ContainerConfig.usedPorts][containerconfig_usedports], then this function returns the IP address where the service is reachable at from _outside_ the enclave that the container is running inside. This IP address is how clients on the host machine can connect to the service. If no used ports were declared, this will be empty.
+If the service declared used ports in [`ServiceConfig.ports`](./starlark-reference/service-config.md), then this function returns the IP address where the service is reachable at from _outside_ the enclave that the container is running inside. This IP address is how clients on the host machine can connect to the service. If no used ports were declared, this will be empty.
 
 **Returns**
 
 The service's public IP address, or an empty value if the service didn't declare any used ports.
 
 ### `getPublicPorts() -> Map<PortID, PortSpec>`
-Gets the ports that the service is reachable at from _outside_ the enclave that the container is running inside. These ports are how clients on the host machine can connect to the service. If the service didn't declare any used ports in [ContainerConfig.usedPorts][containerconfig_usedports], this value will be an empty map.
+Gets the ports that the service is reachable at from _outside_ the enclave that the container is running inside. These ports are how clients on the host machine can connect to the service. If the service didn't declare any used ports in [`ServiceConfig.ports`](./starlark-reference/service-config.md), this value will be an empty map.
 
 **Returns**
 
-The ports (if any) that the service is reachable at from outside the enclave, identified by the user-chosen ID set in [ContainerConfig.usedPorts][containerconfig_usedports] when the service was created.
+The ports (if any) that the service is reachable at from outside the enclave, identified by the user-chosen ID set in [`ServiceConfig.ports`](./starlark-reference/service-config.md) when the service was created.
 
 ### `execCommand(List<String> command) -> (int exitCode, String logs)`
 Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) functionality to execute a command inside the service's running Docker container.
@@ -509,16 +509,7 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 [servicelogsstreamcontent]: #servicelogsstreamcontent
 [servicelog]: #servicelog
 
-[containerconfig]: #containerconfig
-[containerconfig_usedports]: #mapportid-portspec-usedports
-[containerconfig_filesartifactmountpoints]: #mapstring-string-filesartifactmountpoints
-
-[containerconfigbuilder]: #containerconfigbuilder
-
-[modulecontext]: #modulecontext
-
 [enclavecontext]: #enclavecontext
-[enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
 [enclavecontext_runstarlarkscript]: #runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 [enclavecontext_runstarlarkpackage]: #runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 [enclavecontext_runstarlarkremotepackage]: #runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
@@ -533,8 +524,6 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
   
-[templateanddata]: #templateanddata
-
 [loglinefilter]: #loglinefilter
 [google_re2_syntax_docs]: https://github.com/google/re2/wiki/Syntax
 

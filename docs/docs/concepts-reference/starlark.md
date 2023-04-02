@@ -13,7 +13,7 @@ How is Starlark implemented at Kurtosis?
 ----------------------------------------
 Starlark itself is very basic; Google designed it to be extended to fulfill a given usecase. For example, the Bazel language is actually an extension built on top of Starlark. 
 
-We extended basic Starlark with [our own DSL](../starlark-reference/introduction.md) so that it could [fulfill the properties of reusable environment definitions](../explanations/reusable-environment-definitions.md). This gave us:
+We extended basic Starlark with [our own DSL](../starlark-reference/index.md) so that it could [fulfill the properties of reusable environment definitions](../explanations/reusable-environment-definitions.md). This gave us:
 
 - A [list of Kurtosis-specific functions][starlark-reference] for working with an environment
 - The [ability to accept parameters][run-args-reference]
