@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.73.1](https://github.com/kurtosis-tech/kurtosis/compare/0.73.0...0.73.1) (2023-04-02)
+
+
+### Features
+
+* Reduce the word count & language complexity of the Github Issue templates ([#437](https://github.com/kurtosis-tech/kurtosis/issues/437)) ([b1fad7d](https://github.com/kurtosis-tech/kurtosis/commit/b1fad7d9207be855fbdbce9d70410aecf679d892))
+
+
+### Bug Fixes
+
+* Actually fix the broken Docusaurus links in the navbar and footer ([#450](https://github.com/kurtosis-tech/kurtosis/issues/450)) ([3436445](https://github.com/kurtosis-tech/kurtosis/commit/3436445f3f6351b66c9ef5d86a59accd19f4baaf))
+* Fix bug with release-please PR getting a modified Yarn lockfile ([#446](https://github.com/kurtosis-tech/kurtosis/issues/446)) ([bfa155b](https://github.com/kurtosis-tech/kurtosis/commit/bfa155bf4d4be19cff1f3635083d6390586b94fa))
+* Fix links that should be absolute ([#427](https://github.com/kurtosis-tech/kurtosis/issues/427)) ([492bea6](https://github.com/kurtosis-tech/kurtosis/commit/492bea61723b03377c1b981c946fd3fd1c83c70e))
+* Fixed many broken links in the docs ([#444](https://github.com/kurtosis-tech/kurtosis/issues/444)) ([9251cc9](https://github.com/kurtosis-tech/kurtosis/commit/9251cc9f49a323c8916112decc9cd9d9e1fcc430))
+* Improve error message when package arg fails deserialisation ([#418](https://github.com/kurtosis-tech/kurtosis/issues/418)) ([d54fd73](https://github.com/kurtosis-tech/kurtosis/commit/d54fd73e0cb3713214549d6d20f04d374d8bbb50))
+* Indent Caused by in stacktraces ([#417](https://github.com/kurtosis-tech/kurtosis/issues/417)) ([c165a15](https://github.com/kurtosis-tech/kurtosis/commit/c165a15ca24e5af523e27c2d34661025e4189590))
+* Remove no-dead-links Remark plugin ([#447](https://github.com/kurtosis-tech/kurtosis/issues/447)) ([b59b3f8](https://github.com/kurtosis-tech/kurtosis/commit/b59b3f8fd07fe3789595b580085841df54990b57))
+* Remove Quickstart, SDK, and CLI links from the navbar ([#449](https://github.com/kurtosis-tech/kurtosis/issues/449)) ([a7effc9](https://github.com/kurtosis-tech/kurtosis/commit/a7effc946c5db2eeacbcbaee4286c85989a7005f))
+* Try and fix Yarn lockfile violation that's causing Cloudflare publish to fail ([#445](https://github.com/kurtosis-tech/kurtosis/issues/445)) ([4db878b](https://github.com/kurtosis-tech/kurtosis/commit/4db878ba1c47e55af92206249775b573b8de7fd0))
+
 ## [0.73.0](https://github.com/kurtosis-tech/kurtosis/compare/0.72.2...0.73.0) (2023-03-31)
 
 
