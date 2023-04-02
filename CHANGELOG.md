@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.73.2](https://github.com/kurtosis-tech/kurtosis/compare/0.73.1...0.73.2) (2023-04-02)
+
+
+### Bug Fixes
+
+* Fix two small bugs in the docs ([#451](https://github.com/kurtosis-tech/kurtosis/issues/451)) ([d960dee](https://github.com/kurtosis-tech/kurtosis/commit/d960dee0a4db4a253e766ae04f23f24ab08e985a))
+
 ## [0.73.1](https://github.com/kurtosis-tech/kurtosis/compare/0.73.0...0.73.1) (2023-04-02)
 
 
