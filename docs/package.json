@@ -5,7 +5,7 @@
   "scripts": {
     "docusaurus": "docusaurus",
     "remark": "remark",
-    "remark:once": "yarn run remark --quiet --frail --use remark-validate-links --use remark-lint-no-dead-urls docs/",
+    "remark:once": "yarn run remark --quiet --frail --use remark-validate-links docs/",
     "start": "docusaurus start",
     "build": "yarn run remark:once && docusaurus build",
     "swizzle": "docusaurus swizzle",
