@@ -17,7 +17,9 @@ body:
       label: Issue description
       placeholder: |
         e.g. There is a typo in the sentence 'Kurtosis can be run as...' because...
+
+        This is a screenshot...
       description: |
-        We can resolve your issue quicker if you add screenshots or copy-paste the problematic text.
+        Screenshots or copy-pasting the problematic text is very helpful.
     validations:
       required: true

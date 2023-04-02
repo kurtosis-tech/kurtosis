@@ -2,49 +2,33 @@ name: "Bug Report"
 description: Report broken functionality
 labels: ["bug"]
 body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to make Kurtosis better. We thrive on feedback, so you can open this page with `kurtosis feedback --bug`.
   - type: input
     id: version
     attributes:
-      label: What version of the Kurtosis CLI were you running when you hit this bug?
+      label: What's your CLI version?
       placeholder: e.g. 1.2.0
       description: |
-        View the version of your Kurtosis CLI with `kurtosis version`.
+        View the version of your Kurtosis CLI with `kurtosis version`. This will get autofilled if you use `kurtosis feedback --bug`.
     validations:
       required: true
-  - type: checkboxes
-    id: engine-matches
-    attributes:
-      label: Do your CLI and engine versions match?
-      description: |
-        You can verify the versions with `kurtosis version`, and restart your engine with `kurtosis engine restart` if they don't match
-      options:
-        - label: My `kurtosis versions` reports matching CLI and engine versions
-          required: true
-  - type: input
-    id: metrics-user-id
-    attributes:
-      label: (OPTIONAL) What is your metrics user ID?
-      placeholder: e.g. 07d1472497dg44593e5520436603ca4c3423423bd608bec371f9343dxcf4b
-      description: |
-        Print your metrics user ID with `kurtosis analytics id`. This information helps us debug and fix issues quicker.
-        [Read our metrics philosophy here](https://docs.kurtosis.com/explanations/metrics-philosophy).
-    validations:
-      required: false
   - type: textarea
     id: description
     attributes:
       label: Description & steps to reproduce
       description: |
-        We can solve your issue faster when you provide logs, error text, screenshots, reproduction steps, [`kurtosis enclave dump`](https://docs.kurtosis.com/enclave-dump) output, [`kurtosis dump`](https://docs.kurtosis.com/dump) output, etc.
+        We can support you better if you provide logs, screenshots, reproduction steps, [`kurtosis enclave dump`](https://docs.kurtosis.com/enclave-dump) output, [`kurtosis dump`](https://docs.kurtosis.com/dump) output, etc.
       placeholder: |
-        When I run command '...' then the following error appears...
+        When I do X, Y happens...
+
+        Attached is the `kurtosis dump` output...
 
         To reproduce,
         1. Run command '...'
         2. Then do...
-        3. Then try...
-
-        Attached are the logs from 'kurtosis enclave dump'...
     validations:
       required: true
   - type: textarea
@@ -61,7 +45,7 @@ body:
       label: What is the severity of this bug?
       multiple: false
       options:
-      - Critical; I am blocked and Kurtosis is unusable to us because of this bug.
+      - Critical; I am blocked and Kurtosis is unusable for me because of this bug.
       - Painful; this is causing significant friction in my workflow.
       - Papercut; this bug is frustrating, but I have a workaround.
     validations:
