@@ -74,33 +74,20 @@ const config = {
           target: '_self'
         },
         items: [
+          // WARNING!!!!
+          // The navbar is NOT versioned together with versioned docs! So the navbar you have here must work for ALL versions of the docs!
+          // Therefore, it's a good idea not to ensure you're not putting things in the navbar that point to the docs themselves, lest
+          //   you get in a situation where you want to change the docs but now you have a navbar item pointing at it
+          // WARNING!!!!
           {
-            to: '/quickstart',
+            href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml&title=%5BDocs%5D%3A+',
             position: 'left',
-            label: 'Quickstart',
-            activeBasePath: '/quickstart'
-          },
-          {
-            to: '/cli',
-            position: 'left',
-            label: 'CLI',
-            activeBasePath: '/cli'
-          },
-          {
-            to: '/sdk',
-            position: 'left',
-            label: 'SDK',
-            activeBasePath: '/sdk'
+            label: 'Report Docs Issue',
           },
           {
             type: 'docsVersionDropdown',
             position: 'right',
             dropdownActiveClassDisabled: true,
-          },
-          {
-            href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml&title=%5BDocs%5D%3A+',
-            position: 'right',
-            label: 'Report Docs Issue',
           },
         ],
       },
