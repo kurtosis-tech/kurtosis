@@ -6953,6 +6953,20 @@ remark-lint-no-dead-urls@^1.1.0:
     unified-lint-rule "^1.0.4"
     unist-util-visit "^2.0.1"
 
+remark-lint-no-undefined-references@^4.2.0:
+  version "4.2.0"
+  resolved "https://registry.yarnpkg.com/remark-lint-no-undefined-references/-/remark-lint-no-undefined-references-4.2.0.tgz#11a3e579b9107493d7781973dde8517793f52e0c"
+  integrity sha512-EDV9B1ZXMLcKVtMQFvfvtbag4AkLcu8aUNGXoez5GJLcCAQ8Q+sG74yOtIW4xNVlVubEjl0vdkFhaKYLxvn2Sw==
+  dependencies:
+    "@types/mdast" "^3.0.0"
+    micromark-util-normalize-identifier "^1.0.0"
+    unified "^10.0.0"
+    unified-lint-rule "^2.0.0"
+    unist-util-generated "^2.0.0"
+    unist-util-position "^4.0.0"
+    unist-util-visit "^4.0.0"
+    vfile-location "^4.0.0"
+
 remark-mdx@1.6.22:
   version "1.6.22"
   resolved "https://registry.npmjs.org/remark-mdx/-/remark-mdx-1.6.22.tgz"
@@ -7905,6 +7919,16 @@ unified-lint-rule@^1.0.4:
   dependencies:
     wrapped "^1.0.1"
 
+unified-lint-rule@^2.0.0:
+  version "2.1.1"
+  resolved "https://registry.yarnpkg.com/unified-lint-rule/-/unified-lint-rule-2.1.1.tgz#2363f27064f0b44675d11119bb573a738e346f24"
+  integrity sha512-vsLHyLZFstqtGse2gvrGwasOmH8M2y+r2kQMoDSWzSqUkQx2MjHjvZuGSv5FUaiv4RQO1bHRajy7lSGp7XWq5A==
+  dependencies:
+    "@types/unist" "^2.0.0"
+    trough "^2.0.0"
+    unified "^10.0.0"
+    vfile "^5.0.0"
+
 unified@9.2.0:
   version "9.2.0"
   resolved "https://registry.npmjs.org/unified/-/unified-9.2.0.tgz"
@@ -7959,6 +7983,11 @@ unist-util-generated@^1.0.0:
   resolved "https://registry.npmjs.org/unist-util-generated/-/unist-util-generated-1.1.6.tgz"
   integrity sha512-cln2Mm1/CZzN5ttGK7vkoGw+RZ8VcUH6BtGbq98DDtRGquAAOXig1mrBQYelOwMXYS8rK+vZDyyojSjp7JX+Lg==
 
+unist-util-generated@^2.0.0:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/unist-util-generated/-/unist-util-generated-2.0.1.tgz#e37c50af35d3ed185ac6ceacb6ca0afb28a85cae"
+  integrity sha512-qF72kLmPxAw0oN2fwpWIqbXAVyEqUzDHMsbtPvOudIlUzXYFIeQIuxXQCRCFh22B7cixvU0MG7m3MW8FTq/S+A==
+
 unist-util-inspect@^7.0.0:
   version "7.0.2"
   resolved "https://registry.npmjs.org/unist-util-inspect/-/unist-util-inspect-7.0.2.tgz"
@@ -7982,6 +8011,13 @@ unist-util-position@^3.0.0:
   version "3.1.0"
   resolved "https://registry.npmjs.org/unist-util-position/-/unist-util-position-3.1.0.tgz"
   integrity sha512-w+PkwCbYSFw8vpgWD0v7zRCl1FpY3fjDSQ3/N/wNd9Ffa4gPi8+4keqt99N3XW6F99t/mUzp2xAhNmfKWp95QA==
+
+unist-util-position@^4.0.0:
+  version "4.0.4"
+  resolved "https://registry.yarnpkg.com/unist-util-position/-/unist-util-position-4.0.4.tgz#93f6d8c7d6b373d9b825844645877c127455f037"
+  integrity sha512-kUBE91efOWfIVBo8xzh/uZQ7p9ffYRtUbMRZBNFYwf0RK8koUMx6dGUfwylLOKmaT2cs4wSW96QoYUSXAyEtpg==
+  dependencies:
+    "@types/unist" "^2.0.0"
 
 unist-util-remove-position@^2.0.0:
   version "2.0.1"
@@ -8177,6 +8213,14 @@ vfile-location@^3.0.0, vfile-location@^3.2.0:
   version "3.2.0"
   resolved "https://registry.npmjs.org/vfile-location/-/vfile-location-3.2.0.tgz"
   integrity sha512-aLEIZKv/oxuCDZ8lkJGhuhztf/BW4M+iHdCwglA/eWc+vtuRFJj8EtgceYFX4LRjOhCAAiNHsKGssC6onJ+jbA==
+
+vfile-location@^4.0.0:
+  version "4.1.0"
+  resolved "https://registry.yarnpkg.com/vfile-location/-/vfile-location-4.1.0.tgz#69df82fb9ef0a38d0d02b90dd84620e120050dd0"
+  integrity sha512-YF23YMyASIIJXpktBa4vIGLJ5Gs88UB/XePgqPmTa7cDA+JeO3yclbpheQYCHjVHBn/yePzrXuygIL+xbvRYHw==
+  dependencies:
+    "@types/unist" "^2.0.0"
+    vfile "^5.0.0"
 
 vfile-message@^2.0.0:
   version "2.0.4"
