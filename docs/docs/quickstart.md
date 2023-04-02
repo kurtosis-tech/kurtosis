@@ -173,7 +173,7 @@ b6fc024deefe   postgres   postgres: 5432/tcp -> postgresql://127.0.0.1:59299   R
 ### Review: Run Postgres
 So what actually happened? Three things actually:
 
-1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](https://docs.kurtosis.com/concepts-reference/plan) for what you wanted done (in this case, starting a Postgres instance)
+1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](./concepts-reference/plan.md) for what you wanted done (in this case, starting a Postgres instance)
 1. **Validation:** Kurtosis then ran several validations against your plan, including validating that the Postgres image exists
 1. **Execution:** Kurtosis finally executed the validated plan inside the enclave to start a Postgres container
 
@@ -1024,7 +1024,6 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 
 <!-- Misc -->
 [homepage]: home.md
-[kevin-linked]: https://www.linkedin.com/in/kevintoday/
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
 [bazel-github]: https://github.com/bazelbuild/bazel/

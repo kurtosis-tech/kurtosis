@@ -106,3 +106,10 @@ For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply
 [why-we-built-kurtosis]: ./why-we-built-kurtosis.md
 [starlark-reference]: ../concepts-reference/starlark.md
 [starlark-code-reference]: ../starlark-reference/index.md
+[enclaves-reference]: ../concepts-reference/enclaves.md
+[enclave-add-reference]: ../cli-reference/enclave-add.md
+[enclave-ls-reference]: ../cli-reference/enclave-ls.md
+[enclave-inspect-reference]: ../cli-reference/enclave-inspect.md
+[enclave-rm-reference]: ../cli-reference/enclave-rm.md
+[quickstart]: ../quickstart.md
+[client-libs-reference]: ../client-libs-reference.md

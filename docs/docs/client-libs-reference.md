@@ -23,7 +23,7 @@ Creates a new Kurtosis enclave using the given parameters.
 
 **Args**
 * `enclaveName`: The name to give the new enclave.
-* `isPartitioningEnabled`: If set to true, the enclave will be set up to allow for repartitioning. This will make service addition & removal take slightly longer, but allow for calls to [EnclaveContext.repartitionNetwork][enclavecontext_repartitionnetwork].
+* `isPartitioningEnabled`: If set to true, the enclave will be set up to allow for subnetworking. This will make service addition & removal take slightly longer, but will enable [subnetworking](./concepts-reference/subnetworks.md) and allow the use of [`Plan.set_connection`](./starlark-reference/plan.md#set_connection) in the Starlark scripts you run.
 
 **Returns**
 * `enclaveContext`: An [EnclaveContext][enclavecontext] object representing the new enclave.
@@ -286,43 +286,6 @@ Convenience wrapper around [EnclaveContext.runStarlarkPackage][enclavecontext_ru
 
 Convenience wrapper around [EnclaveContext.runStarlarkRemotePackage][enclavecontext_runstarlarkremotepackage], that blocks until the execution of the package is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
-<!-- TODO DELETE THIS!!! -->
-### `registerFilesArtifacts(Map<FilesArtifactID, String> filesArtifactUrls)`
-Downloads the given files artifacts to the Kurtosis engine, associating them with the given IDs, so they can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
-
-**Args**
-
-* `filesArtifactUrls`: A map of files_artifact_id -> url, where the ID is how the artifact will be referenced in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints] and the URL is the URL on the web where the files artifact should be downloaded from.
-
-### `addServiceToPartition(ServiceID serviceId, PartitionID partitionId, ContainerConfig containerConfig) -> ServiceContext serviceContext`
-Starts a new service in the enclave with the given service ID, inside the partition with the given ID, using the given container config.
-
-**Args**
-
-* `serviceId`: The ID that the new service should have.
-* `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
-* `containerConfig`: A [ContainerConfig][containerconfig] object indicating how to configure the service.
-
-**Returns**
-
-* `serviceContext`: The [ServiceContext][servicecontext] representation of a service running in a Docker container. Port information can be found in `ServiceContext.GetPublicPorts()`. The port spec strings that the service declared (as defined in [ContainerConfig.usedPorts][containerconfig_usedports]), mapped to the port on the host machine where the port has been bound to. This allows you to make requests to a service running in Kurtosis by making requests to a port on your local machine. If a port was not bound to a host machine port, it will not be present in the map (and if no ports were bound to host machine ports, the map will be empty).
-
-### `addServicesToPartition(Map<ServiceID, ContainerConfig> containerConfigs, PartitionID partitionId) -> (Map<ServiceID, ServiceContext> successfulServices, Map<ServiceID, Error> failedServices)`
-Start services in bulk in the enclave with the given service IDs, inside the partition with the given ID, using the given container config.
-
-**Args**
-
-* `containerConfigs`: A mapping of service IDs to start in the enclave to their `containerConfig` indicating how to configure the service.
-* `partitionId`: The ID of the partition that the new service should be started in. This can be left blank to start the service in the default partition if it exists (i.e. if the enclave hasn't been repartitioned and the default partition removed).
-
-**Returns**
-
-* `successfulServices`: A mapping of service IDs that were successfully started in the enclave to their respective [ServiceContext][servicecontext] representation.
-* `failedServices`: A mapping of service IDs to the errors the caused that prevented the services from being added successfully to the enclave.
-
-### `addService(ServiceID serviceId,  ContainerConfig containerConfig) -> (ServiceContext serviceContext)`
-Convenience wrapper around [EnclaveContext.addServiceToPartition][enclavecontext_addservicetopartition], that adds the service to the default partition. Note that if the enclave has been repartitioned and the default partition doesn't exist anymore, this method will fail.
-
 ### `getServiceContext(String serviceIdentifier) -> ServiceContext serviceContext`
 Gets relevant information about a service (identified by the given service [identifier][identifier]) that is running in the enclave.
 
@@ -341,8 +304,8 @@ Gets the Name and UUID of the current services in the enclave.
 
 * `serviceIdentifiers`: A map of objects containing a mapping of Name -> UUID for all the services inside the enclave
 
-### `uploadFiles(String pathToUpload, String artifactName) -> FileArtifactUUID, FileArtifactName, Error`
-Takes a filepath or directory path that will be compressed and uploaded to the Kurtosis filestore for use with [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+### `uploadFiles(String pathToUpload, String artifactName) -> FilesArtifactUUID, FilesArtifactName, Error`
+Uploads a filepath or directory path as a [files artifact](./concepts-reference/files-artifacts.md). The resulting files artifact can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md) when adding a service.
 
 If a directory is specified, the contents of the directory will be uploaded to the archive without additional nesting. Empty directories cannot be uploaded.
 
@@ -353,11 +316,11 @@ If a directory is specified, the contents of the directory will be uploaded to t
 
 **Returns**
 
-* `FileArtifactUUID`: A unique ID as a string identifying the uploaded files, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
-* `FileArtifactName`: The name of the file-artifact, it is auto-generated if `artitfactName` is an empty string.
+* `FilesArtifactUUID`: A UUID identifying the new files artifact, which can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md).
+* `FilesArtifactName`: The name of the file-artifact, it is auto-generated if `artitfactName` is an empty string.
 
 ### `storeWebFiles(String urlToDownload, String artifactName)`
-Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, so that the files inside can be mounted inside a service's filespace at creation time via [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+Downloads a files-containing `.tgz` from the given URL as a [files artifact](./concepts-reference/files-artifacts.md). The resulting files artifact can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md) when adding a service.
 
 **Args**
 
@@ -366,7 +329,7 @@ Downloads a files-containing `.tgz` from the given URL to the Kurtosis engine, s
 
 **Returns**
 
-* `UUID`: A unique ID as a string identifying the downloaded, which can be used in [ContainerConfig.filesArtifactMountpoints][containerconfig_filesartifactmountpoints].
+* `UUID`: A UUID identifying the new files artifact, which can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md).
 
 ### `getExistingAndHistoricalServiceIdentifiers() -> ServiceIdentifiers serviceIdentifiers`
 
@@ -402,77 +365,6 @@ if users want to enumerate all service names, say for an autocomplete like funct
 
 **Returns**
 * `serviceNames`: This is a sorted list of service names
-
-ModuleContext
--------------
-**DEPRECATED: Use `runStarlarkScript` and `runStarlarkPackage` instead**
-
-This Kurtosis-provided class is the lowest-level representation of a Kurtosis module - a Docker container with a connection to the Kurtosis engine that responds to commands.
-
-### `execute(String serializedParams) -> String serializedResult`
-**DEPRECATED: Use `runStarlarkScript` and `runStarlarkPackage` instead**
-
-Some modules are considered executable, meaning they respond to an "execute" command. This function will send the execute command to the module with the given serialized args, returning the serialized result. The serialization format of args & response will depend on the module. If the module isn't executable (i.e. doesn't respond to an "execute" command) then an error will be thrown.
-
-**Args**
-
-* `serializedParams`: Serialized data containing args to the module's execute function. Consult the documentation for the module you're using to determine what this should contain.
-
-**Returns**
-
-* `serializedResult`: Serialized data containing the results of executing the module. Consult the documentation for the module you're using to determine what this will contain.
-
-PartitionConnection
--------------------
-This interface represents the network state between two partitions (e.g. whether network traffic is blocked, being partially dropped, etc.).
-
-The three types of partition connections are: unblocked (all traffic is allowed), blocked (no traffic is allowed), and soft (packets are partially dropped). Each type of partition connection has a constructor that can be used to create them.
-
-The soft partition constructor receives one parameter, `packetLossPercentage`, which sets the percentage of packet loss in the connection between the services that are part of the partition.
-
-Unblocked partitions and blocked partitions have parameter-less constructors.
-
-ContainerConfig
----------------
-Object containing information Kurtosis needs to create and run the container. This config should be created using [ContainerConfigBuilder][containerconfigbuilder] instances.
-
-### String image
-The name of the container image that Kurtosis should use when creating the service's container (e.g. `my-repo/my-image:some-tag-name`).
-
-### `Map<PortID, PortSpec> usedPorts`
-The ports that the container will be listening on, identified by a user-friendly ID that can be used to select the port again in the future (e.g. via [ServiceContext.getPublicPorts][servicecontext_getpublicports].
-
-### `Map<String, String> filesArtifactMountpoints`
-Sometimes a service needs files to be available before it starts (e.g. starting a service with a 5 GB Postgres database mounted). To ease this pain, Kurtosis allows you to specify gzipped TAR files that Kurtosis will uncompress and mount at locations on your service containers. These "files artifacts" will need to have been stored in Kurtosis beforehand using methods like [EnclaveContext.uploadFiles][enclavecontext_uploadfiles].
-
-This property is therefore a map of the files artifact ID -> path on the container where the uncompressed artifact contents should be mounted, with the file artifact IDs corresponding to the ID returned by files-storing methods like [EnclaveContext.uploadFiles][enclavecontext_uploadfiles].
-
-E.g. if I've previously uploaded a set of files using [EnclaveContext.uploadFiles][enclavecontext_uploadfiles] and Kurtosis has returned me the ID `813bdb20-3aab-4c5b-a0f5-a7deba7bf0d7`, I might ask Kurtosis to mount the contents inside my container at the `/database` path using a map like `{"813bdb20-3aab-4c5b-a0f5-a7deba7bf0d7": "/database"}`.
-
-### `List<String> entrypointOverrideArgs`
-You often won't control the container images that you'll be using in your testnet, and the `ENTRYPOINT` statement  hardcoded in their Dockerfiles might not be suitable for what you need. This function allows you to override these statements when necessary.
-
-### `List<String> cmdOverrideArgs`
-You often won't control the container images that you'll be using in your testnet, and the `CMD` statement  hardcoded in their Dockerfiles might not be suitable for what you need. This function allows you to override these statements when necessary.
-
-### `Map<String, String> environmentVariableOverrides`
-Defines environment variables that should be set inside the Docker container running the service. This can be necessary for starting containers from Docker images you don't control, as they'll often be parameterized with environment variables.
-
-### `uint64 cpuAllocationMillicpus`
-Allows you to set an allocation for CPU resources available in the underlying host container of a service. The metric used to measure `cpuAllocation`  is `millicpus`, 1000 millicpus is equivalent to 1 CPU on the underlying machine. This metric is identical [Docker's measure of `cpus`](https://docs.docker.com/config/containers/resource_constraints/#:~:text=Description-,%2D%2Dcpus%3D%3Cvalue%3E,-Specify%20how%20much) and [Kubernetes measure of `cpus` for limits](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/#meaning-of-cpu). Setting `cpuAllocationMillicpus=1500` is equivalent to setting `cpus=1.5` in Docker and `cpus=1.5` or `cpus=1500m` in Kubernetes. If set, the value must be a nonzero positive integer. If unset, there will be no constraints on CPU usage of the host container. 
-
-### `uint64 memoryAllocationMegabytes`
-Allows you to set an allocation for memory resources available in the underlying host container of a service. The metric used to measure `memoryAllocation` is `megabytes`. Setting `memoryAllocation=1000` is equivalent to setting the memory limit of the underlying host machine to `1e9 bytes` or `1GB`. If set, the value must be a nonzero positive integer of at least `6 megabytes` as Docker requires this as a minimum. If unset, there will be no constraints on memory usage of the host container. For information on memory limits in your underlying container engine, view [Docker](https://docs.docker.com/config/containers/resource_constraints/)'s and [Kubernetes](https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/)'s docs.
-
-### `String privateIPAddrPlaceholder`
-The placeholder string used within `entrypointOverrideArgs`, `cmdOverrideArgs`, and `environmentVariableOverrides` that gets replaced with the private IP address of the container inside Docker/Kubernetes before the container starts. This defaults to `KURTOSIS_IP_ADDR_PLACEHOLDER` if this isn't set.
-The user needs to make sure that they provide the same placeholder string for this field that they use in `entrypointOverrideArgs`, `cmdOverrideArgs`, and `environmentVariableOverrides`.
-
-
-ContainerConfigBuilder
-------------------------------
-The builder that should be used to create [ContainerConfig][containerconfig] instances. The functions on this builder will correspond to the properties on the [ContainerConfig][containerconfig] object, in the form `withPropertyName` (e.g. `withUsedPorts` sets the ports used by the container).
-
 
 StarlarkRunResponseLine
 -----------------------
@@ -536,7 +428,7 @@ StarlarkRunProgress
 StarlarkRunResult
 -----------------
 
-`StarlarkRunResult` is the object returned by the blocking functions to run Starlark code. It is similar to [RunStarlarkResponseLine][runstarlarkresponseline] except that it is not a union object:
+`StarlarkRunResult` is the object returned by the blocking functions to run Starlark code. It is similar to [StarlarkRunResponseLine][starlarkrunresponseline] except that it is not a union object:
 
 * `instructions`: the [Starlark Instruction][starlarkinstruction] that were run
 
@@ -579,21 +471,21 @@ Gets the ports that the service is reachable at from _inside_ the enclave that t
 
 **Returns**
 
-The ports that the service is reachable at from inside the enclave, identified by the user-chosen ID set in [ContainerConfig.usedPorts][containerconfig_usedports] when the service was created.
+The ports that the service is reachable at from inside the enclave, identified by the user-chosen port ID set in [`ServiceConfig.ports`](./starlark-reference/service-config.md) when the service was created.
 
 ### `getMaybePublicIpAddress() -> String`
-If the service declared used ports in [ContainerConfig.usedPorts][containerconfig_usedports], then this function returns the IP address where the service is reachable at from _outside_ the enclave that the container is running inside. This IP address is how clients on the host machine can connect to the service. If no used ports were declared, this will be empty.
+If the service declared used ports in [`ServiceConfig.ports`](./starlark-reference/service-config.md), then this function returns the IP address where the service is reachable at from _outside_ the enclave that the container is running inside. This IP address is how clients on the host machine can connect to the service. If no used ports were declared, this will be empty.
 
 **Returns**
 
 The service's public IP address, or an empty value if the service didn't declare any used ports.
 
 ### `getPublicPorts() -> Map<PortID, PortSpec>`
-Gets the ports that the service is reachable at from _outside_ the enclave that the container is running inside. These ports are how clients on the host machine can connect to the service. If the service didn't declare any used ports in [ContainerConfig.usedPorts][containerconfig_usedports], this value will be an empty map.
+Gets the ports that the service is reachable at from _outside_ the enclave that the container is running inside. These ports are how clients on the host machine can connect to the service. If the service didn't declare any used ports in [`ServiceConfig.ports`](./starlark-reference/service-config.md), this value will be an empty map.
 
 **Returns**
 
-The ports (if any) that the service is reachable at from outside the enclave, identified by the user-chosen ID set in [ContainerConfig.usedPorts][containerconfig_usedports] when the service was created.
+The ports (if any) that the service is reachable at from outside the enclave, identified by the user-chosen ID set in [`ServiceConfig.ports`](./starlark-reference/service-config.md) when the service was created.
 
 ### `execCommand(List<String> command) -> (int exitCode, String logs)`
 Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) functionality to execute a command inside the service's running Docker container.
@@ -607,22 +499,6 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 * `exitCode`: The exit code of the command.
 * `logs`: The output of the run command, assuming a UTF-8 encoding. **NOTE:** Commands that output non-UTF-8 output will likely be garbled!
 
-TemplateAndData
-------------------
-
-This is an object that gets used by the [renderTemplates][enclavecontext_rendertemplates] function.
-It has two properties.
-
-### String template
-The template that needs to be rendered. We support Golang [templates](https://pkg.go.dev/text/template). The casing of the `keys` or `fields` inside the template must match the casing of the `fields` or the `keys` inside the data.
-
-### Any templateData
-The data that needs to be rendered in the template. This will be converted into a JSON string before it gets sent over the wire. The elements inside the object should exactly match the keys in the template. If you are using a struct for `templateData` then the field names must start with an upper case letter to ensure that the field names are accessible outside of the structs own package. If you are using a map then you can keys that begin with lower case letters as well.
-
-Note, because of how we handle floating point numbers & large integers, if you pass a floating point number it will get
-printed in the decimal notation by default. If you want to use modifiers like `{{printf .%2f | .MyFloat}}`, you'll have to use
-the `Float64` method on the `json.Number` first, so above would look like `{{printf .2%f | .MyFloat.Float64}}`.
-
 <!-------------------------------- ONLY LINKS BELOW HERE ------------------------>
 
 <!-- TODO Make the function definition not include args or return values, so we don't get these huge ugly links that break if we change the function signature -->
@@ -633,19 +509,7 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 [servicelogsstreamcontent]: #servicelogsstreamcontent
 [servicelog]: #servicelog
 
-[containerconfig]: #containerconfig
-[containerconfig_usedports]: #mapportid-portspec-usedports
-[containerconfig_filesartifactmountpoints]: #mapstring-string-filesartifactmountpoints
-
-[containerconfigbuilder]: #containerconfigbuilder
-
-[modulecontext]: #modulecontext
-
 [enclavecontext]: #enclavecontext
-[enclavecontext_registerfilesartifacts]: #registerfilesartifactsmapfilesartifactid-string-filesartifacturls
-
-[partitionconnection]: #partitionconnection
-
 [enclavecontext_runstarlarkscript]: #runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 [enclavecontext_runstarlarkpackage]: #runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 [enclavecontext_runstarlarkremotepackage]: #runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
@@ -655,12 +519,11 @@ the `Float64` method on the `json.Number` first, so above would look like `{{pri
 [starlarkinstructionresult]: #starlarkinstructionresult
 [starlarkerror]: #starlarkerror
 [starlarkrunprogress]: #starlarkrunprogress
+[starlarkrunresult]: #starlarkrunresult
 
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
   
-[templateanddata]: #templateanddata
-
 [loglinefilter]: #loglinefilter
 [google_re2_syntax_docs]: https://github.com/google/re2/wiki/Syntax
 

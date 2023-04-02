@@ -23,7 +23,7 @@ port_spec = PortSpec(
     application_protocol = "http",
 )
 ```
-The above constructor returns a `PortSpec` object that defines information about a port for use in [`add_service`][subnetworks-reference].
+The above constructor returns a `PortSpec` object that defines information about a port for use in [`add_service`](../concepts-reference/subnetworks.md).
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [future-references-reference]: ../concepts-reference/future-references.md

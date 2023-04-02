@@ -31,7 +31,7 @@ This external files problem is not unique to Kurtosis. Every programming languag
   import some-package
   ```
 
-- In Python, local files are handled via the [relative import syntax](https://docs.python.org/3/concepts-reference/import.html#package-relative-imports):
+- In Python, local files are handled via the [relative import syntax](https://docs.python.org/3/reference/import.html#package-relative-imports):
 
   ```python
   from .moduleY import spam

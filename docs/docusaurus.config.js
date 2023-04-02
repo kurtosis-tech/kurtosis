@@ -36,6 +36,9 @@ const config = {
             }
           },
           admonitions: {}, // Add this line to enable admonitions
+
+          // TODO TODO Run Remark plugins through Docusaurus itself (right now we're running it via yarn and package.json)!! See https://docusaurus.io/docs/markdown-features/plugins#installing-plugins
+          
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
