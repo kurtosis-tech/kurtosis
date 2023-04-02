@@ -2,6 +2,7 @@
 id: index
 title: Starlark Introduction
 sidebar_label: Introduction
+slug: /starlark-reference
 sidebar_position: 1
 ---
 
