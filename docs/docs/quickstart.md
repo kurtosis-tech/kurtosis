@@ -960,7 +960,7 @@ Let's review. In this tutorial you have:
 This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
 
 To learn more about how Kurtosis is used, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of Kurtosis in action, including:
-- How to run a simple [Go test][go-test-example] or [Typescript][ts-test-example]against the app we just built
+- How to run a simple [Go test][go-test-example] or [Typescript test][ts-test-example] against the app we just built
 - The [Ethereum package][ethereum-package], used by the Ethereum Foundation, which can be used to set up local testnets 
 - A parameterized package for standing up an [n-node Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
 - The [NEAR package][near-package] for local dApp development in the NEAR ecosystem
