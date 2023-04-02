@@ -5,19 +5,23 @@ body:
   - type: textarea
     id: background-and-motivation
     attributes:
-      label: Motivation & background
-      placeholder: Code examples, screenshots, and references are very helpful here
-      description: |
-        What problem are you trying to solve? What are you looking to accomplish? What pain are you hitting?
+      label: Background & motivation
+      placeholder: |
+        What problem are you trying to solve? What are you looking to accomplish?
+
+        e.g. I'm trying to X, but Y...
+
+        Code examples and screenshots help us a lot.
     validations:
       required: true
   - type: textarea
     id: desired-behavior
     attributes:
       label: Desired behaviour
-      placeholder: Code examples, screenshots, and references are very helpful here
-      description: |
+      placeholder: |
         What would you like to happen?
+
+        e.g. The X should Y...
     validations:
       required: true
   - type: dropdown
@@ -26,7 +30,7 @@ body:
       label: How important is this to you?
       multiple: false
       options:
-      - Critical; Kurtosis is unusable for us without it.
+      - Critical; Kurtosis is unusable for me without it.
       - Painful; the lack of this feature makes using Kurtosis frictionful.
       - Nice to have; this feature would make using Kurtosis more enjoyable.
     validations:
