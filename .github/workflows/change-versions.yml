@@ -30,7 +30,8 @@ jobs:
           cd docs/
 
           # Very important to use Yarn, rather than NPM so we don't get two lockfiles!
-          yarn install
+          # Also, important to use a frozen lockfile so that Yarn isn't silently pushing updated dependencies right to 'main'
+          yarn --frozen-lockfile install
           yarn run docusaurus docs:version "${version}"
 
           cp ../CHANGELOG.md "versioned_docs/version-${version}/changelog.md"

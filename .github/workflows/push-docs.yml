@@ -30,7 +30,7 @@ jobs:
         run: cat CHANGELOG.md >> docs/docs/changelog.md
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Yarn Install
-        run: yarn --cwd ./docs install
+        run: yarn --cwd ./docs --frozen-lockfile install
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Yarn Build
         run: yarn --cwd ./docs build
