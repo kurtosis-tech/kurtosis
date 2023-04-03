@@ -30,7 +30,7 @@ func getCustomReadyConditionsScripPart(
 	timeoutStr string,
 ) string {
 	return fmt.Sprintf("%s(%s=%s(%s=%q, %s=%q, %s=%s), %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)",
-		service_config.ReadyConditionsTypeName,
+		service_config.ReadyConditionTypeName,
 		service_config.RecipeAttr,
 		recipe.GetHttpRecipeTypeName,
 		recipe.PortIdAttr,

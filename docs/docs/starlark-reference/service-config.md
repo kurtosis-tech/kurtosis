@@ -82,7 +82,7 @@ config = ServiceConfig(
     # This field can be used to check the service's readiness after this is started
     # to confirm that it is ready to receive connections and traffic
     # OPTIONAL (Default: no ready conditions)
-    ready_conditions = ReadyConditions(...)
+    ready_conditions = ReadyCondition(...)
 )
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
@@ -91,7 +91,7 @@ The `files` dictionary argument accepts a key value pair, where `key` is the pat
 
 For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
 
-You can see how to configure the [`ReadyConditions` type here][ready-conditions]. 
+You can see how to configure the [`ReadyCondition` type here][ready-condition]. 
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
@@ -100,4 +100,4 @@ You can see how to configure the [`ReadyConditions` type here][ready-conditions]
 [render-templates-reference]: ./plan.md#render_templates
 [store-service-reference]: ./plan.md#store_service_files
 [subnetworks-reference]: ../concepts-reference/subnetworks.md
-[ready-conditions]: ./ready-conditions.md
+[ready-condition]: ./ready-condition.md

@@ -24,7 +24,7 @@ def run(plan):
         endpoint = "?input=foo/bar",
 	)
 
-    ready_conditions = ReadyConditions(
+    ready_conditions = ReadyCondition(
         recipe=get_recipe,
         field="code",
         assertion="==",
