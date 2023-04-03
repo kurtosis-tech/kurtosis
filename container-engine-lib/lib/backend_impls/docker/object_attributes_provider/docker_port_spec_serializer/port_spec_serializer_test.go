@@ -234,8 +234,10 @@ func TestSerializeMethod_ValidPortSpecs(t *testing.T) {
 
 func TestDeSerializeMethod_ValidPortSpecs(t *testing.T) {
 	expectedSpecs := map[string]*port_spec.PortSpec{}
-	expectedPortOne, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_TCP, "", portWaitForTest)
-	expectedPortTwo, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_UDP, "https", portWaitForTest)
+
+	//TODO use portWaitForTest when we include the wait serialization/deserialization
+	expectedPortOne, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_TCP, "", nil)
+	expectedPortTwo, _ := port_spec.NewPortSpec(3333, port_spec.TransportProtocol_UDP, "https", nil)
 	expectedSpecs["portOne"] = expectedPortOne
 	expectedSpecs["portTwo"] = expectedPortTwo
 
