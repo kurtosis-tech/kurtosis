@@ -1,74 +1,52 @@
 name: "Bug Report"
-description: We are always striving to improve Kurtosis. Use this form to report a bug with Kurtosis.
-title: "[bug]: "
+description: Report broken functionality
 labels: ["bug"]
 body:
   - type: markdown
     attributes:
       value: |
-        Thank you for taking the time to fill out this Bug Report. We value your feedback.
-        Please make sure to update the title of this Bug Report to concisely describe the issue.
+        Thank you for taking the time to make Kurtosis better. We thrive on feedback, so you can open this page with `kurtosis feedback --bug`.
   - type: input
     id: version
     attributes:
-      label: What version of the Kurtosis CLI were you running when you encountered this bug?
+      label: What's your CLI version?
       placeholder: e.g. 1.2.0
       description: |
-        To view the current version of the Kurtosis CLI you are using, run `kurtosis version`.
-    validations:
-      required: true
-  - type: input
-    id: metrics-user-id
-    attributes:
-      label: (Optional) What is your metrics user ID?
-      placeholder: e.g. 07d1472497dg44593e5520436603ca4c3423423bd608bec371f9343dxcf4b
-      description: |
-        (Optional) To print your metrics user ID, run `kurtosis analytics id`. This information will help us debug and fix issues quicker.
-        [Read more about our metrics philosophy](https://docs.kurtosis.com/explanations/metrics-philosophy).
-    validations:
-      required: false
-  - type: dropdown
-    id: priority
-    attributes:
-      label: What is the severity of this bug?
-      multiple: false
-      options:
-      - Critical, I am blocked and Kurtosis is unusable to us because of this bug.
-      - Painful, this is causing significant friction in my workflow.
-      - Papercut, this bug is frustrating, but I have a workaround.
-      description: |
-        This information helps us with prioritization.
+        View the version of your Kurtosis CLI with `kurtosis version`. This will get autofilled if you use `kurtosis feedback --bug`.
     validations:
       required: true
   - type: textarea
     id: description
     attributes:
       label: Description & steps to reproduce
-      placeholder: |
-        Share with us what happens today.
-        1. With this package or service ...
-        2. When running this command '...'
-        3. See error ...
       description: |
-        Please provide a description of the bug and consider sharing any screenshots or relevant context that may help our team debug the issue.
+        We can support you better if you provide logs, screenshots, reproduction steps, [`kurtosis enclave dump`](https://docs.kurtosis.com/enclave-dump) output, [`kurtosis dump`](https://docs.kurtosis.com/dump) output, etc.
+      placeholder: |
+        When I do X, Y happens...
+
+        Attached is the `kurtosis dump` output...
+
+        To reproduce,
+        1. Run command '...'
+        2. Then do...
     validations:
       required: true
-  - type: textarea
-    id: logs
-    attributes:
-      label: Relevant logs from `kurtosis enclave dump`
-      placeholder: Attach relevant container and/or Kurtosis engine log files, preferrably those that come from `kurtosis enclave dump`. 
-      render: true
-      description: |
-        Use this section to attach relevant log files from [`kurtosis enclave dump`](https://docs.kurtosis.com/enclave-dump). Doing so helps our team better understand what is happening. 
-    validations:
-      required: false
   - type: textarea
     id: desired-behavior
     attributes:
       label: Desired behavior
-      placeholder: Share with us what should happen instead.
-      description: |
-        Consider adding code examples, screenshots, or references. This helps our team better understand what is happening and what should be happening.
+      placeholder: |
+         What should happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: priority
+    attributes:
+      label: What is the severity of this bug?
+      multiple: false
+      options:
+      - Critical; I am blocked and Kurtosis is unusable for me because of this bug.
+      - Painful; this is causing significant friction in my workflow.
+      - Papercut; this bug is frustrating, but I have a workaround.
     validations:
       required: true

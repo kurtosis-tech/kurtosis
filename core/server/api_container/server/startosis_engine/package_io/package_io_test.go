@@ -3,68 +3,42 @@ package package_io
 import (
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 	"testing"
 )
 
-func TestPackageIo_simpleValue(t *testing.T) {
-	result, err := convertValueToStructIfPossible(starlark.String("Hello World!"))
-	require.Nil(t, err)
+const complexInputJson = `{
+	"dict": {},
+	"float": 3.4,
+	"int": 1,
+	"list": [
+		"a",
+		1,
+		{}
+	],
+	"string": "Hello World!"
+}`
 
-	expectedResult := starlark.String("Hello World!")
-	require.Equal(t, expectedResult, result)
-}
-
-func TestPackageIo_listValue(t *testing.T) {
-	listValue := starlark.NewList([]starlark.Value{
-		starlark.String("Hello"),
-		starlark.String("World!"),
-	})
-	result, err := convertValueToStructIfPossible(listValue)
-	require.Nil(t, err)
-
-	require.Equal(t, listValue, result)
-}
-
-func TestPackageIo_structValue(t *testing.T) {
-	structValue := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-		"greetings": starlark.String("bonjour!"),
-	})
-	result, err := convertValueToStructIfPossible(structValue)
-	require.Nil(t, err)
-
-	require.Equal(t, structValue, result)
-}
-
-func TestPackageIo_processSimpleDict(t *testing.T) {
+func createDict(t *testing.T) *starlark.Dict {
 	dict := starlark.NewDict(1)
-	require.Nil(t, dict.SetKey(starlark.String("greetings"), starlark.String("bonjour!")))
-
-	result, err := convertValueToStructIfPossible(dict)
-	require.Nil(t, err)
-
-	expectedResult := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-		"greetings": starlark.String("bonjour!"),
-	})
-	require.Equal(t, expectedResult, result)
+	require.Nil(t, dict.SetKey(starlark.String("string"), starlark.String("Hello World!")))
+	require.Nil(t, dict.SetKey(starlark.String("int"), starlark.MakeInt(1)))
+	require.Nil(t, dict.SetKey(starlark.String("float"), starlark.Float(3.4)))
+	require.Nil(t, dict.SetKey(starlark.String("dict"), starlark.NewDict(1)))
+	require.Nil(t, dict.SetKey(starlark.String("list"), starlark.NewList([]starlark.Value{starlark.String("a"), starlark.MakeInt(1), starlark.NewDict(1)})))
+	return dict
 }
 
-func TestPackageIo_processNestedDict(t *testing.T) {
-	nested_dict := starlark.NewDict(1)
-	require.Nil(t, nested_dict.SetKey(starlark.String("en_US"), starlark.String("Hello")))
-	require.Nil(t, nested_dict.SetKey(starlark.String("fr_FR"), starlark.String("Bonjour")))
-
-	dict := starlark.NewDict(1)
-	require.Nil(t, dict.SetKey(starlark.String("greetings"), nested_dict))
-
-	result, err := convertValueToStructIfPossible(dict)
+func TestPackageIo_DeserializeArgs(t *testing.T) {
+	result, interpretationErr := DeserializeArgs(&starlark.Thread{}, complexInputJson) //nolint:exhaustruct
+	require.Nil(t, interpretationErr)
+	equal, err := starlark.Equal(createDict(t), result)
 	require.Nil(t, err)
+	require.True(t, equal)
+}
 
-	expectedResult := starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-		"greetings": starlarkstruct.FromStringDict(starlarkstruct.Default, starlark.StringDict{
-			"en_US": starlark.String("Hello"),
-			"fr_FR": starlark.String("Bonjour"),
-		}),
-	})
-	require.Equal(t, expectedResult, result)
+func TestPackageIo_SerializeOutputObject(t *testing.T) {
+	result, interpretationErr := SerializeOutputObject(&starlark.Thread{}, createDict(t)) //nolint:exhaustruct
+	require.Nil(t, interpretationErr)
+
+	require.Equal(t, result, complexInputJson)
 }

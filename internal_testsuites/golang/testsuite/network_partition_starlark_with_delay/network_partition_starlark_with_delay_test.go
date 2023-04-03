@@ -39,7 +39,7 @@ def run(plan, args):
 
 	# adding 2 services to play with, each in their own subnetwork
 	service_1 = plan.add_service(
-		service_name=SERVICE_ID_1, 
+		name=SERVICE_ID_1, 
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_1,
@@ -47,7 +47,7 @@ def run(plan, args):
 	)
 
 	service_2 = plan.add_service(
-		service_name=SERVICE_ID_2, 
+		name=SERVICE_ID_2, 
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 			subnetwork=SUBNETWORK_1
@@ -55,7 +55,7 @@ def run(plan, args):
 	)
 
 	service_3 = plan.add_service(
-		service_name=SERVICE_ID_3, 
+		name=SERVICE_ID_3, 
 		config=ServiceConfig(
 			image=DOCKER_GETTING_STARTED_IMAGE,
 		)
@@ -68,13 +68,13 @@ def run(plan, args):
 	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
-	res = plan.exec(recipe, SERVICE_ID_2)
+	res = plan.exec(recipe=recipe, service_name=SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
 	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_three_cmd],
 	)
-	res = plan.exec(recipe, SERVICE_ID_2)
+	res = plan.exec(recipe=recipe, service_name=SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
 	delay = UniformPacketDelayDistribution(750)
@@ -83,7 +83,7 @@ def run(plan, args):
 	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
-	res = plan.exec(recipe, SERVICE_ID_2)
+	res = plan.exec(recipe=recipe, service_name=SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
 	recipe = ExecRecipe(
@@ -92,7 +92,7 @@ def run(plan, args):
 	
 	# this is doing string comparison
 	# have not found a way to convert output to int
-	res = plan.exec(recipe, SERVICE_ID_2)
+	res = plan.exec(recipe=recipe, service_name=SERVICE_ID_2)
 	plan.assert(res["output"], ">", "1449")
     
 	uniform_delay_distribution = UniformPacketDelayDistribution(ms=350)	
@@ -101,7 +101,7 @@ def run(plan, args):
 	recipe = ExecRecipe(
 		command=["/bin/sh", "-c", service_one_cmd],
 	)
-	res = plan.exec(recipe, SERVICE_ID_2)
+	res = plan.exec(recipe=recipe, service_name=SERVICE_ID_2)
 	plan.assert(res["output"], "<", "2")
 
 	recipe = ExecRecipe(
@@ -112,7 +112,7 @@ def run(plan, args):
 	# have not found a way to convert output to int
 	# the overall latency should be greater than 350*2, but
 	# added some buffer to handle 50ms outliers
-	res = plan.exec(recipe, SERVICE_ID_2)
+	res = plan.exec(recipe=recipe, service_name=SERVICE_ID_2)
 	plan.assert(res["output"], ">", "649")
 	plan.print("Test successfully executed")
 `

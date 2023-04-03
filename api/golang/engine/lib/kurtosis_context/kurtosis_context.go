@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -37,9 +36,15 @@ const (
 	grpcStreamCancelContextErrorMessage = "rpc error: code = Canceled desc = context canceled"
 
 	validUuidMatchesAllowed = 1
+
+	portalIsRequired = false
 )
 
-var apiContainerLogLevel = logrus.DebugLevel
+var (
+	apiContainerLogLevel = logrus.DebugLevel
+
+	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
+)
 
 // Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
 type KurtosisContext struct {
@@ -68,14 +73,10 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
-	// TODO: Here we're checking whether the context is local or remote to connect to the daemon. This is because
-	//  the daemon will not immediately run on all Kurtosis users' laptop. Once that's the case, we can remove this if
-	//  and systematically connect to the locally running Kurtosis portal daemon.
-	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error retrieving current context")
-	}
-	portalClient, err := CreatePortalDaemonClient(currentContext, true)
+	// portal is still optional as it is incubating. For local context, everything will run fine if poral is not
+	// present. For remote context, is it expected that the caller checks that the portal is present before or after
+	// the Kurtosis Context is built, to avoid unexpected failures downstream
+	portalClient, err := CreatePortalDaemonClient(portalIsRequired)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
 	}
@@ -347,13 +348,13 @@ func newEnclaveContextFromEnclaveInfo(
 	// for remote contexts, we need to tunnel the APIC port to the local machine
 	if portalClient != nil {
 		apicGrpcPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcPortOnHostMachine()
-		forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort)
+		forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, &apicPortTransportProtocol)
 		if _, err := portalClient.ForwardPort(ctx, forwardApicPortArgs); err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to forward remote API container port to the local machine")
 		}
 
 		apicGrpcProxyPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcProxyPortOnHostMachine()
-		forwardApicProxyPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcProxyPort, apicGrpcProxyPort)
+		forwardApicProxyPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcProxyPort, apicGrpcProxyPort, &apicPortTransportProtocol)
 		if _, err := portalClient.ForwardPort(ctx, forwardApicProxyPortArgs); err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to forward remote API container proxy port to the local machine")
 		}

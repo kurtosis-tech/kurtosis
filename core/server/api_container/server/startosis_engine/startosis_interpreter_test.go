@@ -94,7 +94,7 @@ def run(plan):
 			"input": ".query.input"
 		}
 	)
-	response = plan.wait(get_recipe, "code", "==",  200, timeout="5m", interval="5s", service_name = "web-server")
+	response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, timeout="5m", interval="5s", service_name="web-server")
 	plan.print(response["body"])
 `
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -196,7 +196,7 @@ def run(plan):
 		},
 		private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `"
 	)
-	datastore_service = plan.add_service(service_name = service_name, config = config)
+	datastore_service = plan.add_service(name = service_name, config = config)
 	plan.print("The grpc port is " + str(datastore_service.ports["grpc"].number))
 	plan.print("The grpc transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
 `
@@ -235,7 +235,7 @@ def run(plan):
 		},
 		private_ip_address_placeholder = "` + privateIPAddressPlaceholder + `"
 	)
-	datastore_service = plan.add_service(service_name = service_name, config = config)
+	datastore_service = plan.add_service(name = service_name, config = config)
 	plan.print("The port is " + str(datastore_service.ports["grpc"].number))
 	plan.print("The transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
 	plan.print("The application protocol is " + datastore_service.ports["grpc"].application_protocol)
@@ -271,7 +271,7 @@ def run(plan):
 			"grpc": struct(number = 1323, transport_protocol = "TCP")
 		}
 	)
-	plan.add_service(service_name = service_name, config = config)
+	plan.add_service(name = service_name, config = config)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -306,7 +306,7 @@ def run(plan):
 			"grpc": PortSpec(number = 1323, transport_protocol = "TCPK") # typo in protocol
 		}
 	)
-	plan.add_service(service_name = service_name, config = config)
+	plan.add_service(name = service_name, config = config)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -340,7 +340,7 @@ def run(plan):
 			"grpc": PortSpec(number = "1234", transport_protocol = "TCP") # port number should be an int
 		}
 	)
-	plan.add_service(service_name = service_name, config = config)
+	plan.add_service(name = service_name, config = config)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -379,7 +379,7 @@ def deploy_datastore_services(plan):
 			}
 		)
 
-		plan.add_service(service_name = unique_service_name, config = config)
+		plan.add_service(name = unique_service_name, config = config)
 
 def run(plan):
 	plan.print("Starting Startosis script!")
@@ -556,7 +556,7 @@ def run(plan):
 			"input": ".query.input"
 		}
 	)
-	response = plan.request(get_recipe, service_name = "web-server")
+	response = plan.request(recipe = get_recipe, service_name = "web-server")
 	plan.print(response["code"])`
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -614,7 +614,7 @@ module_bar = import_module("` + moduleBar + `")
 def run(plan):
 	plan.print("Starting Startosis script!")
 	plan.print("Adding service " + module_bar.service_name)
-	plan.add_service(service_name = module_bar.service_name, config = module_bar.config)
+	plan.add_service(name = module_bar.service_name, config = module_bar.config)
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
@@ -649,7 +649,7 @@ def deploy_datastore_services(plan):
 				)
 			}
 		)
-        plan.add_service(service_name = unique_service_name, config = config)
+        plan.add_service(name = unique_service_name, config = config)
 `
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -721,7 +721,7 @@ def deploy_service(plan):
 		}
 	)
 	plan.print("Adding service " + service_name)
-	plan.add_service(service_name = service_name, config = config)
+	plan.add_service(name = service_name, config = config)
 `
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -759,7 +759,7 @@ def run(plan):
 			"grpc": PortSpec(number = 1323, transport_protocol = "TCP")
 		}
 	)
-	plan.add_service(service_name = service_name, config = config)
+	plan.add_service(name = service_name, config = config)
 `
 	expectedOutputFromScriptB := `Starting Startosis script!
 Adding service example-datastore-server
@@ -940,7 +940,7 @@ func TestStartosisInterpreter_ValidSimpleRemoveService(t *testing.T) {
 def run(plan):
 	plan.print("Starting Startosis script!")
 	service_name = "example-datastore-server"
-	plan.remove_service(service_name=service_name)
+	plan.remove_service(name=service_name)
 	plan.print("The service example-datastore-server has been removed")
 `
 
@@ -1016,7 +1016,7 @@ func TestStartosisInterpreter_RunWithArgsArgsPassed(t *testing.T) {
 	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
 	script := `
 def run(plan, args):
-	plan.print("My favorite number is {0}".format(args.number))
+	plan.print("My favorite number is {0}".format(args["number"]))
 `
 
 	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, `{"number": 4}`)

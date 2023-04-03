@@ -5,24 +5,38 @@ before:
 
 builds:
   - id: cli
-    env:
-      # We need to set this to get a statically-linked binary, else we'll get a dynamically-linked binary that won't be able to be run anywhere
-      - CGO_ENABLED=0
-    main: .
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
+    main: .
     goos:
-      - linux
       - darwin
+      - linux
     goarch:
       - amd64
       - arm64
+    env:
+      - CGO_ENABLED=1
+      # CC_WITH_DEFAULT AND CXX_WITH_DEFAULT values comes from CircleCI env variables, where clang and clang++ are
+      # default values
+      - CC={{ if index .Env "CC_WITH_DEFAULT" }}{{ .Env.CC_WITH_DEFAULT }}{{ else }} clang {{ end }}
+      - CXX={{ if index .Env "CXX_WITH_DEFAULT" }}{{ .Env.CXX_WITH_DEFAULT }}{{ else }} clang++ {{ end }}
+    flags:
+      - -tags=osusergo
     overrides:
       - goos: linux
-        goarch: amd64
+        goarch: arm64
         env:
           - CGO_ENABLED=1
-          - CC="x86_64-linux-musl-gcc"
-          - CXX="x86_64-linux-musl-g++"
+          - CC=aarch64-linux-musl-gcc
+          - CXX=aarch64-linux-musl-g++
+        ldflags:
+          - -linkmode external -extldflags "-static"
+      - goos: linux
+        goarch: amd64
+        goamd64: v1
+        env:
+          - CGO_ENABLED=1
+          - CC=x86_64-linux-musl-gcc
+          - CXX=x86_64-linux-musl-g++
         ldflags:
           - -linkmode external -extldflags "-static"
 

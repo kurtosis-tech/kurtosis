@@ -14,10 +14,10 @@ const (
 	DiscordUrl                     = "https://discord.gg/6Jjp9c89z9"
 	GithubRepoUrl                  = "https://github.com/kurtosis-tech/kurtosis"
 	GithubNewIssuesUrl             = GithubRepoUrl + "/issues/new"
-	GithubChooseNewIssuesUrl       = GithubNewIssuesUrl + "/choose?labels="
-	GithubBugIssueUrl              = GithubNewIssuesUrl + "?labels=bug&template=bug-report.yml&title=%5Bbug%5D%3A+"
-	GithubFeatureRequestIssueUrl   = GithubNewIssuesUrl + "?labels=feature+request&template=feature-request.yml&title=%5BFR%5D%3A+"
-	GithubDocsIssueUrl             = GithubNewIssuesUrl + "?labels=docs&template=docs-issue.yml&title=%5BDocs%5D%3A+"
+	GitHubChooseNewIssuesUrl       = GithubNewIssuesUrl + "/choose?labels="
+	GitHubBugIssueUrl              = GithubNewIssuesUrl + "?labels=bug&template=bug-report.yml"
+	GitHubFeatureRequestIssueUrl   = GithubNewIssuesUrl + "?labels=feature+request&template=feature-request.yml"
+	GitHubDocsIssueUrl             = GithubNewIssuesUrl + "?labels=docs&template=docs-issue.yml"
 	CLICommandsReferenceURL        = DocumentationUrl + "/cli"
 	StarlarkPackagesReferenceURL   = DocumentationUrl + "/reference/packages"
 	StarlarkLocatorsReferenceURL   = DocumentationUrl + "/reference/locators"
@@ -40,7 +40,7 @@ const (
 var urlsToValidateInTest = []string{
 	DocumentationUrl,
 	DiscordUrl,
-	GithubChooseNewIssuesUrl,
+	GitHubChooseNewIssuesUrl,
 	CLICommandsReferenceURL,
 	StarlarkPackagesReferenceURL,
 	StarlarkLocatorsReferenceURL,

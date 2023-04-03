@@ -25,7 +25,7 @@ def run(plan):
 			"grpc": PortSpec(number = GRPC_PORT, transport_protocol = "TCP")
 		}
 	)
-	plan.add_service(service_name = "%s", config = config)
+	plan.add_service(name = "%s", config = config)
 `
 )
 

@@ -1,6 +1,7 @@
 package output_printers
 
 import (
+	"errors"
 	"fmt"
 	"github.com/bazelbuild/buildtools/build"
 	"github.com/briandowns/spinner"
@@ -124,7 +125,9 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 		} else if responseLine.GetError().GetValidationError() != nil {
 			errorMsg = fmt.Sprintf("There was an error validating Starlark code \n%v", responseLine.GetError().GetValidationError().GetErrorMessage())
 		} else if responseLine.GetError().GetExecutionError() != nil {
-			errorMsg = fmt.Sprintf("There was an error executing Starlark code \n%v", responseLine.GetError().GetExecutionError().GetErrorMessage())
+			errorMsgWithStackTrace := errors.New(responseLine.GetError().GetExecutionError().GetErrorMessage())
+			cleanedErrorFromStarlark := out.GetErrorMessageToBeDisplayedOnCli(errorMsgWithStackTrace)
+			errorMsg = fmt.Sprintf("There was an error executing Starlark code \n%v", cleanedErrorFromStarlark)
 		}
 		formattedError := formatError(errorMsg)
 		if err := printer.printPersistentLineToStdOut(formattedError); err != nil {

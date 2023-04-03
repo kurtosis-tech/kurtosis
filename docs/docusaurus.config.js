@@ -36,6 +36,9 @@ const config = {
             }
           },
           admonitions: {}, // Add this line to enable admonitions
+
+          // TODO TODO Run Remark plugins through Docusaurus itself (right now we're running it via yarn and package.json)!! See https://docusaurus.io/docs/markdown-features/plugins#installing-plugins
+          
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -54,8 +57,8 @@ const config = {
         id: 'support_us',
         content:
             '<a target="_blank" rel="noopener noreferrer" href="https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding">Schedule a live session with us for help getting started or to learn more.</a>',
-        backgroundColor: '#fafbfc',
-        textColor: '#091E42',
+        backgroundColor: '#1b1b1d',
+        textColor: '#909294',
         isCloseable: false,
       },
       colorMode: {
@@ -84,9 +87,9 @@ const config = {
             activeBasePath: '/cli'
           },
           {
-            to: '/sdk',
+            to: '/starlark-reference',
             position: 'left',
-            label: 'SDK',
+            label: 'Starlark',
             activeBasePath: '/sdk'
           },
           {
@@ -95,7 +98,7 @@ const config = {
             dropdownActiveClassDisabled: true,
           },
           {
-            href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml&title=%5BDocs%5D%3A+',
+            href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml',
             position: 'right',
             label: 'Report Docs Issue',
           },
@@ -116,8 +119,8 @@ const config = {
                 to: '/cli',
               },
               {
-                label: 'SDK',
-                to: '/sdk',
+                label: 'Starlark',
+                to: '/starlark-reference',
               },
             ],
           },
@@ -161,6 +164,20 @@ const config = {
       prism: {
         theme: lightCodeTheme,
         darkTheme: darkCodeTheme,
+      },
+      algolia: {
+        appId: 'NTSX40VZB8',
+
+        // Public API key, safe to commit
+        apiKey: '4269c726c2fea4e6cddfeb9a21cd3d4e',
+
+        indexName: 'kurtosis',
+
+        contextualSearch: true,
+
+        searchParameters: {},
+
+        searchPagePath: 'search',
       },
     }),
 };

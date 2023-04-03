@@ -67,12 +67,12 @@ func (t *requestTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisP
 
 func (t *requestTestCase2) GetStarlarkCode() string {
 	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestEndpoint)
-	return fmt.Sprintf("%s(%s, %q)", request.RequestBuiltinName, recipe, requestTestCaseServiceName)
+	return fmt.Sprintf("%s(%q, %s)", request.RequestBuiltinName, requestTestCaseServiceName, recipe)
 }
 
 func (t *requestTestCase2) GetStarlarkCodeForAssertion() string {
 	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestEndpoint)
-	return fmt.Sprintf("%s(%s=%s, %s=%q)", request.RequestBuiltinName, request.RecipeArgName, recipe, request.ServiceNameArgName, requestTestCaseServiceName)
+	return fmt.Sprintf("%s(%s=%q, %s=%s)", request.RequestBuiltinName, request.ServiceNameArgName, requestTestCaseServiceName, request.RecipeArgName, recipe)
 }
 
 func (t *requestTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {

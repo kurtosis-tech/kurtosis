@@ -46,7 +46,7 @@ def run(plan):
 		}
 	)
 	
-	plan.add_service(service_name = DATASTORE_SERVICE_NAME, config = config)
+	plan.add_service(name = DATASTORE_SERVICE_NAME, config = config)
 	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
 `
 )

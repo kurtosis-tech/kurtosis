@@ -1,10 +1,6 @@
 name: Deploy documentation
 
-
-on:
-  push:
-    branches:
-      - 'main'
+on: push
 
 jobs:
   publish:
@@ -16,20 +12,36 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-
+        with:
+          fetch-depth: 0
+      - name:
+        run: |
+          # We had a bug where we were using both Yarn and NPM to maintain Docusaurus, which
+          # meant separate and conflicting lockfiles
+          # Only Yarn should be used
+          if [ -f docs/package-lock.json ]; then
+            exit 1
+          fi
+      - name: Docs have changed
+        run: |
+          echo "DOCS_CHANGED=$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs' > /dev/null; echo $?)" >> $GITHUB_OUTPUT
+        id: docs-diff
       - name: Append changelog
         run: cat CHANGELOG.md >> docs/docs/changelog.md
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Yarn Install
-        run: yarn --cwd ./docs install
+        run: yarn --cwd ./docs --frozen-lockfile install
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Yarn Build
         run: yarn --cwd ./docs build
-
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           projectName: ${{ secrets.CLOUDFLARE_PROJECT_NAME }}
           directory: docs/build/
           # as we publish on tag we want to tell CF that the branch is still main so that it can deploy to production
-          branch: main
+          branch: ${GITHUB_REF##*/}

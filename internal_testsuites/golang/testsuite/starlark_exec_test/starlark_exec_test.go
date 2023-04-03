@@ -32,14 +32,14 @@ def run(plan, args):
 		entrypoint = ["sleep"],
 		cmd = ["30"]
 	)
-	plan.add_service(service_name = "test", config = service_config)
+	plan.add_service(name = "test", config = service_config)
 `
 	testStarlarkScriptTemplate = `
 def run(plan, args):
 	exec_recipe = ExecRecipe(
 		command = %v,
 	)
-	exec_result = plan.exec(exec_recipe, "test", acceptable_codes=[0], skip_code_check=True)
+	exec_result = plan.exec(recipe=exec_recipe, service_name="test", acceptable_codes=[0], skip_code_check=True)
 	plan.assert(exec_result["code"], "==", %d)
 	plan.assert(exec_result["output"], "==", "%s")
 `

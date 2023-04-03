@@ -73,11 +73,11 @@ run_dump_kurtosis_enclaves: &run_dump_kurtosis_enclaves
 
     zip -r "${output_dirname}.zip" "${output_dirname}"
 
-# If the only changes are to the docs, we can optimize and skip any code-building/code-testing
+# If the only changes are to the docs subdirectory or to Markdown files, we can optimize and skip any code-building/code-testing
 # `git diff --exit-code` returns 0 exit code if no changes, and 1 if changes
 abort_job_if_only_docs_changes: &abort_job_if_only_docs_changes
   run: |
-    if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs'; then
+    if git --no-pager diff --exit-code origin/main...HEAD -- . ':!docs' ':!*.md'; then
       circleci-agent step halt
     fi 
 
@@ -89,6 +89,7 @@ version: 2.1
 orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
   kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.4
+  slack: circleci/slack@4.10.1
 
 executors:
   ubuntu_vm:
@@ -380,23 +381,25 @@ jobs:
 
   build_cli:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.cli-go-version >>"
+      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
     resource_class: large
     steps:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
 
-      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
+      #- run: sudo apt-get update -y && sudo apt-get install -y musl-dev && sudo apt-get install -y gcc-aarch64-linux-gnu && sudo apt-get install -y g++-aarch64-linux-gnu
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
       # Install goreleaser
+      # we need to update the apt key, otherwise imports fails due to unrecognized key
       - run: |
-          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
-          sudo apt update
-          sudo apt install goreleaser
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
+          curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+          apt update
+          apt install -y goreleaser
 
       # Cache our dependencies
       - restore_cache:
@@ -683,9 +686,9 @@ jobs:
 
       # File commands
       - run: "${KURTOSIS_BINPATH} files rendertemplate test-enclave << pipeline.parameters.rendertemplate-cli-test-template-relative-path >> << pipeline.parameters.rendertemplate-cli-test-data-json-relative-path >> ./rendered --name rendered-file"
-      - run: "${KURTOSIS_BINPATH} files download test-enclave rendered-file ."
+      - run: "${KURTOSIS_BINPATH} files download --enclave test-enclave rendered-file ."
       - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file"
-      - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
+      - run: "${KURTOSIS_BINPATH} files download --enclave test-enclave stored-file ."
 
       # Module inside an enclave
       - run: "${KURTOSIS_BINPATH} enclave ls"
@@ -750,6 +753,44 @@ jobs:
                     false
                   fi
 
+  test_ci_for_failure:
+    executor: ubuntu_vm
+    parameters:
+      <<: *param_cli_cluster_backend
+    steps:
+      - checkout
+
+      - <<: *abort_job_if_only_docs_changes
+
+      # Set up Kurtosis
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+
+      - <<: *steps_install_go_1_18
+
+      # We don't send metrics to avoid polluting our logs
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      - run: "${KURTOSIS_BINPATH} analytics disable"
+
+      # When backend is 'minikube' install minikube and start a Kurtosis gateway
+      - when:
+          condition:
+            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s
+
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_docker
+
+    # adding same enclave fails
+      - run: "${KURTOSIS_BINPATH} enclave add --name test-enclave"
+      - run: "! ${KURTOSIS_BINPATH} service add --name test-encalve"
+
+    # running a broken package fails
+      - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
+
   test_config_init_edge_cases:
     executor: ubuntu_vm
     steps:
@@ -801,6 +842,12 @@ jobs:
     docker:
       - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
     steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
       - checkout
       - run: api/typescript/scripts/build.sh
       - npm-publisher/publish-from-package-version:
@@ -811,16 +858,24 @@ jobs:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
-      - checkout
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
 
+      - checkout
       - setup_remote_docker:
           version: "<< pipeline.parameters.docker-engine-version>>"
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
-      - run: core/files_artifacts_expander/scripts/build.sh
+      - run: |
+          skip_docker_image_building=true
+          core/files_artifacts_expander/scripts/build.sh "${skip_docker_image_building}"
       - run: |
           set -euo pipefail
           source core/files_artifacts_expander/scripts/_constants.env
+          dockerfile_filepath='core/files_artifacts_expander/Dockerfile'
           version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
           echo "Version that was built: ${version_build}"
@@ -828,15 +883,19 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
-          docker push "${image_name_to_publish_semver}"
-          docker push "${image_name_to_publish_latest}"
+          push_to_dockerhub=true
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish_api_container_server_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
 
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
@@ -851,10 +910,12 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       - run: |
-          core/server/scripts/build.sh
+          skip_docker_image_building=true
+          core/server/scripts/build.sh "${skip_docker_image_building}"
       - run: |
           set -euo pipefail
           source core/server/scripts/_constants.env
+          dockerfile_filepath='core/server/Dockerfile'
           version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
           echo "Version that was built: ${version_build}"
@@ -862,15 +923,19 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
-          docker push "${image_name_to_publish_semver}"
-          docker push "${image_name_to_publish_latest}"
+          push_to_dockerhub=true
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   publish_engine_server_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
     steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
       - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
 
       - checkout
@@ -886,11 +951,12 @@ jobs:
       - run: echo "${DOCKER_PASSWORD}" | docker login -u ${DOCKER_USERNAME} --password-stdin
 
       - run: |
-          engine/server/scripts/build.sh
-
+          skip_docker_image_building=true
+          engine/server/scripts/build.sh "${skip_docker_image_building}"
       - run: |
           set -euo pipefail
           source engine/server/scripts/_constants.env
+          dockerfile_filepath='engine/server/Dockerfile'
           version_build="$(./scripts/get-docker-tag.sh)"
           version_to_publish="$(cat version.txt)"
           echo "Version that was built: ${version_build}"
@@ -898,20 +964,25 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_build}"
           image_name_to_publish_semver="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_semver}"
-          docker tag "${image_name_with_version}" "${image_name_to_publish_latest}"
-          docker push "${image_name_to_publish_semver}"
-          docker push "${image_name_to_publish_latest}"
+          push_to_dockerhub=true
+          scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
   push_cli_artifacts:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.cli-go-version >>"
+      - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
     steps:
+      - slack/notify:
+          channel: engineering
+          event: fail
+          # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
+          template: basic_fail_1
+
       # Install goreleaser
       - run: |
-          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
-          sudo apt update
-          sudo apt install goreleaser
+          echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | tee /etc/apt/sources.list.d/goreleaser.list
+          curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
+          apt update
+          apt install -y goreleaser
       - checkout
 
       # Generate Kurtosis Version
@@ -1046,6 +1117,18 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
+      - test_ci_for_failure:
+          name: "Test Basic CLI for failure"
+          cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
           cli-cluster-backend: "docker"
@@ -1089,6 +1172,7 @@ workflows:
       - publish_kurtosis_api_typescript:
           context:
             - npmjs-user
+            - slack-secrets
           filters:
             branches:
               ignore: /.*/
@@ -1097,6 +1181,7 @@ workflows:
       - publish_files_artifacts_expander_image:
           context:
             - docker-user
+            - slack-secrets
           filters:
             branches:
               ignore: /.*/
@@ -1105,6 +1190,7 @@ workflows:
       - publish_api_container_server_image:
           context:
             - docker-user
+            - slack-secrets
           filters:
             branches:
               ignore: /.*/
@@ -1114,6 +1200,7 @@ workflows:
       - publish_engine_server_image:
           context:
             - docker-user
+            - slack-secrets
           filters:
             branches:
               ignore: /.*/
@@ -1124,10 +1211,12 @@ workflows:
           context:
             - gemfury-publisher
             - github-user
+            - slack-secrets
           requires:
             - publish_kurtosis_api_typescript
             - publish_api_container_server_image
             - publish_engine_server_image
+            - publish_files_artifacts_expander_image
           filters:
             branches:
               ignore: /.*/

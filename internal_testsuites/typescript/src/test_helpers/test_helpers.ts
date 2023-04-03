@@ -93,10 +93,10 @@ const TEST_DATASTORE_VALUE = "test-value"
 const WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT = `
 def run(plan, args):
 	get_recipe = GetHttpRequestRecipe(
-		port_id = args.port_id,
-		endpoint = args.endpoint,
+		port_id = args["port_id"],
+		endpoint = args["endpoint"],
 	)
-	plan.wait(get_recipe, "code", "==", 200, args.interval, args.timeout, args.service_name)
+	plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, interval=args["interval"], timeout=args["timeout"], service_name=args["service_name"])
 `
 
 const DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started";
