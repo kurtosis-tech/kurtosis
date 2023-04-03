@@ -8,12 +8,6 @@ sidebar_position: 1
 
 The Kurtosis CLI is a Go CLI wrapped around the Kurtosis Go [client library][client-library-reference]. This section will go through the most common Kurtosis CLI commands and some useful tips on getting started. If you have not already done so, the CLI can be installed by following the instructions [here][installing-the-cli].
 
-:::tip
-The `kurtosis` command, and all of its subcommands, will print helptext when passed the `-h` or `--help` flag. You can use this at any time to see information on the command you're trying to run. For example:
-```
-kurtosis service -h
-```
-:::
 
 :::tip
 Kurtosis supports command-line completion; we recommend [installing it][adding-command-line-completion] for the best experience.
@@ -33,6 +27,35 @@ The version of the CLI and the currently-running engine can be printed with the 
 ```
 kurtosis version
 ```
+
+### Global Flags
+Kurtosis cli supports two global flags - `help` and `cli-log-level`. These flags can be used with any kurtosis cli commands.
+
+#### -h or --help
+This flag prints the helptext for all commands and subcommands. You can use this at any time to see information on the command you're trying to run. For example:
+```
+kurtosis service -h
+```
+
+#### cli-log-level
+This flag sets the level that kurtosis cli will log at - by default it only logs `info` level to the cli. Thesea are all the levels supported by kurtosis -
+```panic|fatal|error|warning|info|debug|trace```. For example, logs with error level can be printed using the command below:- 
+
+```
+kurtosis run --cli-level-log error github.com/package-author/package-repo 
+```
+
+:::info
+
+Users can use the `--cli-level-log` flag to display entire flag traces to the cli. By default the entire stack-traces are logged on to `kurtosis-cli.log` file. The command below, for example, will display the entire stack-traces to the cli for debugging purpose.
+
+```
+kurtosis run --cli-level-log debug github.com/package-author/package-repo 
+```
+:::
+
+
+
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [adding-command-line-completion]: ../guides/adding-command-line-completion.md
