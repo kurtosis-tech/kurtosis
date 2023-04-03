@@ -38,7 +38,7 @@ kurtosis service -h
 ```
 
 #### cli-log-level
-This flag sets the level that kurtosis cli will log at - by default it only logs `info` level to the cli. Thesea are all the levels supported by kurtosis -
+This flag sets the level of details that the Kurtosis CLI will print logs with - by default it only logs `info` level logs to the CLI. The following other log levels are supported by Kurtosis -
 ```panic|fatal|error|warning|info|debug|trace```. For example, logs with error level can be printed using the command below:- 
 
 ```
