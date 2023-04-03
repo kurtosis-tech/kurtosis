@@ -29,7 +29,7 @@ kurtosis version
 ```
 
 ### Global Flags
-Kurtosis cli supports two global flags - `help` and `cli-log-level`. These flags can be used with any kurtosis cli commands.
+Kurtosis CLI supports two global flags - `help` and `cli-log-level`. These flags can be used with any Kurtosis CLI commands.
 
 #### -h or --help
 This flag prints the helptext for all commands and subcommands. You can use this at any time to see information on the command you're trying to run. For example:
