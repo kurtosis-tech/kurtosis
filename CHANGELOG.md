@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.74.0](https://github.com/kurtosis-tech/kurtosis/compare/0.73.2...0.74.0) (2023-04-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* renamed the `ReadyConditions` custom type  to `ReadyCondition` ([#429](https://github.com/kurtosis-tech/kurtosis/issues/429))
+
+### Features
+
+* Add linting validation for Markdown reference-style links ([#453](https://github.com/kurtosis-tech/kurtosis/issues/453)) ([7cbe728](https://github.com/kurtosis-tech/kurtosis/commit/7cbe72869c8f3ac86db0f13dea107ad5f54a5dd6)), closes [#448](https://github.com/kurtosis-tech/kurtosis/issues/448)
+
+
+### Bug Fixes
+
+* colourized the cli output and display starlark messages to the log ([#414](https://github.com/kurtosis-tech/kurtosis/issues/414)) ([af072af](https://github.com/kurtosis-tech/kurtosis/commit/af072af845a887a21171988cb470d29cb70b4884))
+
+
+### Code Refactoring
+
+* renamed the `ReadyConditions` custom type  to `ReadyCondition` ([#429](https://github.com/kurtosis-tech/kurtosis/issues/429)) ([4076ec4](https://github.com/kurtosis-tech/kurtosis/commit/4076ec4cbc9a04da7ba7060af0e9c5be89f866ff))
+
 ## [0.73.2](https://github.com/kurtosis-tech/kurtosis/compare/0.73.1...0.73.2) (2023-04-02)
 
 
