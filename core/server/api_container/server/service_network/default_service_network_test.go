@@ -1423,7 +1423,10 @@ func TestScanPort(t *testing.T) {
 
 	tcpAddrPort, udpAddrPort, closeOpenedPortsFunc, err := openFreeTCPAndUDPLocalHostPortAddressesForTesting()
 	require.NoError(t, err)
-	defer closeOpenedPortsFunc()
+	defer func() {
+		err = closeOpenedPortsFunc()
+		require.NoError(t, err)
+	}()
 
 	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
 	require.NoError(t, err)
@@ -1445,7 +1448,10 @@ func TestWaitUntilAllTCPAndUDPPortsAreOpen_Success(t *testing.T) {
 
 	tcpAddrPort, udpAddrPort, closeOpenedPortsFunc, err := openFreeTCPAndUDPLocalHostPortAddressesForTesting()
 	require.NoError(t, err)
-	defer closeOpenedPortsFunc()
+	defer func() {
+		err = closeOpenedPortsFunc()
+		require.NoError(t, err)
+	}()
 
 	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
 	require.NoError(t, err)
@@ -1470,7 +1476,10 @@ func TestWaitUntilAllTCPAndUDPPortsAreOpen_Fails(t *testing.T) {
 
 	tcpAddrPort, udpAddrPort, closeOpenedPortsFunc, err := openFreeTCPAndUDPLocalHostPortAddressesForTesting()
 	require.NoError(t, err)
-	defer closeOpenedPortsFunc()
+	defer func() {
+		err = closeOpenedPortsFunc()
+		require.NoError(t, err)
+	}()
 
 	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
 	require.NoError(t, err)
