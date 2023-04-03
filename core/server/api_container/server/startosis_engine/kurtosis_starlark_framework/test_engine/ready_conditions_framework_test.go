@@ -24,16 +24,16 @@ func newReadyConditionsTestCase(t *testing.T) *readyConditionsTestCase {
 }
 
 func (t *readyConditionsTestCase) GetId() string {
-	return service_config.ReadyConditionsTypeName
+	return service_config.ReadyConditionTypeName
 }
 
 func (t *readyConditionsTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return service_config.NewReadyConditionsType()
+	return service_config.NewReadyConditionType()
 }
 
 func (t *readyConditionsTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%s(%s=%q, %s=%q, %s=%s), %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)",
-		service_config.ReadyConditionsTypeName,
+		service_config.ReadyConditionTypeName,
 		service_config.RecipeAttr,
 		recipe.GetHttpRecipeTypeName,
 		recipe.PortIdAttr,
@@ -56,7 +56,7 @@ func (t *readyConditionsTestCase) GetStarlarkCode() string {
 }
 
 func (t *readyConditionsTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
-	receivedReadyConditions, ok := typeValue.(*service_config.ReadyConditions)
+	receivedReadyConditions, ok := typeValue.(*service_config.ReadyCondition)
 	require.True(t, ok)
 
 	uncastedRecipe, err := receivedReadyConditions.GetRecipe()

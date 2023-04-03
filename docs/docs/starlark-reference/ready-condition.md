@@ -1,12 +1,12 @@
 ---
-title: ReadyConditions
-sidebar_label: ReadyConditions
+title: ReadyCondition
+sidebar_label: ReadyCondition
 ---
 
-The `ReadyConditions` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic 
+The `ReadyCondition` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic 
 
 ```python
-ready_conditions = ReadyConditions(
+ready_conditions = ReadyCondition(
 
     # The recipe that will be used to check service's readiness.
     # Valid values are of the following types: (ExecRecipe, GetHttpRequestRecipe or PostHttpRequestRecipe)
