@@ -47,7 +47,7 @@ kurtosis run --cli-level-log error github.com/package-author/package-repo
 
 :::info
 
-Users can use the `--cli-log-level` flag to display entire flag traces to the cli. By default the entire stack-traces are logged on to `kurtosis-cli.log` file. The command below, for example, will display the entire stack-traces to the cli for debugging purpose.
+Users can use the `--cli-log-level` flag to display the entire stack trace to the CLI. By default the entire stack trace is saved to the `kurtosis-cli.log` file. The command below, for example, will display the entire stack-traces to the CLI for debugging purposes:
 
 ```
 kurtosis run --cli-log-level debug github.com/package-author/package-repo 
