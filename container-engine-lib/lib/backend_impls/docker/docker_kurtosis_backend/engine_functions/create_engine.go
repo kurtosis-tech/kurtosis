@@ -41,7 +41,7 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -50,7 +50,7 @@ func CreateEngine(
 			consts.EngineTransportProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
