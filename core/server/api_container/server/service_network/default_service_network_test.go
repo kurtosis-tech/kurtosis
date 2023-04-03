@@ -34,6 +34,7 @@ import (
 	"os"
 	"strconv"
 	"testing"
+	"time"
 )
 
 const (
@@ -63,6 +64,8 @@ var (
 	connectionWithSomeConstantDelay     = partition_topology.NewUniformPacketDelayDistribution(500)
 	connectionWithSomePacketLoss        = partition_topology.NewPacketLoss(50.0)
 	packetLossConfigForBlockedPartition = partition_topology.NewPacketLoss(100)
+
+	portWaitForTest = port_spec.NewWait(true, 5*time.Second, 0)
 )
 
 func TestStartService_Successful(t *testing.T) {
@@ -1422,13 +1425,13 @@ func TestScanPort(t *testing.T) {
 	require.NoError(t, err)
 	defer closeOpenedPortsFunc()
 
-	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "")
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
 	require.NoError(t, err)
 
 	err = scanPort(localhost, tcpPortSpec, waitForPortsOpenTimeOut)
 	require.NoError(t, err)
 
-	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "")
+	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest)
 	require.NoError(t, err)
 
 	err = scanPort(localhost, udpPortSpec, waitForPortsOpenTimeOut)
@@ -1442,10 +1445,10 @@ func TestWaitUntilAllTCPAndUDPPortsAreOpen_Success(t *testing.T) {
 	require.NoError(t, err)
 	defer closeOpenedPortsFunc()
 
-	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "")
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
 	require.NoError(t, err)
 
-	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "")
+	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest)
 	require.NoError(t, err)
 
 	ports := map[string]*port_spec.PortSpec{
@@ -1467,13 +1470,13 @@ func TestWaitUntilAllTCPAndUDPPortsAreOpen_Fails(t *testing.T) {
 	require.NoError(t, err)
 	defer closeOpenedPortsFunc()
 
-	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "")
+	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
 	require.NoError(t, err)
 
-	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "")
+	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest)
 	require.NoError(t, err)
 
-	closedPortSpec, err := port_spec.NewPortSpec(closedPortNumber, port_spec.TransportProtocol_TCP, "")
+	closedPortSpec, err := port_spec.NewPortSpec(closedPortNumber, port_spec.TransportProtocol_TCP, "", portWaitForTest)
 	require.NoError(t, err)
 
 	ports := map[string]*port_spec.PortSpec{

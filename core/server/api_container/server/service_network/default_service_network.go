@@ -64,9 +64,11 @@ const (
 	//This configuration duplicates that time
 	waitForPortsOpenMaxRetries               = uint16(1)
 	waitForPortsOpenTimeOut                  = 15 * time.Second
-	waitForPortsOpenRetriesDelayMilliseconds = uint16(500)
+	waitForPortsOpenRetriesDelayMilliseconds = uint16(500) //TODO change the name
 
 	shouldFollowLogs = false
+
+	enableServiceWaitPortChecks = false
 )
 
 var (
@@ -1298,19 +1300,23 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 	}()
 
-	if err := waitUntilAllTCPAndUDPPortsAreOpen(
-		startedService.GetRegistration().GetPrivateIP(),
-		startedService.GetPrivatePorts(),
-	); err != nil {
-		serviceLogs, err := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
-				"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
-			startedService.GetRegistration().GetName(),
+	//TODO it's disable now because we can't use the desired default value because the eth2 needs 5 minutes timeout
+	//TODO we will enable it in the next PR where we will introduce wait's configs for users
+	if enableServiceWaitPortChecks {
+		if err := waitUntilAllTCPAndUDPPortsAreOpen(
 			startedService.GetRegistration().GetPrivateIP(),
-			serviceLogs,
-		)
+			startedService.GetPrivatePorts(),
+		); err != nil {
+			serviceLogs, err := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
+					"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
+				startedService.GetRegistration().GetName(),
+				startedService.GetRegistration().GetPrivateIP(),
+				serviceLogs,
+			)
+		}
 	}
 
 	// if partition is enabled, create a sidecar associated with this service
@@ -1341,10 +1347,8 @@ func waitUntilAllTCPAndUDPPortsAreOpen(
 	var portCheckErrorGroup errgroup.Group
 
 	for _, portSpec := range ports {
-		//TODO get this value from the portSpec configuration
-		timeout := 5 * time.Second
 		wrappedWaitFunc := func() error {
-			return waitUntilPortIsOpenWithTimeout(ipAddr, portSpec, timeout)
+			return waitUntilPortIsOpenWithTimeout(ipAddr, portSpec)
 		}
 		portCheckErrorGroup.Go(wrappedWaitFunc)
 	}
@@ -1361,25 +1365,32 @@ func waitUntilAllTCPAndUDPPortsAreOpen(
 func waitUntilPortIsOpenWithTimeout(
 	ipAddr net.IP,
 	portSpec *port_spec.PortSpec,
-	timeout time.Duration,
 ) error {
+	// reject early if it's disable
+	if !portSpec.GetWait().GetEnable() {
+		return nil
+	}
+	timeout := portSpec.GetWait().GetTimeout()
+
 	var (
 		ticker                  = time.NewTicker(timeout)
 		startTime               = time.Now()
+		finishTime              = startTime.Add(timeout)
 		shouldContinueInTheLoop = true
 		retries                 = 0
 		err                     error
 	)
+
+	time.Sleep(portSpec.GetWait().GetInitialDelay())
 
 	for shouldContinueInTheLoop {
 		select {
 		case <-ticker.C:
 			return stacktrace.NewError("Scanning ports has reached the '%v' time out", timeout.String())
 		default:
-			//TODO review this time out, it's tricky
-			//TODO tomar el start time e ir restando el timeout cada vez que llamamos a scanport
-			//TODO colocar un comentario de porque tenemos 2 timeouts
-			if err = scanPort(ipAddr, portSpec, timeout); err == nil {
+			now := time.Now()
+			scanPortTimeout := finishTime.Sub(now)
+			if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
 				shouldContinueInTheLoop = false
 				break
 			}
@@ -1918,7 +1929,9 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
 	}
 
-	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol())
+	//TODO replace with the value received from the Core's API (we will implement this new fields in a next PR)
+	//TODO now we pass nil that will be translated to the wait's default values
+	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol(), nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
