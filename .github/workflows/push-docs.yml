@@ -39,7 +39,7 @@ jobs:
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Publish to Cloudflare Pages
         uses: cloudflare/pages-action@v1
-        if: github.ref == 'refs/heads/main' || (steps.docs-diff.outputs.DOCS_CHANGED != 0 && contains(github.event.issue.labels.*.name, 'push docs'))
+        if: github.ref == 'refs/heads/main' || (steps.docs-diff.outputs.DOCS_CHANGED != 0 && contains(github.event.pull_request.labels.*.name, 'push docs'))
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
