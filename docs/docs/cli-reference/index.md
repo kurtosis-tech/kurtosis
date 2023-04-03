@@ -131,6 +131,6 @@ Caused by: stat ../../../per/other/submodul/: no such file or directory
 :::
 
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
-[adding-command-line-completion]: ../guides/adding-command-line-completion
-[installing-the-cli]: ../guides/installing-the-cli
-[client-library-reference]: ../client-libs-reference
+[adding-command-line-completion]: ../guides/adding-command-line-completion.md
+[installing-the-cli]: ../guides/installing-the-cli.md
+[client-library-reference]: ../client-libs-reference.md
