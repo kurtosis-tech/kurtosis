@@ -59,12 +59,7 @@ const (
 
 	singleServiceStartupBatch = 1
 
-	//This default configuration is based on local tests for the eth2-package and the near-package
-	//The most demanding was the eth2-package which took around 4 min to check the HTTP TCP port for the lighthouse validator service
-	//This configuration duplicates that time
-	waitForPortsOpenMaxRetries               = uint16(1)
-	waitForPortsOpenTimeOut                  = 15 * time.Second
-	waitForPortsOpenRetriesDelayMilliseconds = uint16(500) //TODO change the name
+	waitForPortsOpenRetriesDelayMilliseconds = uint16(100)
 
 	shouldFollowLogs = false
 

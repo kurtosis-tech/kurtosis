@@ -1428,13 +1428,15 @@ func TestScanPort(t *testing.T) {
 	tcpPortSpec, err := port_spec.NewPortSpec(tcpAddrPort.Port(), port_spec.TransportProtocol_TCP, "", portWaitForTest)
 	require.NoError(t, err)
 
-	err = scanPort(localhost, tcpPortSpec, waitForPortsOpenTimeOut)
+	scanPortTimeout := 5 * time.Second
+
+	err = scanPort(localhost, tcpPortSpec, scanPortTimeout)
 	require.NoError(t, err)
 
 	udpPortSpec, err := port_spec.NewPortSpec(udpAddrPort.Port(), port_spec.TransportProtocol_UDP, "", portWaitForTest)
 	require.NoError(t, err)
 
-	err = scanPort(localhost, udpPortSpec, waitForPortsOpenTimeOut)
+	err = scanPort(localhost, udpPortSpec, scanPortTimeout)
 	require.NoError(t, err)
 }
 
