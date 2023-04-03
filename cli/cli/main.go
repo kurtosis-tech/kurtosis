@@ -7,8 +7,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -55,10 +57,13 @@ func main() {
 		maybeCleanedError := out.GetErrorMessageToBeDisplayedOnCli(err)
 		errorMessageFromCli := maybeCleanedError.Error()
 
-		commands.RootCmd.PrintErrln(errorPrefix, errorMessageFromCli)
+		fullErrorMessage := fmt.Sprintf("%v %v", errorPrefix, errorMessageFromCli)
+		commands.RootCmd.PrintErrln(output_printers.FormatError(fullErrorMessage))
+
 		// if unknown command is entered - display help command
 		if strings.Contains(errorMessageFromCli, commandNotFound) {
-			commands.RootCmd.PrintErrf("Run '%v --help' for usage.\n", commands.RootCmd.CommandPath())
+			helpUsageText := fmt.Sprintf("Run '%v --help' for usage.\n", commands.RootCmd.CommandPath())
+			commands.RootCmd.PrintErrf(output_printers.FormatError(helpUsageText))
 		}
 		os.Exit(errorExitCode)
 	}

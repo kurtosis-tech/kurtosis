@@ -81,7 +81,7 @@ print("UNSUPPORTED_TYPE['ModuleOutput(grafana_info=GrafanaInfo(dashboard_path="/
 
 func TestFormatError(t *testing.T) {
 	errorMessage := "There was an error"
-	formattedErrorMessage := formatError(errorMessage)
+	formattedErrorMessage := FormatError(errorMessage)
 	require.Equal(t, errorMessage, formattedErrorMessage)
 }
 
