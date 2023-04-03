@@ -46,7 +46,7 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
-						if _, _, err := validateAndConvertConfigAndReadyConditions(value); err != nil {
+						if _, _, err := validateAndConvertConfigAndReadyCondition(value); err != nil {
 							return err
 						}
 						return nil
@@ -63,8 +63,8 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 				serviceName:   "",  // populated at interpretation time
 				serviceConfig: nil, // populated at interpretation time
 
-				resultUuid:      "",  // populated at interpretation time
-				readyConditions: nil, // populated at interpretation time
+				resultUuid:     "",  // populated at interpretation time
+				readyCondition: nil, // populated at interpretation time
 			}
 		},
 
@@ -79,9 +79,9 @@ type AddServiceCapabilities struct {
 	serviceNetwork    service_network.ServiceNetwork
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
-	serviceName     service.ServiceName
-	serviceConfig   *kurtosis_core_rpc_api_bindings.ServiceConfig
-	readyConditions *service_config.ReadyConditions
+	serviceName    service.ServiceName
+	serviceConfig  *kurtosis_core_rpc_api_bindings.ServiceConfig
+	readyCondition *service_config.ReadyCondition
 
 	resultUuid string
 }
@@ -96,14 +96,14 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	apiServiceConfig, readyConditions, interpretationErr := validateAndConvertConfigAndReadyConditions(serviceConfig)
+	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(serviceConfig)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
-	builtin.readyConditions = readyConditions
+	builtin.readyCondition = readyCondition
 	builtin.resultUuid, err = builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServiceBuiltinName)
@@ -139,7 +139,7 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
 		replacedServiceName,
-		builtin.readyConditions,
+		builtin.readyCondition,
 	); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
 	}
@@ -149,9 +149,9 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	return instructionResult, nil
 }
 
-func validateAndConvertConfigAndReadyConditions(
+func validateAndConvertConfigAndReadyCondition(
 	rawConfig starlark.Value,
-) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *service_config.ReadyConditions, *startosis_errors.InterpretationError) {
+) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
 	config, ok := rawConfig.(*service_config.ServiceConfig)
 	if !ok {
 		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
@@ -161,10 +161,10 @@ func validateAndConvertConfigAndReadyConditions(
 		return nil, nil, interpretationErr
 	}
 
-	readyConditions, interpretationErr := config.GetReadyConditions()
+	readyCondition, interpretationErr := config.GetReadyCondition()
 	if interpretationErr != nil {
 		return nil, nil, interpretationErr
 	}
 
-	return apiServiceConfig, readyConditions, nil
+	return apiServiceConfig, readyCondition, nil
 }
