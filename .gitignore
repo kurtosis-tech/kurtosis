@@ -95,3 +95,8 @@ tsconfig.tsbuildinfo
 # Generated files
 .docusaurus
 .cache-loader
+
+# We had a bug where we were using both Yarn and NPM to maintain Docusaurus, which
+# meant separate and conflicting lockfiles
+# We don't want NPM lockfiles for Docusaurus - just Yarn
+docs/package-lock.json

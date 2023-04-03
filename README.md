@@ -6,7 +6,7 @@ What is Kurtosis?
 =================
 [Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding. 
 
-To read more about "why Kurtosis?", go [here](https://docs.kurtosis.com/explanations/what-is-kurtosis).
+To read more about "why Kurtosis?", go [here](https://docs.kurtosis.com/#why-use-kurtosis).
 
 To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
 
@@ -19,7 +19,7 @@ Running Kurtosis
 Follow the instructions [here](https://docs.kurtosis.com/install).
 
 ### Run
-Kurtosis create ephemeral multi-container environments called [enclaves][enclave] using [Starlark](https://docs.kurtosis.com/explanations/starlark). These can be bundled together into [packages](https://docs.kurtosis.com/reference/packages). Let's run one now:
+Kurtosis create ephemeral multi-container environments called [enclaves][enclave] using [Starlark](https://docs.kurtosis.com/concepts-reference/starlark). These can be bundled together into [packages](https://docs.kurtosis.com/concepts-reference/packages). Let's run one now:
 
 ```bash
 kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
