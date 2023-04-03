@@ -1333,106 +1333,6 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	return startedService, nil
 }
 
-//TODO move these method to the bottom
-func waitUntilAllTCPAndUDPPortsAreOpen(
-	ipAddr net.IP,
-	ports map[string]*port_spec.PortSpec,
-) error {
-
-	var portCheckErrorGroup errgroup.Group
-
-	for _, portSpec := range ports {
-		wrappedWaitFunc := func() error {
-			return waitUntilPortIsOpenWithTimeout(ipAddr, portSpec)
-		}
-		portCheckErrorGroup.Go(wrappedWaitFunc)
-	}
-	//This error group pattern allow us to reject early if at least one of the ports check fails
-	//in this opportunity we want to reject early because the main user pain that we want to handle
-	//is a wrong service configuration
-	if err := portCheckErrorGroup.Wait(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while waiting for all TCP and UDP ports to be open")
-	}
-
-	return nil
-}
-
-func waitUntilPortIsOpenWithTimeout(
-	ipAddr net.IP,
-	portSpec *port_spec.PortSpec,
-) error {
-	// reject early if it's disable
-	if !portSpec.GetWait().GetEnable() {
-		return nil
-	}
-	timeout := portSpec.GetWait().GetTimeout()
-
-	var (
-		ticker                  = time.NewTicker(timeout)
-		startTime               = time.Now()
-		finishTime              = startTime.Add(timeout)
-		shouldContinueInTheLoop = true
-		retries                 = 0
-		err                     error
-	)
-
-	time.Sleep(portSpec.GetWait().GetInitialDelay())
-
-	for shouldContinueInTheLoop {
-		select {
-		case <-ticker.C:
-			return stacktrace.NewError("Scanning ports has reached the '%v' time out", timeout.String())
-		default:
-			now := time.Now()
-			scanPortTimeout := finishTime.Sub(now)
-			if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
-				shouldContinueInTheLoop = false
-				break
-			}
-			time.Sleep(time.Duration(waitForPortsOpenRetriesDelayMilliseconds) * time.Millisecond)
-			retries++
-		}
-	}
-
-	if err != nil {
-		return stacktrace.Propagate(err, "Unsuccessful ports check for IP '%s' and port spec '%+v', "+
-			"even after '%v' retries with '%v' milliseconds in between retries",
-			ipAddr,
-			portSpec,
-			retries,
-			waitForPortsOpenRetriesDelayMilliseconds,
-		)
-	}
-	logrus.Debugf(
-		"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
-			"with '%v' milliseconds between retries and it took '%v'",
-		ipAddr,
-		portSpec,
-		retries,
-		waitForPortsOpenRetriesDelayMilliseconds,
-		time.Since(startTime),
-	)
-	return nil
-}
-
-func scanPort(ipAddr net.IP, portSpec *port_spec.PortSpec, timeout time.Duration) error {
-	portNumberStr := fmt.Sprintf("%v", portSpec.GetNumber())
-	networkAddress := net.JoinHostPort(ipAddr.String(), portNumberStr)
-	networkStr := strings.ToLower(portSpec.GetTransportProtocol().String())
-	conn, err := net.DialTimeout(networkStr, networkAddress, timeout)
-	if err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred while calling network address '%s' with port protocol '%s' and using time out '%v'",
-			networkAddress,
-			portSpec.GetTransportProtocol().String(),
-			timeout,
-		)
-	}
-	defer conn.Close()
-	return nil
-}
-
 // destroyService is the opposite of startRegisteredService. It removes a started service from the enclave. Note that it does not
 // take care of unregistering the service. For this, unregisterService should be called
 // Similar to unregisterService, it is expected that the service passed to destroyService has been properly started.
@@ -1976,5 +1876,104 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 	if err = parsedTemplate.Execute(renderedTemplateFile, templateData); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
 	}
+	return nil
+}
+
+func waitUntilAllTCPAndUDPPortsAreOpen(
+	ipAddr net.IP,
+	ports map[string]*port_spec.PortSpec,
+) error {
+
+	var portCheckErrorGroup errgroup.Group
+
+	for _, portSpec := range ports {
+		wrappedWaitFunc := func() error {
+			return waitUntilPortIsOpenWithTimeout(ipAddr, portSpec)
+		}
+		portCheckErrorGroup.Go(wrappedWaitFunc)
+	}
+	//This error group pattern allow us to reject early if at least one of the ports check fails
+	//in this opportunity we want to reject early because the main user pain that we want to handle
+	//is a wrong service configuration
+	if err := portCheckErrorGroup.Wait(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while waiting for all TCP and UDP ports to be open")
+	}
+
+	return nil
+}
+
+func waitUntilPortIsOpenWithTimeout(
+	ipAddr net.IP,
+	portSpec *port_spec.PortSpec,
+) error {
+	// reject early if it's disable
+	if !portSpec.GetWait().GetEnable() {
+		return nil
+	}
+	timeout := portSpec.GetWait().GetTimeout()
+
+	var (
+		ticker                  = time.NewTicker(timeout)
+		startTime               = time.Now()
+		finishTime              = startTime.Add(timeout)
+		shouldContinueInTheLoop = true
+		retries                 = 0
+		err                     error
+	)
+
+	time.Sleep(portSpec.GetWait().GetInitialDelay())
+
+	for shouldContinueInTheLoop {
+		select {
+		case <-ticker.C:
+			return stacktrace.NewError("Scanning ports has reached the '%v' time out", timeout.String())
+		default:
+			now := time.Now()
+			scanPortTimeout := finishTime.Sub(now)
+			if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
+				shouldContinueInTheLoop = false
+				break
+			}
+			time.Sleep(time.Duration(waitForPortsOpenRetriesDelayMilliseconds) * time.Millisecond)
+			retries++
+		}
+	}
+
+	if err != nil {
+		return stacktrace.Propagate(err, "Unsuccessful ports check for IP '%s' and port spec '%+v', "+
+			"even after '%v' retries with '%v' milliseconds in between retries",
+			ipAddr,
+			portSpec,
+			retries,
+			waitForPortsOpenRetriesDelayMilliseconds,
+		)
+	}
+	logrus.Debugf(
+		"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
+			"with '%v' milliseconds between retries and it took '%v'",
+		ipAddr,
+		portSpec,
+		retries,
+		waitForPortsOpenRetriesDelayMilliseconds,
+		time.Since(startTime),
+	)
+	return nil
+}
+
+func scanPort(ipAddr net.IP, portSpec *port_spec.PortSpec, timeout time.Duration) error {
+	portNumberStr := fmt.Sprintf("%v", portSpec.GetNumber())
+	networkAddress := net.JoinHostPort(ipAddr.String(), portNumberStr)
+	networkStr := strings.ToLower(portSpec.GetTransportProtocol().String())
+	conn, err := net.DialTimeout(networkStr, networkAddress, timeout)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred while calling network address '%s' with port protocol '%s' and using time out '%v'",
+			networkAddress,
+			portSpec.GetTransportProtocol().String(),
+			timeout,
+		)
+	}
+	defer conn.Close()
 	return nil
 }
