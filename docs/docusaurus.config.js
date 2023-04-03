@@ -36,6 +36,9 @@ const config = {
             }
           },
           admonitions: {}, // Add this line to enable admonitions
+
+          // TODO TODO Run Remark plugins through Docusaurus itself (right now we're running it via yarn and package.json)!! See https://docusaurus.io/docs/markdown-features/plugins#installing-plugins
+          
         },
         theme: {
           customCss: require.resolve('./src/css/custom.css'),
@@ -84,9 +87,9 @@ const config = {
             activeBasePath: '/cli'
           },
           {
-            to: '/sdk',
+            to: '/starlark-reference',
             position: 'left',
-            label: 'SDK',
+            label: 'Starlark',
             activeBasePath: '/sdk'
           },
           {
@@ -95,7 +98,7 @@ const config = {
             dropdownActiveClassDisabled: true,
           },
           {
-            href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml&title=%5BDocs%5D%3A+',
+            href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml',
             position: 'right',
             label: 'Report Docs Issue',
           },
@@ -116,8 +119,8 @@ const config = {
                 to: '/cli',
               },
               {
-                label: 'SDK',
-                to: '/sdk',
+                label: 'Starlark',
+                to: '/starlark-reference',
               },
             ],
           },

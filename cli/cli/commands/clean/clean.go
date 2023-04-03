@@ -41,7 +41,7 @@ var CleanCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand
 	CommandStr:       command_str_consts.CleanCmdStr,
 	ShortDescription: "Cleans up Kurtosis leftover artifacts",
 	LongDescription: fmt.Sprintf(
-		"Removes Kurtosis stopped Kurtosis enclaves (and live ones if the '%v' flag is set), as well as stopped engine containers",
+		"Removes stopped enclaves (and live ones if the '%v' flag is set), as well as stopped engine containers",
 		shouldCleanRunningEnclavesFlagKey,
 	),
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,

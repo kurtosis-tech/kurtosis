@@ -484,7 +484,7 @@
     {
       "detail": "This can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic",
       "documentation": "",
-      "name": "ReadyConditions",
+      "name": "ReadyCondition",
       "params": [
         {
           "name": "recipe",
@@ -523,7 +523,7 @@
           "detail": "# The timeout value is the maximum time that the command waits for the assertion to be true\n Follows Go \"time.Duration\" format https://pkg.go.dev/time#ParseDuration"
         }
       ],
-      "returnType": "ReadyConditions"
+      "returnType": "ReadyCondition"
     },
     {
       "name": "ServiceConfig",
@@ -593,7 +593,7 @@
         },
         {
           "name": "ready_conditions",
-          "type": "ReadyConditions",
+          "type": "ReadyCondition",
           "content": "ready_conditions?",
           "detail": "This field can be used to check the service's readiness after this is started to confirm that it is ready to receive connections and traffic"
         }
