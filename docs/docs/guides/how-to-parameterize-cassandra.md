@@ -1,7 +1,8 @@
 ---
-title: How to set up an n-node Cassandra environment for integration testing in Docker
+title: How to set up an n-node Cassandra environment
 sidebar_label: Setting up an n-node Cassandra cluster
 slug: /how-to-parameterize-cassandra
+toc_max_heading_level: 2
 sidebar_position: 5
 ---
 
@@ -14,9 +15,11 @@ Specifically, we're going to configure our test environments with a way that all
 2. Make their environment definition composable so that these environments can be easily included in tests with other services for different scenarios & use cases.
 
 **Without Kurtosis**
+
 One way to accomplish the above would be to write shell scripts over docker, or over binaries running on bare metal. In this case, we’d have to build these capabilities into our scripts and handle cross-system issues (laptop vs CI) ourselves.
 
 **With Kurtosis**
+
 However, in this guide, we’re going to use a free tool that already has these capabilities built in - Kurtosis. Kurtosis is a composable build system for writing reproducible test environments, and can run on your own laptop or in your favorite CI provider.
 
 :::info
@@ -26,8 +29,8 @@ For a holistic view of Kurtosis’ capabilities, visit our [Quickstart][quicksta
 Setup
 -----
 Before you proceed, make sure you have:
-* Installed and started the Docker engine on your local machine
-* Installed the Kurtosis CLI (or upgraded it to the latest release, if you already have the CLI installed)
+* [Installed and started the Docker engine on your local machine][starting-docker]
+* [Installed the Kurtosis CLI (or upgraded it to the latest release, if you already have the CLI installed)][installing-the-cli]
 
 Instantiate a 3-node Cassandra cluster
 --------------------------------------
@@ -76,7 +79,7 @@ def run(plan, args):
        command = ["/bin/sh", "-c", node_tool_check],
     )
 
-    # Wait for the 
+    # Wait for the nodes to be up and ready to establish connections and receive traffic 
     plan.wait(
         service_name = get_first_node_name(),
         recipe = check_nodes_are_up, 
@@ -169,7 +172,7 @@ f605cff291ef   cassandra-node-1   client: 9042/tcp -> 127.0.0.1:52508    RUNNING
 
 Congratulations! We’ve used Kurtosis to spin up a three-node Cassandra cluster over Docker. 
 
-### Review:
+### Review
 In this section, we created a `.star` file that told Kurtosis to do the following:
 1. Spin up 3 Cassandra containers (one for each node), 
 2. Bootstrap each node to the cluster,
@@ -180,8 +183,8 @@ We now have a simple environment definition for Kurtosis to spin up a 3-node Cas
 
 Fortunately, Kurtosis environment definitions can be parameterized. We’ll see just how easy it is to do so in the next section.
 
-Instantiate an n-node Cassandra cluster (paramterizability)
------------------------------------------------------------
+Parameterize our Cassandra cluster
+----------------------------------
 
 One of Kurtosis’s most powerful features is the out-of-the-box ability to parameterize environment definitions with very little overhead. This can be incredibly useful for developers who want to run different tests or scenarios against various configurations of their environment, without the burden of editing their Bash scripts or `docker-compose.yml` files repeatedly to modify the setup each time.
 
@@ -196,10 +199,10 @@ def run(plan, args):
 	# Default number of Cassandra nodes in our cluster
 	num_nodes = 3
 
-	### NEW CODE ###
+	### <----------- NEW CODE -----------> ###
 	if "num_nodes" in args:
 		num_nodes = args["num_nodes"]
-	### NEW CODE ###
+	### <----------- NEW CODE -----------> ###
 	
 	for node in range(0, num_nodes):
 		node_name = get_service_name(node)
@@ -300,7 +303,7 @@ def run(plan, args):
 	...
 ```
 
-…which is what we used in our main.star file originally!
+…which is what we used in our `main.star` file originally!
 
 What we did next was add an `if statement` with the `hasattr()` function to tell Kurtosis that if an argument is passed in at runtime by a user, then override the default `num_nodes` variable, which we set as 3, with the user-specified value.
 
@@ -310,7 +313,7 @@ In our case, we passed in:
 '{"num_nodes": 5}'
 ```
 
-Which told Kurtosis to run your main.star file with 5 nodes instead of the default of 3 that we began with. 
+Which told Kurtosis to run your `main.star` file with 5 nodes instead of the default of 3 that we began with. 
 
 :::tip
 Note that to pass parameters to the run(plan,args) function, a JSON object needs to be passed in as the 2nd position argument after the script or package path:
@@ -321,8 +324,8 @@ kurtosis run my_package.star '{"arg": "my_name"}'
 
 In this section, we showed how easy it is to use Kurtosis to parameterize our environment definition with just a few lines of code. Next, we’ll walk through another powerful property of Kurtosis environments: composability.
 
-Environment Composability 
--------------------------
+Using and making composable environment definitions
+---------------------------------------------------
 We’ve now written an environment definition using Starlark to instantiate a 3-node Cassandra cluster over Docker, and then modified it slightly to parameterize that definition for other use cases (n-node Cassandra cluster).
 
 However, the benefits of parametrized and reproducible environment properties are amplified when we’re able to share our definition with others to use or use definitions that others (friends, colleagues, etc) have already written.
@@ -362,19 +365,17 @@ Conclusion
 ----------
 And that’s it! To recap this short guide, together we:
 1. Wrote an environment definition that instructs Kurtosis to set up a 3 node Cassandra cluster in an isolated environment called an Enclave (over Docker),
-2. We added a few lines of code to our main.star file to parametrize our environment definition to increase the flexibility and use cases with which it can be used, and,
+2. We added a few lines of code to our `main.star` file to parametrize our environment definition to increase the flexibility and use cases with which it can be used, and,
 3. Executed a remotely-hosted Starlark file that was part of what's called a [Kurtosis Package][packages] to demonstrate the easy composability and reusability of Kurtosis environment definitions.
 
 We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via Github (`kurtosis feedback`) or [email us](mailto:feedback@kurtosistech.com)!
 
-Other Exercises
----------------
+### Other exercises you can do with your Cassandra cluster
 With our parameterized, reusable environment definition for a multi-node Cassandra cluster, feel free to:
 * Turn your local `main.star` file into a runnable Kurtosis package and upload it on Github for others to use following [these instructions][runnable-packages]
 * Use our [Go or Typescript SDK][sdk] to write backend integration tests, like this [network partitioning test][network-partitioning-test]
 
-Other Examples
---------------
+### Other examples
 While this was a short intro to some of Kurtosis’ capabilities, we encourage you to check out our [quickstart][quickstart] (where you’ll build a postgres database and API on top) and our other examples in our [awesome-kurtosis repository][awesome-kurtosis] where you will find other Kurtosis packages for you to check out as well, including a package that spins up a local [Ethereum testnet][eth-package-example] or one that sets up a [voting app using a Redis cluster][redis-package-example]. 
 
 <!---- REFERENCE LINKS BELOW ONLY ---->
@@ -390,3 +391,5 @@ While this was a short intro to some of Kurtosis’ capabilities, we encourage y
 [network-partitioning-test]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/cassandra-network-partition-test
 [redis-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app
 [eth-package-example]: https://github.com/kurtosis-tech/eth-network-package
+[installing-the-cli]: ./installing-the-cli.md#ii-install-the-cli
+[starting-docker]: ./installing-the-cli.md#i-install--start-docker
