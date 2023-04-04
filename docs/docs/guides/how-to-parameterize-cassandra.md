@@ -1,6 +1,6 @@
 ---
 title: How to set up an n-node Cassandra environment for integration testing in Docker
-sidebar_label: 
+sidebar_label: Setting up an n-node Cassandra cluster
 slug: /how-to-parameterize-cassandra
 sidebar_position: 5
 ---
