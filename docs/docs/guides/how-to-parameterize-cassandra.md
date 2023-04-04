@@ -40,7 +40,7 @@ First, create and `cd` into a directory to hold the project we’ll be working o
 mkdir kurtosis-cass-cluster && cd kurtosis-cass-cluster
 ```
 
-Next, create a starlark file called `main.star` inside your new directory with the following contents:
+Next, create a [Starlark][starlark] file called `main.star` inside your new directory with the following contents:
 
 ```python
 DEFAULT_NUMBER_OF_NODES = 3
@@ -173,7 +173,7 @@ f605cff291ef   cassandra-node-1   client: 9042/tcp -> 127.0.0.1:52508    RUNNING
 Congratulations! We’ve used Kurtosis to spin up a three-node Cassandra cluster over Docker. 
 
 ### Review
-In this section, we created a `.star` file that told Kurtosis to do the following:
+In this section, we created file using [Starlark][starlark] that are instructions for Kurtosis to do the following:
 1. Spin up 3 Cassandra containers (one for each node), 
 2. Bootstrap each node to the cluster,
 3. Map the default Cassandra node container ports to ephemeral local machine ports (described in their respective `ServiceConfig`), and
@@ -393,3 +393,4 @@ While this was a short intro to some of Kurtosis’ capabilities, we encourage y
 [eth-package-example]: https://github.com/kurtosis-tech/eth-network-package
 [installing-the-cli]: ./installing-the-cli.md#ii-install-the-cli
 [starting-docker]: ./installing-the-cli.md#i-install--start-docker
+[starlark]: ../concepts-reference/starlark.md
