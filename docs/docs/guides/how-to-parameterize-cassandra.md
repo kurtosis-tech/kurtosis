@@ -287,7 +287,7 @@ daff154657ce   cassandra-node-3   client: 9042/tcp -> 127.0.0.1:54768    RUNNING
                                   cluster: 7000/tcp -> 127.0.0.1:54774
 ```
 
-Congratulations! We’ve just parameterized our Cassandra cluster environment definition and used it to instantiate a 5-node Cassandra cluster. You can run the same command with 2 nodes, or 4 nodes and it will work **Kurtosis environment definitions are completely reproducible and fully parameterizable.**
+Congratulations! We’ve just parameterized our Cassandra cluster environment definition and used it to instantiate a 5-node Cassandra cluster. You can run the same command with 2 nodes, or 4 nodes and it will work **Kurtosis environment definitions are completely reproducible and fully parametrizable.**
 
 :::caution
 Depending on how many nodes you wish to spin up, the max heap size of each node may cumulatively consume more memory on your local machine than you have available, causing the Starlark script to time-out. Modifying the `MAX_HEAP_SIZE` property may help, depending on your needs.
