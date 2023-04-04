@@ -4,14 +4,11 @@ sidebar_label: feedback
 slug: /feedback
 ---
 
-To quickly see all the ways you can get in touch with us, simply run:
+To quickly get in touch with us, simply run:
 ```bash
-kurtosis feedback
+kurtosis feedback 
 ```
-which will return:
-- The link to our [GitHub](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) for filing bug reports and feature requests as GitHub Issues. 
-- Our [feedback email address](mailto:feedback@kurtosistech.com) for sending us suggestions, comments, or questions about Kurtosis via email.
-- A [Calendly link](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding) to schedule a dedicated 1:1 onboarding session with us to help you get started.
+which will open the [Kurtosis GitHub choose new issue page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), where you can select the kind of feedback you want and then describe what you want.
 
 ### Using `kurtosis feedback`
 
