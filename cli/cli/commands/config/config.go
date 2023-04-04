@@ -7,7 +7,6 @@ package config
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	init_config "github.com/kurtosis-tech/kurtosis/cli/cli/commands/config/init"
 	config_path "github.com/kurtosis-tech/kurtosis/cli/cli/commands/config/path"
 	"github.com/spf13/cobra"
 )
@@ -21,6 +20,5 @@ var ConfigCmd = &cobra.Command{
 }
 
 func init() {
-	ConfigCmd.AddCommand(init_config.InitCmd.MustGetCobraCommand())
 	ConfigCmd.AddCommand(config_path.PathCmd.MustGetCobraCommand())
 }
