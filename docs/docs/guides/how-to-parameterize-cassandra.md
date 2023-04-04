@@ -1,0 +1,392 @@
+---
+title: How to set up an n-node Cassandra environment for integration testing in Docker
+sidebar_label: 
+slug: /how-to-parameterize-cassandra
+sidebar_position: 5
+---
+
+Introduction
+------------
+In this guide, we will set up a 3-node Cassandra cluster in Docker and parameterize the environment definition so it can easily be modified for use in different tests that require an _n_-node Cassandra cluster. Then we will show you how to run remotely hosted packages authored by others, and go through how to package and publish our work to Github for others to use as well.
+
+Specifically, we're going to configure our test environments with a way that allows us to both:
+1. Parameterize the environment so a user can trivially specify how many nodes they’d like for their system to have, and 
+2. Make their environment definition composable so that these environments can be easily included in tests with other services for different scenarios & use cases.
+
+**Without Kurtosis**
+One way to accomplish the above would be to write shell scripts over docker, or over binaries running on bare metal. In this case, we’d have to build these capabilities into our scripts and handle cross-system issues (laptop vs CI) ourselves.
+
+**With Kurtosis**
+However, in this guide, we’re going to use a free tool that already has these capabilities built in - Kurtosis. Kurtosis is a composable build system for writing reproducible test environments, and can run on your own laptop or in your favorite CI provider.
+
+:::info
+For a holistic view of Kurtosis’ capabilities, visit our [Quickstart][quickstart]!
+:::
+
+Setup
+-----
+Before you proceed, make sure you have:
+* Installed and started the Docker engine on your local machine
+* Installed the Kurtosis CLI (or upgraded it to the latest release, if you already have the CLI installed)
+
+Instantiate a 3-node Cassandra cluster
+--------------------------------------
+First, create and `cd` into a directory to hold the project we’ll be working on:
+
+```bash
+mkdir kurtosis-cass-cluster && cd kurtosis-cass-cluster
+```
+
+Next, create a starlark file called `main.star` inside your new directory with the following contents:
+
+```python
+DEFAULT_NUMBER_OF_NODES = 3
+CASSANDRA_NODE_PREFIX= "cassandra-node-"
+CASSANDRA_NODE_IMAGE = "cassandra:4.0"
+
+
+CLUSTER_COMM_PORT_ID = "cluster"
+CLUSTER_COM_PORT_NUMBER =  7000
+CLUSTER_COM_PORT_PROTOCOL = "TCP"
+
+
+CLIENT_COMM_PORT_ID = "client"
+CLIENT_COM_PORT_NUMBER = 9042
+CLIENT_COM_PORT_PROTOCOL = "TCP"
+
+
+FIRST_NODE_INDEX = 0
+  
+def run(plan, args):
+    num_nodes = DEFAULT_NUMBER_OF_NODES
+
+    # Simple check to verify that we have at least 1 node in our cluster
+    if num_nodes == 0:
+       fail("Need at least 1 node to Start Cassandra cluster got 0")
+
+    # Iteratively add each node to the cluster, with the given names and serviceConfig specified below
+    for node in range(0, num_nodes):
+       node_name = get_service_name(node)
+       config = get_service_config(num_nodes)
+       plan.add_service(name = node_name, config = config)
+    
+    node_tool_check = "nodetool status | grep UN | wc -l | tr -d '\n'"
+
+    check_nodes_are_up = ExecRecipe(
+       command = ["/bin/sh", "-c", node_tool_check],
+    )
+
+    # Wait for the 
+    plan.wait(
+        service_name = get_first_node_name(),
+        recipe = check_nodes_are_up, 
+        field = "output", 
+        assertion = "==", 
+        target_value = str(num_nodes), 
+        timeout = "8m", 
+        )
+
+    return {"node_names": [get_service_name(x) for x in range(num_nodes)]}
+
+def get_service_name(node_idx):
+    return CASSANDRA_NODE_PREFIX + str(node_idx)
+
+def get_service_config(num_nodes):
+    seeds = ["cassandra-node-"+str(x) for x in range(0, num_nodes)]
+    return ServiceConfig(
+        image = CASSANDRA_NODE_IMAGE,
+        ports = {
+            CLUSTER_COMM_PORT_ID : PortSpec(number = CLUSTER_COM_PORT_NUMBER, transport_protocol = CLUSTER_COM_PORT_PROTOCOL),
+            CLIENT_COMM_PORT_ID : PortSpec(number = CLIENT_COM_PORT_NUMBER, transport_protocol = CLIENT_COM_PORT_PROTOCOL),
+        },
+        env_vars = {
+            "CASSANDRA_SEEDS":",".join(seeds),
+            # without this set Cassandra tries to take 8G and OOMs
+            "MAX_HEAP_SIZE": "512M",
+            "HEAP_NEWSIZE": "1M",
+        }
+    )
+
+def get_first_node_name():
+    return get_service_name(FIRST_NODE_INDEX)
+```
+
+Finally, save your newly created file and, from the working directory we created, run the following command:
+
+```bash
+kurtosis run --enclave cassandra-cluster main.star
+```
+
+:::info
+Kurtosis will run validation checks against our code to ensure that it will work before spinning up the containers for our 3-node Cassandra cluster. We won’t dive into the details of how validation checks are used by Kurtosis in this guide, but you can read more about them [here][multi-phase-runs].
+:::
+
+Your output will look something like:
+
+```bash
+INFO[2023-03-28T17:44:20-03:00] Creating a new enclave for Starlark to run inside...
+INFO[2023-03-28T17:44:24-03:00] Enclave 'cassandra-cluster' created successfully
+
+> add_service name="cassandra-node-0" config=ServiceConfig(image="cassandra:4.0", ports={"client": PortSpec(number=9042, transport_protocol="TCP"), "cluster": PortSpec(number=7000, transport_protocol="TCP")}, env_vars={"CASSANDRA_SEEDS": "cassandra-node-0,cassandra-node-1,cassandra-node-2", "HEAP_NEWSIZE": "1M", "MAX_HEAP_SIZE": "512M"})
+Service 'cassandra-node-0' added with service UUID 'ec084228aa2b4e63aea84c10b9c37963'
+
+> add_service name="cassandra-node-1" config=ServiceConfig(image="cassandra:4.0", ports={"client": PortSpec(number=9042, transport_protocol="TCP"), "cluster": PortSpec(number=7000, transport_protocol="TCP")}, env_vars={"CASSANDRA_SEEDS": "cassandra-node-0,cassandra-node-1,cassandra-node-2", "HEAP_NEWSIZE": "1M", "MAX_HEAP_SIZE": "512M"})
+Service 'cassandra-node-1' added with service UUID 'f605cff291ef495f884c43f9ee9a980c'
+
+> add_service name="cassandra-node-2" config=ServiceConfig(image="cassandra:4.0", ports={"client": PortSpec(number=9042, transport_protocol="TCP"), "cluster": PortSpec(number=7000, transport_protocol="TCP")}, env_vars={"CASSANDRA_SEEDS": "cassandra-node-0,cassandra-node-1,cassandra-node-2", "HEAP_NEWSIZE": "1M", "MAX_HEAP_SIZE": "512M"})
+Service 'cassandra-node-2' added with service UUID '4bcf767e82f546e3acfa597510efb0e5'
+
+> wait recipe=ExecRecipe(command=["/bin/sh", "-c", "nodetool status | grep UN | wc -l | tr -d '\n'"]) field="output" assertion="==" target_value="3" timeout="8m"
+Wait took 33 tries (52.05875544s in total). Assertion passed with following:
+Command returned with exit code '0' and the following output: 3
+
+Starlark code successfully run. Output was:
+{
+	"node_names": [
+		"cassandra-node-0",
+		"cassandra-node-1",
+		"cassandra-node-2"
+	]
+}
+Name:            cassandra-cluster
+UUID:            c8027468561c
+Status:          RUNNING
+Creation Time:   Tue, 28 Mar 2023 16:29:54 -03
+
+========================================= Files Artifacts =========================================
+UUID   Name
+
+========================================== User Services ==========================================
+UUID           Name               Ports                                  Status
+ec084228aa2b   cassandra-node-0   client: 9042/tcp -> 127.0.0.1:52503    RUNNING
+                                  cluster: 7000/tcp -> 127.0.0.1:52502
+f605cff291ef   cassandra-node-1   client: 9042/tcp -> 127.0.0.1:52508    RUNNING
+                                  cluster: 7000/tcp -> 127.0.0.1:52507
+4bcf767e82f5   cassandra-node-2   client: 9042/tcp -> 127.0.0.1:52513    RUNNING
+                                  cluster: 7000/tcp -> 127.0.0.1:52512
+```
+
+
+Congratulations! We’ve used Kurtosis to spin up a three-node Cassandra cluster over Docker. 
+
+### Review:
+In this section, we created a `.star` file that told Kurtosis to do the following:
+1. Spin up 3 Cassandra containers (one for each node), 
+2. Bootstrap each node to the cluster,
+3. Map the default Cassandra node container ports to ephemeral local machine ports (described in their respective `ServiceConfig`), and
+4. Verify using `nodetool` that the cluster is up, running, and has 3 nodes (just as we specified) before returning the names of our nodes.
+
+We now have a simple environment definition for Kurtosis to spin up a 3-node Cassandra cluster. This is useful for developers who need an easy way to reproduce and spin up a 3-node Cassandra cluster for testing. You may now be wondering: but what if I need more nodes?
+
+Fortunately, Kurtosis environment definitions can be parameterized. We’ll see just how easy it is to do so in the next section.
+
+Instantiate an n-node Cassandra cluster (paramterizability)
+-----------------------------------------------------------
+
+One of Kurtosis’s most powerful features is the out-of-the-box ability to parameterize environment definitions with very little overhead. This can be incredibly useful for developers who want to run different tests or scenarios against various configurations of their environment, without the burden of editing their Bash scripts or `docker-compose.yml` files repeatedly to modify the setup each time.
+
+We will parameterize our Cassandra cluster environment definition by adding only 2 lines of code to our `main.star` Starlark file. 
+
+Let’s add in those extra lines now. 
+
+In your `main.star` file, add in the following lines in the code block that describes the `plan` object:
+
+```python
+def run(plan, args):
+	# Default number of Cassandra nodes in our cluster
+	num_nodes = 3
+
+	### NEW CODE ###
+	if "num_nodes" in args:
+		num_nodes = args["num_nodes"]
+	### NEW CODE ###
+	
+	for node in range(0, num_nodes):
+		node_name = get_service_name(node)
+		config = get_service_config(num_nodes)
+		plan.add_service(
+            name = node_name,
+			config = config,
+        )
+
+	# ...
+```
+
+Now save your newly edited `main.star` file and run the following command to blow away our old enclave and spin up a new one with 5 nodes specified:
+
+```bash
+kurtosis clean -a && kurtosis run --enclave cassandra-cluster main.star '{"num_nodes": 5}'
+```
+
+It may take a while, but you should now see the following result:
+
+```bash
+INFO[2023-03-28T21:45:46-03:00] Cleaning enclaves...
+INFO[2023-03-28T21:45:47-03:00] Successfully removed the following enclaves:
+e4c49d41cb0f4c54b9e36ff9c0cba18d	cassandra-cluster
+INFO[2023-03-28T21:45:47-03:00] Successfully cleaned enclaves
+INFO[2023-03-28T21:45:47-03:00] Cleaning old Kurtosis engine containers...
+INFO[2023-03-28T21:45:47-03:00] Successfully cleaned old Kurtosis engine containers
+INFO[2023-03-28T21:45:47-03:00] Creating a new enclave for Starlark to run inside...
+INFO[2023-03-28T21:45:51-03:00] Enclave 'cassandra-cluster' created successfully
+
+> add_service name="cassandra-node-0" config=ServiceConfig(image="cassandra:4.0", ports={"client": PortSpec(number=9042, transport_protocol="TCP"), "cluster": PortSpec(number=7000, transport_protocol="TCP")}, env_vars={"CASSANDRA_SEEDS": "cassandra-node-0,cassandra-node-1,cassandra-node-2,cassandra-node-3,cassandra-node-4", "HEAP_NEWSIZE": "1M", "MAX_HEAP_SIZE": "512M"})
+Service 'cassandra-node-0' added with service UUID '9a9213d1d84645bf8c76d179e6b2cade'
+
+> add_service name="cassandra-node-1" config=ServiceConfig(image="cassandra:4.0", ports={"client": PortSpec(number=9042, transport_protocol="TCP"), "cluster": PortSpec(number=7000, transport_protocol="TCP")}, env_vars={"CASSANDRA_SEEDS": "cassandra-node-0,cassandra-node-1,cassandra-node-2,cassandra-node-3,cassandra-node-4", "HEAP_NEWSIZE": "1M", "MAX_HEAP_SIZE": "512M"})
+Service 'cassandra-node-1' added with service UUID '66c6907c6a8a495b9496eaa37c1de42a'
+
+> add_service name="cassandra-node-2" config=ServiceConfig(image="cassandra:4.0", ports={"client": PortSpec(number=9042, transport_protocol="TCP"), "cluster": PortSpec(number=7000, transport_protocol="TCP")}, env_vars={"CASSANDRA_SEEDS": "cassandra-node-0,cassandra-node-1,cassandra-node-2,cassandra-node-3,cassandra-node-4", "HEAP_NEWSIZE": "1M", "MAX_HEAP_SIZE": "512M"})
+Service 'cassandra-node-2' added with service UUID 'fe9be7991edd40f891e7c2d7f3e14456'
+
+> add_service name="cassandra-node-3" config=ServiceConfig(image="cassandra:4.0", ports={"client": PortSpec(number=9042, transport_protocol="TCP"), "cluster": PortSpec(number=7000, transport_protocol="TCP")}, env_vars={"CASSANDRA_SEEDS": "cassandra-node-0,cassandra-node-1,cassandra-node-2,cassandra-node-3,cassandra-node-4", "HEAP_NEWSIZE": "1M", "MAX_HEAP_SIZE": "512M"})
+Service 'cassandra-node-3' added with service UUID 'daff154657ce46378928749312275edf'
+
+> add_service name="cassandra-node-4" config=ServiceConfig(image="cassandra:4.0", ports={"client": PortSpec(number=9042, transport_protocol="TCP"), "cluster": PortSpec(number=7000, transport_protocol="TCP")}, env_vars={"CASSANDRA_SEEDS": "cassandra-node-0,cassandra-node-1,cassandra-node-2,cassandra-node-3,cassandra-node-4", "HEAP_NEWSIZE": "1M", "MAX_HEAP_SIZE": "512M"})
+Service 'cassandra-node-4' added with service UUID '8ecd6c4b75a64764a87f2ce9d23cd8f0'
+
+> wait recipe=ExecRecipe(command=["/bin/sh", "-c", "nodetool status | grep UN | wc -l | tr -d '\n'"]) field="output" assertion="==" target_value="5" timeout="15m"
+Wait took 33 tries (52.686225608s in total). Assertion passed with following:
+Command returned with exit code '0' and the following output: 5
+
+Starlark code successfully run. Output was:
+{
+	"node_names": [
+		"cassandra-node-0",
+		"cassandra-node-1",
+		"cassandra-node-2",
+		"cassandra-node-3",
+		"cassandra-node-4"
+	]
+}
+INFO[2023-03-28T21:46:55-03:00] ==========================================================
+INFO[2023-03-28T21:46:55-03:00] ||          Created enclave: cassandra-cluster          ||
+INFO[2023-03-28T21:46:55-03:00] ==========================================================
+Name:            cassandra-cluster
+UUID:            c7985e32b076
+Status:          RUNNING
+Creation Time:   Tue, 28 Mar 2023 21:45:47 -03
+
+========================================= Files Artifacts =========================================
+UUID   Name
+
+========================================== User Services ==========================================
+UUID           Name               Ports                                  Status
+9a9213d1d846   cassandra-node-0   client: 9042/tcp -> 127.0.0.1:54740    RUNNING
+                                  cluster: 7000/tcp -> 127.0.0.1:54741
+66c6907c6a8a   cassandra-node-1   client: 9042/tcp -> 127.0.0.1:54746    RUNNING
+                                  cluster: 7000/tcp -> 127.0.0.1:54745
+fe9be7991edd   cassandra-node-2   client: 9042/tcp -> 127.0.0.1:54761    RUNNING
+                                  cluster: 7000/tcp -> 127.0.0.1:54760
+daff154657ce   cassandra-node-3   client: 9042/tcp -> 127.0.0.1:54768    RUNNING
+                                  cluster: 7000/tcp -> 127.0.0.1:54769
+8ecd6c4b75a6   cassandra-node-4   client: 9042/tcp -> 127.0.0.1:54773    RUNNING
+                                  cluster: 7000/tcp -> 127.0.0.1:54774
+```
+
+Congratulations! We’ve just parameterized our Cassandra cluster environment definition and used it to instantiate a 5-node Cassandra cluster. You can run the same command with 2 nodes, or 4 nodes and it will work **Kurtosis environment definitions are completely reproducible and fully parameterizable.**
+
+:::caution
+Depending on how many nodes you wish to spin up, the max heap size of each node may cumulatively consume more memory on your local machine than you have available, causing the Starlark script to time-out. Modifying the `MAX_HEAP_SIZE` property may help, depending on your needs.
+:::
+
+### Review
+How did that work?
+
+The plan object contains all enclave-modifying methods like `add_service`, `remove_service`, `upload_files`, etc. To accept arguments in the `run` function, we simply needed to pass them (arguments) in as the second parameter of our `run` function, like so:
+
+```python
+def run(plan, args):
+	...
+```
+
+…which is what we used in our main.star file originally!
+
+What we did next was add an `if statement` with the `hasattr()` function to tell Kurtosis that if an argument is passed in at runtime by a user, then override the default `num_nodes` variable, which we set as 3, with the user-specified value.
+
+In our case, we passed in:
+
+```bash
+'{"num_nodes": 5}'
+```
+
+Which told Kurtosis to run your main.star file with 5 nodes instead of the default of 3 that we began with. 
+
+:::tip
+Note that to pass parameters to the run(plan,args) function, a JSON object needs to be passed in as the 2nd position argument after the script or package path:
+```bash
+kurtosis run my_package.star '{"arg": "my_name"}'
+```
+:::
+
+In this section, we showed how easy it is to use Kurtosis to parameterize our environment definition with just a few lines of code. Next, we’ll walk through another powerful property of Kurtosis environments: composability.
+
+Environment Composability 
+-------------------------
+We’ve now written an environment definition using Starlark to instantiate a 3-node Cassandra cluster over Docker, and then modified it slightly to parameterize that definition for other use cases (n-node Cassandra cluster).
+
+However, the benefits of parametrized and reproducible environment properties are amplified when we’re able to share our definition with others to use or use definitions that others (friends, colleagues, etc) have already written.
+
+To quickly demonstrate the latter capability, simply run:
+
+```bash
+kurtosis clean -a && kurtosis run --enclave cassandra-cluster github.com/kurtosis-tech/cassandra-package '{"num_nodes": 5}' 
+```
+
+Which should give you the same result as we saw when we ran our local `main.star` file with 5 nodes specified as an argument. However this time, we’re actually using a `main.star` file hosted [remotely on Github and running that instead][github-cass-package]!
+
+**Any Kurtosis environment definition can be converted into a runnable, shareable artifact that we call a Kurtosis Package.** What we just did was run a remotely-hosted Kurtosis package.
+
+While this guide won’t cover the steps needed to convert your Starlark file and export it for others to use as a Kurtosis Package, you can check out our docs to learn more about how to turn a Starlark file into a [runnable Kurtosis package][runnable-packages] using only a [`kurtosis.yml`][kurtosis-yml] file.
+
+### Review
+What we did with our most recent command was execute a remotely-hosted `main.star` from a Kurtosis package on [Github][github-cass-package]. That remotely-hosted `main.star` file has the same code as our local `main.star` file and, with only a [locator][locator], Kurtosis knew we were referencing a publicly-hosted runnable package. 
+
+The entirety of what we wrote locally in our `main.star` file can be packaged up and pushed to the internet (Github) for anyone to use to instantiate an n-node cassandra cluster by simply adding a [`kurtosis.yml`][kurtosis-yml] manifest to your directory and publishing the entire directory to Github. Read more about how to do this [here][runnable-packages].
+
+Turning your Starlark code into a runnable Kurtosis package and making it available on Github means any developer will be able to use our Kurtosis package as a building block in their own environment definition or to run different tests using various configurations of nodes in a Cassandra cluster.
+
+This behavior is bi-directional as well. Meaning, we can import any remotely hosted Kurtosis package and use it’s code inside our own Kurtosis package with the `import_module` instruction like so:
+
+```python
+lib = import_module("github.com/foo/bar/src/lib.star")
+
+def run(plan,args)
+lib.some_function()
+lib.some_variable()
+```
+
+**This feature we just witnessed is the composability property of environments created using Kurtosis and allows environments, and their components, to be easily composed and connected together without needing to know the inner workings of each setup.**
+
+Conclusion
+----------
+And that’s it! To recap this short guide, together we:
+1. Wrote an environment definition that instructs Kurtosis to set up a 3 node Cassandra cluster in an isolated environment called an Enclave (over Docker),
+2. We added a few lines of code to our main.star file to parametrize our environment definition to increase the flexibility and use cases with which it can be used, and,
+3. Executed a remotely-hosted Starlark file that was part of what's called a [Kurtosis Package][packages] to demonstrate the easy composability and reusability of Kurtosis environment definitions.
+
+We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via Github (`kurtosis feedback`) or [email us](mailto:feedback@kurtosistech.com)!
+
+Other Exercises
+---------------
+With our parameterized, reusable environment definition for a multi-node Cassandra cluster, feel free to:
+* Turn your local `main.star` file into a runnable Kurtosis package and upload it on Github for others to use following [these instructions][runnable-packages]
+* Use our [Go or Typescript SDK][sdk] to write backend integration tests, like this [network partitioning test][network-partitioning-test]
+
+Other Examples
+--------------
+While this was a short intro to some of Kurtosis’ capabilities, we encourage you to check out our [quickstart][quickstart] (where you’ll build a postgres database and API on top) and our other examples in our [awesome-kurtosis repository][awesome-kurtosis] where you will find other Kurtosis packages for you to check out as well, including a package that spins up a local [Ethereum testnet][eth-package-example] or one that sets up a [voting app using a Redis cluster][redis-package-example]. 
+
+<!---- REFERENCE LINKS BELOW ONLY ---->
+[quickstart]: ../quickstart.md
+[awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis
+[multi-phase-runs]: ../concepts-reference/multi-phase-runs.md
+[github-cass-package]: https://github.com/kurtosis-tech/cassandra-package/blob/main/main.star
+[runnable-packages]: ../concepts-reference/packages.md#runnable-packages
+[kurtosis-yml]: ../concepts-reference/kurtosis-yml.md
+[locator]: ../concepts-reference/locators.md
+[packages]: ../concepts-reference/packages.md
+[sdk]: ../client-libs-reference.md
+[network-partitioning-test]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/cassandra-network-partition-test
+[redis-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app
+[eth-package-example]: https://github.com/kurtosis-tech/eth-network-package
