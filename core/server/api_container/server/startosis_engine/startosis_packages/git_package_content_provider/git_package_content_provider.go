@@ -34,7 +34,7 @@ const (
 	filePathToKurtosisYamlNotFound             = ""
 	replaceCountPackageDirWithGithubConstant   = 1
 
-	packageDocLink        = "https://docs.kurtosis.com/reference/packages"
+	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
 	osPathSeparatorString = string(os.PathSeparator)
 )
 

@@ -7,13 +7,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/multi_os_command_executor"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/savioxavier/termlink"
 	"net/url"
 	"strings"
 )
@@ -24,7 +21,15 @@ const (
 		"See below for the many ways you can get in touch with us.\n\n" +
 		"TIP: You can quickly type and send us feedback directly from the CLI. For example, " +
 		"`kurtosis feedback \"I enjoy the enclave naming theme\"` will open the Kurtosis GitHub " +
-		"\"Choose New Issue\" page with the description pre-filled with \"I enjoy the enclave naming theme\"."
+		"\"Create New Issue\" page with the description pre-filled with \"I enjoy the enclave naming theme\".\n\n" +
+		"This command can be used to deliver feedback to the Kurtosis team!\n\n" +
+		"* Pass in your feedback as an argument using double quotations (e.g. kurtosis feedback \"my feedback\"), and press enter; this will open our GitHub Issues templates, pre-filled with your feedback/arg.\n" +
+		"* Pass in the --email flag to open a draft email, pre-filled with your feedback/arg, to send to feedback@kurtosistech.com.\n" +
+		"* Pass in the --calendly flag to open our Calendly link to schedule a 1:1 session with us for feedback and questions you may have!\n\n" +
+		"See below for the some direct links as well.\n\n" +
+		"* For bugs/issues, let us know in our GitHub " + user_support_constants.GitHubChooseNewIssuesUrl + "?version=" + kurtosis_version.KurtosisVersion + ".\n" +
+		"* For general feedback, click here to email us " + user_support_constants.FeedbackEmailLink + ".\n" +
+		"* If you need help getting started, schedule an on-boarding session with us on " + user_support_constants.KurtosisOnBoardCalendlyUrl + "."
 
 	emailFlagKey                       = "email"
 	calendlyFlagKey                    = "calendly"
@@ -51,27 +56,6 @@ const (
 	defaultFeatureRequest   = "false"
 	defaultDocs             = "false"
 
-	gitHubLinkText     = "let us know in our GitHub."
-	emailLinkText      = "click here to email us."
-	onboardingLinkText = "schedule an on-boarding session with us."
-
-	feedbackMsgTitle = "Your feedback is valuable and helps us improve Kurtosis. Thank you."
-
-	feedbackMsg = `
-This command can be used to deliver feedback to the Kurtosis team!
-
-* Pass in your feedback as an argument using double quotations (e.g. kurtosis feedback "my feedback"), and press enter; this will open our GitHub Issues templates, pre-filled with your feedback/arg.
-* Pass in the --email flag to open a draft email, pre-filled with your feedback/arg, to send to feedback@kurtosistech.com.
-* Pass in the --calendly flag to open our Calendly link to schedule a 1:1 session with us for feedback and questions you may have!
-
-See below for the some direct links as well.
-
-* For bugs/issues, %v
-* For general feedback, %v
-* If you need help getting started, %v
-`
-	greenColorStr = "green"
-
 	userMsgArgKey          = "message"
 	userMsgArgDefaultValue = "default-message-value"
 	userMsgArgIsOptional   = true
@@ -81,7 +65,6 @@ See below for the some direct links as well.
 
 	notDestinationTypeSelected = ""
 	notFeedbackTypeSelected    = ""
-	emptyUserMsg               = ""
 
 	defaultDestinationType = "gitHub"
 )
@@ -148,18 +131,12 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		return stacktrace.Propagate(err, "An error occurred while extracting the user message from args '%+v'", args)
 	}
 
-	mutuallyExclusiveFeedbackDestinationTypeFlagKeys := []string{
-		emailFlagKey, calendlyFlagKey}
-
-	selectedDestinationType, err := validateMutuallyExclusiveBooleanFlagsAndGetSelectedKey(
-		flags,
-		mutuallyExclusiveFeedbackDestinationTypeFlagKeys,
-	)
+	selectedDestinationType, err := getSelectedDestinationType(flags)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
-			"An error occurred validating mutually exclusive flags '%+v'",
-			mutuallyExclusiveFeedbackDestinationTypeFlagKeys,
+			"An error occurred getting the selected destination type from flags '%+v'",
+			flags,
 		)
 	}
 
@@ -174,19 +151,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		)
 	}
 
-	//GitHub destination is used by default if users fill the message or any feedback type but do not specify the destination
-	if selectedDestinationType == notDestinationTypeSelected &&
-		(userMsg != emptyUserMsg || selectedFeedbackType != notFeedbackTypeSelected) {
-		selectedDestinationType = defaultDestinationType
-	}
-
-	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
-	metricsUserId, err := metricsUserIdStore.GetUserID()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting metrics user id")
-	}
-
-	gitHubIssueURL, err := getGitHubIssueURL(selectedFeedbackType, metricsUserId, userMsg)
+	gitHubIssueURL, err := getGitHubIssueURL(selectedFeedbackType, userMsg)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting GitHub Issue URL")
 	}
@@ -216,16 +181,6 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		}
 	}
 
-	//The following message is printed if destination is not set
-	spotlightMessagePrinter := output_printers.GetSpotlightMessagePrinter()
-	spotlightMessagePrinter.Print(feedbackMsgTitle)
-
-	fmt.Printf(
-		feedbackMsg,
-		termlink.ColorLink(gitHubLinkText, gitHubIssueURL, greenColorStr),
-		termlink.ColorLink(emailLinkText, user_support_constants.FeedbackEmailLink, greenColorStr),
-		termlink.ColorLink(onboardingLinkText, user_support_constants.KurtosisOnBoardCalendlyUrl, greenColorStr),
-	)
 	return nil
 }
 
@@ -298,7 +253,6 @@ func validateUserMsgArg(_ context.Context, _ *flags.ParsedFlags, args *args.Pars
 
 func getGitHubIssueURL(
 	selectedFeedbackType string,
-	metricsUserId string,
 	userEncodedMsgStr string,
 ) (string, error) {
 
@@ -311,7 +265,7 @@ func getGitHubIssueURL(
 	case docsFeedbackFlagKey:
 		gitHubIssueBaseUrl = user_support_constants.GitHubDocsIssueUrl
 	case notFeedbackTypeSelected:
-		gitHubIssueBaseUrl = user_support_constants.GitHubChooseNewIssuesUrl
+		gitHubIssueBaseUrl = user_support_constants.GitHubChooseNewIssuesUrlWitLabels
 	default:
 		return "", stacktrace.NewError(
 			"An error occurred while setting the GitHub URL, expected "+
@@ -321,10 +275,9 @@ func getGitHubIssueURL(
 	}
 
 	gitHubIssueURL := fmt.Sprintf(
-		"%s&version=%v&metrics-user-id=%v&description=%s&background-and-motivation=%s",
+		"%s&version=%v&description=%s&background-and-motivation=%s",
 		gitHubIssueBaseUrl,
 		kurtosis_version.KurtosisVersion,
-		metricsUserId,
 		userEncodedMsgStr,
 		userEncodedMsgStr,
 	)
@@ -355,4 +308,30 @@ func validateMutuallyExclusiveBooleanFlagsAndGetSelectedKey(flags *flags.ParsedF
 		}
 	}
 	return selectedKey, nil
+}
+
+func getSelectedDestinationType(
+	flags *flags.ParsedFlags,
+) (string, error) {
+
+	mutuallyExclusiveFeedbackDestinationTypeFlagKeys := []string{
+		emailFlagKey, calendlyFlagKey}
+
+	selectedDestinationType, err := validateMutuallyExclusiveBooleanFlagsAndGetSelectedKey(
+		flags,
+		mutuallyExclusiveFeedbackDestinationTypeFlagKeys,
+	)
+	if err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred validating mutually exclusive flags '%+v'",
+			mutuallyExclusiveFeedbackDestinationTypeFlagKeys,
+		)
+	}
+
+	if selectedDestinationType == notDestinationTypeSelected {
+		selectedDestinationType = defaultDestinationType
+	}
+
+	return selectedDestinationType, nil
 }
