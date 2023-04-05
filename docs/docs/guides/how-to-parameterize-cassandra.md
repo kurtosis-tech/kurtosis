@@ -22,10 +22,6 @@ One way to accomplish the above would be to write shell scripts over docker, or 
 
 In this guide, we’re going to use Kurtosis. Kurtosis has composability, parameterizability, and portability built into its environment definition system and runtime. With Kurtosis we can ensure that these environments are runnable on your own laptop or in your favorite CI provider.
 
-:::info
-For a holistic view of Kurtosis’ capabilities, visit our [Quickstart][quickstart]!
-:::
-
 Setup
 -----
 Before you proceed, make sure you have:
@@ -290,7 +286,7 @@ daff154657ce   cassandra-node-3   client: 9042/tcp -> 127.0.0.1:54768    RUNNING
 Congratulations! You’ve just parameterized your Cassandra cluster environment definition and used it to instantiate a 5-node Cassandra cluster. You can run the same command with 2 nodes, or 4 nodes, and it will just work. **Kurtosis environment definitions are completely reproducible and fully parametrizable.**
 
 :::caution
-Depending on how many nodes you wish to spin up, the max heap size of each node may cumulatively consume more memory on your local machine than you have available, causing the Starlark script to time-out. Modifying the `MAX_HEAP_SIZE` property may help, depending on your needs.
+Depending on how many nodes you wish to spin up, the max heap size of each node may cumulatively consume more memory on your local machine than you have available, causing the Starlark script to time-out. Modifying the `MAX_HEAP_SIZE` property in the `ServiceConfig` for the Cassandra nodes may help, depending on your needs.
 :::
 
 ### Review
