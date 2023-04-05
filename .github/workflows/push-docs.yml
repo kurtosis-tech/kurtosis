@@ -26,6 +26,11 @@ jobs:
         run: |
           echo "DOCS_CHANGED=$(git --no-pager diff --exit-code origin/main...HEAD -- ':docs' > /dev/null; echo $?)" >> $GITHUB_OUTPUT
         id: docs-diff
+      - uses: actions/setup-node@v3
+        with:
+          node-version-file: "./docs/.node-version"
+          cache: 'yarn'
+          cache-dependency-path: 'docs/**/yarn.lock'
       - name: Append changelog
         run: cat CHANGELOG.md >> docs/docs/changelog.md
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
