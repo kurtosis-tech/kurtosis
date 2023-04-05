@@ -21,7 +21,7 @@ const (
 		"See below for the many ways you can get in touch with us.\n\n" +
 		"TIP: You can quickly type and send us feedback directly from the CLI. For example, " +
 		"`kurtosis feedback \"I enjoy the enclave naming theme\"` will open the Kurtosis GitHub " +
-		"\"Choose New Issue\" page with the description pre-filled with \"I enjoy the enclave naming theme\".\n\n" +
+		"\"Create New Issue\" page with the description pre-filled with \"I enjoy the enclave naming theme\".\n\n" +
 		"This command can be used to deliver feedback to the Kurtosis team!\n\n" +
 		"* Pass in your feedback as an argument using double quotations (e.g. kurtosis feedback \"my feedback\"), and press enter; this will open our GitHub Issues templates, pre-filled with your feedback/arg.\n" +
 		"* Pass in the --email flag to open a draft email, pre-filled with your feedback/arg, to send to feedback@kurtosistech.com.\n" +
