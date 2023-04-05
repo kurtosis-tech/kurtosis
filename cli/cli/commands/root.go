@@ -144,21 +144,12 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 }
 
 func printKurtosisCommandToFile(cmd *cobra.Command, args []string) {
-	// silently fail if there is an error accessing file logger
-	// downside is that we would not be storing the logs in the file, so could lose
-	// stack-traces and users may need to use --debug flag to get the entire stack-trace
-	fileLogger, err := out.GetFileLogger()
-	if err != nil {
-		logrus.Debugf("Error occurred while getting the file logger %+v", err)
-	} else {
-		flagsSetByUsers := getFlagsSetByUsers(cmd.Flags())
-		fileLogger.Infof("===== Executing Command: kurtosis %v %v %v =====",
-			cmd.Name(),
-			strings.Join(flagsSetByUsers, " "),
-			strings.Join(args, " "),
-		)
-	}
-
+	fileLogger := out.GetFileLogger()
+	flagsSetByUsers := getFlagsSetByUsers(cmd.Flags())
+	fileLogger.Infof("===== Executing Command: kurtosis %v %v %v =====",
+		cmd.Name(),
+		strings.Join(flagsSetByUsers, " "),
+		strings.Join(args, " "))
 }
 
 func getFlagsSetByUsers(flagSet *pflag.FlagSet) []string {

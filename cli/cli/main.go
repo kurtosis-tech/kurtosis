@@ -49,25 +49,35 @@ func main() {
 		CallerPrettyfier:          nil,
 	})
 
-	if err := commands.RootCmd.Execute(); err != nil {
-		if !displayErrorMessageToCli(err) {
-			os.Exit(errorExitCode)
-		}
+	err := commands.RootCmd.Execute()
+	exitCode := executeCommand(err)
+	os.Exit(exitCode)
+}
 
-		maybeCleanedError := out.GetErrorMessageToBeDisplayedOnCli(err)
-		errorMessageFromCli := maybeCleanedError.Error()
+func executeCommand(err error) int {
+	defer out.RemoveLogFiles()
 
-		fullErrorMessage := fmt.Sprintf("%v %v", errorPrefix, errorMessageFromCli)
-		commands.RootCmd.PrintErrln(output_printers.FormatError(fullErrorMessage))
-
-		// if unknown command is entered - display help command
-		if strings.Contains(errorMessageFromCli, commandNotFound) {
-			helpUsageText := fmt.Sprintf("Run '%v --help' for usage.\n", commands.RootCmd.CommandPath())
-			commands.RootCmd.PrintErrf(output_printers.FormatError(helpUsageText))
-		}
-		os.Exit(errorExitCode)
+	if err == nil {
+		return successExitCode
 	}
-	os.Exit(successExitCode)
+
+	if !displayErrorMessageToCli(err) {
+		return errorExitCode
+	}
+
+	maybeCleanedError := out.GetErrorMessageToBeDisplayedOnCli(err)
+	errorMessageFromCli := maybeCleanedError.Error()
+
+	fullErrorMessage := fmt.Sprintf("%v %v", errorPrefix, errorMessageFromCli)
+	commands.RootCmd.PrintErrln(output_printers.FormatError(fullErrorMessage))
+
+	// if unknown command is entered - display help command
+	if strings.Contains(errorMessageFromCli, commandNotFound) {
+		helpUsageText := fmt.Sprintf("Run '%v --help' for usage.\n", commands.RootCmd.CommandPath())
+		commands.RootCmd.PrintErrf(output_printers.FormatError(helpUsageText))
+	}
+
+	return errorExitCode
 }
 
 func displayErrorMessageToCli(err error) bool {
