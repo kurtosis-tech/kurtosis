@@ -186,13 +186,13 @@ Fortunately, Kurtosis environment definitions can be parameterized. We’ll see 
 Parameterize your Cassandra cluster
 ----------------------------------
 
-One of Kurtosis’s most powerful features is the out-of-the-box ability to parameterize environment definitions with very little overhead. This can be incredibly useful for developers who want to run different tests or scenarios against various configurations of their environment, without the burden of editing their Bash scripts or `docker-compose.yml` files repeatedly to modify the setup each time.
+Kurtosis enables users to parameterize environment definitions out-of-the-box. If you need to run tests against multiple different configurations of your environment, you'll be to do so without needing maintain different Bash scripts or `docker-compose.yml` files per test.
 
-We will parameterize our Cassandra cluster environment definition by adding only 2 lines of code to our `main.star` Starlark file. 
+You can parameterize our Cassandra cluster environment definition by adding 2 lines of code to your `main.star` Starlark file. 
 
 Let’s add in those extra lines now. 
 
-In your `main.star` file, add in the following lines in the code block that describes the `plan` object:
+In your `main.star` file, add the following lines in the code block that describes the `plan` object:
 
 ```python
 def run(plan, args):
@@ -215,7 +215,7 @@ def run(plan, args):
 	# ...
 ```
 
-Now save your newly edited `main.star` file and run the following command to blow away our old enclave and spin up a new one with 5 nodes specified:
+Now save your newly edited `main.star` file and run the following command to blow away your old enclave and spin up a new one with 5 nodes:
 
 ```bash
 kurtosis clean -a && kurtosis run --enclave cassandra-cluster main.star '{"num_nodes": 5}'
@@ -287,7 +287,7 @@ daff154657ce   cassandra-node-3   client: 9042/tcp -> 127.0.0.1:54768    RUNNING
                                   cluster: 7000/tcp -> 127.0.0.1:54774
 ```
 
-Congratulations! We’ve just parameterized our Cassandra cluster environment definition and used it to instantiate a 5-node Cassandra cluster. You can run the same command with 2 nodes, or 4 nodes and it will work **Kurtosis environment definitions are completely reproducible and fully parametrizable.**
+Congratulations! You’ve just parameterized your Cassandra cluster environment definition and used it to instantiate a 5-node Cassandra cluster. You can run the same command with 2 nodes, or 4 nodes, and it will just work. **Kurtosis environment definitions are completely reproducible and fully parametrizable.**
 
 :::caution
 Depending on how many nodes you wish to spin up, the max heap size of each node may cumulatively consume more memory on your local machine than you have available, causing the Starlark script to time-out. Modifying the `MAX_HEAP_SIZE` property may help, depending on your needs.
@@ -296,24 +296,24 @@ Depending on how many nodes you wish to spin up, the max heap size of each node 
 ### Review
 How did that work?
 
-The plan object contains all enclave-modifying methods like `add_service`, `remove_service`, `upload_files`, etc. To accept arguments in the `run` function, we simply needed to pass them (arguments) in as the second parameter of our `run` function, like so:
+The plan object contains all enclave-modifying methods like `add_service`, `remove_service`, `upload_files`, etc. To use arguments, you accessed them via the second parameter of the `run` function, like so:
 
 ```python
 def run(plan, args):
 	...
 ```
 
-…which is what we used in our `main.star` file originally!
+…which is what you used in your `main.star` file originally!
 
-What we did next was add an `if statement` with the `hasattr()` function to tell Kurtosis that if an argument is passed in at runtime by a user, then override the default `num_nodes` variable, which we set as 3, with the user-specified value.
+What you did next was add an `if statement` with the `hasattr()` function to tell Kurtosis that if an argument is passed in at runtime by a user, then override the default `num_nodes` variable, which we set as 3, with the user-specified value.
 
-In our case, we passed in:
+In our case, you passed in:
 
 ```bash
 '{"num_nodes": 5}'
 ```
 
-Which told Kurtosis to run your `main.star` file with 5 nodes instead of the default of 3 that we began with. 
+which told Kurtosis to run your `main.star` file with 5 nodes instead of the default of 3 that we began with. 
 
 :::tip
 Note that to pass parameters to the run(plan,args) function, a JSON object needs to be passed in as the 2nd position argument after the script or package path:
@@ -322,34 +322,34 @@ kurtosis run my_package.star '{"arg": "my_name"}'
 ```
 :::
 
-In this section, we showed how easy it is to use Kurtosis to parameterize our environment definition with just a few lines of code. Next, we’ll walk through another powerful property of Kurtosis environments: composability.
+In this section, we showed how to use Kurtosis to parameterize an environment definition. Next, we’ll walk through another property of Kurtosis environments: composability.
 
-Using and making composable environment definitions
+Making and using composable environment definitions
 ---------------------------------------------------
-We’ve now written an environment definition using Starlark to instantiate a 3-node Cassandra cluster over Docker, and then modified it slightly to parameterize that definition for other use cases (n-node Cassandra cluster).
+You’ve now written an environment definition using Starlark to instantiate a 3-node Cassandra cluster over Docker, and then modified it slightly to parameterize that definition for other use cases (n-node Cassandra cluster).
 
-However, the benefits of parametrized and reproducible environment properties are amplified when we’re able to share our definition with others to use or use definitions that others (friends, colleagues, etc) have already written.
+However, the benefits of parametrized and reproducible environment properties are amplified when you’re able to share your definition with others to use, or when you use definitions that others (friends, colleagues, etc) have already written.
 
-To quickly demonstrate the latter capability, simply run:
+To quickly demonstrate the latter capability, run:
 
 ```bash
 kurtosis clean -a && kurtosis run --enclave cassandra-cluster github.com/kurtosis-tech/cassandra-package '{"num_nodes": 5}' 
 ```
 
-Which should give you the same result as we saw when we ran our local `main.star` file with 5 nodes specified as an argument. However this time, we’re actually using a `main.star` file hosted [remotely on Github and running that instead][github-cass-package]!
+which should give you the same result you got when you ran your local `main.star` file with 5 nodes specified as an argument. However this time, you’re actually using a `main.star` file hosted [remotely on Github][github-cass-package]!
 
-**Any Kurtosis environment definition can be converted into a runnable, shareable artifact that we call a Kurtosis Package.** What we just did was run a remotely-hosted Kurtosis package.
+**Any Kurtosis environment definition can be converted into a runnable, shareable artifact that we call a Kurtosis Package.** 
 
-While this guide won’t cover the steps needed to convert your Starlark file and export it for others to use as a Kurtosis Package, you can check out our docs to learn more about how to turn a Starlark file into a [runnable Kurtosis package][runnable-packages] using only a [`kurtosis.yml`][kurtosis-yml] file.
+While this guide won’t cover the steps needed to convert your Starlark file and export it for others to use as a Kurtosis Package, you can check out our docs to learn more about how to turn a Starlark file into a [runnable Kurtosis package][runnable-packages].
 
 ### Review
-What we did with our most recent command was execute a remotely-hosted `main.star` from a Kurtosis package on [Github][github-cass-package]. That remotely-hosted `main.star` file has the same code as our local `main.star` file and, with only a [locator][locator], Kurtosis knew we were referencing a publicly-hosted runnable package. 
+You just executed a remote-hosted `main.star` from a Kurtosis package on [Github][github-cass-package]. That remote-hosted `main.star` file has the same code as our local `main.star` file and, with only a [locator][locator], Kurtosis knew that you were referencing a publicly-hosted runnable package. 
 
-The entirety of what we wrote locally in our `main.star` file can be packaged up and pushed to the internet (Github) for anyone to use to instantiate an n-node cassandra cluster by simply adding a [`kurtosis.yml`][kurtosis-yml] manifest to your directory and publishing the entire directory to Github. Read more about how to do this [here][runnable-packages].
+The entirety of what you wrote locally in your `main.star` file can be packaged up and pushed to the internet (Github) for anyone to use to instantiate an n-node cassandra cluster by adding a [`kurtosis.yml`][kurtosis-yml] manifest to your directory and publishing the entire directory to Github. Read more about how to do this [here][runnable-packages].
 
-Turning your Starlark code into a runnable Kurtosis package and making it available on Github means any developer will be able to use our Kurtosis package as a building block in their own environment definition or to run different tests using various configurations of nodes in a Cassandra cluster.
+Turning your Starlark code into a runnable Kurtosis package and making it available on Github means any developer will be able to use your Kurtosis package as a building block in their own environment definition or to run different tests using various configurations of nodes in a Cassandra cluster.
 
-This behavior is bi-directional as well. Meaning, we can import any remotely hosted Kurtosis package and use it’s code inside our own Kurtosis package with the `import_module` instruction like so:
+This behavior is bi-directional as well. Meaning, you can import any remotely hosted Kurtosis package and use its code inside your own Kurtosis package with the `import_module` instruction like so:
 
 ```python
 lib = import_module("github.com/foo/bar/src/lib.star")
@@ -359,24 +359,24 @@ lib.some_function()
 lib.some_variable()
 ```
 
-**This feature we just witnessed is the composability property of environments created using Kurtosis and allows environments, and their components, to be easily composed and connected together without needing to know the inner workings of each setup.**
+**Package distribution via remote-hosted git repositories is one way in which Kurtosis enables environments to be easily composed and connected together without end users needing to know the inner workings of each setup.**
 
 Conclusion
 ----------
-And that’s it! To recap this short guide, together we:
+And that’s it! To recap this short guide, you:
 1. Wrote an environment definition that instructs Kurtosis to set up a 3 node Cassandra cluster in an isolated environment called an Enclave (over Docker),
-2. We added a few lines of code to our `main.star` file to parametrize our environment definition to increase the flexibility and use cases with which it can be used, and,
-3. Executed a remotely-hosted Starlark file that was part of what's called a [Kurtosis Package][packages] to demonstrate the easy composability and reusability of Kurtosis environment definitions.
+2. Added a few lines of code to our `main.star` file to parametrize your environment definition to increase the flexibility and use cases with which it can be used, and,
+3. Executed a remotely-hosted Starlark file that was part of what's called a [Kurtosis Package][packages] to demonstrate how your environment definition can be shared with other developers.
 
 We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via Github (`kurtosis feedback`) or [email us](mailto:feedback@kurtosistech.com)!
 
 ### Other exercises you can do with your Cassandra cluster
-With our parameterized, reusable environment definition for a multi-node Cassandra cluster, feel free to:
+With your parameterized, reusable environment definition for a multi-node Cassandra cluster, feel free to:
 * Turn your local `main.star` file into a runnable Kurtosis package and upload it on Github for others to use following [these instructions][runnable-packages]
 * Use our [Go or Typescript SDK][sdk] to write backend integration tests, like this [network partitioning test][network-partitioning-test]
 
 ### Other examples
-While this was a short intro to some of Kurtosis’ capabilities, we encourage you to check out our [quickstart][quickstart] (where you’ll build a postgres database and API on top) and our other examples in our [awesome-kurtosis repository][awesome-kurtosis] where you will find other Kurtosis packages for you to check out as well, including a package that spins up a local [Ethereum testnet][eth-package-example] or one that sets up a [voting app using a Redis cluster][redis-package-example]. 
+We encourage you to check out our [quickstart][quickstart] (where you’ll build a postgres database and API on top) and our other examples in our [awesome-kurtosis repository][awesome-kurtosis] where you will find other Kurtosis packages for you to check out as well, including a package that spins up a local [Ethereum testnet][eth-package-example] or one that sets up a [voting app using a Redis cluster][redis-package-example]. 
 
 <!---- REFERENCE LINKS BELOW ONLY ---->
 [quickstart]: ../quickstart.md
