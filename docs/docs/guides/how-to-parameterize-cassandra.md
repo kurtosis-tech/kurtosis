@@ -8,11 +8,11 @@ sidebar_position: 5
 
 Introduction
 ------------
-In this guide, we will set up a 3-node Cassandra cluster in Docker and parameterize the environment definition so it can easily be modified for use in different tests that require an _n_-node Cassandra cluster. Then we will show you how to run remotely hosted packages authored by others, and go through how to package and publish our work to Github for others to use as well.
+In this guide, you will set up a 3-node Cassandra cluster in Docker and parameterize the environment definition so it can easily be modified for use in different tests that require an _n_-node Cassandra cluster. Then we will show you how to run remotely hosted packages authored by others, and go through how to package and publish our work to Github for others to use as well.
 
-Specifically, we're going to configure our test environments with a way that allows us to both:
-1. Parameterize the environment so a user can trivially specify how many nodes they’d like for their system to have, and 
-2. Make their environment definition composable so that these environments can be easily included in tests with other services for different scenarios & use cases.
+Specifically, you're going to configure your test environments with a way that allows you to both:
+1. Parameterize the environment so another developer using the environment can specify how many nodes they’d like for their system to have, and 
+2. Make the environment definition composable so that your environments can be included in tests with other services for different scenarios & use cases.
 
 **Without Kurtosis**
 
@@ -20,7 +20,7 @@ One way to accomplish the above would be to write shell scripts over docker, or 
 
 **With Kurtosis**
 
-However, in this guide, we’re going to use a free tool that already has these capabilities built in - Kurtosis. Kurtosis is a composable build system for writing reproducible test environments, and can run on your own laptop or in your favorite CI provider.
+In this guide, we’re going to use Kurtosis. Kurtosis has composability, parameterizability, and portability built into its environment definition system and runtime. With Kurtosis we can ensure that these environments are runnable on your own laptop or in your favorite CI provider.
 
 :::info
 For a holistic view of Kurtosis’ capabilities, visit our [Quickstart][quickstart]!
@@ -34,7 +34,7 @@ Before you proceed, make sure you have:
 
 Instantiate a 3-node Cassandra cluster
 --------------------------------------
-First, create and `cd` into a directory to hold the project we’ll be working on:
+First, create and `cd` into a directory to hold the project you'll be working on:
 
 ```bash
 mkdir kurtosis-cass-cluster && cd kurtosis-cass-cluster
@@ -114,14 +114,14 @@ def get_first_node_name():
     return get_service_name(FIRST_NODE_INDEX)
 ```
 
-Finally, save your newly created file and, from the working directory we created, run the following command:
+Finally, save your newly created file and, from the working directory you created, run the following command:
 
 ```bash
 kurtosis run --enclave cassandra-cluster main.star
 ```
 
 :::info
-Kurtosis will run validation checks against our code to ensure that it will work before spinning up the containers for our 3-node Cassandra cluster. We won’t dive into the details of how validation checks are used by Kurtosis in this guide, but you can read more about them [here][multi-phase-runs].
+Kurtosis will run validation checks against your code to ensure that it will work before spinning up the containers for our 3-node Cassandra cluster. We won’t dive into the details of how validation checks are used by Kurtosis in this guide, but you can read more about them [here][multi-phase-runs].
 :::
 
 Your output will look something like:
@@ -170,20 +170,20 @@ f605cff291ef   cassandra-node-1   client: 9042/tcp -> 127.0.0.1:52508    RUNNING
 ```
 
 
-Congratulations! We’ve used Kurtosis to spin up a three-node Cassandra cluster over Docker. 
+Congratulations! You’ve used Kurtosis to spin up a three-node Cassandra cluster over Docker. 
 
 ### Review
-In this section, we created file using [Starlark][starlark] that are instructions for Kurtosis to do the following:
+In this section, you created a [Starlark][starlark] file with instructions for Kurtosis to do the following:
 1. Spin up 3 Cassandra containers (one for each node), 
 2. Bootstrap each node to the cluster,
 3. Map the default Cassandra node container ports to ephemeral local machine ports (described in their respective `ServiceConfig`), and
 4. Verify using `nodetool` that the cluster is up, running, and has 3 nodes (just as we specified) before returning the names of our nodes.
 
-We now have a simple environment definition for Kurtosis to spin up a 3-node Cassandra cluster. This is useful for developers who need an easy way to reproduce and spin up a 3-node Cassandra cluster for testing. You may now be wondering: but what if I need more nodes?
+You now have a simple environment definition for Kurtosis to spin up a 3-node Cassandra cluster. You may now be wondering: but what if I need to change the number of nodes?
 
 Fortunately, Kurtosis environment definitions can be parameterized. We’ll see just how easy it is to do so in the next section.
 
-Parameterize our Cassandra cluster
+Parameterize your Cassandra cluster
 ----------------------------------
 
 One of Kurtosis’s most powerful features is the out-of-the-box ability to parameterize environment definitions with very little overhead. This can be incredibly useful for developers who want to run different tests or scenarios against various configurations of their environment, without the burden of editing their Bash scripts or `docker-compose.yml` files repeatedly to modify the setup each time.
