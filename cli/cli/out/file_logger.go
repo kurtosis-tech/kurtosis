@@ -47,17 +47,28 @@ func RemoveLogFiles() {
 
 	numberOfFilesToBeDeleted := len(files) - numberOfLogFilesForCommands
 	logrus.Debugf("Removing old %v log file(s) from path %v", numberOfFilesToBeDeleted, kurtosisCliLogsRootFolder)
+
+	// filter out log files that starts with fileNamePrefix image in the kurtosis/cli folder
+	var filesWithKurtosisCliPrefix []os.DirEntry
 	if len(files) > numberOfLogFilesForCommands {
 		for i := 0; i < numberOfFilesToBeDeleted; i++ {
 			fileName := files[i].Name()
-			logFilePath := path.Join(kurtosisCliLogsRootFolder, fileName)
 			if strings.HasPrefix(fileName, fileNamePrefix) {
-				logrus.Debugf("Removing log file at %v", logFilePath)
-				err := os.Remove(logFilePath)
-				if err != nil {
-					logrus.Warnf("Error occurred while removing the log file - '%v' with error %+v", logFilePath, err)
-					break
-				}
+				filesWithKurtosisCliPrefix = append(filesWithKurtosisCliPrefix, files[i])
+			}
+		}
+	}
+
+	// remove all the extra files from the kurtosis/cli folder that starts with fileNamePrefix
+	if len(filesWithKurtosisCliPrefix) > 0 {
+		for _, file := range filesWithKurtosisCliPrefix {
+			fileName := file.Name()
+			logFilePath := path.Join(kurtosisCliLogsRootFolder, fileName)
+
+			logrus.Debugf("Removing log file at %v", logFilePath)
+			if err := os.Remove(logFilePath); err != nil {
+				logrus.Warnf("Error occurred while removing the log file - '%v' with error %+v", logFilePath, err)
+				break
 			}
 		}
 	}
@@ -68,8 +79,7 @@ func RemoveLogFiles() {
 	kurtosisRootFolder := path.Dir(kurtosisCliLogsRootFolder)
 	kurtosisCliLogPath := path.Join(kurtosisRootFolder, fmt.Sprintf("%v.log", fileNamePrefix))
 	if _, err := os.Stat(kurtosisCliLogPath); err == nil {
-		err = os.Remove(kurtosisCliLogPath)
-		if err != nil {
+		if err := os.Remove(kurtosisCliLogPath); err != nil {
 			logrus.Warnf("Error occurred while removing the log file - '%v' with error %+v", kurtosisCliLogPath, err)
 		}
 	}

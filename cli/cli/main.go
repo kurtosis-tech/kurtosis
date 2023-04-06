@@ -50,11 +50,11 @@ func main() {
 	})
 
 	err := commands.RootCmd.Execute()
-	exitCode := executeCommand(err)
+	exitCode := extractExitCodeAfterExecution(err)
 	os.Exit(exitCode)
 }
 
-func executeCommand(err error) int {
+func extractExitCodeAfterExecution(err error) int {
 	defer out.RemoveLogFiles()
 
 	if err == nil {
