@@ -11,6 +11,23 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
+      - name: Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '>=1.18.0'
+      # update go mod
+      - name: Clean up go mod as dependabot deletes kurtosis_version
+        run: |
+          cd "./${{steps.dependabot-metadata.outputs.directory}}"
+          go mod tidy
+      # commit the go mod update
+      - uses: stefanzweifel/git-auto-commit-action@v4
+        with:
+          token: "${{ secrets.RELEASER_TOKEN }}"
       - name: Approve a PR
         run: gh pr review --approve "$PR_URL"
         env:
