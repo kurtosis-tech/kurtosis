@@ -22,6 +22,10 @@ We extended basic Starlark with [our own DSL](../starlark-reference/index.md) so
 
 Additionally, we built a [multi-phase engine][multi-phase-runs-reference] around the Starlark interpreter, to provide [users with benefits not normally available in a scripting language][multi-phase-runs-explanation].
 
+:::tip Visual Studio Code (VS Code) Extension
+We've released an [official Kurtosis Starlark VS Code extension][vscode-plugin] to enrich the developer experience when writing packages with Starlark. Features include: syntax highlighting, method signature suggestions, hover preview for functions, and auto-completion for Kurtosis custom types.
+:::
+
 <!--------------- ONLY LINKS BELOW HERE --------------------------->
 [enclaves-reference]: ./enclaves.md
 [why-kurtosis-starlark]: ../explanations/why-kurtosis-starlark.md
@@ -30,3 +34,4 @@ Additionally, we built a [multi-phase engine][multi-phase-runs-reference] around
 [locators-reference]: ./locators.md
 [multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
+[vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension

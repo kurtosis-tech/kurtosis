@@ -28,6 +28,10 @@ Before you proceed, make sure you have:
 * [Installed and started the Docker engine on your local machine][starting-docker]
 * [Installed the Kurtosis CLI (or upgraded it to the latest release, if you already have the CLI installed)][installing-the-cli]
 
+:::tip Use the Starlark VS Code Extension
+Feel free to use the [official Kurtosis Starlark VS Code extension][vscode-plugin] when writing Starlark with VSCode for features like syntax highlighting, method signature suggestions, hover preview for functions, and auto-completion for Kurtosis custom types.
+:::
+
 Instantiate a 3-node Cassandra cluster
 --------------------------------------
 First, create and `cd` into a directory to hold the project you'll be working on:
