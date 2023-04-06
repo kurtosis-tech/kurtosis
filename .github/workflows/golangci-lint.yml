@@ -18,10 +18,6 @@ on:
 
 jobs:
   golangci:
-    # skip dependabot PRs as they don't change code
-    # and  there is some bug with Golang CI lint and PRs fail
-    # TODO fix the actual issue
-    if: ${{ github.actor != 'dependabot[bot]' }}
     name: golang-lint
     runs-on: ubuntu-latest
     steps:
