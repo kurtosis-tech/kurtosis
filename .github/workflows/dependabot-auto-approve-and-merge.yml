@@ -22,7 +22,8 @@ jobs:
       # update go mod
       - name: Clean up go mod as dependabot deletes kurtosis_version
         run: |
-          cd "./${{steps.dependabot-metadata.outputs.directory}}"
+          ./scripts/generate-kurtosis-version.sh
+          cd ".${{steps.metadata.outputs.directory}}"
           go mod tidy
       # commit the go mod update
       - uses: stefanzweifel/git-auto-commit-action@v4
