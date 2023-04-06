@@ -24,7 +24,7 @@ jobs:
         run: |
           ./scripts/generate-kurtosis-version.sh
           cd ".${{steps.metadata.outputs.directory}}"
-          go mod tidy
+          go get github.com/kurtosis-tech/kurtosis/kurtosis_version@v0.0.0
       # commit the go mod update
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
