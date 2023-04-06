@@ -21,7 +21,6 @@ jobs:
           go-version: '>=1.18.0'
       - uses: actions/checkout@v3
         with:
-          token: "${{ secrets.RELEASER_TOKEN }}"
           fetch-depth: 0
       # update go mod
       - name: Clean up go mod as dependabot deletes kurtosis_version
