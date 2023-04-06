@@ -9,7 +9,7 @@ permissions:
 jobs:
   dependabot:
     runs-on: ubuntu-latest
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: ${{ github.actor == 'dependabot[bot]' }} || ${{ github.event.pull_request.user.login == 'dependabot[bot]' }}
     steps:
       - name: Dependabot metadata
         id: metadata
@@ -19,11 +19,33 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '>=1.18.0'
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          token: "${{ secrets.RELEASER_TOKEN }}"
       # update go mod
       - name: Clean up go mod as dependabot deletes kurtosis_version
         run: |
-          cd "./${{steps.dependabot-metadata.outputs.directory}}"
-          go mod tidy
+          ./scripts/generate-kurtosis-version.sh
+          cd ".${{steps.metadata.outputs.directory}}"
+          go get github.com/kurtosis-tech/kurtosis/kurtosis_version@v0.0.0
+      # run go mod tidy on others as there might be dependents who use us this package
+      - name: Run go.mod tidy on all others
+        run: |
+          set -euo pipefail
+          # List of directories to navigate to
+          directories=("core/launcher" "core/server" "engine/launcher" "engine/server" "cli/cli" "internal_testsuites/golang")
+          cwd=$(pwd)
+
+          # Loop through the directories
+          for dir in "${directories[@]}"
+          do
+            if ! echo "${{steps.metadata.outputs.directory}}" | grep -q "$dir"; then
+              cd "$dir"
+              go mod tidy
+              cd "$cwd"
+            fi
+          done
       # commit the go mod update
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
