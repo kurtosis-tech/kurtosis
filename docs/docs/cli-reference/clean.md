@@ -15,4 +15,4 @@ Flags:
   -h, --help   help for clean
 ```
 
-NOTE: This will not stop the Kurtosis engine itself! To do so, use the [engine stop](./engine-stop.md) command.
+NOTE: This will not stop the Kurtosis engine itself! In order to do so, use the [engine stop](./engine-stop.md) command.
