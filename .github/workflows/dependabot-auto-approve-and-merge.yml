@@ -43,7 +43,7 @@ jobs:
               cd "$dir"
               go mod tidy
               cd "cwd"
-            end
+            fi
           done
       # commit the go mod update
       - uses: stefanzweifel/git-auto-commit-action@v4
