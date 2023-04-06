@@ -42,7 +42,7 @@ jobs:
             if ! echo "${{steps.metadata.outputs.directory}}" | grep -q "$dir"; then
               cd "$dir"
               go mod tidy
-              cd "cwd"
+              cd "$cwd"
             fi
           done
       # commit the go mod update
