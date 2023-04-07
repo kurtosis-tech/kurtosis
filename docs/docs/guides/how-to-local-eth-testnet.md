@@ -104,7 +104,7 @@ The [smart-contract-example](https://github.com/kurtosis-tech/awesome-kurtosis/t
 * [`test/`](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/smart-contract-example/test) contains a simple .js test for your token contract to confirm each player in our Blackjack dApp has 1000 minted for them
 * []`hardhat.config.ts`](https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/smart-contract-example/hardhat.config.ts) configures your Hardhat setup
 
-### Configure Hardhat to use Kurtosis for local network
+### Configure Hardhat to use the local testnet
 
 WWith your dApp development environment set up, you will now connect Hardhat to use the local Ethereum testnet generated using Kurtosis. To accomplish this, replace `<$YOUR_PORT>` in the `localnet` struct in your `hardhat.config.ts` config file with the port of the rpc uri output from any `el-client-<num>` service. In this sample case, the port would be `64248`. Your port will be different.
 
@@ -175,7 +175,7 @@ At this point, you’ve now set up a dApp development environment, connected it 
 
 Now let’s explore how you can configure the underlying network for testing our dApps under varying network configurations.
 
-## Configuring the Local Testnet
+## Configuring the local Ethereum testnet
 
 ### Changing the client configurations and number of nodes
 
