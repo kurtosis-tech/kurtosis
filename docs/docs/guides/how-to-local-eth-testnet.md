@@ -34,14 +34,14 @@ To spin up a local Ethereum testnet, run:
 ```bash
 kurtosis --enclave local-eth-testnet run github.com/kurtosis-tech/eth-network-package
 ```
-:::INFO 
+:::info
 This command names your network: "local-eth-testnet” using the `--enclave` flag.
 :::
 
 Kurtosis will print the steps its taking under the hood as it works to interpret, validate, and then execute the instructions. At the end, you should see an output that resembles the following: 
 ```bash
 INFO[2023-04-04T18:09:44-04:00] ======================================================
-INFO[2023-04-04T18:09:44-04:00] ||          Created enclave: local-eth-testnet       ||
+INFO[2023-04-04T18:09:44-04:00] ||          Created enclave: local-eth-testnet      ||
 INFO[2023-04-04T18:09:44-04:00] ======================================================
 Name:            local-eth-testnet
 UUID:            39372d756ae8
@@ -83,7 +83,7 @@ Congratulations! You used Kurtosis to instantiate a local Ethereum testnet, with
 
 In this section, you executed a command that directed Kurtosis to use the [`eth-network-package` hosted remotely on GitHub](https://github.com/kurtosis-tech/eth-network-package) to spin up a local Ethereum testnet within a Kurtosis [Enclave](https://docs.kurtosis.com/concepts-reference/enclaves/). Inside your enclave, you will find both "file artifacts" and "user services".
 
-The [File Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/) in your enclave include all the data generated and utilized to bootstrap the EL and CL clients. The data was created using the `prelaunch-data-generator` service built from this  [Docker image](https://github.com/ethpandaops/ethereum-genesis-generator)
+The [File Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/) in your enclave include all the data generated and utilized to bootstrap the EL and CL clients. The data was created using the `prelaunch-data-generator` service built from this [Docker image](https://github.com/ethpandaops/ethereum-genesis-generator)
 
 User services display all the containerized services operating in your enclave. You will notice that a single node, featuring both an EL client and a CL client, has been created.
 
@@ -106,7 +106,7 @@ The [smart-contract-example](https://github.com/kurtosis-tech/awesome-kurtosis/t
 
 ### Configure Hardhat to use Kurtosis for local network
 
-WWith your dApp development environment set up, you will now connect Hardhat to use the local Ethereum testnet generated using Kurtosis. To accomplish this, replace `<PORT>` in the `localnet` struct in your `hardhat.config.ts` config file with the port of the rpc uri output from any `el-client-<num>` service. In this sample case, the port would be `64248`. Your port will be different.
+WWith your dApp development environment set up, you will now connect Hardhat to use the local Ethereum testnet generated using Kurtosis. To accomplish this, replace `<$YOUR_PORT>` in the `localnet` struct in your `hardhat.config.ts` config file with the port of the rpc uri output from any `el-client-<num>` service. In this sample case, the port would be `64248`. Your port will be different.
 
 Example in `hardhat.config.ts`:
 ```typescript
@@ -254,7 +254,7 @@ Again, Kurtosis will work for a bit and print out the individual steps that are 
 ```bash
 Starlark code successfully run. No output was returned.
 INFO[2023-04-07T11:43:16-04:00] ==========================================================
-INFO[2023-04-07T11:43:16-04:00] ||          Created enclave: local-eth-testnet         ||
+INFO[2023-04-07T11:43:16-04:00] ||          Created enclave: local-eth-testnet          ||
 INFO[2023-04-07T11:43:16-04:00] ==========================================================
 Name:            local-eth-testnet
 UUID:            bef8c192008e
@@ -314,7 +314,7 @@ ad6f401126fa   el-client-2                                    engine-rpc: 8551/t
 5b45f9c0504b   prelaunch-data-generator-1680882122192182847   <none>                                           STOPPED
 3d4aaa75e218   prelaunch-data-generator-1680882122201668972   <none>                                           STOPPED
 ```
-Congratulations! You’ve successfully configured your local testnet to have 3 nodes instead of 1. To run the same workflows you did before against your dApp (deploy & test), perform the same operations we did before by replacing the `<PORT>` in the `localnet` struct in your `hardhat.config.ts` config file with the port of the rpc uri output from any `el-client-<num>`  service in your new, 3-node local testnet.
+Congratulations! You’ve successfully configured your local testnet to have 3 nodes instead of 1. To run the same workflows you did before against your dApp (deploy & test), perform the same operations we did before by replacing the `<$YOUR_PORT>` in the `localnet` struct in your `hardhat.config.ts` config file with the port of the rpc uri output from any `el-client-<num>`  service in your new, 3-node local testnet.
 
 
 ## Conclusion
