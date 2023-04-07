@@ -40,7 +40,7 @@ func (t *readyConditionsTestCase) GetStarlarkCode() string {
 		TestReadyConditionsRecipePortId,
 		recipe.EndpointAttr,
 		TestReadyConditionsRecipeEndpoint,
-		recipe.ExtractKeyPrefix,
+		recipe.ExtractAttr,
 		TestReadyConditionsRecipeExtract,
 		service_config.FieldAttr,
 		TestReadyConditionsField,
@@ -61,7 +61,7 @@ func (t *readyConditionsTestCase) Assert(typeValue builtin_argument.KurtosisValu
 
 	uncastedRecipe, err := receivedReadyConditions.GetRecipe()
 	if assert.Nil(t, err) {
-		castedRecipe, ok := uncastedRecipe.(*recipe.HttpRequestRecipe)
+		castedRecipe, ok := uncastedRecipe.(recipe.HttpRequestRecipe)
 		require.True(t, ok)
 
 		portIdAttrValue, err := castedRecipe.Attr(recipe.PortIdAttr)
@@ -78,7 +78,7 @@ func (t *readyConditionsTestCase) Assert(typeValue builtin_argument.KurtosisValu
 			require.Equal(t, TestReadyConditionsRecipeEndpoint, endpoint.GoString())
 		}
 
-		extractAttrValue, err := castedRecipe.Attr(recipe.ExtractKeyPrefix)
+		extractAttrValue, err := castedRecipe.Attr(recipe.ExtractAttr)
 		if assert.Nil(t, err) {
 			extract, ok := extractAttrValue.(*starlark.Dict)
 			require.True(t, ok)

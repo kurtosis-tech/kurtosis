@@ -138,7 +138,7 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 	serviceName := service.ServiceName(serviceNameArgumentValue.GoString())
 
 	var genericRecipe recipe.Recipe
-	httpRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
+	httpRecipe, err := builtin_argument.ExtractArgumentValue[recipe.HttpRequestRecipe](arguments, RecipeArgName)
 	if err != nil {
 		execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, RecipeArgName)
 		if err != nil {

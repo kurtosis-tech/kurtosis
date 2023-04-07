@@ -16,18 +16,18 @@ post_request_recipe = PostHttpRequestRecipe(
     endpoint = "/endpoint",
 
     # The content type header of the request (e.g. application/json, text/plain, etc)
-    # MANDATORY
+    # OPTIONAL (DEFAULT:"application/json")
     content_type = "application/json",
 
     # The body of the request
-    # MANDATORY
+    # OPTIONAL (DEFAULT:"")
     body = "{\"data\": \"this is sample body for POST\"}",
     
     # The extract dictionary takes in key-value pairs where:
     # Key is a way you refer to the extraction later on
     # Value is a 'jq' string that contains logic to extract from response body
     # # To lean more about jq, please visit https://devdocs.io/jq/
-    # OPTIONAL
+    # OPTIONAL (DEFAULT:{})
     extract = {
         "extractfield" : ".name.id",
     },

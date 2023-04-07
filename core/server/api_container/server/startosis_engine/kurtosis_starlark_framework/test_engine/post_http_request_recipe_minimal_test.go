@@ -1,0 +1,87 @@
+package test_engine
+
+import (
+	"context"
+	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"io"
+	"net/http"
+	"strings"
+	"testing"
+)
+
+type postHttpRequestRecipeMinimalTestCase struct {
+	*testing.T
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
+}
+
+func newPostHttpRequestRecipeMinimalTestCase(t *testing.T) *postHttpRequestRecipeMinimalTestCase {
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+
+	serviceNetwork := service_network.NewMockServiceNetwork(t)
+	serviceNetwork.EXPECT().HttpRequestService(
+		mock.Anything,
+		string(TestServiceName),
+		TestPrivatePortId,
+		"POST",
+		"application/json",
+		"/test",
+		"",
+	).Times(1).Return(
+		&http.Response{
+			Status:           "200 OK",
+			StatusCode:       200,
+			Proto:            "HTTP/1.0",
+			ProtoMajor:       1,
+			ProtoMinor:       0,
+			Header:           nil,
+			Body:             io.NopCloser(strings.NewReader("")),
+			ContentLength:    -1,
+			TransferEncoding: nil,
+			Close:            false,
+			Uncompressed:     false,
+			Trailer:          nil,
+			Request:          nil,
+			TLS:              nil,
+		},
+		nil,
+	)
+
+	return &postHttpRequestRecipeMinimalTestCase{
+		T:                 t,
+		serviceNetwork:    serviceNetwork,
+		runtimeValueStore: runtimeValueStore,
+	}
+}
+
+func (t *postHttpRequestRecipeMinimalTestCase) GetId() string {
+	return fmt.Sprintf("%s_%s", recipe.PostHttpRecipeTypeName, "minimal")
+}
+
+func (t *postHttpRequestRecipeMinimalTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
+	return recipe.NewPostHttpRequestRecipeType()
+}
+
+func (t *postHttpRequestRecipeMinimalTestCase) GetStarlarkCode() string {
+	return fmt.Sprintf("%s(%s=%q, %s=%q)", recipe.PostHttpRecipeTypeName, recipe.PortIdAttr, TestPrivatePortId, recipe.EndpointAttr, "/test")
+}
+
+func (t *postHttpRequestRecipeMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
+	postHttpRequestRecipe, ok := typeValue.(*recipe.PostHttpRequestRecipe)
+	require.True(t, ok)
+
+	_, err := postHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, TestServiceName)
+	require.NoError(t, err)
+
+	returnValue, interpretationErr := postHttpRequestRecipe.CreateStarlarkReturnValue("result-fake-uuid")
+	require.Nil(t, interpretationErr)
+	expectedInterpretationResult := `{"body": "{{kurtosis:result-fake-uuid:body.runtime_value}}", "code": "{{kurtosis:result-fake-uuid:code.runtime_value}}"}`
+	require.Regexp(t, expectedInterpretationResult, returnValue)
+}

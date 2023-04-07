@@ -82,8 +82,8 @@ func KurtosisHelpers(recursiveInterpret func(moduleId string, scriptContent stri
 func KurtosisTypeConstructors() []*starlark.Builtin {
 	return []*starlark.Builtin{
 		starlark.NewBuiltin(recipe.ExecRecipeName, recipe.MakeExecRequestRecipe),
-		starlark.NewBuiltin(recipe.GetHttpRecipeTypeName, recipe.MakeGetHttpRequestRecipe),
-		starlark.NewBuiltin(recipe.PostHttpRecipeTypeName, recipe.MakePostHttpRequestRecipe),
+		starlark.NewBuiltin(recipe.GetHttpRecipeTypeName, recipe.NewGetHttpRequestRecipeType().CreateBuiltin()),
+		starlark.NewBuiltin(recipe.PostHttpRecipeTypeName, recipe.NewPostHttpRequestRecipeType().CreateBuiltin()),
 		starlark.NewBuiltin(connection_config.ConnectionConfigTypeName, connection_config.NewConnectionConfigType().CreateBuiltin()),
 		starlark.NewBuiltin(packet_delay_distribution.NormalPacketDelayDistributionTypeName, packet_delay_distribution.NewNormalPacketDelayDistributionType().CreateBuiltin()),
 		starlark.NewBuiltin(packet_delay_distribution.UniformPacketDelayDistributionTypeName, packet_delay_distribution.NewUniformPacketDelayDistributionType().CreateBuiltin()),
