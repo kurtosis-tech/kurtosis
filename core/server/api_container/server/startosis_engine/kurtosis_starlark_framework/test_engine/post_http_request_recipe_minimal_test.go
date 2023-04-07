@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
@@ -65,10 +64,6 @@ func (t *postHttpRequestRecipeMinimalTestCase) GetId() string {
 	return fmt.Sprintf("%s_%s", recipe.PostHttpRecipeTypeName, "minimal")
 }
 
-func (t *postHttpRequestRecipeMinimalTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return recipe.NewPostHttpRequestRecipeType()
-}
-
 func (t *postHttpRequestRecipeMinimalTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q)", recipe.PostHttpRecipeTypeName, recipe.PortIdAttr, TestPrivatePortId, recipe.EndpointAttr, "/test")
 }
@@ -83,5 +78,5 @@ func (t *postHttpRequestRecipeMinimalTestCase) Assert(typeValue builtin_argument
 	returnValue, interpretationErr := postHttpRequestRecipe.CreateStarlarkReturnValue("result-fake-uuid")
 	require.Nil(t, interpretationErr)
 	expectedInterpretationResult := `{"body": "{{kurtosis:result-fake-uuid:body.runtime_value}}", "code": "{{kurtosis:result-fake-uuid:code.runtime_value}}"}`
-	require.Regexp(t, expectedInterpretationResult, returnValue)
+	require.Equal(t, expectedInterpretationResult, returnValue.String())
 }

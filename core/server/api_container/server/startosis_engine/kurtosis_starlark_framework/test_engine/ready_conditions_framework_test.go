@@ -3,7 +3,6 @@ package test_engine
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/stretchr/testify/assert"
@@ -25,10 +24,6 @@ func newReadyConditionsTestCase(t *testing.T) *readyConditionsTestCase {
 
 func (t *readyConditionsTestCase) GetId() string {
 	return service_config.ReadyConditionTypeName
-}
-
-func (t *readyConditionsTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return service_config.NewReadyConditionType()
 }
 
 func (t *readyConditionsTestCase) GetStarlarkCode() string {

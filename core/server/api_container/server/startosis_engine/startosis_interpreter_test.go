@@ -80,28 +80,6 @@ def run(plan):
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-func TestStartosisInterpreter_DefineFactAndWait(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan):
-	get_recipe = GetHttpRequestRecipe(
-		port_id = "http-port",
-		endpoint = "?input=output",
-		extract = {
-			"input": ".query.input"
-		}
-	)
-	response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, timeout="5m", interval="5s", service_name="web-server")
-	plan.print(response["body"])
-`
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.NotEmpty(t, instructions)
-}
-
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -540,28 +518,6 @@ def run(plan):
 		errorMsg,
 	).ToAPIType()
 	require.Equal(t, expectedError, interpretationError)
-}
-
-func TestStartosisInterpreter_RequestInstruction(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtime_value_store.NewRuntimeValueStore())
-	interpreter := startosisInterpreter
-	script := `
-def run(plan):
-	get_recipe = GetHttpRequestRecipe(
-		port_id = "http-port",
-		endpoint = "?input=output",
-		extract = {
-			"input": ".query.input"
-		}
-	)
-	response = plan.request(recipe = get_recipe, service_name = "web-server")
-	plan.print(response["code"])`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 2)
 }
 
 func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {

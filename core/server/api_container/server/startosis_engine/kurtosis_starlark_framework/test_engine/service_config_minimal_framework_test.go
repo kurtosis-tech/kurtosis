@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -22,10 +21,6 @@ func newServiceConfigMinimalTestCase(t *testing.T) *serviceConfigMinimalTestCase
 
 func (t *serviceConfigMinimalTestCase) GetId() string {
 	return service_config.ServiceConfigTypeName
-}
-
-func (t *serviceConfigMinimalTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return service_config.NewServiceConfigType()
 }
 
 func (t *serviceConfigMinimalTestCase) GetStarlarkCode() string {

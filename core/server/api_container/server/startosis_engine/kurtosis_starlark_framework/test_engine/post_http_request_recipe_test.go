@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
@@ -69,10 +68,6 @@ func (t *postHttpRequestRecipeTestCase) GetId() string {
 	return fmt.Sprintf("%s_%s", recipe.PostHttpRecipeTypeName, "full")
 }
 
-func (t *postHttpRequestRecipeTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return recipe.NewPostHttpRequestRecipeType()
-}
-
 func (t *postHttpRequestRecipeTestCase) GetStarlarkCode() string {
 	extractors := `{"result": ".value"}`
 	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%q, %s=%s)", recipe.PostHttpRecipeTypeName, recipe.PortIdAttr, TestPrivatePortId, recipe.EndpointAttr, "/test", recipe.RequestBodyAttr, "{}", recipe.ContentTypeAttr, "application/json", recipe.ExtractAttr, extractors)
@@ -88,5 +83,5 @@ func (t *postHttpRequestRecipeTestCase) Assert(typeValue builtin_argument.Kurtos
 	returnValue, interpretationErr := postHttpRequestRecipe.CreateStarlarkReturnValue("result-fake-uuid")
 	require.Nil(t, interpretationErr)
 	expectedInterpretationResult := `{"body": "{{kurtosis:result-fake-uuid:body.runtime_value}}", "code": "{{kurtosis:result-fake-uuid:code.runtime_value}}", "extract.result": "{{kurtosis:result-fake-uuid:extract.result.runtime_value}}"}`
-	require.Regexp(t, expectedInterpretationResult, returnValue)
+	require.Equal(t, expectedInterpretationResult, returnValue.String())
 }
