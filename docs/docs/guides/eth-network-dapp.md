@@ -1,7 +1,7 @@
 ---
 title: How To: Set up a configurable local Ethereum testnet for dApp prototyping and testing
-sidebar_label: Setting up a local Ethereum testnet for dApp development
-slug: /how-to-setup-eth-for-dapps
+sidebar_label: Setting up local Ethereum testnet
+slug: /how-to-eth-network-dapp
 toc_max_heading_level: 2
 sidebar_position: 6
 ---
