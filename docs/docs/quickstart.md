@@ -59,6 +59,7 @@ def run(plan, args):
 ```
 
 :::tip
+If you're using Visual Studio Code, you may find our [Kurtosis VS Code Extension][vscode-plugin] helpful when writing Starlark.
 If you're using Vim, you can add the following to your `.vimrc` to get Starlark syntax highlighting:
 
 ```
@@ -1033,3 +1034,4 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [waku-package]: https://github.com/logos-co/wakurtosis
 [near-package]: https://github.com/kurtosis-tech/near-package
 [iterm]: https://iterm2.com/
+[vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
