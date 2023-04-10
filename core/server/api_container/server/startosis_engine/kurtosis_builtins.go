@@ -81,7 +81,7 @@ func KurtosisHelpers(recursiveInterpret func(moduleId string, scriptContent stri
 // Example: ServiceConfig, PortSpec, etc.
 func KurtosisTypeConstructors() []*starlark.Builtin {
 	return []*starlark.Builtin{
-		starlark.NewBuiltin(recipe.ExecRecipeName, recipe.MakeExecRequestRecipe),
+		starlark.NewBuiltin(recipe.ExecRecipeTypeName, recipe.NewExecRecipeType().CreateBuiltin()),
 		starlark.NewBuiltin(recipe.GetHttpRecipeTypeName, recipe.MakeGetHttpRequestRecipe),
 		starlark.NewBuiltin(recipe.PostHttpRecipeTypeName, recipe.MakePostHttpRequestRecipe),
 		starlark.NewBuiltin(connection_config.ConnectionConfigTypeName, connection_config.NewConnectionConfigType().CreateBuiltin()),
