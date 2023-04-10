@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.75.0](https://github.com/kurtosis-tech/kurtosis/compare/0.74.0...0.75.0) (2023-04-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* removed the Kurtosis CLI `config init` command ([#461](https://github.com/kurtosis-tech/kurtosis/issues/461))
+
+### Code Refactoring
+
+* removed the Kurtosis CLI `config init` command ([#461](https://github.com/kurtosis-tech/kurtosis/issues/461)) ([06578e4](https://github.com/kurtosis-tech/kurtosis/commit/06578e4cad2a097daa8e1dd77c252b97b370606d)), closes [#435](https://github.com/kurtosis-tech/kurtosis/issues/435)
+
 ## [0.74.0](https://github.com/kurtosis-tech/kurtosis/compare/0.73.2...0.74.0) (2023-04-03)
 
 
