@@ -58,3 +58,4 @@ We recommend the last style (naming both positional and optional args), for read
 
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
+[vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
