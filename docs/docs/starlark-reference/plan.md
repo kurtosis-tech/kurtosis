@@ -490,7 +490,7 @@ upload_files
 
 ```python
 artifact_name = plan.upload_files(
-    # The file to upload into a files a files artifact
+    # The file to upload into a files artifact
     # Must be a Kurtosis locator.
     # MANDATORY
     src = "github.com/foo/bar/static/example.txt",
