@@ -513,6 +513,8 @@ To learn more about the accepted recipe types, please checkout [ExecRecipe][star
 
 If it succeeds, it returns a [future references][future-references-reference] with the last recipe run.
 
+This instruction is for one-off waits purpose, and it is not necessary to execute it right after an [add_service][add-service] or [add_services][add-services] call, if you need to check the ready conditions for a single service at startup we suggest to use the [ReadyCondition][ready-condition] type when you define the [ServiceConfig][service-config] for your service
+
 
 ```python
 # This fails in runtime if response["code"] != 200 for each request in a 5 minute time span
@@ -560,6 +562,7 @@ plan.print(response["code"])
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [set-connection]: #set_connection
 [add-service]: #add_service
+[add-services]: #add_services
 [wait]: #wait
 [assert]: #assert
 [extract]: #extract
@@ -571,6 +574,8 @@ plan.print(response["code"])
 [packages-reference]: ../concepts-reference/packages.md
 [locators-reference]: ../concepts-reference/locators.md
 [multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
+[ready-condition]: ./ready-condition.md
+[service-config]: ./service-config.md
 [subnetworks-reference]: ../concepts-reference/subnetworks.md
 
 [starlark-types-connection-config]: ./connection-config.md
@@ -579,3 +584,5 @@ plan.print(response["code"])
 [starlark-types-exec-recipe]: ./exec-recipe.md
 [starlark-types-post-http-recipe]: ./post-http-request-recipe.md
 [starlark-types-get-http-recipe]: ./get-http-request-recipe.md
+
+
