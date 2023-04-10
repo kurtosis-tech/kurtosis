@@ -1921,6 +1921,15 @@ func waitUntilPortIsOpenWithTimeout(
 	scanPortTimeout := finishTime.Sub(now)
 	// Scanning the port for the first time if everything goes well the code ends here
 	if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
+		logrus.Debugf(
+			"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
+				"with '%v' milliseconds between retries and it took '%v'",
+			ipAddr,
+			portSpec,
+			retries,
+			waitForPortsOpenRetriesDelayMilliseconds,
+			time.Since(startTime),
+		)
 		return nil
 	}
 
@@ -1929,36 +1938,31 @@ func waitUntilPortIsOpenWithTimeout(
 	defer ticker.Stop()
 	for {
 		if time.Now().After(finishTime) {
-			err = stacktrace.NewError("Scanning ports has reached the '%v' time out", timeout.String())
-			break
+			return stacktrace.Propagate(err, "Unsuccessful ports check for IP '%s' and port spec '%+v', "+
+				"even after '%v' retries with '%v' milliseconds in between retries. Timeout '%v' has been reached",
+				ipAddr,
+				portSpec,
+				retries,
+				waitForPortsOpenRetriesDelayMilliseconds,
+				timeout.String(),
+			)
 		}
 		<-ticker.C // block until the next tick
 		//retrying
 		if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
+			logrus.Debugf(
+				"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
+					"with '%v' milliseconds between retries and it took '%v'",
+				ipAddr,
+				portSpec,
+				retries,
+				waitForPortsOpenRetriesDelayMilliseconds,
+				time.Since(startTime),
+			)
 			return nil
 		}
 		retries++
 	}
-
-	if err != nil {
-		return stacktrace.Propagate(err, "Unsuccessful ports check for IP '%s' and port spec '%+v', "+
-			"even after '%v' retries with '%v' milliseconds in between retries",
-			ipAddr,
-			portSpec,
-			retries,
-			waitForPortsOpenRetriesDelayMilliseconds,
-		)
-	}
-	logrus.Debugf(
-		"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
-			"with '%v' milliseconds between retries and it took '%v'",
-		ipAddr,
-		portSpec,
-		retries,
-		waitForPortsOpenRetriesDelayMilliseconds,
-		time.Since(startTime),
-	)
-	return nil
 }
 
 func scanPort(ipAddr net.IP, portSpec *port_spec.PortSpec, timeout time.Duration) error {
