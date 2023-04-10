@@ -10,31 +10,19 @@ const (
 
 //TODO we probably will rename it, it's in the design stage
 type wait struct {
-	enable       bool
-	timeout      time.Duration
-	initialDelay time.Duration
+	timeout time.Duration
 }
 
-func NewWait(enable bool, timeout time.Duration, initialDelay time.Duration) *wait {
-	return &wait{enable: enable, timeout: timeout, initialDelay: initialDelay}
+func NewWait(timeout time.Duration) *wait {
+	return &wait{timeout: timeout}
 }
 
 func newWaitWithDefaultValues() *wait {
 	return &wait{
-		enable:       enableByDefault,
-		timeout:      defaultTimeout,
-		initialDelay: noInitialDelayByDefault,
+		timeout: defaultTimeout,
 	}
-}
-
-func (wait *wait) GetEnable() bool {
-	return wait.enable
 }
 
 func (wait *wait) GetTimeout() time.Duration {
 	return wait.timeout
-}
-
-func (wait *wait) GetInitialDelay() time.Duration {
-	return wait.initialDelay
 }

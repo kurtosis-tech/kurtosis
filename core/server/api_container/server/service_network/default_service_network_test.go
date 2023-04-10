@@ -65,7 +65,7 @@ var (
 	connectionWithSomePacketLoss        = partition_topology.NewPacketLoss(50.0)
 	packetLossConfigForBlockedPartition = partition_topology.NewPacketLoss(100)
 
-	portWaitForTest = port_spec.NewWait(true, 5*time.Second, 0)
+	portWaitForTest = port_spec.NewWait(5 * time.Second)
 )
 
 func TestStartService_Successful(t *testing.T) {

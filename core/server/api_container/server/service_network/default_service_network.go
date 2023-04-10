@@ -59,7 +59,7 @@ const (
 
 	singleServiceStartupBatch = 1
 
-	waitForPortsOpenRetriesDelayMilliseconds = uint16(100)
+	waitForPortsOpenRetriesDelayMilliseconds = 500
 
 	shouldFollowLogs = false
 
@@ -1740,16 +1740,8 @@ func (network *DefaultServiceNetwork) getServiceLogs(
 		}
 	}()
 
-	if len(erroredUserServiceUuids) > 0 {
-		err, found := erroredUserServiceUuids[serviceUUID]
-		if !found {
-			return "", stacktrace.NewError(
-				"Expected to find an error for user service with UUID '%v' on user service error map '%+v' "+
-					"but was not found; this should never happen, and is a bug in Kurtosis",
-				serviceUUID,
-				erroredUserServiceUuids,
-			)
-		}
+	err, found := erroredUserServiceUuids[serviceUUID]
+	if found && err != nil {
 		return "", stacktrace.Propagate(
 			err,
 			"An error occurred getting user service logs for user service with UUID '%v'", serviceUUID)
@@ -1762,6 +1754,11 @@ func (network *DefaultServiceNetwork) getServiceLogs(
 				"but was not found; this should never happen, and is a bug "+
 				"in Kurtosis", serviceUUID, userServiceReadCloserLog)
 	}
+	defer func() {
+		if err := userServiceReadCloserLog.Close(); err != nil {
+			logrus.Warnf("Something fails when we tried to close the read closer logs for service with UUID %v", serviceUUID)
+		}
+	}()
 
 	copyBuf := bytes.NewBuffer(nil)
 	if _, err := io.Copy(copyBuf, userServiceReadCloserLog); err != nil {
@@ -1907,36 +1904,40 @@ func waitUntilPortIsOpenWithTimeout(
 	portSpec *port_spec.PortSpec,
 ) error {
 	// reject early if it's disable
-	if !portSpec.GetWait().GetEnable() {
+	if portSpec.GetWait() == nil {
 		return nil
 	}
 	timeout := portSpec.GetWait().GetTimeout()
 
 	var (
-		ticker                  = time.NewTicker(timeout)
-		startTime               = time.Now()
-		finishTime              = startTime.Add(timeout)
-		shouldContinueInTheLoop = true
-		retries                 = 0
-		err                     error
+		startTime  = time.Now()
+		finishTime = startTime.Add(timeout)
+		//shouldContinueInTheLoop = true
+		retries = 0
+		err     error
 	)
 
-	time.Sleep(portSpec.GetWait().GetInitialDelay())
+	now := time.Now()
+	scanPortTimeout := finishTime.Sub(now)
+	// Scanning the port for the first time if everything goes well the code ends here
+	if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
+		return nil
+	}
 
-	for shouldContinueInTheLoop {
-		select {
-		case <-ticker.C:
-			return stacktrace.NewError("Scanning ports has reached the '%v' time out", timeout.String())
-		default:
-			now := time.Now()
-			scanPortTimeout := finishTime.Sub(now)
-			if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
-				shouldContinueInTheLoop = false
-				break
-			}
-			time.Sleep(time.Duration(waitForPortsOpenRetriesDelayMilliseconds) * time.Millisecond)
-			retries++
+	// if the fist check goes wrong we execute the retry strategy
+	ticker := time.NewTicker(waitForPortsOpenRetriesDelayMilliseconds * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		if time.Now().After(finishTime) {
+			err = stacktrace.NewError("Scanning ports has reached the '%v' time out", timeout.String())
+			break
 		}
+		<-ticker.C // block until the next tick
+		//retrying
+		if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
+			return nil
+		}
+		retries++
 	}
 
 	if err != nil {
