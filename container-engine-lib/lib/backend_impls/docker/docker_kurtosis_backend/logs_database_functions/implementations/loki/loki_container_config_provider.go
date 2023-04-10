@@ -30,7 +30,7 @@ func newLokiContainerConfigProvider(config *LokiConfig, httpPortNumber uint16) *
 }
 
 func (loki *lokiContainerConfigProvider) GetPrivateHttpPortSpec() (*port_spec.PortSpec, error) {
-	privateHttpPortSpec, err := port_spec.NewPortSpec(loki.httpPortNumber, httpTransportProtocol, httpApplicationProtocol)
+	privateHttpPortSpec, err := port_spec.NewPortSpec(loki.httpPortNumber, httpTransportProtocol, httpApplicationProtocol, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

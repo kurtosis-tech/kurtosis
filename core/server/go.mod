@@ -36,6 +36,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.6
 	go.starlark.net v0.0.0-20230224151120-c52844e64a10
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
 require (
