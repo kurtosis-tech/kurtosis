@@ -394,3 +394,4 @@ We encourage you to check out our [quickstart][quickstart] (where you’ll build
 [installing-the-cli]: ./installing-the-cli.md#ii-install-the-cli
 [starting-docker]: ./installing-the-cli.md#i-install--start-docker
 [starlark]: ../concepts-reference/starlark.md
+[vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
