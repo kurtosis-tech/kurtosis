@@ -18,11 +18,6 @@ const (
 var lineWithStacktrace = regexp.MustCompile(lineWithStacktraceRegex)
 
 func GetErrorMessageToBeDisplayedOnCli(errorWithStacktrace error) error {
-	// if we are running in the debug mode, just return the error with stack-traces back to the client
-	if logrus.GetLevel() == logrus.DebugLevel {
-		return errorWithStacktrace
-	}
-
 	// silently catch the file logger error and print it in the debug mode
 	// users should not worry about this error
 	// downside is that we may lose stack-traces during file logger failures
@@ -31,6 +26,11 @@ func GetErrorMessageToBeDisplayedOnCli(errorWithStacktrace error) error {
 		logrus.Warnf("Error occurred while getting the file logger %+v", err)
 	} else {
 		loggerToFile.Errorln(errorWithStacktrace.Error())
+	}
+
+	// if we are running in the debug mode, just return the error with stack-traces back to the client
+	if logrus.GetLevel() == logrus.DebugLevel {
+		return errorWithStacktrace
 	}
 
 	errorMessage := errorWithStacktrace.Error()

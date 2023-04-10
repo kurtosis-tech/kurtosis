@@ -129,7 +129,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 			cleanedErrorFromStarlark := out.GetErrorMessageToBeDisplayedOnCli(errorMsgWithStackTrace)
 			errorMsg = fmt.Sprintf("There was an error executing Starlark code \n%v", cleanedErrorFromStarlark)
 		}
-		formattedError := formatError(errorMsg)
+		formattedError := FormatError(errorMsg)
 		if err := printer.printPersistentLineToStdOut(formattedError); err != nil {
 			return stacktrace.Propagate(err, "An error happened executing Starlark code but the error couldn't be printed to the CLI output. Error message was: \n%v", errorMsg)
 		}
@@ -158,7 +158,7 @@ func (printer *ExecutionPrinter) printPersistentLineToStdOut(lineToPrint string)
 	return nil
 }
 
-func formatError(errorMessage string) string {
+func FormatError(errorMessage string) string {
 	return colorizeError(errorMessage)
 }
 
