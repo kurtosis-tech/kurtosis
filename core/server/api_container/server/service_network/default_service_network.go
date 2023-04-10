@@ -1880,12 +1880,13 @@ func waitUntilAllTCPAndUDPPortsAreOpen(
 	ipAddr net.IP,
 	ports map[string]*port_spec.PortSpec,
 ) error {
-
 	var portCheckErrorGroup errgroup.Group
 
 	for _, portSpec := range ports {
+		// we are using value here because we are using it inside the closure
+		portSpecValue := *portSpec
 		wrappedWaitFunc := func() error {
-			return waitUntilPortIsOpenWithTimeout(ipAddr, portSpec)
+			return waitUntilPortIsOpenWithTimeout(ipAddr, portSpecValue)
 		}
 		portCheckErrorGroup.Go(wrappedWaitFunc)
 	}
@@ -1901,7 +1902,7 @@ func waitUntilAllTCPAndUDPPortsAreOpen(
 
 func waitUntilPortIsOpenWithTimeout(
 	ipAddr net.IP,
-	portSpec *port_spec.PortSpec,
+	portSpec port_spec.PortSpec,
 ) error {
 	// reject early if it's disable
 	if portSpec.GetWait() == nil {
@@ -1912,26 +1913,9 @@ func waitUntilPortIsOpenWithTimeout(
 	var (
 		startTime  = time.Now()
 		finishTime = startTime.Add(timeout)
-		//shouldContinueInTheLoop = true
-		retries = 0
-		err     error
+		retries    = 0
+		err        error
 	)
-
-	now := time.Now()
-	scanPortTimeout := finishTime.Sub(now)
-	// Scanning the port for the first time if everything goes well the code ends here
-	if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
-		logrus.Debugf(
-			"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
-				"with '%v' milliseconds between retries and it took '%v'",
-			ipAddr,
-			portSpec,
-			retries,
-			waitForPortsOpenRetriesDelayMilliseconds,
-			time.Since(startTime),
-		)
-		return nil
-	}
 
 	// if the fist check goes wrong we execute the retry strategy
 	ticker := time.NewTicker(waitForPortsOpenRetriesDelayMilliseconds * time.Millisecond)
@@ -1947,9 +1931,10 @@ func waitUntilPortIsOpenWithTimeout(
 				timeout.String(),
 			)
 		}
-		<-ticker.C // block until the next tick
 		//retrying
-		if err = scanPort(ipAddr, portSpec, scanPortTimeout); err == nil {
+		now := time.Now()
+		scanPortTimeout := finishTime.Sub(now)
+		if err = scanPort(ipAddr, &portSpec, scanPortTimeout); err == nil {
 			logrus.Debugf(
 				"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
 					"with '%v' milliseconds between retries and it took '%v'",
@@ -1962,6 +1947,7 @@ func waitUntilPortIsOpenWithTimeout(
 			return nil
 		}
 		retries++
+		<-ticker.C // block until the next tick
 	}
 }
 
