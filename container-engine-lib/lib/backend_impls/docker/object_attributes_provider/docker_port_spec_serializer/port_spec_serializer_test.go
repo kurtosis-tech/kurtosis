@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-var portWaitForTest = port_spec.NewWait(true, 5*time.Second, 0)
+var portWaitForTest = port_spec.NewWait(5 * time.Second)
 
 func TestValidSerDe(t *testing.T) {
 	port1Id := "port1"

@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-var portWaitForTest = NewWait(true, 5*time.Second, 0)
+var portWaitForTest = NewWait(5 * time.Second)
 
 func TestConstructorErrorsOnUnrecognizedProtocol(t *testing.T) {
 	_, err := NewPortSpec(123, TransportProtocol(999), "", portWaitForTest)
