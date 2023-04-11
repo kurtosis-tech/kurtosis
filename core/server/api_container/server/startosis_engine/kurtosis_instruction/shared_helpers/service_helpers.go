@@ -29,11 +29,11 @@ func ExecuteServiceAssertionWithRecipe(
 		considering time that took the request to complete.
 		So we prepend an element to 'tickChan'
 	*/
-	tickChan := time.Tick(interval)
+	tickChan := time.NewTicker(interval)
 	executionTickChan := make(chan time.Time, 2)
 	executionTickChan <- time.Now()
 	go func() {
-		for tick := range tickChan {
+		for tick := range tickChan.C {
 			executionTickChan <- tick
 		}
 	}()
@@ -64,7 +64,7 @@ func ExecuteServiceAssertionWithRecipe(
 		}
 		return nil
 	}
-	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, tickChan, timeoutChan)
+	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, executionTickChan, timeoutChan)
 
 }
 

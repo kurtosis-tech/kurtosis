@@ -66,12 +66,8 @@ func TestExecuteServiceAssertionWithRecipeWithTicker_ExecuteTimeoutAndCancelExec
 	defer cancelFunc()
 
 	execFunc := func() (map[string]starlark.Comparable, error) {
-		for {
-			select {
-			case <-ctx.Done():
-				return nil, stacktrace.NewError("Exec Timeout")
-			}
-		}
+		<-ctx.Done()
+		return nil, stacktrace.NewError("Exec Timeout")
 	}
 	assertFunc := func(map[string]starlark.Comparable) error {
 		return nil
