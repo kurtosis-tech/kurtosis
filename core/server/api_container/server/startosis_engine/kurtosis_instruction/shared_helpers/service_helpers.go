@@ -24,9 +24,6 @@ func ExecuteServiceAssertionWithRecipe(
 	interval time.Duration,
 	timeout time.Duration,
 ) (map[string]starlark.Comparable, int, error) {
-	contextWithDeadline, cancelContext := context.WithTimeout(ctx, timeout)
-	defer cancelContext()
-	timeoutChan := time.After(timeout)
 	/*
 		We would like to kick an execution right away and after that retry every 'interval' seconds,
 		considering time that took the request to complete.
@@ -40,6 +37,15 @@ func ExecuteServiceAssertionWithRecipe(
 			executionTickChan <- tick
 		}
 	}()
+	/*
+		By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached,
+		the underlying request is aborted.
+		'timeoutChan' serves as an exit signal for the loop repeating the recipe execution
+	*/
+	contextWithDeadline, cancelContext := context.WithTimeout(ctx, timeout)
+	defer cancelContext()
+	timeoutChan := time.After(timeout)
+
 	execFunc := func() (map[string]starlark.Comparable, error) {
 		lastResult, recipeErr := recipe.Execute(contextWithDeadline, serviceNetwork, runtimeValueStore, serviceName)
 		if recipeErr != nil {
@@ -62,6 +68,16 @@ func ExecuteServiceAssertionWithRecipe(
 
 }
 
+/*
+Executes 'execFunc':
+  - If it errors, retry after the next tick from 'executionTickChan'.
+  - If it succeeds, executes result with 'assertFunc':
+    -- If it succeeds, returns.
+    -- If it errors, retry after the next tick from 'executionTickChan'
+
+If a signal is sent to 'timeoutChan', loop will be broken, last value is returned,
+alongside if the last error (assert or exec)
+*/
 func executeServiceAssertionWithRecipeWithTicker(
 	serviceName service.ServiceName,
 	execFunc func() (map[string]starlark.Comparable, error),
