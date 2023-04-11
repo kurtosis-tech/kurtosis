@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.1](https://github.com/kurtosis-tech/kurtosis/compare/0.75.0...0.75.1) (2023-04-11)
+
+
+### Bug Fixes
+
+* revert files download enclave flag to arg  ([#489](https://github.com/kurtosis-tech/kurtosis/issues/489)) ([6844393](https://github.com/kurtosis-tech/kurtosis/commit/68443939d27e3eb249ae75eebb913b09877a53b8)), closes [#460](https://github.com/kurtosis-tech/kurtosis/issues/460)
+
 ## [0.75.0](https://github.com/kurtosis-tech/kurtosis/compare/0.74.0...0.75.0) (2023-04-10)
 
 
