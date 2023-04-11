@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -24,11 +23,6 @@ func (t *portSpecFullTestCase) GetId() string {
 	return fmt.Sprintf("%s_%s", port_spec.PortSpecTypeName, "full")
 }
 
-func (t *portSpecFullTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return port_spec.NewPortSpecType()
-}
-
-//TODO add a test to validate no empty string for wait
 func (t *portSpecFullTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%d, %s=%q, %s=%q, %s=%q)",
 		port_spec.PortSpecTypeName,
