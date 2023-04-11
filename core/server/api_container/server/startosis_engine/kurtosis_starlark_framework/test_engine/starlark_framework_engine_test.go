@@ -51,6 +51,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisTypeConstructor(t, newConnectionConfigFullTestCase(t))
 	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketDelayTestCase(t))
 	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketLossTestCase(t))
+	testKurtosisTypeConstructor(t, newExecRecipeTestCase(t))
 	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeNoExtractorTestCase(t))
 	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeTestCase(t))
 	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionFullTestCase(t))

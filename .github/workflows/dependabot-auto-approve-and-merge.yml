@@ -26,9 +26,12 @@ jobs:
       # update go mod
       - name: Clean up go mod as dependabot deletes kurtosis_version
         run: |
-          ./scripts/generate-kurtosis-version.sh
-          cd ".${{steps.metadata.outputs.directory}}"
-          go get github.com/kurtosis-tech/kurtosis/kurtosis_version@v0.0.0
+          directories=("/core/launcher" "/core/server" "/engine/launcher" "/engine/server" "/cli/cli")
+          if echo "$directories" | grep -q "${{steps.metadata.outputs.directory}}"; then
+            ./scripts/generate-kurtosis-version.sh
+            cd ".${{steps.metadata.outputs.directory}}"
+            go get github.com/kurtosis-tech/kurtosis/kurtosis_version@v0.0.0
+          fi
       # run go mod tidy on others as there might be dependents who use us this package
       - name: Run go.mod tidy on all others
         run: |
