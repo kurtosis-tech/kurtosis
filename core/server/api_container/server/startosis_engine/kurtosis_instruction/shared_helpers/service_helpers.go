@@ -24,21 +24,57 @@ func ExecuteServiceAssertionWithRecipe(
 	interval time.Duration,
 	timeout time.Duration,
 ) (map[string]starlark.Comparable, int, error) {
+	contextWithDeadline, cancelContext := context.WithTimeout(ctx, timeout)
+	defer cancelContext()
+	timeoutChan := time.After(timeout)
+	/*
+		We would like to kick an execution right away and after that retry every 'interval' seconds,
+		considering time that took the request to complete.
+		So we prepend an element to 'tickChan'
+	*/
+	tickChan := time.Tick(interval)
+	executionTickChan := make(chan time.Time, 2)
+	executionTickChan <- time.Now()
+	go func() {
+		for tick := range tickChan {
+			executionTickChan <- tick
+		}
+	}()
+	execFunc := func() (map[string]starlark.Comparable, error) {
+		lastResult, recipeErr := recipe.Execute(contextWithDeadline, serviceNetwork, runtimeValueStore, serviceName)
+		if recipeErr != nil {
+			return lastResult, recipeErr
+		}
+		_, found := lastResult[valueField]
+		if !found {
+			return lastResult, stacktrace.NewError("Error extracting value from key '%v'. This is a bug in Kurtosis.", valueField)
+		}
+		return lastResult, nil
+	}
+	assertFunc := func(lastResult map[string]starlark.Comparable) error {
+		assertErr := assert.Assert(lastResult[valueField], assertion, target)
+		if assertErr != nil {
+			return assertErr
+		}
+		return nil
+	}
+	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, tickChan, timeoutChan)
+
+}
+
+func executeServiceAssertionWithRecipeWithTicker(
+	serviceName service.ServiceName,
+	execFunc func() (map[string]starlark.Comparable, error),
+	assertFunc func(map[string]starlark.Comparable) error,
+	executionTickChan <-chan time.Time,
+	timeoutChan <-chan time.Time,
+) (map[string]starlark.Comparable, int, error) {
 	var recipeErr error
 	var assertErr error
 	tries := 0
 	lastResult := map[string]starlark.Comparable{}
-	deadline := time.Now().Add(timeout)
-	contextWithDeadline, cancelContext := context.WithDeadline(ctx, deadline)
-	defer cancelContext()
-	timeoutChan := time.After(timeout)
-	tickChan := time.Tick(interval)
-	instantFirstRunChan := make(chan bool, 2)
-	instantFirstRunChan <- true
 
-	//TODO check if we can refactor this portion in order to use the time.Ticker(backoffDuration) pattern here:
 	for {
-		tries += 1
 		select {
 		case <-timeoutChan:
 			if recipeErr != nil {
@@ -47,40 +83,18 @@ func ExecuteServiceAssertionWithRecipe(
 			if assertErr != nil {
 				return lastResult, tries, stacktrace.NewError("Recipe execution timed-out waiting for the recipe execution to become valid on service '%v'. Tried '%v' times. Last assertion execution error was:\n '$%v'\n", serviceName, tries, assertErr)
 			}
-			return lastResult, tries, stacktrace.NewError("Recipe execution timed-out waiting for recipe execution on service '%v'. Tries '%v'", serviceName, tries)
-		case <-instantFirstRunChan:
-			lastResult, recipeErr, assertErr = runRecipe(contextWithDeadline, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField, assertion, target)
-			if recipeErr == nil && assertErr == nil {
-				return lastResult, tries, nil
+			return lastResult, tries, stacktrace.NewError("Recipe execution timed-out but no errors of assert and recipe happened on service '%v'. This is a bug in Kurtosis.", serviceName)
+		case <-executionTickChan:
+			tries += 1
+			lastResult, recipeErr = execFunc()
+			if recipeErr != nil {
+				continue
 			}
-		case <-tickChan:
-			lastResult, recipeErr, assertErr = runRecipe(contextWithDeadline, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField, assertion, target)
-			if recipeErr == nil && assertErr == nil {
-				return lastResult, tries, nil
+			assertErr = assertFunc(lastResult)
+			if assertErr != nil {
+				continue
 			}
+			return lastResult, tries, nil
 		}
 	}
-}
-
-func runRecipe(ctx context.Context,
-	serviceNetwork service_network.ServiceNetwork,
-	runtimeValueStore *runtime_value_store.RuntimeValueStore,
-	serviceName service.ServiceName,
-	recipe recipe.Recipe,
-	valueField string,
-	assertion string,
-	target starlark.Comparable) (map[string]starlark.Comparable, error, error) {
-	lastResult, recipeErr := recipe.Execute(ctx, serviceNetwork, runtimeValueStore, serviceName)
-	if recipeErr != nil {
-		return lastResult, recipeErr, nil
-	}
-	value, found := lastResult[valueField]
-	if !found {
-		return lastResult, stacktrace.NewError("Error extracting value from key '%v'. This is a bug in Kurtosis.", valueField), nil
-	}
-	assertErr := assert.Assert(value, assertion, target)
-	if assertErr != nil {
-		return lastResult, nil, assertErr
-	}
-	return lastResult, nil, nil
 }
