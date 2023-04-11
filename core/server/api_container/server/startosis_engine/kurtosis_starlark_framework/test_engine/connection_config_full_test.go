@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/connection_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/packet_delay_distribution"
 	"github.com/stretchr/testify/require"
@@ -23,10 +22,6 @@ func newConnectionConfigFullTestCase(t *testing.T) *connectionConfigFullTestCase
 
 func (t *connectionConfigFullTestCase) GetId() string {
 	return fmt.Sprintf("%s_%s", connection_config.ConnectionConfigTypeName, "Full")
-}
-
-func (t *connectionConfigFullTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return connection_config.NewConnectionConfigType()
 }
 
 func (t *connectionConfigFullTestCase) GetStarlarkCode() string {

@@ -60,7 +60,7 @@ func NewRequest(serviceNetwork service_network.ServiceNetwork, runtimeValueStore
 				{
 					Name:              RecipeArgName,
 					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*recipe.HttpRequestRecipe],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[recipe.HttpRequestRecipe],
 					Validator:         nil,
 				},
 				{
@@ -102,7 +102,7 @@ type RequestCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
 	serviceName       service.ServiceName
-	httpRequestRecipe *recipe.HttpRequestRecipe
+	httpRequestRecipe recipe.HttpRequestRecipe
 	resultUuid        string
 	acceptableCodes   []int64
 	skipCodeCheck     bool
@@ -116,7 +116,7 @@ func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.Argume
 	}
 	serviceName := service.ServiceName(serviceNameArgumentValue.GoString())
 
-	httpRequestRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
+	httpRequestRecipe, err := builtin_argument.ExtractArgumentValue[recipe.HttpRequestRecipe](arguments, RecipeArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RecipeArgName)
 	}
