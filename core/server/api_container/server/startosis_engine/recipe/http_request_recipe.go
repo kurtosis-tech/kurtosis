@@ -2,9 +2,7 @@ package recipe
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/itchyny/gojq"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -278,70 +276,14 @@ func (recipe *HttpRequestRecipe) Execute(
 		bodyKey:       starlark.String(body),
 		statusCodeKey: starlark.MakeInt(response.StatusCode),
 	}
-	extractDict, err := recipe.extract(body)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while running extractors on HTTP response body")
-	}
-	for extractorKey, extractorValue := range extractDict {
-		resultDict[fmt.Sprintf("%v.%v", ExtractKeyPrefix, extractorKey)] = extractorValue
+	for _, query := range recipe.extractors {
+		extractedValue, err := Extractor(query, body)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred running extractor '%v' on recipe", query)
+		}
+		resultDict[fmt.Sprintf("%v.%v", ExtractKeyPrefix, query)] = extractedValue
 	}
 	return resultDict, nil
-}
-
-func (recipe *HttpRequestRecipe) extract(body []byte) (map[string]starlark.Comparable, error) {
-	if len(recipe.extractors) == 0 {
-		return map[string]starlark.Comparable{}, nil
-	}
-	logrus.Debug("Executing extract recipe")
-	var jsonBody interface{}
-	err := json.Unmarshal(body, &jsonBody)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when parsing JSON response body")
-	}
-	extractorResult := map[string]starlark.Comparable{}
-	for extractorKey, extractor := range recipe.extractors {
-		logrus.Debugf("Running against '%v' '%v'", jsonBody, extractor)
-		query, err := gojq.Parse(extractor)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred when parsing field extractor '%v'", extractor)
-		}
-		iter := query.Run(jsonBody)
-		foundMatch := false
-		for {
-			matchValue, ok := iter.Next()
-			if !ok {
-				break
-			}
-			if err, ok := matchValue.(error); ok {
-				logrus.Errorf("HTTP request recipe extract emitted error '%v'", err)
-			}
-			if matchValue != nil {
-				var parsedMatchValue starlark.Comparable
-				logrus.Debug("Start parsing...")
-				switch value := matchValue.(type) {
-				case int:
-					parsedMatchValue = starlark.MakeInt(value)
-				case string:
-					parsedMatchValue = starlark.String(value)
-				case float32:
-					parsedMatchValue = starlark.Float(value)
-				case float64:
-					parsedMatchValue = starlark.Float(value)
-				default:
-					parsedMatchValue = starlark.String(fmt.Sprintf("%v", value))
-				}
-				logrus.Debugf("Parsed successfully %v %v", matchValue, parsedMatchValue)
-				extractorResult[extractorKey] = parsedMatchValue
-				foundMatch = true
-				break
-			}
-		}
-		if !foundMatch {
-			return nil, stacktrace.NewError("No field '%v' was found on input '%v'", extractor, body)
-		}
-	}
-	logrus.Debugf("Extractor result map '%v'", extractorResult)
-	return extractorResult, nil
 }
 
 func (recipe *HttpRequestRecipe) ResultMapToString(resultMap map[string]starlark.Comparable) string {

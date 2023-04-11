@@ -9,7 +9,7 @@ import (
 	"go.starlark.net/starlark"
 )
 
-func Extractor(query, input string) (starlark.Comparable, error) {
+func Extractor(query string, input []byte) (starlark.Comparable, error) {
 	logrus.Debugf("Running extractor against query '%v' and input '%v'", input, query)
 	jqQuery, err := gojq.Parse(query)
 	if err != nil {

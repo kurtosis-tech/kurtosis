@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-const jsonObject = `
+var jsonObject = []byte(`
 {
 	"integer": 1,
 	"str": "a",
@@ -18,7 +18,7 @@ const jsonObject = `
 	},
 	"bool": false
 }
-`
+`)
 
 func TestExtractor_Success(t *testing.T) {
 	logrus.SetLevel(logrus.DebugLevel)
@@ -52,8 +52,8 @@ func TestExtractor_FailureQuery(t *testing.T) {
 }
 
 func TestExtractor_FailureInput(t *testing.T) {
-	badInput := `{
-"key": "value"`
+	badInput := []byte(`{
+"key": "value"`)
 	trivialQuery := "."
 	result, err := Extractor(trivialQuery, badInput)
 	assert.Nil(t, result)
