@@ -27,6 +27,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 	"io"
 	"math"
 	"net"
@@ -36,6 +37,7 @@ import (
 	"strings"
 	"sync"
 	"text/template"
+	"time"
 )
 
 const (
@@ -56,6 +58,12 @@ const (
 	exactlyOneShortenedUuidMatch = 1
 
 	singleServiceStartupBatch = 1
+
+	waitForPortsOpenRetriesDelayMilliseconds = 500
+
+	shouldFollowLogs = false
+
+	enableServiceWaitPortChecks = false
 )
 
 var (
@@ -1281,6 +1289,25 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 	}()
 
+	//TODO it's disable now because we can't use the desired default value because the eth2 needs 5 minutes timeout
+	//TODO we will enable it in the next PR where we will introduce wait's configs for users
+	if enableServiceWaitPortChecks {
+		if err := waitUntilAllTCPAndUDPPortsAreOpen(
+			startedService.GetRegistration().GetPrivateIP(),
+			startedService.GetPrivatePorts(),
+		); err != nil {
+			serviceLogs, err := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
+					"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
+				startedService.GetRegistration().GetName(),
+				startedService.GetRegistration().GetPrivateIP(),
+				serviceLogs,
+			)
+		}
+	}
+
 	// if partition is enabled, create a sidecar associated with this service
 	if network.isPartitioningEnabled {
 		if err := network.createSidecarAndAddToMap(ctx, startedService); err != nil {
@@ -1680,6 +1707,61 @@ func (network *DefaultServiceNetwork) getServiceNameForIdentifierUnlocked(servic
 	return "", stacktrace.NewError("Couldn't find a matching service name for identifier '%v'", serviceIdentifier)
 }
 
+func (network *DefaultServiceNetwork) getServiceLogs(
+	ctx context.Context,
+	serviceObj *service.Service,
+	shouldFollowLogs bool,
+) (string, error) {
+	enclaveUuid := serviceObj.GetRegistration().GetEnclaveID()
+	serviceUUID := serviceObj.GetRegistration().GetUUID()
+	userServiceFilters := &service.ServiceFilters{
+		Names: nil,
+		UUIDs: map[service.ServiceUUID]bool{
+			serviceUUID: true,
+		},
+		Statuses: nil,
+	}
+
+	successfulUserServiceLogs, erroredUserServiceUuids, err := network.kurtosisBackend.GetUserServiceLogs(ctx, enclaveUuid, userServiceFilters, shouldFollowLogs)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting user service logs using filters '%+v'", userServiceFilters)
+	}
+	defer func() {
+		for _, userServiceLogsReadCloser := range successfulUserServiceLogs {
+			if err := userServiceLogsReadCloser.Close(); err != nil {
+				logrus.Warnf("We tried to close the user service logs read-closer-objects after we're done using it, but doing so threw an error:\n%v", err)
+			}
+		}
+	}()
+
+	err, found := erroredUserServiceUuids[serviceUUID]
+	if found && err != nil {
+		return "", stacktrace.Propagate(
+			err,
+			"An error occurred getting user service logs for user service with UUID '%v'", serviceUUID)
+	}
+
+	userServiceReadCloserLog, found := successfulUserServiceLogs[serviceUUID]
+	if !found {
+		return "", stacktrace.NewError(
+			"Expected to find logs for user service with UUID '%v' on user service logs map '%+v' "+
+				"but was not found; this should never happen, and is a bug "+
+				"in Kurtosis", serviceUUID, userServiceReadCloserLog)
+	}
+	defer func() {
+		if err := userServiceReadCloserLog.Close(); err != nil {
+			logrus.Warnf("Something fails when we tried to close the read closer logs for service with UUID %v", serviceUUID)
+		}
+	}()
+
+	copyBuf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(copyBuf, userServiceReadCloserLog); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred copying the service logs to a buffer")
+	}
+
+	return copyBuf.String(), nil
+}
+
 func convertAPIPortsToPortSpecs(
 	privateAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	publicAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
@@ -1733,7 +1815,9 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
 	}
 
-	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol())
+	//TODO replace with the value received from the Core's API (we will implement this new fields in a next PR)
+	//TODO now we pass nil that will be translated to the wait's default values
+	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol(), nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -1783,5 +1867,98 @@ func renderTemplateToFile(templateAsAString string, templateData interface{}, de
 	if err = parsedTemplate.Execute(renderedTemplateFile, templateData); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
 	}
+	return nil
+}
+
+func waitUntilAllTCPAndUDPPortsAreOpen(
+	ipAddr net.IP,
+	ports map[string]*port_spec.PortSpec,
+) error {
+	var portCheckErrorGroup errgroup.Group
+
+	for _, portSpec := range ports {
+		// we are using value here because we are using it inside the closure
+		portSpecValue := *portSpec
+		wrappedWaitFunc := func() error {
+			return waitUntilPortIsOpenWithTimeout(ipAddr, portSpecValue)
+		}
+		portCheckErrorGroup.Go(wrappedWaitFunc)
+	}
+	//This error group pattern allow us to reject early if at least one of the ports check fails
+	//in this opportunity we want to reject early because the main user pain that we want to handle
+	//is a wrong service configuration
+	if err := portCheckErrorGroup.Wait(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while waiting for all TCP and UDP ports to be open")
+	}
+
+	return nil
+}
+
+func waitUntilPortIsOpenWithTimeout(
+	ipAddr net.IP,
+	portSpec port_spec.PortSpec,
+) error {
+	// reject early if it's disable
+	if portSpec.GetWait() == nil {
+		return nil
+	}
+	timeout := portSpec.GetWait().GetTimeout()
+
+	var (
+		startTime  = time.Now()
+		finishTime = startTime.Add(timeout)
+		retries    = 0
+		err        error
+	)
+
+	// if the fist check goes wrong we execute the retry strategy
+	ticker := time.NewTicker(waitForPortsOpenRetriesDelayMilliseconds * time.Millisecond)
+	defer ticker.Stop()
+	for {
+		if time.Now().After(finishTime) {
+			return stacktrace.Propagate(err, "Unsuccessful ports check for IP '%s' and port spec '%+v', "+
+				"even after '%v' retries with '%v' milliseconds in between retries. Timeout '%v' has been reached",
+				ipAddr,
+				portSpec,
+				retries,
+				waitForPortsOpenRetriesDelayMilliseconds,
+				timeout.String(),
+			)
+		}
+		//retrying
+		now := time.Now()
+		scanPortTimeout := finishTime.Sub(now)
+		if err = scanPort(ipAddr, &portSpec, scanPortTimeout); err == nil {
+			logrus.Debugf(
+				"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
+					"with '%v' milliseconds between retries and it took '%v'",
+				ipAddr,
+				portSpec,
+				retries,
+				waitForPortsOpenRetriesDelayMilliseconds,
+				time.Since(startTime),
+			)
+			return nil
+		}
+		retries++
+		<-ticker.C // block until the next tick
+	}
+}
+
+func scanPort(ipAddr net.IP, portSpec *port_spec.PortSpec, timeout time.Duration) error {
+	portNumberStr := fmt.Sprintf("%v", portSpec.GetNumber())
+	networkAddress := net.JoinHostPort(ipAddr.String(), portNumberStr)
+	networkStr := strings.ToLower(portSpec.GetTransportProtocol().String())
+	conn, err := net.DialTimeout(networkStr, networkAddress, timeout)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred while calling network address '%s' with port protocol '%s' and using time out '%v'",
+			networkAddress,
+			portSpec.GetTransportProtocol().String(),
+			timeout,
+		)
+	}
+	defer conn.Close()
 	return nil
 }
