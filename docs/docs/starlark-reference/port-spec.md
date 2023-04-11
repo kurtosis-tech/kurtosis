@@ -19,7 +19,7 @@ port_spec = PortSpec(
     # For example:
     #  "http" to get a URL of "http://..."
     #  "postgresql" to get a URL of "postgresql://..."
-    # OPTIONAL
+    # OPTIONAL (DEFAULT:"http")
     application_protocol = "http",
 )
 ```

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/update_service_config"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -22,10 +21,6 @@ func newUpdateServiceConfigTestCase(t *testing.T) *updateServiceConfigTestCase {
 
 func (t *updateServiceConfigTestCase) GetId() string {
 	return update_service_config.UpdateServiceConfigTypeName
-}
-
-func (t *updateServiceConfigTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return update_service_config.NewUpdateServiceConfigType()
 }
 
 func (t *updateServiceConfigTestCase) GetStarlarkCode() string {
