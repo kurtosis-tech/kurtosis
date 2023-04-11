@@ -13,11 +13,17 @@ import (
 //
 // ==============================================================================================
 
-func NewPort(number uint32, protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol, maybeApplicationProtocol string) *kurtosis_core_rpc_api_bindings.Port {
+func NewPort(
+	number uint32,
+	protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol,
+	maybeApplicationProtocol string,
+	maybeWaitTimeout string,
+) *kurtosis_core_rpc_api_bindings.Port {
 	return &kurtosis_core_rpc_api_bindings.Port{
 		Number:                   number,
 		TransportProtocol:        protocol,
 		MaybeApplicationProtocol: maybeApplicationProtocol,
+		MaybeWaitTimeout:         maybeWaitTimeout,
 	}
 }
 

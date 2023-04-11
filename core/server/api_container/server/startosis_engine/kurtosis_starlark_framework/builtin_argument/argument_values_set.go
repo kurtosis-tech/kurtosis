@@ -135,6 +135,13 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 		if argumentDefinition.IsOptional && argValue == nil {
 			continue
 		}
+		if argumentDefinition.Validator != nil {
+			if interpretationErr := argumentDefinition.Validator(argValue); interpretationErr != nil {
+				// TODO: probably worth making parseArguments return an interpretationError to avoid conversion here
+				invalidArgs[argName] = fmt.Errorf(interpretationErr.Error())
+				continue
+			}
+		}
 		if reflect.TypeOf(argumentDefinition.ZeroValueProvider()) == nil {
 			// it means the type is an interface, we are not able to validate its concrete type at this step
 			continue
@@ -145,13 +152,6 @@ func parseArguments(argumentDefinitions []*BuiltinArgument, builtinName string, 
 				reflect.TypeOf(argValue),
 				reflect.TypeOf(argumentDefinition.ZeroValueProvider()))
 			continue
-		}
-		if argumentDefinition.Validator != nil {
-			if interpretationErr := argumentDefinition.Validator(argValue); interpretationErr != nil {
-				// TODO: probably worth making parseArguments return an interpretationError to avoid conversion here
-				invalidArgs[argName] = fmt.Errorf(interpretationErr.Error())
-				continue
-			}
 		}
 	}
 	if len(invalidArgs) > 0 {

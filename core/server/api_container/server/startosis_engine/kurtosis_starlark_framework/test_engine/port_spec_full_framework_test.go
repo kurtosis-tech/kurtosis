@@ -28,8 +28,19 @@ func (t *portSpecFullTestCase) GetTypeConstructor() *kurtosis_type_constructor.K
 	return port_spec.NewPortSpecType()
 }
 
+//TODO add a test to validate no empty string for wait
 func (t *portSpecFullTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%d, %s=%q, %s=%q)", port_spec.PortSpecTypeName, port_spec.PortNumberAttr, TestPrivatePortNumber, port_spec.TransportProtocolAttr, TestPrivatePortProtocolStr, port_spec.PortApplicationProtocolAttr, TestPrivateApplicationProtocol)
+	return fmt.Sprintf("%s(%s=%d, %s=%q, %s=%q, %s=%q)",
+		port_spec.PortSpecTypeName,
+		port_spec.PortNumberAttr,
+		TestPrivatePortNumber,
+		port_spec.TransportProtocolAttr,
+		TestPrivatePortProtocolStr,
+		port_spec.PortApplicationProtocolAttr,
+		TestPrivateApplicationProtocol,
+		port_spec.WaitAttr,
+		TestWaitConfiguration,
+	)
 }
 
 func (t *portSpecFullTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {

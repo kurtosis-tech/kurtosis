@@ -78,6 +78,8 @@ message Port {
   // The protocol that the port is listening on
   TransportProtocol transport_protocol = 2;
   string maybe_application_protocol = 3;
+  // The wait timeout duration in string
+  string maybe_wait_timeout = 4;
 }
 
 message ServiceInfo {

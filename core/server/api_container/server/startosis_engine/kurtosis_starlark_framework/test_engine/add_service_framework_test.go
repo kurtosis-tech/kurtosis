@@ -111,8 +111,8 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 func (t *addServiceTestCase) GetStarlarkCode() string {
 	serviceConfigStarlarkStrTemplate := "ServiceConfig(" +
 		"image=%q, " +
-		"ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)}, " +
-		"public_ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)}, " +
+		"ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}, " +
+		"public_ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}, " +
 		"files={%q: %q}, " +
 		"entrypoint=[%q, %q], " +
 		"cmd=[%q, %q, %q], " +
@@ -129,8 +129,8 @@ func (t *addServiceTestCase) GetStarlarkCode() string {
 		"))"
 	serviceConfig := fmt.Sprintf(serviceConfigStarlarkStrTemplate,
 		TestContainerImageName,
-		TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol,
-		TestPublicPortId, TestPublicPortNumber, TestPublicPortProtocolStr, TestPublicApplicationProtocol,
+		TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol, TestWaitConfiguration,
+		TestPublicPortId, TestPublicPortNumber, TestPublicPortProtocolStr, TestPublicApplicationProtocol, TestWaitConfiguration,
 		TestFilesArtifactPath1, TestFilesArtifactName1,
 		TestEntryPointSlice[0], TestEntryPointSlice[1],
 		TestCmdSlice[0], TestCmdSlice[1], TestCmdSlice[2],
