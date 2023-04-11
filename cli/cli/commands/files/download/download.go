@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -21,9 +22,9 @@ import (
 )
 
 const (
-	enclaveIdentifierFlagKey = "enclave"
-	// Signifies that enclave identifier hasn't been passed
-	defaultEnclaveIdentifierKeyword = ""
+	enclaveIdentifierArgKey = "enclave"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
 
 	artifactIdentifierArgKey        = "artifact-identifier"
 	emptyArtifactIdentifier         = ""
@@ -52,16 +53,10 @@ const (
 var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesDownloadCmdStr,
 	ShortDescription:          "Download a files artifact from an enclave",
-	LongDescription:           "Download the given files artifact from the given enclave to your machine. The files artifact and enclave are specified by identifier (name, UUID, or shortened UUID). Read more about identifiers here: https://docs.kurtosis.com/reference/resource-identifier",
+	LongDescription:           "Download a files artifact using an identifier(name, uuid, shortened uuid) from an enclave to the host machine",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
-		{
-			Key:     enclaveIdentifierFlagKey,
-			Usage:   "The enclave from which the file will be downloaded. This is a required flag.",
-			Type:    flags.FlagType_String,
-			Default: defaultEnclaveIdentifierKeyword,
-		},
 		{
 			Key:     noExtractFlagKey,
 			Usage:   "If true then the file won't be extracted. Default false.",
@@ -70,6 +65,12 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 	},
 	Args: []*args.ArgConfig{
+		enclave_id_arg.NewEnclaveIdentifierArg(
+			enclaveIdentifierArgKey,
+			engineClientCtxKey,
+			isEnclaveIdArgOptional,
+			isEnclaveIdArgGreedy,
+		),
 		{
 			Key:                   artifactIdentifierArgKey,
 			ValidationFunc:        validateArtifactIdentifier,
@@ -98,14 +99,9 @@ func run(
 	flags *flags.ParsedFlags,
 	args *args.ParsedArgs,
 ) error {
-	enclaveIdentifier, err := flags.GetString(enclaveIdentifierFlagKey)
+	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using flag key '%s'", enclaveIdentifierFlagKey)
-	}
-
-	if enclaveIdentifier == defaultEnclaveIdentifierKeyword {
-		// we don't use stack trace as its too much to read
-		return fmt.Errorf("Enclave identifier is a required flag; please pass a valid value using the '--%s' flag", enclaveIdentifierFlagKey)
+		return stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdentifierArgKey)
 	}
 
 	artifactIdentifier, err := args.GetNonGreedyArg(artifactIdentifierArgKey)
