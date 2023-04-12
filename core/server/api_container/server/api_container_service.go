@@ -489,7 +489,12 @@ func transformPortSpecToApiPort(port *port_spec.PortSpec) (*kurtosis_core_rpc_ap
 		maybeApplicationProtocol = *port.GetMaybeApplicationProtocol()
 	}
 
-	result := binding_constructors.NewPort(uint32(portNumUint16), apiProto, maybeApplicationProtocol)
+	maybeWaitTimeout := ""
+	if port.GetWait() != nil {
+		maybeWaitTimeout = port.GetWait().GetTimeout().String()
+	}
+
+	result := binding_constructors.NewPort(uint32(portNumUint16), apiProto, maybeApplicationProtocol, maybeWaitTimeout)
 	return result, nil
 }
 

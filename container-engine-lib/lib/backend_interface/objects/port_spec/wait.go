@@ -3,12 +3,9 @@ package port_spec
 import "time"
 
 const (
-	enableByDefault         = true
-	defaultTimeout          = 15 * time.Second
-	noInitialDelayByDefault = time.Duration(0)
+	defaultTimeout = 15 * time.Second
 )
 
-//TODO we probably will rename it, it's in the design stage
 type wait struct {
 	timeout time.Duration
 }

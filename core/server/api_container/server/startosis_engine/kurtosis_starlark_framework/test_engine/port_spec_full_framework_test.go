@@ -43,7 +43,7 @@ func (t *portSpecFullTestCase) Assert(typeValue builtin_argument.KurtosisValueTy
 	portSpec, err := portSpecStarlark.ToKurtosisType()
 	require.Nil(t, err)
 
-	expectedPortSpec := binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol)
+	expectedPortSpec := binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol, TestWaitConfiguration)
 	require.Equal(t, expectedPortSpec, portSpec)
 
 }

@@ -30,7 +30,7 @@ var (
 	TestPrivatePortProtocolStr     = "TCP"
 	TestPrivatePortProtocol        = kurtosis_core_rpc_api_bindings.Port_TCP
 	TestPrivateApplicationProtocol = "https"
-	TestWaitConfiguration          = "10s"
+	TestWaitConfiguration          = "2s"
 
 	TestPublicPortId              = "endpoints"
 	TestPublicPortNumber          = uint32(80)

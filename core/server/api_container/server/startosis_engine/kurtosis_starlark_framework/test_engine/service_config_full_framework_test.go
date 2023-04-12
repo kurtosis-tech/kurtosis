@@ -55,9 +55,9 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	expectedServiceConfig := services.NewServiceConfigBuilder(
 		TestContainerImageName,
 	).WithPrivatePorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-		TestPrivatePortId: binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol),
+		TestPrivatePortId: binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol, TestWaitConfiguration),
 	}).WithPublicPorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-		TestPublicPortId: binding_constructors.NewPort(TestPublicPortNumber, TestPublicPortProtocol, TestPrivateApplicationProtocol),
+		TestPublicPortId: binding_constructors.NewPort(TestPublicPortNumber, TestPublicPortProtocol, TestPrivateApplicationProtocol, TestWaitConfiguration),
 	}).WithFilesArtifactMountDirpaths(map[string]string{
 		TestFilesArtifactPath1: TestFilesArtifactName1,
 		TestFilesArtifactPath2: TestFilesArtifactName2,
