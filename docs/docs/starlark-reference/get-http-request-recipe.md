@@ -24,7 +24,7 @@ get_request_recipe = GetHttpRequestRecipe(
     # body that you get from the HTTP GET request.
     # 
     # To lean more about jq, please visit https://devdocs.io/jq/
-    # OPTIONAL
+    # OPTIONAL (DEFAULT:{})
     extract = {
         "extractfield" : ".name.id",
     },

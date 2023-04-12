@@ -80,28 +80,6 @@ def run(plan):
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-func TestStartosisInterpreter_DefineFactAndWait(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan):
-	get_recipe = GetHttpRequestRecipe(
-		port_id = "http-port",
-		endpoint = "?input=output",
-		extract = {
-			"input": ".query.input"
-		}
-	)
-	response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, timeout="5m", interval="5s", service_name="web-server")
-	plan.print(response["body"])
-`
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.NotEmpty(t, instructions)
-}
-
 func TestStartosisInterpreter_ScriptFailingSingleError(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -542,28 +520,6 @@ def run(plan):
 	require.Equal(t, expectedError, interpretationError)
 }
 
-func TestStartosisInterpreter_RequestInstruction(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtime_value_store.NewRuntimeValueStore())
-	interpreter := startosisInterpreter
-	script := `
-def run(plan):
-	get_recipe = GetHttpRequestRecipe(
-		port_id = "http-port",
-		endpoint = "?input=output",
-		extract = {
-			"input": ".query.input"
-		}
-	)
-	response = plan.request(recipe = get_recipe, service_name = "web-server")
-	plan.print(response["code"])`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 2)
-}
-
 func TestStartosisInterpreter_ImportingAValidModuleThatPreviouslyFailedToLoadSucceeds(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
@@ -770,51 +726,6 @@ Adding service example-datastore-server
 	require.Len(t, instructions, 3)
 	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 14, 18)
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutputFromScriptB)
-}
-
-func TestStartosisInterpreter_ValidExecScript(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
-	script := `
-def run(plan):
-	plan.print("Executing mkdir!")
-	recipe = ExecRecipe(
-		command = ["mkdir", "/tmp/foo"]
-	)
-	plan.exec(recipe = recipe, service_name = "web-server")
-`
-
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-	require.Nil(t, interpretationError)
-	require.Len(t, instructions, 2)
-}
-
-func TestStartosisInterpreter_InvalidExecRecipeMissingRequiredCommand(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	testRuntimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, testRuntimeValueStore)
-	script := `
-def run(plan):
-	plan.print("Executing mkdir!")
-	recipe = ExecRecipe()
-	plan.exec(recipe = recipe)
-`
-
-	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
-
-	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
-		[]startosis_errors.CallFrame{
-			*startosis_errors.NewCallFrame("run", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 4, 21)),
-			*startosis_errors.NewCallFrame("ExecRecipe", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 0, 0)),
-		},
-		"Evaluation error: ExecRecipe: missing argument for command",
-	).ToAPIType()
-
-	require.NotNil(t, interpretationError)
-	require.Equal(t, expectedError, interpretationError)
 }
 
 func TestStartosisInterpreter_ReadFileFromGithub(t *testing.T) {

@@ -37,7 +37,7 @@ func getCustomReadyConditionsScripPart(
 		portStr,
 		recipe.EndpointAttr,
 		endpointStr,
-		recipe.ExtractKeyPrefix,
+		recipe.ExtractAttr,
 		extractStr,
 		service_config.FieldAttr,
 		fieldStr,

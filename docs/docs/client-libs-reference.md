@@ -18,12 +18,12 @@ KurtosisContext
 ---------------
 A connection to a Kurtosis engine, used for manipulating enclaves.
 
-### `createEnclave(String enclaveName, boolean isPartitioningEnabled) -> [EnclaveContext][enclavecontext] enclaveContext`
+### `createEnclave(String enclaveName, boolean isSubnetworkingEnabled) -> [EnclaveContext][enclavecontext] enclaveContext`
 Creates a new Kurtosis enclave using the given parameters.
 
 **Args**
 * `enclaveName`: The name to give the new enclave.
-* `isPartitioningEnabled`: If set to true, the enclave will be set up to allow for subnetworking. This will make service addition & removal take slightly longer, but will enable [subnetworking](./concepts-reference/subnetworks.md) and allow the use of [`Plan.set_connection`](./starlark-reference/plan.md#set_connection) in the Starlark scripts you run.
+* `isSubnetworkingEnabled`: If set to true, the enclave will be set up to allow for subnetworking. This will make service addition & removal take slightly longer, but will enable [subnetworking](./concepts-reference/subnetworks.md) and allow the use of [`Plan.set_connection`](./starlark-reference/plan.md#set_connection) in the Starlark scripts you run.
 
 **Returns**
 * `enclaveContext`: An [EnclaveContext][enclavecontext] object representing the new enclave.
