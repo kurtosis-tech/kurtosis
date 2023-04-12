@@ -62,8 +62,6 @@ const (
 	waitForPortsOpenRetriesDelayMilliseconds = 500
 
 	shouldFollowLogs = false
-
-	enableServiceWaitPortChecks = false
 )
 
 var (
@@ -1295,23 +1293,19 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 	}()
 
-	//TODO it's disable now because we can't use the desired default value because the eth2 needs 5 minutes timeout
-	//TODO we will enable it in the next PR where we will introduce wait's configs for users
-	if enableServiceWaitPortChecks {
-		if err := waitUntilAllTCPAndUDPPortsAreOpen(
+	if err := waitUntilAllTCPAndUDPPortsAreOpen(
+		startedService.GetRegistration().GetPrivateIP(),
+		startedService.GetPrivatePorts(),
+	); err != nil {
+		serviceLogs, err := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
+				"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
+			startedService.GetRegistration().GetName(),
 			startedService.GetRegistration().GetPrivateIP(),
-			startedService.GetPrivatePorts(),
-		); err != nil {
-			serviceLogs, err := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
-					"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
-				startedService.GetRegistration().GetName(),
-				startedService.GetRegistration().GetPrivateIP(),
-				serviceLogs,
-			)
-		}
+			serviceLogs,
+		)
 	}
 
 	// if partition is enabled, create a sidecar associated with this service

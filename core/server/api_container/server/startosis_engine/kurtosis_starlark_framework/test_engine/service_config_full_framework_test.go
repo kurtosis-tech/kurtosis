@@ -52,7 +52,7 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	serviceConfig, err := serviceConfigStarlark.ToKurtosisType()
 	require.Nil(t, err)
 
-	expectedServiceConfig := services.NewServiceConfigBuilder(
+	expectedServiceConfigBuilder := services.NewServiceConfigBuilder(
 		TestContainerImageName,
 	).WithPrivatePorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
 		TestPrivatePortId: binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol, TestWaitConfiguration),
@@ -77,5 +77,8 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	).WithMemoryAllocationMegabytes(
 		TestMemoryAllocation,
 	)
-	require.Equal(t, expectedServiceConfig.Build(), serviceConfig)
+
+	expectedServiceConfig := expectedServiceConfigBuilder.Build()
+
+	require.Equal(t, expectedServiceConfig, serviceConfig)
 }

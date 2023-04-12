@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	portWaitTimeout = "2s"
+	portWaitTimeout = ""
 )
 
 type portSpecMinimalTestCase struct {

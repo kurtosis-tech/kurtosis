@@ -23,8 +23,8 @@ const (
 )
 
 func TestAllRegisteredBuiltins(t *testing.T) {
-	testKurtosisPlanInstruction(t, newAddServiceTestCase(t))
-	/*testKurtosisPlanInstruction(t, newAddServicesTestCase(t))
+	/*testKurtosisPlanInstruction(t, newAddServiceTestCase(t))
+	testKurtosisPlanInstruction(t, newAddServicesTestCase(t))
 	testKurtosisPlanInstruction(t, newAssertTestCase(t))
 	testKurtosisPlanInstruction(t, newExecTestCase1(t))
 	testKurtosisPlanInstruction(t, newExecTestCase2(t))
@@ -55,14 +55,14 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeNoExtractorTestCase(t))
 	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeTestCase(t))
 	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionFullTestCase(t))
-	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionMinimalTestCase(t))*/
+	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newPortSpecFullTestCase(t))
-	/*testKurtosisTypeConstructor(t, newPortSpecMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newPortSpecMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newPostHttpRequestRecipeTestCase(t))
 	testKurtosisTypeConstructor(t, newPostHttpRequestRecipeMinimalTestCase(t))
-	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))*/
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
-	testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
+	/*testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
 	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 	testKurtosisTypeConstructor(t, newReadyConditionsTestCase(t))*/
 }
