@@ -43,6 +43,8 @@ Before you proceed, please make sure you have:
 - [Installed and started the Docker engine][installing-docker-guide]
 - [Installed the Kurtosis CLI][installing-kurtosis-guide] (or [upgraded to latest][upgrading-kurtosis-guide] if you already have it)
 
+We are also available in the browser on [GitPod](https://gitpod.io/?editor=code#https://github.com/kurtosis-tech/quickstart-gitpod)
+
 Hello, World
 ------------
 First, create and `cd` into a directory to hold the project you'll be working on:
