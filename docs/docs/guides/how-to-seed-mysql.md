@@ -1,5 +1,5 @@
 ---
-title: How To: programmatically seed MySQL databases for integration tests
+title: How to programmatically seed MySQL databases for integration tests
 sidebar_label: Programmatically seeding MySQL databases
 slug: /how-to-seed-mysql
 toc_max_heading_level: 2
