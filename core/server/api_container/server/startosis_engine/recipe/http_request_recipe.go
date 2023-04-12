@@ -86,12 +86,12 @@ func executeInternal(
 		bodyKey:       starlark.String(responseBody),
 		statusCodeKey: starlark.MakeInt(response.StatusCode),
 	}
-	for _, query := range extractors {
+	for extractorName, query := range extractors {
 		extractedValue, err := Extractor(query, responseBody)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred running extractor '%v' on recipe", query)
 		}
-		resultDict[fmt.Sprintf("%v%v", extractKeyPrefix, query)] = extractedValue
+		resultDict[fmt.Sprintf("%v.%v", extractKeyPrefix, extractorName)] = extractedValue
 	}
 	return resultDict, nil
 }
@@ -123,7 +123,7 @@ func createStarlarkReturnValueInternal(resultUuid string, extractors map[string]
 		return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", statusCodeKey)
 	}
 	for extractorKey := range extractors {
-		fullExtractorKey := fmt.Sprintf("%v%v", extractKeyPrefix, extractorKey)
+		fullExtractorKey := fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)
 		err = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)))
 		if err != nil {
 			return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", fullExtractorKey)
