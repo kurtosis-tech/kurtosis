@@ -32,11 +32,6 @@ import {
 } from "../constructor_calls";
 import {Readable} from "stream";
 import {LogLineFilter} from "./log_line_filter";
-import {
-    StarlarkExecutionError,
-    StarlarkInstruction,
-    StarlarkInterpretationError, StarlarkValidationError
-} from "../../../core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {Enclaves} from "./enclaves";
 import {EnclaveIdentifiers} from "./enclave_identifiers";
 
@@ -104,13 +99,13 @@ export class KurtosisContext {
         return ok(kurtosisContext)
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
-    public async createEnclave(enclaveName: string, isPartitioningEnabled: boolean): Promise<Result<EnclaveContext, Error>> {
+    // Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
+    public async createEnclave(enclaveName: string, isSubnetworkingEnabled: boolean): Promise<Result<EnclaveContext, Error>> {
         const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
             enclaveName,
             DEFAULT_API_CONTAINER_VERSION_TAG,
             API_CONTAINER_LOG_LEVEL,
-            isPartitioningEnabled,
+            isSubnetworkingEnabled,
         );
 
         const getEnclaveResponseResult = await this.client.createEnclaveResponse(enclaveArgs)
