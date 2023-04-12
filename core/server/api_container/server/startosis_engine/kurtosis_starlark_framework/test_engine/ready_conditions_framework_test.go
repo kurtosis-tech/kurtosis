@@ -3,7 +3,6 @@ package test_engine
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/stretchr/testify/assert"
@@ -27,10 +26,6 @@ func (t *readyConditionsTestCase) GetId() string {
 	return service_config.ReadyConditionTypeName
 }
 
-func (t *readyConditionsTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return service_config.NewReadyConditionType()
-}
-
 func (t *readyConditionsTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%s(%s=%q, %s=%q, %s=%s), %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)",
 		service_config.ReadyConditionTypeName,
@@ -40,7 +35,7 @@ func (t *readyConditionsTestCase) GetStarlarkCode() string {
 		TestReadyConditionsRecipePortId,
 		recipe.EndpointAttr,
 		TestReadyConditionsRecipeEndpoint,
-		recipe.ExtractKeyPrefix,
+		recipe.ExtractAttr,
 		TestReadyConditionsRecipeExtract,
 		service_config.FieldAttr,
 		TestReadyConditionsField,
@@ -61,7 +56,7 @@ func (t *readyConditionsTestCase) Assert(typeValue builtin_argument.KurtosisValu
 
 	uncastedRecipe, err := receivedReadyConditions.GetRecipe()
 	if assert.Nil(t, err) {
-		castedRecipe, ok := uncastedRecipe.(*recipe.HttpRequestRecipe)
+		castedRecipe, ok := uncastedRecipe.(recipe.HttpRequestRecipe)
 		require.True(t, ok)
 
 		portIdAttrValue, err := castedRecipe.Attr(recipe.PortIdAttr)
@@ -78,7 +73,7 @@ func (t *readyConditionsTestCase) Assert(typeValue builtin_argument.KurtosisValu
 			require.Equal(t, TestReadyConditionsRecipeEndpoint, endpoint.GoString())
 		}
 
-		extractAttrValue, err := castedRecipe.Attr(recipe.ExtractKeyPrefix)
+		extractAttrValue, err := castedRecipe.Attr(recipe.ExtractAttr)
 		if assert.Nil(t, err) {
 			extract, ok := extractAttrValue.(*starlark.Dict)
 			require.True(t, ok)

@@ -398,13 +398,13 @@
         {
           "name": "content_type",
           "type": "string",
-          "content": "content_type",
+          "content": "content_type?",
           "detail": "The content type header of the request (e.g. application/json, text/plain, etc)"
         },
         {
           "name": "body",
           "type": "string",
-          "content": "body",
+          "content": "body?",
           "detail": "The body of the request"
         },
         {
