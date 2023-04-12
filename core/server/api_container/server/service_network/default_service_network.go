@@ -1911,9 +1911,11 @@ func waitUntilPortIsOpenWithTimeout(
 		err        error
 	)
 
-	// if the fist check goes wrong we execute the retry strategy
 	ticker := time.NewTicker(waitForPortsOpenRetriesDelayMilliseconds * time.Millisecond)
 	defer ticker.Stop()
+
+	logrus.Debugf("Checking if port spec '%+v' in '%v' is open...", portSpec, ipAddr)
+
 	for {
 		if time.Now().After(finishTime) {
 			return stacktrace.Propagate(err, "Unsuccessful ports check for IP '%s' and port spec '%+v', "+
@@ -1925,7 +1927,6 @@ func waitUntilPortIsOpenWithTimeout(
 				timeout.String(),
 			)
 		}
-		//retrying
 		now := time.Now()
 		scanPortTimeout := finishTime.Sub(now)
 		if err = scanPort(ipAddr, &portSpec, scanPortTimeout); err == nil {

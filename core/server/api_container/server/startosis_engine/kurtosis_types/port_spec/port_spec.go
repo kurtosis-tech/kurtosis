@@ -36,7 +36,7 @@ func NewPortSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.Uint64InRange(value, TransportProtocolAttr, minPortNumber, maxPortNumber)
+						return builtin_argument.Uint64InRange(value, PortNumberAttr, minPortNumber, maxPortNumber)
 					},
 				},
 				{
