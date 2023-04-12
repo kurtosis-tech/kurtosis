@@ -86,12 +86,12 @@ func executeInternal(
 		bodyKey:       starlark.String(responseBody),
 		statusCodeKey: starlark.MakeInt(response.StatusCode),
 	}
-	for _, query := range recipe.extractors {
-		extractedValue, err := Extractor(query, body)
+	for _, query := range extractors {
+		extractedValue, err := Extractor(query, responseBody)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred running extractor '%v' on recipe", query)
 		}
-		resultDict[fmt.Sprintf("%v.%v", ExtractKeyPrefix, query)] = extractedValue
+		resultDict[fmt.Sprintf("%v.%v", extractKeyPrefix, query)] = extractedValue
 	}
 	return resultDict, nil
 }
