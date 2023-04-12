@@ -41,32 +41,32 @@ MYSQL_DEFAULT_PORT = 3036
 
 
 def create_database(plan, database_name, database_user, database_password, seed_script_artifact = None):
-files = {}
-# Given that scripts on /docker-entrypoint-initdb.d/ are executed sorted by filename
-if seed_script_artifact != None:
-files["/docker-entrypoint-initdb.d"] = seed_script_artifact
-service_name = "mysql-{}".format(database_name)
-# Add service
-mysql_service = plan.add_service(
-name = service_name,
-config = ServiceConfig(
-image = MYSQL_IMAGE,
-ports = {
-"db": PortSpec(
-number = MYSQL_DEFAULT_PORT,
-transport_protocol = "TCP",
-application_protocol = "http",
-),
-},
-files = files,
-env_vars = {
-"MYSQL_ROOT_PASSWORD": ROOT_DEFAULT_PASSWORD,
-"MYSQL_DATABASE": database_name,
-"MYSQL_USER": database_user,
-"MYSQL_PASSWORD":  database_password,
-},
-)
-)
+    files = {}
+    # Given that scripts on /docker-entrypoint-initdb.d/ are executed sorted by filename
+    if seed_script_artifact != None:
+        files["/docker-entrypoint-initdb.d"] = seed_script_artifact
+    service_name = "mysql-{}".format(database_name)
+    # Add service
+    mysql_service = plan.add_service(
+        name = service_name,
+        config = ServiceConfig(
+            image = MYSQL_IMAGE,
+            ports = {
+                "db": PortSpec(
+                    number = MYSQL_DEFAULT_PORT,
+                    transport_protocol = "TCP",
+                    application_protocol = "http",
+                ),
+            },
+            files = files,
+            env_vars = {
+                "MYSQL_ROOT_PASSWORD": ROOT_DEFAULT_PASSWORD,
+                "MYSQL_DATABASE": database_name,
+                "MYSQL_USER": database_user,
+                "MYSQL_PASSWORD":  database_password,
+            },
+        )
+    )
 . . .
 ```
 
