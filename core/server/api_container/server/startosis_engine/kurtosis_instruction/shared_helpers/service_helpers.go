@@ -37,35 +37,45 @@ func ExecuteServiceAssertionWithRecipe(
 			executionTickChan <- tick
 		}
 	}()
-	/*
-		By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached,
-		the underlying request is aborted.
-		'timeoutChan' serves as an exit signal for the loop repeating the recipe execution
-	*/
+	// By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached, the underlying
+	// request is aborted. 'timeoutChan' serves as an exit signal for the loop repeating the recipe execution.
 	contextWithDeadline, cancelContext := context.WithTimeout(ctx, timeout)
 	defer cancelContext()
 	timeoutChan := time.After(timeout)
 
 	execFunc := func() (map[string]starlark.Comparable, error) {
-		lastResult, recipeErr := recipe.Execute(contextWithDeadline, serviceNetwork, runtimeValueStore, serviceName)
-		if recipeErr != nil {
-			return lastResult, recipeErr
-		}
-		_, found := lastResult[valueField]
-		if !found {
-			return lastResult, stacktrace.NewError("Error extracting value from key '%v'. This is a bug in Kurtosis.", valueField)
-		}
-		return lastResult, nil
+		return execRequestAndGetValue(contextWithDeadline, serviceNetwork, runtimeValueStore, serviceName, recipe, valueField)
 	}
-	assertFunc := func(lastResult map[string]starlark.Comparable) error {
-		assertErr := assert.Assert(lastResult[valueField], assertion, target)
-		if assertErr != nil {
-			return assertErr
-		}
-		return nil
+	assertFunc := func(currentResult map[string]starlark.Comparable) error {
+		return assertResult(currentResult[valueField], assertion, target)
 	}
 	return executeServiceAssertionWithRecipeWithTicker(serviceName, execFunc, assertFunc, executionTickChan, timeoutChan)
 
+}
+
+func assertResult(currentResult starlark.Comparable, assertion string, target starlark.Comparable) error {
+	err := assert.Assert(currentResult, assertion, target)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func execRequestAndGetValue(ctx context.Context,
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	serviceName service.ServiceName,
+	recipe recipe.Recipe,
+	valueField string) (map[string]starlark.Comparable, error) {
+	resultMap, err := recipe.Execute(ctx, serviceNetwork, runtimeValueStore, serviceName)
+	if err != nil {
+		return resultMap, err
+	}
+	_, found := resultMap[valueField]
+	if !found {
+		return resultMap, stacktrace.NewError("Error extracting value from key '%v'. This is a bug in Kurtosis.", valueField)
+	}
+	return resultMap, nil
 }
 
 /*
@@ -75,15 +85,17 @@ Executes 'execFunc':
     -- If it succeeds, returns.
     -- If it errors, retry after the next tick from 'executionTickChan'
 
-If a signal is sent to 'timeoutChan', loop will be broken, last value is returned,
+If a signal is sent to 'interruptChan', loop will be broken, last value is returned,
 alongside if the last error (assert or exec)
+
+Returns the last output of the exec, number of tries before return and the error (if any)
 */
 func executeServiceAssertionWithRecipeWithTicker(
 	serviceName service.ServiceName,
 	execFunc func() (map[string]starlark.Comparable, error),
 	assertFunc func(map[string]starlark.Comparable) error,
 	executionTickChan <-chan time.Time,
-	timeoutChan <-chan time.Time,
+	interruptChan <-chan time.Time,
 ) (map[string]starlark.Comparable, int, error) {
 	var recipeErr error
 	var assertErr error
@@ -92,7 +104,7 @@ func executeServiceAssertionWithRecipeWithTicker(
 
 	for {
 		select {
-		case <-timeoutChan:
+		case <-interruptChan:
 			if recipeErr != nil {
 				return lastResult, tries, stacktrace.NewError("Recipe execution timed-out waiting for the recipe execution to become valid on service '%v'. Tried '%v' times. Last recipe execution error was:\n '$%v'\n", serviceName, tries, recipeErr)
 			}
