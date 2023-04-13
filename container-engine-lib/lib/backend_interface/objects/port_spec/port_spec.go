@@ -4,11 +4,16 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+const (
+	DefaultWaitTimeoutDurationStr = "15s"
+	DisableWaitTimeoutDurationStr = ""
+)
+
 type PortSpec struct {
 	number              uint16
 	transportProtocol   TransportProtocol
 	applicationProtocol *string
-	wait                *wait
+	waitTimeout         string
 }
 
 /*
@@ -18,7 +23,7 @@ func NewPortSpec(
 	number uint16,
 	transportProtocol TransportProtocol,
 	maybeApplicationProtocol string,
-	wait *wait,
+	waitTimeout string,
 ) (*PortSpec, error) {
 	var appProtocol *string
 	if maybeApplicationProtocol != "" {
@@ -30,15 +35,11 @@ func NewPortSpec(
 		return nil, stacktrace.NewError("Unrecognized transportProtocol '%v'", transportProtocol.String())
 	}
 
-	if wait == nil {
-		wait = newWaitWithDefaultValues()
-	}
-
 	portSpec := &PortSpec{
 		number:              number,
 		transportProtocol:   transportProtocol,
 		applicationProtocol: appProtocol,
-		wait:                wait,
+		waitTimeout:         waitTimeout,
 	}
 
 	return portSpec, nil
@@ -56,7 +57,6 @@ func (spec *PortSpec) GetMaybeApplicationProtocol() *string {
 	return spec.applicationProtocol
 }
 
-//TODO we probably will rename it, it's in the design stage
-func (spec *PortSpec) GetWait() *wait {
-	return spec.wait
+func (spec *PortSpec) GetWaitTimeout() string {
+	return spec.waitTimeout
 }
