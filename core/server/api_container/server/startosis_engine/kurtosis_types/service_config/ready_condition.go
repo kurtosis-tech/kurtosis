@@ -55,9 +55,7 @@ func NewReadyConditionType() *kurtosis_type_constructor.KurtosisTypeConstructor 
 					Name:              TargetAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Comparable],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, FieldAttr)
-					},
+					Validator:         nil,
 				},
 				{
 					Name:              IntervalAttr,
