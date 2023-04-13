@@ -7,8 +7,10 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -47,22 +49,35 @@ func main() {
 		CallerPrettyfier:          nil,
 	})
 
-	if err := commands.RootCmd.Execute(); err != nil {
-		if !displayErrorMessageToCli(err) {
-			os.Exit(errorExitCode)
-		}
+	err := commands.RootCmd.Execute()
+	exitCode := extractExitCodeAfterExecution(err)
+	os.Exit(exitCode)
+}
 
-		maybeCleanedError := out.GetErrorMessageToBeDisplayedOnCli(err)
-		errorMessageFromCli := maybeCleanedError.Error()
+func extractExitCodeAfterExecution(err error) int {
+	defer out.RemoveLogFiles()
 
-		commands.RootCmd.PrintErrln(errorPrefix, errorMessageFromCli)
-		// if unknown command is entered - display help command
-		if strings.Contains(errorMessageFromCli, commandNotFound) {
-			commands.RootCmd.PrintErrf("Run '%v --help' for usage.\n", commands.RootCmd.CommandPath())
-		}
-		os.Exit(errorExitCode)
+	if err == nil {
+		return successExitCode
 	}
-	os.Exit(successExitCode)
+
+	if !displayErrorMessageToCli(err) {
+		return errorExitCode
+	}
+
+	maybeCleanedError := out.GetErrorMessageToBeDisplayedOnCli(err)
+	errorMessageFromCli := maybeCleanedError.Error()
+
+	fullErrorMessage := fmt.Sprintf("%v %v", errorPrefix, errorMessageFromCli)
+	commands.RootCmd.PrintErrln(output_printers.FormatError(fullErrorMessage))
+
+	// if unknown command is entered - display help command
+	if strings.Contains(errorMessageFromCli, commandNotFound) {
+		helpUsageText := fmt.Sprintf("Run '%v --help' for usage.\n", commands.RootCmd.CommandPath())
+		commands.RootCmd.PrintErrf(output_printers.FormatError(helpUsageText))
+	}
+
+	return errorExitCode
 }
 
 func displayErrorMessageToCli(err error) bool {

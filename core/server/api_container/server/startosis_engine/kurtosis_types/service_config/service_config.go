@@ -115,7 +115,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 				{
 					Name:              ReadyConditionsAttr,
 					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*ReadyConditions],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*ReadyCondition],
 					Validator:         nil,
 				},
 			},
@@ -285,8 +285,8 @@ func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.S
 	return builder.Build(), nil
 }
 
-func (config *ServiceConfig) GetReadyConditions() (*ReadyConditions, *startosis_errors.InterpretationError) {
-	readyConditions, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*ReadyConditions](config.KurtosisValueTypeDefault, ReadyConditionsAttr)
+func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_errors.InterpretationError) {
+	readyConditions, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*ReadyCondition](config.KurtosisValueTypeDefault, ReadyConditionsAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

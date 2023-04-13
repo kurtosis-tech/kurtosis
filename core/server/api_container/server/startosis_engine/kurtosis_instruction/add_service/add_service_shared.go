@@ -146,7 +146,7 @@ func runServiceReadinessCheck(
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	serviceName service.ServiceName,
-	readyConditions *service_config.ReadyConditions,
+	readyConditions *service_config.ReadyCondition,
 ) error {
 	if readyConditions != nil {
 

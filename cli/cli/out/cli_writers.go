@@ -43,10 +43,20 @@ func PrintOutLn(msg string) {
 	if _, printErr := fmt.Fprintln(std.out, msg); printErr != nil {
 		logrus.Errorf("Error printing message to StdOut. Message was:\n%s\nError was:\n%v", msg, printErr.Error())
 	}
+
+	printLogsToFile(msg)
+
 }
 
 func PrintErrLn(msg string) {
 	if _, printErr := fmt.Fprintln(std.err, msg); printErr != nil {
 		logrus.Errorf("Error printing message to StdErr. Message was:\n%s\nError was:\n%v", msg, printErr.Error())
 	}
+
+	printLogsToFile(msg)
+}
+
+func printLogsToFile(msg string) {
+	fileLogger := GetFileLogger()
+	fileLogger.Println(msg)
 }

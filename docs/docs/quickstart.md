@@ -2,6 +2,7 @@
 title: Quickstart
 sidebar_label: Quickstart
 slug: /quickstart
+toc_max_heading_level: 2
 ---
 
 Introduction
@@ -19,17 +20,20 @@ For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, o
 - Parameterize your application setup in order to automate loading data into your API
 :::
 
-<details><summary>Getting help and giving feedback</summary>
+<details><summary>TL;DR Version</summary>
 
-There are many ways to get help and give feedback. First, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, here are some ways to get support:
+This quickstart is in a "code along" format. If you'd prefer to dive straight into running the end results and exploring the code, [install Kurtosis](#setup), clone the [`awesome-kurtosis` repository][awesome-kurtosis-repo], and then run:
 
-- `kurtosis feedback "my feedback"` will take you to our [Github issue creation page](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) to file an issue with pre-filled text `my feedback`.  Passing in `--bug` or `--docs` will take you to the specific Issue template for bug reports or docs issues, respectively
-- `kurtosis feedback --calendly` opens a calendly link for a personal help session with [our cofounder Kevin][kevin-linked].
-- `kurtosis discord` command will open up our [Discord](https://discord.com/channels/783719264308953108/783719264308953111), where you can get live support via chat with our team.
+```bash
+cd awesome-kurtosis/quickstart && kurtosis run --enclave quickstart main.star 
+```
 
-**Don't suffer in silence - we want to help and hear from you!**
+Now you're running the application in this quickstart on your laptop.
 
+If you want to see how to run tests over Kurtosis environments, `cd` into [`go-test`][go-test-example] or [`ts-test`][ts-test-example] and refer to the README to run a simple Go or Typescript test against this app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
 </details>
+
+If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us in our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111) or on [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)!
 
 Setup
 -----
@@ -47,10 +51,6 @@ First, create and `cd` into a directory to hold the project you'll be working on
 mkdir kurtosis-quickstart && cd kurtosis-quickstart
 ```
 
-:::tip
-All code blocks in this quickstart can be copied by hovering over the block and clicking the clipboard that appears in the right.
-:::
-
 Next, create a Starlark file called `main.star` inside your new directory with the following contents (more on Starlark in the "Review" section coming up soon):
 
 ```python
@@ -59,6 +59,7 @@ def run(plan, args):
 ```
 
 :::tip
+If you're using Visual Studio Code, you may find our [Kurtosis VS Code Extension][vscode-plugin] helpful when writing Starlark.
 If you're using Vim, you can add the following to your `.vimrc` to get Starlark syntax highlighting:
 
 ```
@@ -173,7 +174,7 @@ b6fc024deefe   postgres   postgres: 5432/tcp -> postgresql://127.0.0.1:59299   R
 ### Review: Run Postgres
 So what actually happened? Three things actually:
 
-1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](https://docs.kurtosis.com/reference/plan) for what you wanted done (in this case, starting a Postgres instance)
+1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](./concepts-reference/plan.md) for what you wanted done (in this case, starting a Postgres instance)
 1. **Validation:** Kurtosis then ran several validations against your plan, including validating that the Postgres image exists
 1. **Execution:** Kurtosis finally executed the validated plan inside the enclave to start a Postgres container
 
@@ -960,11 +961,12 @@ Let's review. In this tutorial you have:
 This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
 
 To learn more about how Kurtosis is used, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of Kurtosis in action, including:
+- How to run a simple [Go test][go-test-example] or [Typescript test][ts-test-example] against the app we just built
 - The [Ethereum package][ethereum-package], used by the Ethereum Foundation, which can be used to set up local testnets 
 - A parameterized package for standing up an [n-node Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
 - The [NEAR package][near-package] for local dApp development in the NEAR ecosystem
 
-Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), to [email us](mailto:feedback@kurtosistech.com), or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
+Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
 
 Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), [join the community in our Discord](https://discord.com/channels/783719264308953108/783719264308953111), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
 
@@ -979,7 +981,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 
 <!--------------------------- Explanations ------------------------------------>
 [architecture-explanation]: ./explanations/architecture.md
-[enclaves-reference]: ./reference/enclaves.md
+[enclaves-reference]: ./concepts-reference/enclaves.md
 [services-explanation]: ./explanations/architecture.md#services
 [reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
 [why-we-built-kurtosis-explanation]: ./explanations/why-we-built-kurtosis.md
@@ -988,30 +990,28 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 
 <!--------------------------- Reference ------------------------------------>
 <!-- CLI Commands Reference -->
-[cli-reference]: ./reference/cli/cli.md
-[kurtosis-run-reference]: ./reference/cli/run-starlark.md
-[kurtosis-clean-reference]: ./reference/cli/clean.md
-[kurtosis-enclave-inspect-reference]: ./reference/cli/enclave-inspect.md
-[kurtosis-files-upload-reference]: ./reference/cli/files-upload.md
-[kurtosis-feedback-reference]: ./reference/cli/feedback.md
-[kurtosis-twitter]: ./reference/cli/twitter.md
-[starlark-reference]: ./reference/starlark.md
+[cli-reference]: /cli
+[kurtosis-run-reference]: ./cli-reference/run-starlark.md
+[kurtosis-clean-reference]: ./cli-reference/clean.md
+[kurtosis-enclave-inspect-reference]: ./cli-reference/enclave-inspect.md
+[kurtosis-files-upload-reference]: ./cli-reference/files-upload.md
+[kurtosis-feedback-reference]: ./cli-reference/feedback.md
+[kurtosis-twitter]: ./cli-reference/twitter.md
+[starlark-reference]: ./concepts-reference/starlark.md
 
 <!-- SL Instructions Reference-->
-[starlark-instructions-reference]: ./reference/starlark-instructions.md
-[upload-files-reference]: ./reference/starlark-instructions.md#upload_files
-[request-reference]: ./reference/starlark-instructions.md#request
-[exec-reference]: ./reference/starlark-instructions.md#exec
+[request-reference]: ./starlark-reference/plan.md#request
+[exec-reference]: ./starlark-reference/plan.md#exec
 
 <!-- Reference -->
-[multi-phase-runs-reference]: ./reference/multi-phase-runs.md
-[kurtosis-yml-reference]: ./reference/kurtosis-yml.md
-[packages-reference]: ./reference/packages.md
-[runnable-packages-reference]: ./reference/packages.md#runnable-packages
-[locators-reference]: ./reference/locators.md
-[plan-reference]: ./reference/plan.md
-[future-references-reference]: ./reference/future-references.md
-[files-artifacts-reference]: ./reference/files-artifacts.md
+[multi-phase-runs-reference]: ./concepts-reference/multi-phase-runs.md
+[kurtosis-yml-reference]: ./concepts-reference/kurtosis-yml.md
+[packages-reference]: ./concepts-reference/packages.md
+[runnable-packages-reference]: ./concepts-reference/packages.md#runnable-packages
+[locators-reference]: ./concepts-reference/locators.md
+[plan-reference]: ./concepts-reference/plan.md
+[future-references-reference]: ./concepts-reference/future-references.md
+[files-artifacts-reference]: ./concepts-reference/files-artifacts.md
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->
@@ -1020,10 +1020,11 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [data-package-example-main.star]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/main.star
 [data-package-example-seed-tar]: https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/data-package/dvd-rental-data.tar
 [cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
+[go-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/go-test
+[ts-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/ts-test
 
 <!-- Misc -->
 [homepage]: home.md
-[kevin-linked]: https://www.linkedin.com/in/kevintoday/
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
 [bazel-github]: https://github.com/bazelbuild/bazel/
@@ -1033,3 +1034,4 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [waku-package]: https://github.com/logos-co/wakurtosis
 [near-package]: https://github.com/kurtosis-tech/near-package
 [iterm]: https://iterm2.com/
+[vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension

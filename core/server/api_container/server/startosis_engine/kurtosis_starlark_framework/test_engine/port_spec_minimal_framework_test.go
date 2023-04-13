@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -23,10 +22,6 @@ func newPortSpecMinimalTestCase(t *testing.T) *portSpecMinimalTestCase {
 
 func (t *portSpecMinimalTestCase) GetId() string {
 	return fmt.Sprintf("%s_%s", port_spec.PortSpecTypeName, "full")
-}
-
-func (t *portSpecMinimalTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return port_spec.NewPortSpecType()
 }
 
 func (t *portSpecMinimalTestCase) GetStarlarkCode() string {

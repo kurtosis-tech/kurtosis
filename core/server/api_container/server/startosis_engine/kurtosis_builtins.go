@@ -81,15 +81,15 @@ func KurtosisHelpers(recursiveInterpret func(moduleId string, scriptContent stri
 // Example: ServiceConfig, PortSpec, etc.
 func KurtosisTypeConstructors() []*starlark.Builtin {
 	return []*starlark.Builtin{
-		starlark.NewBuiltin(recipe.ExecRecipeName, recipe.MakeExecRequestRecipe),
-		starlark.NewBuiltin(recipe.GetHttpRecipeTypeName, recipe.MakeGetHttpRequestRecipe),
-		starlark.NewBuiltin(recipe.PostHttpRecipeTypeName, recipe.MakePostHttpRequestRecipe),
+		starlark.NewBuiltin(recipe.ExecRecipeTypeName, recipe.NewExecRecipeType().CreateBuiltin()),
+		starlark.NewBuiltin(recipe.GetHttpRecipeTypeName, recipe.NewGetHttpRequestRecipeType().CreateBuiltin()),
+		starlark.NewBuiltin(recipe.PostHttpRecipeTypeName, recipe.NewPostHttpRequestRecipeType().CreateBuiltin()),
 		starlark.NewBuiltin(connection_config.ConnectionConfigTypeName, connection_config.NewConnectionConfigType().CreateBuiltin()),
 		starlark.NewBuiltin(packet_delay_distribution.NormalPacketDelayDistributionTypeName, packet_delay_distribution.NewNormalPacketDelayDistributionType().CreateBuiltin()),
 		starlark.NewBuiltin(packet_delay_distribution.UniformPacketDelayDistributionTypeName, packet_delay_distribution.NewUniformPacketDelayDistributionType().CreateBuiltin()),
 		starlark.NewBuiltin(port_spec.PortSpecTypeName, port_spec.NewPortSpecType().CreateBuiltin()),
 		starlark.NewBuiltin(service_config.ServiceConfigTypeName, service_config.NewServiceConfigType().CreateBuiltin()),
 		starlark.NewBuiltin(update_service_config.UpdateServiceConfigTypeName, update_service_config.NewUpdateServiceConfigType().CreateBuiltin()),
-		starlark.NewBuiltin(service_config.ReadyConditionsTypeName, service_config.NewReadyConditionsType().CreateBuiltin()),
+		starlark.NewBuiltin(service_config.ReadyConditionTypeName, service_config.NewReadyConditionType().CreateBuiltin()),
 	}
 }

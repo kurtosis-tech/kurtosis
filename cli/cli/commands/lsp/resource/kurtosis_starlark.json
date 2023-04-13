@@ -28,7 +28,7 @@
         {
           "name": "configs",
           "type": "dict<string, ServiceConfig>",
-          "content": "service_name",
+          "content": "configs",
           "detail": "A map of service_name -> ServiceConfig for all services that needs to be added."
         }
       ],
@@ -371,7 +371,7 @@
         },
         {
           "name": "extract",
-          "type": "string",
+          "type": "dict(string, string)",
           "content": "extract?",
           "detail": "The extract dictionary takes in key-value pairs where: key is a way you refer to the extraction later on value is a 'jq' string that contains logic to extract from response body"
         }
@@ -398,18 +398,18 @@
         {
           "name": "content_type",
           "type": "string",
-          "content": "content_type",
+          "content": "content_type?",
           "detail": "The content type header of the request (e.g. application/json, text/plain, etc)"
         },
         {
           "name": "body",
           "type": "string",
-          "content": "body",
+          "content": "body?",
           "detail": "The body of the request"
         },
         {
           "name": "extract",
-          "type": "string",
+          "type": "dict(string, string)",
           "content": "extract?",
           "detail": "The extract dictionary takes in key-value pairs where: key is a way you refer to the extraction later on value is a 'jq' string that contains logic to extract from response body"
         }
@@ -484,7 +484,7 @@
     {
       "detail": "This can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic",
       "documentation": "",
-      "name": "ReadyConditions",
+      "name": "ReadyCondition",
       "params": [
         {
           "name": "recipe",
@@ -523,7 +523,7 @@
           "detail": "# The timeout value is the maximum time that the command waits for the assertion to be true\n Follows Go \"time.Duration\" format https://pkg.go.dev/time#ParseDuration"
         }
       ],
-      "returnType": "ReadyConditions"
+      "returnType": "ReadyCondition"
     },
     {
       "name": "ServiceConfig",
@@ -593,7 +593,7 @@
         },
         {
           "name": "ready_conditions",
-          "type": "ReadyConditions",
+          "type": "ReadyCondition",
           "content": "ready_conditions?",
           "detail": "This field can be used to check the service's readiness after this is started to confirm that it is ready to receive connections and traffic"
         }
