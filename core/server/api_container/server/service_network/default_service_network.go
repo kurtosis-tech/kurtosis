@@ -1297,7 +1297,10 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		startedService.GetRegistration().GetPrivateIP(),
 		startedService.GetPrivatePorts(),
 	); err != nil {
-		serviceLogs, err := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
+		serviceLogs, getServiceLogsErr := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
+		if getServiceLogsErr != nil {
+			serviceLogs = fmt.Sprintf("An error occurred while getting the service logs.\n Error:%v", getServiceLogsErr)
+		}
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
