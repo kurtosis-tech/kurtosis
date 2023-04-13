@@ -14,11 +14,15 @@ const emptyServiceName = ""
 func TestExecuteServiceAssertionWithRecipeWithTicker_ExecuteOnceAndTimeoutReached(t *testing.T) {
 	executionTickChan := make(chan time.Time, 2)
 	timeoutChan := make(chan time.Time, 2)
+	execRunCount := 0
+	assertRunCount := 0
 
 	execFunc := func() (map[string]starlark.Comparable, error) {
+		execRunCount += 1
 		return nil, stacktrace.NewError("Exec Error")
 	}
 	assertFunc := func(map[string]starlark.Comparable) error {
+		assertRunCount += 1
 		return nil
 	}
 	executionTickChan <- time.Now()
@@ -29,6 +33,8 @@ func TestExecuteServiceAssertionWithRecipeWithTicker_ExecuteOnceAndTimeoutReache
 	_, tries, err := executeServiceAssertionWithRecipeWithTicker(emptyServiceName, execFunc, assertFunc, executionTickChan, timeoutChan)
 	assert.NotNil(t, err)
 	assert.Equal(t, tries, 1)
+	assert.Equal(t, execRunCount, 1)
+	assert.Equal(t, assertRunCount, 0)
 }
 
 func TestExecuteServiceAssertionWithRecipeWithTicker_ExecuteTriceAndSucceeds(t *testing.T) {
@@ -51,9 +57,12 @@ func TestExecuteServiceAssertionWithRecipeWithTicker_ExecuteTriceAndSucceeds(t *
 		}
 		return nil
 	}
-	for i := 0; i < 10; i++ {
-		executionTickChan <- time.Now()
-	}
+	go func() {
+		for i := 0; i < 10; i++ {
+			time.Sleep(10 * time.Millisecond)
+			executionTickChan <- time.Now()
+		}
+	}()
 	_, tries, err := executeServiceAssertionWithRecipeWithTicker(emptyServiceName, execFunc, assertFunc, executionTickChan, timeoutChan)
 	assert.Nil(t, err)
 	assert.Equal(t, tries, 3)
