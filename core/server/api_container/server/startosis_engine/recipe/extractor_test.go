@@ -42,13 +42,20 @@ func TestExtractor_Success(t *testing.T) {
 	}
 }
 
-func TestExtractor_FailureQuery(t *testing.T) {
+func TestExtractor_FailureQueryNotFound(t *testing.T) {
 	queryList := []string{".not_found", ".list.[2]", ".dict.not_found"}
 	for i := range queryList {
 		result, err := Extractor(queryList[i], jsonObject)
 		assert.Nil(t, result)
 		assert.NotNil(t, err)
 	}
+}
+
+func TestExtractor_FailureQueryInvalid(t *testing.T) {
+	notValidQuery := "not valid query"
+	result, err := Extractor(notValidQuery, jsonObject)
+	assert.Nil(t, result)
+	assert.NotNil(t, err)
 }
 
 func TestExtractor_FailureInput(t *testing.T) {

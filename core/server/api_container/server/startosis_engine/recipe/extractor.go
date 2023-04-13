@@ -10,7 +10,7 @@ import (
 )
 
 func Extractor(query string, input []byte) (starlark.Comparable, error) {
-	logrus.Debugf("Running extractor against query '%v' and input '%v'", input, query)
+	logrus.Debugf("Running extractor against query '%v' and input '%v'", string(input), query)
 	jqQuery, err := gojq.Parse(query)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when parsing field extractor '%v'", query)
@@ -20,10 +20,10 @@ func Extractor(query string, input []byte) (starlark.Comparable, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred when parsing JSON response body:\n'%v'", jsonBody)
 	}
-	iter := jqQuery.Run(jsonBody)
+	matchIterator := jqQuery.Run(jsonBody)
 	parsedMatchList := []starlark.Value{}
 	for {
-		matchValue, ok := iter.Next()
+		matchValue, ok := matchIterator.Next()
 		if !ok {
 			break
 		}
@@ -33,7 +33,6 @@ func Extractor(query string, input []byte) (starlark.Comparable, error) {
 			continue
 		}
 		if matchValue != nil {
-			logrus.Debug("Match was not an error, start parsing...")
 			parsedMatchValue := parseJsonValueToStarlark(matchValue)
 			logrus.Debugf("Parsed successfully from %v to %v", matchValue, parsedMatchValue)
 			parsedMatchList = append(parsedMatchList, parsedMatchValue)
