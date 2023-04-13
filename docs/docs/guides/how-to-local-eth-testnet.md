@@ -325,7 +325,7 @@ And that's it! To recap this short guide, you:
 * Deployed a dApp and ran a simple test against it on the local Ethereum network
 * Configured the underlying Ethereum network to have 3 nodes
 
-We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or [email us](mailto:feedback@kurtosistech.com)!
+We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or in our [Discord](https://discord.com/channels/783719264308953108/783719264308953111).
 
 ### Other examples and guides
 We encourage you to check out our [quickstart](https://docs.kurtosis.com/quickstart) (where you’ll build a Postgres database and API on top) and our other examples in our [awesome-kurtosis repository](https://github.com/kurtosis-tech/awesome-kurtosis) where you’ll find some great examples, including packages for:
