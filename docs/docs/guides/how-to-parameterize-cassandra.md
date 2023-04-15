@@ -368,7 +368,7 @@ And that’s it! To recap this short guide, you:
 2. Added a few lines of code to our `main.star` file to parametrize your environment definition to increase the flexibility and use cases with which it can be used, and,
 3. Executed a remotely-hosted Starlark file that was part of what's called a [Kurtosis Package][packages] to demonstrate how your environment definition can be shared with other developers.
 
-We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via Github (`kurtosis feedback`) or [email us](mailto:feedback@kurtosistech.com)!
+We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via Github (`kurtosis feedback`) or in our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111).
 
 ### Other exercises you can do with your Cassandra cluster
 With your parameterized, reusable environment definition for a multi-node Cassandra cluster, feel free to:
