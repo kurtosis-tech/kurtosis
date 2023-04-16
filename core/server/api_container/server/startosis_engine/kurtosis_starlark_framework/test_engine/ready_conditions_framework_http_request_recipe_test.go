@@ -12,21 +12,21 @@ import (
 	"time"
 )
 
-type readyConditionsTestCase struct {
+type readyConditionsHttpRecipeTestCase struct {
 	*testing.T
 }
 
-func newReadyConditionsTestCase(t *testing.T) *readyConditionsTestCase {
-	return &readyConditionsTestCase{
+func newReadyConditionsHttpRecipeTestCase(t *testing.T) *readyConditionsHttpRecipeTestCase {
+	return &readyConditionsHttpRecipeTestCase{
 		T: t,
 	}
 }
 
-func (t *readyConditionsTestCase) GetId() string {
+func (t *readyConditionsHttpRecipeTestCase) GetId() string {
 	return service_config.ReadyConditionTypeName
 }
 
-func (t *readyConditionsTestCase) GetStarlarkCode() string {
+func (t *readyConditionsHttpRecipeTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%s(%s=%q, %s=%q, %s=%s), %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)",
 		service_config.ReadyConditionTypeName,
 		service_config.RecipeAttr,
@@ -50,7 +50,7 @@ func (t *readyConditionsTestCase) GetStarlarkCode() string {
 	)
 }
 
-func (t *readyConditionsTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t *readyConditionsHttpRecipeTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	receivedReadyConditions, ok := typeValue.(*service_config.ReadyCondition)
 	require.True(t, ok)
 
