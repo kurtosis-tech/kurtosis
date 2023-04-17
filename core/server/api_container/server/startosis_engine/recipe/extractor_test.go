@@ -36,7 +36,7 @@ func TestExtractor_Success(t *testing.T) {
 		starlark.NewList([]starlark.Value{starlark.MakeInt(1), starlark.String("a")}),
 	}
 	for i := range queryList {
-		result, err := Extractor(queryList[i], jsonObject)
+		result, err := extract(jsonObject, queryList[i])
 		assert.Nil(t, err)
 		assert.Equal(t, expectedList[i], result)
 	}
@@ -45,7 +45,7 @@ func TestExtractor_Success(t *testing.T) {
 func TestExtractor_FailureQueryNotFound(t *testing.T) {
 	queryList := []string{".not_found", ".list.[2]", ".dict.not_found"}
 	for i := range queryList {
-		result, err := Extractor(queryList[i], jsonObject)
+		result, err := extract(jsonObject, queryList[i])
 		assert.Nil(t, result)
 		assert.NotNil(t, err)
 	}
@@ -53,7 +53,7 @@ func TestExtractor_FailureQueryNotFound(t *testing.T) {
 
 func TestExtractor_FailureQueryInvalid(t *testing.T) {
 	notValidQuery := "not valid query"
-	result, err := Extractor(notValidQuery, jsonObject)
+	result, err := extract(jsonObject, notValidQuery)
 	assert.Nil(t, result)
 	assert.NotNil(t, err)
 }
@@ -62,7 +62,37 @@ func TestExtractor_FailureInput(t *testing.T) {
 	badInput := []byte(`{
 "key": "value"`)
 	trivialQuery := "."
-	result, err := Extractor(trivialQuery, badInput)
+	result, err := extract(badInput, trivialQuery)
 	assert.Nil(t, result)
 	assert.NotNil(t, err)
+}
+
+func TestRunExtractors_OutputKeys(t *testing.T) {
+	extractors := map[string]string{
+		"id":  ".integer",
+		"id2": ".str",
+	}
+	result, err := runExtractors(jsonObject, extractors)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]starlark.Comparable{
+		"extract.id":  starlark.MakeInt(1),
+		"extract.id2": starlark.String("a"),
+	}, result)
+}
+
+func TestRunExtractors_EmptyOutput(t *testing.T) {
+	extractors := map[string]string{}
+	result, err := runExtractors(jsonObject, extractors)
+	assert.Nil(t, err)
+	assert.NotNil(t, result)
+	assert.Len(t, result, 0)
+}
+
+func TestRunExtractors_FailureQueryInvalid(t *testing.T) {
+	extractors := map[string]string{
+		"id": ".does_not_exist",
+	}
+	result, err := runExtractors(jsonObject, extractors)
+	assert.NotNil(t, err)
+	assert.Nil(t, result)
 }

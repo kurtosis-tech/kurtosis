@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
+	"golang.org/x/exp/maps"
 	"io"
 	"net/http"
 	"reflect"
@@ -19,9 +20,8 @@ import (
 )
 
 const (
-	statusCodeKey    = "code"
-	bodyKey          = "body"
-	extractKeyPrefix = "extract"
+	statusCodeKey = "code"
+	bodyKey       = "body"
 
 	// Common attributes for both [Get|Post]HttpRequestRecipe
 	PortIdAttr   = "port_id"
@@ -86,13 +86,11 @@ func executeInternal(
 		bodyKey:       starlark.String(responseBody),
 		statusCodeKey: starlark.MakeInt(response.StatusCode),
 	}
-	for extractorName, query := range extractors {
-		extractedValue, err := Extractor(query, responseBody)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred running extractor '%v' on recipe", query)
-		}
-		resultDict[fmt.Sprintf("%v.%v", extractKeyPrefix, extractorName)] = extractedValue
+	extractDict, err := runExtractors(responseBody, extractors)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while running extractors from HTTP recipe")
 	}
+	maps.Copy(extractDict, resultDict)
 	return resultDict, nil
 }
 

@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
+	"golang.org/x/exp/maps"
 	"reflect"
 	"strings"
 )
@@ -41,6 +42,15 @@ func NewExecRecipeType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 							return interpretationErr
 						}
 						return nil
+					},
+				},
+				{
+					Name:              ExtractAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						_, interpretationErr := convertExtractorsToDict(true, value)
+						return interpretationErr
 					},
 				},
 			},
@@ -94,6 +104,15 @@ func (recipe *ExecRecipe) Execute(
 		return nil, stacktrace.NewError("Unexpected '%s' attribute for '%s'. Error was: \n%s",
 			CommandAttr, ExecRecipeTypeName, interpretationErr.Error())
 	}
+	rawExtractors, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
+		recipe.KurtosisValueTypeDefault, ExtractAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	extractors, interpretationErr := convertExtractorsToDict(found, rawExtractors)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
 
 	// execute recipe
 	var commandWithRuntimeValue []string
@@ -114,10 +133,16 @@ func (recipe *ExecRecipe) Execute(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceName)
 	}
-	return map[string]starlark.Comparable{
+	resultDict := map[string]starlark.Comparable{
 		execOutputKey:   starlark.String(commandOutput),
 		execExitCodeKey: starlark.MakeInt(int(exitCode)),
-	}, nil
+	}
+	extractDict, err := runExtractors([]byte(commandOutput), extractors)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while running extractors from exec recipe")
+	}
+	maps.Copy(extractDict, resultDict)
+	return resultDict, nil
 }
 
 func (recipe *ExecRecipe) ResultMapToString(resultMap map[string]starlark.Comparable) string {
