@@ -105,23 +105,20 @@ func (readyCondition *ReadyCondition) Copy() (builtin_argument.KurtosisValueType
 }
 
 func (readyCondition *ReadyCondition) GetRecipe() (recipe.Recipe, *startosis_errors.InterpretationError) {
-	var genericRecipe recipe.Recipe
-
-	httpRecipe, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[recipe.HttpRequestRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
-	genericRecipe = httpRecipe
 	//TODO we should rework the recipe types to inherit a single common type, this will avoid the double parsing here.
-	if interpretationErr != nil {
-		execRecipe, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
-		genericRecipe = execRecipe
-	} else if !found {
+	httpRecipe, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[recipe.HttpRequestRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
+	if (!found && interpretationErr == nil) {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
 			RecipeAttr, ReadyConditionTypeName)
 	}
-
-	return genericRecipe, nil
+	if (interpretationErr == nil) {
+		return httpRecipe, nil
+	}
+	execRecipe, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
+	if (interpretationErr == nil) {
+		return execRecipe, nil
+	}
+	return nil, interpretationErr
 }
 
 func (readyCondition *ReadyCondition) GetField() (string, *startosis_errors.InterpretationError) {
