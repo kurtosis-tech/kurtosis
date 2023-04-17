@@ -207,3 +207,8 @@ Starlark code successfully run. No output was returned.
 Congrats! You've just written two Kurtosis packages: one to instantiate the database and another to seed it with tables and data. 
 
 To recap, the [`mysql-package/mysql.star`](https://github.com/kurtosis-tech/mysql-package/blob/main/mysql.star) file on Github can be used as a building block for downstream Kurtosis packages to consume. You used it to set up an empty MySQL database instance while the [blog-mysql-seed/main.star](https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/blog-mysql-seed/main.star) package was used to create a database and seed it with data.
+
+<!--------------------------REFERENCES------------------------------>
+[installing-the-cli]: ./installing-the-cli.md#ii-install-the-cli
+[starting-docker]: ./installing-the-cli.md#i-install--start-docker
+[vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
