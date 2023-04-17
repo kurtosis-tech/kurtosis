@@ -103,21 +103,32 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context,
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	defer func() {
+		if !executionStartedSuccessfully {
+			cancelCtxFunc() // cancel the context as something went wrong
+		}
+	}()
+
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(packageRootPath, serializedParams, dryRun, parallelism)
 	if err != nil {
-		cancelCtxFunc() // manually call the cancel function as something went wrong
-		return nil, nil, stacktrace.Propagate(err, "Error preparing package for execution '%v'", packageRootPath)
+		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
+	}
+
+	err = enclaveCtx.uploadStarlarkPackage(executeStartosisPackageArgs.PackageId, packageRootPath)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Error uploading package '%s' prior to executing it", packageRootPath)
 	}
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisPackageArgs)
 	if err != nil {
-		cancelCtxFunc() // manually call the cancel function as something went wrong
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark package '%v'", packageRootPath)
 	}
 
 	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
+	executionStartedSuccessfully = true
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
@@ -132,17 +143,24 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, packageId string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	defer func() {
+		if !executionStartedSuccessfully {
+			cancelCtxFunc() // cancel the context as something went wrong
+		}
+	}()
+
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, serializedParams, dryRun, parallelism)
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
-		cancelCtxFunc() // manually call the cancel function as something went wrong
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark package '%v'", packageId)
 	}
 
 	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
+	executionStartedSuccessfully = true
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
@@ -351,12 +369,37 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(packageRootPath
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, packageRootPath)
 	}
+	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, serializedParams, dryRun, parallelism), nil
+}
 
-	logrus.Infof("Compressing package '%v' at '%v' for upload", kurtosisYaml.PackageName, packageRootPath)
+func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
+	logrus.Infof("Compressing package '%v' at '%v' for upload", packageId, packageRootPath)
 	compressedModule, err := shared_utils.CompressPath(packageRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", packageRootPath)
+		return stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", packageRootPath)
 	}
-	logrus.Infof("Uploading and executing package '%v'", kurtosisYaml.PackageName)
-	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, compressedModule, serializedParams, dryRun, parallelism), nil
+	logrus.Infof("Uploading and executing package '%v'", packageId)
+
+	client, err := enclaveCtx.client.UploadStarlarkPackage(context.Background())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error was encountered initiating the data upload to the API Container.")
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, emptypb.Empty](client)
+	_, err = clientStream.SendData(
+		packageId,
+		compressedModule,
+		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+				Data:              contentChunk,
+				PreviousChunkHash: previousChunkHash,
+				Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+					Name: packageId,
+				},
+			}, nil
+		},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
+	}
+	return nil
 }

@@ -240,6 +240,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasParallelism(): boolean;
   clearParallelism(): RunStarlarkPackageArgs;
 
+  getClonePackage(): boolean;
+  setClonePackage(value: boolean): RunStarlarkPackageArgs;
+  hasClonePackage(): boolean;
+  clearClonePackage(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -258,6 +263,7 @@ export namespace RunStarlarkPackageArgs {
     serializedParams: string,
     dryRun?: boolean,
     parallelism?: number,
+    clonePackage?: boolean,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -274,6 +280,11 @@ export namespace RunStarlarkPackageArgs {
   export enum ParallelismCase { 
     _PARALLELISM_NOT_SET = 0,
     PARALLELISM = 7,
+  }
+
+  export enum ClonePackageCase { 
+    _CLONE_PACKAGE_NOT_SET = 0,
+    CLONE_PACKAGE = 8,
   }
 }
 

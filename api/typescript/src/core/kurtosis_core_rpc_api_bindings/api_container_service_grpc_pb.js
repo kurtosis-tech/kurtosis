@@ -349,6 +349,18 @@ runStarlarkScript: {
     responseSerialize: serialize_api_container_api_StarlarkRunResponseLine,
     responseDeserialize: deserialize_api_container_api_StarlarkRunResponseLine,
   },
+  // Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
+uploadStarlarkPackage: {
+    path: '/api_container_api.ApiContainerService/UploadStarlarkPackage',
+    requestStream: true,
+    responseStream: false,
+    requestType: api_container_service_pb.StreamedDataChunk,
+    responseType: google_protobuf_empty_pb.Empty,
+    requestSerialize: serialize_api_container_api_StreamedDataChunk,
+    requestDeserialize: deserialize_api_container_api_StreamedDataChunk,
+    responseSerialize: serialize_google_protobuf_Empty,
+    responseDeserialize: deserialize_google_protobuf_Empty,
+  },
   // Executes a Starlark script on the user's behalf
 runStarlarkPackage: {
     path: '/api_container_api.ApiContainerService/RunStarlarkPackage',
