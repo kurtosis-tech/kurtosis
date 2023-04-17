@@ -33,7 +33,8 @@ builds:
           {{- end }}
         {{- end }}
     ldflags:
-      {{- if eq .Os "linux" }}-linkmode external -extldflags "-static"{{- end }}
+      - >-
+        {{- if eq .Os "linux" }}-linkmode external -extldflags "-static"{{- end }}
     tags:
       - osusergo
 # In order for releasing-to-Github to work, we have to create these archives
