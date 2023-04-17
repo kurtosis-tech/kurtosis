@@ -17,7 +17,7 @@ Specifically, to run a set of integration tests, an application must satisfy a s
 - We need to be able to easily link our databases into our microservices in different tests - so that teams building different features, or different microservices, can reference the databases as well without redoing work.
 - Ideally, we seed our databases in a way that is reproducible, parameterizable, and composable. One way to do this would involve writing configuration files, code, and shell scripts over Docker, or on bare metal - in which case we’d have to build these guarantees into our scripts.
 
-However, in this guide, we’re going to use a free tool, Kurtosis, that already has reproducibility, composability, and parameterizability built-in. Kurtosis is a composable build system for writing reproducible multi-container test environments, and can run on your own laptop or in your favorite CI provider.
+However, in this guide, we’re going to use a free tool, [Kurtosis][kurtosis-website], that already has reproducibility, composability, and parameterizability built-in. Kurtosis is a composable build system for writing reproducible multi-container test environments, and can run on your own laptop or in your favorite CI provider.
 
 Setup
 -----
@@ -31,7 +31,7 @@ Feel free to use the [official Kurtosis Starlark VS Code extension][vscode-plugi
 
 Instantiate a MySQL instance
 ----------------------------
-A Kurtosis package (written in Starlark) will be used to abstract away the interface with MySQL. To create one from the command line, begin by creating a simple folder:
+A Kurtosis package (written in [Starlark][starlark]) will be used to abstract away the interface with MySQL. To create one from the command line, begin by creating a simple folder:
 
 ```bash
 mkdir mysql-package && cd mysql-package
@@ -212,3 +212,5 @@ To recap, the [`mysql-package/mysql.star`](https://github.com/kurtosis-tech/mysq
 [installing-the-cli]: ./installing-the-cli.md#ii-install-the-cli
 [starting-docker]: ./installing-the-cli.md#i-install--start-docker
 [vscode-plugin]: https://marketplace.visualstudio.com/items?itemName=Kurtosis.kurtosis-extension
+[kurtosis-website]: https://www.kurtosis.com/
+[starlark]: ../concepts-reference/starlark.md
