@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.75.2](https://github.com/kurtosis-tech/kurtosis/compare/0.75.1...0.75.2) (2023-04-17)
+
+
+### Bug Fixes
+
+* Fix argument extraction logic when argument is present but is of wrong type ([#514](https://github.com/kurtosis-tech/kurtosis/issues/514)) ([0c97d83](https://github.com/kurtosis-tech/kurtosis/commit/0c97d83daea233d1687bc7a56dfd39035c1fc4d3))
+* use subnetworking over partitioning ([#491](https://github.com/kurtosis-tech/kurtosis/issues/491)) ([327cdcf](https://github.com/kurtosis-tech/kurtosis/commit/327cdcfb5b6d97805bcd9bf4bbbee7eb2270af94)), closes [#443](https://github.com/kurtosis-tech/kurtosis/issues/443)
+* wait command times out even if recipe is still executing ([#480](https://github.com/kurtosis-tech/kurtosis/issues/480)) ([9fd81fa](https://github.com/kurtosis-tech/kurtosis/commit/9fd81fadeb8662c39c20c2647b2fb9e2c5946506))
+
 ## [0.75.1](https://github.com/kurtosis-tech/kurtosis/compare/0.75.0...0.75.1) (2023-04-11)
 
 
