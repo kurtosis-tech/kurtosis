@@ -7,6 +7,8 @@ import (
 	"io"
 )
 
+// MockServerStream is a mock of GRPC ServerStream interface to facilitate testing the streaming capabilities this
+// package implements
 type MockServerStream struct {
 	currentReadIdx int
 	chunks         []*TestDataChunk
