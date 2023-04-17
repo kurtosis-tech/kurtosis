@@ -27,6 +27,10 @@ builds:
         {{- end }}
     tags:
       - osusergo
+    overrides:
+      - goos: linux
+        ldflags:
+          - -linkmode external -extldflags "-static"
 # In order for releasing-to-Github to work, we have to create these archives
 archives:
   - id: cli
