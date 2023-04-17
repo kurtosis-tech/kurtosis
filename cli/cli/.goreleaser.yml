@@ -15,16 +15,23 @@ builds:
       - arm64
     env:
       - CGO_ENABLED=1
-      # CC_WITH_DEFAULT AND CXX_WITH_DEFAULT values comes from CircleCI env variables, where clang and clang++ are
-      # default values
+      # Only override compilers if we are on CI, otherwise use the locally available C/C++ toolchain
       - >-
-        {{- if eq .Os "linux" }}
-          {{- if eq .Arch "amd64"}}CC=x86_64-linux-musl-gcc{{- end }}
-          {{- if eq .Arch "arm64"}}CC=aaarch64-linux-musl-gcc{{- end }}
-        {{- end }}
-        {{- if eq .Os "darwin" }}
-          {{ if index .Env "CI" }}CC=o64h-clang{{ end }}
-        {{- end }}
+        {{ if index .Env "CI" }}
+          {{- if eq .Os "linux" }}
+            {{- if eq .Arch "amd64"}}CC=x86_64-linux-musl-gcc{{- end }}
+            {{- if eq .Arch "arm64"}}CC=aarch64-linux-musl-gcc{{- end }}
+          {{- end }}
+          {{- if eq .Os "darwin" }}CC=o64h-clang{{- end }}
+        {{ end }}
+      - >-
+        {{ if index .Env "CI" }}
+          {{- if eq .Os "linux" }}
+            {{- if eq .Arch "amd64"}}CC=x86_64-linux-musl-g++{{- end }}
+            {{- if eq .Arch "arm64"}}CC=aarch64-linux-musl-g++{{- end }}
+          {{- end }}
+          {{- if eq .Os "darwin" }}CC=o64h-clang++{{- end }}
+        {{ end }}
     tags:
       - osusergo
     overrides:
