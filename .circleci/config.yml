@@ -208,6 +208,14 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
       - run: contexts-config-store/scripts/build.sh
 
+  build_grpc_file_transfer:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version>>"
+    steps:
+      - checkout
+      - <<: *abort_job_if_only_docs_changes
+      - run: grpc-file-transfer/scripts/build.sh
+
   build_name_generator:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version>>"
@@ -1004,6 +1012,12 @@ workflows:
                 - main
 
       - build_contexts_config_store:
+          filters:
+            branches:
+              ignore:
+                - main
+
+      - build_grpc_file_transfer:
           filters:
             branches:
               ignore:
