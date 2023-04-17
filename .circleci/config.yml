@@ -383,9 +383,6 @@ jobs:
     docker:
       - image: "docker/tilt-releaser@sha256:31e51c6441faa5021a20ebe84cf974145d2975f792dd880a5d1c2fa578818458"
     resource_class: large
-    environment:
-      CC_WITH_DEFAULT: clang
-      CXX_WITH_DEFAULT: clang++
     steps:
       - checkout
 
@@ -409,8 +406,8 @@ jobs:
           keys:
             - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
 
-      - run:
-          command: cli/cli/scripts/build.sh true
+      - run: |
+          cli/cli/scripts/build.sh true
 
       - save_cache:
           key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
