@@ -13,8 +13,6 @@ import (
 const (
 	testName              = "starlark_exec_test"
 	isPartitioningEnabled = false
-	defaultDryRun         = false
-	emptyParams           = "{}"
 )
 
 const (
@@ -54,6 +52,9 @@ var (
 	execCommandThatShouldFail          = []string{"false"}
 	execCommandThatShouldHaveLogOutput = []string{"echo", "hello"}
 
+	expectedLogOutputLength         = len(expectedLogOutput) - 1         // Length is calculated on non escaped \n
+	expectedAdvancedLogOutputLength = len(expectedAdvancedLogOutput) - 1 // Length is calculated on non escaped \n
+
 	// This command tests to ensure that the commands the user is running get passed exactly as-is to the Docker
 	// container. If Kurtosis code is magically wrapping the code with "sh -c", this will fail.
 	execCommandThatWillFailIfShWrapped = []string{"echo", "hello && hello"}
@@ -61,8 +62,8 @@ var (
 	testStarlarkScripts = []string{
 		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldWork), successExitCode, noExecOutput, 0),
 		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldFail), failureExitCode, noExecOutput, 0),
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldHaveLogOutput), successExitCode, expectedLogOutput, len(expectedLogOutput)),
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatWillFailIfShWrapped), successExitCode, expectedAdvancedLogOutput, len(expectedAdvancedLogOutput)),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldHaveLogOutput), successExitCode, expectedLogOutput, expectedLogOutputLength),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatWillFailIfShWrapped), successExitCode, expectedAdvancedLogOutput, expectedAdvancedLogOutputLength),
 	}
 )
 
