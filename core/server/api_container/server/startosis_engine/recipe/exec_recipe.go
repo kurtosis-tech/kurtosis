@@ -137,7 +137,7 @@ func (recipe *ExecRecipe) Execute(
 		execOutputKey:   starlark.String(commandOutput),
 		execExitCodeKey: starlark.MakeInt(int(exitCode)),
 	}
-	extractDict, err := runExtractors([]byte(commandOutput), extractors)
+	extractDict, err := runExtractors([]byte(fmt.Sprintf("%q", commandOutput)), extractors)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while running extractors from exec recipe")
 	}

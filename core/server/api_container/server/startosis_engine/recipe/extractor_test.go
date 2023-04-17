@@ -59,12 +59,36 @@ func TestExtractor_FailureQueryInvalid(t *testing.T) {
 }
 
 func TestExtractor_FailureInput(t *testing.T) {
-	badInput := []byte(`{
-"key": "value"`)
-	trivialQuery := "."
-	result, err := extract(badInput, trivialQuery)
-	assert.Nil(t, result)
-	assert.NotNil(t, err)
+	testInputs := map[string]string{
+		"1":       ".",
+		"\"hi\"":  "length",
+		"\"bye\"": ".",
+	}
+	testOutputs := []any{
+		starlark.MakeInt(1),
+		starlark.MakeInt(2),
+		starlark.String("bye"),
+	}
+	index := 0
+	for input, query := range testInputs {
+		result, err := extract([]byte(input), query)
+		assert.Nil(t, err)
+		assert.Equal(t, testOutputs[index], result)
+		index += 1
+	}
+}
+
+func TestExtractor_SimpleValues(t *testing.T) {
+	extractors := map[string]string{
+		"id":  ".integer",
+		"id2": ".str",
+	}
+	result, err := runExtractors(jsonObject, extractors)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]starlark.Comparable{
+		"extract.id":  starlark.MakeInt(1),
+		"extract.id2": starlark.String("a"),
+	}, result)
 }
 
 func TestRunExtractors_OutputKeys(t *testing.T) {
