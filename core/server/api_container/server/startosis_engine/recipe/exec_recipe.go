@@ -176,6 +176,23 @@ func (recipe *ExecRecipe) CreateStarlarkReturnValue(resultUuid string) (*starlar
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error happened while creating exec return value, setting field '%v'", execOutputKey)
 	}
+
+	rawExtractors, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
+		recipe.KurtosisValueTypeDefault, ExtractAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	extractors, interpretationErr := convertExtractorsToDict(found, rawExtractors)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	for extractorKey := range extractors {
+		fullExtractorKey := fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)
+		err = dict.SetKey(starlark.String(fullExtractorKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, fullExtractorKey)))
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("An error has occurred when creating return value for request recipe, setting field '%v'", fullExtractorKey)
+		}
+	}
 	dict.Freeze()
 	return dict, nil
 }
