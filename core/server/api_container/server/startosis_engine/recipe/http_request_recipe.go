@@ -90,7 +90,7 @@ func executeInternal(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while running extractors from HTTP recipe")
 	}
-	maps.Copy(extractDict, resultDict)
+	maps.Copy(resultDict, extractDict)
 	return resultDict, nil
 }
 

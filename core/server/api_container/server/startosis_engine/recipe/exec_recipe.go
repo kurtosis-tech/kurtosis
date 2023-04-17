@@ -141,7 +141,7 @@ func (recipe *ExecRecipe) Execute(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while running extractors from exec recipe")
 	}
-	maps.Copy(extractDict, resultDict)
+	maps.Copy(resultDict, extractDict)
 	return resultDict, nil
 }
 

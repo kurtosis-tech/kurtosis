@@ -38,10 +38,14 @@ def run(plan, args):
 def run(plan, args):
 	exec_recipe = ExecRecipe(
 		command = %v,
+		extract = {
+			"len": "length" 
+		}
 	)
 	exec_result = plan.exec(recipe=exec_recipe, service_name="test", acceptable_codes=[0], skip_code_check=True)
 	plan.assert(exec_result["code"], "==", %d)
 	plan.assert(exec_result["output"], "==", "%s")
+	plan.assert(exec_result["extract.len"], "==", %d)
 `
 )
 
@@ -55,10 +59,10 @@ var (
 	execCommandThatWillFailIfShWrapped = []string{"echo", "hello && hello"}
 
 	testStarlarkScripts = []string{
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldWork), successExitCode, noExecOutput),
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldFail), failureExitCode, noExecOutput),
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldHaveLogOutput), successExitCode, expectedLogOutput),
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatWillFailIfShWrapped), successExitCode, expectedAdvancedLogOutput),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldWork), successExitCode, noExecOutput, 0),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldFail), failureExitCode, noExecOutput, 0),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldHaveLogOutput), successExitCode, expectedLogOutput, len(expectedLogOutput)),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatWillFailIfShWrapped), successExitCode, expectedAdvancedLogOutput, len(expectedAdvancedLogOutput)),
 	}
 )
 
