@@ -22,7 +22,9 @@ For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, o
 
 <details><summary>TL;DR Version</summary>
 
-This quickstart is in a "code along" format. If you'd prefer to dive straight into running the end results and exploring the code, [you can do so in the browser using Gitpod](https://gitpod.io/?editor=code#https://github.com/kurtosis-tech/quickstart-gitpod)
+This quickstart is in a "code along" format. You can also dive straight into running the end results and exploring the code too.
+ 
+**Player One: [Start](https://gitpod.io/?editor=code#https://github.com/kurtosis-tech/quickstart-gitpod)**
  
 </details>
 
