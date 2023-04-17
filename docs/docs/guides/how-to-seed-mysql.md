@@ -8,44 +8,58 @@ sidebar_position: 6
 
 Introduction
 ------------
-In this guide, you will programmatically seed a MySQL database for integration tests in an ExpressJS application. ExpressJS can be replaced with any containerized microservice framework you wish.
+In this guide, you will programmatically seed a MySQL database for integration tests in an ExpressJS application. ExpressJS can be replaced with any containerized microservice framework you wish to use.
 
-In general, to run a set of integration tests, an application must satisfy a series of requirements:
+Specifically, to run a set of integration tests, an application must satisfy a series of requirements:
 
-- Our test environments need to be instantiated and run the same way every test, or else they’ll be flaky.
+- Our test environments need to be instantiated and run the same way for every test, or else they’ll be flaky.
 - The seed data can easily be changed for our application across tests, so we can test across different scenarios.
 - We need to be able to easily link our databases into our microservices in different tests - so that teams building different features, or different microservices, can reference the databases as well without redoing work.
 - Ideally, we seed our databases in a way that is reproducible, parameterizable, and composable. One way to do this would involve writing configuration files, code, and shell scripts over Docker, or on bare metal - in which case we’d have to build these guarantees into our scripts.
 
 However, in this guide, we’re going to use a free tool, Kurtosis, that already has reproducibility, composability, and parameterizability built-in. Kurtosis is a composable build system for writing reproducible multi-container test environments, and can run on your own laptop or in your favorite CI provider.
 
-# How to:
+Setup
+-----
+Before you proceed, make sure you have:
+* [Installed and started the Docker engine on your local machine][starting-docker]
+* [Installed the Kurtosis CLI (or upgraded it to the latest release, if you already have the CLI installed)][installing-the-cli]
 
-First, install Kurtosis following the instructions at the [docs](https://docs.kurtosis.com/install). Kurtosis uses the Starlark language to programmatically define our system, seed our data, and test behavior.
+:::tip Use the Starlark VS Code Extension
+Feel free to use the [official Kurtosis Starlark VS Code extension][vscode-plugin] when writing Starlark with VSCode for features like syntax highlighting, method signature suggestions, hover preview for functions, and auto-completion for Kurtosis custom types.
+:::
 
-Now we will create a Starlark Package to abstract away the interface with MySQL. We will start by creating a repository named "mysql-package".
+Instantiate a MySQL instance
+----------------------------
+A Kurtosis package (written in Starlark) will be used to abstract away the interface with MySQL. To create one from the command line, begin by creating a simple folder:
 
-Inside that repository, we will write a `mysql-package/kurtosis.yml` file to declare where this package will live. In our case, it will look like this:
+```bash
+mkdir mysql-package && cd mysql-package
+```
 
+Then, inside the "mysql-package" folder, create a `mysql-package/kurtosis.yml` file to declare where this package will live. This converts your directory into a [Kurtosis package](https://docs.kurtosis.com/concepts-reference/packages). 
 
+The content of your `kurtosis.yml` file should look like:
 ```yml
 name: github.com/kurtosis-tech/mysql-package
 ```
 
-After that, we will create a file for the main implementation named "mysql-package/main.star". There, we want to first initialize the MySQL service by defining the required environment variables, exposing the ports, and allowing users to pass an init db script:
+Next, in the same folder, create a file for the main implementation named `mysql.star`. In this `.star` file, the MySQL service will be initialized by defining the required environment variables, exposing the ports, and allowing users to pass an `init db` script.
 
+Begin your `mysql.star` file with the following:
 ```python
 MYSQL_IMAGE = "mysql:8.0.32"
 ROOT_DEFAULT_PASSWORD = "root"
 MYSQL_DEFAULT_PORT = 3036
-
 
 def create_database(plan, database_name, database_user, database_password, seed_script_artifact = None):
     files = {}
     # Given that scripts on /docker-entrypoint-initdb.d/ are executed sorted by filename
     if seed_script_artifact != None:
         files["/docker-entrypoint-initdb.d"] = seed_script_artifact
+
     service_name = "mysql-{}".format(database_name)
+    
     # Add service
     mysql_service = plan.add_service(
         name = service_name,
@@ -65,59 +79,65 @@ def create_database(plan, database_name, database_user, database_password, seed_
                 "MYSQL_USER": database_user,
                 "MYSQL_PASSWORD":  database_password,
             },
+            # Conditions that, when satisifed, confirm that a service is ready to receive connections and traffic after its been started (defined later)
+            ready_conditions = ReadyCondition,
         )
     )
 . . .
 ```
 
-We also want to wait until MySQL is available before moving forward
+Ideally, as a step in the instantiation of our MySQL database, the readiness of the service can be checked and confirmed so that its available to accept connections and traffic. To add a readiness check for this, add the following:
 ```python
   . . .
-  # Wait for MySQL to become available
-   plan.wait(
-       service_name = service_name,
-       recipe = ExecRecipe(command = ["mysql", "-u", database_user, "-p{}".format(database_password), database_name]),
-       field = "code",
-       assertion = "==",
-       target_value = 0,
-       timeout = "30s",
+  # Define the readiness conditions 
+    ready_conditions = ReadyCondition(
+        recipe = ExecRecipe(
+            command = ["mysql", "-u", database_user, "-p{}".format(database_password), database_name]),
+        field = "code",
+        assertion = "==",
+        target_value = 0,
+        timeout = "30s",
     )
    . . .
 ```
 
-Last but not least, we would like to return a struct that encapsulates all the required database information for later usage by this and other packages.
+Last but not least, add the following to return a struct that encapsulates all the required database information for later usage by this and other packages:
 
 ```python
 . . .
    return {
-       service=mysql_service,
-       name=database_name,
-       user=database_user,
-       password=database_password,
+       service = mysql_service,
+       name = database_name,
+       user = database_user,
+       password = database_password,
    }
 . . .
 ```
-
+:::note
 Note that we made this function generic enough so any team can leverage this package, independent of the application, by passing the desired database name, credentials, and setup script, abstracting away MySQL specifics and only interacting with the result of create_database.
+:::
 
-We would also like to offer a way for consumers of this package to run a SQL query after database creation. We can use the result of create_database as input, since this encapsulates all details of the database. This is what it looks like:
-
+You now have all the instructions needed for Kurtosis to instantiate a MySQL database. However, a databse is not very useful unless its queryable by other users. For consumers of this package to run a SQL query after database creation, add the following block that uses the result of `create_database` as an input:
 
 ```python
 def run_sql(plan, database, sql_query):
    exec_result = plan.exec(
        service_name = database.service.name,
-       recipe = ExecRecipe(command = ["sh", "-c", "mysql -u {} -p{} -e '{}' {}".format(database.user, database.password, sql_query, database.name)]),
    )
    return exec_result["output"]
 ```
+And thats it! What you've done here is write a set of instructions that anyone can consume and use, with Kurtosis, to instantiate a MySQL database and make a simple query against it to test functionality. Your local `mysql.star` should look identical to this one on [Github](https://github.com/kurtosis-tech/mysql-package/blob/main/mysql.star)
 
-The final script looks like this: [mysql-package/mysql.star](https://github.com/kurtosis-tech/mysql-package/blob/main/mysql.star)
+Seed the database with data upon startup
+----------------------------------------
+With the MySQL package ready to go, you will now write a new package that seeds it with data. In this specific case, you will write a package that spins up a database pre-populated with blog data to test our application.
 
-With the MySQL package written, we will now write a package that consumes it. In our case, we will write a package that spins up a database pre-populated with blog data to test our application.
+Start by creating a folder called "blog-mysql-seed" next to your "mysql-package" folder. Inside your "blog-mysql-seed" folder, create a `blog-mysql-seed/kurtosis.yml` file with the following contents:
+```yml
+name: github.com/kurtosis-tech/awesome-kurtosis/blog-mysql-seed
+```
 
-We will start by creating a repository called "blog-seeder". Inside that repository, we will again write a "blog-seeder/kurtosis.yml" file. Other than that, we will include two SQL files: "setup.sql" to create tables and "seed.sql" to populate them.
-
+Next, create 2 `.sql` files: "setup.sql" to create tables and "seed.sql" to populate them, and save them in the same folder.
 ```sql
 % setup.sql
 CREATE TABLE user (
@@ -139,10 +159,11 @@ INSERT INTO user (user_id, first_name) VALUES (2, "Jorge");
 INSERT INTO post (post_id, content, author_user_id) VALUES (0, "Lorem ipsum dolor sit amet", 2);
 ```
 
-Now we will write the main file containing the logic of loading these files, in our case it looks like:
+Finally, create a `main.star` file with the following contents:
 
 ```python
 mysql = import_module("github.com/kurtosis-tech/mysql-package/mysql.star")
+
 SELECT_SQL_EXAMPLE = "SELECT * FROM post"
 
 def run(plan, args):
@@ -152,46 +173,23 @@ def run(plan, args):
     seed_sql = read_file(
         src = "github.com/kurtosis-tech/awesome-kurtosis/blog-mysql-seed/seed.sql",
     )
-    db = mysql.create_database(plan, “db”, “user”, “pass”, seed_script_artifact = setup_sql)
+    db = mysql.create_database(plan, args["database"], args["username"], args["password"], seed_script_artifact = setup_sql)
     mysql.run_sql(plan, db, seed_sql)
     mysql.run_sql(plan, db, SELECT_SQL_EXAMPLE)
 ```
-This script can be run using the following command line from within “blog-seeder” repo: `kurtosis run .`
 
-Ideally, we would also like to allow callers of this package to parameterize the values of "db", "user", and "password". This way, if the application code changes and expects, for example, a different "db" name, we can easily modify the behavior of the package.
+This new `main.star` file can be run from the "blog-mysql-seed" folder. The Kurtosis package is actually parameterized so that if the application code changes and expects, for example, a different "db" name, you can easily modify the behavior of the package. 
 
-```python
-mysql = import_module("github.com/kurtosis-tech/mysql-package/mysql.star")
-SELECT_SQL_EXAMPLE = "SELECT * FROM post"
+Your final script should look like this: [blog-mysql-seed/main.star](https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/blog-mysql-seed/main.star)
 
-def run(plan, args):
-   setup_sql = plan.upload_files(
-       src = "github.com/kurtosis-tech/awesome-kurtosis/blog-mysql-seed/setup.sql",
-   )
-   seed_sql = read_file(
-       src = "github.com/kurtosis-tech/awesome-kurtosis/blog-mysql-seed/seed.sql",
-   )
-   db = mysql.create_database(plan, “db”, “user”, “pass”, seed_script_artifact = setup_sql)
-   mysql.run_sql(plan, db, seed_sql)
-   mysql.run_sql(plan, db, SELECT_SQL_EXAMPLE)
+To show that it works, you can run the following (from the "blog-mysql-seed" folder):
+```bash
+kurtosis run main.star '{"database": "bd", "username": "abc", "password": "123"}'
 ```
 
-This script can be run using the following command line from within “blog-seeder” repo: `kurtosis run .`
-
-Ideally, we would also like to allow callers of this package to parameterize the values of "db", "user", and "password". This way, if the application code changes and expects, for example, a different "db" name, we can easily modify the behavior of the package.
-
-Final script looks like this: [blog-mysql-seed/main.star](https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/blog-mysql-seed/main.star)
-
-This script can be run using the following command line from within “blog-seeder” repo:
-
+Your output should look something like this:
 ```bash
-kurtosis run . '{"username": "abc", "password": "123", "database": "bd"}'
-```
-
-From the output
-
-```bash
-\> exec recipe=ExecRecipe(command=["sh", "-c", "mysql -u hi -pbye -e 'SELECT * FROM post' bd"])
+> exec recipe=ExecRecipe(command=["sh", "-c", "mysql -u hi -pbye -e 'SELECT * FROM post' bd"])
 ```
 
 Command returned with exit code '0' and the following output:
@@ -205,3 +203,7 @@ post_id content author_user_id
 
 Starlark code successfully run. No output was returned.
 ```
+
+Congrats! You've just written two Kurtosis packages: one to instantiate the database and another to seed it with tables and data. 
+
+To recap, the [`mysql-package/mysql.star`](https://github.com/kurtosis-tech/mysql-package/blob/main/mysql.star) file on Github can be used as a building block for downstream Kurtosis packages to consume. You used it to set up an empty MySQL database instance while the [blog-mysql-seed/main.star](https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/blog-mysql-seed/main.star) package was used to create a database and seed it with data.
