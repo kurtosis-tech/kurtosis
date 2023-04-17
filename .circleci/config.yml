@@ -406,11 +406,11 @@ jobs:
           keys:
             - << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
 
-      - run: |
-          cli/cli/scripts/build.sh true
-        environment:
-          CC_WITH_DEFAULT: clang
-          CXX_WITH_DEFAULT: clang++
+      - run:
+          command: cli/cli/scripts/build.sh true
+          environment:
+            CC_WITH_DEFAULT: clang
+            CXX_WITH_DEFAULT: clang++
 
       - save_cache:
           key: << pipeline.parameters.cli-build-cache-key-prefix >>-{{ checksum "cli/cli/go.sum" }}
