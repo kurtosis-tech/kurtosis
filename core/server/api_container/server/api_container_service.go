@@ -25,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -382,6 +383,43 @@ func (apicService ApiContainerService) UploadFilesArtifact(_ context.Context, ar
 
 	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactUuid), Name: maybeArtifactName}
 	return response, nil
+}
+
+func (apicService ApiContainerService) UploadFilesArtifactV2(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactV2Server) error {
+	var maybeArtifactName string
+	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](server)
+
+	err := serverStream.ReceiveData(
+		maybeArtifactName,
+		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+			if maybeArtifactName == "" {
+				maybeArtifactName = dataChunk.GetMetadata().GetName()
+			} else if maybeArtifactName != dataChunk.GetMetadata().GetName() {
+				return nil, "", stacktrace.NewError("An unexpected error occurred receiving file artifacts chunk. Artifact name was changed during the upload process")
+			}
+			return dataChunk.GetData(), dataChunk.GetPreviousChunkHash(), nil
+		},
+		func(assembledContent []byte) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
+			if maybeArtifactName == "" {
+				maybeArtifactName = apicService.filesArtifactStore.GenerateUniqueNameForFileArtifact()
+			}
+
+			// finished receiving all the chunks and assembling them into a single byte array
+			filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(assembledContent, maybeArtifactName)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred while trying to upload the file")
+			}
+			return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{
+				Uuid: string(filesArtifactUuid),
+				Name: maybeArtifactName,
+			}, nil
+		},
+	)
+
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred receiving the file payload")
+	}
+	return nil
 }
 
 func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {

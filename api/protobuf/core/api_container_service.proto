@@ -45,7 +45,13 @@ service ApiContainerService {
   rpc WaitForHttpPostEndpointAvailability(WaitForHttpPostEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
 
   // Uploads a files artifact to the Kurtosis File System
+  // Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
   rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
+
+  // Uploads a files artifact to the Kurtosis File System
+  // Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
+  // library is only implemented in Go
+  rpc UploadFilesArtifactV2(stream StreamedDataChunk) returns (UploadFilesArtifactResponse) {};
 
   // TODO Make this a server-side streaming method so the client can download large files
   // Downloads a files artifact from the Kurtosis File System
@@ -420,6 +426,26 @@ message WaitForHttpPostEndpointAvailabilityArgs {
   uint32 retries_delay_milliseconds = 7;
   //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
   string body_text = 8;
+}
+
+// ==============================================================================================
+//                                          Streamed Data Chunk
+// ==============================================================================================
+message StreamedDataChunk {
+  // Chunk of the overall files artifact bytes
+  bytes data = 1;
+
+  // Hash of the PREVIOUS chunk, or empty string is this is the first chunk
+  // Referencing the previous chunk via its hash allows Kurtosis to validate
+  // the consistency of the data in case some chunk were not received
+  string previous_chunk_hash = 2;
+
+  // Additional metadata about the item being streamed
+  DataChunkMetadata metadata = 3;
+}
+
+message DataChunkMetadata {
+  string name = 1;
 }
 
 // ==============================================================================================
