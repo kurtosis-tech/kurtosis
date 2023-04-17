@@ -54,9 +54,11 @@ type ApiContainerServiceClient interface {
 	// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
 	// library is only implemented in Go
 	UploadFilesArtifactV2(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactV2Client, error)
-	// TODO Make this a server-side streaming method so the client can download large files
 	// Downloads a files artifact from the Kurtosis File System
+	// Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
 	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (*DownloadFilesArtifactResponse, error)
+	// Downloads a files artifact from the Kurtosis File System
+	DownloadFilesArtifactV2(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactV2Client, error)
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
 	StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
@@ -280,6 +282,38 @@ func (c *apiContainerServiceClient) DownloadFilesArtifact(ctx context.Context, i
 	return out, nil
 }
 
+func (c *apiContainerServiceClient) DownloadFilesArtifactV2(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactV2Client, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[3], "/api_container_api.ApiContainerService/DownloadFilesArtifactV2", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &apiContainerServiceDownloadFilesArtifactV2Client{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ApiContainerService_DownloadFilesArtifactV2Client interface {
+	Recv() (*StreamedDataChunk, error)
+	grpc.ClientStream
+}
+
+type apiContainerServiceDownloadFilesArtifactV2Client struct {
+	grpc.ClientStream
+}
+
+func (x *apiContainerServiceDownloadFilesArtifactV2Client) Recv() (*StreamedDataChunk, error) {
+	m := new(StreamedDataChunk)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *apiContainerServiceClient) StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error) {
 	out := new(StoreWebFilesArtifactResponse)
 	err := c.cc.Invoke(ctx, "/api_container_api.ApiContainerService/StoreWebFilesArtifact", in, out, opts...)
@@ -351,9 +385,11 @@ type ApiContainerServiceServer interface {
 	// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
 	// library is only implemented in Go
 	UploadFilesArtifactV2(ApiContainerService_UploadFilesArtifactV2Server) error
-	// TODO Make this a server-side streaming method so the client can download large files
 	// Downloads a files artifact from the Kurtosis File System
+	// Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
 	DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error)
+	// Downloads a files artifact from the Kurtosis File System
+	DownloadFilesArtifactV2(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactV2Server) error
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
 	StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
@@ -411,6 +447,9 @@ func (UnimplementedApiContainerServiceServer) UploadFilesArtifactV2(ApiContainer
 }
 func (UnimplementedApiContainerServiceServer) DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadFilesArtifact not implemented")
+}
+func (UnimplementedApiContainerServiceServer) DownloadFilesArtifactV2(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactV2Server) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadFilesArtifactV2 not implemented")
 }
 func (UnimplementedApiContainerServiceServer) StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreWebFilesArtifact not implemented")
@@ -720,6 +759,27 @@ func _ApiContainerService_DownloadFilesArtifact_Handler(srv interface{}, ctx con
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiContainerService_DownloadFilesArtifactV2_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadFilesArtifactArgs)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ApiContainerServiceServer).DownloadFilesArtifactV2(m, &apiContainerServiceDownloadFilesArtifactV2Server{stream})
+}
+
+type ApiContainerService_DownloadFilesArtifactV2Server interface {
+	Send(*StreamedDataChunk) error
+	grpc.ServerStream
+}
+
+type apiContainerServiceDownloadFilesArtifactV2Server struct {
+	grpc.ServerStream
+}
+
+func (x *apiContainerServiceDownloadFilesArtifactV2Server) Send(m *StreamedDataChunk) error {
+	return x.ServerStream.SendMsg(m)
+}
+
 func _ApiContainerService_StoreWebFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(StoreWebFilesArtifactArgs)
 	if err := dec(in); err != nil {
@@ -879,6 +939,11 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "UploadFilesArtifactV2",
 			Handler:       _ApiContainerService_UploadFilesArtifactV2_Handler,
 			ClientStreams: true,
+		},
+		{
+			StreamName:    "DownloadFilesArtifactV2",
+			Handler:       _ApiContainerService_DownloadFilesArtifactV2_Handler,
+			ServerStreams: true,
 		},
 	},
 	Metadata: "api_container_service.proto",

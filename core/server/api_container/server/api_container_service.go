@@ -442,6 +442,42 @@ func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context
 	return resp, nil
 }
 
+func (apicService ApiContainerService) DownloadFilesArtifactV2(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactV2Server) error {
+	artifactIdentifier := args.Identifier
+	if strings.TrimSpace(artifactIdentifier) == "" {
+		return stacktrace.NewError("Cannot download file with empty files artifact identifier")
+	}
+
+	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
+	}
+
+	fileBytes, err := os.ReadFile(filesArtifact.GetAbsoluteFilepath())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred reading files artifact file bytes")
+	}
+
+	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](server)
+	err = serverStream.SendData(
+		artifactIdentifier,
+		fileBytes,
+		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+				Data:              contentChunk,
+				PreviousChunkHash: previousChunkHash,
+				Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+					Name: artifactIdentifier,
+				},
+			}, nil
+		},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred receiving the file payload")
+	}
+	return nil
+}
+
 func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
 	url := args.Url
 	artifactName := args.Name

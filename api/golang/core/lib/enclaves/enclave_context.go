@@ -261,11 +261,22 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 // Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
 func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, artifactIdentifier string) ([]byte, error) {
 	args := binding_constructors.DownloadFilesArtifactArgs(artifactIdentifier)
-	response, err := enclaveCtx.client.DownloadFilesArtifact(ctx, args)
+
+	client, err := enclaveCtx.client.DownloadFilesArtifactV2(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred initiating the download of files artifact '%v'", artifactIdentifier)
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse](client)
+	fileContent, err := clientStream.ReceiveData(
+		artifactIdentifier,
+		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
+		},
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred downloading files artifact '%v'", artifactIdentifier)
 	}
-	return response.Data, nil
+	return fileContent, nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
