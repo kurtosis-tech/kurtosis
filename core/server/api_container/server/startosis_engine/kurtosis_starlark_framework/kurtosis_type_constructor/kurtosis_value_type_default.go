@@ -40,7 +40,7 @@ func ExtractAttrValue[AttrValueType starlark.Value](value *KurtosisValueTypeDefa
 	}
 	result, ok := attrValue.(AttrValueType)
 	if !ok {
-		return result, false, startosis_errors.NewInterpretationError(
+		return result, true, startosis_errors.NewInterpretationError(
 			"Attribute '%s' exists but is of type '%s' (requested: '%s')",
 			attrValue,
 			reflect.TypeOf(attrValue),
