@@ -33,7 +33,7 @@ Now you're running the application in this quickstart on your laptop.
 If you want to see how to run tests over Kurtosis environments, `cd` into [`go-test`][go-test-example] or [`ts-test`][ts-test-example] and refer to the README to run a simple Go or Typescript test against this app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
 </details>
 
-If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us on our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111) or [email us](mailto:feedback@kurtosistech.com)!
+If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us in our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111) or on [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)!
 
 Setup
 -----
@@ -966,7 +966,7 @@ To learn more about how Kurtosis is used, we encourage you to check out our [`aw
 - A parameterized package for standing up an [n-node Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
 - The [NEAR package][near-package] for local dApp development in the NEAR ecosystem
 
-Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose), to [email us](mailto:feedback@kurtosistech.com), or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
+Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
 
 Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), [join the community in our Discord](https://discord.com/channels/783719264308953108/783719264308953111), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
 

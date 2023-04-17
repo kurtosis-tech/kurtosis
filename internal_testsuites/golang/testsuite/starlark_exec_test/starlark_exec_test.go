@@ -28,7 +28,7 @@ const (
 	setupStarlarkScript = `
 def run(plan, args):
 	service_config = ServiceConfig(
-		image = "alpine:3.12.4",
+		image = "alpine:3.17",
 		entrypoint = ["sleep"],
 		cmd = ["30"]
 	)
