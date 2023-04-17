@@ -28,6 +28,11 @@ func sendMessagesToStream[DataChunkProtoMessage interface{}](
 	sendViaStreamFunc func(msg interface{}) error,
 	grpcMsgConstructor func(previousChunkHash string, contentChunk []byte) (*DataChunkProtoMessage, error),
 ) error {
+	if len(payload) > kurtosisMaximumFileSizeLimit {
+		return stacktrace.NewError("The files you are trying to send, which are now compressed, exceed or reach " +
+			"100mb. Please reduce the total file size.")
+	}
+
 	var previousChunkHash string
 	hasher := sha1.New()
 	chunkNumber := 0
@@ -105,6 +110,7 @@ func readMessagesFromStream[DataChunkMessageType interface{}](
 
 		dataChunk = new(DataChunkMessageType)
 		errorReceivingChunk = readMsgFromStream(dataChunk) // TODO: we can add a retryer here
+		blockIdx += 1
 	}
 	if errorReceivingChunk != io.EOF {
 		return nil, stacktrace.Propagate(errorReceivingChunk, "An unexpected error occurred receiving '%s'",

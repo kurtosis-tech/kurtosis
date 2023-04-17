@@ -96,6 +96,7 @@ func TestSendBytesStream_successOneChunk(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, clientStream.CloseSend())
 	assembledContent, err := clientStream.GetAssembledContent()
+	require.NoError(t, err)
 	// When this assertion fails, to help debugging, change the value of chunkSize to something reasonable, like 5.
 	require.Equal(t, fullContent, assembledContent)
 }

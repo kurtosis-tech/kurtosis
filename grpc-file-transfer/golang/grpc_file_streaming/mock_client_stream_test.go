@@ -27,6 +27,7 @@ func NewMockClientStream(chunks ...*TestDataChunk) *MockClientStream {
 	return &MockClientStream{
 		currentReadIdx: 0,
 		chunks:         chunks,
+		isClosed:       false,
 	}
 }
 
