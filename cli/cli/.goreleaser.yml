@@ -19,7 +19,7 @@ builds:
       - >-
         {{ if index .Env "CI" }}{{- if eq .Os "darwin" }}CC=o64h-clang{{- end }}{{ end }}
       - >-
-        {{ if index .Env "CI" }}{{- if eq .Os "darwin" }}CC=o64h-clang++{{- end }}{{ end }}
+        {{ if index .Env "CI" }}{{- if eq .Os "darwin" }}CXX=o64h-clang++{{- end }}{{ end }}
     tags:
       - osusergo
     overrides:
