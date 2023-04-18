@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.75.4](https://github.com/kurtosis-tech/kurtosis/compare/0.75.3...0.75.4) (2023-04-18)
+
+
+### Bug Fixes
+
+* Address flakiness of extractor test ([#510](https://github.com/kurtosis-tech/kurtosis/issues/510)) ([4508df3](https://github.com/kurtosis-tech/kurtosis/commit/4508df328b5f91310353cec3e7abb58483e40083))
+* Support ExecRecipe in ReadyCondition ([#507](https://github.com/kurtosis-tech/kurtosis/issues/507)) ([539e8e9](https://github.com/kurtosis-tech/kurtosis/commit/539e8e97185aa785d74c814bf587b06bd9f6ed04))
+
 ## [0.75.3](https://github.com/kurtosis-tech/kurtosis/compare/0.75.2...0.75.3) (2023-04-18)
 
 
