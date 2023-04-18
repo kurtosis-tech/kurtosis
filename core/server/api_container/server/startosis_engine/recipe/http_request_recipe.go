@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -33,6 +34,9 @@ type HttpRequestRecipe interface {
 	builtin_argument.KurtosisValueType
 
 	Recipe
+
+	// RequestType as of 2023-04-18 this only exists so that ExecRecipe doesn't implement HttpRequestRecipe
+	RequestType() string
 }
 
 func executeInternal(
@@ -160,4 +164,19 @@ func convertExtractorsToDict(isAttrSet bool, extractorsValue starlark.Value) (ma
 		extractorStringMap[extractorKeyStr.GoString()] = extractorValueStr.GoString()
 	}
 	return extractorStringMap, nil
+}
+
+func ValidateHttpRequestRecipe(httpRequestRecipe HttpRequestRecipe, serviceName service.ServiceName, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+	portIdValue, err := httpRequestRecipe.Attr(PortIdAttr)
+	if err != nil {
+		return startosis_errors.NewValidationError("Tried fetching port ID for request on service '%s' but failed", serviceName)
+	}
+	portIdStringValue, ok := starlark.AsString(portIdValue)
+	if !ok {
+		return startosis_errors.NewValidationError("Tried getting string value for port ID '%v' for request to service '%s' but failed", portIdValue, serviceName)
+	}
+	if portIdExists := validatorEnvironment.DoesPrivatePortIDExistForService(portIdStringValue, serviceName); !portIdExists {
+		return startosis_errors.NewValidationError("Request required port ID '%v' to exist on service '%v' but it doesn't", portIdStringValue, serviceName)
+	}
+	return nil
 }
