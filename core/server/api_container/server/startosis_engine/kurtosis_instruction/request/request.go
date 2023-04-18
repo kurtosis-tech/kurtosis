@@ -161,16 +161,8 @@ func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.Argume
 }
 
 func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	portIdValue, err := builtin.httpRequestRecipe.Attr(recipe.PortIdAttr)
-	if err != nil {
-		return startosis_errors.NewValidationError("Tried fetching port ID for request on service '%s' but failed", builtin.serviceName)
-	}
-	portIdStringValue, ok := starlark.AsString(portIdValue)
-	if !ok {
-		return startosis_errors.NewValidationError("Tried getting string value for port ID '%v' for request to service '%s' but failed", portIdValue, builtin.serviceName)
-	}
-	if portIdExists := validatorEnvironment.DoesPrivatePortIDExistForService(portIdStringValue, builtin.serviceName); !portIdExists {
-		return startosis_errors.NewValidationError("Request required port ID '%v' to exist on service '%v' but it doesn't", portIdStringValue, builtin.serviceName)
+	if validationErr := recipe.ValidateHttpRequestRecipe(builtin.httpRequestRecipe, builtin.serviceName, validatorEnvironment); validationErr != nil {
+		return validationErr
 	}
 	return nil
 }
