@@ -10,6 +10,7 @@ type ValidatorEnvironment struct {
 	requiredDockerImages         map[string]bool
 	serviceNames                 map[service.ServiceName]bool
 	artifactNames                map[string]bool
+	serviceNameToPrivatePortIds  map[service.ServiceName][]string
 }
 
 func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool) *ValidatorEnvironment {
@@ -40,6 +41,32 @@ func (environment *ValidatorEnvironment) RemoveServiceName(serviceName service.S
 func (environment *ValidatorEnvironment) DoesServiceNameExist(serviceName service.ServiceName) bool {
 	_, ok := environment.serviceNames[serviceName]
 	return ok
+}
+
+func (environment *ValidatorEnvironment) AddPrivatePortIDForService(portID string, serviceName service.ServiceName) {
+	portIds, found := environment.serviceNameToPrivatePortIds[serviceName]
+	if found {
+		environment.serviceNameToPrivatePortIds[serviceName] = append(portIds, portID)
+		return
+	}
+	environment.serviceNameToPrivatePortIds[serviceName] = []string{portID}
+}
+
+func (environment *ValidatorEnvironment) DoesPrivatePortIDExistForService(portID string, serviceName service.ServiceName) bool {
+	existingPortIDs, found := environment.serviceNameToPrivatePortIds[serviceName]
+	if !found {
+		return false
+	}
+	for _, existingPortID := range existingPortIDs {
+		if existingPortID == portID {
+			return true
+		}
+	}
+	return false
+}
+
+func (environment *ValidatorEnvironment) RemoveServiceFromPrivatePortIDMapping(serviceName service.ServiceName) {
+	delete(environment.serviceNameToPrivatePortIds, serviceName)
 }
 
 func (environment *ValidatorEnvironment) AddArtifactName(artifactName string) {

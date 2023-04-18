@@ -160,7 +160,7 @@ func (builtin *RequestCapabilities) Interpret(arguments *builtin_argument.Argume
 	return returnValue, nil
 }
 
-func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, _ *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	return nil
 }
 
