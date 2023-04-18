@@ -1058,8 +1058,6 @@ workflows:
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
           cli-cluster-backend: "docker"
-          context:
-            - docker-user
           requires:
             - build_cli
             - build_api_container_server
@@ -1070,8 +1068,6 @@ workflows:
       - test_ci_for_failure:
           name: "Test Basic CLI for failure"
           cli-cluster-backend: "docker"
-          context:
-            - docker-user
           requires:
             - build_cli
             - build_api_container_server
@@ -1082,8 +1078,6 @@ workflows:
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
           cli-cluster-backend: "docker"
-          context:
-            - docker-user
           requires:
             - build_cli
             - build_api_container_server
@@ -1094,8 +1088,6 @@ workflows:
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
           cli-cluster-backend: "docker"
-          context:
-            - docker-user
           requires:
             - build_cli
             - build_api_container_server
@@ -1104,8 +1096,6 @@ workflows:
           <<: *filters_ignore_main
 
       - test_old_enclave_continuity:
-          context:
-            - docker-user
           requires:
             - build_cli
             - build_api_container_server
