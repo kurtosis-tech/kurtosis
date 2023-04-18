@@ -35,6 +35,7 @@ type HttpRequestRecipe interface {
 
 	Recipe
 
+	// RequestType as of 2023-04-18 this only exists so that ExecRecipe doesn't implement HttpRequestRecipe
 	RequestType() string
 }
 
