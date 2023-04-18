@@ -248,10 +248,6 @@ jobs:
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
-
-      - setup_remote_docker:
-          version: "<< pipeline.parameters.docker-engine-version>>"
-
       - run: |
           core/files_artifacts_expander/scripts/build.sh
           source core/files_artifacts_expander/scripts/_constants.env
@@ -350,9 +346,6 @@ jobs:
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
-
-      - setup_remote_docker:
-          version: "<< pipeline.parameters.docker-engine-version>>"
 
       # Cache our dependencies
       - restore_cache:
