@@ -4,6 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"go.starlark.net/starlark"
+	"go.starlark.net/syntax"
 	"testing"
 )
 
@@ -36,9 +37,11 @@ func TestExtractor_Success(t *testing.T) {
 		starlark.NewList([]starlark.Value{starlark.MakeInt(1), starlark.String("a")}),
 	}
 	for i := range queryList {
-		result, err := extract(jsonObject, queryList[i])
-		assert.Nil(t, err)
-		assert.Equal(t, expectedList[i], result)
+		result, extractErr := extract(jsonObject, queryList[i])
+		assert.Nil(t, extractErr)
+		equal, cmpErr := expectedList[i].CompareSameType(syntax.EQL, result, 2)
+		assert.Nil(t, cmpErr)
+		assert.True(t, equal)
 	}
 }
 
