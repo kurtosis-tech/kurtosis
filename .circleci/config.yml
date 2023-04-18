@@ -248,6 +248,9 @@ jobs:
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
 
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
+
       - run: |
           core/files_artifacts_expander/scripts/build.sh
           source core/files_artifacts_expander/scripts/_constants.env
@@ -346,6 +349,9 @@ jobs:
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
+
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
 
       # Cache our dependencies
       - restore_cache:
@@ -1021,8 +1027,6 @@ workflows:
               ignore:
                 - main
       - build_files_artifacts_expander:
-          context:
-            - docker-user
           filters:
             branches:
               ignore:
@@ -1033,8 +1037,6 @@ workflows:
               ignore:
                 - main
       - build_api_container_server:
-          context:
-            - docker-user
           filters:
             branches:
               ignore:
@@ -1046,8 +1048,6 @@ workflows:
               ignore:
                 - main
       - build_engine_server:
-          context:
-            - docker-user
           filters:
             branches:
               ignore:
