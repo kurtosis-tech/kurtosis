@@ -1,4 +1,4 @@
-package startosis_request_wait_assert
+package startosis_request_wait_assert_test
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 )
 
 const (
-	waitInvalidPortIDTest       = "starlark-wait-invalid-portid"
-	waitInvalidPortIDFailScript = `
+	requestInvalidServiceName       = "starlark-request-invalid-service"
+	requestInvalidServiceNameScript = `
 def run(plan):
 	service_config = ServiceConfig(
 		image = "mendhak/http-https-echo:26",
@@ -20,22 +20,22 @@ def run(plan):
 
 	plan.add_service(name = "web-server", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
-		port_id = "invalid-port-id",
+		port_id = "http-port",
 		endpoint = "?input=foo/bar",
 		extract = {
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = plan.wait(service_name = "web-server", recipe = get_recipe, field = "code", assertion = "==", target_value = 200)
+	response = plan.request(service_name = "invalid-service", recipe = get_recipe)
 `
 )
 
-func TestStarlark_InvalidPortIdWait(t *testing.T) {
+func TestStarlark_InvalidServiceRequest(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, waitInvalidPortIDTest, waitInvalidPortIDFailScript)
+	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, requestInvalidServiceName, requestInvalidServiceNameScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Len(t, runResult.ValidationErrors, 1)
-	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, "Request required port ID 'invalid-port-id' to exist on service 'web-server' but it doesn't")
+	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, "Tried creating a request for service 'invalid-service' which doesn't exist")
 }
