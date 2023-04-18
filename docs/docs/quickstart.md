@@ -8,7 +8,7 @@ toc_max_heading_level: 2
 Introduction
 ------------
 
-Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you will run in this guide is free, public, and does not contain any sensitive data.
+Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you will run in this guide is free, public, and does not contain any sensitive data. 
 
 For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, our [introduction page][homepage] will be a great starting point, alongside our [motivations behind starting Kurtosis][why-we-built-kurtosis-explanation].
 
@@ -22,15 +22,10 @@ For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, o
 
 <details><summary>TL;DR Version</summary>
 
-This quickstart is in a "code along" format. If you'd prefer to dive straight into running the end results and exploring the code, [install Kurtosis](#setup), clone the [`awesome-kurtosis` repository][awesome-kurtosis-repo], and then run:
-
-```bash
-cd awesome-kurtosis/quickstart && kurtosis run --enclave quickstart main.star 
-```
-
-Now you're running the application in this quickstart on your laptop.
-
-If you want to see how to run tests over Kurtosis environments, `cd` into [`go-test`][go-test-example] or [`ts-test`][ts-test-example] and refer to the README to run a simple Go or Typescript test against this app. Refer to the [recap](#conclusion) and the other `Review` sections in this quickstart guide to learn more about what we did and how we did it.
+This quickstart is in a "code along" format. You can also dive straight into running the end results and exploring the code too.
+ 
+**Player One: [Start](https://gitpod.io/?editor=code#https://github.com/kurtosis-tech/quickstart-gitpod)**
+ 
 </details>
 
 If you ever get stuck, every Kurtosis command accepts a `-h` flag to print helptext. If that doesn't help, you can get in touch with us in our [Discord server](https://discord.com/channels/783719264308953108/783719264308953111) or on [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)!
