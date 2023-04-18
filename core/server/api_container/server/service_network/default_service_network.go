@@ -862,6 +862,23 @@ func (network *DefaultServiceNetwork) GetServiceNames() map[service.ServiceName]
 	return serviceNames
 }
 
+func (network *DefaultServiceNetwork) GetServiceNameToPrivatePortIdsMap() (map[service.ServiceName][]string, error) {
+	serviceToPrivatePortIds := make(map[service.ServiceName][]string, len(network.registeredServiceInfo))
+	ctx := context.Background()
+	for serviceName := range network.registeredServiceInfo {
+		service, err := network.GetService(ctx, string(serviceName))
+		if err != nil {
+			return nil, stacktrace.NewError("An error occurred while fetching service '%s' for its private port mappings", serviceName)
+		}
+		serviceToPrivatePortIds[serviceName] = []string{}
+		privatePorts := service.GetPrivatePorts()
+		for portId := range privatePorts {
+			serviceToPrivatePortIds[serviceName] = append(serviceToPrivatePortIds[serviceName], portId)
+		}
+	}
+	return serviceToPrivatePortIds, nil
+}
+
 func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, serviceIdentifier string, srcPath string, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	serviceName, err := network.getServiceNameForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {

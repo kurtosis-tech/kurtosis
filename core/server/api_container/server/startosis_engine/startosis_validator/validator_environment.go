@@ -13,14 +13,13 @@ type ValidatorEnvironment struct {
 	serviceNameToPrivatePortIds  map[service.ServiceName][]string
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string) *ValidatorEnvironment {
 	return &ValidatorEnvironment{
 		isNetworkPartitioningEnabled: isNetworkPartitioningEnabled,
 		requiredDockerImages:         map[string]bool{},
 		serviceNames:                 serviceNames,
 		artifactNames:                artifactNames,
-		// TODO(gyani) : perhaps pass existing services so that this runs against existing enclave
-		serviceNameToPrivatePortIds: map[service.ServiceName][]string{},
+		serviceNameToPrivatePortIds:  serviceNameToPrivatePortIds,
 	}
 }
 

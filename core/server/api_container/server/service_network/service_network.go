@@ -80,6 +80,8 @@ type ServiceNetwork interface {
 
 	GetServiceNames() map[service.ServiceName]bool
 
+	GetServiceNameToPrivatePortIdsMap() (map[service.ServiceName][]string, error)
+
 	GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers
 
 	GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool)

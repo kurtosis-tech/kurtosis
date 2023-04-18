@@ -42,10 +42,20 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 
 		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
+
+		serviceNamePortIdMapping, err := validator.serviceNetwork.GetServiceNameToPrivatePortIdsMap()
+		if err != nil {
+			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Couldn't create validator environment as we ran into errors fetching existing services and ports")
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+			return
+		}
+
 		environment := startosis_validator.NewValidatorEnvironment(
 			validator.serviceNetwork.IsNetworkPartitioningEnabled(),
 			validator.serviceNetwork.GetServiceNames(),
-			validator.fileArtifactStore.ListFiles())
+			validator.fileArtifactStore.ListFiles(),
+			serviceNamePortIdMapping)
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAnUpdateEnvironment(instructions, environment, starlarkRunResponseLineStream)
