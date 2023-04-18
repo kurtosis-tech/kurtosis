@@ -221,6 +221,9 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 }
 
 func (builtin *WaitCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+	if serviceExists := validatorEnvironment.DoesServiceNameExist(builtin.serviceName); !serviceExists {
+		return startosis_errors.NewValidationError("Tried creating a wait for service '%s' which doesn't exist", builtin.serviceName)
+	}
 	httpRequestRecipe, ok := builtin.recipe.(recipe.HttpRequestRecipe)
 	// if the passed recipe isn't http request recipe we can't do much
 	if !ok {
