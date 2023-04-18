@@ -78,6 +78,9 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	}
 	validatorEnvironment.AddServiceName(serviceName)
 	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.ContainerImageName)
+	for portId := range serviceConfig.PrivatePorts {
+		validatorEnvironment.AddPrivatePortIDForService(portId, serviceName)
+	}
 	return nil
 }
 

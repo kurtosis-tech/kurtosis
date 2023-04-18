@@ -151,16 +151,18 @@ func (portalManager *PortalManager) StopExisting(_ context.Context) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Error getting Portal process from its PID %d", pid)
 	}
-	if process == nil {
-		if portalManager.IsReachable() {
-			logrus.Warnf(portalReachableButNotRegisteredWarningMsg)
-			return nil
-		}
+	if process == nil && portalManager.IsReachable() {
+		logrus.Warnf(portalReachableButNotRegisteredWarningMsg)
+		return nil
 	}
 
-	if err = process.Signal(syscall.SIGINT); err != nil {
-		logrus.Warnf("Error stopping currently running portal on PID: '%d'. It might already be stopped. "+
-			"PID file will be removed. Error was: %s", pid, err.Error())
+	if process != nil {
+		if err = process.Signal(syscall.SIGINT); err != nil {
+			logrus.Warnf("Error stopping currently running portal on PID: '%d'. It might already be stopped. "+
+				"PID file will be removed. Error was: %s", pid, err.Error())
+		}
+	} else {
+		logrus.Infof("Portal already stopped but PID file exists. Removing it.")
 	}
 
 	if err = os.Remove(portalPidFilePath); err != nil {
