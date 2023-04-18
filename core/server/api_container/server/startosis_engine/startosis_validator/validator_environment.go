@@ -19,6 +19,7 @@ func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map
 		requiredDockerImages:         map[string]bool{},
 		serviceNames:                 serviceNames,
 		artifactNames:                artifactNames,
+		serviceNameToPrivatePortIds:  map[service.ServiceName][]string{},
 	}
 }
 
