@@ -10,7 +10,7 @@ type ValidatorEnvironment struct {
 	requiredDockerImages         map[string]bool
 	serviceNames                 map[service.ServiceName]bool
 	artifactNames                map[string]bool
-	serviceNameToPrivatePortIds  map[service.ServiceName][]string
+	serviceNameToPrivatePortIDs  map[service.ServiceName][]string
 }
 
 func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string) *ValidatorEnvironment {
@@ -19,7 +19,7 @@ func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map
 		requiredDockerImages:         map[string]bool{},
 		serviceNames:                 serviceNames,
 		artifactNames:                artifactNames,
-		serviceNameToPrivatePortIds:  serviceNameToPrivatePortIds,
+		serviceNameToPrivatePortIDs:  serviceNameToPrivatePortIds,
 	}
 }
 
@@ -45,16 +45,11 @@ func (environment *ValidatorEnvironment) DoesServiceNameExist(serviceName servic
 }
 
 func (environment *ValidatorEnvironment) AddPrivatePortIDForService(portID string, serviceName service.ServiceName) {
-	portIds, found := environment.serviceNameToPrivatePortIds[serviceName]
-	if found {
-		environment.serviceNameToPrivatePortIds[serviceName] = append(portIds, portID)
-		return
-	}
-	environment.serviceNameToPrivatePortIds[serviceName] = []string{portID}
+	environment.serviceNameToPrivatePortIDs[serviceName] = append(environment.serviceNameToPrivatePortIDs[serviceName], portID)
 }
 
 func (environment *ValidatorEnvironment) DoesPrivatePortIDExistForService(portID string, serviceName service.ServiceName) bool {
-	existingPortIDs, found := environment.serviceNameToPrivatePortIds[serviceName]
+	existingPortIDs, found := environment.serviceNameToPrivatePortIDs[serviceName]
 	if !found {
 		return false
 	}
@@ -67,7 +62,7 @@ func (environment *ValidatorEnvironment) DoesPrivatePortIDExistForService(portID
 }
 
 func (environment *ValidatorEnvironment) RemoveServiceFromPrivatePortIDMapping(serviceName service.ServiceName) {
-	delete(environment.serviceNameToPrivatePortIds, serviceName)
+	delete(environment.serviceNameToPrivatePortIDs, serviceName)
 }
 
 func (environment *ValidatorEnvironment) AddArtifactName(artifactName string) {
