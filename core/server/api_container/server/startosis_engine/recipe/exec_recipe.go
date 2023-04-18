@@ -139,7 +139,7 @@ func (recipe *ExecRecipe) Execute(
 	}
 	extractDict, err := runExtractors([]byte(fmt.Sprintf("%q", commandOutput)), extractors)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while running extractors from exec recipe")
+		return nil, stacktrace.Propagate(err, "An error occurred while running extractors '%v' on command output '%v'", extractors, commandOutput)
 	}
 	maps.Copy(resultDict, extractDict)
 	return resultDict, nil
