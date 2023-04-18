@@ -132,11 +132,6 @@ func (m *MockServiceNetworkCustom) GetServiceNames() map[service.ServiceName]boo
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) GetServiceNameToPrivatePortIdsMap() (map[service.ServiceName][]string, error) {
-	//TODO implement me
-	panic(unimplementedMsg)
-}
-
 func (m *MockServiceNetworkCustom) GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool) {
 	serviceRegistration, found := m.serviceRegistrations[serviceName]
 	return serviceRegistration, found

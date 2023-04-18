@@ -6,11 +6,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 
@@ -43,7 +45,8 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 
-		serviceNamePortIdMapping, err := validator.serviceNetwork.GetServiceNameToPrivatePortIdsMap()
+		serviceNames := validator.serviceNetwork.GetServiceNames()
+		serviceNamePortIdMapping, err := getServiceNameToPortIDsMap(serviceNames, validator.serviceNetwork)
 		if err != nil {
 			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Couldn't create validator environment as we ran into errors fetching existing services and ports")
 			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
@@ -53,7 +56,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 
 		environment := startosis_validator.NewValidatorEnvironment(
 			validator.serviceNetwork.IsNetworkPartitioningEnabled(),
-			validator.serviceNetwork.GetServiceNames(),
+			serviceNames,
 			validator.fileArtifactStore.ListFiles(),
 			serviceNamePortIdMapping)
 
@@ -173,4 +176,21 @@ func removeIfPresent(slice []string, valueToRemove string) []string {
 	newSlice := make([]string, 0)
 	newSlice = append(newSlice, slice[:valueToRemoveIndex]...)
 	return append(newSlice, slice[valueToRemoveIndex+1:]...)
+}
+
+func getServiceNameToPortIDsMap(serviceNames map[service.ServiceName]bool, network service_network.ServiceNetwork) (map[service.ServiceName][]string, error) {
+	serviceToPrivatePortIds := make(map[service.ServiceName][]string, len(serviceNames))
+	ctx := context.Background()
+	for serviceName := range serviceNames {
+		service, err := network.GetService(ctx, string(serviceName))
+		if err != nil {
+			return nil, stacktrace.NewError("An error occurred while fetching service '%s' for its private port mappings", serviceName)
+		}
+		serviceToPrivatePortIds[serviceName] = []string{}
+		privatePorts := service.GetPrivatePorts()
+		for portId := range privatePorts {
+			serviceToPrivatePortIds[serviceName] = append(serviceToPrivatePortIds[serviceName], portId)
+		}
+	}
+	return serviceToPrivatePortIds, nil
 }
