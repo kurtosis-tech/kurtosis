@@ -230,11 +230,6 @@ func (builtin *WaitCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet,
 	if !ok {
 		return nil
 	}
-	// check if the recipe contains the PortIdAttr to verify it is a http request recipe
-	if _, err := httpRequestRecipe.Attr(recipe.PortIdAttr); err != nil {
-		// not having a PortId attr means it isn't an http request recipe
-		return nil
-	}
 	if validationErr := recipe.ValidateHttpRequestRecipe(httpRequestRecipe, builtin.serviceName, validatorEnvironment); validationErr != nil {
 		return validationErr
 	}

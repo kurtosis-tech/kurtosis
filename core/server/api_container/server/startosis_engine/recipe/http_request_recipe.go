@@ -34,6 +34,8 @@ type HttpRequestRecipe interface {
 	builtin_argument.KurtosisValueType
 
 	Recipe
+
+	RequestType() string
 }
 
 func executeInternal(
