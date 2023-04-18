@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.5](https://github.com/kurtosis-tech/kurtosis/compare/0.75.4...0.75.5) (2023-04-18)
+
+
+### Features
+
+* Add extractors to exec recipe ([#508](https://github.com/kurtosis-tech/kurtosis/issues/508)) ([b044093](https://github.com/kurtosis-tech/kurtosis/commit/b0440932e18397239212c63576bb15fbda00bd59))
+
 ## [0.75.4](https://github.com/kurtosis-tech/kurtosis/compare/0.75.3...0.75.4) (2023-04-18)
 
 
