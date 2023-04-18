@@ -40,6 +40,7 @@ mkdir mysql-package && cd mysql-package
 Then, inside the "mysql-package" folder, create a `mysql-package/kurtosis.yml` file to declare where this package will live. This converts your directory into a [Kurtosis package](https://docs.kurtosis.com/concepts-reference/packages). 
 
 The content of your `kurtosis.yml` file should look like:
+
 ```yml
 name: github.com/kurtosis-tech/mysql-package
 ```
@@ -58,11 +59,24 @@ def create_database(plan, database_name, database_user, database_password, seed_
     if seed_script_artifact != None:
         files["/docker-entrypoint-initdb.d"] = seed_script_artifact
 
+    # Give your service the name passed in by a user
     service_name = "mysql-{}".format(database_name)
+
+    # Define a readiness check for your database to ensure the service is ready to receive traffic and connections after starting
+    db_ready_check = ReadyCondition(
+        recipe = ExecRecipe(
+            command = ["mysql", "-u", database_user, "-p{}".format(database_password), database_name]
+            ),
+        field = "code",
+        assertion = "==",
+        target_value = 0,
+        timeout = "30s",
+    )
     
-    # Add service
+    # Add MySQL service
     mysql_service = plan.add_service(
         name = service_name,
+        # Define the service configurations
         config = ServiceConfig(
             image = MYSQL_IMAGE,
             ports = {
@@ -79,28 +93,10 @@ def create_database(plan, database_name, database_user, database_password, seed_
                 "MYSQL_USER": database_user,
                 "MYSQL_PASSWORD":  database_password,
             },
-            # Conditions that, when satisifed, confirm that a service is ready to receive connections and traffic after its been started (defined later)
-            ready_conditions = ReadyCondition,
-        )
+            ready_conditions = db_ready_check,
+        ),
     )
-. . .
 ```
-
-Ideally, as a step in the instantiation of our MySQL database, the readiness of the service can be checked and confirmed so that its available to accept connections and traffic. To add a readiness check for this, add the following:
-```python
-  . . .
-  # Define the readiness conditions 
-    ready_conditions = ReadyCondition(
-        recipe = ExecRecipe(
-            command = ["mysql", "-u", database_user, "-p{}".format(database_password), database_name]),
-        field = "code",
-        assertion = "==",
-        target_value = 0,
-        timeout = "30s",
-    )
-   . . .
-```
-
 Last but not least, add the following to return a struct that encapsulates all the required database information for later usage by this and other packages:
 
 ```python
