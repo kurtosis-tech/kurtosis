@@ -37,5 +37,5 @@ func TestStarlark_InvalidServiceWait(t *testing.T) {
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Len(t, runResult.ValidationErrors, 1)
-	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, "Tried creating a request for service 'invalid-service' which doesn't exist")
+	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, "Tried creating a wait for service 'invalid-service' which doesn't exist")
 }
