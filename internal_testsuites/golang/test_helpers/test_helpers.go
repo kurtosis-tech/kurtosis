@@ -314,8 +314,9 @@ func RunScriptWithDefaultConfig(ctx context.Context, enclaveCtx *enclaves.Enclav
 func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) *enclaves.StarlarkRunResult {
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, _, err := CreateEnclave(t, ctx, testName, partitioningDisabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := CreateEnclave(t, ctx, testName, partitioningDisabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
+	defer func() { _ = destroyEnclaveFunc() }()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Startosis script...")
