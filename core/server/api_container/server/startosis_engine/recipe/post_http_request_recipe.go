@@ -200,5 +200,5 @@ func (recipe *PostHttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string
 }
 
 func (recipe *PostHttpRequestRecipe) RequestType() string {
-	return getMethod
+	return postMethod
 }
