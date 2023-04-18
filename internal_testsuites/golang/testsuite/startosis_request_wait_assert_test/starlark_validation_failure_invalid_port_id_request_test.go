@@ -35,7 +35,7 @@ func TestStarlark_InvalidPortIdRequest(t *testing.T) {
 	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, requestInvalidPortIDTest, requestInvalidPortIDFailScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
-	require.NotEmpty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation errors")
 	require.Len(t, runResult.ValidationErrors, 1)
 	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, "Request required port ID 'invalid-port-id' to exist on service 'web-server' but it doesn't")
 }
