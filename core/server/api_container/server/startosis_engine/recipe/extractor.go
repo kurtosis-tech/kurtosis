@@ -20,7 +20,7 @@ func extract(input []byte, query string) (starlark.Comparable, error) {
 	var jsonBody interface{}
 	err = json.Unmarshal(input, &jsonBody)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when parsing JSON response body:\n'%v'", jsonBody)
+		return nil, stacktrace.Propagate(err, "An error occurred when parsing JSON response body:\n'%v'", string(input))
 	}
 	matchIterator := jqQuery.Run(jsonBody)
 	parsedMatchList := []starlark.Value{}
