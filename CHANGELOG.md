@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.3](https://github.com/kurtosis-tech/kurtosis/compare/0.75.2...0.75.3) (2023-04-18)
+
+
+### Bug Fixes
+
+* Re-enable `--platform=linux/amd64` for Engine and APIC docker image ([#516](https://github.com/kurtosis-tech/kurtosis/issues/516)) ([07a0d07](https://github.com/kurtosis-tech/kurtosis/commit/07a0d07250e30fbf422917005e706c1a10789750))
+
 ## [0.75.2](https://github.com/kurtosis-tech/kurtosis/compare/0.75.1...0.75.2) (2023-04-17)
 
 
