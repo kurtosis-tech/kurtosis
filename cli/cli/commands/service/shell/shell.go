@@ -40,6 +40,8 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+
+	newLineTerminator = "\n"
 )
 
 var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -133,7 +135,7 @@ func run(
 	go io.Copy(os.Stderr, newReader)
 	go io.Copy(conn, os.Stdin)
 
-	io.Copy(conn, strings.NewReader(passAsIsFlag+"\n"))
+	io.Copy(conn, strings.NewReader(passAsIsFlag+newLineTerminator))
 
 	stdinFd := int(os.Stdin.Fd())
 	var oldState *terminal.State
