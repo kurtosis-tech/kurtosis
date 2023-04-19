@@ -26,13 +26,15 @@ def main():
                 versions_to_keep.append(version_str)
                 continue
 
-            # if the version is being processed is "0" patch then just keep it
-            if version.patch == "0":
+            # as we go down the list if the minor version changes then we are on the highest patch with the minor
+            # version so we keep it
+            if version.minor != current_version.minor:
                 versions_to_keep.append(version_str)
+                current_version  = version
                 continue
 
-            # if the version being processed is different major/minor from current and doesn't end with 0 delete it
-            if version.patch != "0":
+            # if the minor version is the same as the previous one then we are on a lower patch
+            if version.minor == current_version.minor:
                 versioned_docs_to_delete.append(f"versioned_docs/version-{version_str}")
                 versioned_sidebars_to_delete.append(f"versioned_sidebars/version-{version_str}-sidebars.json")
 
