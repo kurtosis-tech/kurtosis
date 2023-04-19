@@ -34,7 +34,7 @@ def main():
                 versioned_docs_to_delete.append(f"versioned_docs/version-{version_str}")
                 versioned_sidebars_to_delete.append(f"versioned_sidebars/version-{version_str}-sidebars.json")
 
-    for docs_folder_to_delete in versioned_sidebars_to_delete:
+    for docs_folder_to_delete in versioned_docs_to_delete:
         os.rmdir(docs_folder_to_delete)
 
     for sidebar_to_remove in versioned_sidebars_to_delete:
