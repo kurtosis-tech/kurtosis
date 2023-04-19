@@ -2,9 +2,10 @@
 # from the root of the docs folder
 
 import json
+import os
 from collections import namedtuple
 
-VERSIONS_FILE_NAME = "../docs/versions.json"
+VERSIONS_FILE_NAME = "versions.json"
 
 Version = namedtuple("Version", "major minor patch")
 
@@ -32,6 +33,16 @@ def main():
             if version.patch != "0":
                 versioned_docs_to_delete.append(f"versioned_docs/version-{version_str}")
                 versioned_sidebars_to_delete.append(f"versioned_sidebars/version-{version_str}-sidebars.json")
+
+    for docs_folder_to_delete in versioned_sidebars_to_delete:
+        os.rmdir(docs_folder_to_delete)
+
+    for sidebar_to_remove in versioned_sidebars_to_delete:
+        os.remove(sidebar_to_remove)
+
+    with open(VERSIONS_FILE_NAME, 'w') as versions_file:
+        versions_to_keep_json = json.dumps(versions_to_keep, indent=2)
+        versions_file.write(versions_to_keep_json)
 
 
 def str_to_version(version_str):
