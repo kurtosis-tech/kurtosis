@@ -32,6 +32,7 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 	execArgKey              = "exec"
+	execArgDefaultValue     = ""
 
 	serviceIdentifierArgKey  = "service"
 	isServiceGuidArgOptional = false
@@ -53,7 +54,7 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 			// TODO(gb): link to a doc page mentioning what a "Kurtosis instruction" is
 			Usage:   "If true, the Kurtosis instructions will not be executed, they will just be printed to the output of the CLI",
 			Type:    flags.FlagType_String,
-			Default: "",
+			Default: execArgDefaultValue,
 		},
 	},
 	Args: []*args.ArgConfig{
