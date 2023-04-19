@@ -61,8 +61,8 @@ def run(plan):
 			"my-content-type": '.headers["content-type"]'
 		}
 	)
-	plan.wait(recipe=post_recipe_no_body, field="code", assertion="==", target_value=200, service_name = "web-server")
-	plan.assert(post_response["extract.my-content-type"], "==", "application/json")
+	post_recipe_no_body_output = plan.wait(recipe=post_recipe_no_body, field="code", assertion="==", target_value=200, service_name = "web-server")
+	plan.assert(post_recipe_no_body_output["extract.my-content-type"], "==", "application/json")
 	exec_recipe = ExecRecipe(
 		command = ["echo", "hello", post_response["extract.my-body"]]
 	)
