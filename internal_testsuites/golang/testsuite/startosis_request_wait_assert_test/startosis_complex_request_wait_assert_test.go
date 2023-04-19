@@ -45,7 +45,7 @@ def run(plan):
 		body=response["extract.exploded-slash"],
 		extract = {
 			"my-body": ".body",
-			"my-content-type": ".headers.content-type"
+			"my-content-type": ".headers.[\"content-type\"]"
 		}
 	)
 	plan.wait(recipe=post_recipe, field="code", assertion="==", target_value=200, service_name="web-server")
@@ -57,7 +57,7 @@ def run(plan):
 		port_id = "http-port",
 		endpoint = "/",
 		extract = {
-			"my-content-type": ".headers.content-type"
+			"my-content-type": ".headers.[\"content-type\"]"
 		}
 	)
 	plan.wait(recipe=post_recipe_no_body, field="code", assertion="==", target_value=200, service_name = "web-server")
