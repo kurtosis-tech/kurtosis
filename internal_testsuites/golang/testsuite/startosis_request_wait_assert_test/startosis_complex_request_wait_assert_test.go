@@ -41,22 +41,27 @@ def run(plan):
 	post_recipe = PostHttpRequestRecipe(
 		port_id = "http-port",
 		endpoint = "/",
-		content_type="text/plain",
+		content_type="application/json",
 		body=response["extract.exploded-slash"],
 		extract = {
-			"my-body": ".body"
+			"my-body": ".body",
+			"my-content-type": ".headers.content-type"
 		}
 	)
 	plan.wait(recipe=post_recipe, field="code", assertion="==", target_value=200, service_name="web-server")
 	post_response = plan.request(recipe=post_recipe, service_name="web-server")
 	plan.assert(post_response["code"], "==", 200)
+	plan.assert(post_response["extract.my-content-type"], "==", "application/json")
 	plan.assert(post_response["extract.my-body"], "==", "bar")
 	post_recipe_no_body = PostHttpRequestRecipe(
 		port_id = "http-port",
 		endpoint = "/",
-		content_type="text/plain",
+		extract = {
+			"my-content-type": ".headers.content-type"
+		}
 	)
 	plan.wait(recipe=post_recipe_no_body, field="code", assertion="==", target_value=200, service_name = "web-server")
+	plan.assert(post_response["extract.my-content-type"], "==", "application/json")
 	exec_recipe = ExecRecipe(
 		command = ["echo", "hello", post_response["extract.my-body"]]
 	)
