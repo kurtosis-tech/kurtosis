@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.75.7](https://github.com/kurtosis-tech/kurtosis/compare/0.75.6...0.75.7) (2023-04-19)
+
+
+### Bug Fixes
+
+* prune non 0 patch versions for docs that aren't current minor version ([#528](https://github.com/kurtosis-tech/kurtosis/issues/528)) ([c65d691](https://github.com/kurtosis-tech/kurtosis/commit/c65d69168fcbcd3c7e470dedb4156594616e35a4)), closes [#487](https://github.com/kurtosis-tech/kurtosis/issues/487)
+
 ## [0.75.6](https://github.com/kurtosis-tech/kurtosis/compare/0.75.5...0.75.6) (2023-04-19)
 
 
