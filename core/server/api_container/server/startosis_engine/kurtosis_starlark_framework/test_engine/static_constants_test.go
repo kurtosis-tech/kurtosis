@@ -71,6 +71,7 @@ var (
 
 	TestReadyConditionsRecipePortId   = "http"
 	TestReadyConditionsRecipeEndpoint = "/endpoint?input=data"
+	TestReadyConditionsRecipeCommand  = []string{"tool", "arg"}
 	TestReadyConditionsRecipeExtract  = "{}"
 	TestReadyConditionsField          = "code"
 	TestReadyConditionsAssertion      = "=="

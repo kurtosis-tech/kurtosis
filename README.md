@@ -242,7 +242,7 @@ Kurtosis is a free and source-available product maintained by the [Kurtosis][kur
 - Filing an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)
 - [Joining our Discord server][discord]
 - [Following us on Twitter][twitter]
-- [Emailing us](mailto:feedback@kurtosistech.com) (also available as `kurtosis feedback --email`)
+- Emailing us via the CLI: `kurtosis feedback --email`
 - [Hop on a call to chat with us](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
