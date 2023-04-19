@@ -67,16 +67,16 @@ func TestExtractor_FailureInput(t *testing.T) {
 		"\"hi\"":  "length",
 		"\"bye\"": ".",
 	}
-	testOutputs := []any{
-		starlark.MakeInt(1),
-		starlark.MakeInt(2),
-		starlark.String("bye"),
+	testOutputs := map[string]starlark.Comparable{
+		"1":       starlark.MakeInt(1),
+		"\"hi\"":  starlark.MakeInt(2),
+		"\"bye\"": starlark.String("bye"),
 	}
 	index := 0
 	for input, query := range testInputs {
 		result, err := extract([]byte(input), query)
 		assert.Nil(t, err)
-		assert.Equal(t, testOutputs[index], result)
+		assert.Equal(t, testOutputs[input], result)
 		index += 1
 	}
 }
