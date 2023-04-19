@@ -173,11 +173,13 @@ func (portSpec *PortSpec) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.Port
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	if _, ok := waitValue.(starlark.NoneType); ok {
-		waitTimeout = port_spec.DisableWaitTimeoutDurationStr
-	}
-	if waitValueStr, ok := waitValue.(starlark.String); ok {
-		waitTimeout = waitValueStr.GoString()
+	if found {
+		if _, ok := waitValue.(starlark.NoneType); ok {
+			waitTimeout = port_spec.DisableWaitTimeoutDurationStr
+		}
+		if waitValueStr, ok := waitValue.(starlark.String); ok {
+			waitTimeout = waitValueStr.GoString()
+		}
 	}
 
 	return binding_constructors.NewPort(parsedPortNumber, parsedTransportProtocol, parsedPortApplicationProtocol, waitTimeout), nil
