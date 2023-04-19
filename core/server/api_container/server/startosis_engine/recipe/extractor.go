@@ -41,7 +41,7 @@ func extract(input []byte, query string) (starlark.Comparable, error) {
 		}
 	}
 	if len(parsedMatchList) == 0 {
-		return nil, stacktrace.NewError("No field '%v' was found on input '%v'", query, input)
+		return nil, stacktrace.NewError("No field '%v' was found on input '%v'", query, string(input))
 	}
 	if len(parsedMatchList) == 1 {
 		return parsedMatchList[0].(starlark.Comparable), nil

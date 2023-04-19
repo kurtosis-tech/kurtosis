@@ -799,6 +799,9 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 	if err != nil {
 		return nil, stacktrace.NewError("An error occurred building HTTP request on service '%v', URL '%v'", service, url)
 	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred on HTTP request on service '%v', URL '%v'", service, url)
