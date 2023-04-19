@@ -107,6 +107,8 @@ def run(plan, args):
 	artifactNamePrefix = "artifact-uploaded-via-helper-%v"
 
 	defaultParallelism = 4
+
+	defaultWaitTimeoutForTest = "5s"
 )
 
 var (
@@ -121,16 +123,19 @@ var fileServerPortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	Number:                   fileServerPrivatePortNum,
 	TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TCP,
 	MaybeApplicationProtocol: emptyApplicationProtocol,
+	MaybeWaitTimeout:         defaultWaitTimeoutForTest,
 }
 var datastorePortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	Number:                   uint32(datastore_rpc_api_consts.ListenPort),
 	TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TCP,
 	MaybeApplicationProtocol: emptyApplicationProtocol,
+	MaybeWaitTimeout:         defaultWaitTimeoutForTest,
 }
 var apiPortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	Number:                   uint32(example_api_server_rpc_api_consts.ListenPort),
 	TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TCP,
 	MaybeApplicationProtocol: emptyApplicationProtocol,
+	MaybeWaitTimeout:         defaultWaitTimeoutForTest,
 }
 
 type GrpcAvailabilityChecker interface {
