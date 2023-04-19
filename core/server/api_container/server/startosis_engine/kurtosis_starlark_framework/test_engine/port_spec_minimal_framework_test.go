@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	portWaitTimeout = ""
+	defaultPortWaitTimeout = "15s"
 )
 
 type portSpecMinimalTestCase struct {
@@ -38,7 +38,7 @@ func (t *portSpecMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValu
 	portSpec, err := portSpecStarlark.ToKurtosisType()
 	require.Nil(t, err)
 
-	expectedPortSpec := binding_constructors.NewPort(TestPrivatePortNumber, kurtosis_core_rpc_api_bindings.Port_TCP, "", portWaitTimeout)
+	expectedPortSpec := binding_constructors.NewPort(TestPrivatePortNumber, kurtosis_core_rpc_api_bindings.Port_TCP, "", defaultPortWaitTimeout)
 	require.Equal(t, expectedPortSpec, portSpec)
 
 }

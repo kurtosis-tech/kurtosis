@@ -97,7 +97,7 @@ func CreatePortSpec(
 	portNumber uint32,
 	transportProtocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol,
 	maybeApplicationProtocol string,
-	waitTimeout string,
+	maybeWaitTimeout string,
 ) (*PortSpec, *startosis_errors.InterpretationError) {
 	args := []starlark.Value{
 		starlark.MakeInt(int(portNumber)),
@@ -109,7 +109,11 @@ func CreatePortSpec(
 		args = append(args, nil)
 	}
 
-	args = append(args, starlark.String(waitTimeout))
+	if maybeWaitTimeout != "" {
+		args = append(args, starlark.String(maybeWaitTimeout))
+	} else {
+		args = append(args, nil)
+	}
 
 	argumentDefinitions := NewPortSpecType().KurtosisBaseBuiltin.Arguments
 	argumentValuesSet := builtin_argument.NewArgumentValuesSet(argumentDefinitions, args)

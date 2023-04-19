@@ -4,16 +4,11 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-const (
-	DefaultWaitTimeoutDurationStr = "15s"
-	DisableWaitTimeoutDurationStr = ""
-)
-
 type PortSpec struct {
 	number              uint16
 	transportProtocol   TransportProtocol
 	applicationProtocol *string
-	waitTimeout         string
+	wait                *Wait
 }
 
 /*
@@ -23,7 +18,7 @@ func NewPortSpec(
 	number uint16,
 	transportProtocol TransportProtocol,
 	maybeApplicationProtocol string,
-	waitTimeout string,
+	wait *Wait,
 ) (*PortSpec, error) {
 	var appProtocol *string
 	if maybeApplicationProtocol != "" {
@@ -39,7 +34,7 @@ func NewPortSpec(
 		number:              number,
 		transportProtocol:   transportProtocol,
 		applicationProtocol: appProtocol,
-		waitTimeout:         waitTimeout,
+		wait:                wait,
 	}
 
 	return portSpec, nil
@@ -57,6 +52,6 @@ func (spec *PortSpec) GetMaybeApplicationProtocol() *string {
 	return spec.applicationProtocol
 }
 
-func (spec *PortSpec) GetWaitTimeout() string {
-	return spec.waitTimeout
+func (spec *PortSpec) GetWait() *Wait {
+	return spec.wait
 }

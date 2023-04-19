@@ -1818,9 +1818,20 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
 	}
 
-	//TODO replace with the value received from the Core's API (we will implement this new fields in a next PR)
-	//TODO now we pass nil that will be translated to the wait's default values
-	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol(), nil)
+	var (
+		wait *port_spec.Wait
+		err  error
+	)
+
+	// a nil wait means the port wait feature will be disabled
+	if port.GetMaybeWaitTimeout() != port_spec.DisableWaitTimeoutDurationStr {
+		wait, err = port_spec.CreateWait(port.GetMaybeWaitTimeout())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating wait using port wait time out '%v'", port.GetMaybeWaitTimeout())
+		}
+	}
+
+	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol(), wait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
