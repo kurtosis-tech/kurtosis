@@ -24,12 +24,14 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"os"
+	"strings"
 )
 
 const (
 	enclaveIdentifierArgKey = "enclave"
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
+	execArgKey              = "exec"
 
 	serviceIdentifierArgKey  = "service"
 	isServiceGuidArgOptional = false
@@ -45,7 +47,15 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 	LongDescription:           "Starts a shell on the specified service",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     nil,
+	Flags: []*flags.FlagConfig{
+		{
+			Key: execArgKey,
+			// TODO(gb): link to a doc page mentioning what a "Kurtosis instruction" is
+			Usage:   "If true, the Kurtosis instructions will not be executed, they will just be printed to the output of the CLI",
+			Type:    flags.FlagType_String,
+			Default: "",
+		},
+	},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIdentifierArg(
 			enclaveIdentifierArgKey,
@@ -78,6 +88,11 @@ func run(
 	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the service identifier using arg key '%v'", serviceIdentifierArgKey)
+	}
+
+	passAsIsFlag, err := flags.GetString(execArgKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the pass as is flag using key '%v'", execArgKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -116,6 +131,8 @@ func run(
 	}()
 	go io.Copy(os.Stderr, newReader)
 	go io.Copy(conn, os.Stdin)
+
+	io.Copy(conn, strings.NewReader(passAsIsFlag+"\n"))
 
 	stdinFd := int(os.Stdin.Fd())
 	var oldState *terminal.State
