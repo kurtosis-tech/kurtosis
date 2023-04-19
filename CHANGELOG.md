@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.75.6](https://github.com/kurtosis-tech/kurtosis/compare/0.75.5...0.75.6) (2023-04-19)
+
+
+### Features
+
+* validate port ids before execution ([#519](https://github.com/kurtosis-tech/kurtosis/issues/519)) ([f6aceee](https://github.com/kurtosis-tech/kurtosis/commit/f6aceee42f65ce239b019d4179543aaf53b9e605))
+
+
+### Bug Fixes
+
+* Fix error message in recipe extraction logic to help with debugging ([#527](https://github.com/kurtosis-tech/kurtosis/issues/527)) ([45f9f8b](https://github.com/kurtosis-tech/kurtosis/commit/45f9f8b8d2b01d3480e444bd9319a048966802ca))
+* Fix NPE when stopping an already killled Portal process ([#526](https://github.com/kurtosis-tech/kurtosis/issues/526)) ([7307322](https://github.com/kurtosis-tech/kurtosis/commit/7307322bdf36e8dac21cf613c40fbab78e426685))
+* Pass Content-Type header to request ([#531](https://github.com/kurtosis-tech/kurtosis/issues/531)) ([b3a9294](https://github.com/kurtosis-tech/kurtosis/commit/b3a92943258493c0bc705c3755d8b9ae20715035))
+
 ## [0.75.5](https://github.com/kurtosis-tech/kurtosis/compare/0.75.4...0.75.5) (2023-04-18)
 
 
