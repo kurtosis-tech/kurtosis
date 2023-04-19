@@ -45,6 +45,7 @@ def main():
     with open(VERSIONS_FILE_NAME, 'w') as versions_file:
         versions_to_keep_json = json.dumps(versions_to_keep, indent=2)
         versions_file.write(versions_to_keep_json)
+        versions_file.write("\n")
 
 
 def str_to_version(version_str):
