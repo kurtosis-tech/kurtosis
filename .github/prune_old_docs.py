@@ -19,18 +19,19 @@ def main():
     with open(VERSIONS_FILE_NAME, "r") as available_versions:
         available_versions_json = json.loads(available_versions.read())
         current_version = str_to_version(available_versions_json[0])
+        latest_version = current_version
         for version_str in available_versions_json:
             version = str_to_version(version_str)
-            # if the version being processed is the same as the current major and minor version do nothing
-            if version.major == current_version.major and version.minor == current_version.minor:
+            # if the version being processed is the same as the latest major and minor version do nothing
+            if version.major == latest_version.major and version.minor == latest_version.minor:
                 versions_to_keep.append(version_str)
                 continue
 
             # as we go down the list if the minor version changes then we are on the highest patch with the minor
-            # version so we keep it
+            # version so, we keep it
             if version.minor != current_version.minor:
                 versions_to_keep.append(version_str)
-                current_version  = version
+                current_version = version
                 continue
 
             # if the minor version is the same as the previous one then we are on a lower patch
