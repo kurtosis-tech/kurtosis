@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"strings"
@@ -142,7 +143,7 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 	scriptOutput := strings.Builder{}
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.StarlarkInstruction
 
-	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject)
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject, runtime_value_store.NewRuntimeValueStore())
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()

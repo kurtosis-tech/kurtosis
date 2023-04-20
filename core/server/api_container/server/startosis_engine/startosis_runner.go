@@ -26,11 +26,12 @@ const (
 	startingExecutionMsg      = "Starting execution"
 )
 
-func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
+func NewStartosisRunner(runtimeValueStore *runtime_value_store.RuntimeValueStore, interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
 	return &StartosisRunner{
 		startosisInterpreter: interpreter,
 		startosisValidator:   validator,
 		startosisExecutor:    executor,
+		runtimeValueStore:    runtimeValueStore,
 	}
 }
 
