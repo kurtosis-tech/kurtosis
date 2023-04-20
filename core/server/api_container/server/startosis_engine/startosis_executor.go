@@ -5,6 +5,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
@@ -35,7 +37,7 @@ func NewStartosisExecutor() *StartosisExecutor {
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string, runtimeValueStore *runtime_value_store.RuntimeValueStore) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, ParallelismParam, parallelism)
@@ -72,7 +74,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		}
 
 		// TODO(gb): we should run magic string replacement on the output
-		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(serializedScriptOutput)
+		scriptWithValuesReplaced, _ := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, runtimeValueStore)
+		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced)
 	}()
 	return starlarkRunResponseLineStream
 }
