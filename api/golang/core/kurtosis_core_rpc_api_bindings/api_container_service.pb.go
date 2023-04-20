@@ -71,9 +71,7 @@ func (Port_TransportProtocol) EnumDescriptor() ([]byte, []int) {
 }
 
 // ==============================================================================================
-//
-//	Shared Objects (Used By Multiple Endpoints)
-//
+//                           Shared Objects (Used By Multiple Endpoints)
 // ==============================================================================================
 type Port struct {
 	state         protoimpl.MessageState
@@ -155,9 +153,7 @@ type ServiceInfo struct {
 	// NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
 	MaybePublicIpAddr string `protobuf:"bytes,4,opt,name=maybe_public_ip_addr,json=maybePublicIpAddr,proto3" json:"maybe_public_ip_addr,omitempty"`
 	// Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
-	//
-	//	corresponds to the ID that was passed in in StartServiceArgs
-	//
+	//  corresponds to the ID that was passed in in StartServiceArgs
 	// NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
 	MaybePublicPorts map[string]*Port `protobuf:"bytes,5,rep,name=maybe_public_ports,json=maybePublicPorts,proto3" json:"maybe_public_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Name of the service
@@ -255,7 +251,7 @@ type ServiceConfig struct {
 	ContainerImageName string `protobuf:"bytes,1,opt,name=container_image_name,json=containerImageName,proto3" json:"container_image_name,omitempty"`
 	// Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
 	PrivatePorts map[string]*Port `protobuf:"bytes,2,rep,name=private_ports,json=privatePorts,proto3" json:"private_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	PublicPorts map[string]*Port `protobuf:"bytes,3,rep,name=public_ports,json=publicPorts,proto3" json:"public_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
 	EntrypointArgs []string `protobuf:"bytes,4,rep,name=entrypoint_args,json=entrypointArgs,proto3" json:"entrypoint_args,omitempty"`
@@ -436,9 +432,7 @@ func (x *UpdateServiceConfig) GetSubnetwork() string {
 }
 
 // ==============================================================================================
-//
-//	Execute Starlark Arguments
-//
+//                               Execute Starlark Arguments
 // ==============================================================================================
 type RunStarlarkScriptArgs struct {
 	state         protoimpl.MessageState
@@ -523,7 +517,6 @@ type RunStarlarkPackageArgs struct {
 	// This should be a valid JSON string
 	//
 	// Types that are assignable to StarlarkPackageContent:
-	//
 	//	*RunStarlarkPackageArgs_Local
 	//	*RunStarlarkPackageArgs_Remote
 	StarlarkPackageContent isRunStarlarkPackageArgs_StarlarkPackageContent `protobuf_oneof:"starlark_package_content"`
@@ -632,9 +625,7 @@ func (*RunStarlarkPackageArgs_Local) isRunStarlarkPackageArgs_StarlarkPackageCon
 func (*RunStarlarkPackageArgs_Remote) isRunStarlarkPackageArgs_StarlarkPackageContent() {}
 
 // ==============================================================================================
-//
-//	Starlark Execution Response
-//
+//                               Starlark Execution Response
 // ==============================================================================================
 type StarlarkRunResponseLine struct {
 	state         protoimpl.MessageState
@@ -642,7 +633,6 @@ type StarlarkRunResponseLine struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to RunResponseLine:
-	//
 	//	*StarlarkRunResponseLine_Instruction
 	//	*StarlarkRunResponseLine_Error
 	//	*StarlarkRunResponseLine_ProgressInfo
@@ -1009,7 +999,6 @@ type StarlarkError struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Error:
-	//
 	//	*StarlarkError_InterpretationError
 	//	*StarlarkError_ValidationError
 	//	*StarlarkError_ExecutionError
@@ -1358,9 +1347,7 @@ func (x *StarlarkRunFinishedEvent) GetSerializedOutput() string {
 }
 
 // ==============================================================================================
-//
-//	Start Service
-//
+//                                        Start Service
 // ==============================================================================================
 type StartServicesArgs struct {
 	state         protoimpl.MessageState
@@ -1467,9 +1454,7 @@ func (x *StartServicesResponse) GetFailedServiceNameToError() map[string]string 
 }
 
 // ==============================================================================================
-//
-//	Get Services
-//
+//                                          Get Services
 // ==============================================================================================
 type GetServicesArgs struct {
 	state         protoimpl.MessageState
@@ -1683,9 +1668,7 @@ func (x *GetExistingAndHistoricalServiceIdentifiersResponse) GetAllIdentifiers()
 }
 
 // ==============================================================================================
-//
-//	Remove Service
-//
+//                                        Remove Service
 // ==============================================================================================
 type RemoveServiceArgs struct {
 	state         protoimpl.MessageState
@@ -1783,9 +1766,7 @@ func (x *RemoveServiceResponse) GetServiceUuid() string {
 }
 
 // ==============================================================================================
-//
-//	Repartition
-//
+//                                          Repartition
 // ==============================================================================================
 type RepartitionArgs struct {
 	state         protoimpl.MessageState
@@ -1797,8 +1778,7 @@ type RepartitionArgs struct {
 	// Definition of partitionIdA -> partitionIdB -> information defining the connection between A <-> B
 	PartitionConnections map[string]*PartitionConnections `protobuf:"bytes,2,rep,name=partition_connections,json=partitionConnections,proto3" json:"partition_connections,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Information about the default inter-partition connection to set up if one is not defined in the
-	//
-	//	partition connections map
+	//  partition connections map
 	DefaultConnection *PartitionConnectionInfo `protobuf:"bytes,3,opt,name=default_connection,json=defaultConnection,proto3" json:"default_connection,omitempty"`
 }
 
@@ -1999,9 +1979,7 @@ func (x *PartitionConnectionInfo) GetPacketLossPercentage() float32 {
 }
 
 // ==============================================================================================
-//
-//	Exec Command
-//
+//                                          Exec Command
 // ==============================================================================================
 type ExecCommandArgs struct {
 	state         protoimpl.MessageState
@@ -2060,9 +2038,7 @@ func (x *ExecCommandArgs) GetCommandArgs() []string {
 }
 
 // ==============================================================================================
-//
-//	Pause/Unpause Service
-//
+//                                          Pause/Unpause Service
 // ==============================================================================================
 type PauseServiceArgs struct {
 	state         protoimpl.MessageState
@@ -2217,28 +2193,26 @@ func (x *ExecCommandResponse) GetLogOutput() string {
 }
 
 // ==============================================================================================
-//
-//	Wait For HTTP Get Endpoint Availability
-//
+//                             Wait For HTTP Get Endpoint Availability
 // ==============================================================================================
 type WaitForHttpGetEndpointAvailabilityArgs struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier of the service to check.
+	//The identifier of the service to check.
 	ServiceIdentifier string `protobuf:"bytes,1,opt,name=service_identifier,json=serviceIdentifier,proto3" json:"service_identifier,omitempty"`
-	// The port of the service to check. For instance 8080
+	//The port of the service to check. For instance 8080
 	Port uint32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	// The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+	//The path of the service to check. It mustn't start with the first slash. For instance `service/health`
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// The number of milliseconds to wait until executing the first HTTP call
+	//The number of milliseconds to wait until executing the first HTTP call
 	InitialDelayMilliseconds uint32 `protobuf:"varint,4,opt,name=initial_delay_milliseconds,json=initialDelayMilliseconds,proto3" json:"initial_delay_milliseconds,omitempty"`
-	// Max number of HTTP call attempts that this will execute until giving up and returning an error
+	//Max number of HTTP call attempts that this will execute until giving up and returning an error
 	Retries uint32 `protobuf:"varint,5,opt,name=retries,proto3" json:"retries,omitempty"`
-	// Number of milliseconds to wait between retries
+	//Number of milliseconds to wait between retries
 	RetriesDelayMilliseconds uint32 `protobuf:"varint,6,opt,name=retries_delay_milliseconds,json=retriesDelayMilliseconds,proto3" json:"retries_delay_milliseconds,omitempty"`
-	// If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+	//If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
 	BodyText string `protobuf:"bytes,7,opt,name=body_text,json=bodyText,proto3" json:"body_text,omitempty"`
 }
 
@@ -2324,30 +2298,28 @@ func (x *WaitForHttpGetEndpointAvailabilityArgs) GetBodyText() string {
 }
 
 // ==============================================================================================
-//
-//	Wait For HTTP Post Endpoint Availability
-//
+//                           Wait For HTTP Post Endpoint Availability
 // ==============================================================================================
 type WaitForHttpPostEndpointAvailabilityArgs struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier of the service to check.
+	//The identifier of the service to check.
 	ServiceIdentifier string `protobuf:"bytes,1,opt,name=service_identifier,json=serviceIdentifier,proto3" json:"service_identifier,omitempty"`
-	// The port of the service to check. For instance 8080
+	//The port of the service to check. For instance 8080
 	Port uint32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	// The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+	//The path of the service to check. It mustn't start with the first slash. For instance `service/health`
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// The content of the request body.
+	//The content of the request body.
 	RequestBody string `protobuf:"bytes,4,opt,name=request_body,json=requestBody,proto3" json:"request_body,omitempty"`
-	// The number of milliseconds to wait until executing the first HTTP call
+	//The number of milliseconds to wait until executing the first HTTP call
 	InitialDelayMilliseconds uint32 `protobuf:"varint,5,opt,name=initial_delay_milliseconds,json=initialDelayMilliseconds,proto3" json:"initial_delay_milliseconds,omitempty"`
-	// Max number of HTTP call attempts that this will execute until giving up and returning an error
+	//Max number of HTTP call attempts that this will execute until giving up and returning an error
 	Retries uint32 `protobuf:"varint,6,opt,name=retries,proto3" json:"retries,omitempty"`
-	// Number of milliseconds to wait between retries
+	//Number of milliseconds to wait between retries
 	RetriesDelayMilliseconds uint32 `protobuf:"varint,7,opt,name=retries_delay_milliseconds,json=retriesDelayMilliseconds,proto3" json:"retries_delay_milliseconds,omitempty"`
-	// If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+	//If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
 	BodyText string `protobuf:"bytes,8,opt,name=body_text,json=bodyText,proto3" json:"body_text,omitempty"`
 }
 
@@ -2440,9 +2412,7 @@ func (x *WaitForHttpPostEndpointAvailabilityArgs) GetBodyText() string {
 }
 
 // ==============================================================================================
-//
-//	Streamed Data Chunk
-//
+//                                          Streamed Data Chunk
 // ==============================================================================================
 type StreamedDataChunk struct {
 	state         protoimpl.MessageState
@@ -2560,9 +2530,7 @@ func (x *DataChunkMetadata) GetName() string {
 }
 
 // ==============================================================================================
-//
-//	Upload Files Artifact
-//
+//                                          Upload Files Artifact
 // ==============================================================================================
 type UploadFilesArtifactArgs struct {
 	state         protoimpl.MessageState
@@ -2679,9 +2647,7 @@ func (x *UploadFilesArtifactResponse) GetName() string {
 }
 
 // ==============================================================================================
-//
-//	Download Files Artifact
-//
+//                                          Download Files Artifact
 // ==============================================================================================
 type DownloadFilesArtifactArgs struct {
 	state         protoimpl.MessageState
@@ -2780,9 +2746,7 @@ func (x *DownloadFilesArtifactResponse) GetData() []byte {
 }
 
 // ==============================================================================================
-//
-//	Store Web Files Artifact
-//
+//                                        Store Web Files Artifact
 // ==============================================================================================
 type StoreWebFilesArtifactArgs struct {
 	state         protoimpl.MessageState

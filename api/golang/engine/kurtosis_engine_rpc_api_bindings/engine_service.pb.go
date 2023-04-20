@@ -23,9 +23,7 @@ const (
 )
 
 // ==============================================================================================
-//
-//	Get Enclaves
-//
+//                                            Get Enclaves
 // ==============================================================================================
 // Status of the containers in the enclave
 // NOTE: We have to prefix the enum values with the enum name due to the way Protobuf enum valuee uniqueness works
@@ -90,8 +88,7 @@ const (
 	EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_NONEXISTENT EnclaveAPIContainerStatus = 0
 	// An API container exists and is running
 	// NOTE: this does NOT say that the server inside the API container is available, because checking if it's available requires making a call to the API container
-	//
-	//	If we have a lot of API containers, we'd be making tons of calls
+	//  If we have a lot of API containers, we'd be making tons of calls
 	EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING EnclaveAPIContainerStatus = 1
 	// An API container exists, but isn't running
 	EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_STOPPED EnclaveAPIContainerStatus = 2
@@ -138,7 +135,7 @@ func (EnclaveAPIContainerStatus) EnumDescriptor() ([]byte, []int) {
 	return file_engine_service_proto_rawDescGZIP(), []int{1}
 }
 
-// The filter operator which can be text or regex type
+//The filter operator which can be text or regex type
 // NOTE: We have to prefix the enum values with the enum name due to the way Protobuf enum value uniqueness works
 type LogLineOperator int32
 
@@ -193,9 +190,7 @@ func (LogLineOperator) EnumDescriptor() ([]byte, []int) {
 }
 
 // ==============================================================================================
-//
-//	Get Engine Info
-//
+//                                        Get Engine Info
 // ==============================================================================================
 type GetEngineInfoResponse struct {
 	state         protoimpl.MessageState
@@ -246,9 +241,7 @@ func (x *GetEngineInfoResponse) GetEngineVersion() string {
 }
 
 // ==============================================================================================
-//
-//	Create Enclave
-//
+//                                        Create Enclave
 // ==============================================================================================
 type CreateEnclaveArgs struct {
 	state         protoimpl.MessageState
@@ -331,7 +324,7 @@ type CreateEnclaveResponse struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// All the enclave information inside this object
+	//All the enclave information inside this object
 	EnclaveInfo *EnclaveInfo `protobuf:"bytes,1,opt,name=enclave_info,json=enclaveInfo,proto3" json:"enclave_info,omitempty"`
 }
 
@@ -379,7 +372,7 @@ type EnclaveAPIContainerInfo struct {
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The container engine ID of the API container
+	//The container engine ID of the API container
 	ContainerId string `protobuf:"bytes,1,opt,name=container_id,json=containerId,proto3" json:"container_id,omitempty"`
 	// The IP inside the enclave network of the API container (i.e. how services inside the network can reach the API container)
 	IpInsideEnclave string `protobuf:"bytes,2,opt,name=ip_inside_enclave,json=ipInsideEnclave,proto3" json:"ip_inside_enclave,omitempty"`
@@ -536,7 +529,7 @@ type EnclaveInfo struct {
 	ApiContainerInfo *EnclaveAPIContainerInfo `protobuf:"bytes,6,opt,name=api_container_info,json=apiContainerInfo,proto3" json:"api_container_info,omitempty"`
 	// NOTE: Will not be present if the API container status is not "RUNNING"!!
 	ApiContainerHostMachineInfo *EnclaveAPIContainerHostMachineInfo `protobuf:"bytes,7,opt,name=api_container_host_machine_info,json=apiContainerHostMachineInfo,proto3" json:"api_container_host_machine_info,omitempty"`
-	// The enclave's creation time
+	//The enclave's creation time
 	CreationTime *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=creation_time,json=creationTime,proto3" json:"creation_time,omitempty"`
 }
 
@@ -791,16 +784,14 @@ func (x *GetExistingAndHistoricalEnclaveIdentifiersResponse) GetAllIdentifiers()
 }
 
 // ==============================================================================================
-//
-//	Stop Enclave
-//
+//                                       Stop Enclave
 // ==============================================================================================
 type StopEnclaveArgs struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to stop
+	//The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to stop
 	EnclaveIdentifier string `protobuf:"bytes,1,opt,name=enclave_identifier,json=enclaveIdentifier,proto3" json:"enclave_identifier,omitempty"`
 }
 
@@ -844,16 +835,14 @@ func (x *StopEnclaveArgs) GetEnclaveIdentifier() string {
 }
 
 // ==============================================================================================
-//
-//	Destroy Enclave
-//
+//                                       Destroy Enclave
 // ==============================================================================================
 type DestroyEnclaveArgs struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to destroy
+	//The identifier(uuid, shortened uuid, name) of the Kurtosis enclave to destroy
 	EnclaveIdentifier string `protobuf:"bytes,1,opt,name=enclave_identifier,json=enclaveIdentifier,proto3" json:"enclave_identifier,omitempty"`
 }
 
@@ -897,9 +886,7 @@ func (x *DestroyEnclaveArgs) GetEnclaveIdentifier() string {
 }
 
 // ==============================================================================================
-//
-//	Create Enclave
-//
+//                                       Create Enclave
 // ==============================================================================================
 type CleanArgs struct {
 	state         protoimpl.MessageState
@@ -1053,9 +1040,7 @@ func (x *CleanResponse) GetRemovedEnclaveNameAndUuids() []*EnclaveNameAndUuid {
 }
 
 // ==============================================================================================
-//
-//	Get User Service Logs
-//
+//                                   Get User Service Logs
 // ==============================================================================================
 type GetServiceLogsArgs struct {
 	state         protoimpl.MessageState
