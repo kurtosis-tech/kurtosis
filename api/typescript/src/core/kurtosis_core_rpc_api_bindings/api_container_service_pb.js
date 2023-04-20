@@ -2614,7 +2614,8 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     remote: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
     serializedParams: jspb.Message.getFieldWithDefault(msg, 5, ""),
     dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
-    parallelism: jspb.Message.getFieldWithDefault(msg, 7, 0)
+    parallelism: jspb.Message.getFieldWithDefault(msg, 7, 0),
+    clonePackage: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
   };
 
   if (includeInstance) {
@@ -2674,6 +2675,10 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
     case 7:
       var value = /** @type {number} */ (reader.readInt32());
       msg.setParallelism(value);
+      break;
+    case 8:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setClonePackage(value);
       break;
     default:
       reader.skipField();
@@ -2743,6 +2748,13 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f != null) {
     writer.writeInt32(
       7,
+      f
+    );
+  }
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 8));
+  if (f != null) {
+    writer.writeBool(
+      8,
       f
     );
   }
@@ -2950,6 +2962,42 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.clearParallelism = func
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.hasParallelism = function() {
   return jspb.Message.getField(this, 7) != null;
+};
+
+
+/**
+ * optional bool clone_package = 8;
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getClonePackage = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 8, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setClonePackage = function(value) {
+  return jspb.Message.setField(this, 8, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearClonePackage = function() {
+  return jspb.Message.setField(this, 8, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.hasClonePackage = function() {
+  return jspb.Message.getField(this, 8) != null;
 };
 
 
