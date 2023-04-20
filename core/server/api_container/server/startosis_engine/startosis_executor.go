@@ -74,7 +74,14 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		}
 
 		// TODO(gb): we should run magic string replacement on the output
-		scriptWithValuesReplaced, _ := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, runtimeValueStore)
+		scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, runtimeValueStore)
+		if err != nil {
+			propagatedErr := stacktrace.Propagate(err, "An error occurred while replacing the runtime values in the output of the script")
+			serializedError := binding_constructors.NewStarlarkExecutionError(propagatedErr.Error())
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+			return
+		}
 		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced)
 	}()
 	return starlarkRunResponseLineStream
