@@ -38,7 +38,7 @@ func (clientStream *ClientStream[DataChunkMessageType, ServerResponseType]) Send
 		return nil, stacktrace.Propagate(err, "An error occurred sending '%s'", contentNameForLogging)
 	}
 
-	// The client needs to close the stream to tell the server nothing more is expected
+	// The client (which is the sender here) needs to close the stream to tell the server nothing more is expected
 	if err = clientStream.grpcStream.CloseSend(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error was encountered closing the stream for '%s' after all "+
 			"chunks were sent", contentNameForLogging)
