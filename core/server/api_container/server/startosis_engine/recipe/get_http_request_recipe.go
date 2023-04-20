@@ -162,3 +162,7 @@ func (recipe *GetHttpRequestRecipe) CreateStarlarkReturnValue(resultUuid string)
 	}
 	return returnValue, nil
 }
+
+func (recipe *GetHttpRequestRecipe) RequestType() string {
+	return getMethod
+}

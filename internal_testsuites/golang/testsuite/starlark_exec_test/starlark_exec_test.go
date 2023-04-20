@@ -13,8 +13,6 @@ import (
 const (
 	testName              = "starlark_exec_test"
 	isPartitioningEnabled = false
-	defaultDryRun         = false
-	emptyParams           = "{}"
 )
 
 const (
@@ -38,10 +36,14 @@ def run(plan, args):
 def run(plan, args):
 	exec_recipe = ExecRecipe(
 		command = %v,
+		extract = {
+			"len": "length" 
+		}
 	)
 	exec_result = plan.exec(recipe=exec_recipe, service_name="test", acceptable_codes=[0], skip_code_check=True)
 	plan.assert(exec_result["code"], "==", %d)
 	plan.assert(exec_result["output"], "==", "%s")
+	plan.assert(exec_result["extract.len"], "==", %d)
 `
 )
 
@@ -50,15 +52,18 @@ var (
 	execCommandThatShouldFail          = []string{"false"}
 	execCommandThatShouldHaveLogOutput = []string{"echo", "hello"}
 
+	expectedLogOutputLength         = len(expectedLogOutput) - 1         // Length is calculated on non escaped \n
+	expectedAdvancedLogOutputLength = len(expectedAdvancedLogOutput) - 1 // Length is calculated on non escaped \n
+
 	// This command tests to ensure that the commands the user is running get passed exactly as-is to the Docker
 	// container. If Kurtosis code is magically wrapping the code with "sh -c", this will fail.
 	execCommandThatWillFailIfShWrapped = []string{"echo", "hello && hello"}
 
 	testStarlarkScripts = []string{
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldWork), successExitCode, noExecOutput),
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldFail), failureExitCode, noExecOutput),
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldHaveLogOutput), successExitCode, expectedLogOutput),
-		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatWillFailIfShWrapped), successExitCode, expectedAdvancedLogOutput),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldWork), successExitCode, noExecOutput, 0),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldFail), failureExitCode, noExecOutput, 0),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatShouldHaveLogOutput), successExitCode, expectedLogOutput, expectedLogOutputLength),
+		fmt.Sprintf(testStarlarkScriptTemplate, sliceToStarlarkString(execCommandThatWillFailIfShWrapped), successExitCode, expectedAdvancedLogOutput, expectedAdvancedLogOutputLength),
 	}
 )
 
