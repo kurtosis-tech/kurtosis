@@ -17,16 +17,18 @@ const (
 )
 
 type StartosisExecutor struct {
-	mutex *sync.Mutex
+	mutex             *sync.Mutex
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
 type ExecutionError struct {
 	Error string
 }
 
-func NewStartosisExecutor() *StartosisExecutor {
+func NewStartosisExecutor(runtimeValueStore *runtime_value_store.RuntimeValueStore) *StartosisExecutor {
 	return &StartosisExecutor{
-		mutex: &sync.Mutex{},
+		mutex:             &sync.Mutex{},
+		runtimeValueStore: runtimeValueStore,
 	}
 }
 
@@ -37,7 +39,7 @@ func NewStartosisExecutor() *StartosisExecutor {
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string, runtimeValueStore *runtime_value_store.RuntimeValueStore) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, ParallelismParam, parallelism)
@@ -73,7 +75,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			}
 		}
 
-		scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, runtimeValueStore)
+		scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
 		if err != nil {
 			propagatedErr := stacktrace.Propagate(err, "An error occurred while replacing the runtime values in the output of the script")
 			serializedError := binding_constructors.NewStarlarkExecutionError(propagatedErr.Error())

@@ -173,10 +173,9 @@ func runMain() error {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
-		runtimeValueStore,
 		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
-		startosis_engine.NewStartosisExecutor())
+		startosis_engine.NewStartosisExecutor(runtimeValueStore))
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(

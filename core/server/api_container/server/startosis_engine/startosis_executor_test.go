@@ -33,7 +33,7 @@ var (
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
-	executor := NewStartosisExecutor()
+	executor := NewStartosisExecutor(runtime_value_store.NewRuntimeValueStore())
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
@@ -58,7 +58,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 }
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
-	executor := NewStartosisExecutor()
+	executor := NewStartosisExecutor(runtime_value_store.NewRuntimeValueStore())
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
@@ -95,7 +95,7 @@ instruction2()
 }
 
 func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
-	executor := NewStartosisExecutor()
+	executor := NewStartosisExecutor(runtime_value_store.NewRuntimeValueStore())
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
@@ -143,7 +143,7 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 	scriptOutput := strings.Builder{}
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.StarlarkInstruction
 
-	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject, runtime_value_store.NewRuntimeValueStore())
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject)
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()

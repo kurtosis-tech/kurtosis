@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/sirupsen/logrus"
 )
 
@@ -14,8 +13,6 @@ type StartosisRunner struct {
 	startosisValidator *StartosisValidator
 
 	startosisExecutor *StartosisExecutor
-
-	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
 const (
@@ -26,12 +23,11 @@ const (
 	startingExecutionMsg      = "Starting execution"
 )
 
-func NewStartosisRunner(runtimeValueStore *runtime_value_store.RuntimeValueStore, interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
+func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
 	return &StartosisRunner{
 		startosisInterpreter: interpreter,
 		startosisValidator:   validator,
 		startosisExecutor:    executor,
-		runtimeValueStore:    runtimeValueStore,
 	}
 }
 
@@ -73,7 +69,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
-		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsList, serializedScriptOutput, runner.runtimeValueStore)
+		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsList, serializedScriptOutput)
 		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
 		}
