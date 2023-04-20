@@ -23,7 +23,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230221115618-70c305416224
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230420134033-7ad0b1570592
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.14
