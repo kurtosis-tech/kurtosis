@@ -41,6 +41,13 @@ jobs:
           working-directory: contexts-config-store/
           args: --timeout=3m
           skip-pkg-cache: true
+      - name: lint-grpc-file-transfer
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: v1.49.0
+          working-directory: grpc-file-transfer/golang/
+          args: --timeout=3m
+          skip-pkg-cache: true
       - name: lint-name-generator
         uses: golangci/golangci-lint-action@v3
         with:

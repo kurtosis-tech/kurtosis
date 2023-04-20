@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
+	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -223,8 +224,24 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 			pathToUpload)
 	}
 
-	args := binding_constructors.NewUploadFilesArtifactArgs(content, artifactName)
-	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
+	client, err := enclaveCtx.client.UploadFilesArtifactV2(context.Background())
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "An error was encountered initiating the data upload to the API Container.")
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](client)
+	response, err := clientStream.SendData(
+		artifactName,
+		content,
+		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+				Data:              contentChunk,
+				PreviousChunkHash: previousChunkHash,
+				Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+					Name: artifactName,
+				},
+			}, nil
+		},
+	)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
 	}
