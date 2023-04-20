@@ -100,15 +100,57 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	return nil
 }
 
+func (apicService ApiContainerService) UploadStarlarkPackage(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadStarlarkPackageServer) error {
+	var packageId string
+	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, emptypb.Empty](server)
+
+	err := serverStream.ReceiveData(
+		packageId,
+		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+			if packageId == "" {
+				packageId = dataChunk.GetMetadata().GetName()
+			} else if packageId != dataChunk.GetMetadata().GetName() {
+				return nil, "", stacktrace.NewError("An unexpected error occurred receiving Starlark package chunk. Package name was changed during the upload process")
+			}
+			return dataChunk.GetData(), dataChunk.GetPreviousChunkHash(), nil
+		},
+		func(assembledContent []byte) (*emptypb.Empty, error) {
+			if packageId == "" {
+				return nil, stacktrace.NewError("The package being uploaded did not have any name attached. This is a Kurtosis bug")
+			}
+
+			// finished receiving all the chunks and assembling them into a single byte array
+			_, interpretationError := apicService.startosisModuleContentProvider.StorePackageContents(packageId, assembledContent, doOverwriteExistingModule)
+			if interpretationError != nil {
+				return nil, stacktrace.Propagate(interpretationError, "Error storing package in APIC once received")
+			}
+			return &emptypb.Empty{}, nil
+		},
+	)
+
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred receiving the Starlark package payload")
+	}
+	return nil
+}
+
 func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
 	packageId := args.GetPackageId()
-	isRemote := args.GetRemote()
-	moduleContentIfLocal := args.GetLocal()
 	parallelism := int(args.GetParallelism())
-	serializedParams := args.SerializedParams
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
+	serializedParams := args.SerializedParams
 
-	scriptWithRunFunction, interpretationError := apicService.runStarlarkPackageSetup(packageId, isRemote, moduleContentIfLocal)
+	// TODO: remove this fork once everything uses the UploadStarlarkPackage endpoint prior to calling this
+	//  right now the TS SDK still uses the old deprecated behavior
+	var scriptWithRunFunction string
+	var interpretationError *startosis_errors.InterpretationError
+	if args.ClonePackage != nil {
+		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil)
+	} else {
+		// old deprecated syntax in use
+		moduleContentIfLocal := args.GetLocal()
+		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal)
+	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
 			return stacktrace.Propagate(err, "Error preparing for package execution and this error could not be sent through the output stream: '%s'", packageId)
@@ -433,13 +475,40 @@ func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context
 		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
 	}
 
-	fileBytes, err := ioutil.ReadFile(filesArtifact.GetAbsoluteFilepath())
+	fileBytes, err := os.ReadFile(filesArtifact.GetAbsoluteFilepath())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred reading files artifact file bytes")
 	}
 
 	resp := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse{Data: fileBytes}
 	return resp, nil
+}
+
+func (apicService ApiContainerService) DownloadFilesArtifactV2(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactV2Server) error {
+	// context is not used in DownloadFilesArtifact, it's fine to pass context.Background() here
+	fileBytes, err := apicService.DownloadFilesArtifact(context.Background(), args)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred reading files artifact file bytes")
+	}
+
+	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](server)
+	err = serverStream.SendData(
+		args.Identifier,
+		fileBytes.GetData(),
+		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+				Data:              contentChunk,
+				PreviousChunkHash: previousChunkHash,
+				Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+					Name: args.Identifier,
+				},
+			}, nil
+		},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred receiving the file payload")
+	}
+	return nil
 }
 
 func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
@@ -682,13 +751,19 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	return serviceInfoResponse, nil
 }
 
-func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string, isRemote bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
+func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string, clonePackage bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
-	if isRemote {
+	if clonePackage {
 		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.ClonePackage(packageId)
-	} else {
+	} else if moduleContentIfLocal != nil {
+		// TODO: remove this once UploadStarlarkPackage is called prior to calling RunStarlarkPackage by all consumers
+		//  of this API
 		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StorePackageContents(packageId, moduleContentIfLocal, doOverwriteExistingModule)
+	} else {
+		// We just need to retrieve the absolute path, the content is will not be stored here since it has been uploaded
+		// prior to this call
+		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.GetOnDiskAbsolutePackagePath(packageId)
 	}
 	if interpretationError != nil {
 		return "", interpretationError

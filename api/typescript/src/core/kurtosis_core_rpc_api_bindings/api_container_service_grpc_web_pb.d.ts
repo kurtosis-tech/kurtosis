@@ -103,6 +103,11 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.DownloadFilesArtifactResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.DownloadFilesArtifactResponse>;
 
+  downloadFilesArtifactV2(
+    request: api_container_service_pb.DownloadFilesArtifactArgs,
+    metadata?: grpcWeb.Metadata
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StreamedDataChunk>;
+
   storeWebFilesArtifact(
     request: api_container_service_pb.StoreWebFilesArtifactArgs,
     metadata: grpcWeb.Metadata | undefined,
@@ -207,6 +212,11 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.DownloadFilesArtifactArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.DownloadFilesArtifactResponse>;
+
+  downloadFilesArtifactV2(
+    request: api_container_service_pb.DownloadFilesArtifactArgs,
+    metadata?: grpcWeb.Metadata
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.StreamedDataChunk>;
 
   storeWebFilesArtifact(
     request: api_container_service_pb.StoreWebFilesArtifactArgs,
