@@ -1005,6 +1005,54 @@ export namespace WaitForHttpPostEndpointAvailabilityArgs {
   }
 }
 
+export class StreamedDataChunk extends jspb.Message {
+  getData(): Uint8Array | string;
+  getData_asU8(): Uint8Array;
+  getData_asB64(): string;
+  setData(value: Uint8Array | string): StreamedDataChunk;
+
+  getPreviousChunkHash(): string;
+  setPreviousChunkHash(value: string): StreamedDataChunk;
+
+  getMetadata(): DataChunkMetadata | undefined;
+  setMetadata(value?: DataChunkMetadata): StreamedDataChunk;
+  hasMetadata(): boolean;
+  clearMetadata(): StreamedDataChunk;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StreamedDataChunk.AsObject;
+  static toObject(includeInstance: boolean, msg: StreamedDataChunk): StreamedDataChunk.AsObject;
+  static serializeBinaryToWriter(message: StreamedDataChunk, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StreamedDataChunk;
+  static deserializeBinaryFromReader(message: StreamedDataChunk, reader: jspb.BinaryReader): StreamedDataChunk;
+}
+
+export namespace StreamedDataChunk {
+  export type AsObject = {
+    data: Uint8Array | string,
+    previousChunkHash: string,
+    metadata?: DataChunkMetadata.AsObject,
+  }
+}
+
+export class DataChunkMetadata extends jspb.Message {
+  getName(): string;
+  setName(value: string): DataChunkMetadata;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): DataChunkMetadata.AsObject;
+  static toObject(includeInstance: boolean, msg: DataChunkMetadata): DataChunkMetadata.AsObject;
+  static serializeBinaryToWriter(message: DataChunkMetadata, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): DataChunkMetadata;
+  static deserializeBinaryFromReader(message: DataChunkMetadata, reader: jspb.BinaryReader): DataChunkMetadata;
+}
+
+export namespace DataChunkMetadata {
+  export type AsObject = {
+    name: string,
+  }
+}
+
 export class UploadFilesArtifactArgs extends jspb.Message {
   getData(): Uint8Array | string;
   getData_asU8(): Uint8Array;

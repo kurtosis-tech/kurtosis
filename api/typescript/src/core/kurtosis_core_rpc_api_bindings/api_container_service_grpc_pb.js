@@ -258,6 +258,17 @@ function deserialize_api_container_api_StoreWebFilesArtifactResponse(buffer_arg)
   return api_container_service_pb.StoreWebFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_StreamedDataChunk(arg) {
+  if (!(arg instanceof api_container_service_pb.StreamedDataChunk)) {
+    throw new Error('Expected argument of type api_container_api.StreamedDataChunk');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StreamedDataChunk(buffer_arg) {
+  return api_container_service_pb.StreamedDataChunk.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_UnpauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.UnpauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.UnpauseServiceArgs');
@@ -471,6 +482,7 @@ waitForHttpPostEndpointAvailability: {
     responseDeserialize: deserialize_google_protobuf_Empty,
   },
   // Uploads a files artifact to the Kurtosis File System
+// Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
 uploadFilesArtifact: {
     path: '/api_container_api.ApiContainerService/UploadFilesArtifact',
     requestStream: false,
@@ -479,6 +491,20 @@ uploadFilesArtifact: {
     responseType: api_container_service_pb.UploadFilesArtifactResponse,
     requestSerialize: serialize_api_container_api_UploadFilesArtifactArgs,
     requestDeserialize: deserialize_api_container_api_UploadFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
+  },
+  // Uploads a files artifact to the Kurtosis File System
+// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
+// library is only implemented in Go
+uploadFilesArtifactV2: {
+    path: '/api_container_api.ApiContainerService/UploadFilesArtifactV2',
+    requestStream: true,
+    responseStream: false,
+    requestType: api_container_service_pb.StreamedDataChunk,
+    responseType: api_container_service_pb.UploadFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_StreamedDataChunk,
+    requestDeserialize: deserialize_api_container_api_StreamedDataChunk,
     responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
   },
