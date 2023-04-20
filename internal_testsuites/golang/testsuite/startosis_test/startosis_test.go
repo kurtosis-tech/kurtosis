@@ -89,8 +89,9 @@ def run(plan, args):
 			PATH_TO_MOUNT_RENDERED_CONFIG: rendered_artifact
 		}
 	)
-	plan.add_service(name = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
+	deployed_service = plan.add_service(name = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
 	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
+	return {"ip-address": deployed_service.ip_address}
 `
 )
 
