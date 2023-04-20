@@ -9,6 +9,7 @@ import * as grpc from "@grpc/grpc-js";
 
 interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.UntypedServiceImplementation> {
   runStarlarkScript: grpc.MethodDefinition<api_container_service_pb.RunStarlarkScriptArgs, api_container_service_pb.StarlarkRunResponseLine>;
+  uploadStarlarkPackage: grpc.MethodDefinition<api_container_service_pb.StreamedDataChunk, google_protobuf_empty_pb.Empty>;
   runStarlarkPackage: grpc.MethodDefinition<api_container_service_pb.RunStarlarkPackageArgs, api_container_service_pb.StarlarkRunResponseLine>;
   startServices: grpc.MethodDefinition<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.MethodDefinition<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
@@ -34,6 +35,7 @@ export const ApiContainerServiceService: IApiContainerServiceService;
 
 export interface IApiContainerServiceServer extends grpc.UntypedServiceImplementation {
   runStarlarkScript: grpc.handleServerStreamingCall<api_container_service_pb.RunStarlarkScriptArgs, api_container_service_pb.StarlarkRunResponseLine>;
+  uploadStarlarkPackage: grpc.handleClientStreamingCall<api_container_service_pb.StreamedDataChunk, google_protobuf_empty_pb.Empty>;
   runStarlarkPackage: grpc.handleServerStreamingCall<api_container_service_pb.RunStarlarkPackageArgs, api_container_service_pb.StarlarkRunResponseLine>;
   startServices: grpc.handleUnaryCall<api_container_service_pb.StartServicesArgs, api_container_service_pb.StartServicesResponse>;
   getServices: grpc.handleUnaryCall<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
@@ -59,6 +61,9 @@ export class ApiContainerServiceClient extends grpc.Client {
   constructor(address: string, credentials: grpc.ChannelCredentials, options?: object);
   runStarlarkScript(argument: api_container_service_pb.RunStarlarkScriptArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
   runStarlarkScript(argument: api_container_service_pb.RunStarlarkScriptArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
+  uploadStarlarkPackage(callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientWritableStream<api_container_service_pb.StreamedDataChunk>;
+  uploadStarlarkPackage(metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientWritableStream<api_container_service_pb.StreamedDataChunk>;
+  uploadStarlarkPackage(metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientWritableStream<api_container_service_pb.StreamedDataChunk>;
   runStarlarkPackage(argument: api_container_service_pb.RunStarlarkPackageArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
   runStarlarkPackage(argument: api_container_service_pb.RunStarlarkPackageArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
   startServices(argument: api_container_service_pb.StartServicesArgs, callback: grpc.requestCallback<api_container_service_pb.StartServicesResponse>): grpc.ClientUnaryCall;
