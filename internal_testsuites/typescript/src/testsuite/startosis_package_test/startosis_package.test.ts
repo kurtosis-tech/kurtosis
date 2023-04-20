@@ -40,7 +40,7 @@ test("Test valid Starlark package with input", async () => {
         expect(runResult.value.validationErrors).toEqual([])
         expect(runResult.value.executionError).toBeUndefined()
 
-        const expectedScriptOutput = "bonjour!\nHello World!\n{\n\t\"message\": \"Hello World!]\"\n}\n"
+        const expectedScriptOutput = "bonjour!\nHello World!\n{\n\t\"message\": \"Hello World!\"\n}\n"
         expect(runResult.value.runOutput).toEqual(expectedScriptOutput)
         expect(runResult.value.instructions).toHaveLength(2)
     } finally {
