@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.75.8](https://github.com/kurtosis-tech/kurtosis/compare/0.75.7...0.75.8) (2023-04-20)
+
+
+### Features
+
+* GRPC file streaming library ([#504](https://github.com/kurtosis-tech/kurtosis/issues/504)) ([ec30ada](https://github.com/kurtosis-tech/kurtosis/commit/ec30ada5e81e18442c60e420c4fb86435a79d2a5))
+
+
+### Bug Fixes
+
+* added telemetry about network partitioning for enclaves that get created ([#535](https://github.com/kurtosis-tech/kurtosis/issues/535)) ([379a1a6](https://github.com/kurtosis-tech/kurtosis/commit/379a1a69404f04c9f6d6235e1759c471951c0419))
+
 ## [0.75.7](https://github.com/kurtosis-tech/kurtosis/compare/0.75.6...0.75.7) (2023-04-19)
 
 
