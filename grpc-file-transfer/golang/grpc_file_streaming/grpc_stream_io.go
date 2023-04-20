@@ -22,10 +22,10 @@ const (
 // and send it via the stream using sendViaStreamFunc.
 // grpcMsgConstructor must be implemented by the user of this function. it should produce an actual proto message object
 // from the previousChunkHash and the byte array for this chunk.
-func sendMessagesToStream[DataChunkProtoMessage interface{}](
+func sendMessagesToStream[DataChunkProtoMessage any](
 	payloadNameForLogging string,
 	payload []byte,
-	sendViaStreamFunc func(msg interface{}) error,
+	sendViaStreamFunc func(msg any) error,
 	grpcMsgConstructor func(previousChunkHash string, contentChunk []byte) (*DataChunkProtoMessage, error),
 ) error {
 	if len(payload) > kurtosisMaximumFileSizeLimit {
@@ -76,9 +76,9 @@ func sendMessagesToStream[DataChunkProtoMessage interface{}](
 // It extracts the valuable information (i.e. the byte array and the previous chunk hash) form the generic proto message
 // using the provided grpcMsgExtractor function.
 // It returns a simple byte array corresponding to the assembled payload (concatenation of all chunks)
-func readMessagesFromStream[DataChunkMessageType interface{}](
+func readMessagesFromStream[DataChunkMessageType any](
 	payloadNameForLogging string,
-	readMsgFromStream func(msg interface{}) error,
+	readMsgFromStream func(msg any) error,
 	grpcMsgExtractor func(dataChunk *DataChunkMessageType) ([]byte, string, error),
 ) ([]byte, error) {
 	var assembledContent []byte

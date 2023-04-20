@@ -7,11 +7,11 @@ import (
 
 // ServerStream is a wrapper around a GRPC ServerStream object to be able to send and receive payloads bypassing the
 // 4MB limit set by GRPC.
-type ServerStream[DataChunkMessageType interface{}, ServerResponseType interface{}] struct {
+type ServerStream[DataChunkMessageType any, ServerResponseType any] struct {
 	grpcStream grpc.ServerStream
 }
 
-func NewServerStream[DataChunkMessageType interface{}, ServerResponseType interface{}](
+func NewServerStream[DataChunkMessageType any, ServerResponseType any](
 	grpcStream grpc.ServerStream,
 ) *ServerStream[DataChunkMessageType, ServerResponseType] {
 	return &ServerStream[DataChunkMessageType, ServerResponseType]{

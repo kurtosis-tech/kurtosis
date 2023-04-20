@@ -7,11 +7,11 @@ import (
 
 // ClientStream is a wrapper around a GRPC ClientStream object to be able to send and receive payloads bypassing the
 // 4MB limit set by GRPC.
-type ClientStream[DataChunkMessageType interface{}, ServerResponseType interface{}] struct {
+type ClientStream[DataChunkMessageType any, ServerResponseType any] struct {
 	grpcStream grpc.ClientStream
 }
 
-func NewClientStream[DataChunkMessageType interface{}, ServerResponseType interface{}](
+func NewClientStream[DataChunkMessageType any, ServerResponseType any](
 	grpcStream grpc.ClientStream,
 ) *ClientStream[DataChunkMessageType, ServerResponseType] {
 	return &ClientStream[DataChunkMessageType, ServerResponseType]{

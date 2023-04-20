@@ -44,7 +44,7 @@ func (stream *MockServerStream) Context() context.Context {
 	panic("not implemented")
 }
 
-func (stream *MockServerStream) SendMsg(msg interface{}) error {
+func (stream *MockServerStream) SendMsg(msg any) error {
 	castMsg, ok := msg.(*TestDataChunk)
 	if !ok {
 		return stacktrace.NewError("Expecting TestDataChunk for MockServerStream, got '%T'", msg)
@@ -53,7 +53,7 @@ func (stream *MockServerStream) SendMsg(msg interface{}) error {
 	return nil
 }
 
-func (stream *MockServerStream) RecvMsg(msg interface{}) error {
+func (stream *MockServerStream) RecvMsg(msg any) error {
 	if stream.currentReadIdx >= len(stream.chunks) {
 		return io.EOF
 	}
