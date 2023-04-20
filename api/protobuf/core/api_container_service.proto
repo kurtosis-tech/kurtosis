@@ -56,9 +56,12 @@ service ApiContainerService {
   // library is only implemented in Go
   rpc UploadFilesArtifactV2(stream StreamedDataChunk) returns (UploadFilesArtifactResponse) {};
 
-  // TODO Make this a server-side streaming method so the client can download large files
   // Downloads a files artifact from the Kurtosis File System
+  // Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
   rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (DownloadFilesArtifactResponse) {};
+
+  // Downloads a files artifact from the Kurtosis File System
+  rpc DownloadFilesArtifactV2(DownloadFilesArtifactArgs) returns (stream StreamedDataChunk) {};
 
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
   rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};

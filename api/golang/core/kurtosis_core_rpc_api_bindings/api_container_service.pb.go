@@ -71,9 +71,7 @@ func (Port_TransportProtocol) EnumDescriptor() ([]byte, []int) {
 }
 
 // ==============================================================================================
-//
-//	Shared Objects (Used By Multiple Endpoints)
-//
+//                           Shared Objects (Used By Multiple Endpoints)
 // ==============================================================================================
 type Port struct {
 	state         protoimpl.MessageState
@@ -155,9 +153,7 @@ type ServiceInfo struct {
 	// NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
 	MaybePublicIpAddr string `protobuf:"bytes,4,opt,name=maybe_public_ip_addr,json=maybePublicIpAddr,proto3" json:"maybe_public_ip_addr,omitempty"`
 	// Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
-	//
-	//	corresponds to the ID that was passed in in StartServiceArgs
-	//
+	//  corresponds to the ID that was passed in in StartServiceArgs
 	// NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
 	MaybePublicPorts map[string]*Port `protobuf:"bytes,5,rep,name=maybe_public_ports,json=maybePublicPorts,proto3" json:"maybe_public_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Name of the service
@@ -255,7 +251,7 @@ type ServiceConfig struct {
 	ContainerImageName string `protobuf:"bytes,1,opt,name=container_image_name,json=containerImageName,proto3" json:"container_image_name,omitempty"`
 	// Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
 	PrivatePorts map[string]*Port `protobuf:"bytes,2,rep,name=private_ports,json=privatePorts,proto3" json:"private_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	// TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
+	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	PublicPorts map[string]*Port `protobuf:"bytes,3,rep,name=public_ports,json=publicPorts,proto3" json:"public_ports,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
 	EntrypointArgs []string `protobuf:"bytes,4,rep,name=entrypoint_args,json=entrypointArgs,proto3" json:"entrypoint_args,omitempty"`
@@ -436,9 +432,7 @@ func (x *UpdateServiceConfig) GetSubnetwork() string {
 }
 
 // ==============================================================================================
-//
-//	Execute Starlark Arguments
-//
+//                               Execute Starlark Arguments
 // ==============================================================================================
 type RunStarlarkScriptArgs struct {
 	state         protoimpl.MessageState
@@ -524,7 +518,6 @@ type RunStarlarkPackageArgs struct {
 	// clone_package below
 	//
 	// Types that are assignable to StarlarkPackageContent:
-	//
 	//	*RunStarlarkPackageArgs_Local
 	//	*RunStarlarkPackageArgs_Remote
 	StarlarkPackageContent isRunStarlarkPackageArgs_StarlarkPackageContent `protobuf_oneof:"starlark_package_content"`
@@ -647,9 +640,7 @@ func (*RunStarlarkPackageArgs_Local) isRunStarlarkPackageArgs_StarlarkPackageCon
 func (*RunStarlarkPackageArgs_Remote) isRunStarlarkPackageArgs_StarlarkPackageContent() {}
 
 // ==============================================================================================
-//
-//	Starlark Execution Response
-//
+//                               Starlark Execution Response
 // ==============================================================================================
 type StarlarkRunResponseLine struct {
 	state         protoimpl.MessageState
@@ -657,7 +648,6 @@ type StarlarkRunResponseLine struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to RunResponseLine:
-	//
 	//	*StarlarkRunResponseLine_Instruction
 	//	*StarlarkRunResponseLine_Error
 	//	*StarlarkRunResponseLine_ProgressInfo
@@ -1024,7 +1014,6 @@ type StarlarkError struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Types that are assignable to Error:
-	//
 	//	*StarlarkError_InterpretationError
 	//	*StarlarkError_ValidationError
 	//	*StarlarkError_ExecutionError
@@ -1373,9 +1362,7 @@ func (x *StarlarkRunFinishedEvent) GetSerializedOutput() string {
 }
 
 // ==============================================================================================
-//
-//	Start Service
-//
+//                                        Start Service
 // ==============================================================================================
 type StartServicesArgs struct {
 	state         protoimpl.MessageState
@@ -1482,9 +1469,7 @@ func (x *StartServicesResponse) GetFailedServiceNameToError() map[string]string 
 }
 
 // ==============================================================================================
-//
-//	Get Services
-//
+//                                          Get Services
 // ==============================================================================================
 type GetServicesArgs struct {
 	state         protoimpl.MessageState
@@ -1698,9 +1683,7 @@ func (x *GetExistingAndHistoricalServiceIdentifiersResponse) GetAllIdentifiers()
 }
 
 // ==============================================================================================
-//
-//	Remove Service
-//
+//                                        Remove Service
 // ==============================================================================================
 type RemoveServiceArgs struct {
 	state         protoimpl.MessageState
@@ -1798,9 +1781,7 @@ func (x *RemoveServiceResponse) GetServiceUuid() string {
 }
 
 // ==============================================================================================
-//
-//	Repartition
-//
+//                                          Repartition
 // ==============================================================================================
 type RepartitionArgs struct {
 	state         protoimpl.MessageState
@@ -1812,8 +1793,7 @@ type RepartitionArgs struct {
 	// Definition of partitionIdA -> partitionIdB -> information defining the connection between A <-> B
 	PartitionConnections map[string]*PartitionConnections `protobuf:"bytes,2,rep,name=partition_connections,json=partitionConnections,proto3" json:"partition_connections,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// Information about the default inter-partition connection to set up if one is not defined in the
-	//
-	//	partition connections map
+	//  partition connections map
 	DefaultConnection *PartitionConnectionInfo `protobuf:"bytes,3,opt,name=default_connection,json=defaultConnection,proto3" json:"default_connection,omitempty"`
 }
 
@@ -2014,9 +1994,7 @@ func (x *PartitionConnectionInfo) GetPacketLossPercentage() float32 {
 }
 
 // ==============================================================================================
-//
-//	Exec Command
-//
+//                                          Exec Command
 // ==============================================================================================
 type ExecCommandArgs struct {
 	state         protoimpl.MessageState
@@ -2075,9 +2053,7 @@ func (x *ExecCommandArgs) GetCommandArgs() []string {
 }
 
 // ==============================================================================================
-//
-//	Pause/Unpause Service
-//
+//                                          Pause/Unpause Service
 // ==============================================================================================
 type PauseServiceArgs struct {
 	state         protoimpl.MessageState
@@ -2232,28 +2208,26 @@ func (x *ExecCommandResponse) GetLogOutput() string {
 }
 
 // ==============================================================================================
-//
-//	Wait For HTTP Get Endpoint Availability
-//
+//                             Wait For HTTP Get Endpoint Availability
 // ==============================================================================================
 type WaitForHttpGetEndpointAvailabilityArgs struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier of the service to check.
+	//The identifier of the service to check.
 	ServiceIdentifier string `protobuf:"bytes,1,opt,name=service_identifier,json=serviceIdentifier,proto3" json:"service_identifier,omitempty"`
-	// The port of the service to check. For instance 8080
+	//The port of the service to check. For instance 8080
 	Port uint32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	// The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+	//The path of the service to check. It mustn't start with the first slash. For instance `service/health`
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// The number of milliseconds to wait until executing the first HTTP call
+	//The number of milliseconds to wait until executing the first HTTP call
 	InitialDelayMilliseconds uint32 `protobuf:"varint,4,opt,name=initial_delay_milliseconds,json=initialDelayMilliseconds,proto3" json:"initial_delay_milliseconds,omitempty"`
-	// Max number of HTTP call attempts that this will execute until giving up and returning an error
+	//Max number of HTTP call attempts that this will execute until giving up and returning an error
 	Retries uint32 `protobuf:"varint,5,opt,name=retries,proto3" json:"retries,omitempty"`
-	// Number of milliseconds to wait between retries
+	//Number of milliseconds to wait between retries
 	RetriesDelayMilliseconds uint32 `protobuf:"varint,6,opt,name=retries_delay_milliseconds,json=retriesDelayMilliseconds,proto3" json:"retries_delay_milliseconds,omitempty"`
-	// If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+	//If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
 	BodyText string `protobuf:"bytes,7,opt,name=body_text,json=bodyText,proto3" json:"body_text,omitempty"`
 }
 
@@ -2339,30 +2313,28 @@ func (x *WaitForHttpGetEndpointAvailabilityArgs) GetBodyText() string {
 }
 
 // ==============================================================================================
-//
-//	Wait For HTTP Post Endpoint Availability
-//
+//                           Wait For HTTP Post Endpoint Availability
 // ==============================================================================================
 type WaitForHttpPostEndpointAvailabilityArgs struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	// The identifier of the service to check.
+	//The identifier of the service to check.
 	ServiceIdentifier string `protobuf:"bytes,1,opt,name=service_identifier,json=serviceIdentifier,proto3" json:"service_identifier,omitempty"`
-	// The port of the service to check. For instance 8080
+	//The port of the service to check. For instance 8080
 	Port uint32 `protobuf:"varint,2,opt,name=port,proto3" json:"port,omitempty"`
-	// The path of the service to check. It mustn't start with the first slash. For instance `service/health`
+	//The path of the service to check. It mustn't start with the first slash. For instance `service/health`
 	Path string `protobuf:"bytes,3,opt,name=path,proto3" json:"path,omitempty"`
-	// The content of the request body.
+	//The content of the request body.
 	RequestBody string `protobuf:"bytes,4,opt,name=request_body,json=requestBody,proto3" json:"request_body,omitempty"`
-	// The number of milliseconds to wait until executing the first HTTP call
+	//The number of milliseconds to wait until executing the first HTTP call
 	InitialDelayMilliseconds uint32 `protobuf:"varint,5,opt,name=initial_delay_milliseconds,json=initialDelayMilliseconds,proto3" json:"initial_delay_milliseconds,omitempty"`
-	// Max number of HTTP call attempts that this will execute until giving up and returning an error
+	//Max number of HTTP call attempts that this will execute until giving up and returning an error
 	Retries uint32 `protobuf:"varint,6,opt,name=retries,proto3" json:"retries,omitempty"`
-	// Number of milliseconds to wait between retries
+	//Number of milliseconds to wait between retries
 	RetriesDelayMilliseconds uint32 `protobuf:"varint,7,opt,name=retries_delay_milliseconds,json=retriesDelayMilliseconds,proto3" json:"retries_delay_milliseconds,omitempty"`
-	// If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
+	//If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
 	BodyText string `protobuf:"bytes,8,opt,name=body_text,json=bodyText,proto3" json:"body_text,omitempty"`
 }
 
@@ -2455,9 +2427,7 @@ func (x *WaitForHttpPostEndpointAvailabilityArgs) GetBodyText() string {
 }
 
 // ==============================================================================================
-//
-//	Streamed Data Chunk
-//
+//                                          Streamed Data Chunk
 // ==============================================================================================
 type StreamedDataChunk struct {
 	state         protoimpl.MessageState
@@ -2575,9 +2545,7 @@ func (x *DataChunkMetadata) GetName() string {
 }
 
 // ==============================================================================================
-//
-//	Upload Files Artifact
-//
+//                                          Upload Files Artifact
 // ==============================================================================================
 type UploadFilesArtifactArgs struct {
 	state         protoimpl.MessageState
@@ -2694,9 +2662,7 @@ func (x *UploadFilesArtifactResponse) GetName() string {
 }
 
 // ==============================================================================================
-//
-//	Download Files Artifact
-//
+//                                          Download Files Artifact
 // ==============================================================================================
 type DownloadFilesArtifactArgs struct {
 	state         protoimpl.MessageState
@@ -2795,9 +2761,7 @@ func (x *DownloadFilesArtifactResponse) GetData() []byte {
 }
 
 // ==============================================================================================
-//
-//	Store Web Files Artifact
-//
+//                                        Store Web Files Artifact
 // ==============================================================================================
 type StoreWebFilesArtifactArgs struct {
 	state         protoimpl.MessageState
@@ -3888,7 +3852,7 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x46,
 	0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x4e, 0x61, 0x6d, 0x65,
 	0x41, 0x6e, 0x64, 0x55, 0x75, 0x69, 0x64, 0x52, 0x11, 0x66, 0x69, 0x6c, 0x65, 0x4e, 0x61, 0x6d,
-	0x65, 0x73, 0x41, 0x6e, 0x64, 0x55, 0x75, 0x69, 0x64, 0x73, 0x32, 0xc7, 0x11, 0x0a, 0x13, 0x41,
+	0x65, 0x73, 0x41, 0x6e, 0x64, 0x55, 0x75, 0x69, 0x64, 0x73, 0x32, 0xba, 0x12, 0x0a, 0x13, 0x41,
 	0x70, 0x69, 0x43, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x53, 0x65, 0x72, 0x76, 0x69,
 	0x63, 0x65, 0x12, 0x6d, 0x0a, 0x11, 0x52, 0x75, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x6c, 0x61, 0x72,
 	0x6b, 0x53, 0x63, 0x72, 0x69, 0x70, 0x74, 0x12, 0x28, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f,
@@ -3995,46 +3959,54 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x72, 0x67, 0x73, 0x1a, 0x30, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
 	0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64,
 	0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x52, 0x65, 0x73,
-	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x79, 0x0a, 0x15, 0x53, 0x74, 0x6f, 0x72, 0x65,
-	0x57, 0x65, 0x62, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74,
-	0x12, 0x2c, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72,
-	0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x62, 0x46, 0x69, 0x6c,
-	0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x30,
-	0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61,
-	0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x62, 0x46, 0x69, 0x6c, 0x65, 0x73,
-	0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65,
-	0x22, 0x00, 0x12, 0x91, 0x01, 0x0a, 0x1d, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x46, 0x69, 0x6c, 0x65,
-	0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x46, 0x72, 0x6f, 0x6d, 0x53, 0x65, 0x72,
-	0x76, 0x69, 0x63, 0x65, 0x12, 0x34, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61,
-	0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x46, 0x69,
-	0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x46, 0x72, 0x6f, 0x6d, 0x53,
-	0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x38, 0x2e, 0x61, 0x70, 0x69,
-	0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53,
-	0x74, 0x6f, 0x72, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63,
-	0x74, 0x46, 0x72, 0x6f, 0x6d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70,
-	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x94, 0x01, 0x0a, 0x1e, 0x52, 0x65, 0x6e, 0x64, 0x65,
-	0x72, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x54, 0x6f, 0x46, 0x69, 0x6c, 0x65,
-	0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x12, 0x35, 0x2e, 0x61, 0x70, 0x69, 0x5f,
-	0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x65,
-	0x6e, 0x64, 0x65, 0x72, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x54, 0x6f, 0x46,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x71, 0x0a, 0x17, 0x44, 0x6f, 0x77, 0x6e, 0x6c,
+	0x6f, 0x61, 0x64, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74,
+	0x56, 0x32, 0x12, 0x2c, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e,
+	0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x44, 0x6f, 0x77, 0x6e, 0x6c, 0x6f, 0x61, 0x64, 0x46,
 	0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x41, 0x72, 0x67, 0x73,
-	0x1a, 0x39, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72,
-	0x5f, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x54, 0x65, 0x6d, 0x70, 0x6c,
-	0x61, 0x74, 0x65, 0x73, 0x54, 0x6f, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66,
-	0x61, 0x63, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x75, 0x0a,
-	0x1e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61,
-	0x63, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x41, 0x6e, 0x64, 0x55, 0x75, 0x69, 0x64, 0x73, 0x12,
-	0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x62, 0x75,
-	0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x39, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f,
-	0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x4c, 0x69, 0x73, 0x74,
-	0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x4e, 0x61, 0x6d,
-	0x65, 0x73, 0x41, 0x6e, 0x64, 0x55, 0x75, 0x69, 0x64, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e,
-	0x73, 0x65, 0x22, 0x00, 0x42, 0x52, 0x5a, 0x50, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63,
-	0x6f, 0x6d, 0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x2d, 0x74, 0x65, 0x63, 0x68,
-	0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x67, 0x6f,
-	0x6c, 0x61, 0x6e, 0x67, 0x2f, 0x63, 0x6f, 0x72, 0x65, 0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73,
-	0x69, 0x73, 0x5f, 0x63, 0x6f, 0x72, 0x65, 0x5f, 0x72, 0x70, 0x63, 0x5f, 0x61, 0x70, 0x69, 0x5f,
-	0x62, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x1a, 0x24, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72,
+	0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x65, 0x64, 0x44, 0x61, 0x74,
+	0x61, 0x43, 0x68, 0x75, 0x6e, 0x6b, 0x22, 0x00, 0x30, 0x01, 0x12, 0x79, 0x0a, 0x15, 0x53, 0x74,
+	0x6f, 0x72, 0x65, 0x57, 0x65, 0x62, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66,
+	0x61, 0x63, 0x74, 0x12, 0x2c, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
+	0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x62,
+	0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x41, 0x72, 0x67,
+	0x73, 0x1a, 0x30, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65,
+	0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x57, 0x65, 0x62, 0x46, 0x69,
+	0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f,
+	0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x91, 0x01, 0x0a, 0x1d, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x46,
+	0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x46, 0x72, 0x6f, 0x6d,
+	0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12, 0x34, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f,
+	0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x53, 0x74, 0x6f, 0x72,
+	0x65, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x46, 0x72,
+	0x6f, 0x6d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x38, 0x2e,
+	0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70,
+	0x69, 0x2e, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69,
+	0x66, 0x61, 0x63, 0x74, 0x46, 0x72, 0x6f, 0x6d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x52,
+	0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x94, 0x01, 0x0a, 0x1e, 0x52, 0x65,
+	0x6e, 0x64, 0x65, 0x72, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x54, 0x6f, 0x46,
+	0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x12, 0x35, 0x2e, 0x61,
+	0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69,
+	0x2e, 0x52, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x54, 0x65, 0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73,
+	0x54, 0x6f, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x41,
+	0x72, 0x67, 0x73, 0x1a, 0x39, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69,
+	0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x52, 0x65, 0x6e, 0x64, 0x65, 0x72, 0x54, 0x65,
+	0x6d, 0x70, 0x6c, 0x61, 0x74, 0x65, 0x73, 0x54, 0x6f, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72,
+	0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00,
+	0x12, 0x75, 0x0a, 0x1e, 0x4c, 0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74,
+	0x69, 0x66, 0x61, 0x63, 0x74, 0x4e, 0x61, 0x6d, 0x65, 0x73, 0x41, 0x6e, 0x64, 0x55, 0x75, 0x69,
+	0x64, 0x73, 0x12, 0x16, 0x2e, 0x67, 0x6f, 0x6f, 0x67, 0x6c, 0x65, 0x2e, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x62, 0x75, 0x66, 0x2e, 0x45, 0x6d, 0x70, 0x74, 0x79, 0x1a, 0x39, 0x2e, 0x61, 0x70, 0x69,
+	0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x4c,
+	0x69, 0x73, 0x74, 0x46, 0x69, 0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74,
+	0x4e, 0x61, 0x6d, 0x65, 0x73, 0x41, 0x6e, 0x64, 0x55, 0x75, 0x69, 0x64, 0x73, 0x52, 0x65, 0x73,
+	0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x52, 0x5a, 0x50, 0x67, 0x69, 0x74, 0x68, 0x75,
+	0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x2d, 0x74,
+	0x65, 0x63, 0x68, 0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x2f, 0x61, 0x70, 0x69,
+	0x2f, 0x67, 0x6f, 0x6c, 0x61, 0x6e, 0x67, 0x2f, 0x63, 0x6f, 0x72, 0x65, 0x2f, 0x6b, 0x75, 0x72,
+	0x74, 0x6f, 0x73, 0x69, 0x73, 0x5f, 0x63, 0x6f, 0x72, 0x65, 0x5f, 0x72, 0x70, 0x63, 0x5f, 0x61,
+	0x70, 0x69, 0x5f, 0x62, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f,
+	0x74, 0x6f, 0x33,
 }
 
 var (
@@ -4180,32 +4152,34 @@ var file_api_container_service_proto_depIdxs = []int32{
 	38, // 55: api_container_api.ApiContainerService.UploadFilesArtifact:input_type -> api_container_api.UploadFilesArtifactArgs
 	36, // 56: api_container_api.ApiContainerService.UploadFilesArtifactV2:input_type -> api_container_api.StreamedDataChunk
 	40, // 57: api_container_api.ApiContainerService.DownloadFilesArtifact:input_type -> api_container_api.DownloadFilesArtifactArgs
-	42, // 58: api_container_api.ApiContainerService.StoreWebFilesArtifact:input_type -> api_container_api.StoreWebFilesArtifactArgs
-	44, // 59: api_container_api.ApiContainerService.StoreFilesArtifactFromService:input_type -> api_container_api.StoreFilesArtifactFromServiceArgs
-	46, // 60: api_container_api.ApiContainerService.RenderTemplatesToFilesArtifact:input_type -> api_container_api.RenderTemplatesToFilesArtifactArgs
-	67, // 61: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:input_type -> google.protobuf.Empty
-	7,  // 62: api_container_api.ApiContainerService.RunStarlarkScript:output_type -> api_container_api.StarlarkRunResponseLine
-	67, // 63: api_container_api.ApiContainerService.UploadStarlarkPackage:output_type -> google.protobuf.Empty
-	7,  // 64: api_container_api.ApiContainerService.RunStarlarkPackage:output_type -> api_container_api.StarlarkRunResponseLine
-	19, // 65: api_container_api.ApiContainerService.StartServices:output_type -> api_container_api.StartServicesResponse
-	21, // 66: api_container_api.ApiContainerService.GetServices:output_type -> api_container_api.GetServicesResponse
-	23, // 67: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:output_type -> api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
-	25, // 68: api_container_api.ApiContainerService.RemoveService:output_type -> api_container_api.RemoveServiceResponse
-	67, // 69: api_container_api.ApiContainerService.Repartition:output_type -> google.protobuf.Empty
-	33, // 70: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
-	67, // 71: api_container_api.ApiContainerService.PauseService:output_type -> google.protobuf.Empty
-	67, // 72: api_container_api.ApiContainerService.UnpauseService:output_type -> google.protobuf.Empty
-	67, // 73: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:output_type -> google.protobuf.Empty
-	67, // 74: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:output_type -> google.protobuf.Empty
-	39, // 75: api_container_api.ApiContainerService.UploadFilesArtifact:output_type -> api_container_api.UploadFilesArtifactResponse
-	39, // 76: api_container_api.ApiContainerService.UploadFilesArtifactV2:output_type -> api_container_api.UploadFilesArtifactResponse
-	41, // 77: api_container_api.ApiContainerService.DownloadFilesArtifact:output_type -> api_container_api.DownloadFilesArtifactResponse
-	43, // 78: api_container_api.ApiContainerService.StoreWebFilesArtifact:output_type -> api_container_api.StoreWebFilesArtifactResponse
-	45, // 79: api_container_api.ApiContainerService.StoreFilesArtifactFromService:output_type -> api_container_api.StoreFilesArtifactFromServiceResponse
-	47, // 80: api_container_api.ApiContainerService.RenderTemplatesToFilesArtifact:output_type -> api_container_api.RenderTemplatesToFilesArtifactResponse
-	49, // 81: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:output_type -> api_container_api.ListFilesArtifactNamesAndUuidsResponse
-	62, // [62:82] is the sub-list for method output_type
-	42, // [42:62] is the sub-list for method input_type
+	40, // 58: api_container_api.ApiContainerService.DownloadFilesArtifactV2:input_type -> api_container_api.DownloadFilesArtifactArgs
+	42, // 59: api_container_api.ApiContainerService.StoreWebFilesArtifact:input_type -> api_container_api.StoreWebFilesArtifactArgs
+	44, // 60: api_container_api.ApiContainerService.StoreFilesArtifactFromService:input_type -> api_container_api.StoreFilesArtifactFromServiceArgs
+	46, // 61: api_container_api.ApiContainerService.RenderTemplatesToFilesArtifact:input_type -> api_container_api.RenderTemplatesToFilesArtifactArgs
+	67, // 62: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:input_type -> google.protobuf.Empty
+	7,  // 63: api_container_api.ApiContainerService.RunStarlarkScript:output_type -> api_container_api.StarlarkRunResponseLine
+	67, // 64: api_container_api.ApiContainerService.UploadStarlarkPackage:output_type -> google.protobuf.Empty
+	7,  // 65: api_container_api.ApiContainerService.RunStarlarkPackage:output_type -> api_container_api.StarlarkRunResponseLine
+	19, // 66: api_container_api.ApiContainerService.StartServices:output_type -> api_container_api.StartServicesResponse
+	21, // 67: api_container_api.ApiContainerService.GetServices:output_type -> api_container_api.GetServicesResponse
+	23, // 68: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:output_type -> api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
+	25, // 69: api_container_api.ApiContainerService.RemoveService:output_type -> api_container_api.RemoveServiceResponse
+	67, // 70: api_container_api.ApiContainerService.Repartition:output_type -> google.protobuf.Empty
+	33, // 71: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
+	67, // 72: api_container_api.ApiContainerService.PauseService:output_type -> google.protobuf.Empty
+	67, // 73: api_container_api.ApiContainerService.UnpauseService:output_type -> google.protobuf.Empty
+	67, // 74: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:output_type -> google.protobuf.Empty
+	67, // 75: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:output_type -> google.protobuf.Empty
+	39, // 76: api_container_api.ApiContainerService.UploadFilesArtifact:output_type -> api_container_api.UploadFilesArtifactResponse
+	39, // 77: api_container_api.ApiContainerService.UploadFilesArtifactV2:output_type -> api_container_api.UploadFilesArtifactResponse
+	41, // 78: api_container_api.ApiContainerService.DownloadFilesArtifact:output_type -> api_container_api.DownloadFilesArtifactResponse
+	36, // 79: api_container_api.ApiContainerService.DownloadFilesArtifactV2:output_type -> api_container_api.StreamedDataChunk
+	43, // 80: api_container_api.ApiContainerService.StoreWebFilesArtifact:output_type -> api_container_api.StoreWebFilesArtifactResponse
+	45, // 81: api_container_api.ApiContainerService.StoreFilesArtifactFromService:output_type -> api_container_api.StoreFilesArtifactFromServiceResponse
+	47, // 82: api_container_api.ApiContainerService.RenderTemplatesToFilesArtifact:output_type -> api_container_api.RenderTemplatesToFilesArtifactResponse
+	49, // 83: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:output_type -> api_container_api.ListFilesArtifactNamesAndUuidsResponse
+	63, // [63:84] is the sub-list for method output_type
+	42, // [42:63] is the sub-list for method input_type
 	42, // [42:42] is the sub-list for extension type_name
 	42, // [42:42] is the sub-list for extension extendee
 	0,  // [0:42] is the sub-list for field type_name

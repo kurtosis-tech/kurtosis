@@ -520,8 +520,8 @@ uploadFilesArtifactV2: {
     responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
   },
-  // TODO Make this a server-side streaming method so the client can download large files
-// Downloads a files artifact from the Kurtosis File System
+  // Downloads a files artifact from the Kurtosis File System
+// Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
 downloadFilesArtifact: {
     path: '/api_container_api.ApiContainerService/DownloadFilesArtifact',
     requestStream: false,
@@ -532,6 +532,18 @@ downloadFilesArtifact: {
     requestDeserialize: deserialize_api_container_api_DownloadFilesArtifactArgs,
     responseSerialize: serialize_api_container_api_DownloadFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_DownloadFilesArtifactResponse,
+  },
+  // Downloads a files artifact from the Kurtosis File System
+downloadFilesArtifactV2: {
+    path: '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
+    requestStream: false,
+    responseStream: true,
+    requestType: api_container_service_pb.DownloadFilesArtifactArgs,
+    responseType: api_container_service_pb.StreamedDataChunk,
+    requestSerialize: serialize_api_container_api_DownloadFilesArtifactArgs,
+    requestDeserialize: deserialize_api_container_api_DownloadFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_StreamedDataChunk,
+    responseDeserialize: deserialize_api_container_api_StreamedDataChunk,
   },
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
 storeWebFilesArtifact: {
