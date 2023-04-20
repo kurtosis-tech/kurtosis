@@ -37,21 +37,22 @@ func sendMessagesToStream[DataChunkProtoMessage any](
 	hasher := sha1.New()
 	chunkNumber := 0
 	totalChunksNumber := int(math.Ceil(float64(len(payload)) / chunkSize))
+	lastChunkIndex := totalChunksNumber - 1
 
-	for blockIdx := 0; blockIdx < totalChunksNumber; blockIdx++ {
+	for chunkIdx := 0; chunkIdx <= lastChunkIndex; chunkIdx++ {
 		logrus.Debugf("Sending content for %s. Block number %d/%d", payloadNameForLogging, chunkNumber, totalChunksNumber-1)
 
 		var contentChunk []byte
-		payloadStartIdx := blockIdx * chunkSize
-		if blockIdx == totalChunksNumber-1 {
+		payloadFirstByteIdx := chunkIdx * chunkSize
+		if chunkIdx == lastChunkIndex {
 			// last chunk - copy everything that's left in the payload array
-			contentChunk = make([]byte, len(payload)-payloadStartIdx)
-			copy(contentChunk, payload[payloadStartIdx:])
+			contentChunk = make([]byte, len(payload[payloadFirstByteIdx:]))
+			copy(contentChunk, payload[payloadFirstByteIdx:])
 		} else {
 			// copy chunkSize bytes from the content array to the contentChunk
 			contentChunk = make([]byte, chunkSize)
-			payloadNextStartIdx := (blockIdx + 1) * chunkSize
-			copy(contentChunk, payload[payloadStartIdx:payloadNextStartIdx])
+			nextPayloadChunkFirstByteIdx := (chunkIdx + 1) * chunkSize
+			copy(contentChunk, payload[payloadFirstByteIdx:nextPayloadChunkFirstByteIdx])
 		}
 
 		message, err := grpcMsgConstructor(previousChunkHash, contentChunk)
