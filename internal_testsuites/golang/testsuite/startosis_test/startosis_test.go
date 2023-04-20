@@ -125,6 +125,9 @@ Templates artifact name 'rendered-file' rendered with artifact UUID '[a-f0-9]{32
 Rendered file to rendered-file
 Service 'example-datastore-server-2' added with service UUID '[a-z-0-9]+'
 Deployed example-datastore-server-2 successfully
+{
+	"ip-address": "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+}
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Startosis script")
