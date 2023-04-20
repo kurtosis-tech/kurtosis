@@ -73,7 +73,6 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			}
 		}
 
-		// TODO(gb): we should run magic string replacement on the output
 		scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, runtimeValueStore)
 		if err != nil {
 			propagatedErr := stacktrace.Propagate(err, "An error occurred while replacing the runtime values in the output of the script")
