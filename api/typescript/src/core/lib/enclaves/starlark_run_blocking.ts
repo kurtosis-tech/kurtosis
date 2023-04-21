@@ -40,10 +40,8 @@ export async function readStreamContentUntilClosed(responseLines: Readable): Pro
                 }
             } else if (responseLine.getRunFinishedEvent() !== undefined) {
                 let runFinishedEvent = responseLine.getRunFinishedEvent()!
-                if (runFinishedEvent.getIsrunsuccessful()) {
-                    if (runFinishedEvent.getSerializedOutput() != "")  {
+                if (runFinishedEvent.getIsrunsuccessful() && runFinishedEvent.getSerializedOutput() != "")  {
                         scriptOutput += runFinishedEvent.getSerializedOutput() + STARLARK_RUN_OUTPUT_LINE_SPLIT
-                    }
                 }
             }
         })

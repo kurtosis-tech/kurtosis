@@ -56,11 +56,9 @@ func ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLines <-chan *kurtos
 			}
 		} else if responseLine.GetRunFinishedEvent() != nil {
 			runFinishedEvent := responseLine.GetRunFinishedEvent()
-			if runFinishedEvent.GetIsRunSuccessful() {
-				if runFinishedEvent.GetSerializedOutput() != "" {
-					scriptOutput.WriteString(runFinishedEvent.GetSerializedOutput())
-					scriptOutput.WriteString(starlarkRunOutputLinesSplit)
-				}
+			if runFinishedEvent.GetIsRunSuccessful() && runFinishedEvent.GetSerializedOutput() != "" {
+				scriptOutput.WriteString(runFinishedEvent.GetSerializedOutput())
+				scriptOutput.WriteString(starlarkRunOutputLinesSplit)
 			}
 		}
 	}
