@@ -4,7 +4,9 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_warning"
 	"github.com/sirupsen/logrus"
+	"sync"
 )
 
 type StartosisRunner struct {
@@ -13,6 +15,8 @@ type StartosisRunner struct {
 	startosisValidator *StartosisValidator
 
 	startosisExecutor *StartosisExecutor
+
+	mutex *sync.Mutex
 }
 
 const (
@@ -28,15 +32,28 @@ func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisV
 		startosisInterpreter: interpreter,
 		startosisValidator:   validator,
 		startosisExecutor:    executor,
+		mutex:                &sync.Mutex{},
 	}
 }
 
 func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism int, packageId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	runner.mutex.Lock()
+	startosis_warning.Initialize()
 	// TODO(gb): add metric tracking maybe?
 	starlarkRunResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-
 	go func() {
-		defer close(starlarkRunResponseLines)
+		defer func() {
+			warnings := startosis_warning.GetContentFromWarningSet()
+
+			if len(warnings) > 0 {
+				for _, warning := range warnings {
+					starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(warning)
+				}
+			}
+
+			runner.mutex.Unlock()
+			close(starlarkRunResponseLines)
+		}()
 
 		// Interpretation starts > send progress info (this line will be invisible as interpretation is super quick)
 		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
@@ -74,6 +91,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
 		}
 		logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", len(instructionsList))
+
 	}()
 	return starlarkRunResponseLines
 }
