@@ -37,8 +37,8 @@ type EnclaveUUID string
 type PartitionID string
 
 const (
-	kurtosisYamlFilename                      = "kurtosis.yml"
-	ensureCompressedFileIsLesserThanGRPCLimit = true
+	kurtosisYamlFilename    = "kurtosis.yml"
+	enforceMaxFileSizeLimit = true
 )
 
 // Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
@@ -235,7 +235,7 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]servic
 
 // Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, services.FileArtifactName, error) {
-	content, err := shared_utils.CompressPath(pathToUpload, ensureCompressedFileIsLesserThanGRPCLimit)
+	content, err := shared_utils.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err,
 			"There was an error compressing the file '%v' before upload",
@@ -385,7 +385,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(packageRootPath
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
 	logrus.Infof("Compressing package '%v' at '%v' for upload", packageId, packageRootPath)
-	compressedModule, err := shared_utils.CompressPath(packageRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
+	compressedModule, err := shared_utils.CompressPath(packageRootPath, enforceMaxFileSizeLimit)
 	if err != nil {
 		return stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", packageRootPath)
 	}

@@ -10,13 +10,13 @@ import (
 )
 
 const (
-	grpcDataTransferLimit     = 3999000 //3.999 Mb. 1kb wiggle room. 1kb being about the size of a simple 2 paragraph readme.
+	kurtosisDataTransferLimit = 100 * 1024 * 1024 // 100 MB
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
 	defaultTmpDir             = ""
 )
 
-func CompressPath(pathToCompress string, accountForGRPCLimit bool) ([]byte, error) {
+func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) ([]byte, error) {
 	pathToCompress = strings.TrimRight(pathToCompress, string(filepath.Separator))
 	uploadFileInfo, err := os.Stat(pathToCompress)
 	if err != nil {
@@ -59,12 +59,12 @@ func CompressPath(pathToCompress string, accountForGRPCLimit bool) ([]byte, erro
 			tempDir, pathToCompress)
 	}
 
-	if accountForGRPCLimit && compressedFileInfo.Size() >= grpcDataTransferLimit {
+	if enforceMaxFileSizeLimit && compressedFileInfo.Size() >= kurtosisDataTransferLimit {
 		return nil, stacktrace.NewError(
-			"The files you are trying to upload, which are now compressed, exceed or reach 4mb, a limit imposed by gRPC. " +
-				"Please reduce the total file size and ensure it can compress to a size below 4mb.")
+			"The files you are trying to upload, which are now compressed, exceed or reach 100mb. " +
+				"Manipulation (i.e. uploads or downloads) of files larger than 100mb is currently disallowed in Kurtosis.")
 	}
-	content, err := ioutil.ReadFile(compressedFilePath)
+	content, err := os.ReadFile(compressedFilePath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
 			"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
