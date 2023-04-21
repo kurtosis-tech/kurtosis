@@ -38,6 +38,11 @@ export async function readStreamContentUntilClosed(responseLines: Readable): Pro
                 } else if (responseLine.getError()?.getExecutionError() !== undefined) {
                     executionError = responseLine.getError()?.getExecutionError()
                 }
+            } else if (responseLine.getRunFinishedEvent() !== undefined) {
+                let runFinishedEvent = responseLine.getRunFinishedEvent()!
+                if (runFinishedEvent.getIsrunsuccessful() && runFinishedEvent.getSerializedOutput() != "")  {
+                        scriptOutput += runFinishedEvent.getSerializedOutput() + STARLARK_RUN_OUTPUT_LINE_SPLIT
+                }
             }
         })
         responseLines.on('error', function () {

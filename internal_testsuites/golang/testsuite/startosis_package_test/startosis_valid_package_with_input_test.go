@@ -44,6 +44,9 @@ func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
 
 	expectedScriptOutput := `bonjour!
 Hello World!
+{
+	"message": "Hello World!"
+}
 `
 	require.Equal(t, expectedScriptOutput, string(runResult.RunOutput))
 	require.Len(t, runResult.Instructions, 2)
