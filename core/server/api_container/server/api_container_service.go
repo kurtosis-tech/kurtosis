@@ -24,6 +24,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -671,17 +672,21 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 
 func (apicService ApiContainerService) runStarlark(parallelism int, dryRun bool, packageId string, serializedStarlark string, serializedParams string, stream grpc.ServerStream) {
 	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, serializedStarlark, serializedParams)
+	startosis_warning.Setup(stream)
+
 	for {
 		select {
 		case <-stream.Context().Done():
 			// TODO: maybe add the ability to kill the execution
 			logrus.Infof("Stream was closed by client. The script ouput won't be returned anymore but note that the execution won't be interrupted. There's currently no way to stop a Kurtosis script execution.")
+			startosis_warning.Close()
 			return
 		case responseLine, isChanOpen := <-responseLineStream:
 			if !isChanOpen {
 				// Channel closed means that this function returned, so we won't receive any message through the stream anymore
 				// We expect the stream to be closed soon and the above case to exit that function
 				logrus.Info("Startosis script execution returned, no more output to stream.")
+				startosis_warning.Close()
 				return
 			}
 			// in addition to send the msg to the RPC stream, we also print the lines to the APIC logs at debug level

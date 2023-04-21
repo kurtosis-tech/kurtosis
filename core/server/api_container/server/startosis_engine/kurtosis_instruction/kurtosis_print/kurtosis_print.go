@@ -2,6 +2,7 @@ package kurtosis_print
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -63,6 +64,7 @@ func (builtin *PrintCapabilities) Interpret(arguments *builtin_argument.Argument
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", PrintArgName)
 	}
 	builtin.msg = msg
+	fmt.Println("intrepreting Print method")
 	return starlark.None, nil
 }
 

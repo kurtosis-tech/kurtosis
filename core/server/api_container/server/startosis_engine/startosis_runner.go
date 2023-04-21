@@ -34,7 +34,6 @@ func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisV
 func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism int, packageId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	// TODO(gb): add metric tracking maybe?
 	starlarkRunResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-
 	go func() {
 		defer close(starlarkRunResponseLines)
 
