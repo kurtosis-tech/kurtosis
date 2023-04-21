@@ -14,6 +14,7 @@ type WarningStruct struct {
 
 var once *sync.Once
 var warn WarningStruct
+var lock = &sync.Mutex{}
 
 //Setup initialize the warning struct with the current available grpc stream
 func Setup(stream grpc.ServerStream) {
@@ -34,7 +35,10 @@ func Close() {
 }
 
 //TODO: add an abstraction so that this method actually prints to cli only once!
-func printOncef(message string, args ...interface{}) {
+func PrintOncef(message string, args ...interface{}) {
+	lock.Lock()
+	defer lock.Unlock()
+
 	formattedMessage := fmt.Sprintf(message, args...)
 	if warn.stream != nil {
 		if err := warn.stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(formattedMessage)); err != nil {
