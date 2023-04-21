@@ -29,8 +29,7 @@ const (
 
 	timeBetweenNetworkCreationRetries = 1 * time.Second
 
-	allowedNetworkFirstOctet = 10
-
+	allowedNetworkFirstOctet       = 10
 	maximumPossibleValueForAnOctet = 255
 )
 
