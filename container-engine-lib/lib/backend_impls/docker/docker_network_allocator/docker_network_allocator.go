@@ -29,7 +29,9 @@ const (
 
 	timeBetweenNetworkCreationRetries = 1 * time.Second
 
-	allowedNetworkFirstOctet = uint32(10)
+	allowedNetworkFirstOctet = 10
+
+	maximumPossibleValueForAnOctet = 255
 )
 
 var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
@@ -150,7 +152,7 @@ func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 	for offsetIpsUint64 := uint64(0); offsetIpsUint64 < maxUint32PlusOne; offsetIpsUint64 += networkWidthUint64 {
 	}
 
-	for secondOctet := 0; secondOctet < 256; secondOctet++ {
+	for secondOctet := 0; secondOctet <= maximumPossibleValueForAnOctet; secondOctet++ {
 		ipAddressString := fmt.Sprintf("%v.%v.0.0", allowedNetworkFirstOctet, secondOctet)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{
