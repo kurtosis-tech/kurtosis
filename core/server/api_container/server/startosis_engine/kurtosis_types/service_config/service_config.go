@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_warning"
 	"go.starlark.net/starlark"
 	"math"
 )
@@ -128,7 +127,6 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 
 func instantiateServiceConfig(arguments *builtin_argument.ArgumentValuesSet) (builtin_argument.KurtosisValueType, *startosis_errors.InterpretationError) {
 	kurtosisValueType, err := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(ServiceConfigTypeName, arguments)
-	startosis_warning.Printf("Service Config Warning!!")
 	if err != nil {
 		return nil, err
 	}

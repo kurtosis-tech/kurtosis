@@ -5,29 +5,36 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"sync"
 )
 
 type WarningStruct struct {
 	stream grpc.ServerStream
-	isOpen bool
 }
 
+var once *sync.Once
 var warn WarningStruct
 
+//Setup initialize the warning struct with the current available grpc stream
 func Setup(stream grpc.ServerStream) {
-	if !warn.isOpen {
-		warn = WarningStruct{stream: stream}
-		warn.isOpen = true
+	if once == nil {
+		once = &sync.Once{}
 	}
+
+	once.Do(func() {
+		warn = WarningStruct{stream: stream}
+	})
 }
 
 // Close this method is called once the starlark execution is completed
+// This method is called during clean up and ensures that next time
+// when set up is called - warn struct will be initialized with current available stream
 func Close() {
-	warn.isOpen = false
-	warn.stream = nil
+	once = nil
 }
 
-func Printf(message string, args ...interface{}) {
+//TODO: add an abstraction so that this method actually prints to cli only once!
+func printOncef(message string, args ...interface{}) {
 	formattedMessage := fmt.Sprintf(message, args...)
 	if warn.stream != nil {
 		if err := warn.stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(formattedMessage)); err != nil {
