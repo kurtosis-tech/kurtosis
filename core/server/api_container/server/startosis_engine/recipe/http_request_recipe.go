@@ -2,18 +2,18 @@ package recipe
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"github.com/itchyny/gojq"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
+	"golang.org/x/exp/maps"
 	"io"
 	"net/http"
 	"reflect"
@@ -21,9 +21,8 @@ import (
 )
 
 const (
-	statusCodeKey    = "code"
-	bodyKey          = "body"
-	extractKeyPrefix = "extract"
+	statusCodeKey = "code"
+	bodyKey       = "body"
 
 	// Common attributes for both [Get|Post]HttpRequestRecipe
 	PortIdAttr   = "port_id"
@@ -35,6 +34,9 @@ type HttpRequestRecipe interface {
 	builtin_argument.KurtosisValueType
 
 	Recipe
+
+	// RequestType as of 2023-04-18 this only exists so that ExecRecipe doesn't implement HttpRequestRecipe
+	RequestType() string
 }
 
 func executeInternal(
@@ -88,70 +90,12 @@ func executeInternal(
 		bodyKey:       starlark.String(responseBody),
 		statusCodeKey: starlark.MakeInt(response.StatusCode),
 	}
-	extractDict, err := extractInternal(responseBody, extractors)
+	extractDict, err := runExtractors(responseBody, extractors)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while running extractors on HTTP response body")
+		return nil, stacktrace.Propagate(err, "An error occurred while running extractors from HTTP recipe")
 	}
-	for extractorKey, extractorValue := range extractDict {
-		resultDict[fmt.Sprintf("%v.%v", extractKeyPrefix, extractorKey)] = extractorValue
-	}
+	maps.Copy(resultDict, extractDict)
 	return resultDict, nil
-}
-
-func extractInternal(responseBody []byte, extractors map[string]string) (map[string]starlark.Comparable, error) {
-	if len(extractors) == 0 {
-		return map[string]starlark.Comparable{}, nil
-	}
-	logrus.Debug("Executing extract recipe")
-	var jsonBody interface{}
-	err := json.Unmarshal(responseBody, &jsonBody)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred when parsing JSON response body")
-	}
-	extractorResult := map[string]starlark.Comparable{}
-	for extractorKey, extractor := range extractors {
-		logrus.Debugf("Running against '%v' '%v'", jsonBody, extractor)
-		query, err := gojq.Parse(extractor)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred when parsing field extractor '%v'", extractor)
-		}
-		iter := query.Run(jsonBody)
-		foundMatch := false
-		for {
-			matchValue, ok := iter.Next()
-			if !ok {
-				break
-			}
-			if err, ok := matchValue.(error); ok {
-				logrus.Errorf("HTTP request recipe extract emitted error '%v'", err)
-			}
-			if matchValue != nil {
-				var parsedMatchValue starlark.Comparable
-				logrus.Debug("Start parsing...")
-				switch value := matchValue.(type) {
-				case int:
-					parsedMatchValue = starlark.MakeInt(value)
-				case string:
-					parsedMatchValue = starlark.String(value)
-				case float32:
-					parsedMatchValue = starlark.Float(value)
-				case float64:
-					parsedMatchValue = starlark.Float(value)
-				default:
-					parsedMatchValue = starlark.String(fmt.Sprintf("%v", value))
-				}
-				logrus.Debugf("Parsed successfully %v %v", matchValue, parsedMatchValue)
-				extractorResult[extractorKey] = parsedMatchValue
-				foundMatch = true
-				break
-			}
-		}
-		if !foundMatch {
-			return nil, stacktrace.NewError("No field '%s' was found on input '%s'", extractor, string(responseBody))
-		}
-	}
-	logrus.Debugf("Extractor result map '%v'", extractorResult)
-	return extractorResult, nil
 }
 
 func resultMapToStringInternal(resultMap map[string]starlark.Comparable) string {
@@ -220,4 +164,19 @@ func convertExtractorsToDict(isAttrSet bool, extractorsValue starlark.Value) (ma
 		extractorStringMap[extractorKeyStr.GoString()] = extractorValueStr.GoString()
 	}
 	return extractorStringMap, nil
+}
+
+func ValidateHttpRequestRecipe(httpRequestRecipe HttpRequestRecipe, serviceName service.ServiceName, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+	portIdValue, err := httpRequestRecipe.Attr(PortIdAttr)
+	if err != nil {
+		return startosis_errors.NewValidationError("Tried fetching port ID for request on service '%s' but failed", serviceName)
+	}
+	portIdStringValue, ok := starlark.AsString(portIdValue)
+	if !ok {
+		return startosis_errors.NewValidationError("Tried getting string value for port ID '%v' for request to service '%s' but failed", portIdValue, serviceName)
+	}
+	if portIdExists := validatorEnvironment.DoesPrivatePortIDExistForService(portIdStringValue, serviceName); !portIdExists {
+		return startosis_errors.NewValidationError("Request required port ID '%v' to exist on service '%v' but it doesn't", portIdStringValue, serviceName)
+	}
+	return nil
 }

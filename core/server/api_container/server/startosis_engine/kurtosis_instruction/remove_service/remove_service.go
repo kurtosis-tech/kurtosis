@@ -73,6 +73,7 @@ func (builtin *RemoveServiceCapabilities) Validate(_ *builtin_argument.ArgumentV
 		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' doesn't exist", RemoveServiceBuiltinName, builtin.serviceName)
 	}
 	validatorEnvironment.RemoveServiceName(builtin.serviceName)
+	validatorEnvironment.RemoveServiceFromPrivatePortIDMapping(builtin.serviceName)
 	return nil
 }
 

@@ -2,7 +2,10 @@ module github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite
 
 go 1.18
 
-replace github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+replace (
+	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
+)
 
 require (
 	github.com/golang/protobuf v1.5.2
@@ -24,6 +27,7 @@ require (
 	github.com/golang/snappy v0.0.4 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230328194643-b4dea3081e25 // indirect
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
 	github.com/mholt/archiver v3.1.1+incompatible // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect

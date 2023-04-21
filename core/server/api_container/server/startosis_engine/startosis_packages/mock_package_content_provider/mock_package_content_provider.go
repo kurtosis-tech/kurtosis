@@ -41,18 +41,23 @@ func (provider *MockPackageContentProvider) ClonePackage(_ string) (string, *sta
 	panic(unimplementedMessage)
 }
 
-func (provider *MockPackageContentProvider) StorePackageContents(string, []byte, bool) (string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) GetOnDiskAbsolutePackagePath(packageId string) (string, *startosis_errors.InterpretationError) {
+	panic(unimplementedMessage)
+
+}
+
+func (provider *MockPackageContentProvider) StorePackageContents(_ string, _ []byte, _ bool) (string, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 
-func (provider *MockPackageContentProvider) GetModuleContents(packageId string) (string, *startosis_errors.InterpretationError) {
-	absFilePath, found := provider.starlarkPackages[packageId]
+func (provider *MockPackageContentProvider) GetModuleContents(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
+	absFilePath, found := provider.starlarkPackages[fileInsidePackageUrl]
 	if !found {
-		return "", startosis_errors.NewInterpretationError("Package '%v' not found", packageId)
+		return "", startosis_errors.NewInterpretationError("Package '%v' not found", fileInsidePackageUrl)
 	}
 	fileContent, err := os.ReadFile(absFilePath)
 	if err != nil {
-		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", packageId)
+		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", fileInsidePackageUrl)
 	}
 	return string(fileContent), nil
 }
