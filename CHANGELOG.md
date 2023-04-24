@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.75.9](https://github.com/kurtosis-tech/kurtosis/compare/0.75.8...0.75.9) (2023-04-24)
+
+
+### Features
+
+* allow passing an exec to shell  ([#550](https://github.com/kurtosis-tech/kurtosis/issues/550)) ([44c9187](https://github.com/kurtosis-tech/kurtosis/commit/44c91876dbee951de70368db33a379237a7f8cda))
+* Raise file size limit to 100mb for file downloads and uploads ([#542](https://github.com/kurtosis-tech/kurtosis/issues/542)) ([ec8534a](https://github.com/kurtosis-tech/kurtosis/commit/ec8534aeb187f3c17b69c344d96efe24cc187697))
+* replace runtime values in output with real values ([#541](https://github.com/kurtosis-tech/kurtosis/issues/541)) ([8df9666](https://github.com/kurtosis-tech/kurtosis/commit/8df966631afca0fbfe0bd345fe9a0576b55824f6))
+
+
+### Bug Fixes
+
+* restrict random network allocation to 10.0.0.0/8 following RFC 4096 ([#545](https://github.com/kurtosis-tech/kurtosis/issues/545)) ([003f190](https://github.com/kurtosis-tech/kurtosis/commit/003f190af636f76009fac34899d8b51ef5dad901))
+
 ## [0.75.8](https://github.com/kurtosis-tech/kurtosis/compare/0.75.7...0.75.8) (2023-04-20)
 
 
