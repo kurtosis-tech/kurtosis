@@ -46,6 +46,8 @@ def main():
                 current_version = version
                 continue
 
+    assert len(versions_to_keep) <= MOST_TO_KEEP_OF_LATEST_VERSION + HISTORICAL_VERSIONS_TO_KEEP
+
     versions_to_delete = set(available_versions_list).difference(set(versions_to_keep))
     for version in versions_to_delete:
         versioned_docs_to_delete.append(f"versioned_docs/version-{version}")
