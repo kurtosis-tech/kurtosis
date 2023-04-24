@@ -11,8 +11,8 @@ VERSIONS_FILE_NAME = "versions.json"
 
 Version = namedtuple("Version", "major minor patch")
 
-HISTORICAL_VERSIONS_TO_KEEP = -1
-MOST_TO_KEEP_OF_LATEST_VERSION = -1
+HISTORICAL_VERSIONS_TO_KEEP = 5
+MOST_TO_KEEP_OF_LATEST_VERSION = 5
 
 def main():
     versions_to_keep = []
@@ -28,13 +28,13 @@ def main():
             version = str_to_version(version_str)
             # if the version being processed is the same as the latest major and minor version do nothing
             if version.major == latest_version.major and version.minor == latest_version.minor:
-                if MOST_TO_KEEP_OF_LATEST_VERSION > 0 and current_versions_kept > MOST_TO_KEEP_OF_LATEST_VERSION:
+                if MOST_TO_KEEP_OF_LATEST_VERSION > 0 and current_versions_kept >= MOST_TO_KEEP_OF_LATEST_VERSION:
                     continue
                 current_versions_kept += 1
                 versions_to_keep.append(version_str)
                 continue
 
-            if HISTORICAL_VERSIONS_TO_KEEP > 0 and historical_versions_kept > HISTORICAL_VERSIONS_TO_KEEP:
+            if HISTORICAL_VERSIONS_TO_KEEP > 0 and historical_versions_kept >= HISTORICAL_VERSIONS_TO_KEEP:
                 break
 
             historical_versions_kept += 1
