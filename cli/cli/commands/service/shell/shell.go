@@ -27,11 +27,11 @@ import (
 )
 
 const (
-	enclaveIdentifierArgKey = "enclave"
-	isEnclaveIdArgOptional  = false
-	isEnclaveIdArgGreedy    = false
-	commandToRunFlagKey     = "exec"
-	execArgDefaultValue     = ""
+	enclaveIdentifierArgKey          = "enclave"
+	isEnclaveIdArgOptional           = false
+	isEnclaveIdArgGreedy             = false
+	commandToRunFlagKey              = "exec"
+	commandToRunInsteadOfBashFlagKey = ""
 
 	serviceIdentifierArgKey  = "service"
 	isServiceGuidArgOptional = false
@@ -49,11 +49,10 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
-			Key: commandToRunFlagKey,
-			// TODO(gb): link to a doc page mentioning what a "Kurtosis instruction" is
-			Usage:   "If true, the Kurtosis instructions will not be executed, they will just be printed to the output of the CLI",
+			Key:     commandToRunFlagKey,
+			Usage:   "If this flag is used Kurtosis will not run bash/sh on the container by default instead Kurtosis will run the passed in command. Note if the command being run is multiple words you should wrap it in quotes",
 			Type:    flags.FlagType_String,
-			Default: execArgDefaultValue,
+			Default: commandToRunInsteadOfBashFlagKey,
 		},
 	},
 	Args: []*args.ArgConfig{
