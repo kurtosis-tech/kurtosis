@@ -52,7 +52,7 @@ const (
 	folderPermissionForRenderedTemplates = 0755
 	tempDirForRenderedTemplatesPrefix    = "temp-dir-for-rendered-templates-"
 
-	ensureCompressedFileIsLesserThanGRPCLimit = false
+	enforceMaxFileSizeLimit = false
 
 	emptyCollectionLength        = 0
 	exactlyOneShortenedUuidMatch = 1
@@ -1625,7 +1625,7 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 		}
 	}
 
-	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, ensureCompressedFileIsLesserThanGRPCLimit)
+	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
 	}

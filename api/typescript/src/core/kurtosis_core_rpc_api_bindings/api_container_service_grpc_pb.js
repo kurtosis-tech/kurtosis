@@ -258,6 +258,17 @@ function deserialize_api_container_api_StoreWebFilesArtifactResponse(buffer_arg)
   return api_container_service_pb.StoreWebFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_StreamedDataChunk(arg) {
+  if (!(arg instanceof api_container_service_pb.StreamedDataChunk)) {
+    throw new Error('Expected argument of type api_container_api.StreamedDataChunk');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_StreamedDataChunk(buffer_arg) {
+  return api_container_service_pb.StreamedDataChunk.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_UnpauseServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.UnpauseServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.UnpauseServiceArgs');
@@ -337,6 +348,18 @@ runStarlarkScript: {
     requestDeserialize: deserialize_api_container_api_RunStarlarkScriptArgs,
     responseSerialize: serialize_api_container_api_StarlarkRunResponseLine,
     responseDeserialize: deserialize_api_container_api_StarlarkRunResponseLine,
+  },
+  // Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
+uploadStarlarkPackage: {
+    path: '/api_container_api.ApiContainerService/UploadStarlarkPackage',
+    requestStream: true,
+    responseStream: false,
+    requestType: api_container_service_pb.StreamedDataChunk,
+    responseType: google_protobuf_empty_pb.Empty,
+    requestSerialize: serialize_api_container_api_StreamedDataChunk,
+    requestDeserialize: deserialize_api_container_api_StreamedDataChunk,
+    responseSerialize: serialize_google_protobuf_Empty,
+    responseDeserialize: deserialize_google_protobuf_Empty,
   },
   // Executes a Starlark script on the user's behalf
 runStarlarkPackage: {
@@ -471,6 +494,7 @@ waitForHttpPostEndpointAvailability: {
     responseDeserialize: deserialize_google_protobuf_Empty,
   },
   // Uploads a files artifact to the Kurtosis File System
+// Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
 uploadFilesArtifact: {
     path: '/api_container_api.ApiContainerService/UploadFilesArtifact',
     requestStream: false,
@@ -482,8 +506,22 @@ uploadFilesArtifact: {
     responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
   },
-  // TODO Make this a server-side streaming method so the client can download large files
-// Downloads a files artifact from the Kurtosis File System
+  // Uploads a files artifact to the Kurtosis File System
+// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
+// library is only implemented in Go
+uploadFilesArtifactV2: {
+    path: '/api_container_api.ApiContainerService/UploadFilesArtifactV2',
+    requestStream: true,
+    responseStream: false,
+    requestType: api_container_service_pb.StreamedDataChunk,
+    responseType: api_container_service_pb.UploadFilesArtifactResponse,
+    requestSerialize: serialize_api_container_api_StreamedDataChunk,
+    requestDeserialize: deserialize_api_container_api_StreamedDataChunk,
+    responseSerialize: serialize_api_container_api_UploadFilesArtifactResponse,
+    responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
+  },
+  // Downloads a files artifact from the Kurtosis File System
+// Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
 downloadFilesArtifact: {
     path: '/api_container_api.ApiContainerService/DownloadFilesArtifact',
     requestStream: false,
@@ -494,6 +532,18 @@ downloadFilesArtifact: {
     requestDeserialize: deserialize_api_container_api_DownloadFilesArtifactArgs,
     responseSerialize: serialize_api_container_api_DownloadFilesArtifactResponse,
     responseDeserialize: deserialize_api_container_api_DownloadFilesArtifactResponse,
+  },
+  // Downloads a files artifact from the Kurtosis File System
+downloadFilesArtifactV2: {
+    path: '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
+    requestStream: false,
+    responseStream: true,
+    requestType: api_container_service_pb.DownloadFilesArtifactArgs,
+    responseType: api_container_service_pb.StreamedDataChunk,
+    requestSerialize: serialize_api_container_api_DownloadFilesArtifactArgs,
+    requestDeserialize: deserialize_api_container_api_DownloadFilesArtifactArgs,
+    responseSerialize: serialize_api_container_api_StreamedDataChunk,
+    responseDeserialize: deserialize_api_container_api_StreamedDataChunk,
   },
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
 storeWebFilesArtifact: {

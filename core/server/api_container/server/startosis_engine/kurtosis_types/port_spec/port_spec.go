@@ -211,7 +211,3 @@ func parsePortApplicationProtocol(isSet bool, applicationProtocol starlark.Strin
 	// validation against the regexp has been run already
 	return applicationProtocol.GoString(), nil
 }
-
-func validateWait() {
-
-}

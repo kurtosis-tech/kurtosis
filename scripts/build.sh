@@ -17,6 +17,7 @@ BUILD_SCRIPT_RELATIVE_FILEPATHS=(
     "scripts/generate-kurtosis-version.sh"
     "container-engine-lib/scripts/build.sh"
     "contexts-config-store/scripts/build.sh"
+    "grpc-file-transfer/scripts/build.sh"
     "name_generator/scripts/build.sh"
     "api/scripts/build.sh"
     "core/scripts/build.sh"

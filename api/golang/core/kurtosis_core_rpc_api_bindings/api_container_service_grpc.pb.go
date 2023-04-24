@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion7
 
 const (
 	ApiContainerService_RunStarlarkScript_FullMethodName                          = "/api_container_api.ApiContainerService/RunStarlarkScript"
+	ApiContainerService_UploadStarlarkPackage_FullMethodName                      = "/api_container_api.ApiContainerService/UploadStarlarkPackage"
 	ApiContainerService_RunStarlarkPackage_FullMethodName                         = "/api_container_api.ApiContainerService/RunStarlarkPackage"
 	ApiContainerService_StartServices_FullMethodName                              = "/api_container_api.ApiContainerService/StartServices"
 	ApiContainerService_GetServices_FullMethodName                                = "/api_container_api.ApiContainerService/GetServices"
@@ -33,7 +34,9 @@ const (
 	ApiContainerService_WaitForHttpGetEndpointAvailability_FullMethodName         = "/api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability"
 	ApiContainerService_WaitForHttpPostEndpointAvailability_FullMethodName        = "/api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability"
 	ApiContainerService_UploadFilesArtifact_FullMethodName                        = "/api_container_api.ApiContainerService/UploadFilesArtifact"
+	ApiContainerService_UploadFilesArtifactV2_FullMethodName                      = "/api_container_api.ApiContainerService/UploadFilesArtifactV2"
 	ApiContainerService_DownloadFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/DownloadFilesArtifact"
+	ApiContainerService_DownloadFilesArtifactV2_FullMethodName                    = "/api_container_api.ApiContainerService/DownloadFilesArtifactV2"
 	ApiContainerService_StoreWebFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/StoreWebFilesArtifact"
 	ApiContainerService_StoreFilesArtifactFromService_FullMethodName              = "/api_container_api.ApiContainerService/StoreFilesArtifactFromService"
 	ApiContainerService_RenderTemplatesToFilesArtifact_FullMethodName             = "/api_container_api.ApiContainerService/RenderTemplatesToFilesArtifact"
@@ -46,6 +49,8 @@ const (
 type ApiContainerServiceClient interface {
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkScript(ctx context.Context, in *RunStarlarkScriptArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkScriptClient, error)
+	// Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
+	UploadStarlarkPackage(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadStarlarkPackageClient, error)
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkPackageClient, error)
 	// Start services by creating containers for them
@@ -69,10 +74,17 @@ type ApiContainerServiceClient interface {
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(ctx context.Context, in *WaitForHttpPostEndpointAvailabilityArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Uploads a files artifact to the Kurtosis File System
+	// Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
 	UploadFilesArtifact(ctx context.Context, in *UploadFilesArtifactArgs, opts ...grpc.CallOption) (*UploadFilesArtifactResponse, error)
-	// TODO Make this a server-side streaming method so the client can download large files
+	// Uploads a files artifact to the Kurtosis File System
+	// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
+	// library is only implemented in Go
+	UploadFilesArtifactV2(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactV2Client, error)
 	// Downloads a files artifact from the Kurtosis File System
+	// Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
 	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (*DownloadFilesArtifactResponse, error)
+	// Downloads a files artifact from the Kurtosis File System
+	DownloadFilesArtifactV2(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactV2Client, error)
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
 	StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
@@ -122,8 +134,42 @@ func (x *apiContainerServiceRunStarlarkScriptClient) Recv() (*StarlarkRunRespons
 	return m, nil
 }
 
+func (c *apiContainerServiceClient) UploadStarlarkPackage(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadStarlarkPackageClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[1], ApiContainerService_UploadStarlarkPackage_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &apiContainerServiceUploadStarlarkPackageClient{stream}
+	return x, nil
+}
+
+type ApiContainerService_UploadStarlarkPackageClient interface {
+	Send(*StreamedDataChunk) error
+	CloseAndRecv() (*emptypb.Empty, error)
+	grpc.ClientStream
+}
+
+type apiContainerServiceUploadStarlarkPackageClient struct {
+	grpc.ClientStream
+}
+
+func (x *apiContainerServiceUploadStarlarkPackageClient) Send(m *StreamedDataChunk) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *apiContainerServiceUploadStarlarkPackageClient) CloseAndRecv() (*emptypb.Empty, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(emptypb.Empty)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *apiContainerServiceClient) RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkPackageClient, error) {
-	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[1], ApiContainerService_RunStarlarkPackage_FullMethodName, opts...)
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[2], ApiContainerService_RunStarlarkPackage_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -253,6 +299,40 @@ func (c *apiContainerServiceClient) UploadFilesArtifact(ctx context.Context, in 
 	return out, nil
 }
 
+func (c *apiContainerServiceClient) UploadFilesArtifactV2(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactV2Client, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[3], ApiContainerService_UploadFilesArtifactV2_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &apiContainerServiceUploadFilesArtifactV2Client{stream}
+	return x, nil
+}
+
+type ApiContainerService_UploadFilesArtifactV2Client interface {
+	Send(*StreamedDataChunk) error
+	CloseAndRecv() (*UploadFilesArtifactResponse, error)
+	grpc.ClientStream
+}
+
+type apiContainerServiceUploadFilesArtifactV2Client struct {
+	grpc.ClientStream
+}
+
+func (x *apiContainerServiceUploadFilesArtifactV2Client) Send(m *StreamedDataChunk) error {
+	return x.ClientStream.SendMsg(m)
+}
+
+func (x *apiContainerServiceUploadFilesArtifactV2Client) CloseAndRecv() (*UploadFilesArtifactResponse, error) {
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	m := new(UploadFilesArtifactResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func (c *apiContainerServiceClient) DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (*DownloadFilesArtifactResponse, error) {
 	out := new(DownloadFilesArtifactResponse)
 	err := c.cc.Invoke(ctx, ApiContainerService_DownloadFilesArtifact_FullMethodName, in, out, opts...)
@@ -260,6 +340,38 @@ func (c *apiContainerServiceClient) DownloadFilesArtifact(ctx context.Context, i
 		return nil, err
 	}
 	return out, nil
+}
+
+func (c *apiContainerServiceClient) DownloadFilesArtifactV2(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactV2Client, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[4], ApiContainerService_DownloadFilesArtifactV2_FullMethodName, opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &apiContainerServiceDownloadFilesArtifactV2Client{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type ApiContainerService_DownloadFilesArtifactV2Client interface {
+	Recv() (*StreamedDataChunk, error)
+	grpc.ClientStream
+}
+
+type apiContainerServiceDownloadFilesArtifactV2Client struct {
+	grpc.ClientStream
+}
+
+func (x *apiContainerServiceDownloadFilesArtifactV2Client) Recv() (*StreamedDataChunk, error) {
+	m := new(StreamedDataChunk)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *apiContainerServiceClient) StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error) {
@@ -304,6 +416,8 @@ func (c *apiContainerServiceClient) ListFilesArtifactNamesAndUuids(ctx context.C
 type ApiContainerServiceServer interface {
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkScript(*RunStarlarkScriptArgs, ApiContainerService_RunStarlarkScriptServer) error
+	// Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
+	UploadStarlarkPackage(ApiContainerService_UploadStarlarkPackageServer) error
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error
 	// Start services by creating containers for them
@@ -327,10 +441,17 @@ type ApiContainerServiceServer interface {
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(context.Context, *WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error)
 	// Uploads a files artifact to the Kurtosis File System
+	// Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
 	UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error)
-	// TODO Make this a server-side streaming method so the client can download large files
+	// Uploads a files artifact to the Kurtosis File System
+	// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
+	// library is only implemented in Go
+	UploadFilesArtifactV2(ApiContainerService_UploadFilesArtifactV2Server) error
 	// Downloads a files artifact from the Kurtosis File System
+	// Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
 	DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error)
+	// Downloads a files artifact from the Kurtosis File System
+	DownloadFilesArtifactV2(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactV2Server) error
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
 	StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
@@ -346,6 +467,9 @@ type UnimplementedApiContainerServiceServer struct {
 
 func (UnimplementedApiContainerServiceServer) RunStarlarkScript(*RunStarlarkScriptArgs, ApiContainerService_RunStarlarkScriptServer) error {
 	return status.Errorf(codes.Unimplemented, "method RunStarlarkScript not implemented")
+}
+func (UnimplementedApiContainerServiceServer) UploadStarlarkPackage(ApiContainerService_UploadStarlarkPackageServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadStarlarkPackage not implemented")
 }
 func (UnimplementedApiContainerServiceServer) RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error {
 	return status.Errorf(codes.Unimplemented, "method RunStarlarkPackage not implemented")
@@ -383,8 +507,14 @@ func (UnimplementedApiContainerServiceServer) WaitForHttpPostEndpointAvailabilit
 func (UnimplementedApiContainerServiceServer) UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method UploadFilesArtifact not implemented")
 }
+func (UnimplementedApiContainerServiceServer) UploadFilesArtifactV2(ApiContainerService_UploadFilesArtifactV2Server) error {
+	return status.Errorf(codes.Unimplemented, "method UploadFilesArtifactV2 not implemented")
+}
 func (UnimplementedApiContainerServiceServer) DownloadFilesArtifact(context.Context, *DownloadFilesArtifactArgs) (*DownloadFilesArtifactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadFilesArtifact not implemented")
+}
+func (UnimplementedApiContainerServiceServer) DownloadFilesArtifactV2(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactV2Server) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadFilesArtifactV2 not implemented")
 }
 func (UnimplementedApiContainerServiceServer) StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreWebFilesArtifact not implemented")
@@ -429,6 +559,32 @@ type apiContainerServiceRunStarlarkScriptServer struct {
 
 func (x *apiContainerServiceRunStarlarkScriptServer) Send(m *StarlarkRunResponseLine) error {
 	return x.ServerStream.SendMsg(m)
+}
+
+func _ApiContainerService_UploadStarlarkPackage_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ApiContainerServiceServer).UploadStarlarkPackage(&apiContainerServiceUploadStarlarkPackageServer{stream})
+}
+
+type ApiContainerService_UploadStarlarkPackageServer interface {
+	SendAndClose(*emptypb.Empty) error
+	Recv() (*StreamedDataChunk, error)
+	grpc.ServerStream
+}
+
+type apiContainerServiceUploadStarlarkPackageServer struct {
+	grpc.ServerStream
+}
+
+func (x *apiContainerServiceUploadStarlarkPackageServer) SendAndClose(m *emptypb.Empty) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *apiContainerServiceUploadStarlarkPackageServer) Recv() (*StreamedDataChunk, error) {
+	m := new(StreamedDataChunk)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func _ApiContainerService_RunStarlarkPackage_Handler(srv interface{}, stream grpc.ServerStream) error {
@@ -650,6 +806,32 @@ func _ApiContainerService_UploadFilesArtifact_Handler(srv interface{}, ctx conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiContainerService_UploadFilesArtifactV2_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ApiContainerServiceServer).UploadFilesArtifactV2(&apiContainerServiceUploadFilesArtifactV2Server{stream})
+}
+
+type ApiContainerService_UploadFilesArtifactV2Server interface {
+	SendAndClose(*UploadFilesArtifactResponse) error
+	Recv() (*StreamedDataChunk, error)
+	grpc.ServerStream
+}
+
+type apiContainerServiceUploadFilesArtifactV2Server struct {
+	grpc.ServerStream
+}
+
+func (x *apiContainerServiceUploadFilesArtifactV2Server) SendAndClose(m *UploadFilesArtifactResponse) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func (x *apiContainerServiceUploadFilesArtifactV2Server) Recv() (*StreamedDataChunk, error) {
+	m := new(StreamedDataChunk)
+	if err := x.ServerStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
 func _ApiContainerService_DownloadFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(DownloadFilesArtifactArgs)
 	if err := dec(in); err != nil {
@@ -666,6 +848,27 @@ func _ApiContainerService_DownloadFilesArtifact_Handler(srv interface{}, ctx con
 		return srv.(ApiContainerServiceServer).DownloadFilesArtifact(ctx, req.(*DownloadFilesArtifactArgs))
 	}
 	return interceptor(ctx, in, info, handler)
+}
+
+func _ApiContainerService_DownloadFilesArtifactV2_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(DownloadFilesArtifactArgs)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(ApiContainerServiceServer).DownloadFilesArtifactV2(m, &apiContainerServiceDownloadFilesArtifactV2Server{stream})
+}
+
+type ApiContainerService_DownloadFilesArtifactV2Server interface {
+	Send(*StreamedDataChunk) error
+	grpc.ServerStream
+}
+
+type apiContainerServiceDownloadFilesArtifactV2Server struct {
+	grpc.ServerStream
+}
+
+func (x *apiContainerServiceDownloadFilesArtifactV2Server) Send(m *StreamedDataChunk) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _ApiContainerService_StoreWebFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -819,8 +1022,23 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
+			StreamName:    "UploadStarlarkPackage",
+			Handler:       _ApiContainerService_UploadStarlarkPackage_Handler,
+			ClientStreams: true,
+		},
+		{
 			StreamName:    "RunStarlarkPackage",
 			Handler:       _ApiContainerService_RunStarlarkPackage_Handler,
+			ServerStreams: true,
+		},
+		{
+			StreamName:    "UploadFilesArtifactV2",
+			Handler:       _ApiContainerService_UploadFilesArtifactV2_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "DownloadFilesArtifactV2",
+			Handler:       _ApiContainerService_DownloadFilesArtifactV2_Handler,
 			ServerStreams: true,
 		},
 	},
