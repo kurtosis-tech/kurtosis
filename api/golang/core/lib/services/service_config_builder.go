@@ -140,7 +140,7 @@ func copyPortsMap(ports map[string]*kurtosis_core_rpc_api_bindings.Port) map[str
 	}
 	newPorts := make(map[string]*kurtosis_core_rpc_api_bindings.Port, len(ports))
 	for name, port := range ports {
-		newPorts[name] = binding_constructors.NewPort(port.Number, port.TransportProtocol, port.MaybeApplicationProtocol)
+		newPorts[name] = binding_constructors.NewPort(port.Number, port.TransportProtocol, port.MaybeApplicationProtocol, port.MaybeWaitTimeout)
 	}
 	return newPorts
 }

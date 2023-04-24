@@ -18,6 +18,7 @@ const (
 	PortNumberAttr              = "number"
 	TransportProtocolAttr       = "transport_protocol"
 	PortApplicationProtocolAttr = "application_protocol"
+	WaitAttr                    = "wait"
 
 	maxPortNumber                 = 65535
 	minPortNumber                 = 1
@@ -35,7 +36,7 @@ func NewPortSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.Uint64InRange(value, TransportProtocolAttr, minPortNumber, maxPortNumber)
+						return builtin_argument.Uint64InRange(value, PortNumberAttr, minPortNumber, maxPortNumber)
 					},
 				},
 				{
@@ -52,6 +53,16 @@ func NewPortSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.StringRegexp(value, PortApplicationProtocolAttr, validApplicationProtocolRegex)
+					},
+				},
+				{
+					Name:              WaitAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
+					// the value can be a string duration, or it can be a Starlark none value (because we are preparing
+					// the signature to receive a custom type in the future) when users want to disable it
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.DurationOrNone(value, WaitAttr)
 					},
 				},
 			},
@@ -75,13 +86,24 @@ type PortSpec struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
 }
 
-func CreatePortSpec(portNumber uint32, transportProtocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol, maybeApplicationProtocol string) (*PortSpec, *startosis_errors.InterpretationError) {
+func CreatePortSpec(
+	portNumber uint32,
+	transportProtocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol,
+	maybeApplicationProtocol string,
+	maybeWaitTimeout string,
+) (*PortSpec, *startosis_errors.InterpretationError) {
 	args := []starlark.Value{
 		starlark.MakeInt(int(portNumber)),
 		starlark.String(transportProtocol.String()),
 	}
 	if maybeApplicationProtocol != "" {
 		args = append(args, starlark.String(maybeApplicationProtocol))
+	} else {
+		args = append(args, nil)
+	}
+
+	if maybeWaitTimeout != "" {
+		args = append(args, starlark.String(maybeWaitTimeout))
 	} else {
 		args = append(args, nil)
 	}
@@ -137,7 +159,23 @@ func (portSpec *PortSpec) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.Port
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	return binding_constructors.NewPort(parsedPortNumber, parsedTransportProtocol, parsedPortApplicationProtocol), nil
+
+	waitTimeout := port_spec.DefaultWaitTimeoutDurationStr
+	waitValue, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Value](
+		portSpec.KurtosisValueTypeDefault, WaitAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		if _, ok := waitValue.(starlark.NoneType); ok {
+			waitTimeout = port_spec.DisableWaitTimeoutDurationStr
+		}
+		if waitValueStr, ok := waitValue.(starlark.String); ok {
+			waitTimeout = waitValueStr.GoString()
+		}
+	}
+
+	return binding_constructors.NewPort(parsedPortNumber, parsedTransportProtocol, parsedPortApplicationProtocol, waitTimeout), nil
 }
 
 func parsePortNumber(isSet bool, portNumberStarlark starlark.Int) (uint32, *startosis_errors.InterpretationError) {
@@ -172,4 +210,8 @@ func parsePortApplicationProtocol(isSet bool, applicationProtocol starlark.Strin
 	}
 	// validation against the regexp has been run already
 	return applicationProtocol.GoString(), nil
+}
+
+func validateWait() {
+
 }

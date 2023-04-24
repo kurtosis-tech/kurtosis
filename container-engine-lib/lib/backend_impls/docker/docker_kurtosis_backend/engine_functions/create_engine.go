@@ -41,7 +41,12 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, nil)
+	defaultWait, err := port_spec.CreateWaitWithDefaultValues()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a wait with default values")
+	}
+
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -50,7 +55,7 @@ func CreateEngine(
 			consts.EngineTransportProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, nil)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
