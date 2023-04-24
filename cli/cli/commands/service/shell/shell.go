@@ -135,7 +135,8 @@ func run(
 	go io.Copy(os.Stderr, newReader)
 	go io.Copy(conn, os.Stdin)
 
-	io.Copy(conn, strings.NewReader(passAsIsFlag+newLineTerminator))
+	io.Copy(conn, strings.NewReader(passAsIsFlag))
+	io.Copy(conn, strings.NewReader(newLineTerminator))
 
 	stdinFd := int(os.Stdin.Fd())
 	var oldState *terminal.State
