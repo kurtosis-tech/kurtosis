@@ -149,9 +149,6 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 // Just with 10.0.0.0/8 we can get 2^24 ips; if we limit services per APIC to 4096(/20) we can get 4096 per docker engine
 // For simplicity we limit it to 256 APICs and allow networks 10.1.0.0/20 - 10.255.0.0.0/20
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
-	for offsetIpsUint64 := uint64(0); offsetIpsUint64 < maxUint32PlusOne; offsetIpsUint64 += networkWidthUint64 {
-	}
-
 	for secondOctet := secondOctetLowestPossibleValue; secondOctet <= secondOctetMaximumPossibleValue; secondOctet++ {
 		ipAddressString := fmt.Sprintf("%v.%v.0.0", allowedNetworkFirstOctet, secondOctet)
 		resultNetworkIp := net.ParseIP(ipAddressString)
