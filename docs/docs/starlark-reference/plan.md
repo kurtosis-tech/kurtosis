@@ -177,6 +177,21 @@ result = plan.exec(
     # You can chain this call with assert to check codes after request is done.
     # OPTIONAL (Defaults to False)
     skip_code_check = False,
+    
+    # 
+    # The extract dictionary can be used for filtering specific parts of a response
+    # assigning that output to a key-value pair, where the key is the reference 
+    # variable and the value is the specific output. 
+    # 
+    # Specifcally: the key is the way you refer to the extraction later on and
+    # the value is a 'jq' string that contains logic to extract parts from response 
+    # body that you get from the exec_recipe used
+    # 
+    # To lean more about jq, please visit https://devdocs.io/jq/
+    # OPTIONAL (DEFAULT:{})
+    extract = {
+        "extractfield" : ".name.id",
+    },
 )
 
 plan.print(result["output"])
