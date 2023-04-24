@@ -50,7 +50,7 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 	Flags: []*flags.FlagConfig{
 		{
 			Key:     commandToRunFlagKey,
-			Usage:   "If this flag is used Kurtosis will not run bash/sh on the container by default instead Kurtosis will run the passed in command. Note if the command being run is multiple words you should wrap it in quotes",
+			Usage:   "If this flag is used Kurtosis will not run bash/sh on the container by default instead; Kurtosis will run the passed in command. Note if the command being run is multiple words you should wrap it in quotes",
 			Type:    flags.FlagType_String,
 			Default: commandToRunInsteadOfBashFlagKey,
 		},
