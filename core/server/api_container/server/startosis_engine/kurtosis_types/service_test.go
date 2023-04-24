@@ -17,6 +17,7 @@ const (
 	serviceNameTestValue     = starlark.String("test-service")
 	emptyPortSpecWaitTimeout = ""
 	portSpecWaitTimeout      = "2s"
+	grpcPortId               = "grpc"
 )
 
 func TestService_StringRepresentation(t *testing.T) {
@@ -105,7 +106,7 @@ func createTestServiceType() (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
+	if err := ports.SetKey(starlark.String(grpcPortId), portSpec); err != nil {
 		return nil, err
 	}
 	service := NewService(serviceNameTestValue, hostnameTestValue, ipAddressTestValue, ports)
@@ -118,7 +119,7 @@ func createTestServiceTypeWithApplicationProtocol() (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
+	if err := ports.SetKey(starlark.String(grpcPortId), portSpec); err != nil {
 		return nil, err
 	}
 	service := NewService(serviceNameTestValue, hostnameTestValue, ipAddressTestValue, ports)
@@ -131,7 +132,7 @@ func createTestServiceTypeWithWait() (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
+	if err := ports.SetKey(starlark.String(grpcPortId), portSpec); err != nil {
 		return nil, err
 	}
 	service := NewService(serviceNameTestValue, hostnameTestValue, ipAddressTestValue, ports)
@@ -144,7 +145,7 @@ func createTestServiceTypeWithApplicationProtocolAndWait() (*Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	if err := ports.SetKey(starlark.String("grpc"), portSpec); err != nil {
+	if err := ports.SetKey(starlark.String(grpcPortId), portSpec); err != nil {
 		return nil, err
 	}
 	service := NewService(serviceNameTestValue, hostnameTestValue, ipAddressTestValue, ports)

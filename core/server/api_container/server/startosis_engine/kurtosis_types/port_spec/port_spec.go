@@ -59,17 +59,10 @@ func NewPortSpecType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              WaitAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
+					// the value can be a string duration, or it can be a Starlark none value (because we are preparing
+					// the signature to receive a custom type in the future) when users want to disable it
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						// the value can be a string duration, or
-						// it can be a Starlark none value (because we are preparing the signature to receive a custom type in the future) when users want to disable it
-						if _, ok := value.(starlark.NoneType); !ok {
-							// we do not accept empty string as a none wait config
-							if interpretationErr := builtin_argument.NonEmptyString(value, WaitAttr); interpretationErr != nil {
-								return interpretationErr
-							}
-							return builtin_argument.Duration(value, WaitAttr)
-						}
-						return nil
+						return builtin_argument.DurationOrNone(value, WaitAttr)
 					},
 				},
 			},
@@ -217,4 +210,8 @@ func parsePortApplicationProtocol(isSet bool, applicationProtocol starlark.Strin
 	}
 	// validation against the regexp has been run already
 	return applicationProtocol.GoString(), nil
+}
+
+func validateWait() {
+
 }

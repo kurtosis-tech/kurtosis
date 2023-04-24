@@ -62,6 +62,8 @@ const (
 	waitForPortsOpenRetriesDelayMilliseconds = 500
 
 	shouldFollowLogs = false
+
+	publicPortsSuffix = "-public"
 )
 
 var (
@@ -1290,9 +1292,11 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 	}()
 
+	allPrivateAndPublicPorts := mergeAndGetAllPrivateAndPublicServicePorts(startedService)
+
 	if err := waitUntilAllTCPAndUDPPortsAreOpen(
 		startedService.GetRegistration().GetPrivateIP(),
-		startedService.GetPrivatePorts(),
+		allPrivateAndPublicPorts,
 	); err != nil {
 		serviceLogs, getServiceLogsErr := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
 		if getServiceLogsErr != nil {
@@ -1925,7 +1929,7 @@ func waitUntilPortIsOpenWithTimeout(
 	ticker := time.NewTicker(waitForPortsOpenRetriesDelayMilliseconds * time.Millisecond)
 	defer ticker.Stop()
 
-	logrus.Debugf("Checking if port spec '%+v' in '%v' is open...", portSpec, ipAddr)
+	logrus.Debugf("Checking if port '%+v' in '%v' is open...", portSpec, ipAddr)
 
 	for {
 		if time.Now().After(finishTime) {
@@ -1973,4 +1977,21 @@ func scanPort(ipAddr net.IP, portSpec *port_spec.PortSpec, timeout time.Duration
 	}
 	defer conn.Close()
 	return nil
+}
+
+func mergeAndGetAllPrivateAndPublicServicePorts(service *service.Service) map[string]*port_spec.PortSpec {
+	allPrivateAndPublicPorts := map[string]*port_spec.PortSpec{}
+
+	for portId, portSpec := range service.GetPrivatePorts() {
+		allPrivateAndPublicPorts[portId] = portSpec
+	}
+
+	for portId, portSpec := range service.GetMaybePublicPorts() {
+		newPortId := portId
+		if _, found := allPrivateAndPublicPorts[portId]; found {
+			newPortId = portId + publicPortsSuffix
+		}
+		allPrivateAndPublicPorts[newPortId] = portSpec
+	}
+	return allPrivateAndPublicPorts
 }
