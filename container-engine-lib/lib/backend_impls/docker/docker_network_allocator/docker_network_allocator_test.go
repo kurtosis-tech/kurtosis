@@ -42,7 +42,7 @@ func TestEntireNetworkingSpace(t *testing.T) {
 	}
 	i := 0
 	for {
-		if i == secondOctetMaximumPossibleValue+1 {
+		if i == secondOctetMaximumPossibleValue {
 			break
 		}
 		freeIPAddress, err := findRandomFreeNetwork(takenNetworks)
