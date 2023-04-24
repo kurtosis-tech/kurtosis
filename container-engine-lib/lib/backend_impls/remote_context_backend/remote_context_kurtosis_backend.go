@@ -152,8 +152,8 @@ func (backend *RemoteContextKurtosisBackend) RunUserServiceExecCommands(ctx cont
 	return backend.remoteKurtosisBackend.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands)
 }
 
-func (backend *RemoteContextKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultConn net.Conn, resultErr error) {
-	return backend.remoteKurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid)
+func (backend *RemoteContextKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, commandToRunInsteadOfBash string) (resultConn net.Conn, resultErr error) {
+	return backend.remoteKurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, "")
 }
 
 func (backend *RemoteContextKurtosisBackend) CopyFilesFromUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, srcPathOnService string, output io.Writer) error {
