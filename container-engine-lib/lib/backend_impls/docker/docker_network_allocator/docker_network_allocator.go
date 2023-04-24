@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/network_helpers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"math"
 	"math/rand"
 	"net"
 	"strings"
@@ -35,8 +34,6 @@ const (
 )
 
 var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
-var networkWidthUint64 = uint64(math.Pow(float64(2), float64(networkWidthBits)))
-var maxUint32PlusOne = uint64(math.MaxUint32) + 1
 var emptyIpSet = map[string]bool{}
 
 type DockerNetworkAllocator struct {
