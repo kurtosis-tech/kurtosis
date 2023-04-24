@@ -692,7 +692,7 @@ api = plan.add_service(
 
 ...Kurtosis simply swapped in the correct Postgres container Execution-time values. While future references take some getting used to, [we've found the feedback loop speedup to be very worth it][why-multi-phase-runs-explanation].
 
-**What you've just seen is Kurtosis' powerful ability to data generated at runtime to set up service dependencies in multi-container test environments. You also saw how seamless it was to to run on-box CLI commands on a container.**
+**What you've just seen is Kurtosis' powerful ability to gracefully handle data generated at runtime to set up service dependencies in multi-container test environments. You also saw how seamless it was to to run on-box CLI commands on a container.**
 
 Modifying data
 --------------
