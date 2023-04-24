@@ -7,6 +7,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander => ../files_artifacts_expander
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../launcher
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
 )
@@ -17,12 +18,13 @@ require (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // Local dependency
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.1
-	google.golang.org/grpc v1.40.0
+	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 	gotest.tools v2.2.0+incompatible
 )
@@ -63,7 +65,6 @@ require (
 	github.com/itchyny/timefmt-go v0.1.4 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v0.0.0-20201106050909-4977a11b4351 // indirect
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect

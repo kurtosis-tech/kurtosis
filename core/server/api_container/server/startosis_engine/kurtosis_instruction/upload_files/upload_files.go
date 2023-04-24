@@ -22,7 +22,7 @@ const (
 
 	ArtifactNameArgName = "name"
 
-	ensureCompressedFileIsLesserThanGRPCLimit = false
+	enforceMaxFileSizeLimit = false
 )
 
 func NewUploadFiles(serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -112,7 +112,7 @@ func (builtin *UploadFilesCapabilities) Validate(_ *builtin_argument.ArgumentVal
 }
 
 func (builtin *UploadFilesCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	compressedData, err := shared_utils.CompressPath(builtin.pathOnDisk, ensureCompressedFileIsLesserThanGRPCLimit)
+	compressedData, err := shared_utils.CompressPath(builtin.pathOnDisk, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", builtin.pathOnDisk)
 	}
