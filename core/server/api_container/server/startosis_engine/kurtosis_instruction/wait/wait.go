@@ -138,7 +138,7 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 	serviceName := service.ServiceName(serviceNameArgumentValue.GoString())
 
 	var genericRecipe recipe.Recipe
-	httpRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.HttpRequestRecipe](arguments, RecipeArgName)
+	httpRecipe, err := builtin_argument.ExtractArgumentValue[recipe.HttpRequestRecipe](arguments, RecipeArgName)
 	if err != nil {
 		execRecipe, err := builtin_argument.ExtractArgumentValue[*recipe.ExecRecipe](arguments, RecipeArgName)
 		if err != nil {
@@ -221,7 +221,18 @@ func (builtin *WaitCapabilities) Interpret(arguments *builtin_argument.ArgumentV
 }
 
 func (builtin *WaitCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	// TODO(vcolombo): Add validation step here
+	if serviceExists := validatorEnvironment.DoesServiceNameExist(builtin.serviceName); !serviceExists {
+		return startosis_errors.NewValidationError("Tried creating a wait for service '%s' which doesn't exist", builtin.serviceName)
+	}
+
+	httpRequestRecipe, ok := builtin.recipe.(recipe.HttpRequestRecipe)
+	// if the passed recipe isn't http request recipe we can't do much
+	if !ok {
+		return nil
+	}
+	if validationErr := recipe.ValidateHttpRequestRecipe(httpRequestRecipe, builtin.serviceName, validatorEnvironment); validationErr != nil {
+		return validationErr
+	}
 	return nil
 }
 

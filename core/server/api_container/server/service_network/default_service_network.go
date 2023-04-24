@@ -52,7 +52,7 @@ const (
 	folderPermissionForRenderedTemplates = 0755
 	tempDirForRenderedTemplatesPrefix    = "temp-dir-for-rendered-templates-"
 
-	ensureCompressedFileIsLesserThanGRPCLimit = false
+	enforceMaxFileSizeLimit = false
 
 	emptyCollectionLength        = 0
 	exactlyOneShortenedUuidMatch = 1
@@ -795,21 +795,18 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceIdentifier, portId)
 	}
 	url := fmt.Sprintf("http://%v:%v%v", service.GetRegistration().GetPrivateIP(), port.GetNumber(), endpoint)
-	if method == http.MethodPost {
-		response, err := http.Post(url, contentType, strings.NewReader(body))
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred on POST HTTP request on '%v'", url)
-		}
-		return response, err
-	} else if method == http.MethodGet {
-		response, err := http.Get(url)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred on GET HTTP request on '%v'", url)
-		}
-		return response, err
-	} else {
-		return nil, stacktrace.NewError("An error occurred because %v is unsupported for HTTP request", method)
+	req, err := http.NewRequestWithContext(ctx, method, url, strings.NewReader(body))
+	if err != nil {
+		return nil, stacktrace.NewError("An error occurred building HTTP request on service '%v', URL '%v'", service, url)
 	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred on HTTP request on service '%v', URL '%v'", service, url)
+	}
+	return resp, nil
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
@@ -1627,7 +1624,7 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 		}
 	}
 
-	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, ensureCompressedFileIsLesserThanGRPCLimit)
+	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
 	}

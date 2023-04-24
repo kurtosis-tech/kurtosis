@@ -464,7 +464,7 @@ func getOrCreateEnclaveContext(
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
 	}
-	if err = metricsClient.TrackCreateEnclave(enclaveIdentifierOrName); err != nil {
+	if err = metricsClient.TrackCreateEnclave(enclaveIdentifierOrName, isPartitioningEnabled); err != nil {
 		logrus.Error("An error occurred while logging the create enclave event")
 	}
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())

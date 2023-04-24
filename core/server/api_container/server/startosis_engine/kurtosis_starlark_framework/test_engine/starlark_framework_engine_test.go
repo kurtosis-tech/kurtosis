@@ -52,15 +52,20 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketDelayTestCase(t))
 	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketLossTestCase(t))
 	testKurtosisTypeConstructor(t, newExecRecipeTestCase(t))
+	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeNoExtractorTestCase(t))
+	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeTestCase(t))
 	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionFullTestCase(t))
 	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newPortSpecFullTestCase(t))
 	testKurtosisTypeConstructor(t, newPortSpecMinimalTestCase(t))
+	testKurtosisTypeConstructor(t, newPostHttpRequestRecipeTestCase(t))
+	testKurtosisTypeConstructor(t, newPostHttpRequestRecipeMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
 	testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
 	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
-	testKurtosisTypeConstructor(t, newReadyConditionsTestCase(t))
+	testKurtosisTypeConstructor(t, newReadyConditionsHttpRecipeTestCase(t))
+	testKurtosisTypeConstructor(t, newReadyConditionsExecRecipeTestCase(t))
 }
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {

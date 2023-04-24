@@ -208,6 +208,14 @@ jobs:
       - <<: *abort_job_if_only_docs_changes
       - run: contexts-config-store/scripts/build.sh
 
+  build_grpc_file_transfer:
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version>>"
+    steps:
+      - checkout
+      - <<: *abort_job_if_only_docs_changes
+      - run: grpc-file-transfer/scripts/build.sh
+
   build_name_generator:
     docker:
       - image: "cimg/go:<< pipeline.parameters.go-version>>"
@@ -686,9 +694,9 @@ jobs:
 
       # File commands
       - run: "${KURTOSIS_BINPATH} files rendertemplate test-enclave << pipeline.parameters.rendertemplate-cli-test-template-relative-path >> << pipeline.parameters.rendertemplate-cli-test-data-json-relative-path >> ./rendered --name rendered-file"
-      - run: "${KURTOSIS_BINPATH} files download --enclave test-enclave rendered-file ."
+      - run: "${KURTOSIS_BINPATH} files download test-enclave rendered-file ."
       - run: "${KURTOSIS_BINPATH} files storeservice test-enclave test1 /usr/local/apache2/conf/httpd.conf --name stored-file"
-      - run: "${KURTOSIS_BINPATH} files download --enclave test-enclave stored-file ."
+      - run: "${KURTOSIS_BINPATH} files download test-enclave stored-file ."
 
       # Module inside an enclave
       - run: "${KURTOSIS_BINPATH} enclave ls"
@@ -1004,6 +1012,12 @@ workflows:
                 - main
 
       - build_contexts_config_store:
+          filters:
+            branches:
+              ignore:
+                - main
+
+      - build_grpc_file_transfer:
           filters:
             branches:
               ignore:

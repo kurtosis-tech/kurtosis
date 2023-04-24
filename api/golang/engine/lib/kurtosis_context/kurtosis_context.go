@@ -89,18 +89,18 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	return kurtosisContext, nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-ispartitioningenabled---enclavecontextenclavecontext-enclavecontext
+// Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
 func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	ctx context.Context,
 	enclaveName string,
-	isPartitioningEnabled bool,
+	isSubnetworkingEnabled bool,
 ) (*enclaves.EnclaveContext, error) {
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveName:            enclaveName,
 		ApiContainerVersionTag: defaultApiContainerVersionTag,
 		ApiContainerLogLevel:   apiContainerLogLevel.String(),
-		IsPartitioningEnabled:  isPartitioningEnabled,
+		IsPartitioningEnabled:  isSubnetworkingEnabled,
 	}
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)

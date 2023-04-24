@@ -89,8 +89,9 @@ def run(plan, args):
 			PATH_TO_MOUNT_RENDERED_CONFIG: rendered_artifact
 		}
 	)
-	plan.add_service(name = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
+	deployed_service = plan.add_service(name = SERVICE_DEPENDENT_ON_DATASTORE_SERVICE, config = dependent_config)
 	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
+	return {"ip-address": deployed_service.ip_address}
 `
 )
 
@@ -124,6 +125,9 @@ Templates artifact name 'rendered-file' rendered with artifact UUID '[a-f0-9]{32
 Rendered file to rendered-file
 Service 'example-datastore-server-2' added with service UUID '[a-z-0-9]+'
 Deployed example-datastore-server-2 successfully
+{
+	"ip-address": "[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}.[0-9]{1,3}"
+}
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Startosis script")

@@ -55,9 +55,7 @@ func NewReadyConditionType() *kurtosis_type_constructor.KurtosisTypeConstructor 
 					Name:              TargetAttr,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Comparable],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, FieldAttr)
-					},
+					Validator:         nil,
 				},
 				{
 					Name:              IntervalAttr,
@@ -107,24 +105,20 @@ func (readyCondition *ReadyCondition) Copy() (builtin_argument.KurtosisValueType
 }
 
 func (readyCondition *ReadyCondition) GetRecipe() (recipe.Recipe, *startosis_errors.InterpretationError) {
-	var genericRecipe recipe.Recipe
-
-	httpRecipe, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.HttpRequestRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
-	genericRecipe = httpRecipe
+	//TODO we should rework the recipe types to inherit a single common type, this will avoid the double parsing here.
+	httpRecipe, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[recipe.HttpRequestRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
 			RecipeAttr, ReadyConditionTypeName)
 	}
-	//TODO we should rework the recipe types to inherit a single common type, this will avoid the double parsing here.
-	if interpretationErr != nil {
-		execRecipe, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
-		if interpretationErr != nil {
-			return nil, interpretationErr
-		}
-		genericRecipe = execRecipe
+	if interpretationErr == nil {
+		return httpRecipe, nil
 	}
-
-	return genericRecipe, nil
+	execRecipe, _, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*recipe.ExecRecipe](readyCondition.KurtosisValueTypeDefault, RecipeAttr)
+	if interpretationErr == nil {
+		return execRecipe, nil
+	}
+	return nil, interpretationErr
 }
 
 func (readyCondition *ReadyCondition) GetField() (string, *startosis_errors.InterpretationError) {
@@ -205,7 +199,7 @@ func (readyCondition *ReadyCondition) GetTimeout() (time.Duration, *startosis_er
 }
 
 func validateRecipe(value starlark.Value) *startosis_errors.InterpretationError {
-	_, ok := value.(*recipe.HttpRequestRecipe)
+	_, ok := value.(recipe.HttpRequestRecipe)
 	if !ok {
 		//TODO we should rework the recipe types to inherit a single common type, this will avoid the double parsing here.
 		_, ok := value.(*recipe.ExecRecipe)

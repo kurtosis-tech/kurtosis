@@ -1,10 +1,12 @@
-package upload_files_test
+package upload_download_files_test
 
 import (
 	"context"
+	"crypto/md5"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
 	"io/ioutil"
@@ -39,6 +41,10 @@ const (
 	fileServerServiceName services.ServiceName = "file-server"
 
 	testArtifactName = "test-artifact"
+
+	largeFileSize            = 25 * 1024 * 1024
+	emptyFilePathForTempFile = ""
+	enforceFileSizeLimit     = true
 )
 
 func TestUploadAndDownloadFiles(t *testing.T) {
@@ -74,6 +80,46 @@ func TestUploadAndDownloadFiles(t *testing.T) {
 
 	require.Equal(t, archiveBytesViaShortenedUuid, archiveBytesViaUuid)
 	require.Equal(t, archiveBytesViaName, archiveBytesViaUuid)
+}
+
+func TestUploadAndDownloadLargeFilesCheckingConsistency(t *testing.T) {
+	ctx := context.Background()
+
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer func() { _ = destroyEnclaveFunc() }()
+
+	// generate a 10MB random file
+	randomFilePath, deleteFile, err := test_helpers.GenerateRandomTempFile(largeFileSize, emptyFilePathForTempFile)
+	require.NoError(t, err)
+	defer deleteFile()
+
+	// Upload the file to an artifact
+	fileArtifactUuid, fileArtifactName, err := enclaveCtx.UploadFiles(randomFilePath, testArtifactName)
+	require.NoError(t, err)
+	require.Equal(t, testArtifactName, string(fileArtifactName))
+
+	// Download the artifact - Note that the artifact comes as a .tgz here
+	downloadedFileContent, err := enclaveCtx.DownloadFilesArtifact(context.Background(), string(fileArtifactUuid))
+	require.NoError(t, err)
+
+	// Compute the hash of the initial file, compressed in the same way artifacts are compressed
+	initialFileCompressed, err := shared_utils.CompressPath(randomFilePath, enforceFileSizeLimit)
+	require.NoError(t, err)
+	md5Hash := md5.New()
+	_, err = md5Hash.Write(initialFileCompressed)
+	require.NoError(t, err)
+	initialFileHash := md5Hash.Sum(nil)
+
+	// Compute the hash of the downloaded file
+	md5Hash = md5.New()
+	_, err = md5Hash.Write(downloadedFileContent)
+	require.NoError(t, err)
+	downloadedFileMd5 := md5Hash.Sum(nil)
+
+	// Compare the two hashes = they must match
+	require.Equal(t, initialFileHash, downloadedFileMd5)
 }
 
 // ========================================================================

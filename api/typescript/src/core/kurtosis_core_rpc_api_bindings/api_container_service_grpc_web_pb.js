@@ -923,6 +923,62 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.downloadFiles
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.DownloadFilesArtifactArgs,
+ *   !proto.api_container_api.StreamedDataChunk>}
+ */
+const methodDescriptor_ApiContainerService_DownloadFilesArtifactV2 = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
+  grpc.web.MethodType.SERVER_STREAMING,
+  proto.api_container_api.DownloadFilesArtifactArgs,
+  proto.api_container_api.StreamedDataChunk,
+  /**
+   * @param {!proto.api_container_api.DownloadFilesArtifactArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.StreamedDataChunk.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.DownloadFilesArtifactArgs} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StreamedDataChunk>}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.downloadFilesArtifactV2 =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_DownloadFilesArtifactV2);
+};
+
+
+/**
+ * @param {!proto.api_container_api.DownloadFilesArtifactArgs} request The request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StreamedDataChunk>}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.downloadFilesArtifactV2 =
+    function(request, metadata) {
+  return this.client_.serverStreaming(this.hostname_ +
+      '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_DownloadFilesArtifactV2);
+};
+
+
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
  *   !proto.api_container_api.StoreWebFilesArtifactArgs,
  *   !proto.api_container_api.StoreWebFilesArtifactResponse>}
  */

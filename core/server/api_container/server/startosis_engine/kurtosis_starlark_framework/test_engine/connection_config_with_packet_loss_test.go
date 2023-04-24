@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/connection_config"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -22,10 +21,6 @@ func newConnectionConfigWithPacketLossTestCase(t *testing.T) *connectionConfigWi
 
 func (t *connectionConfigWithPacketLossTestCase) GetId() string {
 	return fmt.Sprintf("%s_%s", connection_config.ConnectionConfigTypeName, "WithPacketLoss")
-}
-
-func (t *connectionConfigWithPacketLossTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {
-	return connection_config.NewConnectionConfigType()
 }
 
 func (t *connectionConfigWithPacketLossTestCase) GetStarlarkCode() string {

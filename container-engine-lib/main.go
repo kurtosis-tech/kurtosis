@@ -185,7 +185,7 @@ func runKurtosisBackendTesting() error {
 			logrus.Infof("Errored user service registrations: %+v", erroredUserServiceRegistrations)
 
 			serviceConfig := service.NewServiceConfig(
-				"alpine:3.12.4",
+				"alpine:3.17",
 				nil,
 				nil,
 				nil,

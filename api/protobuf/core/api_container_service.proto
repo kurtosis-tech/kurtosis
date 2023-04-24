@@ -11,6 +11,9 @@ service ApiContainerService {
   // Executes a Starlark script on the user's behalf
   rpc RunStarlarkScript(RunStarlarkScriptArgs) returns (stream StarlarkRunResponseLine) {};
 
+  // Uploads a Starlark package. This step is required before the package can be executed with RunStarlarkPackage
+  rpc UploadStarlarkPackage(stream StreamedDataChunk) returns (google.protobuf.Empty) {};
+
   // Executes a Starlark script on the user's behalf
   rpc RunStarlarkPackage(RunStarlarkPackageArgs) returns (stream StarlarkRunResponseLine) {};
 
@@ -45,11 +48,20 @@ service ApiContainerService {
   rpc WaitForHttpPostEndpointAvailability(WaitForHttpPostEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
 
   // Uploads a files artifact to the Kurtosis File System
+  // Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
   rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
 
-  // TODO Make this a server-side streaming method so the client can download large files
+  // Uploads a files artifact to the Kurtosis File System
+  // Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
+  // library is only implemented in Go
+  rpc UploadFilesArtifactV2(stream StreamedDataChunk) returns (UploadFilesArtifactResponse) {};
+
   // Downloads a files artifact from the Kurtosis File System
+  // Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
   rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (DownloadFilesArtifactResponse) {};
+
+  // Downloads a files artifact from the Kurtosis File System
+  rpc DownloadFilesArtifactV2(DownloadFilesArtifactArgs) returns (stream StreamedDataChunk) {};
 
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
   rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};
@@ -167,13 +179,16 @@ message RunStarlarkScriptArgs {
 message RunStarlarkPackageArgs {
   string package_id = 1;
 
-  // Serialized parameters data for the Starlark package main function
-  // This should be a valid JSON string
+  // Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
+  // RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
+  // clone_package below
   oneof starlark_package_content {
     bytes local = 3; // the payload of the local module
     bool remote = 4; // just a flag to indicate the module must be cloned inside the API
   }
 
+  // Serialized parameters data for the Starlark package main function
+  // This should be a valid JSON string
   string serialized_params = 5;
 
   // Defaults to false
@@ -181,6 +196,12 @@ message RunStarlarkPackageArgs {
 
   // Defaults to 4
   optional int32 parallelism = 7;
+
+  // Whether the package should be cloned or not.
+  // If false, then the package will be pulled from the APIC local package store. If it's a local package then is must
+  // have been uploaded using UploadStarlarkPackage prior to calling RunStarlarkPackage.
+  // If true, then the package will be cloned from GitHub before execution starts
+  optional bool clone_package = 8;
 }
 
 // ==============================================================================================
@@ -420,6 +441,26 @@ message WaitForHttpPostEndpointAvailabilityArgs {
   uint32 retries_delay_milliseconds = 7;
   //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
   string body_text = 8;
+}
+
+// ==============================================================================================
+//                                          Streamed Data Chunk
+// ==============================================================================================
+message StreamedDataChunk {
+  // Chunk of the overall files artifact bytes
+  bytes data = 1;
+
+  // Hash of the PREVIOUS chunk, or empty string is this is the first chunk
+  // Referencing the previous chunk via its hash allows Kurtosis to validate
+  // the consistency of the data in case some chunk were not received
+  string previous_chunk_hash = 2;
+
+  // Additional metadata about the item being streamed
+  DataChunkMetadata metadata = 3;
+}
+
+message DataChunkMetadata {
+  string name = 1;
 }
 
 // ==============================================================================================

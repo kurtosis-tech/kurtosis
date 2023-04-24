@@ -19,8 +19,6 @@ const (
 
 	userSendMetricsElection = "user-send-metrics-election"
 
-	kurtosisCliLogs = "kurtosis-cli.log"
-
 	LastPesteredUserAboutOldVersionFilename = "last-pestered-user-about-old-version"
 
 	portalBinaryFilename  = "kurtosis-portal"
@@ -29,8 +27,9 @@ const (
 	portalPidFilename     = "kurtosis-portal.pid"
 
 	// ------------ Names of dirs inside Kurtosis directory --------------
-	engineDataDirname = "engine-data"
-	portalSubDirname  = "portal"
+	engineDataDirname      = "engine-data"
+	portalSubDirname       = "portal"
+	kurtosisCliLogsDirname = "cli"
 )
 
 // TODO after 2022-07-08, when we're confident nobody is using engines without engine data directories anymore,
@@ -103,11 +102,11 @@ func GetLastPesteredUserAboutOldVersionsFilepath() (string, error) {
 	return lastPesteredUserForOldVersionsFilePath, nil
 }
 
-func GetKurtosisCliLogsFilePath() (string, error) {
-	xdgRelFilepath := getRelativeFilepathForXDG(kurtosisCliLogs)
-	kurtosisCliLogFilePath, err := xdg.DataFile(xdgRelFilepath)
+func GetKurtosisCliLogsFileDirPath(fileName string) (string, error) {
+	xdgRelDirPath := getRelativeFilePathForKurtosisCliLogs()
+	kurtosisCliLogFilePath, err := xdg.DataFile(path.Join(xdgRelDirPath, fileName))
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred getting the kurtosis cli logs file path using '%v'", xdgRelFilepath)
+		return "", stacktrace.Propagate(err, "An error occurred getting the kurtosis cli logs file path using '%v'", kurtosisCliLogFilePath)
 	}
 	return kurtosisCliLogFilePath, nil
 }
@@ -160,4 +159,8 @@ func getRelativeFilepathForXDG(filepathRelativeToKurtosisDir string) string {
 
 func getRelativeFilepathForPortalForXDG(filepathRelativeToKurtosisPortalDir string) string {
 	return path.Join(applicationDirname, portalSubDirname, filepathRelativeToKurtosisPortalDir)
+}
+
+func getRelativeFilePathForKurtosisCliLogs() string {
+	return path.Join(applicationDirname, kurtosisCliLogsDirname)
 }
