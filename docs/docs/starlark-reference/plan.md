@@ -178,7 +178,6 @@ result = plan.exec(
     # OPTIONAL (Defaults to False)
     skip_code_check = False,
     
-    # 
     # The extract dictionary can be used for filtering specific parts of a response
     # assigning that output to a key-value pair, where the key is the reference 
     # variable and the value is the specific output. 
