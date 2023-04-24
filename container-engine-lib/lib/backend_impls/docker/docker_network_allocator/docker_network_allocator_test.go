@@ -31,7 +31,7 @@ func TestErrorOnNoFreeIps(t *testing.T) {
 func TestEntireNetworkingSpace(t *testing.T) {
 	takenNetworks := []*net.IPNet{}
 	allPossibleNetworks := []*net.IPNet{}
-	for secondOctet := 0; secondOctet <= maximumPossibleValueForAnOctet; secondOctet++ {
+	for secondOctet := secondOctetLowestPossibleValue; secondOctet <= secondOctetMaximumPossibleValue; secondOctet++ {
 		ipAddressString := fmt.Sprintf("%v.%v.0.0", allowedNetworkFirstOctet, secondOctet)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{
@@ -42,7 +42,7 @@ func TestEntireNetworkingSpace(t *testing.T) {
 	}
 	i := 0
 	for {
-		if i == maximumPossibleValueForAnOctet+1 {
+		if i == secondOctetMaximumPossibleValue+1 {
 			break
 		}
 		freeIPAddress, err := findRandomFreeNetwork(takenNetworks)

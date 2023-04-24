@@ -29,8 +29,9 @@ const (
 
 	timeBetweenNetworkCreationRetries = 1 * time.Second
 
-	allowedNetworkFirstOctet       = 10
-	maximumPossibleValueForAnOctet = 255
+	allowedNetworkFirstOctet        = 10
+	secondOctetMaximumPossibleValue = 255
+	secondOctetLowestPossibleValue  = 1
 )
 
 var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
@@ -146,12 +147,12 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 // https://github.com/hashicorp/serf/issues/385#issuecomment-208755148 - we try to follow RFC 6890
 // https://www.rfc-editor.org/rfc/rfc6890.html calls 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 Private-Use (docker usually picks from 172.16.0.0/12)
 // Just with 10.0.0.0/8 we can get 2^24 ips; if we limit services per APIC to 4096(/20) we can get 4096 per docker engine
-// For simplicity we limit it to 256 APICs and allow networks 10.0.0.0/20 - 10.255.0.0.0/20
+// For simplicity we limit it to 256 APICs and allow networks 10.1.0.0/20 - 10.255.0.0.0/20
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 	for offsetIpsUint64 := uint64(0); offsetIpsUint64 < maxUint32PlusOne; offsetIpsUint64 += networkWidthUint64 {
 	}
 
-	for secondOctet := 0; secondOctet <= maximumPossibleValueForAnOctet; secondOctet++ {
+	for secondOctet := secondOctetLowestPossibleValue; secondOctet <= secondOctetMaximumPossibleValue; secondOctet++ {
 		ipAddressString := fmt.Sprintf("%v.%v.0.0", allowedNetworkFirstOctet, secondOctet)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{
