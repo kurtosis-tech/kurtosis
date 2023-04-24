@@ -24,14 +24,13 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	"os"
-	"strings"
 )
 
 const (
 	enclaveIdentifierArgKey = "enclave"
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
-	execArgKey              = "exec"
+	commandToRunFlagKey     = "exec"
 	execArgDefaultValue     = ""
 
 	serviceIdentifierArgKey  = "service"
@@ -40,8 +39,6 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
-
-	newLineTerminator = "\n"
 )
 
 var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -52,7 +49,7 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
-			Key: execArgKey,
+			Key: commandToRunFlagKey,
 			// TODO(gb): link to a doc page mentioning what a "Kurtosis instruction" is
 			Usage:   "If true, the Kurtosis instructions will not be executed, they will just be printed to the output of the CLI",
 			Type:    flags.FlagType_String,
@@ -93,9 +90,9 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the service identifier using arg key '%v'", serviceIdentifierArgKey)
 	}
 
-	passAsIsFlag, err := flags.GetString(execArgKey)
+	commandToRunInsteadOfBash, err := flags.GetString(commandToRunFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting the pass as is flag using key '%v'", execArgKey)
+		return stacktrace.Propagate(err, "An error occurred while getting the command to run using key '%v'", commandToRunFlagKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -116,7 +113,7 @@ func run(
 	}
 	serviceUuid := service.ServiceUUID(serviceCtx.GetServiceUUID())
 
-	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid)
+	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, commandToRunInsteadOfBash)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting connection with user service with UUID '%v' in enclave '%v'", serviceUuid, enclaveIdentifier)
 	}
@@ -134,9 +131,6 @@ func run(
 	}()
 	go io.Copy(os.Stderr, newReader)
 	go io.Copy(conn, os.Stdin)
-
-	io.Copy(conn, strings.NewReader(passAsIsFlag))
-	io.Copy(conn, strings.NewReader(newLineTerminator))
 
 	stdinFd := int(os.Stdin.Fd())
 	var oldState *terminal.State

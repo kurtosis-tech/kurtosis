@@ -284,15 +284,8 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
 }
 
-func (backend *DockerKurtosisBackend) GetConnectionWithUserService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceUuid service.ServiceUUID,
-) (
-	net.Conn,
-	error,
-) {
-	return user_service_functions.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, backend.dockerManager)
+func (backend *DockerKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, commandToRunInsteadOfBash string) (net.Conn, error) {
+	return user_service_functions.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, backend.dockerManager, commandToRunInsteadOfBash)
 }
 
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
