@@ -1066,7 +1066,7 @@ func (_c *MockKurtosisBackend_GetAPIContainers_Call) RunAndReturn(run func(conte
 }
 
 // GetConnectionWithUserService provides a mock function with given fields: ctx, enclaveUuid, serviceUuid
-func (_m *MockKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (net.Conn, error) {
+func (_m *MockKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, commandToRunInsteadOfBash string, ) (net.Conn, error, ) {
 	ret := _m.Called(ctx, enclaveUuid, serviceUuid)
 
 	var r0 net.Conn
