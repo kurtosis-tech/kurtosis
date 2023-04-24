@@ -2,6 +2,7 @@ package user_service_functions
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -11,8 +12,9 @@ import (
 )
 
 const (
-	defaultCommandToRunInsteadOfBash = ""
-	commandToRunIndex                = 2
+	defaultCommandToRunInsteadOfBash               = ""
+	commandToRunIndex                              = 2
+	lineToEchoWhileUserWaitsForTheirCommandToBeRun = `echo "Running '%v'" && %v`
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -35,7 +37,7 @@ func GetConnectionWithUserService(ctx context.Context, enclaveId enclave.Enclave
 	container := serviceDockerResources.ServiceContainer
 
 	if commandToRunInsteadOfBash != defaultCommandToRunInsteadOfBash {
-		commandToRunWhenCreatingUserServiceShell[commandToRunIndex] = commandToRunInsteadOfBash
+		commandToRunWhenCreatingUserServiceShell[commandToRunIndex] = fmt.Sprintf(lineToEchoWhileUserWaitsForTheirCommandToBeRun, commandToRunInsteadOfBash, commandToRunInsteadOfBash)
 	}
 
 	hijackedResponse, err := dockerManager.CreateContainerExec(ctx, container.GetId(), commandToRunWhenCreatingUserServiceShell)
