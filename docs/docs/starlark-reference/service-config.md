@@ -91,7 +91,12 @@ The `files` dictionary argument accepts a key value pair, where `key` is the pat
 
 For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
 
-You can see how to configure the [`ReadyCondition` type here][ready-condition]. 
+You can see how to configure the [`ReadyCondition` type here][ready-condition].
+
+:::tip
+If you are trying to use more complex versions of `cmd` and are running into issues we recommend using `cmd` in addition to `entrypoint`. You can
+set the `entrypoint` to `["/bin/sh", "-c"]` and then set the `cmd` to whatever you want.
+:::
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service

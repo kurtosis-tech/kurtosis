@@ -29,6 +29,11 @@ exec_recipe = ExecRecipe(
 )
 ```
 
+:::tip
+If you are trying to run a complex `command` with `|` we recommend that you prefix the command with `/bin/sh -c` and wrap the command in a string; so something like `command = ["echo" "a", "|" "grep a"]` should
+be rewritten as `command = ["/bin/sh", "-c", "echo a | grep a"]`. This is because `Docker` treats everything after the `echo` as args; instead of what you'd expect. 
+:::
+
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [exec-reference]: ./plan.md#exec
 [wait-reference]: ./plan.md#wait
