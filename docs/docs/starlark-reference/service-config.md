@@ -95,7 +95,7 @@ You can see how to configure the [`ReadyCondition` type here][ready-condition].
 
 :::tip
 If you are trying to use more complex versions of `cmd` and are running into issues we recommend using `cmd` in addition to `entrypoint`. You can
-set the `entrypoint` to `["/bin/sh", "-c"]` and then set the `cmd` to whatever you want.
+set the `entrypoint` to `["/bin/sh", "-c"]` and then set the `cmd` to the command as you would type it in your shell, for example: `cmd = ["echo a", "|", "grep a"]`
 :::
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
