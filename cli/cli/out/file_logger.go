@@ -17,6 +17,7 @@ import (
 var (
 	once                      sync.Once
 	kurtosisCliLogsRootFolder = ""
+	cliLogNotSet              = ""
 )
 
 const (
@@ -40,7 +41,14 @@ func GetFileLogger() *logrus.Logger {
 }
 
 func RemoveLogFiles() {
-	files, err := os.ReadDir(kurtosisCliLogsRootFolder)
+	if kurtosisCliLogsRootFolder == cliLogNotSet {
+		return
+	}
+
+	var files []os.DirEntry
+	var err error
+
+	files, err = os.ReadDir(kurtosisCliLogsRootFolder)
 	if err != nil {
 		logrus.Warnf("Error occurred while listing the files from the directory at - '%v' with error %+v", kurtosisCliLogsRootFolder, err)
 	}
