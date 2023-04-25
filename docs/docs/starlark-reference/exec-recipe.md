@@ -29,6 +29,11 @@ exec_recipe = ExecRecipe(
 )
 ```
 
+:::tip
+If you are trying to run a complex `command` with `|`, you should prefix the command with `/bin/sh -c` and wrap the actual command in a string; for example: `command = ["echo", "a", "|", "grep a"]` should
+be rewritten as `command = ["/bin/sh", "-c", "echo a | grep a"]`. Not doing so makes everything after the `echo` as args of that command, instead of following the behavior you would expect from a shell.
+:::
+
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [exec-reference]: ./plan.md#exec
 [wait-reference]: ./plan.md#wait
