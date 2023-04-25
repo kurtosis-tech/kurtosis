@@ -47,6 +47,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism
 
 			if len(warnings) > 0 {
 				for _, warning := range warnings {
+					// TODO: create a new binding_constructor for warning message
 					starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(warning)
 				}
 			}

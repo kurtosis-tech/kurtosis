@@ -117,7 +117,6 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 		argsTuple = append(argsTuple, planModule)
 	}
 
-	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
 	if runFunction.NumParams() == paramsRequiredForArgs {
 		if paramName, _ := runFunction.Param(argsParamIndex); paramName != argsParamName {
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
@@ -129,8 +128,6 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 		}
 		argsTuple = append(argsTuple, inputArgs)
 	}
-
-	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
 
 	outputObject, err := starlark.Call(runFunctionExecutionThread, runFunction, argsTuple, noKwargs)
 	if err != nil {
