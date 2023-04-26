@@ -48,9 +48,9 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 			expectedServiceConfig := services.NewServiceConfigBuilder(
 				TestContainerImageName,
 			).WithPrivatePorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-				TestPrivatePortId: binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPublicApplicationProtocol),
+				TestPrivatePortId: binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPublicApplicationProtocol, TestWaitConfiguration),
 			}).WithPublicPorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-				TestPublicPortId: binding_constructors.NewPort(TestPublicPortNumber, TestPublicPortProtocol, TestPublicApplicationProtocol),
+				TestPublicPortId: binding_constructors.NewPort(TestPublicPortNumber, TestPublicPortProtocol, TestPublicApplicationProtocol, TestWaitConfiguration),
 			}).WithFilesArtifactMountDirpaths(map[string]string{
 				TestFilesArtifactPath1: TestFilesArtifactName1,
 			}).WithCmdArgs(
@@ -111,8 +111,8 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 func (t *addServiceTestCase) GetStarlarkCode() string {
 	serviceConfigStarlarkStrTemplate := "ServiceConfig(" +
 		"image=%q, " +
-		"ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)}, " +
-		"public_ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)}, " +
+		"ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}, " +
+		"public_ports={%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}, " +
 		"files={%q: %q}, " +
 		"entrypoint=[%q, %q], " +
 		"cmd=[%q, %q, %q], " +
@@ -129,8 +129,8 @@ func (t *addServiceTestCase) GetStarlarkCode() string {
 		"))"
 	serviceConfig := fmt.Sprintf(serviceConfigStarlarkStrTemplate,
 		TestContainerImageName,
-		TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol,
-		TestPublicPortId, TestPublicPortNumber, TestPublicPortProtocolStr, TestPublicApplicationProtocol,
+		TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol, TestWaitConfiguration,
+		TestPublicPortId, TestPublicPortNumber, TestPublicPortProtocolStr, TestPublicApplicationProtocol, TestWaitConfiguration,
 		TestFilesArtifactPath1, TestFilesArtifactName1,
 		TestEntryPointSlice[0], TestEntryPointSlice[1],
 		TestCmdSlice[0], TestCmdSlice[1], TestCmdSlice[2],
@@ -156,7 +156,7 @@ func (t *addServiceTestCase) Assert(interpretationResult starlark.Value, executi
 	serviceObj, ok := interpretationResult.(*kurtosis_types.Service)
 	require.True(t, ok, "interpretation result should be a dictionary")
 	require.NotNil(t, serviceObj)
-	expectedServiceObj := fmt.Sprintf(`Service\(hostname = "{{kurtosis:[0-9a-f]{32}:hostname.runtime_value}}", ip_address = "{{kurtosis:[0-9a-f]{32}:ip_address.runtime_value}}", name = "%v", ports = {%q: PortSpec\(number=%d, transport_protocol=%q, application_protocol=%q\)}\)`, TestServiceName, TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol)
+	expectedServiceObj := fmt.Sprintf(`Service\(hostname = "{{kurtosis:[0-9a-f]{32}:hostname.runtime_value}}", ip_address = "{{kurtosis:[0-9a-f]{32}:ip_address.runtime_value}}", name = "%v", ports = {%q: PortSpec\(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q\)}\)`, TestServiceName, TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol, TestWaitConfiguration)
 	require.Regexp(t, expectedServiceObj, serviceObj.String())
 
 	expectedExecutionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", TestServiceName, TestServiceUuid)

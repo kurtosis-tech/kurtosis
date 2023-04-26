@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = (function() {
-  if (this) { return this; }
-  if (typeof window !== 'undefined') { return window; }
-  if (typeof global !== 'undefined') { return global; }
-  if (typeof self !== 'undefined') { return self; }
-  return Function('return this')();
-}.call(null));
+var global = Function('return this')();
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
@@ -1161,7 +1155,8 @@ proto.api_container_api.Port.toObject = function(includeInstance, msg) {
   var f, obj = {
     number: jspb.Message.getFieldWithDefault(msg, 1, 0),
     transportProtocol: jspb.Message.getFieldWithDefault(msg, 2, 0),
-    maybeApplicationProtocol: jspb.Message.getFieldWithDefault(msg, 3, "")
+    maybeApplicationProtocol: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    maybeWaitTimeout: jspb.Message.getFieldWithDefault(msg, 4, "")
   };
 
   if (includeInstance) {
@@ -1210,6 +1205,10 @@ proto.api_container_api.Port.deserializeBinaryFromReader = function(msg, reader)
       var value = /** @type {string} */ (reader.readString());
       msg.setMaybeApplicationProtocol(value);
       break;
+    case 4:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setMaybeWaitTimeout(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1257,6 +1256,13 @@ proto.api_container_api.Port.serializeBinaryToWriter = function(message, writer)
   if (f.length > 0) {
     writer.writeString(
       3,
+      f
+    );
+  }
+  f = message.getMaybeWaitTimeout();
+  if (f.length > 0) {
+    writer.writeString(
+      4,
       f
     );
   }
@@ -1323,6 +1329,24 @@ proto.api_container_api.Port.prototype.getMaybeApplicationProtocol = function() 
  */
 proto.api_container_api.Port.prototype.setMaybeApplicationProtocol = function(value) {
   return jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional string maybe_wait_timeout = 4;
+ * @return {string}
+ */
+proto.api_container_api.Port.prototype.getMaybeWaitTimeout = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 4, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.Port} returns this
+ */
+proto.api_container_api.Port.prototype.setMaybeWaitTimeout = function(value) {
+  return jspb.Message.setProto3StringField(this, 4, value);
 };
 
 

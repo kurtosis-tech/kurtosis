@@ -92,7 +92,12 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		envVarsWithOwnIp[key] = value
 	}
 
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerTransportProtocol, consts.HttpApplicationProtocol, nil)
+	defaultWait, err := port_spec.CreateWaitWithDefaultValues()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new wait with default values")
+	}
+
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, apiContainerTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -101,7 +106,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 			consts.EngineTransportProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, apiContainerTransportProtocol, consts.HttpApplicationProtocol, nil)
+	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, apiContainerTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

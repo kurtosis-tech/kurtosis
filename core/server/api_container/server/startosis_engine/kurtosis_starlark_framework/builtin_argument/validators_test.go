@@ -92,3 +92,35 @@ func TestFloatInRange_Valid(t *testing.T) {
 	err := FloatInRange(value, "test_uint", 6, math.MaxUint64)
 	require.Nil(t, err)
 }
+
+func TestDuration_Valid(t *testing.T) {
+	value := starlark.String("2m")
+	err := Duration(value, "test_duration")
+	require.Nil(t, err)
+}
+
+func TestDuration_Invalid(t *testing.T) {
+	value := starlark.String("2minutos")
+	err := Duration(value, "test_duration")
+	require.NotNil(t, err)
+	require.Equal(t, "The value '2minutos' of 'test_duration' attribute is not a valid duration string format\n\tCaused by: time: unknown unit \"minutos\" in duration \"2minutos\"", err.Error())
+}
+
+func TestDurationOrNone_ValidDurationString(t *testing.T) {
+	value := starlark.String("15s")
+	err := DurationOrNone(value, "test_duration_or_none_valid_duration_string")
+	require.Nil(t, err)
+}
+
+func TestDurationOrNone_ValidNoneType(t *testing.T) {
+	value := starlark.None
+	err := DurationOrNone(value, "test_duration_or_none_valid_none_type")
+	require.Nil(t, err)
+}
+
+func TestDurationOrNone_InvalidEmptyString(t *testing.T) {
+	value := starlark.String("")
+	err := DurationOrNone(value, "test_duration_or_none_invalid_empty_string")
+	require.NotNil(t, err)
+	require.Equal(t, "Value for 'test_duration_or_none_invalid_empty_string' was an empty string. This is disallowed", err.Error())
+}
