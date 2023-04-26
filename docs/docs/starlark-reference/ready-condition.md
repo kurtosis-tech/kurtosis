@@ -5,7 +5,7 @@ sidebar_label: ReadyCondition
 
 The `ReadyCondition` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic.
 
-It is flexible, and you can configure it in order to check service readiness in many ways, but if you just want to check if your service's ports are open (to consider it ready) and these can receive incoming calls, we suggest to use the `wait` field in the [ServiceConfig][service-config] type. And if you need one-off wait not attached to the [ServiceConfig][service-config] you suggest you to use the [wait][wait] instruction
+As you will see below, using `ReadyCondition` is a flexible and highly configurable way to define a readiness check for a given service. However, if all you need is a check upon service startup for whether or not a port is open and ready for traffic, then we recommend relying on the default `wait` field in the [PortSpec constructor][port-spec] (as part of the [ServiceConfig][service-config] type).
 
 ```python
 ready_conditions = ReadyCondition(
