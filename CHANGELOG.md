@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.1](https://github.com/kurtosis-tech/kurtosis/compare/0.76.0...0.76.1) (2023-04-26)
+
+
+### Bug Fixes
+
+* random error message after execution ([#565](https://github.com/kurtosis-tech/kurtosis/issues/565)) ([daedaef](https://github.com/kurtosis-tech/kurtosis/commit/daedaef4a82ad49f0dcdf865c716b72e919d48c5))
+
 ## [0.76.0](https://github.com/kurtosis-tech/kurtosis/compare/0.75.9...0.76.0) (2023-04-26)
 
 
