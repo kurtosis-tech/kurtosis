@@ -23,7 +23,7 @@ port_spec = PortSpec(
     application_protocol = "http",
     
     # Kurtosis will automatically perform a check to ensure all declared UDP and TCP ports are open and ready for traffic and connections upon startup.
-    # We can set a custom wait time out value with or disable the feature or through this property
+    # You may specify a custom wait timeout duration or disable the feature entirely.
     # You may specify a custom wait timeout duration with a string:
     #  wait = "2m"
     # Or, you can disable this feature by setting the value in None:
