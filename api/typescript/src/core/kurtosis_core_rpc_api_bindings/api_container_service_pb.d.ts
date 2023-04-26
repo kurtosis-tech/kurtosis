@@ -13,6 +13,9 @@ export class Port extends jspb.Message {
   getMaybeApplicationProtocol(): string;
   setMaybeApplicationProtocol(value: string): Port;
 
+  getMaybeWaitTimeout(): string;
+  setMaybeWaitTimeout(value: string): Port;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Port.AsObject;
   static toObject(includeInstance: boolean, msg: Port): Port.AsObject;
@@ -26,6 +29,7 @@ export namespace Port {
     number: number,
     transportProtocol: Port.TransportProtocol,
     maybeApplicationProtocol: string,
+    maybeWaitTimeout: string,
   }
 
   export enum TransportProtocol { 

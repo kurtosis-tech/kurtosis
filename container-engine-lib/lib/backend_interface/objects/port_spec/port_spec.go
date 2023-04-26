@@ -8,7 +8,7 @@ type PortSpec struct {
 	number              uint16
 	transportProtocol   TransportProtocol
 	applicationProtocol *string
-	wait                *wait
+	wait                *Wait
 }
 
 /*
@@ -18,7 +18,7 @@ func NewPortSpec(
 	number uint16,
 	transportProtocol TransportProtocol,
 	maybeApplicationProtocol string,
-	wait *wait,
+	wait *Wait,
 ) (*PortSpec, error) {
 	var appProtocol *string
 	if maybeApplicationProtocol != "" {
@@ -28,10 +28,6 @@ func NewPortSpec(
 	// throw an error if the method receives more than 3 parameters.
 	if !transportProtocol.IsATransportProtocol() {
 		return nil, stacktrace.NewError("Unrecognized transportProtocol '%v'", transportProtocol.String())
-	}
-
-	if wait == nil {
-		wait = newWaitWithDefaultValues()
 	}
 
 	portSpec := &PortSpec{
@@ -56,7 +52,6 @@ func (spec *PortSpec) GetMaybeApplicationProtocol() *string {
 	return spec.applicationProtocol
 }
 
-//TODO we probably will rename it, it's in the design stage
-func (spec *PortSpec) GetWait() *wait {
+func (spec *PortSpec) GetWait() *Wait {
 	return spec.wait
 }

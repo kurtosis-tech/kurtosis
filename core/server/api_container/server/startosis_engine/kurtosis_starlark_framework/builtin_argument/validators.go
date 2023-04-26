@@ -98,3 +98,15 @@ func Duration(value starlark.Value, attributeName string) *startosis_errors.Inte
 
 	return nil
 }
+
+func DurationOrNone(value starlark.Value, attributeName string) *startosis_errors.InterpretationError {
+	// the value can be a string duration, or it can be a Starlark none value (which usually is used to disable the argument and his behaviour)
+	if _, ok := value.(starlark.NoneType); !ok {
+		// we do not accept empty string as a none wait config
+		if interpretationErr := NonEmptyString(value, attributeName); interpretationErr != nil {
+			return interpretationErr
+		}
+		return Duration(value, attributeName)
+	}
+	return nil
+}

@@ -7,16 +7,20 @@ import (
 	"testing"
 )
 
+const (
+	portWaitTimeout = "2s"
+)
+
 func TestServiceConfigBuilderFrom_Invariant(t *testing.T) {
 	initialServiceConfig := NewServiceConfigBuilder(
 		"test-image",
 	).WithPrivatePorts(
 		map[string]*kurtosis_core_rpc_api_bindings.Port{
-			"grpc": binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "https"),
+			"grpc": binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "https", portWaitTimeout),
 		},
 	).WithPublicPorts(
 		map[string]*kurtosis_core_rpc_api_bindings.Port{
-			"grpc": binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "https"),
+			"grpc": binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "https", portWaitTimeout),
 		},
 	).WithEntryPointArgs(
 		[]string{"echo", "'Hello World!'"},
@@ -60,8 +64,8 @@ func TestServiceConfigBuilderFrom_Invariant(t *testing.T) {
 
 	// test that initial value has not changed
 	require.Equal(t, "test-image", initialServiceConfig.ContainerImageName)
-	require.Equal(t, binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "https"), initialServiceConfig.PrivatePorts["grpc"])
-	require.Equal(t, binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "https"), initialServiceConfig.PublicPorts["grpc"])
+	require.Equal(t, binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "https", portWaitTimeout), initialServiceConfig.PrivatePorts["grpc"])
+	require.Equal(t, binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "https", portWaitTimeout), initialServiceConfig.PublicPorts["grpc"])
 	require.Equal(t, []string{"echo", "'Hello World!'"}, initialServiceConfig.EntrypointArgs)
 	require.Equal(t, []string{"sleep", "999999"}, initialServiceConfig.CmdArgs)
 	require.Equal(t, map[string]string{"VAR_1": "VALUE"}, initialServiceConfig.EnvVars)
@@ -72,8 +76,8 @@ func TestServiceConfigBuilderFrom_Invariant(t *testing.T) {
 
 	// test that new value are as expected
 	require.Equal(t, "new-test-image", newServiceConfig.ContainerImageName)
-	require.Equal(t, binding_constructors.NewPort(9876, kurtosis_core_rpc_api_bindings.Port_TCP, "https"), newServiceConfig.PrivatePorts["grpc"])
-	require.Equal(t, binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "ftp"), newServiceConfig.PublicPorts["grpc"])
+	require.Equal(t, binding_constructors.NewPort(9876, kurtosis_core_rpc_api_bindings.Port_TCP, "https", portWaitTimeout), newServiceConfig.PrivatePorts["grpc"])
+	require.Equal(t, binding_constructors.NewPort(1323, kurtosis_core_rpc_api_bindings.Port_TCP, "ftp", portWaitTimeout), newServiceConfig.PublicPorts["grpc"])
 	require.Equal(t, []string{"new-echo", "'Hello World!'"}, newServiceConfig.EntrypointArgs)
 	require.Equal(t, []string{"sleep", "1234"}, newServiceConfig.CmdArgs)
 	require.Equal(t, map[string]string{"VAR_1": "NEW_VALUE"}, newServiceConfig.EnvVars)

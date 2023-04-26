@@ -29,8 +29,8 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%q, %s=%d, %s=%d, %s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, TestContainerImageName,
-		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)}", TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol),
-		service_config.PublicPortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q)}", TestPublicPortId, TestPublicPortNumber, TestPublicPortProtocolStr, TestPublicApplicationProtocol),
+		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol, TestWaitConfiguration),
+		service_config.PublicPortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", TestPublicPortId, TestPublicPortNumber, TestPublicPortProtocolStr, TestPublicApplicationProtocol, TestWaitConfiguration),
 		service_config.FilesAttr, fmt.Sprintf("{%q: %q, %q: %q}", TestFilesArtifactPath1, TestFilesArtifactName1, TestFilesArtifactPath2, TestFilesArtifactName2),
 		service_config.EntrypointAttr, fmt.Sprintf("[%q, %q]", TestEntryPointSlice[0], TestEntryPointSlice[1]),
 		service_config.CmdAttr, fmt.Sprintf("[%q, %q, %q]", TestCmdSlice[0], TestCmdSlice[1], TestCmdSlice[2]),
@@ -52,12 +52,12 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	serviceConfig, err := serviceConfigStarlark.ToKurtosisType()
 	require.Nil(t, err)
 
-	expectedServiceConfig := services.NewServiceConfigBuilder(
+	expectedServiceConfigBuilder := services.NewServiceConfigBuilder(
 		TestContainerImageName,
 	).WithPrivatePorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-		TestPrivatePortId: binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol),
+		TestPrivatePortId: binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol, TestWaitConfiguration),
 	}).WithPublicPorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-		TestPublicPortId: binding_constructors.NewPort(TestPublicPortNumber, TestPublicPortProtocol, TestPrivateApplicationProtocol),
+		TestPublicPortId: binding_constructors.NewPort(TestPublicPortNumber, TestPublicPortProtocol, TestPrivateApplicationProtocol, TestWaitConfiguration),
 	}).WithFilesArtifactMountDirpaths(map[string]string{
 		TestFilesArtifactPath1: TestFilesArtifactName1,
 		TestFilesArtifactPath2: TestFilesArtifactName2,
@@ -77,5 +77,8 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	).WithMemoryAllocationMegabytes(
 		TestMemoryAllocation,
 	)
-	require.Equal(t, expectedServiceConfig.Build(), serviceConfig)
+
+	expectedServiceConfig := expectedServiceConfigBuilder.Build()
+
+	require.Equal(t, expectedServiceConfig, serviceConfig)
 }

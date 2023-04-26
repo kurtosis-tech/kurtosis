@@ -63,7 +63,7 @@ const (
 
 	shouldFollowLogs = false
 
-	enableServiceWaitPortChecks = false
+	publicPortsSuffix = "-public"
 )
 
 var (
@@ -1292,23 +1292,24 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 	}()
 
-	//TODO it's disable now because we can't use the desired default value because the eth2 needs 5 minutes timeout
-	//TODO we will enable it in the next PR where we will introduce wait's configs for users
-	if enableServiceWaitPortChecks {
-		if err := waitUntilAllTCPAndUDPPortsAreOpen(
-			startedService.GetRegistration().GetPrivateIP(),
-			startedService.GetPrivatePorts(),
-		); err != nil {
-			serviceLogs, err := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
-					"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
-				startedService.GetRegistration().GetName(),
-				startedService.GetRegistration().GetPrivateIP(),
-				serviceLogs,
-			)
+	allPrivateAndPublicPorts := mergeAndGetAllPrivateAndPublicServicePorts(startedService)
+
+	if err := waitUntilAllTCPAndUDPPortsAreOpen(
+		startedService.GetRegistration().GetPrivateIP(),
+		allPrivateAndPublicPorts,
+	); err != nil {
+		serviceLogs, getServiceLogsErr := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
+		if getServiceLogsErr != nil {
+			serviceLogs = fmt.Sprintf("An error occurred while getting the service logs.\n Error:%v", getServiceLogsErr)
 		}
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
+				"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
+			startedService.GetRegistration().GetName(),
+			startedService.GetRegistration().GetPrivateIP(),
+			serviceLogs,
+		)
 	}
 
 	// if partition is enabled, create a sidecar associated with this service
@@ -1818,9 +1819,20 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
 	}
 
-	//TODO replace with the value received from the Core's API (we will implement this new fields in a next PR)
-	//TODO now we pass nil that will be translated to the wait's default values
-	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol(), nil)
+	var (
+		wait *port_spec.Wait
+		err  error
+	)
+
+	// a nil wait means the port wait feature will be disabled
+	if port.GetMaybeWaitTimeout() != port_spec.DisableWaitTimeoutDurationStr {
+		wait, err = port_spec.CreateWait(port.GetMaybeWaitTimeout())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating wait using port wait time out '%v'", port.GetMaybeWaitTimeout())
+		}
+	}
+
+	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol(), wait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -1914,9 +1926,11 @@ func waitUntilPortIsOpenWithTimeout(
 		err        error
 	)
 
-	// if the fist check goes wrong we execute the retry strategy
 	ticker := time.NewTicker(waitForPortsOpenRetriesDelayMilliseconds * time.Millisecond)
 	defer ticker.Stop()
+
+	logrus.Debugf("Checking if port '%+v' in '%v' is open...", portSpec, ipAddr)
+
 	for {
 		if time.Now().After(finishTime) {
 			return stacktrace.Propagate(err, "Unsuccessful ports check for IP '%s' and port spec '%+v', "+
@@ -1928,7 +1942,6 @@ func waitUntilPortIsOpenWithTimeout(
 				timeout.String(),
 			)
 		}
-		//retrying
 		now := time.Now()
 		scanPortTimeout := finishTime.Sub(now)
 		if err = scanPort(ipAddr, &portSpec, scanPortTimeout); err == nil {
@@ -1964,4 +1977,21 @@ func scanPort(ipAddr net.IP, portSpec *port_spec.PortSpec, timeout time.Duration
 	}
 	defer conn.Close()
 	return nil
+}
+
+func mergeAndGetAllPrivateAndPublicServicePorts(service *service.Service) map[string]*port_spec.PortSpec {
+	allPrivateAndPublicPorts := map[string]*port_spec.PortSpec{}
+
+	for portId, portSpec := range service.GetPrivatePorts() {
+		allPrivateAndPublicPorts[portId] = portSpec
+	}
+
+	for portId, portSpec := range service.GetMaybePublicPorts() {
+		newPortId := portId
+		if _, found := allPrivateAndPublicPorts[portId]; found {
+			newPortId = portId + publicPortsSuffix
+		}
+		allPrivateAndPublicPorts[newPortId] = portSpec
+	}
+	return allPrivateAndPublicPorts
 }
