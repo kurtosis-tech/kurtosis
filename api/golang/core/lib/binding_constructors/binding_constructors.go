@@ -13,11 +13,17 @@ import (
 //
 // ==============================================================================================
 
-func NewPort(number uint32, protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol, maybeApplicationProtocol string) *kurtosis_core_rpc_api_bindings.Port {
+func NewPort(
+	number uint32,
+	protocol kurtosis_core_rpc_api_bindings.Port_TransportProtocol,
+	maybeApplicationProtocol string,
+	maybeWaitTimeout string,
+) *kurtosis_core_rpc_api_bindings.Port {
 	return &kurtosis_core_rpc_api_bindings.Port{
 		Number:                   number,
 		TransportProtocol:        protocol,
 		MaybeApplicationProtocol: maybeApplicationProtocol,
+		MaybeWaitTimeout:         maybeWaitTimeout,
 	}
 }
 
@@ -70,12 +76,14 @@ func NewRunStarlarkScriptArgs(serializedString string, serializedParams string, 
 	}
 }
 
-func NewRunStarlarkPackageArgs(packageId string, compressedPackage []byte, serializedParams string, dryRun bool, parallelism int32) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
+func NewRunStarlarkPackageArgs(packageId string, serializedParams string, dryRun bool, parallelism int32) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
+	clonePackage := false
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
-		StarlarkPackageContent: &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs_Local{Local: compressedPackage},
+		ClonePackage:           &clonePackage,
+		StarlarkPackageContent: nil,
 		SerializedParams:       serializedParams,
 		DryRun:                 &dryRun,
 		Parallelism:            parallelismCopy,
@@ -85,9 +93,11 @@ func NewRunStarlarkPackageArgs(packageId string, compressedPackage []byte, seria
 func NewRunStarlarkRemotePackageArgs(packageId string, serializedParams string, dryRun bool, parallelism int32) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
+	clonePackage := true
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
-		StarlarkPackageContent: &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs_Remote{Remote: true},
+		ClonePackage:           &clonePackage,
+		StarlarkPackageContent: nil,
 		SerializedParams:       serializedParams,
 		DryRun:                 &dryRun,
 		Parallelism:            parallelismCopy,

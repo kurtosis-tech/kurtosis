@@ -125,7 +125,7 @@ func run(
 
 	logrus.Info("Creating new enclave...")
 
-	if err = metricsClient.TrackCreateEnclave(enclaveName); err != nil {
+	if err = metricsClient.TrackCreateEnclave(enclaveName, isPartitioningEnabled); err != nil {
 		logrus.Warn("An error occurred while logging the create enclave event")
 	}
 

@@ -41,8 +41,9 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 		number := port.GetNumber()
 		transportProtocol := port.GetTransportProtocol()
 		maybeApplicationProtocol := port.GetMaybeApplicationProtocol()
+		maybeWaitTimeout := port.GetMaybeWaitTimeout()
 
-		portSpec, interpretationErr := port_spec.CreatePortSpec(number, transportProtocol, maybeApplicationProtocol)
+		portSpec, interpretationErr := port_spec.CreatePortSpec(number, transportProtocol, maybeApplicationProtocol, maybeWaitTimeout)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -78,6 +79,9 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	}
 	validatorEnvironment.AddServiceName(serviceName)
 	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.ContainerImageName)
+	for portId := range serviceConfig.PrivatePorts {
+		validatorEnvironment.AddPrivatePortIDForService(portId, serviceName)
+	}
 	return nil
 }
 

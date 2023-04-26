@@ -19,6 +19,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io/ioutil"
+	"math/rand"
 	"net/http"
 	"os"
 	"path"
@@ -107,6 +108,8 @@ def run(plan, args):
 	artifactNamePrefix = "artifact-uploaded-via-helper-%v"
 
 	defaultParallelism = 4
+
+	defaultWaitTimeoutForTest = "5s"
 )
 
 var (
@@ -121,16 +124,19 @@ var fileServerPortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	Number:                   fileServerPrivatePortNum,
 	TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TCP,
 	MaybeApplicationProtocol: emptyApplicationProtocol,
+	MaybeWaitTimeout:         defaultWaitTimeoutForTest,
 }
 var datastorePortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	Number:                   uint32(datastore_rpc_api_consts.ListenPort),
 	TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TCP,
 	MaybeApplicationProtocol: emptyApplicationProtocol,
+	MaybeWaitTimeout:         defaultWaitTimeoutForTest,
 }
 var apiPortSpec = &kurtosis_core_rpc_api_bindings.Port{
 	Number:                   uint32(example_api_server_rpc_api_consts.ListenPort),
 	TransportProtocol:        kurtosis_core_rpc_api_bindings.Port_TCP,
 	MaybeApplicationProtocol: emptyApplicationProtocol,
+	MaybeWaitTimeout:         defaultWaitTimeoutForTest,
 }
 
 type GrpcAvailabilityChecker interface {
@@ -505,6 +511,45 @@ func AddServicesWithLogLines(
 		servicesAdded[serviceName] = serviceCtx
 	}
 	return servicesAdded, nil
+}
+
+func GenerateRandomTempFile(byteSize int, filePathOptional string) (string, func(), error) {
+	fileCreationSuccessful := false
+	content := make([]byte, byteSize)
+	_, err := rand.Read(content)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "Error generating random content for file")
+	}
+
+	var file *os.File
+	if filePathOptional == "" {
+		file, err = os.CreateTemp("", "")
+		if err != nil {
+			return "", nil, stacktrace.Propagate(err, "Error creating temporary file")
+		}
+	} else {
+		file, err = os.Create(filePathOptional)
+	}
+	cleanFileFunc := func() {
+		if err = os.Remove(file.Name()); err != nil {
+			logrus.Warnf("Error removing file '%s' after test has finished", file.Name())
+		}
+	}
+	defer func() {
+		if err = file.Close(); err != nil {
+			logrus.Warnf("Unexpected error closing temporary random file after creating it")
+		}
+		if !fileCreationSuccessful {
+			cleanFileFunc()
+		}
+	}()
+
+	_, err = file.Write(content)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "Error writing content to temporary file")
+	}
+	fileCreationSuccessful = true
+	return file.Name(), cleanFileFunc, nil
 }
 
 // ====================================================================================================

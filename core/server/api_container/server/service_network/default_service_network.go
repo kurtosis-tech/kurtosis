@@ -52,7 +52,7 @@ const (
 	folderPermissionForRenderedTemplates = 0755
 	tempDirForRenderedTemplatesPrefix    = "temp-dir-for-rendered-templates-"
 
-	ensureCompressedFileIsLesserThanGRPCLimit = false
+	enforceMaxFileSizeLimit = false
 
 	emptyCollectionLength        = 0
 	exactlyOneShortenedUuidMatch = 1
@@ -63,7 +63,7 @@ const (
 
 	shouldFollowLogs = false
 
-	enableServiceWaitPortChecks = false
+	publicPortsSuffix = "-public"
 )
 
 var (
@@ -795,21 +795,18 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceIdentifier, portId)
 	}
 	url := fmt.Sprintf("http://%v:%v%v", service.GetRegistration().GetPrivateIP(), port.GetNumber(), endpoint)
-	if method == http.MethodPost {
-		response, err := http.Post(url, contentType, strings.NewReader(body))
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred on POST HTTP request on '%v'", url)
-		}
-		return response, err
-	} else if method == http.MethodGet {
-		response, err := http.Get(url)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred on GET HTTP request on '%v'", url)
-		}
-		return response, err
-	} else {
-		return nil, stacktrace.NewError("An error occurred because %v is unsupported for HTTP request", method)
+	req, err := http.NewRequestWithContext(ctx, method, url, strings.NewReader(body))
+	if err != nil {
+		return nil, stacktrace.NewError("An error occurred building HTTP request on service '%v', URL '%v'", service, url)
 	}
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
+	}
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred on HTTP request on service '%v', URL '%v'", service, url)
+	}
+	return resp, nil
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
@@ -1295,23 +1292,24 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 	}()
 
-	//TODO it's disable now because we can't use the desired default value because the eth2 needs 5 minutes timeout
-	//TODO we will enable it in the next PR where we will introduce wait's configs for users
-	if enableServiceWaitPortChecks {
-		if err := waitUntilAllTCPAndUDPPortsAreOpen(
-			startedService.GetRegistration().GetPrivateIP(),
-			startedService.GetPrivatePorts(),
-		); err != nil {
-			serviceLogs, err := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
-					"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
-				startedService.GetRegistration().GetName(),
-				startedService.GetRegistration().GetPrivateIP(),
-				serviceLogs,
-			)
+	allPrivateAndPublicPorts := mergeAndGetAllPrivateAndPublicServicePorts(startedService)
+
+	if err := waitUntilAllTCPAndUDPPortsAreOpen(
+		startedService.GetRegistration().GetPrivateIP(),
+		allPrivateAndPublicPorts,
+	); err != nil {
+		serviceLogs, getServiceLogsErr := network.getServiceLogs(ctx, startedService, shouldFollowLogs)
+		if getServiceLogsErr != nil {
+			serviceLogs = fmt.Sprintf("An error occurred while getting the service logs.\n Error:%v", getServiceLogsErr)
 		}
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
+				"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
+			startedService.GetRegistration().GetName(),
+			startedService.GetRegistration().GetPrivateIP(),
+			serviceLogs,
+		)
 	}
 
 	// if partition is enabled, create a sidecar associated with this service
@@ -1627,7 +1625,7 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 		}
 	}
 
-	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, ensureCompressedFileIsLesserThanGRPCLimit)
+	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
 	}
@@ -1821,9 +1819,20 @@ func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*por
 		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
 	}
 
-	//TODO replace with the value received from the Core's API (we will implement this new fields in a next PR)
-	//TODO now we pass nil that will be translated to the wait's default values
-	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol(), nil)
+	var (
+		wait *port_spec.Wait
+		err  error
+	)
+
+	// a nil wait means the port wait feature will be disabled
+	if port.GetMaybeWaitTimeout() != port_spec.DisableWaitTimeoutDurationStr {
+		wait, err = port_spec.CreateWait(port.GetMaybeWaitTimeout())
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating wait using port wait time out '%v'", port.GetMaybeWaitTimeout())
+		}
+	}
+
+	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol(), wait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -1917,9 +1926,11 @@ func waitUntilPortIsOpenWithTimeout(
 		err        error
 	)
 
-	// if the fist check goes wrong we execute the retry strategy
 	ticker := time.NewTicker(waitForPortsOpenRetriesDelayMilliseconds * time.Millisecond)
 	defer ticker.Stop()
+
+	logrus.Debugf("Checking if port '%+v' in '%v' is open...", portSpec, ipAddr)
+
 	for {
 		if time.Now().After(finishTime) {
 			return stacktrace.Propagate(err, "Unsuccessful ports check for IP '%s' and port spec '%+v', "+
@@ -1931,7 +1942,6 @@ func waitUntilPortIsOpenWithTimeout(
 				timeout.String(),
 			)
 		}
-		//retrying
 		now := time.Now()
 		scanPortTimeout := finishTime.Sub(now)
 		if err = scanPort(ipAddr, &portSpec, scanPortTimeout); err == nil {
@@ -1967,4 +1977,21 @@ func scanPort(ipAddr net.IP, portSpec *port_spec.PortSpec, timeout time.Duration
 	}
 	defer conn.Close()
 	return nil
+}
+
+func mergeAndGetAllPrivateAndPublicServicePorts(service *service.Service) map[string]*port_spec.PortSpec {
+	allPrivateAndPublicPorts := map[string]*port_spec.PortSpec{}
+
+	for portId, portSpec := range service.GetPrivatePorts() {
+		allPrivateAndPublicPorts[portId] = portSpec
+	}
+
+	for portId, portSpec := range service.GetMaybePublicPorts() {
+		newPortId := portId
+		if _, found := allPrivateAndPublicPorts[portId]; found {
+			newPortId = portId + publicPortsSuffix
+		}
+		allPrivateAndPublicPorts[newPortId] = portSpec
+	}
+	return allPrivateAndPublicPorts
 }

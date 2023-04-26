@@ -21,7 +21,7 @@ const (
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_NAME = "` + serviceName + `"
 
-spec = PortSpec(number = 5000, transport_protocol = "UDP")
+spec = PortSpec(number = 5000, transport_protocol = "UDP", wait = None)
 
 def run(plan):
     plan.add_service(
@@ -29,9 +29,9 @@ def run(plan):
         config = ServiceConfig(
             image = DOCKER_GETTING_STARTED_IMAGE, 
             ports = {
-                "port1": PortSpec(number = 3333),
+                "port1": PortSpec(number = 3333, wait = None),
                 "port2": spec,
-                "port3": PortSpec(number = 1234, transport_protocol = "TCP", application_protocol = "http"),
+                "port3": PortSpec(number = 1234, transport_protocol = "TCP", application_protocol = "http", wait = None),
             }
         )
     )

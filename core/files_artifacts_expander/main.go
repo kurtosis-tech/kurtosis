@@ -11,6 +11,7 @@ import (
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
+	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -119,7 +120,7 @@ func runMain() error {
 func createExpandFilesArtifactJob(ctx context.Context, apiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient, resultErrsChan chan error, filesArtifactExpansion args.FilesArtifactExpansion) func() {
 	return func() {
 		if err := expandFilesArtifact(ctx, apiContainerClient, filesArtifactExpansion); err != nil {
-			resultErrsChan <- stacktrace.Propagate(err, "An error occured expanding files artifact '%v' into directory '%v'", filesArtifactExpansion.FilesIdentifier, filesArtifactExpansion.DirPathToExpandTo)
+			resultErrsChan <- stacktrace.Propagate(err, "An error occurred expanding files artifact '%v' into directory '%v'", filesArtifactExpansion.FilesIdentifier, filesArtifactExpansion.DirPathToExpandTo)
 		}
 	}
 }
@@ -130,11 +131,22 @@ func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_r
 	downloadRequestArgs := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
 		Identifier: artifactIdentifier,
 	}
-	response, err := apiContainerClient.DownloadFilesArtifact(ctx, downloadRequestArgs)
+	client, err := apiContainerClient.DownloadFilesArtifactV2(ctx, downloadRequestArgs)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred initiating the download of files artifact '%v'", artifactIdentifier)
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, any](client)
+	fileContent, err := clientStream.ReceiveData(
+		artifactIdentifier,
+		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
+		},
+	)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to download files artifacts for files artifact with identifier '%v' from Kurtosis, instead a non-nil error was returned", artifactIdentifier)
 	}
-	// Save the bytes to file, might not be necssary if we can pipe the artifact bytes to stdin
+
+	// Save the bytes to file, might not be necessary if we can pipe the artifact bytes to stdin
 	filesArtifactFile, err := os.CreateTemp(os.TempDir(), "")
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to create a temporary file for the files artifact bytes, instead a non-nil error was returned")
@@ -144,7 +156,7 @@ func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_r
 	}
 
 	filesArtifactFileName := filesArtifactFile.Name()
-	if err := os.WriteFile(filesArtifactFileName, response.Data, filesArtifactTemporaryFilePermissions); err != nil {
+	if err := os.WriteFile(filesArtifactFileName, fileContent, filesArtifactTemporaryFilePermissions); err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to save files artifact to disk at path '%v', instead a non nil error was returned", filesArtifactFileName)
 	}
 	// Extract the tarball to the specified location

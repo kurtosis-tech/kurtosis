@@ -1,28 +1,46 @@
 package port_spec
 
-import "time"
-
-const (
-	enableByDefault         = true
-	defaultTimeout          = 15 * time.Second
-	noInitialDelayByDefault = time.Duration(0)
+import (
+	"github.com/kurtosis-tech/stacktrace"
+	"time"
 )
 
-//TODO we probably will rename it, it's in the design stage
-type wait struct {
+const (
+	DefaultWaitTimeoutDurationStr = "15s"
+	DisableWaitTimeoutDurationStr = ""
+)
+
+type Wait struct {
 	timeout time.Duration
 }
 
-func NewWait(timeout time.Duration) *wait {
-	return &wait{timeout: timeout}
+func NewWait(timeout time.Duration) *Wait {
+	return &Wait{timeout: timeout}
 }
 
-func newWaitWithDefaultValues() *wait {
-	return &wait{
+func CreateWaitWithDefaultValues() (*Wait, error) {
+	defaultTimeout, err := time.ParseDuration(DefaultWaitTimeoutDurationStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a new wait with default values")
+	}
+
+	newWait := &Wait{
 		timeout: defaultTimeout,
 	}
+
+	return newWait, nil
 }
 
-func (wait *wait) GetTimeout() time.Duration {
+func CreateWait(timeoutStr string) (*Wait, error) {
+
+	timeoutDuration, err := time.ParseDuration(timeoutStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a wait object using time out string '%s'", timeoutStr)
+	}
+
+	return &Wait{timeout: timeoutDuration}, nil
+}
+
+func (wait *Wait) GetTimeout() time.Duration {
 	return wait.timeout
 }

@@ -30,6 +30,9 @@ var (
 	TestPrivatePortProtocolStr     = "TCP"
 	TestPrivatePortProtocol        = kurtosis_core_rpc_api_bindings.Port_TCP
 	TestPrivateApplicationProtocol = "https"
+	TestWaitConfiguration          = "2s"
+	TestWaitDefaultValue           = "15s"
+	TestWaitNotValidEmptyString    = ""
 
 	TestPublicPortId              = "endpoints"
 	TestPublicPortNumber          = uint32(80)
@@ -69,6 +72,7 @@ var (
 
 	TestReadyConditionsRecipePortId   = "http"
 	TestReadyConditionsRecipeEndpoint = "/endpoint?input=data"
+	TestReadyConditionsRecipeCommand  = []string{"tool", "arg"}
 	TestReadyConditionsRecipeExtract  = "{}"
 	TestReadyConditionsField          = "code"
 	TestReadyConditionsAssertion      = "=="

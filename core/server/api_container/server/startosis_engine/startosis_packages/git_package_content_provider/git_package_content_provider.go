@@ -137,6 +137,22 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 	return string(contents), nil
 }
 
+func (provider *GitPackageContentProvider) GetOnDiskAbsolutePackagePath(packageId string) (string, *startosis_errors.InterpretationError) {
+	parsedPackageId, interpretationError := parseGitURL(packageId)
+	if interpretationError != nil {
+		return "", interpretationError
+	}
+
+	relPackagePathToPackagesDir := getPathToPackageRoot(parsedPackageId)
+	packageAbsolutePathOnDisk := path.Join(provider.packagesDir, relPackagePathToPackagesDir)
+
+	_, err := os.Stat(packageAbsolutePathOnDisk)
+	if err != nil {
+		return "", startosis_errors.NewInterpretationError("Package '%v' does not exist on disk at '%s'", packageId, packageAbsolutePathOnDisk)
+	}
+	return packageAbsolutePathOnDisk, nil
+}
+
 func (provider *GitPackageContentProvider) StorePackageContents(packageId string, moduleTar []byte, overwriteExisting bool) (string, *startosis_errors.InterpretationError) {
 	parsedPackageId, interpretationError := parseGitURL(packageId)
 	if interpretationError != nil {
@@ -362,7 +378,8 @@ func validatePackageNameMatchesKurtosisYamlLocation(kurtosisYaml *yaml_parser.Ku
 // TODO: we should clean this up and have a dependency management system; all the dependencies should be stated kurtosis.yml upfront
 // TODO: this will simplify our validation process, and enable customers to use local packages like go.
 // TODO: in my opinion - we should eventually clone and validate the packages even before we start the interpretation process, maybe inside
-//  api_container_service
+//
+//	api_container_service
 func getKurtosisYamlPathForFileUrl(absPathToFile string, packagesDir string) (string, *startosis_errors.InterpretationError) {
 	return getKurtosisYamlPathForFileUrlInternal(absPathToFile, packagesDir, os.Stat)
 }

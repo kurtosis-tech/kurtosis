@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
+	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -36,8 +37,8 @@ type EnclaveUUID string
 type PartitionID string
 
 const (
-	kurtosisYamlFilename                      = "kurtosis.yml"
-	ensureCompressedFileIsLesserThanGRPCLimit = true
+	kurtosisYamlFilename    = "kurtosis.yml"
+	enforceMaxFileSizeLimit = true
 )
 
 // Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
@@ -102,21 +103,32 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context,
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	defer func() {
+		if !executionStartedSuccessfully {
+			cancelCtxFunc() // cancel the context as something went wrong
+		}
+	}()
+
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(packageRootPath, serializedParams, dryRun, parallelism)
 	if err != nil {
-		cancelCtxFunc() // manually call the cancel function as something went wrong
-		return nil, nil, stacktrace.Propagate(err, "Error preparing package for execution '%v'", packageRootPath)
+		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
+	}
+
+	err = enclaveCtx.uploadStarlarkPackage(executeStartosisPackageArgs.PackageId, packageRootPath)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Error uploading package '%s' prior to executing it", packageRootPath)
 	}
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisPackageArgs)
 	if err != nil {
-		cancelCtxFunc() // manually call the cancel function as something went wrong
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark package '%v'", packageRootPath)
 	}
 
 	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
+	executionStartedSuccessfully = true
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
@@ -131,17 +143,24 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, packageId string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
+	defer func() {
+		if !executionStartedSuccessfully {
+			cancelCtxFunc() // cancel the context as something went wrong
+		}
+	}()
+
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, serializedParams, dryRun, parallelism)
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
-		cancelCtxFunc() // manually call the cancel function as something went wrong
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened executing Starlark package '%v'", packageId)
 	}
 
 	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
+	executionStartedSuccessfully = true
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
@@ -216,15 +235,31 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]servic
 
 // Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, services.FileArtifactName, error) {
-	content, err := shared_utils.CompressPath(pathToUpload, ensureCompressedFileIsLesserThanGRPCLimit)
+	content, err := shared_utils.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err,
 			"There was an error compressing the file '%v' before upload",
 			pathToUpload)
 	}
 
-	args := binding_constructors.NewUploadFilesArtifactArgs(content, artifactName)
-	response, err := enclaveCtx.client.UploadFilesArtifact(context.Background(), args)
+	client, err := enclaveCtx.client.UploadFilesArtifactV2(context.Background())
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "An error was encountered initiating the data upload to the API Container.")
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](client)
+	response, err := clientStream.SendData(
+		artifactName,
+		content,
+		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+				Data:              contentChunk,
+				PreviousChunkHash: previousChunkHash,
+				Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+					Name: artifactName,
+				},
+			}, nil
+		},
+	)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
 	}
@@ -244,11 +279,22 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 // Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
 func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, artifactIdentifier string) ([]byte, error) {
 	args := binding_constructors.DownloadFilesArtifactArgs(artifactIdentifier)
-	response, err := enclaveCtx.client.DownloadFilesArtifact(ctx, args)
+
+	client, err := enclaveCtx.client.DownloadFilesArtifactV2(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred initiating the download of files artifact '%v'", artifactIdentifier)
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse](client)
+	fileContent, err := clientStream.ReceiveData(
+		artifactIdentifier,
+		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {
+			return dataChunk.Data, dataChunk.PreviousChunkHash, nil
+		},
+	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred downloading files artifact '%v'", artifactIdentifier)
 	}
-	return response.Data, nil
+	return fileContent, nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
@@ -334,12 +380,37 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(packageRootPath
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, packageRootPath)
 	}
+	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, serializedParams, dryRun, parallelism), nil
+}
 
-	logrus.Infof("Compressing package '%v' at '%v' for upload", kurtosisYaml.PackageName, packageRootPath)
-	compressedModule, err := shared_utils.CompressPath(packageRootPath, ensureCompressedFileIsLesserThanGRPCLimit)
+func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
+	logrus.Infof("Compressing package '%v' at '%v' for upload", packageId, packageRootPath)
+	compressedModule, err := shared_utils.CompressPath(packageRootPath, enforceMaxFileSizeLimit)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", packageRootPath)
+		return stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", packageRootPath)
 	}
-	logrus.Infof("Uploading and executing package '%v'", kurtosisYaml.PackageName)
-	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, compressedModule, serializedParams, dryRun, parallelism), nil
+	logrus.Infof("Uploading and executing package '%v'", packageId)
+
+	client, err := enclaveCtx.client.UploadStarlarkPackage(context.Background())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error was encountered initiating the data upload to the API Container.")
+	}
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, emptypb.Empty](client)
+	_, err = clientStream.SendData(
+		packageId,
+		compressedModule,
+		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
+			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
+				Data:              contentChunk,
+				PreviousChunkHash: previousChunkHash,
+				Metadata: &kurtosis_core_rpc_api_bindings.DataChunkMetadata{
+					Name: packageId,
+				},
+			}, nil
+		},
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
+	}
+	return nil
 }

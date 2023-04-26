@@ -10,14 +10,16 @@ type ValidatorEnvironment struct {
 	requiredDockerImages         map[string]bool
 	serviceNames                 map[service.ServiceName]bool
 	artifactNames                map[string]bool
+	serviceNameToPrivatePortIDs  map[service.ServiceName][]string
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string) *ValidatorEnvironment {
 	return &ValidatorEnvironment{
 		isNetworkPartitioningEnabled: isNetworkPartitioningEnabled,
 		requiredDockerImages:         map[string]bool{},
 		serviceNames:                 serviceNames,
 		artifactNames:                artifactNames,
+		serviceNameToPrivatePortIDs:  serviceNameToPrivatePortIds,
 	}
 }
 
@@ -40,6 +42,27 @@ func (environment *ValidatorEnvironment) RemoveServiceName(serviceName service.S
 func (environment *ValidatorEnvironment) DoesServiceNameExist(serviceName service.ServiceName) bool {
 	_, ok := environment.serviceNames[serviceName]
 	return ok
+}
+
+func (environment *ValidatorEnvironment) AddPrivatePortIDForService(portID string, serviceName service.ServiceName) {
+	environment.serviceNameToPrivatePortIDs[serviceName] = append(environment.serviceNameToPrivatePortIDs[serviceName], portID)
+}
+
+func (environment *ValidatorEnvironment) DoesPrivatePortIDExistForService(portID string, serviceName service.ServiceName) bool {
+	existingPortIDs, found := environment.serviceNameToPrivatePortIDs[serviceName]
+	if !found {
+		return false
+	}
+	for _, existingPortID := range existingPortIDs {
+		if existingPortID == portID {
+			return true
+		}
+	}
+	return false
+}
+
+func (environment *ValidatorEnvironment) RemoveServiceFromPrivatePortIDMapping(serviceName service.ServiceName) {
+	delete(environment.serviceNameToPrivatePortIDs, serviceName)
 }
 
 func (environment *ValidatorEnvironment) AddArtifactName(artifactName string) {

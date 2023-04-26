@@ -1,0 +1,2 @@
+# the Go test generate a binary file on the fly to test upload. We don't want it checked into GitHub
+*.bin
