@@ -22,7 +22,7 @@ port_spec = PortSpec(
     # OPTIONAL (DEFAULT:"http")
     application_protocol = "http",
     
-    # All the service's TCP and UDP ports are automatically check, Kurtosis check if the declared ports
+    # Kurtosis will automatically perform a check to ensure all declared UDP and TCP ports are open and ready for traffic and connections upon startup.
     # are open before finishing the service startup.
     # We can set a custom wait time out value with or disable the feature or through this property
     # You can specify a custom wait time out using a Duration string:
