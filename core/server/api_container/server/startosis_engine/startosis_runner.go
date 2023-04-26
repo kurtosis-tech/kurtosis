@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_warning"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/sirupsen/logrus"
 	"sync"
 )
@@ -32,7 +32,10 @@ func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisV
 		startosisInterpreter: interpreter,
 		startosisValidator:   validator,
 		startosisExecutor:    executor,
-		mutex:                &sync.Mutex{},
+
+		// we only expect one starlark package to run at a time against an enclave
+		// this lock ensures that only warning set is accessed by one starlark run method
+		mutex: &sync.Mutex{},
 	}
 }
 
@@ -40,12 +43,11 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism
 	runner.mutex.Lock()
 	defer runner.mutex.Unlock()
 
-	startosis_warning.Reset()
 	// TODO(gb): add metric tracking maybe?
 	starlarkRunResponseLines := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		defer func() {
-			warnings := startosis_warning.GetContentFromWarningSet()
+			warnings := starlark_warning.GetContentFromWarningSet()
 
 			if len(warnings) > 0 {
 				for _, warning := range warnings {

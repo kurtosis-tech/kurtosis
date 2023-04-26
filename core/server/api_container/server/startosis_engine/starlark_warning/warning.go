@@ -1,4 +1,4 @@
-package startosis_warning
+package starlark_warning
 
 import (
 	"fmt"
@@ -27,13 +27,15 @@ var warningMessageSet *sync.Map
 
 var once = new(sync.Once)
 
+const warningMessageValue = true
+
 // PrintOnceAtTheEndOfExecutionf This method stores the warnings in the warning set.
 // The unique constraint is just the warning message, however,
 //TODO: to have more comprehensive unique constraint such as instruction name
 func PrintOnceAtTheEndOfExecutionf(message string, args ...interface{}) {
 	once.Do(initialize)
 	formattedMessage := fmt.Sprintf(message, args...)
-	_, stored := warningMessageSet.LoadOrStore(formattedMessage, true)
+	_, stored := warningMessageSet.LoadOrStore(formattedMessage, warningMessageValue)
 	if !stored {
 		logrus.Tracef("Error occurred while adding warning to the set with message: %v", formattedMessage)
 	}
