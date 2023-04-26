@@ -28,7 +28,7 @@ port_spec = PortSpec(
     #  wait = "2m"
     # Or, you can disable this feature by setting the value in None:
     #  wait = None
-    # The feature is enabled by default with a default timeout
+    # The feature is enabled by default with a default timeout of 15s
     # OPTIONAL (DEFAULT:"15s")
     wait = "4s"
 )
