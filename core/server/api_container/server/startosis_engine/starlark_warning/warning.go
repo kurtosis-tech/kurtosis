@@ -32,6 +32,7 @@ const warningMessageValue = true
 // PrintOnceAtTheEndOfExecutionf This method stores the warnings in the warning set.
 // The unique constraint is just the warning message, however,
 //TODO: to have more comprehensive unique constraint such as instruction name
+//no:lint
 func PrintOnceAtTheEndOfExecutionf(message string, args ...interface{}) {
 	once.Do(initialize)
 	formattedMessage := fmt.Sprintf(message, args...)
