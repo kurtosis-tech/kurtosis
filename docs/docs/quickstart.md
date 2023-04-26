@@ -222,7 +222,7 @@ SEED_DATA_DIRPATH = "/seed-data"
 
 def run(plan, args):
     # Make data available for use in Kurtosis
-    data_package_module_result = data_package_module.run(plan, struct())
+    data_package_module_result = data_package_module.run(plan, {})
 
     # Add a Postgres server
     postgres = plan.add_service(
@@ -385,7 +385,7 @@ data_package_module = import_module("github.com/kurtosis-tech/awesome-kurtosis/d
 ```
 ... which we then ran locally:
 ```python
-data_package_module_result = data_package_module.run(plan, struct())
+data_package_module_result = data_package_module.run(plan, {})
 ```
 
 This external Kurtosis package, named ["data-package"][data-package-example] contains the seed data for your Postgres instance that we [referenced earlier](#add-some-data) as a `.tar` file.
@@ -460,7 +460,7 @@ POSTGREST_PORT_ID = "http"
 
 def run(plan, args):
     # Make data available for use in Kurtosis
-    data_package_module_result = data_package_module.run(plan, struct())
+    data_package_module_result = data_package_module.run(plan, {})
 
     # Add a Postgres server
     postgres = plan.add_service(
@@ -756,7 +756,7 @@ POSTGREST_PORT_ID = "http"
 
 def run(plan, args):
     # Make data available for use in Kurtosis
-    data_package_module_result = data_package_module.run(plan, struct())
+    data_package_module_result = data_package_module.run(plan, {})
 
     # Add a Postgres server
     postgres = plan.add_service(
