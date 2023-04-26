@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.76.0](https://github.com/kurtosis-tech/kurtosis/compare/0.75.9...0.76.0) (2023-04-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* Added automatic service's ports opening wait for TCP and UDP ports. All the declared service's TCP and UDP ports will be checked by default but this can be also deactivate. This change should not break anything in most cases but could be some cases were the default timeout is not enough and users will have to increase the wait timeout to fix the break  ([#534](https://github.com/kurtosis-tech/kurtosis/issues/534))
+
+### Features
+
+* Added automatic service's ports opening wait for TCP and UDP ports. All the declared service's TCP and UDP ports will be checked by default but this can be also deactivate. This change should not break anything in most cases but could be some cases were the default timeout is not enough and users will have to increase the wait timeout to fix the break  ([#534](https://github.com/kurtosis-tech/kurtosis/issues/534)) ([a961b6e](https://github.com/kurtosis-tech/kurtosis/commit/a961b6e03edc91abad0a12a277bb083062fbe2a0))
+
 ## [0.75.9](https://github.com/kurtosis-tech/kurtosis/compare/0.75.8...0.75.9) (2023-04-24)
 
 
