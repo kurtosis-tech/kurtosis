@@ -3,7 +3,9 @@ title: ReadyCondition
 sidebar_label: ReadyCondition
 ---
 
-The `ReadyCondition` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic 
+The `ReadyCondition` can be used to execute a readiness check after a service is started to confirm that it is ready to receive connections and traffic.
+
+As you will see below, using `ReadyCondition` is a flexible and highly configurable way to define a readiness check for a given service. However, if all you need is a check upon service startup for whether or not a port is open and ready for traffic, then we recommend relying on the default `wait` field in the [PortSpec constructor][port-spec] (as part of the [ServiceConfig][service-config] type).
 
 ```python
 ready_conditions = ReadyCondition(
@@ -43,4 +45,43 @@ ready_conditions = ReadyCondition(
 )
 ```
 
+Let us show you how to use it with an easy example:
+```python
+def run(plan):
+    # we define the recipe first
+    get_recipe = GetHttpRequestRecipe(
+		port_id = "http-port",
+		endpoint = "?input=foo/bar",
+		extract = {
+			"exploded-slash": ".query.input | split(\"/\") | .[1]"
+		}
+	)
+
+    # then the ready conditions using the ReadyCondition type which contain the recipe already created
+    ready_conditions_config = ReadyCondition(
+        recipe = get_recipe,
+        field = "code",
+        assertion = "==",
+        target_value = 200,
+        interval = "10s",
+        timeout = "200s",
+    )
+
+    # we set the ready conditions in the ServiceConfig 
+    service_config = ServiceConfig(
+		image = "mendhak/http-https-echo:26",
+		ports = {
+			"http-port": PortSpec(number = 8080, transport_protocol = "TCP")
+		},
+        ready_conditions= ready_conditions_config,
+	)
+
+    # finally we execute the add_service instruction using all the pre-configured data
+    plan.add_service(name = "web-server", config = service_config)
+```
+
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
+
+[service-config]: ./service-config.md
+[port-spec]: ./port-spec.md
+[wait]: ./plan.md#wait
