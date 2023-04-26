@@ -83,4 +83,5 @@ def run(plan):
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 
 [service-config]: ./service-config.md
+[port-spec]: ./port-spec.md
 [wait]: ./plan.md#wait
