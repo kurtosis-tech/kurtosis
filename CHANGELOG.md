@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.3](https://github.com/kurtosis-tech/kurtosis/compare/0.76.2...0.76.3) (2023-04-27)
+
+
+### Bug Fixes
+
+* make api depend not on internal version of grpc-file-transfer ([#572](https://github.com/kurtosis-tech/kurtosis/issues/572)) ([8cb536e](https://github.com/kurtosis-tech/kurtosis/commit/8cb536e35930e11d0414e8ab49a2bfa86692fe2d))
+
 ## [0.76.2](https://github.com/kurtosis-tech/kurtosis/compare/0.76.1...0.76.2) (2023-04-27)
 
 
