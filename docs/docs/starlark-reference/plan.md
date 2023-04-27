@@ -1,4 +1,5 @@
----title: Plan
+---
+title: Plan
 sidebar_label: Plan
 ---
 
