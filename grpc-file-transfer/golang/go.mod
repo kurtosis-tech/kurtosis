@@ -1,4 +1,4 @@
-module grpc-file-transfer
+module github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang
 
 go 1.18
 
