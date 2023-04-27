@@ -59,6 +59,7 @@ const sidebars = {
             ]
         },
         'client-libs-reference',
+        'best-practices',
         {
             type: 'link',
             label: 'Examples',
