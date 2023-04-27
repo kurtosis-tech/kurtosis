@@ -2,6 +2,7 @@ package metrics_client_factory
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_logger_converter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
@@ -10,6 +11,7 @@ import (
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -53,6 +55,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while getting the users metrics id")
 	}
 
+	logger := logrus.StandardLogger()
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
 		source.KurtosisCLISource,
 		kurtosis_version.KurtosisVersion,
@@ -61,6 +64,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 		sendUserMetrics,
 		shouldFlushMetricsClientQueueOnEachEvent,
 		newDoNothingMetricsClientCallback(),
+		logrus_logger_converter.ConvertLogrusLoggerToAnalyticsLogger(logger),
 	)
 
 	if err != nil {
