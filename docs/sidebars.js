@@ -60,16 +60,7 @@ const sidebars = {
         },
         'client-libs-reference',
         'best-practices',
-        {
-            type: 'link',
-            label: 'Examples',
-            href: 'https://github.com/kurtosis-tech/awesome-kurtosis',
-        },
-        {
-            type: 'link',
-            label: 'Kurtosis-Managed Packages',
-            href: 'https://github.com/kurtosis-tech?q=package+in%3Aname&type=all&language=&sort=',
-        },
+        'package-index',
         'changelog',
     ],
 };
