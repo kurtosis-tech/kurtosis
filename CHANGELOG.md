@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.2](https://github.com/kurtosis-tech/kurtosis/compare/0.76.1...0.76.2) (2023-04-27)
+
+
+### Bug Fixes
+
+* fixed grpc-file-transfer Golang module name ([#570](https://github.com/kurtosis-tech/kurtosis/issues/570)) ([bcb0dc9](https://github.com/kurtosis-tech/kurtosis/commit/bcb0dc935ee8b22c0900d6cdaf844c6e78baab14))
+
 ## [0.76.1](https://github.com/kurtosis-tech/kurtosis/compare/0.76.0...0.76.1) (2023-04-26)
 
 
