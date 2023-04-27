@@ -10,11 +10,11 @@ type logrusLoggerImpl struct {
 }
 
 func (logger *logrusLoggerImpl) Logf(format string, args ...interface{}) {
-	logrus.Debugf(format, args)
+	logrus.Debugf(format, args...)
 }
 
 func (logger *logrusLoggerImpl) Errorf(format string, args ...interface{}) {
-	logger.logrus.Errorf(format, args)
+	logger.logrus.Errorf(format, args...)
 }
 
 func ConvertLogrusLoggerToAnalyticsLogger(logger *logrus.Logger) analytics.Logger {
