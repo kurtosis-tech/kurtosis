@@ -318,6 +318,11 @@ export class StarlarkRunResponseLine extends jspb.Message {
   hasRunFinishedEvent(): boolean;
   clearRunFinishedEvent(): StarlarkRunResponseLine;
 
+  getWarning(): StarlarkWarning | undefined;
+  setWarning(value?: StarlarkWarning): StarlarkRunResponseLine;
+  hasWarning(): boolean;
+  clearWarning(): StarlarkRunResponseLine;
+
   getRunResponseLineCase(): StarlarkRunResponseLine.RunResponseLineCase;
 
   serializeBinary(): Uint8Array;
@@ -335,6 +340,7 @@ export namespace StarlarkRunResponseLine {
     progressInfo?: StarlarkRunProgress.AsObject,
     instructionResult?: StarlarkInstructionResult.AsObject,
     runFinishedEvent?: StarlarkRunFinishedEvent.AsObject,
+    warning?: StarlarkWarning.AsObject,
   }
 
   export enum RunResponseLineCase { 
@@ -344,6 +350,25 @@ export namespace StarlarkRunResponseLine {
     PROGRESS_INFO = 3,
     INSTRUCTION_RESULT = 4,
     RUN_FINISHED_EVENT = 5,
+    WARNING = 6,
+  }
+}
+
+export class StarlarkWarning extends jspb.Message {
+  getWarningMessage(): string;
+  setWarningMessage(value: string): StarlarkWarning;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): StarlarkWarning.AsObject;
+  static toObject(includeInstance: boolean, msg: StarlarkWarning): StarlarkWarning.AsObject;
+  static serializeBinaryToWriter(message: StarlarkWarning, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): StarlarkWarning;
+  static deserializeBinaryFromReader(message: StarlarkWarning, reader: jspb.BinaryReader): StarlarkWarning;
+}
+
+export namespace StarlarkWarning {
+  export type AsObject = {
+    warningMessage: string,
   }
 }
 

@@ -216,7 +216,12 @@ message StarlarkRunResponseLine {
     StarlarkRunProgress progress_info = 3;
     StarlarkInstructionResult instruction_result = 4;
     StarlarkRunFinishedEvent run_finished_event = 5;
+    StarlarkWarning warning = 6;
   }
+}
+
+message StarlarkWarning {
+  string warning_message = 1;
 }
 
 message StarlarkInstruction {

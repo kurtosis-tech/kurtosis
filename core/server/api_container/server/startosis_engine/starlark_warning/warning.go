@@ -29,6 +29,13 @@ var once = new(sync.Once)
 
 const warningMessageValue = true
 
+// Clear the warning message set
+// This method will force the methods to re-initialize the warning basically making the set empty
+// This called everytime a startosis run is called
+func Clear() {
+	once = new(sync.Once)
+}
+
 // PrintOnceAtTheEndOfExecutionf This method stores the warnings in the warning set.
 // The unique constraint is just the warning message, however,
 //TODO: to have more comprehensive unique constraint such as instruction name
