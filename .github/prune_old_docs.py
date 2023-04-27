@@ -37,12 +37,11 @@ def main():
             if HISTORICAL_VERSIONS_TO_KEEP > 0 and historical_versions_kept >= HISTORICAL_VERSIONS_TO_KEEP:
                 break
 
-            historical_versions_kept += 1
-
             # as we go down the list if the minor version changes then we are on the highest patch with the minor
             # version so, we keep it
             if version.minor != current_version.minor:
                 versions_to_keep.append(version_str)
+                historical_versions_kept += 1
                 current_version = version
                 continue
 
