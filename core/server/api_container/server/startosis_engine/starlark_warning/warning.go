@@ -19,7 +19,7 @@ IS RECEIVED - AND IF NOT THEN ADD IT OTHERWISE IGNORE.
 
 MOST IMPORTANTLY - DO NOT DIRECTLY USE THIS VARIABLE AND INSTEAD USE PrintOnceAtTheEndOfExecutionf METHOD OR OTHER AVAILABLE
 ABSTRACTIONS. THE LONG TERM PLAN IS EITHER TO EXTRACT THIS OUT INTO ITS OWN PACKAGE LIKE stacktrace OR PASS IT DOWN TO
-INSTRUCTIONS ETC. I AM LEANING TOWARDS THE FIRST ONE, BECAUSE WARNING MESSAGES IS AN SEPARATE ENTITY AND DO NOT SEE ANY VALUE
+INSTRUCTIONS ETC. I (PK) LEANING TOWARDS THE FIRST ONE, BECAUSE WARNING MESSAGES IS AN SEPARATE ENTITY AND DO NOT SEE ANY VALUE
 ON COUPLING IT WITH OUR CORE LOGIC - THE WARNING SET ONLY CONTROLS THE STATE FOR WARNING MESSAGE WHICH CAN BE DONE IN ITS
 OWN PACKAGE - HOWEVER IT IS NOT SUPER URGENT ATM
 */
@@ -32,7 +32,6 @@ const warningMessageValue = true
 // PrintOnceAtTheEndOfExecutionf This method stores the warnings in the warning set.
 // The unique constraint is just the warning message, however,
 //TODO: to have more comprehensive unique constraint such as instruction name
-//no:lint
 func PrintOnceAtTheEndOfExecutionf(message string, args ...interface{}) {
 	once.Do(initialize)
 	formattedMessage := fmt.Sprintf(message, args...)
@@ -47,11 +46,10 @@ func PrintOnceAtTheEndOfExecutionf(message string, args ...interface{}) {
 // start with empty set
 func GetContentFromWarningSet() []string {
 	once.Do(initialize)
-
 	var warnings []string
-	warningMessageSet.Range(func(key interface{}, value interface{}) bool {
+	warningMessageSet.Range(func(key interface{}, _ interface{}) bool {
 		warnings = append(warnings, fmt.Sprint(key))
-		// once the key is read, remove the map
+		// once the key is read, remove from the map
 		warningMessageSet.Delete(key)
 		return true
 	})
