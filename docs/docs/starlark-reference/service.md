@@ -5,7 +5,7 @@ sidebar_label: Service
 
 The `Service` object encapsulates service information returned by the [`Plan.add_service`][add-service-starlark-reference] and [`Plan.add_services`][add-services-starlark-reference] functions.
 
-It has the following properties (all of which are [future references][futre-references-concepts-reference], because [runtime values don't exist at interpretation time][multi-phase-runs-concepts-reference]):
+It has the following properties (all of which are [future references][future-references-concepts-reference], because [runtime values don't exist at interpretation time][multi-phase-runs-concepts-reference]):
 
 ```python
 # The hostname of the service
