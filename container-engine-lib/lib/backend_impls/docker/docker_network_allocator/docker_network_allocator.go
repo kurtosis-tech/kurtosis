@@ -2,11 +2,12 @@ package docker_network_allocator
 
 import (
 	"context"
-	"fmt"
+	"encoding/binary"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/network_helpers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"math"
 	"math/rand"
 	"net"
 	"strings"
@@ -27,14 +28,87 @@ const (
 	maxNumNetworkAllocationRetries = 10
 
 	timeBetweenNetworkCreationRetries = 1 * time.Second
-
-	allowedNetworkFirstOctet        = 10
-	secondOctetMaximumPossibleValue = 255
-	secondOctetLowestPossibleValue  = 1
 )
 
 var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
+var networkWidthUint64 = uint64(math.Pow(float64(2), float64(networkWidthBits)))
+var maxUint32PlusOne = uint64(math.MaxUint32) + 1
 var emptyIpSet = map[string]bool{}
+
+// These IP ranges are reserved, so we'll skip creating any networks in them
+// If we don't, Docker will throw an error of "failed to set gateway while updating gateway: route for the gateway X.X.X.X could not be found: network is unreachable"
+// The start & end are BOTH inclusive (else we'd have no way to block off the single 255.255.255.255/32 address)
+// See https://en.wikipedia.org/wiki/IPv4#Special-use_addresses
+var disallowedIpRanges = [][][]byte{
+	{
+		// Current network (only valid as source address)
+		{0, 0, 0, 0}, {0, 255, 255, 255},
+	},
+	{
+		// Used for local communications within a private network
+		{10, 0, 0, 0}, {10, 255, 255, 255},
+	},
+	{
+		// Shared address space for communications between a service provider and its subscribers when using a carrier-grade NAT
+		{100, 64, 0, 0}, {100, 127, 255, 255},
+	},
+	{
+		// Used for loopback addresses to the local host
+		{127, 0, 0, 0}, {127, 255, 255, 255},
+	},
+	{
+		// Used for link-local addresses between two hosts on a single link when no IP address is otherwise specified, such as would have normally been retrieved from a DHCP server
+		{169, 254, 0, 0}, {169, 254, 255, 255},
+	},
+	{
+		// Used for local communications within a private network
+		{172, 16, 0, 0}, {172, 31, 255, 255},
+	},
+	{
+		// IETF Protocol Assignments
+		{192, 0, 0, 0}, {192, 0, 0, 255},
+	},
+	{
+		// Assigned as TEST-NET-1, documentation and examples
+		{192, 0, 2, 0}, {192, 0, 2, 255},
+	},
+	{
+		// Reserved; formerly used for IPv6 to IPv4 relay (included IPv6 address block 2002::/16)
+		{192, 88, 99, 0}, {192, 88, 99, 255},
+	},
+	{
+		// Used for local communications within a private network
+		{192, 168, 0, 0}, {192, 168, 255, 255},
+	},
+	{
+		// Used for benchmark testing of inter-network communications between two separate subnets
+		{198, 18, 0, 0}, {198, 19, 255, 255},
+	},
+	{
+		// Assigned as TEST-NET-2, documentation and examples
+		{198, 51, 100, 0}, {198, 51, 100, 255},
+	},
+	{
+		// Assigned as TEST-NET-3, documentation and examples
+		{203, 0, 113, 0}, {203, 0, 113, 255},
+	},
+	{
+		// In use for IP multicast (Former Class D network)
+		{224, 0, 0, 0}, {239, 255, 255, 255},
+	},
+	{
+		// Assigned as MCAST-TEST-NET, documentation and examples
+		{233, 252, 0, 0}, {233, 252, 0, 255},
+	},
+	{
+		// Reserved for future use (Former Class E network)
+		{240, 0, 0, 0}, {255, 255, 255, 254},
+	},
+	{
+		// Reserved for the "limited broadcast" destination address
+		{255, 255, 255, 255}, {255, 255, 255, 255},
+	},
+}
 
 type DockerNetworkAllocator struct {
 	// Our constructor sets the rand.Seed, so we want to force users to use the constructor
@@ -140,19 +214,47 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 	)
 }
 
-// This algorithm only picks a network in the 10.0.0.0/20 - 10.255.0.0.0/20 list
-// https://github.com/hashicorp/serf/issues/385#issuecomment-208755148 - we try to follow RFC 6890
-// https://www.rfc-editor.org/rfc/rfc6890.html calls 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 Private-Use (docker usually picks from 172.16.0.0/12)
-// Just with 10.0.0.0/8 we can get 2^24 ips; if we limit services per APIC to 4096(/20) we can get 4096 per docker engine
-// For simplicity we limit it to 256 APICs and allow networks 10.1.0.0/20 - 10.255.0.0.0/20
+// NOTE: This is an intentionally non-deterministic algorithm!!!! The rationale: when many instances of Kurtosis
+//
+//	are running at once, if we make the algorithm deterministic (e.g. start a 0.0.0.0, and keep checking subsequent
+//	subnets until you find a free one, which was the first iteration of this algo) then you get contention as the
+//	multiple instances are all trying to allocate the same networks at the same time. Therefore, we change the start
+//	to be different on every call
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
-	for secondOctet := secondOctetLowestPossibleValue; secondOctet <= secondOctetMaximumPossibleValue; secondOctet++ {
-		ipAddressString := fmt.Sprintf("%v.%v.0.0", allowedNetworkFirstOctet, secondOctet)
-		resultNetworkIp := net.ParseIP(ipAddressString)
+	var searchStartNetworkIpUint64 uint64
+	// There's no point in starting the search for a valid free network at a disallowed block, so keep rerolling
+	//  the random startpoint until we at least find a non-disallowed IP
+	for keepGoing := true; keepGoing; keepGoing = isIpInDisallowedRange(uint32(searchStartNetworkIpUint64)) {
+		searchStartNetworksOffsetUint64 := uint64(rand.Uint32()) / networkWidthUint64
+		searchStartNetworkIpUint64 = searchStartNetworksOffsetUint64 * networkWidthUint64
+	}
+
+	// TODO PERF: This algorithm is very dumb in that it iterates over EVERY possible network, starting from a random
+	//  start IP. This means that even if there's a preexisting network that takes up the first half of the IP space, we'll
+	//  still try *every* possible network inside that already-allocated space (which will burn a ton of CPU cycles)
+	for offsetIpsUint64 := uint64(0); offsetIpsUint64 < maxUint32PlusOne; offsetIpsUint64 += networkWidthUint64 {
+		resultNetworkIpUint64UnModulod := searchStartNetworkIpUint64 + offsetIpsUint64
+
+		// Homerolled modulo, because doing modulo in Golang is a pain in the ass
+		var resultNetworkIpUint64 uint64
+		if resultNetworkIpUint64UnModulod < maxUint32PlusOne {
+			resultNetworkIpUint64 = resultNetworkIpUint64UnModulod
+		} else {
+			resultNetworkIpUint64 = resultNetworkIpUint64UnModulod - maxUint32PlusOne
+		}
+		resultNetworkIpUint32 := uint32(resultNetworkIpUint64)
+
+		if isIpInDisallowedRange(resultNetworkIpUint32) {
+			continue
+		}
+
+		resultNetworkIp := make([]byte, 4)
+		binary.BigEndian.PutUint32(resultNetworkIp, resultNetworkIpUint32)
 		resultNetwork := &net.IPNet{
 			IP:   resultNetworkIp,
 			Mask: networkCidrMask,
 		}
+
 		hasCollision := false
 		for _, network := range networks {
 			if resultNetwork.Contains(network.IP) || network.Contains(resultNetworkIp) {
@@ -166,4 +268,17 @@ func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 	}
 
 	return nil, stacktrace.NewError("There is no IP address space available for a new network with %v bits of width", networkWidthBits)
+}
+
+func isIpInDisallowedRange(ipUint32 uint32) bool {
+	for _, disallowedRange := range disallowedIpRanges {
+		rangeStartBytes := disallowedRange[0]
+		rangeStartUint32 := binary.BigEndian.Uint32(rangeStartBytes)
+		rangeEndBytes := disallowedRange[1]
+		rangeEndUint32 := binary.BigEndian.Uint32(rangeEndBytes)
+		if rangeStartUint32 <= ipUint32 && ipUint32 <= rangeEndUint32 {
+			return true
+		}
+	}
+	return false
 }
