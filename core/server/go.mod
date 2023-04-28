@@ -30,7 +30,6 @@ require (
 )
 
 require (
-	github.com/cenkalti/backoff/v4 v4.2.0
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/itchyny/gojq v0.12.9
@@ -38,6 +37,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	go.etcd.io/bbolt v1.3.6
 	go.starlark.net v0.0.0-20230224151120-c52844e64a10
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 )
 
@@ -77,7 +77,6 @@ require (
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
 	golang.org/x/net v0.7.0 // indirect
 	golang.org/x/sys v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
