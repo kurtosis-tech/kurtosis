@@ -18,6 +18,27 @@ Passing [package arguments][args-concepts-reference] to the CLI can get hairy du
    ```
    The double quotes around the `$(cat my-args.json)` are important so any spaces inside `my-args.json` don't fool Bash into thinking you're passing in two separate arguments.
 
+Choosing the right wait
+-----------------------
+Kurtosis has three different types of waits. Described here are the three, with tips on when to use each:
+
+1. Automatic waiting on port availability when a service starts (enabled by default; can be configured with [`PortSpec.wait`][port-spec-starlark-reference])
+    - Should be sufficient for most usecases
+    - Requires little-to-no extra configuration
+    - Will cause parallel `Plan.add_services` to fail, allowing for quick aborting
+1. Waiting on [`ReadyCondition`][ready-condition-starlark-reference]s (configured in [`ServiceConfig`][service-config-starlark-reference])
+    - Allows for more advanced checking (e.g. require a certain HTTP response body, ensure a CLI call returns success, etc.)
+    - More complex to configure
+    - Will cause parallel `Plan.add_services` to fail, allowing for quick aborting
+1. The [`Plan.wait`][plan-wait-starlark-reference]
+    - Most useful for asserting the system has reached a desired state in tests (e.g. wait until data shows up after loading)
+    - More complex to configure
+    - Cannot be used to short-circuit `Plan.add_services`
 
 <!---------------------------------------- ONLY LINKS BELOW HERE!!! ----------------------------------->
 [args-concepts-reference]: ./concepts-reference/args.md
+
+[service-config-starlark-reference]: ./starlark-reference/service-config.md
+[port-spec-starlark-reference]: ./starlark-reference/port-spec.md
+[ready-condition-starlark-reference]: ./starlark-reference/ready-condition.md
+[plan-wait-starlark-reference]: ./starlark-reference/plan.md#wait
