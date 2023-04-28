@@ -577,5 +577,5 @@ plan.print(response["code"])
 [starlark-types-exec-recipe]: ./exec-recipe.md
 [starlark-types-post-http-recipe]: ./post-http-request-recipe.md
 [starlark-types-get-http-recipe]: ./get-http-request-recipe.md
-[service-starlark-reference]: ./service.md]
+[service-starlark-reference]: ./service.md
 
