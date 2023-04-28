@@ -6,6 +6,7 @@ import (
 
 const WarningConstant = "[WARN]:"
 
+// DeprecationDate TODO: check if the date is valid
 type DeprecationDate struct {
 	Day   int
 	Month int
@@ -16,6 +17,9 @@ func (deprecationDate *DeprecationDate) GetFormattedDate() string {
 	return fmt.Sprintf("%v/%v/%v", deprecationDate.Day, deprecationDate.Month, deprecationDate.Year)
 }
 
+// DeprecationNotice
+//TODO: enforce that these fields are required
+// give examples for good mitigation examples; currently it's free form for folks to start using right away
 type DeprecationNotice struct {
 	deprecationDate DeprecationDate
 	mitigation      string
