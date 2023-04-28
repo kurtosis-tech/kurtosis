@@ -3,6 +3,7 @@ package kurtosis_starlark_framework
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -57,4 +58,100 @@ func getArgumentDefinitionsWithServiceNameAndShouldStart() []*builtin_argument.B
 			},
 		},
 	}
+}
+
+func Test_printWarningIfArgumentIsDeprecated(t *testing.T) {
+	deprecatedDate := starlark_warning.DeprecationDate{
+		Day: 20, Month: 11, Year: 2023,
+	}
+
+	deprecatedMitigation := "mitigation for config"
+	baseBuiltIn := &KurtosisBaseBuiltin{
+		Name: "kurtosis_builtin",
+	}
+
+	builtinArgs := []*builtin_argument.BuiltinArgument{
+		{
+			Name: "config",
+			Deprecation: starlark_warning.Deprecation(
+				deprecatedDate,
+				deprecatedMitigation,
+			),
+		},
+		{
+			Name: "another_key",
+			Deprecation: starlark_warning.Deprecation(
+				starlark_warning.DeprecationDate{
+					Day: 20, Month: 11, Year: 2023,
+				},
+				"mitigation reason for another_key",
+			),
+		},
+	}
+
+	printWarningForArguments(builtinArgs, baseBuiltIn)
+	warnings := starlark_warning.GetContentFromWarningSet()
+	require.Len(t, warnings, 2)
+
+	// just checking only one warning to make sure that the string formatting works
+	require.Contains(t, warnings[0],
+		fmt.Sprintf("%q field for %q will be deprecated by %v. %v",
+			"config",
+			"kurtosis_builtin",
+			deprecatedDate.GetFormattedDate(),
+			deprecatedMitigation,
+		))
+}
+
+func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
+	deprecatedDate := starlark_warning.DeprecationDate{
+		Day: 20, Month: 11, Year: 2023,
+	}
+
+	deprecatedMitigation := "mitigation instruction reason"
+	baseBuiltIn := &KurtosisBaseBuiltin{
+		Name: "kurtosis_builtin",
+		Deprecation: starlark_warning.Deprecation(
+			deprecatedDate,
+			deprecatedMitigation,
+		),
+	}
+
+	builtinArgs := []*builtin_argument.BuiltinArgument{
+		{
+			Name: "config",
+			Deprecation: starlark_warning.Deprecation(
+				starlark_warning.DeprecationDate{
+					Day: 20, Month: 11, Year: 2023,
+				},
+				"mitigation reason",
+			),
+		},
+	}
+
+	printWarningForArguments(builtinArgs, baseBuiltIn)
+	warnings := starlark_warning.GetContentFromWarningSet()
+	require.Len(t, warnings, 1)
+	require.Contains(t, warnings[0],
+		fmt.Sprintf("%q instruction will be deprecated by %v. %v",
+			"kurtosis_builtin",
+			deprecatedDate.GetFormattedDate(),
+			deprecatedMitigation,
+		))
+}
+
+func Test_printWarningForInstructionNoWarning(t *testing.T) {
+	baseBuiltIn := &KurtosisBaseBuiltin{
+		Name: "KurtosisType",
+	}
+
+	builtinArgs := []*builtin_argument.BuiltinArgument{
+		{
+			Name: "config",
+		},
+	}
+
+	printWarningForArguments(builtinArgs, baseBuiltIn)
+	warnings := starlark_warning.GetContentFromWarningSet()
+	require.Len(t, warnings, 0)
 }

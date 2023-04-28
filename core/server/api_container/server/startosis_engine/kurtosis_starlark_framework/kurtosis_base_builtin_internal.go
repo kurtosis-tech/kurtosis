@@ -82,19 +82,19 @@ func printWarningForArguments(arguments []*builtin_argument.BuiltinArgument, bui
 	}
 }
 
-func getFormattedWarningMessageForInstruction(deprecation *starlark_warning.DeprecationNotice, instructionName string) string {
-	deprecationDateStr := deprecation.deprecationDate.GetFormattedDate()
-	deprecationReason := deprecation.mitigation
-	return fmt.Sprintf("%q instruction will be deprecated by %v. %v", instructionName, deprecationDateStr, deprecationReason)
+func getFormattedWarningMessageForInstruction(deprecation *starlark_warning.DeprecationNotice, builtinName string) string {
+	deprecationDateStr := deprecation.GetDeprecatedDate()
+	deprecationReason := deprecation.GetMitigation()
+	return fmt.Sprintf("%q instruction will be deprecated by %v. %v", builtinName, deprecationDateStr, deprecationReason)
 }
 
-func getFormattedWarningMessageForArgument(deprecation *starlark_warning.DeprecationNotice, instructionName string, argumentName string) string {
-	deprecationDateStr := deprecation.deprecationDate.GetFormattedDate()
-	deprecationReason := deprecation.mitigation
+func getFormattedWarningMessageForArgument(deprecation *starlark_warning.DeprecationNotice, builtinName string, argumentName string) string {
+	deprecationDateStr := deprecation.GetDeprecatedDate()
+	deprecationReason := deprecation.GetMitigation()
 	return fmt.Sprintf(
 		"%q field for %q will be deprecated by %v. %v",
 		argumentName,
-		instructionName,
+		builtinName,
 		deprecationDateStr,
 		deprecationReason,
 	)

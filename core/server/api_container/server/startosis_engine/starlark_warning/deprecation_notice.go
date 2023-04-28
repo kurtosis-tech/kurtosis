@@ -12,13 +12,21 @@ type DeprecationDate struct {
 	Year  int
 }
 
-func (deprecationDate DeprecationDate) GetFormattedDate() string {
+func (deprecationDate *DeprecationDate) GetFormattedDate() string {
 	return fmt.Sprintf("%v/%v/%v", deprecationDate.Day, deprecationDate.Month, deprecationDate.Year)
 }
 
 type DeprecationNotice struct {
 	deprecationDate DeprecationDate
 	mitigation      string
+}
+
+func (deprecationNotice *DeprecationNotice) GetDeprecatedDate() string {
+	return deprecationNotice.deprecationDate.GetFormattedDate()
+}
+
+func (deprecationNotice *DeprecationNotice) GetMitigation() string {
+	return deprecationNotice.mitigation
 }
 
 // Deprecation DeprecationDate - date when the field or the instruction will be deprecated
