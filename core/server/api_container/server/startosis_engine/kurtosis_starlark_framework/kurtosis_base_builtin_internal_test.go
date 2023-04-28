@@ -66,7 +66,8 @@ func Test_printWarningIfArgumentIsDeprecated(t *testing.T) {
 	}
 
 	deprecatedMitigation := "mitigation for config"
-	baseBuiltIn := &KurtosisBaseBuiltin{
+	// nolint:exhaustruct
+	baseBuiltIn := KurtosisBaseBuiltin{
 		Name: "kurtosis_builtin",
 	}
 
@@ -89,7 +90,7 @@ func Test_printWarningIfArgumentIsDeprecated(t *testing.T) {
 		},
 	}
 
-	printWarningForArguments(builtinArgs, baseBuiltIn)
+	printWarningForArguments(builtinArgs, &baseBuiltIn)
 	warnings := starlark_warning.GetContentFromWarningSet()
 	require.Len(t, warnings, 2)
 
@@ -109,7 +110,8 @@ func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
 	}
 
 	deprecatedMitigation := "mitigation instruction reason"
-	baseBuiltIn := &KurtosisBaseBuiltin{
+	// nolint:exhaustruct
+	baseBuiltIn := KurtosisBaseBuiltin{
 		Name: "kurtosis_builtin",
 		Deprecation: starlark_warning.Deprecation(
 			deprecatedDate,
@@ -129,7 +131,7 @@ func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
 		},
 	}
 
-	printWarningForArguments(builtinArgs, baseBuiltIn)
+	printWarningForArguments(builtinArgs, &baseBuiltIn)
 	warnings := starlark_warning.GetContentFromWarningSet()
 	require.Len(t, warnings, 1)
 	require.Contains(t, warnings[0],
@@ -141,7 +143,8 @@ func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
 }
 
 func Test_printWarningForInstructionNoWarning(t *testing.T) {
-	baseBuiltIn := &KurtosisBaseBuiltin{
+	// nolint:exhaustruct
+	baseBuiltIn := KurtosisBaseBuiltin{
 		Name: "KurtosisType",
 	}
 
@@ -151,7 +154,7 @@ func Test_printWarningForInstructionNoWarning(t *testing.T) {
 		},
 	}
 
-	printWarningForArguments(builtinArgs, baseBuiltIn)
+	printWarningForArguments(builtinArgs, &baseBuiltIn)
 	warnings := starlark_warning.GetContentFromWarningSet()
 	require.Len(t, warnings, 0)
 }
