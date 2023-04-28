@@ -507,13 +507,11 @@ The return value is a [future reference][future-references-reference] to the nam
 wait
 ----
 
-The `wait` instruction fails the Starlark script or package with an execution error if the [assertion][assert] does not succeed in a given period of time.
+The `wait` instruction fails the Starlark script or package with an execution error if the provided [assertion][assert] does not succeed within a given period of time. If the assertion succeeds, `wait` returns a [future references][future-references-reference] with the result the last run of the assertion.
 
-To learn more about the accepted recipe types, please checkout [ExecRecipe][starlark-types-exec-recipe], [GetHttpRequestRecipe][starlark-types-get-http-recipe] or [PostHttpRequestRecipe][starlark-types-post-http-recipe].
+This instruction is best used for asserting the system has reached a desired state, e.g. in testing. To wait until a service is ready, you are better off using automatic port availability waiting via [`PortSpec.wait`][starlark-types-port-spec] or [`ServiceConfig.ready_conditions`][starlark-types-update-service-config], as these will short-circuit a parallel [`add_services`][add-services] call if they fail.
 
-If it succeeds, it returns a [future references][future-references-reference] with the last recipe run.
-
-This instruction is for one-off waits purpose, and it is not necessary to execute it right after an [add_service][add-service] or [add_services][add-services] call, if you need to check the ready conditions for a single service at startup we suggest to use the [ReadyCondition][ready-condition] type when you define the [ServiceConfig][service-config] for your service
+To learn more about the accepted recipe types, please see [`ExecRecipe`][starlark-types-exec-recipe], [`GetHttpRequestRecipe`][starlark-types-get-http-recipe] or [`PostHttpRequestRecipe`][starlark-types-post-http-recipe].
 
 
 ```python
@@ -523,7 +521,7 @@ response = plan.wait(
     # If it does not, a validation error will be thrown
     # MANDATORY
     service_name = "example-datastore-server-1",
-    
+
     # The recipe that will be run until assert passes.
     # Valid values are of the following types: (ExecRecipe, GetHttpRequestRecipe, PostHttpRequestRecipe)
     # MANDATORY
@@ -584,5 +582,6 @@ plan.print(response["code"])
 [starlark-types-exec-recipe]: ./exec-recipe.md
 [starlark-types-post-http-recipe]: ./post-http-request-recipe.md
 [starlark-types-get-http-recipe]: ./get-http-request-recipe.md
+[starlark-types-port-spec]: ./port-spec.md
 
 
