@@ -14,7 +14,7 @@ type KurtosisBaseBuiltin struct {
 
 	Arguments []*builtin_argument.BuiltinArgument
 
-	Deprecation *starlark_warning.DeprecationNotice
+	Deprecation *starlark_warning.DeprecationNotice `exhaustruct:"optional"`
 }
 
 type KurtosisConstructibleBuiltin interface {
