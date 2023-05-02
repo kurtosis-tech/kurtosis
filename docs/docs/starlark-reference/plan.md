@@ -14,9 +14,10 @@ Note that the function calls listed here merely add a step to the plan. They do 
 add_service
 -----------
 
-The `add_service` instruction adds a service to the Kurtosis enclave within which the script executes.
+The `add_service` instruction adds a service to the Kurtosis enclave within which the script executes, and returns a [`Service`][service-starlark-reference] object containing information about the newly-added service.
 
 ```python
+# Returns a Service object (see the Service page in the sidebar)
 service = plan.add_service(
     # The service name of the service being created.
     # The service name is a reference to the service, which can be used in the future to refer to the service.
@@ -24,27 +25,18 @@ service = plan.add_service(
     # MANDATORY
     name = "example-datastore-server-1",
 
-    # The configuration for this service. See the 'ServiceConfig' section of 'Starlark Types' from the sidebar for more information.
+    # The configuration for this service, as specified via a ServiceConfig object (see the ServiceConfig page in the sidebar)
     # MANDATORY
     config = service_config,
 )
 ```
 
-For more info about the `config` argument, see [ServiceConfig][starlark-types-service-config]
+For detailed information about the parameters the `config` argument accepts, see [ServiceConfig][starlark-types-service-config].
 
-:::info
-See [here][files-artifacts-reference] for more details on files artifacts.
-:::
-
-The `add_service` function returns a `service` object that contains service information in the form of [future references][future-references-reference] that can be used later in the script. The `service` struct has:
-- A `hostname` property representing [a future reference][future-references-reference] to the service's hostname.
-- An `ip_address` property representing [a future reference][future-references-reference] to the service's IP address.
-- A `ports` dictionary containing [future reference][future-references-reference] information about each port that the service is listening on.
-- A `name` property representing the name of the service.
-
-The value of the `ports` dictionary is an object with three properties, `number`, `transport_protocol` and `application_protocol` (optional), which themselves are [future references][future-references-reference].
+For detailed information about what `add_service` returns, see [Service][service-starlark-reference].
 
 Example:
+
 ```python
 dependency = plan.add_service(
     name = "dependency",
@@ -71,19 +63,17 @@ plan.add_service(
 add_services
 ------------
 
-The `add_services` instruction adds multiple services all at once.
+The `add_services` instruction behaves like `add_service`, but adds the services in parallel.
 
-The main advantage compared to calling [add_service][add-service] multiple times is that one call to `add_services` 
-will add multiple services at once. Currently, it can process up to 4 services concurrently, therefore reducing the
-total time by a factor of nearly 4.
+The default parallelism is 4, but this can be increased using [the `--parallelism` flag of the `run` CLI command][cli-run-reference].
 
-Similar to `add_service`, it takes a map of service names to service configuration objects as input and returns a map 
-of service names to service objects.
+`add_services` takes a dictionary of service names -> [`ServiceConfig`][starlark-types-service-config] objects as input, and returns a dictionary 
+of service names -> [`Service`][service-starlark-reference] objects.
 
 ```python
 all_services = plan.add_services(
     # A map of service_name -> ServiceConfig for all services that needs to be added.
-    # See the 'ServiceConfig' section of 'Starlark Types' from the sidebar for more information on this type.
+    # See the 'ServiceConfig' page in the sidebar for more information on this type.
     # MANDATORY
     configs = {
         "example-datastore-server-1": datastore_server_config_1,
@@ -92,14 +82,17 @@ all_services = plan.add_services(
 )
 ```
 
+For detailed information about the `ServiceConfig` object, see [here][starlark-types-service-config].
+
+For detailed information about the `Service` objects that `add_services`, see [Service][service-starlark-reference].
+
+
 :::caution
 
-`add_services` will succeed if and only if all services are successfully added. If any one fails, the entire batch of
+`add_services` will succeed if and only if all services are successfully added. If any one fails (perhaps due to timeouts a ready condition failing), the entire batch of
 services will be rolled back and the instruction will return an execution error.
 
 :::
-
-The number of services being added concurrently is tunable by the `--parallelism` flag of the run command (see more on the [`kurtosis run`][cli-run-reference] reference).
 
 assert
 ------
@@ -582,6 +575,5 @@ plan.print(response["code"])
 [starlark-types-exec-recipe]: ./exec-recipe.md
 [starlark-types-post-http-recipe]: ./post-http-request-recipe.md
 [starlark-types-get-http-recipe]: ./get-http-request-recipe.md
+[service-starlark-reference]: ./service.md
 [starlark-types-port-spec]: ./port-spec.md
-
-
