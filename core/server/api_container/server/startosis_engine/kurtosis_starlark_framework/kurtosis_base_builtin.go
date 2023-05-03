@@ -2,6 +2,7 @@ package kurtosis_starlark_framework
 
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"go.starlark.net/starlark"
 )
 
@@ -12,6 +13,8 @@ type KurtosisBaseBuiltin struct {
 	Name string
 
 	Arguments []*builtin_argument.BuiltinArgument
+
+	Deprecation *starlark_warning.DeprecationNotice `exhaustruct:"optional"`
 }
 
 type KurtosisConstructibleBuiltin interface {
