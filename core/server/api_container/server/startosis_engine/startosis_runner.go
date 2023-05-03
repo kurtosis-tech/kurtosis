@@ -41,6 +41,7 @@ func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisV
 
 func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism int, packageId string, serializedStartosis string, serializedParams string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	runner.mutex.Lock()
+	starlark_warning.Clear()
 	defer runner.mutex.Unlock()
 
 	// TODO(gb): add metric tracking maybe?
@@ -52,7 +53,7 @@ func (runner *StartosisRunner) Run(ctx context.Context, dryRun bool, parallelism
 			if len(warnings) > 0 {
 				for _, warning := range warnings {
 					// TODO: create a new binding_constructor for warning message
-					starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(warning)
+					starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromWarning(warning)
 				}
 			}
 
