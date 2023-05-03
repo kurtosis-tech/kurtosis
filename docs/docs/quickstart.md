@@ -24,7 +24,7 @@ For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, o
 
 This quickstart is in a "code along" format. You can also dive straight into running the end results and exploring the code too.
  
-**Open the Playground: [Start](https://gitpod.io/?editor=code#https://github.com/kurtosis-tech/quickstart-gitpod)**
+**Open the Playground: [Start](https://gitpod.io/?editor=code#https://github.com/kurtosis-tech/quickstart-gitpod?autostart=true)**
 
 Click on the "New Workspace" button! You don't have to worry about the Context URL, Editor or Class. It's all pre-configured for you.
  
