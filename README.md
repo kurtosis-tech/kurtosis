@@ -90,7 +90,10 @@ This repository is structured as a monorepo, containing the following projects:
 Dev Dependencies
 ----------------
 
-To build Kurtosis itself, you must have the following installed:
+The commands below assume that the env variable BREW_PREFIX contains the brew prefix.
+```bash
+BREW_PREFIX="$(brew --prefix)"
+```
 
 #### Bash (5 or above)
 
@@ -108,6 +111,7 @@ chsh -s "${BREW_PREFIX}/bin/bash"
 
 On MacOS:
 ```bash
+# Install modern version of git, the one that ships on MacOS can be too old
 brew install git
 ```
  
