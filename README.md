@@ -92,19 +92,25 @@ Dev Dependencies
 
 To build Kurtosis itself, you must have the following installed:
 
-#### Bash (5 or above) + Git
+#### Bash (5 or above)
 
 On MacOS:
 ```bash
 # Install modern version of bash, the one that ships on MacOS is too old
 brew install bash
-# Allow it as shell
+# Allow bash as shell
 echo "${BREW_PREFIX}/bin/bash" | sudo tee -a /etc/shells
 # Optional: make bash your default shell
 chsh -s "${BREW_PREFIX}/bin/bash"
-# Install modern version of git, the one that ships on MacOS is too old
+```
+  
+#### Git
+
+On MacOS:
+```bash
 brew install git
 ```
+ 
 #### Docker
 
 On MacOS:
@@ -117,6 +123,8 @@ brew install docker
 On MacOS:
 ```bash
 brew install go@1.18
+# Add the Go binary dir to your PATH
+PATH="${BREW_PREFIX}/opt/go@1.18/bin:$PATH"
 ```
 
 #### Goreleaser
@@ -158,13 +166,13 @@ Build Instructions
 To build the entire project, run:
 
 ```bash
-./script/build.sh
+./scripts/build.sh
 ```
 
 To only build a specific project, run the script on `./PROJECT/PATH/script/build.sh`, for example:
 
 ```bash
-./container-engine-lib/build.sh
+./container-engine-lib/scripts/build.sh
 ./core/scripts/build.sh
 ./api/scripts/build.sh
 ./engine/scripts/build.sh
@@ -174,7 +182,7 @@ To only build a specific project, run the script on `./PROJECT/PATH/script/build
 If there are any changes to the Protobuf files in the `api` subdirectory, the Protobuf bindings must be regenerated:
 
 ```bash
-$ ./api/scripts/regenerate-protobuf-bindings.sh
+./api/scripts/regenerate-protobuf-bindings.sh
 ```
 
 Build scripts also run unit tests as part of the build process.
@@ -223,16 +231,16 @@ changes made to the Typescript package within `api/typescript` aren't hot loaded
 Dev Run Instructions
 --------------------
 
-Once the project has built, run `./cli/cli/scripts/launch_cli.sh` as if it was the `kurtosis` command:
+Once the project has built, run `./cli/cli/scripts/launch-cli.sh` as if it was the `kurtosis` command:
 
 ```bash
-./cli/cli/scripts/launch_cli.sh enclave add
+./cli/cli/scripts/launch-cli.sh enclave add
 ```
 
 If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
 
 ```bash
-alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
+alias kurtosis="$(pwd)/cli/cli/scripts/launch-cli.sh"
 kurtosis enclave add
 ```
 
