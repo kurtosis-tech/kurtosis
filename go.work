@@ -1,0 +1,17 @@
+go 1.18
+
+use (
+	./api/golang
+	./cli/cli
+	./container-engine-lib
+	./contexts-config-store
+	./core/files_artifacts_expander
+	./core/launcher
+	./core/server
+	./engine/launcher
+	./engine/server
+	./grpc-file-transfer/golang
+	./internal_testsuites/golang
+	./kurtosis_version
+	./name_generator
+)
