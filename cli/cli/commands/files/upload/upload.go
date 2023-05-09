@@ -55,7 +55,7 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		file_system_path_arg.NewFilepathOrDirpathArg(
 			pathArgKey,
 			isPathArgOptional,
-			nil,
+			file_system_path_arg.NoValidationExceptionFunc,
 		),
 	},
 	RunFunc: run,
