@@ -99,8 +99,7 @@ func getValidationFunc(
 			return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", argKey)
 		}
 
-		isExceptionalValue := validationExceptionFunc(filePathOrDirpath)
-		if isExceptionalValue {
+		if validationExceptionFunc != nil && validationExceptionFunc(filePathOrDirpath) {
 			return nil
 		}
 
