@@ -244,6 +244,7 @@ def run(plan, args):
     )
 
     # Load the data into Postgres
+    postgres_flags = ["-U", POSTGRES_USER,"-d", POSTGRES_DB]
     plan.exec(
         service_name = "postgres",
         recipe = ExecRecipe(command = ["pg_restore"] + postgres_flags + [
@@ -282,24 +283,6 @@ Files with artifact name 'howling-thunder' uploaded with artifact UUID '32810fc8
 
 > add_service name="postgres" config=ServiceConfig(image="postgres:15.2-alpine", ports={"postgres": PortSpec(number=5432, application_protocol="postgresql")}, files={"/seed-data": "howling-thunder"}, env_vars={"POSTGRES_DB": "app_db", "POSTGRES_PASSWORD": "password", "POSTGRES_USER": "app_user"})
 Service 'postgres' added with service UUID 'f1d9cab2ca344d1fbb0fc00b2423f45f'
-
-> wait recipe=ExecRecipe(command=["psql", "-U", "app_user", "-d", "app_db", "-c", "\\l"]) field="code" assertion="==" target_value=0 timeout="5s"
-Wait took 2 tries (1.135498667s in total). Assertion passed with following:
-Command returned with exit code '0' and the following output:
---------------------
-                                                List of databases
-   Name    |  Owner   | Encoding |  Collate   |   Ctype    | ICU Locale | Locale Provider |   Access privileges
------------+----------+----------+------------+------------+------------+-----------------+-----------------------
- app_db    | app_user | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            |
- postgres  | app_user | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            |
- template0 | app_user | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            | =c/app_user          +
-           |          |          |            |            |            |                 | app_user=CTc/app_user
- template1 | app_user | UTF8     | en_US.utf8 | en_US.utf8 |            | libc            | =c/app_user          +
-           |          |          |            |            |            |                 | app_user=CTc/app_user
-(4 rows)
-
-
---------------------
 
 > exec recipe=ExecRecipe(command=["pg_restore", "-U", "app_user", "-d", "app_db", "--no-owner", "--role=app_user", "/seed-data/dvd-rental-data.tar"])
 Command returned with exit code '0' with no output
@@ -471,6 +454,7 @@ def run(plan, args):
     )
 
     # Load the data into Postgres
+    postgres_flags = ["-U", POSTGRES_USER,"-d", POSTGRES_DB]
     plan.exec(
         service_name = "postgres",
         recipe = ExecRecipe(command = ["pg_restore"] + postgres_flags + [
@@ -511,17 +495,29 @@ kurtosis clean -a && kurtosis run --enclave quickstart .
 We just got a failure, just like we might when building a real system!
 
 ```text
-> wait recipe=GetHttpRequestRecipe(port_id="http", endpoint="/actor", extract="") field="code" assertion="==" target_value=200 timeout="5s"
-There was an error executing Starlark code
-An error occurred executing instruction (number 6) at github.com/ME/kurtosis-quickstart[77:14]:
-wait(recipe=GetHttpRequestRecipe(port_id="http", endpoint="/actor", extract=""), field="code", assertion="==", target_value=200, timeout="5s", service_name="api")
-Caused by: Wait timed-out waiting for the assertion to become valid. Waited for '8.183602629s'. Last assertion error was: 
-<nil>
+> add_service name="api" config=ServiceConfig(image="postgrest/postgrest:v10.2.0.20230209", ports={"http": PortSpec(number=3000, application_protocol="http")}, env_vars={"PGRST_DB_ANON_ROLE": "app_user", "PGRST_DB_URI": "postgresql://postgres:password@{{kurtosis:4d65eca66b5749df8988419ae31dda21:ip_address.runtime_value}}:5432/app_db"})
+There was an error executing Starlark code 
+An error occurred executing instruction (number 4) at DEFAULT_PACKAGE_ID_FOR_SCRIPT[54:27]:
+  add_service(name="api", config=ServiceConfig(image="postgrest/postgrest:v10.2.0.20230209", ports={"http": PortSpec(number=3000, application_protocol="http")}, env_vars={"PGRST_DB_ANON_ROLE": "app_user", "PGRST_DB_URI": "postgresql://postgres:password@{{kurtosis:4d65eca66b5749df8988419ae31dda21:ip_address.runtime_value}}:5432/app_db"}))
+  Caused by: Unexpected error occurred starting service 'api'
+  Caused by: An error occurred waiting for all TCP and UDP ports being open for service 'api' with private IP '10.1.0.4'; as the most common error is a wrong service configuration, here you can find the service logs:
+  == SERVICE 'api' LOGS ===================================
+  09/May/2023:19:18:41 +0000: Attempting to connect to the database...
+  09/May/2023:19:18:41 +0000: {"code":"PGRST000","details":"connection to server at \"10.1.0.3\", port 5432 failed: FATAL:  password authentication failed for user \"postgres\"\n","hint":null,"message":"Database connection error. Retrying the connection."}
+  09/May/2023:19:18:41 +0000: connection to server at "10.1.0.3", port 5432 failed: FATAL:  password authentication failed for user "postgres"
+  
+  postgrest: thread killed
+  
+  == FINISHED SERVICE 'api' LOGS ===================================
+  Caused by: An error occurred while waiting for all TCP and UDP ports to be open
+  Caused by: Unsuccessful ports check for IP '10.1.0.4' and port spec '{number:3000 transportProtocol:0 applicationProtocol:0xc006662e10 wait:0xc00662d510}', even after '2' retries with '500' milliseconds in between retries. Timeout '15s' has been reached
+  Caused by: An error occurred while calling network address '10.1.0.4:3000' with port protocol 'TCP' and using time out '14.499139733s'
+  Caused by: dial tcp 10.1.0.4:3000: i/o timeout
 
 Error encountered running Starlark code.
 ```
 
-Here, Kurtosis is telling us that the `wait` instruction on line `77` of your `main.star` (the one for ensuring PostgREST is up) is timing out.
+Here, Kurtosis is telling us that the `add_service` instruction on line `54` of your `main.star` (the one for ensuring PostgREST is up) is timing out when was checking for ports opening.
 
 :::info
 Fun fact: this failure was encountered at the last step in Kurtosis' [multi-phase run approach][multi-phase-runs-reference], which is also called the Execution step that we mentioned earlier [when we got Postgres up and running](#review-run-postgres).
@@ -529,7 +525,9 @@ Fun fact: this failure was encountered at the last step in Kurtosis' [multi-phas
 
 
 #### Investigating the issue
-The enclave state is usually a good place to start. If you look at the bottom of your output you'll see the following state of the enclave:
+If you check the service's logs, printed in the error message right after this header `== SERVICE 'api' LOGS ===================================`, you will see that there is an authentication error  
+
+The enclave state is usually a good place to find mor clues. If you look at the bottom of your output you'll see the following state of the enclave:
 
 ```text
 
@@ -545,12 +543,11 @@ UUID           Name
 ========================================== User Services ==========================================
 UUID           Name        Ports                                                Status
 45b355fc810b   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59821   RUNNING
-80987420176f   api         http: 3000/tcp                                       STOPPED
 ```
 
-From the above, the problem is clear now: the PostgREST service (named: `api`) status is `STOPPED`, rather than `RUNNING`. 
+From the above, we can infer that the PostgREST service (named: `api`) is not created, so there were an error during the creation face. 
 
-When we grab the PostgREST logs...
+You can also grab the PostgREST logs...
 
 ```bash
 kurtosis service logs quickstart api
@@ -744,6 +741,7 @@ def run(plan, args):
     )
 
     # Load the data into Postgres
+    postgres_flags = ["-U", POSTGRES_USER,"-d", POSTGRES_DB]
     plan.exec(
         service_name = "postgres",
         recipe = ExecRecipe(command = ["pg_restore"] + postgres_flags + [
