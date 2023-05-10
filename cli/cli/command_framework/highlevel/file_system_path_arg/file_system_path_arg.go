@@ -15,12 +15,19 @@ const (
 	DoNotContinueWithDefaultValidation = false
 )
 
-// This function type can be used to customize the validation.
-// The function returns two values:
+// The File System Path Arg comes with a default validation function (see below getValidationFunc)
+// A custom validation function can be used to customize the validation.  This validation
+// function can be called along the default validation function or alone.
+// The custom validation function is called before the default validation function.
+// The custom validation function takes the argument value and returns two values:
 //   - Validation error
 //   - Should we also call the default validation function getValidationFunc if the custom validation succeeded?
-// The custom validation function is called first.
-// See helper functions DefaultValidationFunc and BypassDefaultValidationFunc if you don't want to use a custom validation function.
+// If you want to just call the default validation function, set validationFunc to DefaultValidationFunc
+// If you want to bypass the default validation function, set validationFunc to BypassDefaultValidationFunc
+// If you want to call a custom validation function first, set validationFunc to your
+// validation function and then return ContinueWithDefaultValidation or 
+// DoNotContinueWithDefaultValidation depending on if you want to also call the
+// default validation function or not.
 type fileSystemArgumentValidationFunc func(argumentValue string) (error, bool)
 var (
 	// Use this function to call the default validation function getValidationFunc
