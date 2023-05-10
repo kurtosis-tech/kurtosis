@@ -146,15 +146,15 @@ const config = {
             items: [
               {
                 label: `Careers - We're Hiring`,
-                href: 'https://www.kurtosis.com/careers',
+                href: 'https://www.kurtosistech.com/careers',
               },
               {
                 label: 'About Us',
-                href: 'https://www.kurtosis.com/company',
+                href: 'https://www.kurtosistech.com/company',
               },
               {
                 label: 'Blog',
-                href: 'https://www.kurtosis.com/blog',
+                href: 'https://www.kurtosistech.com/blog',
               },
             ],
           },
