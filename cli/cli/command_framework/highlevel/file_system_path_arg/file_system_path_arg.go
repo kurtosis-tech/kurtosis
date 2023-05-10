@@ -11,24 +11,41 @@ import (
 
 const (
 	isNotGreedyArg = false
-	defaultValue   = ""
+	ContinueWithDefaultValidation = true
+	DoNotContinueWithDefaultValidation = false
 )
 
-// This function type can be used to create custom argument value conditions where the validation will be omitted
-// To omit the argument value the function has to return true when the condition is accomplished
-type fileSystemArgumentValidationExceptionFunc func(argumentValue string) (isValid bool)
+// This function type can be used to customize the validation.
+// The function returns two values:
+//   - Validation error
+//   - Should we also call the default validation function getValidationFunc if the custom validation succeeded?
+// The custom validation function is called first.
+// See helper functions DefaultValidationFunc and BypassDefaultValidationFunc if you don't want to use a custom validation function.
+type fileSystemArgumentValidationFunc func(argumentValue string) (error, bool)
+var (
+	// Use this function to call the default validation function getValidationFunc
+	DefaultValidationFunc = func(argumentValue string) (error, bool) {
+		return nil, ContinueWithDefaultValidation
+	}
+	// Use this function to bypass the default validation function getValidationFunc
+	BypassDefaultValidationFunc = func(argumentValue string) (error, bool) {
+		return nil, DoNotContinueWithDefaultValidation
+	}
+)
 
 // Prebuilt file path arg which has tab-completion and validation ready out-of-the-box
 func NewFilepathArg(
 	argKey string,
 	isOptional bool,
-	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
+	defaultValue string,
+	validationFunc fileSystemArgumentValidationFunc,
 ) *args.ArgConfig {
 	return newFileSystemPathArg(
 		argKey,
 		isOptional,
+		defaultValue,
 		FileSystemPathType_Filepath,
-		validationExceptionFunc,
+		validationFunc,
 	)
 }
 
@@ -36,13 +53,15 @@ func NewFilepathArg(
 func NewDirpathArg(
 	argKey string,
 	isOptional bool,
-	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
+	defaultValue string,
+	validationFunc fileSystemArgumentValidationFunc,
 ) *args.ArgConfig {
 	return newFileSystemPathArg(
 		argKey,
 		isOptional,
+		defaultValue,
 		FileSystemPathType_Dirpath,
-		validationExceptionFunc,
+		validationFunc,
 	)
 }
 
@@ -50,13 +69,15 @@ func NewDirpathArg(
 func NewFilepathOrDirpathArg(
 	argKey string,
 	isOptional bool,
-	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
+	defaultValue string,
+	validationFunc fileSystemArgumentValidationFunc,
 ) *args.ArgConfig {
 	return newFileSystemPathArg(
 		argKey,
 		isOptional,
+		defaultValue,
 		FileSystemPathType_FilepathOrDirpath,
-		validationExceptionFunc,
+		validationFunc,
 	)
 }
 
@@ -64,11 +85,12 @@ func newFileSystemPathArg(
 	// The arg key where this file system path argument will be stored
 	argKey string,
 	isOptional bool,
+	defaultValue string,
 	pathType FileSystemPathType,
-	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
+	validationFunc fileSystemArgumentValidationFunc,
 ) *args.ArgConfig {
 
-	validate := getValidationFunc(argKey, pathType, validationExceptionFunc)
+	validate := getValidationFunc(argKey, pathType, validationFunc)
 
 	return &args.ArgConfig{
 		Key:            argKey,
@@ -85,7 +107,7 @@ func newFileSystemPathArg(
 func getValidationFunc(
 	argKey string,
 	pathType FileSystemPathType,
-	validationExceptionFunc fileSystemArgumentValidationExceptionFunc,
+	validationFunc fileSystemArgumentValidationFunc,
 ) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 
@@ -99,8 +121,14 @@ func getValidationFunc(
 			return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", argKey)
 		}
 
-		if validationExceptionFunc != nil && validationExceptionFunc(filePathOrDirpath) {
-			return nil
+		if validationFunc != nil {
+			err, continueWithDefaultValidation := validationFunc(filePathOrDirpath)
+			if err != nil {
+				return err
+			}
+			if !continueWithDefaultValidation {
+				return nil
+			}
 		}
 
 		fileInfo, err := os.Stat(filePathOrDirpath)
