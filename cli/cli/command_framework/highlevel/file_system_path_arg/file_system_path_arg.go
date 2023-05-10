@@ -17,6 +17,7 @@ const (
 // This function type can be used to create custom argument value conditions where the validation will be omitted
 // To omit the argument value the function has to return true when the condition is accomplished
 type fileSystemArgumentValidationExceptionFunc func(argumentValue string) (isValid bool)
+var NoValidationExceptionFunc fileSystemArgumentValidationExceptionFunc = nil
 
 // Prebuilt file path arg which has tab-completion and validation ready out-of-the-box
 func NewFilepathArg(
@@ -99,8 +100,7 @@ func getValidationFunc(
 			return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", argKey)
 		}
 
-		isExceptionalValue := validationExceptionFunc(filePathOrDirpath)
-		if isExceptionalValue {
+		if validationExceptionFunc != nil && validationExceptionFunc(filePathOrDirpath) {
 			return nil
 		}
 
