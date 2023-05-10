@@ -3,6 +3,7 @@ package add
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -16,6 +17,8 @@ import (
 
 const (
 	contextFilePathArgKey = "context-config"
+	isContextFilePathArgOptional = false
+	defaultContextFilePathArg = ""
 )
 
 var ContextAddCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -25,10 +28,12 @@ var ContextAddCmd = &lowlevel.LowlevelKurtosisCommand{
 		" you can switch to it using the 'kurtosis context switch' command",
 	Flags: []*flags.FlagConfig{},
 	Args: []*args.ArgConfig{
-		{
-			Key:            contextFilePathArgKey,
-			ValidationFunc: validateContextFilePathArg,
-		},
+		file_system_path_arg.NewFilepathArg(
+			contextFilePathArgKey,
+			isContextFilePathArgOptional,
+			defaultContextFilePathArg,
+			file_system_path_arg.DefaultValidationFunc,
+		),
 	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
@@ -68,16 +73,4 @@ func parseContextFile(contextFilePath string) (*generated.KurtosisContext, error
 		return nil, stacktrace.Propagate(err, "Content of context file at does not seem to be valid. It couldn't be parsed.")
 	}
 	return newContext, nil
-}
-
-func validateContextFilePathArg(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
-	contextFilePath, err := args.GetNonGreedyArg(contextFilePathArgKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the path to validate using key '%v'", contextFilePathArgKey)
-	}
-	if _, err := os.Stat(contextFilePath); err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying context file '%v' exists and is readable",
-			contextFilePath)
-	}
-	return nil
 }

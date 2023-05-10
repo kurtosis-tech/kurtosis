@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -28,6 +29,11 @@ const (
 	templateFilepathArgKey = "template-filepath"
 	dataJSONFilepathArgKey = "data-json-filepath"
 	destRelFilepathArgKey  = "destination-relative-filepath"
+	defaultFilepathArg     = ""
+	
+	isTemplateFilepathArgOptional = false
+	isDataJSONFilepathArgOptional = false
+	isDestRelFilepathArgOptional  = false
 
 	nameFlagKey = "name"
 	defaultName = ""
@@ -85,18 +91,24 @@ var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKu
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		{
-			Key:            templateFilepathArgKey,
-			ValidationFunc: validateTemplateFileArg,
-		},
-		{
-			Key:            dataJSONFilepathArgKey,
-			ValidationFunc: validateDataJSONFileArg,
-		},
-		{
-			Key:            destRelFilepathArgKey,
-			ValidationFunc: validateDestRelFilePathArg,
-		},
+		file_system_path_arg.NewFilepathArg(
+			templateFilepathArgKey,
+			isTemplateFilepathArgOptional,
+			defaultFilepathArg,
+			file_system_path_arg.DefaultValidationFunc,
+		),
+		file_system_path_arg.NewFilepathArg(
+			dataJSONFilepathArgKey,
+			isDataJSONFilepathArgOptional,
+			defaultFilepathArg,
+			validateDataJSONFileArg,
+		),
+		file_system_path_arg.NewFilepathArg(
+			destRelFilepathArgKey,
+			isDestRelFilepathArgOptional,
+			defaultFilepathArg,
+			validateDestRelFilePathArg,
+		),
 	},
 	RunFunc: run,
 }
@@ -173,47 +185,25 @@ func run(
 	return nil
 }
 
-func validateTemplateFileArg(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	templateFilepath, err := args.GetNonGreedyArg(templateFilepathArgKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the template filepath to validate using key '%v'", templateFilepathArgKey)
-	}
-
-	if _, err := os.Stat(templateFilepath); err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying that the template file '%v' exists and is readable", templateFilepath)
-	}
-	return nil
-}
-
-func validateDataJSONFileArg(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	dataJSONFilepath, err := args.GetNonGreedyArg(dataJSONFilepathArgKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the data JSON filepath to validate using key '%v'", dataJSONFilepathArgKey)
-	}
-
+func validateDataJSONFileArg(dataJSONFilepath string) (error, bool) {
 	dataJSONFileContent, err := os.ReadFile(dataJSONFilepath)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred verifying data JSON '%v' exists and is readable", dataJSONFilepath)
+		return stacktrace.Propagate(err, "An error occurred verifying data JSON '%v' exists and is readable", dataJSONFilepath), file_system_path_arg.DoNotContinueWithDefaultValidation
 	}
 
 	if !json.Valid(dataJSONFileContent) {
-		return stacktrace.NewError("The data file isn't valid JSON")
+		return stacktrace.NewError("The data file isn't valid JSON"), file_system_path_arg.DoNotContinueWithDefaultValidation
 	}
 
-	return nil
+	return nil, file_system_path_arg.DoNotContinueWithDefaultValidation
 }
 
-func validateDestRelFilePathArg(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	destRelFilepath, err := args.GetNonGreedyArg(destRelFilepathArgKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the destination relative filepath to validate using key '%v'", destRelFilepathArgKey)
-	}
-
+func validateDestRelFilePathArg(destRelFilepath string) (error, bool) {
 	if path.IsAbs(destRelFilepath) {
-		return stacktrace.NewError("Expected a relative path but got an absolute path '%v'", destRelFilepath)
+		return stacktrace.NewError("Expected a relative path but got an absolute path '%v'", destRelFilepath), file_system_path_arg.DoNotContinueWithDefaultValidation
 	}
 
-	return nil
+	return nil, file_system_path_arg.DoNotContinueWithDefaultValidation
 }
 
 func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, destRelFilepath string, templateFileContents string, templateData interface{}, artifactName string) (string, error) {
