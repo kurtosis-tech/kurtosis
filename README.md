@@ -4,7 +4,7 @@
 ----
 What is Kurtosis?
 =================
-[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding. 
+[Kurtosis](https://www.kurtosistech.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding. 
 
 To read more about "why Kurtosis?", go [here](https://docs.kurtosistech.com/#why-use-kurtosis).
 
