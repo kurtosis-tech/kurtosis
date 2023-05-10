@@ -6,9 +6,9 @@ What is Kurtosis?
 =================
 [Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding. 
 
-To read more about "why Kurtosis?", go [here](https://docs.kurtosis.com/#why-use-kurtosis).
+To read more about "why Kurtosis?", go [here](https://docs.kurtosistech.com/#why-use-kurtosis).
 
-To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
+To read about the architecture, go [here](https://docs.kurtosistech.com/explanations/architecture).
 
 Kurtosis Kloud Early Access
 ===========================
@@ -21,10 +21,10 @@ Running Kurtosis
 
 ### Install
 
-Follow the instructions [here](https://docs.kurtosis.com/install).
+Follow the instructions [here](https://docs.kurtosistech.com/install).
 
 ### Run
-Kurtosis create ephemeral multi-container environments called [enclaves][enclave] using [Starlark](https://docs.kurtosis.com/concepts-reference/starlark). These can be bundled together into [packages](https://docs.kurtosis.com/concepts-reference/packages). Let's run one now:
+Kurtosis create ephemeral multi-container environments called [enclaves][enclave] using [Starlark](https://docs.kurtosistech.com/concepts-reference/starlark). These can be bundled together into [packages](https://docs.kurtosistech.com/concepts-reference/packages). Let's run one now:
 
 ```bash
 kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
@@ -84,7 +84,7 @@ This repository is structured as a monorepo, containing the following projects:
 - `engine`: Container launched to coordinate [enclaves][enclave]
 - `api`: Defines the API of the Kurtosis platform (`engine` and `core`)
 - `cli`: Produces CLI binary, allowing interaction with the Kurtosis system
-- `docs`: Documentation that is published to [docs.kurtosis.com](docs)
+- `docs`: Documentation that is published to [docs.kurtosistech.com](docs)
 - `internal_testsuites`: End to end tests
 
 Dev Dependencies
@@ -263,11 +263,11 @@ Kurtosis is a free and source-available product maintained by the [Kurtosis][kur
 - [Hop on a call to chat with us](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
-[enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
+[enclave]: https://docs.kurtosistech.com/explanations/architecture#enclaves
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
-[quickstart-reference]: https://docs.kurtosis.com/quickstart
+[quickstart-reference]: https://docs.kurtosistech.com/quickstart
 [discord]: https://discord.gg/Es7QHbY4
 [kurtosis-tech]: https://github.com/kurtosis-tech
-[docs]: https://docs.kurtosis.com
+[docs]: https://docs.kurtosistech.com
 [twitter]: https://twitter.com/KurtosisTech
-[starlark-explanation]: https://docs.kurtosis.com/explanations/starlark
+[starlark-explanation]: https://docs.kurtosistech.com/explanations/starlark

@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/vsDark');
 const config = {
   title: 'Kurtosis Docs',
   tagline: 'Next-gen developer experience for building, testing, and running distributed systems.',
-  url: 'https://docs.kurtosis.com',
+  url: 'https://docs.kurtosistech.com',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',

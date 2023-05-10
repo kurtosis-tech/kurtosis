@@ -24,8 +24,8 @@ In this guide, the Kurtosis eth-network-package spins up a local Ethereum testne
 ## Setting up Kurtosis
 
 Before you proceed, make sure you have:
-* [Installed and started the Docker engine](https://docs.kurtosis.com/next/install#i-install--start-docker) on your local machine
-* [Installed the Kurtosis CLI](https://docs.kurtosis.com/next/install#ii-install-the-cli) (or upgraded it to the latest release, if you already have the CLI installed)
+* [Installed and started the Docker engine](https://docs.kurtosistech.com/next/install#i-install--start-docker) on your local machine
+* [Installed the Kurtosis CLI](https://docs.kurtosistech.com/next/install#ii-install-the-cli) (or upgraded it to the latest release, if you already have the CLI installed)
 * Installed[Node.js](https://nodejs.org/en), [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable), and [npx](https://www.npmjs.com/package/npx) (for your dApp environment)
 
 ## Instantiating a local Ethereum testnet
@@ -81,9 +81,9 @@ Congratulations! You used Kurtosis to instantiate a local Ethereum testnet, with
 
 ### Review
 
-In this section, you executed a command that directed Kurtosis to use the [`eth-network-package` hosted remotely on GitHub](https://github.com/kurtosis-tech/eth-network-package) to spin up a local Ethereum testnet within a Kurtosis [Enclave](https://docs.kurtosis.com/concepts-reference/enclaves/). Inside your enclave, you will find both "file artifacts" and "user services".
+In this section, you executed a command that directed Kurtosis to use the [`eth-network-package` hosted remotely on GitHub](https://github.com/kurtosis-tech/eth-network-package) to spin up a local Ethereum testnet within a Kurtosis [Enclave](https://docs.kurtosistech.com/concepts-reference/enclaves/). Inside your enclave, you will find both "file artifacts" and "user services".
 
-The [File Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/) in your enclave include all the data generated and utilized to bootstrap the EL and CL clients. The data was created using the `prelaunch-data-generator` service built from this [Docker image](https://github.com/ethpandaops/ethereum-genesis-generator)
+The [File Artifacts](https://docs.kurtosistech.com/concepts-reference/files-artifacts/) in your enclave include all the data generated and utilized to bootstrap the EL and CL clients. The data was created using the `prelaunch-data-generator` service built from this [Docker image](https://github.com/ethpandaops/ethereum-genesis-generator)
 
 User services display all the containerized services operating in your enclave. You will notice that a single node, featuring both an EL client and a CL client, has been created.
 
@@ -328,6 +328,6 @@ And that's it! To recap this short guide, you:
 We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or [email us](mailto:feedback@kurtosistech.com)!
 
 ### Other examples and guides
-We encourage you to check out our [quickstart](https://docs.kurtosis.com/quickstart) (where you’ll build a Postgres database and API on top) and our other examples in our [awesome-kurtosis repository](https://github.com/kurtosis-tech/awesome-kurtosis) where you’ll find some great examples, including packages for:
+We encourage you to check out our [quickstart](https://docs.kurtosistech.com/quickstart) (where you’ll build a Postgres database and API on top) and our other examples in our [awesome-kurtosis repository](https://github.com/kurtosis-tech/awesome-kurtosis) where you’ll find some great examples, including packages for:
 * [Spinning up the same local Ethereum testnet](https://github.com/kurtosis-tech/eth2-package), but with additional services connected such as a transaction spammer (to simulate transactions), a fork monitor, and a connected Grafana and Prometheus instance
 * Performing a [sub-networking test](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/ethereum-network-partition-test) against the same local Ethereum network

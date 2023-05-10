@@ -30,11 +30,11 @@ const (
 	defaultDepth = 1
 	// this gets us the entire history - useful for fetching commits on a repo
 	depthAssumingBranchTagsCommitsAreSpecified = 0
-	howImportWorksLink                         = "https://docs.kurtosis.com/explanations/how-do-kurtosis-imports-work"
+	howImportWorksLink                         = "https://docs.kurtosistech.com/explanations/how-do-kurtosis-imports-work"
 	filePathToKurtosisYamlNotFound             = ""
 	replaceCountPackageDirWithGithubConstant   = 1
 
-	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
+	packageDocLink        = "https://docs.kurtosistech.com/concepts-reference/packages"
 	osPathSeparatorString = string(os.PathSeparator)
 )
 
