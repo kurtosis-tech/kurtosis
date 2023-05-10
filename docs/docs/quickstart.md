@@ -545,7 +545,7 @@ UUID           Name        Ports                                                
 45b355fc810b   postgres    postgres: 5432/tcp -> postgresql://127.0.0.1:59821   RUNNING
 ```
 
-From the above, we can infer that the PostgREST service (named: `api`) is not created, so there were an error during the creation face. 
+From the above, we can see that the PostgREST service (named: `api`) is not in the 'User Services' list, so we can infer that it crashed when it was starting. 
 
 You can also grab the PostgREST logs...
 
