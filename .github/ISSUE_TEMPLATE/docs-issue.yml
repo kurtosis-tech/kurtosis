@@ -8,7 +8,7 @@ body:
     id: url-link
     attributes:
       label: Where did you see the issue in our documentation? 
-      placeholder: e.g. https://docs.kurtosis.com/explanations/architecture
+      placeholder: e.g. https://docs.kurtosistech.com/explanations/architecture
     validations:
       required: true
   - type: textarea
