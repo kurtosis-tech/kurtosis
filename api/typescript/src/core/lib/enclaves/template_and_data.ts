@@ -1,4 +1,4 @@
-// Docs available at ttps://docs.kurtosis.com/sdk#templateanddata
+// Docs available at ttps://docs.kurtosistech.com/sdk#templateanddata
 export class TemplateAndData {
     constructor(
       public readonly template: string,

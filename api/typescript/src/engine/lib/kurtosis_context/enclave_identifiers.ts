@@ -3,7 +3,7 @@ import kurtosis_engine_rpc_api_bindings =  require("../../kurtosis_engine_rpc_ap
 
 const VALID_UUID_MATCHES_ALLOWED = 1
 
-// Docs available at https://docs.kurtosis.com/sdk#enclave-identifiers
+// Docs available at https://docs.kurtosistech.com/sdk#enclave-identifiers
 export class EnclaveIdentifiers {
     public readonly enclaveNameToUuids: Map<string, EnclaveUUID[]>;
     public readonly enclaveUuids: Map<EnclaveUUID, boolean>;
