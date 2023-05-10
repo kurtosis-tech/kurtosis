@@ -53,7 +53,7 @@ const (
 var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesDownloadCmdStr,
 	ShortDescription:          "Download a files artifact from an enclave",
-	LongDescription:           "Download the given files artifact from the given enclave to your machine. The files artifact and enclave are specified by identifier (name, UUID, or shortened UUID). Read more about identifiers here: https://docs.kurtosis.com/reference/resource-identifier",
+	LongDescription:           "Download the given files artifact from the given enclave to your machine. The files artifact and enclave are specified by identifier (name, UUID, or shortened UUID). Read more about identifiers here: https://docs.kurtosistech.com/reference/resource-identifier",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{

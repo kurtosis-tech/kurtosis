@@ -17,7 +17,7 @@ Change Date:          2027-04-27
 Change License:       AGPLv3 (GNU Affero General Public License Version 3)
 
 For information about alternative licensing arrangements for the Software,
-please visit: https://kurtosis.com/
+please visit: https://kurtosistech.com/
 
 Notice
 
