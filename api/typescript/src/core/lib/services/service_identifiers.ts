@@ -3,7 +3,7 @@ import kurtosis_core_rpc_api_bindings =  require("../../kurtosis_core_rpc_api_bi
 
 const VALID_UUID_MATCHES_ALLOWED = 1
 
-// Docs available at https://docs.kurtosis.com/sdk#service-identifiers
+// Docs available at https://docs.kurtosistech.com/sdk#service-identifiers
 export class ServiceIdentifiers {
     public readonly serviceNameToUuids: Map<ServiceName, ServiceUUID[]>;
     public readonly serviceUuids: Map<ServiceUUID, boolean>;
