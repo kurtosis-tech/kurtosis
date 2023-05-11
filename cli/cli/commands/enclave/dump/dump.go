@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -22,12 +23,12 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	outputDirpathArg = "output-dirpath"
+	outputDirpathArg        = "output-dirpath"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	defaultEnclaveDumpDir = ""
+	defaultEnclaveDumpDir = "kurtosis-dump"
 	enclaveDumpSeparator  = "--"
 	outputDirIsOptional   = true
 )
@@ -46,12 +47,12 @@ var EnclaveDumpCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		// TODO Create a NewFilepathArg that has filepath tab-completion & validation set up
-		{
-			Key:          outputDirpathArg,
-			DefaultValue: defaultEnclaveDumpDir,
-			IsOptional:   outputDirIsOptional,
-		},
+		file_system_path_arg.NewDirpathArg(
+			outputDirpathArg,
+			outputDirIsOptional,
+			defaultEnclaveDumpDir,
+			file_system_path_arg.BypassDefaultValidationFunc,
+		),
 	},
 	RunFunc: run,
 }

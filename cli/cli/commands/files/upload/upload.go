@@ -21,8 +21,9 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	pathArgKey = "path"
-	isPathArgOptional = false
+	pathArgKey          = "path"
+	isPathArgOptional   = false
+	defaultPathArg      = ""
 
 	nameFlagKey = "name"
 	defaultName = ""
@@ -55,7 +56,8 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		file_system_path_arg.NewFilepathOrDirpathArg(
 			pathArgKey,
 			isPathArgOptional,
-			file_system_path_arg.NoValidationExceptionFunc,
+			defaultPathArg,
+			file_system_path_arg.DefaultValidationFunc,
 		),
 	},
 	RunFunc: run,
