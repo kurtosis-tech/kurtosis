@@ -15,12 +15,7 @@ builds:
       - amd64
       - arm64
     env:
-      - >-
-          {{- if eq .Os "windows" }}
-            CGO_ENABLED=0
-          {{- else }}
-            CGO_ENABLED=1
-          {{- end }}
+      - CGO_ENABLED={{ if eq .Os "windows" }}0{{ else }}1{{ end }}
       # Only override compilers if we are on CI, otherwise use the locally available C/C++ toolchain
       - >-
         {{- if index .Env "CI" }}
