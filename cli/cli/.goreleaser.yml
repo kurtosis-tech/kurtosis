@@ -10,11 +10,17 @@ builds:
     goos:
       - darwin
       - linux
+      - windows
     goarch:
       - amd64
       - arm64
     env:
-      - CGO_ENABLED=1
+      - >-
+          {{- if eq .Os "windows" }}
+            CGO_ENABLED=0
+          {{- else }}
+            CGO_ENABLED=1
+          {{- end }}
       # Only override compilers if we are on CI, otherwise use the locally available C/C++ toolchain
       - >-
         {{- if index .Env "CI" }}
