@@ -8,7 +8,7 @@ builds:
     binary: "{{ .Env.CLI_BINARY_FILENAME }}"
     main: .
     goos:
-#      - darwin
+      - darwin
       - linux
       - windows
     goarch:

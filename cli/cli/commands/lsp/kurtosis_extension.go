@@ -1,3 +1,5 @@
+//go:build !windows
+
 package lsp
 
 import (
@@ -172,7 +174,7 @@ func (definition *KurtosisBuiltinProvider) ReadJsonFile() error {
 	return err
 }
 
-func GetKurtosisBuiltIn() *analysis.Builtins {
+func getKurtosisBuiltIn() *analysis.Builtins {
 	// nolint:exhaustruct
 	kurtosisProvider := KurtosisBuiltinProvider{}
 	builtIn := analysis.NewBuiltins()

@@ -8,7 +8,7 @@ import (
 )
 
 func NewLspCommand() *cobra.Command {
-	kurtosisPlugins := GetKurtosisBuiltIn()
+	kurtosisPlugins := getKurtosisBuiltIn()
 	rootCmd := starlark_lsp_cli.NewRootCmd("lsp", kurtosisPlugins)
 	rootCmd.Use = "lsp"
 	rootCmd.Hidden = true
