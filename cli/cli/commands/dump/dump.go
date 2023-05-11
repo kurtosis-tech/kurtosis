@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -35,11 +36,12 @@ var KurtosisDump = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	Flags:                     nil,
 	// TODO perhaps add an --enclave flag here and deprecate enclave dump but that clashes with engine dumping
 	Args: []*args.ArgConfig{
-		{
-			Key:          outputDirpathArg,
-			DefaultValue: defaultKurtosisDumpDir,
-			IsOptional:   outputDirIsOptional,
-		},
+		file_system_path_arg.NewDirpathArg(
+			outputDirpathArg,
+			outputDirIsOptional,
+			defaultKurtosisDumpDir,
+			file_system_path_arg.BypassDefaultValidationFunc,
+		),
 	},
 	RunFunc: run,
 }
