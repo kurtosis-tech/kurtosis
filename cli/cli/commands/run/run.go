@@ -159,7 +159,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			scriptOrPackagePathKey,
 			isScriptOrPackagePathArgumentOptional,
 			defaultScriptOrPackagePathArgument,
-			scriptpathValidation,
+			scriptPathValidation,
 		),
 		{
 			Key:            inputArgsArgKey,
@@ -501,9 +501,9 @@ func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo, kurtosisYMLFilePath str
 	return fileInfo.Mode().IsRegular() && fileInfo.Name() == kurtosisYMLFilePath
 }
 
-func scriptpathValidation(scriptpath string) (error, bool) {
+func scriptPathValidation(scriptPath string) (error, bool) {
 	// if it's a Github path we don't validate further, the APIC will do it for us
-	if strings.HasPrefix(scriptpath, githubDomainPrefix) {
+	if strings.HasPrefix(scriptPath, githubDomainPrefix) {
 		return nil, file_system_path_arg.DoNotContinueWithDefaultValidation
 	}
 	

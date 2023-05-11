@@ -16,7 +16,7 @@ const (
 )
 
 // The File System Path Arg comes with a default validation function (see below getValidationFunc)
-// A custom validation function can be used to customize the validation.  This validation
+// A custom validation function can be used to customize the validation. This validation
 // function can be called along the default validation function or alone.
 // The custom validation function is called before the default validation function.
 // The custom validation function takes the argument value and returns two values:
@@ -130,7 +130,7 @@ func getValidationFunc(
 		if validationFunc != nil {
 			err, continueWithDefaultValidation := validationFunc(filePathOrDirpath)
 			if err != nil {
-				return err
+				return stacktrace.Propagate(err, "Error validating %v '%s'", pathType.String(), filePathOrDirpath)
 			}
 			if !continueWithDefaultValidation {
 				return nil
