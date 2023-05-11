@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.5](https://github.com/kurtosis-tech/kurtosis/compare/0.76.4...0.76.5) (2023-05-11)
+
+
+### Features
+
+* Support path argument autocomplete in all CLI commands ([#607](https://github.com/kurtosis-tech/kurtosis/issues/607)) ([e5a5fe1](https://github.com/kurtosis-tech/kurtosis/commit/e5a5fe1f4c690a4ceeea63e718fb4c446e921940))
+
 ## [0.76.4](https://github.com/kurtosis-tech/kurtosis/compare/0.76.3...0.76.4) (2023-05-11)
 
 
