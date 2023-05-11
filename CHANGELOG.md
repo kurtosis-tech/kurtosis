@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.76.4](https://github.com/kurtosis-tech/kurtosis/compare/0.76.3...0.76.4) (2023-05-11)
+
+
+### Features
+
+* Add Windows support for CLI ([#608](https://github.com/kurtosis-tech/kurtosis/issues/608)) ([4cc1c56](https://github.com/kurtosis-tech/kurtosis/commit/4cc1c56e3cebf41c5a033df718938a4d805a3400))
+* added sign-up for kcloud ([#591](https://github.com/kurtosis-tech/kurtosis/issues/591)) ([16641e9](https://github.com/kurtosis-tech/kurtosis/commit/16641e9ed0947ea34d44b0c521b429ace5ab5b50))
+* Help developers to work across the project modules ([#596](https://github.com/kurtosis-tech/kurtosis/issues/596)) ([e7f845e](https://github.com/kurtosis-tech/kurtosis/commit/e7f845ecd67c8218b28ff284b12ac18949108364))
+* return deprecation warnings to users in yellow in colour. ([#586](https://github.com/kurtosis-tech/kurtosis/issues/586)) ([7609fd8](https://github.com/kurtosis-tech/kurtosis/commit/7609fd8c77994875eae77fd458f1744f267c17fb))
+
+
+### Bug Fixes
+
+* Enable autocomplete for the `files upload` path argument ([#598](https://github.com/kurtosis-tech/kurtosis/issues/598)) ([be52f9e](https://github.com/kurtosis-tech/kurtosis/commit/be52f9e73c5cd63e09f5c2343add165886bd7313))
+* kurtosis --&gt; kurtosistech in readme ([#604](https://github.com/kurtosis-tech/kurtosis/issues/604)) ([d6c2ea2](https://github.com/kurtosis-tech/kurtosis/commit/d6c2ea2f6f8127c799701707e65c7697c8354452))
+* Pipe metric reporting logs to logger instead of stderr ([#576](https://github.com/kurtosis-tech/kurtosis/issues/576)) ([7060473](https://github.com/kurtosis-tech/kurtosis/commit/7060473563f12b9d097aeb20eb3e4c5cf3e58d55))
+* Refresh the README dev instructions ([#595](https://github.com/kurtosis-tech/kurtosis/issues/595)) ([0c71fac](https://github.com/kurtosis-tech/kurtosis/commit/0c71fac3ae3a36fdf6df56e567b3ba184a6756b6))
+* rename cloud--&gt;kloud in readme ([#602](https://github.com/kurtosis-tech/kurtosis/issues/602)) ([a998d39](https://github.com/kurtosis-tech/kurtosis/commit/a998d39a3511cf6ba84759f4b91cb20795cefd3d))
+* Support redirects with cookies in the user support URLs validation test ([#600](https://github.com/kurtosis-tech/kurtosis/issues/600)) ([ce9718e](https://github.com/kurtosis-tech/kurtosis/commit/ce9718ed55e60cd227f036149da0c410ba99be09)), closes [#599](https://github.com/kurtosis-tech/kurtosis/issues/599)
+
 ## [0.76.3](https://github.com/kurtosis-tech/kurtosis/compare/0.76.2...0.76.3) (2023-04-27)
 
 
