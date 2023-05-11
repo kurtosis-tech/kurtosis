@@ -140,6 +140,16 @@ brews:
     caveats: |
       The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosistech.com/.
 
+chocolateys:
+  - name: Kurtosis
+    ids:
+      - cli
+    title: Kurtosis
+    authors: Kurtosis Technologies
+    project_url: https://kurtosis.com/
+    skip_publish: true
+    api_key: '{{ .Env.CHOCOLATEY_API_KEY }}'
+
 publishers:
   # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/
   - name: fury.io
