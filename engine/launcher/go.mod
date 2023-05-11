@@ -2,21 +2,12 @@ module github.com/kurtosis-tech/kurtosis/engine/launcher
 
 go 1.18
 
-replace (
-	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
-	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
-)
-
 require (
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20230511164423-a67337d851aa // local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.4
 )
-
-require github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
@@ -30,6 +21,8 @@ require (
 	github.com/gammazero/workerpool v1.1.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.3.0 // indirect
+	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230511164423-a67337d851aa // indirect
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-20230511164423-a67337d851aa // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/pkg/errors v0.9.1 // indirect

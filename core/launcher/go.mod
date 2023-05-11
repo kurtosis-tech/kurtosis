@@ -2,14 +2,9 @@ module github.com/kurtosis-tech/kurtosis/core/launcher
 
 go 1.18
 
-replace (
-	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
-)
-
 require (
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // Local dependency
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
+	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20230511164423-a67337d851aa // Local dependency
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-20230511164423-a67337d851aa // Local dependency generated during build
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.7.4

@@ -1,6 +1,10 @@
 cloud.google.com/go/compute/metadata v0.2.0/go.mod h1:zFmK7XCadkQkj6TtorcaGlCW1hT1fIilQDwofLpJ20k=
 github.com/google/go-cmp v0.5.9/go.mod h1:17dUlkBOakJ0+DkrSSNjCkIjxS6bF9zb3elmeNGIjoY=
 github.com/google/go-github v17.0.0+incompatible h1:N0LgJ1j65A7kfXrZnUDaYCs/Sf4rEjNlfyDHW9dolSY=
+github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander v0.0.0-20230511164423-a67337d851aa/go.mod h1:VaUouD6Zncdm4PAMfkamHOO5PQhlG9K6Gk4QRYKqR7Y=
+github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0-20230511164423-a67337d851aa/go.mod h1:uUrmD3PLasxC+uWp9+vtqGfIWTg0MSSL86EdtB1N3Ls=
+github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20230511164423-a67337d851aa/go.mod h1:BoV4Nq0Sgvl1P+xFsgcsn5RmhNgrfF8ZJkhk/fglocQ=
+github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230511164423-a67337d851aa/go.mod h1:hdPqPb7IMQ1MHfKLH1yV7vvlQNf3MOI4HYqb2NOFMHI=
 github.com/mattn/go-isatty v0.0.16 h1:bq3VjFmv/sOjHtdEhmkEV4x1AJtvUvOJ2PFAZ5+peKQ=
 github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
 github.com/yuin/goldmark v1.4.13/go.mod h1:6yULJ656Px+3vBD8DxQVa3kxgyrAnzto9xy5taEt/CY=

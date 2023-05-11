@@ -2,15 +2,6 @@ module github.com/kurtosis-tech/kurtosis/cli/cli
 
 go 1.18
 
-replace (
-	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
-	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
-	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
-	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
-)
-
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/adrg/xdg v0.4.0
@@ -18,11 +9,10 @@ require (
 	github.com/dmarkham/enumer v1.5.5
 	github.com/docker/distribution v2.8.0+incompatible
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
+	github.com/kurtosis-tech/kurtosis/api/golang v0.76.4 // local dependency
+    github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20230511164423-a67337d851aa  // local dependency
+    github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20230511164423-a67337d851aa  // local dependency
+    github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-20230511164423-a67337d851aa  // Local dependency generated during build
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230427161256-0c1550da27b5
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
@@ -73,7 +63,6 @@ require (
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // indirect
 	github.com/mattn/go-colorable v0.1.9 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

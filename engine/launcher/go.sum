@@ -27,6 +27,11 @@ github.com/google/uuid v1.3.0/go.mod h1:TIyPZe4MgqvfeYDBFedMoGGpEw/LqOeaOT+nhxU+
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kr/text v0.2.0 h1:5Nx0Ya0ZqY2ygV366QzturHI13Jq95ApcVaJBhpS+AY=
+github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20230511164423-a67337d851aa/go.mod h1:cgTnqHz6AHpwtW2HWvDfTRH1KF3ZjvEVQMkq9x3BamM=
+github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230511164423-a67337d851aa h1:ox9zlNwc8IBSvshvzNf8UWBTFuwUGZZ91+bW3cvxv0Y=
+github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20230511164423-a67337d851aa/go.mod h1:pa8uDQz1JcK76jT33ApltrH+bzZEUU+7gmyxNi9UM3A=
+github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-20230511164423-a67337d851aa h1:lAmRmaiTT3VFLqnfdAicsL9gSXEQwvr+vJueUkPGl6E=
+github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-20230511164423-a67337d851aa/go.mod h1:D3pecZZsghQMjdEIZ59MyyPv4/tOBWZ0Ec1YQOdZcYU=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409 h1:YQTATifMUwZEtZYb0LVA7DK2pj8s71iY8rzweuUQ5+g=
 github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409/go.mod h1:y5weVs5d9wXXHcDA1awRxkIhhHC1xxYJN8a7aXnE6S8=
 github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae h1:O4SWKdcHVCvYqyDV+9CJA1fcDN2L11Bule0iFy3YlAI=

@@ -2,23 +2,12 @@ module github.com/kurtosis-tech/kurtosis/engine/server
 
 go 1.18
 
-replace (
-	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
-	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
-	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
-	github.com/kurtosis-tech/kurtosis/core/launcher => ../../core/launcher
-	github.com/kurtosis-tech/kurtosis/engine/launcher => ../launcher
-	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
-	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
-)
-
 require (
-	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0
-	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // local dependency
-	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0
-	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // local dependency
+	github.com/kurtosis-tech/kurtosis/api/golang v0.76.4
+	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0-20230511164423-a67337d851aa // local dependency
+	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0-20230511164423-a67337d851aa // local dependency
+	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20230511164423-a67337d851aa // local dependency
+	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230511164423-a67337d851aa // local dependency
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
@@ -54,7 +43,7 @@ require (
 require github.com/gorilla/websocket v1.4.2
 
 require (
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect
+	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-20230511164423-a67337d851aa // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 )
