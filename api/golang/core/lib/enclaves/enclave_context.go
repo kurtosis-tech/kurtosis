@@ -41,7 +41,7 @@ const (
 	enforceMaxFileSizeLimit = true
 )
 
-// Docs available at https://docs.kurtosistech.com/sdk/#enclavecontext
+// Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
 type EnclaveContext struct {
 	client kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
 
@@ -66,17 +66,17 @@ func NewEnclaveContext(
 	}
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk/#getenclaveuuid---enclaveuuid
+// Docs available at https://docs.kurtosis.com/sdk/#getenclaveuuid---enclaveuuid
 func (enclaveCtx *EnclaveContext) GetEnclaveUuid() EnclaveUUID {
 	return enclaveCtx.enclaveUuid
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk/#getenclavename---string
+// Docs available at https://docs.kurtosis.com/sdk/#getenclavename---string
 func (enclaveCtx *EnclaveContext) GetEnclaveName() string {
 	return enclaveCtx.enclaveName
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, serializedScript string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(serializedScript, serializedParams, dryRun, parallelism)
@@ -92,7 +92,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, seriali
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context, serializedScript string, serializedParams string, dryRun bool, parallelism int32) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkScript(ctx, serializedScript, serializedParams, dryRun, parallelism)
 	if err != nil {
@@ -101,7 +101,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context,
 	return ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan), nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
@@ -132,7 +132,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packag
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool, parallelism int32) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageRootPath, serializedParams, dryRun, parallelism)
 	if err != nil {
@@ -141,7 +141,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context
 	return ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan), nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, packageId string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
@@ -164,7 +164,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, 
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
+// Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(ctx context.Context, packageId string, serializedParams string, dryRun bool, parallelism int32) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun, parallelism)
 	if err != nil {
@@ -173,7 +173,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(ctx context.C
 	return ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan), nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk#getservicecontextstring-serviceidentifier---servicecontext-servicecontext
+// Docs available at https://docs.kurtosis.com/sdk#getservicecontextstring-serviceidentifier---servicecontext-servicecontext
 func (enclaveCtx *EnclaveContext) GetServiceContext(serviceIdentifier string) (*services.ServiceContext, error) {
 	serviceIdentifierMapForArgs := map[string]bool{serviceIdentifier: true}
 	getServiceInfoArgs := binding_constructors.NewGetServicesArgs(serviceIdentifierMapForArgs)
@@ -216,7 +216,7 @@ func (enclaveCtx *EnclaveContext) GetServiceContext(serviceIdentifier string) (*
 	return serviceContext, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
+// Docs available at https://docs.kurtosis.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
 func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]services.ServiceUUID, error) {
 	getServicesArgs := binding_constructors.NewGetServicesArgs(map[string]bool{})
 	response, err := enclaveCtx.client.GetServices(context.Background(), getServicesArgs)
@@ -233,7 +233,7 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]servic
 	return serviceInfos, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
+// Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, services.FileArtifactName, error) {
 	content, err := shared_utils.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
 	if err != nil {
@@ -266,7 +266,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 	return services.FilesArtifactUUID(response.GetUuid()), services.FileArtifactName(response.GetName()), nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk#storewebfilesstring-urltodownload-string-artifactname
+// Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
 func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string, artifactName string) (services.FilesArtifactUUID, error) {
 	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb, artifactName)
 	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
@@ -276,7 +276,7 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 	return services.FilesArtifactUUID(response.Uuid), nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk#downloadfilesartifact-fileidentifier-string
+// Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
 func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, artifactIdentifier string) ([]byte, error) {
 	args := binding_constructors.DownloadFilesArtifactArgs(artifactIdentifier)
 
@@ -297,7 +297,7 @@ func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, art
 	return fileContent, nil
 }
 
-// Docs available at https://docs.kurtosistech.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
+// Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
 func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalServiceIdentifiers(ctx context.Context) (*services.ServiceIdentifiers, error) {
 	response, err := enclaveCtx.client.GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
 	if err != nil {
@@ -306,7 +306,7 @@ func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalServiceIdentifiers(ctx
 	return services.NewServiceIdentifiers(enclaveCtx.enclaveName, response.AllIdentifiers), nil
 }
 
-// Docs available at https://docs.kurtosistech.com/#getallfilesartifactnamesanduuids---filesartifactnameanduuid-filesartifactnamesanduuids
+// Docs available at https://docs.kurtosis.com/#getallfilesartifactnamesanduuids---filesartifactnameanduuid-filesartifactnamesanduuids
 func (enclaveCtx *EnclaveContext) GetAllFilesArtifactNamesAndUuids(ctx context.Context) ([]*kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid, error) {
 	response, err := enclaveCtx.client.ListFilesArtifactNamesAndUuids(ctx, &emptypb.Empty{})
 	if err != nil {

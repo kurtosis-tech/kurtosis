@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	packagesUrl = "https://docs.kurtosistech.com/concepts-reference/packages"
+	packagesUrl = "https://docs.kurtosis.com/concepts-reference/packages"
 )
 
 // fields are public because it's needed for YAML decoding
