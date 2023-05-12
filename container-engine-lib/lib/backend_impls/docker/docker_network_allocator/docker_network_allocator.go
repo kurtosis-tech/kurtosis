@@ -146,7 +146,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 // https://github.com/hashicorp/serf/issues/385#issuecomment-208755148 - we try to follow RFC 6890
 // https://www.rfc-editor.org/rfc/rfc6890.html calls 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 Private-Use (docker usually picks from 172.16.0.0/12)
 // Just with this range we can get 256 APICs; if we limit services per APIC to 256(/24)
-// For simplicity we limit it to 256 APICs and allow networks 172.16.1.0/24 - 17.16.0.255.0/24
+// For simplicity we limit it to 256 APICs and allow networks 172.16.1.0/24 - 17.16.255.0/24
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 	for thirdOctet := thirdOctetLowestPossibleValue; thirdOctet <= thirdOctetHighestPossibleValue; thirdOctet++ {
 		ipAddressString := fmt.Sprintf("%v.%v.%v.0", allowedNetworkFirstOctet, allowedNetworkSecondOctet, thirdOctet)
