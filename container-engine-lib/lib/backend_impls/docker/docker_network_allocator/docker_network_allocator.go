@@ -18,6 +18,7 @@ const (
 
 	// We hardcode this because the algorithm for finding slots for variable-sized networks is MUCH more complex
 	// This will give 256 IPs per address; if this isn't enough we can up it in the future
+	// This limits us to 256 Services per APIC
 	networkWidthBits = uint32(8)
 
 	// Docker returns an error with this text when we try to create a network with a CIDR mask
@@ -28,9 +29,10 @@ const (
 
 	timeBetweenNetworkCreationRetries = 1 * time.Second
 
-	allowedNetworkFirstOctet        = 172
-	secondOctetMaximumPossibleValue = 255
-	secondOctetLowestPossibleValue  = 1
+	allowedNetworkFirstOctet       = 172
+	allowedNetworkSecondOctet      = 16
+	thirdOctetHighestPossibleValue = 255
+	thirdOctetLowestPossibleValue  = 1
 )
 
 var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
@@ -146,8 +148,8 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 // Just with this range we can get 256 APICs; if we limit services per APIC to 256(/24)
 // For simplicity we limit it to 256 APICs and allow networks 172.16.1.0/24 - 17.16.0.255.0/24
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
-	for secondOctet := secondOctetLowestPossibleValue; secondOctet <= secondOctetMaximumPossibleValue; secondOctet++ {
-		ipAddressString := fmt.Sprintf("%v.16.%v.0", allowedNetworkFirstOctet, secondOctet)
+	for thirdOctet := thirdOctetLowestPossibleValue; thirdOctet <= thirdOctetHighestPossibleValue; thirdOctet++ {
+		ipAddressString := fmt.Sprintf("%v.%v.%v.0", allowedNetworkFirstOctet, allowedNetworkSecondOctet, thirdOctet)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{
 			IP:   resultNetworkIp,
