@@ -32,7 +32,7 @@ func TestEntireNetworkingSpace(t *testing.T) {
 	takenNetworks := []*net.IPNet{}
 	allPossibleNetworks := []*net.IPNet{}
 	for secondOctet := secondOctetLowestPossibleValue; secondOctet <= secondOctetMaximumPossibleValue; secondOctet++ {
-		ipAddressString := fmt.Sprintf("%v.%v.0.0", allowedNetworkFirstOctet, secondOctet)
+		ipAddressString := fmt.Sprintf("%v.16.%v.0", allowedNetworkFirstOctet, secondOctet)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{
 			IP:   resultNetworkIp,

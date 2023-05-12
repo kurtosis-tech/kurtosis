@@ -17,8 +17,8 @@ const (
 	supportedIpAddrBitLength = uint32(32)
 
 	// We hardcode this because the algorithm for finding slots for variable-sized networks is MUCH more complex
-	// This will give 4096 IPs per address; if this isn't enough we can up it in the future
-	networkWidthBits = uint32(12)
+	// This will give 256 IPs per address; if this isn't enough we can up it in the future
+	networkWidthBits = uint32(8)
 
 	// Docker returns an error with this text when we try to create a network with a CIDR mask
 	//  that overlaps with a preexisting network
@@ -147,7 +147,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 // For simplicity we limit it to 256 APICs and allow networks 10.1.0.0/20 - 10.255.0.0.0/20
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 	for secondOctet := secondOctetLowestPossibleValue; secondOctet <= secondOctetMaximumPossibleValue; secondOctet++ {
-		ipAddressString := fmt.Sprintf("%v.%v.0.0", allowedNetworkFirstOctet, secondOctet)
+		ipAddressString := fmt.Sprintf("%v.16.%v.0", allowedNetworkFirstOctet, secondOctet)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{
 			IP:   resultNetworkIp,
