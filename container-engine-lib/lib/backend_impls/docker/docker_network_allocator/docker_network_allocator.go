@@ -17,8 +17,9 @@ const (
 	supportedIpAddrBitLength = uint32(32)
 
 	// We hardcode this because the algorithm for finding slots for variable-sized networks is MUCH more complex
-	// This will give 4096 IPs per address; if this isn't enough we can up it in the future
-	networkWidthBits = uint32(12)
+	// This will give 256 IPs per address; if this isn't enough we can up it in the future
+	// This limits us to 256 Services per APIC
+	networkWidthBits = uint32(8)
 
 	// Docker returns an error with this text when we try to create a network with a CIDR mask
 	//  that overlaps with a preexisting network
@@ -28,9 +29,10 @@ const (
 
 	timeBetweenNetworkCreationRetries = 1 * time.Second
 
-	allowedNetworkFirstOctet        = 10
-	secondOctetMaximumPossibleValue = 255
-	secondOctetLowestPossibleValue  = 1
+	allowedNetworkFirstOctet       = 172
+	allowedNetworkSecondOctet      = 16
+	thirdOctetHighestPossibleValue = 255
+	thirdOctetLowestPossibleValue  = 1
 )
 
 var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
@@ -140,14 +142,14 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 	)
 }
 
-// This algorithm only picks a network in the 10.0.0.0/20 - 10.255.0.0.0/20 list
+// This algorithm only picks a network in the 172.16.1.0/24 - 17.16.0.255.0/24 list
 // https://github.com/hashicorp/serf/issues/385#issuecomment-208755148 - we try to follow RFC 6890
 // https://www.rfc-editor.org/rfc/rfc6890.html calls 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 Private-Use (docker usually picks from 172.16.0.0/12)
-// Just with 10.0.0.0/8 we can get 2^24 ips; if we limit services per APIC to 4096(/20) we can get 4096 per docker engine
-// For simplicity we limit it to 256 APICs and allow networks 10.1.0.0/20 - 10.255.0.0.0/20
+// Just with this range we can get 256 APICs; if we limit services per APIC to 256(/24)
+// For simplicity we limit it to 256 APICs and allow networks 172.16.1.0/24 - 17.16.255.0/24
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
-	for secondOctet := secondOctetLowestPossibleValue; secondOctet <= secondOctetMaximumPossibleValue; secondOctet++ {
-		ipAddressString := fmt.Sprintf("%v.%v.0.0", allowedNetworkFirstOctet, secondOctet)
+	for thirdOctet := thirdOctetLowestPossibleValue; thirdOctet <= thirdOctetHighestPossibleValue; thirdOctet++ {
+		ipAddressString := fmt.Sprintf("%v.%v.%v.0", allowedNetworkFirstOctet, allowedNetworkSecondOctet, thirdOctet)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{
 			IP:   resultNetworkIp,
