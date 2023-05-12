@@ -12,7 +12,7 @@ func TestStarlarkWarningMessage(t *testing.T) {
 
 	warnings := GetContentFromWarningSet()
 	require.Equal(t, 2, len(warnings))
-	require.Equal(t, []string{"warning one", "warning second"}, warnings)
+	require.ElementsMatch(t, []string{"warning one", "warning second"}, warnings)
 
 	// this ensures that `GetContentFromWarningSet` actually deletes all the previous warnings
 	PrintOnceAtTheEndOfExecutionf("warning three")

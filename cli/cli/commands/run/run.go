@@ -35,6 +35,7 @@ import (
 const (
 	scriptOrPackagePathKey                = "script-or-package-path"
 	isScriptOrPackagePathArgumentOptional = false
+	defaultScriptOrPackagePathArgument    = ""
 
 	starlarkExtension = ".star"
 
@@ -82,13 +83,6 @@ const (
 	runSucceeded = true
 
 	portMappingSeparatorForLogs = ", "
-)
-
-var (
-	githubScriptpathValidationExceptionFunc = func(scriptpath string) bool {
-		// if it's a Github path we don't validate further, the APIC will do it for us
-		return strings.HasPrefix(scriptpath, githubDomainPrefix)
-	}
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -164,7 +158,8 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		file_system_path_arg.NewFilepathOrDirpathArg(
 			scriptOrPackagePathKey,
 			isScriptOrPackagePathArgumentOptional,
-			githubScriptpathValidationExceptionFunc,
+			defaultScriptOrPackagePathArgument,
+			scriptPathValidation,
 		),
 		{
 			Key:            inputArgsArgKey,
@@ -504,4 +499,13 @@ func isStandaloneScript(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
 
 func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
 	return fileInfo.Mode().IsRegular() && fileInfo.Name() == kurtosisYMLFilePath
+}
+
+func scriptPathValidation(scriptPath string) (error, bool) {
+	// if it's a Github path we don't validate further, the APIC will do it for us
+	if strings.HasPrefix(scriptPath, githubDomainPrefix) {
+		return nil, file_system_path_arg.DoNotContinueWithDefaultValidation
+	}
+	
+	return nil, file_system_path_arg.ContinueWithDefaultValidation
 }

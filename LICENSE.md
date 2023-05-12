@@ -3,7 +3,7 @@ Business Source License 1.1
 Parameters
 
 Licensor:             Kurtosis Technologies, Inc.
-Licensed Work:        Kurtosis 0.76.3
+Licensed Work:        Kurtosis 0.76.5
 The Licensed Work is (c) 2023 Kurtosis Technologies, Inc.
 Additional Use Grant: You may make use of the Licensed Work, provided that
 you may not use the Licensed Work for an Environment Orchestration Service.
@@ -12,12 +12,12 @@ you may not use the Licensed Work for an Environment Orchestration Service.
                       allows third parties (other than your employees and
                       contractors) to create distributed system environments.
 
-Change Date:          2027-04-27
+Change Date:          2027-05-11
 
 Change License:       AGPLv3 (GNU Affero General Public License Version 3)
 
 For information about alternative licensing arrangements for the Software,
-please visit: https://kurtosis.com/
+please visit: https://kurtosistech.com/
 
 Notice
 

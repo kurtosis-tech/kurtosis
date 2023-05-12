@@ -995,6 +995,9 @@ workflows:
                     },
                     {
                         "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/.*"
+                    },
+                    {
+                        "pattern": "https://twitter.com/.*"
                     }
                 ]
             }

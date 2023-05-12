@@ -12,7 +12,7 @@ const (
 	remoteContextUuid = "54702bfbc6f242bea540134a77186d22"
 	remoteContextName = "kurtosis-cloud"
 
-	host        = "cloud.kurtosis.com"
+	host        = "cloud.kurtosistech.com"
 	portalPort  = 9730
 	backendPort = 9732
 	tunnelPort  = 9731
@@ -47,7 +47,7 @@ var (
 	}, 
 	"name":"kurtosis-cloud", 
 	"remoteContextV0":{
-		"host":"cloud.kurtosis.com", 
+		"host":"cloud.kurtosistech.com", 
 		"remotePortalPort":9730, 
 		"kurtosisBackendPort":9732, 
 		"tunnelPort":9731, 

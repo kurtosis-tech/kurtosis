@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -33,7 +34,6 @@ const (
 
 	destinationPathArgKey        = "destination-path"
 	isDestinationPathArgOptional = false
-	isDestinationPathArgGreedy   = false
 	emptyDestinationPathArg      = ""
 
 	noExtractFlagKey          = "no-extract"
@@ -53,7 +53,7 @@ const (
 var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesDownloadCmdStr,
 	ShortDescription:          "Download a files artifact from an enclave",
-	LongDescription:           "Download the given files artifact from the given enclave to your machine. The files artifact and enclave are specified by identifier (name, UUID, or shortened UUID). Read more about identifiers here: https://docs.kurtosis.com/reference/resource-identifier",
+	LongDescription:           "Download the given files artifact from the given enclave to your machine. The files artifact and enclave are specified by identifier (name, UUID, or shortened UUID). Read more about identifiers here: https://docs.kurtosistech.com/reference/resource-identifier",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
@@ -79,14 +79,12 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			DefaultValue:          nil,
 			ArgCompletionProvider: nil,
 		},
-		{
-			Key:                   destinationPathArgKey,
-			ValidationFunc:        validateDestinationPath,
-			IsOptional:            isDestinationPathArgOptional,
-			IsGreedy:              isDestinationPathArgGreedy,
-			DefaultValue:          nil,
-			ArgCompletionProvider: nil,
-		},
+		file_system_path_arg.NewDirpathArg(
+			destinationPathArgKey,
+			isDestinationPathArgOptional,
+			emptyDestinationPathArg,
+			file_system_path_arg.BypassDefaultValidationFunc,
+		),
 	},
 	RunFunc: run,
 }
@@ -192,31 +190,6 @@ func validateArtifactIdentifier(ctx context.Context, flags *flags.ParsedFlags, a
 
 	if strings.TrimSpace(artifactIdentifier) == emptyArtifactIdentifier {
 		return stacktrace.NewError("Artifact identifier cannot be an empty string")
-	}
-
-	return nil
-}
-
-func validateDestinationPath(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	destinationPath, err := args.GetNonGreedyArg(destinationPathArgKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the destination path to validate using key '%v'", destinationPath)
-	}
-
-	if strings.TrimSpace(destinationPath) == emptyDestinationPathArg {
-		return stacktrace.NewError("Destination path cannot be an empty string")
-	}
-
-	absoluteDestinationPath, err := filepath.Abs(destinationPath)
-	if err != nil {
-		return stacktrace.NewError("An error occurred while getting absolute path for the passed destination path '%v'", destinationPath)
-	}
-	// check if passed path is a file, error if so
-	fileInfo, err := os.Stat(absoluteDestinationPath)
-	if err == nil {
-		if !fileInfo.IsDir() {
-			return stacktrace.NewError("Passed destination '%v' isn't a directory but is a non empty file or symlink. Please pass a valid directory.", absoluteDestinationPath)
-		}
 	}
 
 	return nil

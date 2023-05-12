@@ -3,7 +3,7 @@ Kurtosis Docs
 
 >📖 Kurtosis documentation site codebase.
 >
->👉 Read at [docs.kurtosis.com][kurtosis-docs]
+>👉 Read at [docs.kurtosistech.com][kurtosis-docs]
 
 ---
 
@@ -63,4 +63,4 @@ $ yarn serve
 When your PR merges into `main`, the documentation will automatically be rebuilt and republished to [our docs page][kurtosis-docs].
 
 <!------ ONLY LINKS BELOW HERE ------------>
-[kurtosis-docs]: https://docs.kurtosis.com
+[kurtosis-docs]: https://docs.kurtosistech.com

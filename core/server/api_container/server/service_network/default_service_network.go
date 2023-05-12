@@ -64,6 +64,9 @@ const (
 	shouldFollowLogs = false
 
 	publicPortsSuffix = "-public"
+
+	serviceLogsHeader = "== SERVICE '%s' LOGS ==================================="
+	serviceLogsFooter = "== FINISHED SERVICE '%s' LOGS ==================================="
 )
 
 var (
@@ -1763,7 +1766,12 @@ func (network *DefaultServiceNetwork) getServiceLogs(
 		return "", stacktrace.Propagate(err, "An error occurred copying the service logs to a buffer")
 	}
 
-	return copyBuf.String(), nil
+	header := fmt.Sprintf(serviceLogsHeader, serviceObj.GetRegistration().GetName())
+	footer := fmt.Sprintf(serviceLogsFooter, serviceObj.GetRegistration().GetName())
+
+	serviceLogs := fmt.Sprintf("%s\n%s\n%s", header, copyBuf.String(), footer)
+
+	return serviceLogs, nil
 }
 
 func convertAPIPortsToPortSpecs(

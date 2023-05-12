@@ -4,27 +4,27 @@
 ----
 What is Kurtosis?
 =================
-[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding. 
+[Kurtosis](https://www.kurtosistech.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding. 
 
-To read more about "why Kurtosis?", go [here](https://docs.kurtosis.com/#why-use-kurtosis).
+To read more about "why Kurtosis?", go [here](https://docs.kurtosistech.com/#why-use-kurtosis).
 
-To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
+To read about the architecture, go [here](https://docs.kurtosistech.com/explanations/architecture).
 
-Kurtosis Cloud Early Access
+Kurtosis Kloud Early Access
 ===========================
 
 If you're looking to run a distributed system on the cloud, look no further! 
-We're excited to launch an early access offering for Kurtosis Cloud. Once you [sign up](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H), we'll reach out to you with the next steps.
+We're excited to launch an early access offering for Kurtosis Kloud. Once you [sign up](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H), we'll reach out to you with the next steps.
 
 Running Kurtosis
 ================
 
 ### Install
 
-Follow the instructions [here](https://docs.kurtosis.com/install).
+Follow the instructions [here](https://docs.kurtosistech.com/install).
 
 ### Run
-Kurtosis create ephemeral multi-container environments called [enclaves][enclave] using [Starlark](https://docs.kurtosis.com/concepts-reference/starlark). These can be bundled together into [packages](https://docs.kurtosis.com/concepts-reference/packages). Let's run one now:
+Kurtosis create ephemeral multi-container environments called [enclaves][enclave] using [Starlark](https://docs.kurtosistech.com/concepts-reference/starlark). These can be bundled together into [packages](https://docs.kurtosistech.com/concepts-reference/packages). Let's run one now:
 
 ```bash
 kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
@@ -84,27 +84,37 @@ This repository is structured as a monorepo, containing the following projects:
 - `engine`: Container launched to coordinate [enclaves][enclave]
 - `api`: Defines the API of the Kurtosis platform (`engine` and `core`)
 - `cli`: Produces CLI binary, allowing interaction with the Kurtosis system
-- `docs`: Documentation that is published to [docs.kurtosis.com](docs)
+- `docs`: Documentation that is published to [docs.kurtosistech.com](docs)
 - `internal_testsuites`: End to end tests
 
 Dev Dependencies
 ----------------
 
-To build Kurtosis itself, you must have the following installed:
+The commands below assume that the env variable BREW_PREFIX contains the brew prefix.
+```bash
+BREW_PREFIX="$(brew --prefix)"
+```
 
-#### Bash (5 or above) + Git
+#### Bash (5 or above)
 
 On MacOS:
 ```bash
 # Install modern version of bash, the one that ships on MacOS is too old
 brew install bash
-# Allow it as shell
+# Allow bash as shell
 echo "${BREW_PREFIX}/bin/bash" | sudo tee -a /etc/shells
 # Optional: make bash your default shell
 chsh -s "${BREW_PREFIX}/bin/bash"
-# Install modern version of git, the one that ships on MacOS is too old
+```
+  
+#### Git
+
+On MacOS:
+```bash
+# Install modern version of git, the one that ships on MacOS can be too old
 brew install git
 ```
+ 
 #### Docker
 
 On MacOS:
@@ -117,6 +127,8 @@ brew install docker
 On MacOS:
 ```bash
 brew install go@1.18
+# Add the Go binary dir to your PATH
+PATH="${BREW_PREFIX}/opt/go@1.18/bin:$PATH"
 ```
 
 #### Goreleaser
@@ -158,13 +170,13 @@ Build Instructions
 To build the entire project, run:
 
 ```bash
-./script/build.sh
+./scripts/build.sh
 ```
 
 To only build a specific project, run the script on `./PROJECT/PATH/script/build.sh`, for example:
 
 ```bash
-./container-engine-lib/build.sh
+./container-engine-lib/scripts/build.sh
 ./core/scripts/build.sh
 ./api/scripts/build.sh
 ./engine/scripts/build.sh
@@ -174,7 +186,7 @@ To only build a specific project, run the script on `./PROJECT/PATH/script/build
 If there are any changes to the Protobuf files in the `api` subdirectory, the Protobuf bindings must be regenerated:
 
 ```bash
-$ ./api/scripts/regenerate-protobuf-bindings.sh
+./api/scripts/regenerate-protobuf-bindings.sh
 ```
 
 Build scripts also run unit tests as part of the build process.
@@ -223,16 +235,16 @@ changes made to the Typescript package within `api/typescript` aren't hot loaded
 Dev Run Instructions
 --------------------
 
-Once the project has built, run `./cli/cli/scripts/launch_cli.sh` as if it was the `kurtosis` command:
+Once the project has built, run `./cli/cli/scripts/launch-cli.sh` as if it was the `kurtosis` command:
 
 ```bash
-./cli/cli/scripts/launch_cli.sh enclave add
+./cli/cli/scripts/launch-cli.sh enclave add
 ```
 
 If you want tab completion on the recently built CLI, you can alias it to `kurtosis`:
 
 ```bash
-alias kurtosis="$(pwd)/cli/cli/scripts/launch_cli.sh"
+alias kurtosis="$(pwd)/cli/cli/scripts/launch-cli.sh"
 kurtosis enclave add
 ```
 
@@ -251,11 +263,11 @@ Kurtosis is a free and source-available product maintained by the [Kurtosis][kur
 - [Hop on a call to chat with us](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
 
 <!-------- ONLY LINKS BELOW THIS POINT -------->
-[enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
+[enclave]: https://docs.kurtosistech.com/explanations/architecture#enclaves
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
-[quickstart-reference]: https://docs.kurtosis.com/quickstart
+[quickstart-reference]: https://docs.kurtosistech.com/quickstart
 [discord]: https://discord.gg/Es7QHbY4
 [kurtosis-tech]: https://github.com/kurtosis-tech
-[docs]: https://docs.kurtosis.com
+[docs]: https://docs.kurtosistech.com
 [twitter]: https://twitter.com/KurtosisTech
-[starlark-explanation]: https://docs.kurtosis.com/explanations/starlark
+[starlark-explanation]: https://docs.kurtosistech.com/explanations/starlark
