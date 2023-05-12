@@ -73,7 +73,7 @@ Contributing to Kurtosis
 <details>
 <summary>Expand to see contribution info</summary>
 
-See our [CONTRIBUTING](./CONTRIBUTING.md) file.
+See our [CONTRIBUTING](./CONTRIBUTING.md) page.
 
 Repository Structure
 --------------------
