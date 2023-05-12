@@ -47,7 +47,7 @@ export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
 
-// Docs available at https://docs.kurtosistech.com/sdk#kurtosiscontext
+// Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
 export class KurtosisContext {
     private readonly client: GenericEngineClient
 
@@ -99,7 +99,7 @@ export class KurtosisContext {
         return ok(kurtosisContext)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
+    // Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
     public async createEnclave(enclaveName: string, isSubnetworkingEnabled: boolean): Promise<Result<EnclaveContext, Error>> {
         const enclaveArgs: CreateEnclaveArgs = newCreateEnclaveArgs(
             enclaveName,
@@ -129,7 +129,7 @@ export class KurtosisContext {
         return ok(enclaveContext);
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#getenclavecontextstring-enclaveidentifier---enclavecontextenclavecontext-enclavecontext
+    // Docs available at https://docs.kurtosis.com/sdk/#getenclavecontextstring-enclaveidentifier---enclavecontextenclavecontext-enclavecontext
     public async getEnclaveContext(enclaveIdentifier: string): Promise<Result<EnclaveContext, Error>> {
         const enclaveInfoResult = await this.getEnclave(enclaveIdentifier)
 
@@ -147,7 +147,7 @@ export class KurtosisContext {
         return ok(newEnclaveContextResult.value);
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#getenclaves---enclaves-enclaves
+    // Docs available at https://docs.kurtosis.com/sdk#getenclaves---enclaves-enclaves
     public async getEnclaves(): Promise<Result<Enclaves, Error>>{
         const getEnclavesResponseResult = await this.client.getEnclavesResponse();
         if (getEnclavesResponseResult.isErr()) {
@@ -172,7 +172,7 @@ export class KurtosisContext {
         return ok(new Enclaves(enclavesByUuid, enclavesByName, enclavesByShortenedUuid));
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#getenclavestring-enclaveidentifier---enclaveinfo-enclaveinfo
+    // Docs available at https://docs.kurtosis.com/sdk/#getenclavestring-enclaveidentifier---enclaveinfo-enclaveinfo
     public async getEnclave(enclaveIdentifier: string): Promise<Result<EnclaveInfo, Error>> {
         const enclavesResult = await this.getEnclaves()
         if (enclavesResult.isErr()) {
@@ -201,7 +201,7 @@ export class KurtosisContext {
         return err(new Error(`Couldn't find enclave for identifier '${enclaveIdentifier}'`))
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#stopenclavestring-enclaveidentifier
+    // Docs available at https://docs.kurtosis.com/sdk/#stopenclavestring-enclaveidentifier
     public async stopEnclave(enclaveIdentifier: string): Promise<Result<null, Error>>{
         const stopEnclaveArgs: StopEnclaveArgs = newStopEnclaveArgs(enclaveIdentifier)
         const stopEnclaveResult = await this.client.stopEnclave(stopEnclaveArgs)
@@ -212,7 +212,7 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#destroyenclavestring-enclaveidentifier
+    // Docs available at https://docs.kurtosis.com/sdk/#destroyenclavestring-enclaveidentifier
     public async destroyEnclave(enclaveIdentifier: string): Promise<Result<null, Error>>{
         const destroyEnclaveArgs: DestroyEnclaveArgs = newDestroyEnclaveArgs(enclaveIdentifier);
         const destroyEnclaveResult = await this.client.destroyEnclave(destroyEnclaveArgs)
@@ -223,7 +223,7 @@ export class KurtosisContext {
         return ok(null)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#cleanboolean-shouldcleanall---enclavenameanduuid-removedenclavenameanduuids
+    // Docs available at https://docs.kurtosis.com/sdk#cleanboolean-shouldcleanall---enclavenameanduuid-removedenclavenameanduuids
     public async clean(shouldCleanAll: boolean): Promise<Result<EnclaveNameAndUuid[], Error>>{
         const cleanArgs: CleanArgs = newCleanArgs(shouldCleanAll);
         const cleanResponseResult = await this.client.clean(cleanArgs)
@@ -249,7 +249,7 @@ export class KurtosisContext {
     //      //insert your code here
     //})
     //You can cancel receiving the stream from the service calling serviceLogsReadable.destroy()
-    // Docs available at https://docs.kurtosistech.com/sdk#getservicelogsstring-enclaveidentifier-setserviceuuid-serviceuuids-boolean-shouldfollowlogs-loglinefilter-loglinefilter---servicelogsstreamcontent-servicelogsstreamcontent
+    // Docs available at https://docs.kurtosis.com/sdk#getservicelogsstring-enclaveidentifier-setserviceuuid-serviceuuids-boolean-shouldfollowlogs-loglinefilter-loglinefilter---servicelogsstreamcontent-servicelogsstreamcontent
     public async getServiceLogs(enclaveIdentifier: string, serviceUuids: Set<ServiceUUID>, shouldFollowLogs: boolean, logLineFilter: LogLineFilter|undefined): Promise<Result<Readable, Error>> {
         let getServiceLogsArgs: GetServiceLogsArgs;
 
@@ -358,7 +358,7 @@ export class KurtosisContext {
             if (!doApiVersionsMatch) {
                 return err(new Error(
                     `An API version mismatch was detected between the running engine version '${runningEngineSemver.version}' and the engine version this Kurtosis SDK library expects, '${libraryEngineSemver.version}'. You should:\n` +
-                    `  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosistech.com/install#upgrading\n` +
+                    `  1) upgrade your Kurtosis CLI to latest using the instructions at https://docs.kurtosis.com/install#upgrading\n` +
                     `  2) use the Kurtosis CLI to restart your engine via 'kurtosis engine restart'\n`	+
                     `  3) upgrade your Kurtosis SDK library using the instructions at https://github.com/kurtosis-tech/kurtosis-sdk\n`,
                 ));

@@ -20,7 +20,7 @@ body:
     attributes:
       label: Description & steps to reproduce
       description: |
-        We can support you better if you provide logs, screenshots, reproduction steps, [`kurtosis enclave dump`](https://docs.kurtosistech.com/enclave-dump) output, [`kurtosis dump`](https://docs.kurtosistech.com/dump) output, etc.
+        We can support you better if you provide logs, screenshots, reproduction steps, [`kurtosis enclave dump`](https://docs.kurtosis.com/enclave-dump) output, [`kurtosis dump`](https://docs.kurtosis.com/dump) output, etc.
       placeholder: |
         When I do X, Y happens...
 

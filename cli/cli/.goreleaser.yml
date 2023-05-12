@@ -113,7 +113,7 @@ brews:
       zsh_completion.install "scripts/completions/scripts/kurtosis.zsh" => "_kurtosis"
       fish_completion.install "scripts/completions/scripts/kurtosis.fish"
     caveats: |
-      The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosistech.com/.
+      The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosis.com/.
 
   # creates a versioned brew formula, enabling installation of specific versions of kurtosis cli
   - name: kurtosis-cli@{{ .Tag }}
@@ -138,7 +138,7 @@ brews:
       zsh_completion.install "scripts/completions/scripts/kurtosis.zsh" => "_kurtosis"
       fish_completion.install "scripts/completions/scripts/kurtosis.fish"
     caveats: |
-      The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosistech.com/.
+      The kurtosis CLI is installed with tab completion support. For more details visit https://docs.kurtosis.com/.
 
 publishers:
   # Inspired by https://netdevops.me/2021/building-and-publishing-deb/rpm-packages-with-goreleaser-and-fury.io/

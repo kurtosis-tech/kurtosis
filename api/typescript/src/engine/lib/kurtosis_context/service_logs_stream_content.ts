@@ -14,12 +14,12 @@ export class ServiceLogsStreamContent {
         this.notFoundServiceUuids = notFoundServiceUuids;
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#getservicelogsbyserviceuuids----mapserviceuuid-arrayservicelog-servicelogsbyserviceuuids
+    // Docs available at https://docs.kurtosis.com/sdk#getservicelogsbyserviceuuids----mapserviceuuid-arrayservicelog-servicelogsbyserviceuuids
     public getServiceLogsByServiceUuids(): Map<ServiceUUID, Array<ServiceLog>> {
         return this.serviceLogsByServiceUuids;
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#getnotfoundserviceuuids---setserviceuuid-notfoundserviceuuids
+    // Docs available at https://docs.kurtosis.com/sdk#getnotfoundserviceuuids---setserviceuuid-notfoundserviceuuids
     public getNotFoundServiceUuids(): Set<ServiceUUID> {
         return this.notFoundServiceUuids;
     }
