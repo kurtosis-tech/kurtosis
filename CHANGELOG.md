@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.6](https://github.com/kurtosis-tech/kurtosis/compare/0.76.5...0.76.6) (2023-05-12)
+
+
+### Bug Fixes
+
+* ips are on the range 172.16.0.0/16 ([#618](https://github.com/kurtosis-tech/kurtosis/issues/618)) ([b48cb73](https://github.com/kurtosis-tech/kurtosis/commit/b48cb73dadffdb23922c73b68fed1485840eb846))
+
 ## [0.76.5](https://github.com/kurtosis-tech/kurtosis/compare/0.76.4...0.76.5) (2023-05-11)
 
 
