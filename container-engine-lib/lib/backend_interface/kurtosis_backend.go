@@ -33,7 +33,6 @@ type KurtosisBackend interface {
 		imageOrgAndRepo string,
 		imageVersionTag string,
 		grpcPortNum uint16,
-		grpcProxyPortNum uint16,
 		envVars map[string]string,
 	) (
 		*engine.Engine,
@@ -114,7 +113,6 @@ type KurtosisBackend interface {
 		image string,
 		enclaveUuid enclave.EnclaveUUID,
 		grpcPortNum uint16,
-		grpcProxyPortNum uint16,
 		enclaveDataVolumeDirpath string,
 		// The environment variable that the user is requesting to populate with the container's own IP address
 		// Must not conflict with the custom environment variables

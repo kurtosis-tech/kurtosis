@@ -37,7 +37,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	imageOrgAndRepo string,
 	imageVersionTag string,
 	grpcPortNum uint16,
-	grpcProxyPortNum uint16,
 	envVars map[string]string,
 ) (*engine.Engine, error) {
 	result, err := backend.underlying.CreateEngine(
@@ -45,7 +44,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 		imageOrgAndRepo,
 		imageVersionTag,
 		grpcPortNum,
-		grpcProxyPortNum,
 		envVars,
 	)
 	if err != nil {
@@ -169,7 +167,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
-	grpcProxyPortNum uint16,
 	enclaveDataVolumeDirpath string,
 	ownIpEnvVar string,
 	customEnvVars map[string]string,
@@ -183,7 +180,6 @@ func (backend *MetricsReportingKurtosisBackend) CreateAPIContainer(
 		image,
 		enclaveUuid,
 		grpcPortNum,
-		grpcProxyPortNum,
 		enclaveDataVolumeDirpath,
 		ownIpEnvVar,
 		customEnvVars,

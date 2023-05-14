@@ -33,7 +33,6 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	ctx context.Context,
 	logLevel logrus.Level,
 	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
-	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
@@ -41,7 +40,6 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
-	// NOTE: We can return a resultPublicGrpcProxyPortNum here if we ever need it
 	resultErr error,
 ) {
 	publicIpAddr, publicGrpcPortSpec, err := launcher.LaunchWithCustomVersion(
@@ -49,7 +47,6 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		kurtosis_version.KurtosisVersion,
 		logLevel,
 		grpcListenPortNum,
-		grpcProxyListenPortNum,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		backendConfigSupplier,
@@ -66,7 +63,6 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	imageVersionTag string,
 	logLevel logrus.Level,
 	grpcListenPortNum uint16, // The port that the engine server will listen on AND the port that it should be bound to on the host machine
-	grpcProxyListenPortNum uint16, // Envoy proxy port that will forward grpc-web calls to the engine
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
@@ -83,7 +79,6 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	}
 	argsObj, err := args.NewEngineServerArgs(
 		grpcListenPortNum,
-		grpcProxyListenPortNum,
 		logLevel.String(),
 		imageVersionTag,
 		metricsUserID,
@@ -106,7 +101,6 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		containerImage,
 		imageVersionTag,
 		grpcListenPortNum,
-		grpcProxyListenPortNum,
 		envVars,
 	)
 	if err != nil {

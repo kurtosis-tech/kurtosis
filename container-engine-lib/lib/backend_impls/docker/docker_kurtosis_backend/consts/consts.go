@@ -15,13 +15,7 @@ const (
 	//  be stored in the port spec label
 	KurtosisInternalContainerGrpcPortId = "grpc"
 
-	// The ID of the GRPC proxy port for Kurtosis-internal containers. This is necessary because
-	// Typescript's grpc-web cannot communicate directly with GRPC ports, so Kurtosis-internal containers
-	// need a proxy  that will translate grpc-web requests before they hit the main GRPC server
-	KurtosisInternalContainerGrpcProxyPortId = "grpcProxy"
-
-	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported), which also
-	// means that its grpc-proxy must listen on TCP
+	// The engine server uses gRPC so MUST listen on TCP (no other protocols are supported)
 	EngineTransportProtocol = port_spec.TransportProtocol_TCP
 
 	// This needs to be bind-mounted into the engine & API containers so they can manipulate Docker

@@ -87,7 +87,6 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 	imageOrgAndRepo string,
 	imageVersionTag string,
 	grpcPortNum uint16,
-	grpcProxyPortNum uint16,
 	envVars map[string]string,
 ) (
 	*engine.Engine,
@@ -98,7 +97,6 @@ func (backend *DockerKurtosisBackend) CreateEngine(
 		imageOrgAndRepo,
 		imageVersionTag,
 		grpcPortNum,
-		grpcProxyPortNum,
 		envVars,
 		backend.dockerManager,
 		backend.objAttrsProvider,

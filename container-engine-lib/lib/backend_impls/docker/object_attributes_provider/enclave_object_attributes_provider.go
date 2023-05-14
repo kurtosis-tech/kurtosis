@@ -33,8 +33,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 		ipAddr net.IP,
 		privateGrpcPortId string,
 		privateGrpcPortSpec *port_spec.PortSpec,
-		privateGrpcProxyPortId string,
-		privateGrpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForUserServiceContainer(
 		serviceName service.ServiceName,
@@ -153,8 +151,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	ipAddr net.IP,
 	privateGrpcPortId string,
 	privateGrpcPortSpec *port_spec.PortSpec,
-	privateGrpcProxyPortId string,
-	privateGrpcProxyPortSpec *port_spec.PortSpec,
 ) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForEnclaveObject(
 		[]string{
@@ -180,7 +176,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 
 	usedPorts := map[string]*port_spec.PortSpec{
 		privateGrpcPortId:      privateGrpcPortSpec,
-		privateGrpcProxyPortId: privateGrpcProxyPortSpec,
 	}
 	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {

@@ -60,8 +60,8 @@ func (backend *RemoteContextKurtosisBackend) FetchImage(ctx context.Context, ima
 	return nil
 }
 
-func (backend *RemoteContextKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, envVars map[string]string) (*engine.Engine, error) {
-	return backend.localKurtosisBackend.CreateEngine(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, envVars)
+func (backend *RemoteContextKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, envVars map[string]string) (*engine.Engine, error) {
+	return backend.localKurtosisBackend.CreateEngine(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars)
 }
 
 func (backend *RemoteContextKurtosisBackend) GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error) {
@@ -104,8 +104,8 @@ func (backend *RemoteContextKurtosisBackend) DestroyEnclaves(ctx context.Context
 	return backend.remoteKurtosisBackend.DestroyEnclaves(ctx, filters)
 }
 
-func (backend *RemoteContextKurtosisBackend) CreateAPIContainer(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, grpcProxyPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string) (*api_container.APIContainer, error) {
-	return backend.remoteKurtosisBackend.CreateAPIContainer(ctx, image, enclaveUuid, grpcPortNum, grpcProxyPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
+func (backend *RemoteContextKurtosisBackend) CreateAPIContainer(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string) (*api_container.APIContainer, error) {
+	return backend.remoteKurtosisBackend.CreateAPIContainer(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
 }
 
 func (backend *RemoteContextKurtosisBackend) GetAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveUUID]*api_container.APIContainer, error) {

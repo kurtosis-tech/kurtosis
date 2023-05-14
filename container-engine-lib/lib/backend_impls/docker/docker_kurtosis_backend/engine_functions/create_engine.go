@@ -27,7 +27,6 @@ func CreateEngine(
 	imageOrgAndRepo string,
 	imageVersionTag string,
 	grpcPortNum uint16,
-	grpcProxyPortNum uint16,
 	envVars map[string]string,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
@@ -55,31 +54,18 @@ func CreateEngine(
 			consts.EngineTransportProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating the engine's private grpc proxy port spec object using number '%v' and protocol '%v'",
-			grpcProxyPortNum,
-			consts.EngineTransportProtocol.String(),
-		)
-	}
 
 	engineAttrs, err := objAttrsProvider.ForEngineServer(
 		engineGuid,
 		consts.KurtosisInternalContainerGrpcPortId,
 		privateGrpcPortSpec,
-		consts.KurtosisInternalContainerGrpcProxyPortId,
-		privateGrpcProxyPortSpec,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting the engine server container attributes using GUID '%v', grpc port num '%v', and "+
-				"grpc proxy port num '%v'",
+			"An error occurred getting the engine server container attributes using GUID '%v'and grpc port num %v'",
 			engineGuid,
 			grpcPortNum,
-			grpcProxyPortNum,
 		)
 	}
 
@@ -87,14 +73,9 @@ func CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
-	privateGrpcProxyDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateGrpcProxyPortSpec)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc proxy port spec to a Docker port")
-	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort:      docker_manager.NewManualPublishingSpec(grpcPortNum),
-		privateGrpcProxyDockerPort: docker_manager.NewManualPublishingSpec(grpcProxyPortNum),
 	}
 
 	bindMounts := map[string]string{
@@ -169,13 +150,6 @@ func CreateEngine(
 	); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc port to become available")
 	}
-
-	// TODO UNCOMMENT THIS ONCE WE HAVE GRPC-PROXY WIRED UP!!
-	/*
-		if err := waitForPortAvailabilityUsingNetstat(ctx, backend.dockerManager, containerId, grpcProxyPortNum); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine server's grpc proxy port to become available")
-		}
-	*/
 
 	result, err := getEngineObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
 	if err != nil {
