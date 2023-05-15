@@ -5,7 +5,6 @@
 
 import {ok, err, Result} from "neverthrow";
 import log from "loglevel";
-import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
 import type {
     Port,
@@ -73,10 +72,6 @@ export class EnclaveContext {
         enclaveUuid: string,
         enclaveName: string,
     ): Promise<Result<EnclaveContext, Error>> {
-
-        if(!isExecutionEnvNode){
-            return err(new Error("It seems you're trying to create Enclave Context from Web environment. Please consider the 'newGrpcWebEnclaveContext()' method instead."))
-        }
 
         let genericApiContainerClient: GenericApiContainerClient
         let genericTgzArchiver: GenericTgzArchiver
