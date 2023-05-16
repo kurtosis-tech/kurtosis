@@ -10,6 +10,7 @@ internal_testsuites_root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 CHILD_TEST_SCRIPT_FILENAME="test.sh"
 STARLARK_DIR_PATH="starlark"
+RESOURCES_DIR_PATH="resources"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
@@ -21,7 +22,9 @@ script_dirname="$(basename "${script_dirpath}")"
 
 for maybe_testsuite_rel_dirpath in $(find "${internal_testsuites_root_dirpath}" -type d -mindepth 1 -maxdepth 1 ); do
     maybe_testsuite_dirname="$(basename "${maybe_testsuite_rel_dirpath}")"
-    if [ "${maybe_testsuite_dirname}" == "${script_dirname}" ] || [ "${maybe_testsuite_dirname}" == "${STARLARK_DIR_PATH}" ]; then
+    if [ "${maybe_testsuite_dirname}" == "${script_dirname}" ] || \
+       [ "${maybe_testsuite_dirname}" == "${STARLARK_DIR_PATH}" ] || \
+       [ "${maybe_testsuite_dirname}" == "${RESOURCES_DIR_PATH}" ]; then
         continue
     fi
 

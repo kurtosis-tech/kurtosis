@@ -8,7 +8,7 @@ package user_support_constants
 const (
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 	//    If you add new URLs below, make sure to add them to the urlsToValidateInTest below!!!
-	Domain                            = "kurtosistech.com"
+	Domain                            = "kurtosis.com"
 	OldDomain                         = "kurtosistech.com" //This domain is still used for email accounts
 	DocumentationUrl                  = "https://docs." + Domain
 	DiscordUrl                        = "https://discord.gg/6Jjp9c89z9"

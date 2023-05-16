@@ -7,7 +7,7 @@ import (
 	"sort"
 )
 
-// Docs available at https://docs.kurtosistech.com/sdk#enclave-identifiers
+// Docs available at https://docs.kurtosis.com/sdk#enclave-identifiers
 type EnclaveIdentifiers struct {
 	enclaveNameToUuids          map[string][]enclaves.EnclaveUUID
 	enclaveUuids                map[enclaves.EnclaveUUID]bool

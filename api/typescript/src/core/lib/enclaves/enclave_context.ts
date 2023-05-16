@@ -54,7 +54,7 @@ const DEFAULT_PARTITION_ID: PartitionID = "";
 export const KURTOSIS_YAML_FILENAME = "kurtosis.yml";
 
 
-// Docs available at https://docs.kurtosistech.com/sdk/#enclavecontext
+// Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
 export class EnclaveContext {
 
     private readonly backend: GenericApiContainerClient
@@ -145,17 +145,17 @@ export class EnclaveContext {
         return ok(enclaveContext)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#getenclaveuuid---enclaveuuid
+    // Docs available at https://docs.kurtosis.com/sdk/#getenclaveuuid---enclaveuuid
     public getEnclaveUuid(): EnclaveUUID {
         return this.backend.getEnclaveUuid();
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#getenclavename---string
+    // Docs available at https://docs.kurtosis.com/sdk/#getenclavename---string
     public getEnclaveName(): string {
         return this.backend.getEnclaveName();
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkScript(
         serializedStartosisScript: string,
         serializedParams: string,
@@ -172,7 +172,7 @@ export class EnclaveContext {
         return ok(scriptRunResult.value)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkScriptBlocking(
         serializedStartosisScript: string,
         serializedParams: string,
@@ -186,7 +186,7 @@ export class EnclaveContext {
         return ok(fullRunResult)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkPackage(
         packageRootPath: string,
         serializedParams: string,
@@ -203,7 +203,7 @@ export class EnclaveContext {
         return ok(packageRunResult.value)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkPackageBlocking(
         packageRootPath: string,
         serializedParams: string,
@@ -217,7 +217,7 @@ export class EnclaveContext {
         return ok(fullRunResult)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#runremotestarlarkpackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
+    // Docs available at https://docs.kurtosis.com/sdk/#runremotestarlarkpackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkRemotePackage(
         moduleId: string,
         serializedParams: string,
@@ -235,7 +235,7 @@ export class EnclaveContext {
         return ok(remotePackageRunResult.value)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
+    // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkRemotePackageBlocking(
         moduleId: string,
         serializedParams: string,
@@ -249,7 +249,7 @@ export class EnclaveContext {
         return ok(fullRunResult)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#addserviceserviceid-serviceid--containerconfig-containerconfig---servicecontext-servicecontext
+    // Docs available at https://docs.kurtosis.com/sdk/#addserviceserviceid-serviceid--containerconfig-containerconfig---servicecontext-servicecontext
     public async addService(
             serviceName: ServiceName,
             containerConfig: ContainerConfig
@@ -275,7 +275,7 @@ export class EnclaveContext {
         return ok(serviceCtx);
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#addservicetopartitionserviceid-serviceid-partitionid-partitionid-containerconfig-containerconfig---servicecontext-servicecontext
+    // Docs available at https://docs.kurtosis.com/sdk/#addservicetopartitionserviceid-serviceid-partitionid-partitionid-containerconfig-containerconfig---servicecontext-servicecontext
     public async addServiceToPartition(
             serviceName: ServiceName,
             partitionId: PartitionID,
@@ -302,7 +302,7 @@ export class EnclaveContext {
         return ok(serviceCtx);
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk/#addservicestopartitionmapserviceid-containerconfig-containerconfigs-partitionid-partitionid---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
+    // Docs available at https://docs.kurtosis.com/sdk/#addservicestopartitionmapserviceid-containerconfig-containerconfigs-partitionid-partitionid---mapserviceid-servicecontext-successfulservices-mapserviceid-error-failedservices
     public async addServicesToPartition(
         containerConfigs: Map<ServiceName, ContainerConfig>,
         partitionID: PartitionID,
@@ -433,7 +433,7 @@ export class EnclaveContext {
         return ok([successfulServices, failedServicesPool])
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#getservicecontextstring-serviceidentifier---servicecontext-servicecontext
+    // Docs available at https://docs.kurtosis.com/sdk#getservicecontextstring-serviceidentifier---servicecontext-servicecontext
     public async getServiceContext(serviceIdentifier: string): Promise<Result<ServiceContext, Error>> {
         const serviceArgMap = new Map<string, boolean>()
         serviceArgMap.set(serviceIdentifier, true)
@@ -485,7 +485,7 @@ export class EnclaveContext {
         return ok(serviceContext);
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
+    // Docs available at https://docs.kurtosis.com/sdk#getservices---mapservicename--serviceuuid-serviceidentifiers
     public async getServices(): Promise<Result<Map<ServiceName, ServiceUUID>, Error>> {
         const getAllServicesArgMap: Map<string, boolean> = new Map<string,boolean>()
         const emptyGetServicesArg: GetServicesArgs = newGetServicesArgs(getAllServicesArgMap)
@@ -504,7 +504,7 @@ export class EnclaveContext {
         return ok(serviceInfos)
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
+    // Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
     public async uploadFiles(pathToArchive: string, name: string): Promise<Result<FilesArtifactUUID, Error>>  {
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(pathToArchive)
         if (archiverResponse.isErr()){
@@ -520,7 +520,7 @@ export class EnclaveContext {
         return ok(uploadResult.value.getUuid())
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#storewebfilesstring-urltodownload-string-artifactname
+    // Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
     public async storeWebFiles(url: string, name: string): Promise<Result<FilesArtifactUUID, Error>> {
         const args = newStoreWebFilesArtifactArgs(url, name);
         const storeWebFilesArtifactResponseResult = await this.backend.storeWebFilesArtifact(args)
@@ -531,7 +531,7 @@ export class EnclaveContext {
         return ok(storeWebFilesArtifactResponse.getUuid())
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#downloadfilesartifact-fileidentifier-string
+    // Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
     public async downloadFilesArtifact(identifier: string): Promise<Result<Uint8Array, Error>> {
         const args = newDownloadFilesArtifactArgs(identifier);
         const downloadFilesArtifactResponseResult = await this.backend.downloadFilesArtifact(args)
@@ -542,7 +542,7 @@ export class EnclaveContext {
         return ok(downloadFilesArtifactResponse.getData_asU8())
     }
 
-    // Docs available at https://docs.kurtosistech.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
+    // Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
     public async getExistingAndHistoricalServiceIdentifiers(): Promise<Result<ServiceIdentifiers, Error>> {
         const getExistingAndHistoricalServiceIdentifiersResponseResult = await this.backend.getExistingAndHistoricalServiceIdentifiers()
         if (getExistingAndHistoricalServiceIdentifiersResponseResult.isErr()) {
@@ -553,7 +553,7 @@ export class EnclaveContext {
         return ok(new ServiceIdentifiers(getExistingAndHistoricalIdentifiersValue.getAllidentifiersList()))
     }
 
-    // Docs available at https://docs.kurtosistech.com/#getallfilesartifactnamesanduuids---filesartifactnameanduuid-filesartifactnamesanduuids
+    // Docs available at https://docs.kurtosis.com/#getallfilesartifactnamesanduuids---filesartifactnameanduuid-filesartifactnamesanduuids
     public async getAllFilesArtifactNamesAndUuids(): Promise<Result<FilesArtifactNameAndUuid[], Error>> {
         const getAllFilesArtifactsNamesAndUuidsResponseResult = await this.backend.getAllFilesArtifactNamesAndUuids()
         if (getAllFilesArtifactsNamesAndUuidsResponseResult.isErr()) {

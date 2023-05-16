@@ -7,7 +7,7 @@ const darkCodeTheme = require('prism-react-renderer/themes/vsDark');
 const config = {
   title: 'Kurtosis Docs',
   tagline: 'Next-gen developer experience for building, testing, and running distributed systems.',
-  url: 'https://docs.kurtosistech.com',
+  url: 'https://docs.kurtosis.com',
   baseUrl: '/',
   onBrokenLinks: 'throw',
   onBrokenMarkdownLinks: 'throw',
@@ -70,7 +70,7 @@ const config = {
         logo: {
           alt: 'Kurtosis',
           src: 'img/brand/kurtosis-logo-white-text.png',
-          href: 'https://kurtosistech.com',
+          href: 'https://kurtosis.com',
           target: '_self'
         },
         items: [
@@ -146,15 +146,15 @@ const config = {
             items: [
               {
                 label: `Careers - We're Hiring`,
-                href: 'https://www.kurtosistech.com/careers',
+                href: 'https://www.kurtosis.com/careers',
               },
               {
                 label: 'About Us',
-                href: 'https://www.kurtosistech.com/company',
+                href: 'https://www.kurtosis.com/company',
               },
               {
                 label: 'Blog',
-                href: 'https://www.kurtosistech.com/blog',
+                href: 'https://www.kurtosis.com/blog',
               },
             ],
           },
