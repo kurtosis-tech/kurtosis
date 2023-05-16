@@ -63,7 +63,7 @@ func CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred getting the engine server container attributes using GUID '%v'and grpc port num %v'",
+			"An error occurred getting the engine server container attributes using GUID '%v' and GRPC port num '%v'",
 			engineGuid,
 			grpcPortNum,
 		)
