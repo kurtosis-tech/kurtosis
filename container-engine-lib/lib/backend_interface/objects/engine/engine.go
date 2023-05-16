@@ -20,11 +20,10 @@ type Engine struct {
 	// This information will be nil if the engine isn't running
 	publicIpAddr        net.IP
 	publicGrpcPort      *port_spec.PortSpec
-	publicGrpcProxyPort *port_spec.PortSpec
 }
 
-func NewEngine(guid EngineGUID, status container_status.ContainerStatus, publicIpAddr net.IP, publicGrpcPort *port_spec.PortSpec, publicGrpcProxyPort *port_spec.PortSpec) *Engine {
-	return &Engine{guid: guid, status: status, publicIpAddr: publicIpAddr, publicGrpcPort: publicGrpcPort, publicGrpcProxyPort: publicGrpcProxyPort}
+func NewEngine(guid EngineGUID, status container_status.ContainerStatus, publicIpAddr net.IP, publicGrpcPort *port_spec.PortSpec) *Engine {
+	return &Engine{guid: guid, status: status, publicIpAddr: publicIpAddr, publicGrpcPort: publicGrpcPort}
 }
 
 func (engine *Engine) GetGUID() EngineGUID {
@@ -38,7 +37,4 @@ func (engine *Engine) GetPublicIPAddress() net.IP {
 }
 func (engine *Engine) GetPublicGRPCPort() *port_spec.PortSpec {
 	return engine.publicGrpcPort
-}
-func (engine *Engine) GetPublicGRPCProxyPortNum() *port_spec.PortSpec {
-	return engine.publicGrpcProxyPort
 }

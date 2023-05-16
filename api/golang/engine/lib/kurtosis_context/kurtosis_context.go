@@ -26,8 +26,6 @@ const (
 
 	DefaultGrpcEngineServerPortNum = uint16(9710)
 
-	DefaultGrpcProxyEngineServerPortNum = uint16(9711)
-
 	// Blank tells the engine server to use the default
 	defaultApiContainerVersionTag = ""
 
@@ -351,12 +349,6 @@ func newEnclaveContextFromEnclaveInfo(
 		forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, &apicPortTransportProtocol)
 		if _, err := portalClient.ForwardPort(ctx, forwardApicPortArgs); err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to forward remote API container port to the local machine")
-		}
-
-		apicGrpcProxyPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcProxyPortOnHostMachine()
-		forwardApicProxyPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcProxyPort, apicGrpcProxyPort, &apicPortTransportProtocol)
-		if _, err := portalClient.ForwardPort(ctx, forwardApicProxyPortArgs); err != nil {
-			return nil, stacktrace.Propagate(err, "Unable to forward remote API container proxy port to the local machine")
 		}
 	}
 

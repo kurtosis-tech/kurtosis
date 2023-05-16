@@ -5,7 +5,6 @@
 
 import {ok, err, Result} from "neverthrow";
 import log from "loglevel";
-import { isNode as  isExecutionEnvNode} from "browser-or-node";
 import * as jspb from "google-protobuf";
 import type {
     Port,
@@ -14,7 +13,6 @@ import type {
     GetServicesArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import { GrpcNodeApiContainerClient } from "./grpc_node_api_container_client";
-import { GrpcWebApiContainerClient } from "./grpc_web_api_container_client";
 import type { GenericApiContainerClient } from "./generic_api_container_client";
 import {
     newDownloadFilesArtifactArgs,
@@ -68,54 +66,12 @@ export class EnclaveContext {
         this.genericTgzArchiver = genericTgzArchiver
     }
 
-    public static async newGrpcWebEnclaveContext(
-        ipAddress: string,
-        apiContainerGrpcProxyPortNum: number,
-        enclaveUuid: string,
-        enclaveName: string,
-    ): Promise<Result<EnclaveContext, Error>> {
-
-        if(isExecutionEnvNode){
-            return err(new Error("It seems you're trying to create Enclave Context from Node environment. Please consider the 'newGrpcNodeEnclaveContext()' method instead."))
-        }
-
-        let genericApiContainerClient: GenericApiContainerClient
-        let genericTgzArchiver: GenericTgzArchiver
-        let pathJoiner: GenericPathJoiner
-        try {
-
-            pathJoiner = await import("path-browserify")
-            const apiContainerServiceWeb = await import("../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb")
-
-            const apiContainerGrpcProxyUrl: string = `${ipAddress}:${apiContainerGrpcProxyPortNum}`
-            const apiContainerClient = new apiContainerServiceWeb.ApiContainerServiceClient(apiContainerGrpcProxyUrl);
-            genericApiContainerClient = new GrpcWebApiContainerClient(apiContainerClient, enclaveUuid, enclaveName)
-
-            const webFileArchiver = await import("./web_tgz_archiver")
-            genericTgzArchiver = new webFileArchiver.WebTgzArchiver()
-        }catch(error) {
-            if (error instanceof Error) {
-                return err(error);
-            }
-            return err(new Error(
-                "An unknown exception value was thrown during creation of the API container client that wasn't an error: " + error
-            ));
-        }
-
-        const enclaveContext = new EnclaveContext(genericApiContainerClient, pathJoiner, genericTgzArchiver);
-        return ok(enclaveContext)
-    }
-
     public static async newGrpcNodeEnclaveContext(
         ipAddress: string,
         apiContainerGrpcPortNum: number,
         enclaveUuid: string,
         enclaveName: string,
     ): Promise<Result<EnclaveContext, Error>> {
-
-        if(!isExecutionEnvNode){
-            return err(new Error("It seems you're trying to create Enclave Context from Web environment. Please consider the 'newGrpcWebEnclaveContext()' method instead."))
-        }
 
         let genericApiContainerClient: GenericApiContainerClient
         let genericTgzArchiver: GenericTgzArchiver

@@ -1,11 +1,9 @@
 import log from "loglevel"
 import * as semver from "semver"
 import {err, ok, Result} from "neverthrow";
-import { isNode as isExecutionEnvNode} from "browser-or-node";
 import {EnclaveContext, EnclaveUUID, ServiceUUID} from "../../../index";
 import { GenericEngineClient } from "./generic_engine_client";
 import { KURTOSIS_VERSION } from "../../../kurtosis_version/kurtosis_version";
-import { GrpcWebEngineClient } from "./grpc_web_engine_client";
 import { GrpcNodeEngineClient } from "./grpc_node_engine_client";
 import {
     CleanArgs,
@@ -42,7 +40,6 @@ const API_CONTAINER_LOG_LEVEL: string = "debug";
 const SHORTENED_UUID_ALLOWED_MATCHES = 1;
 
 export const DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM: number = 9710;
-export const DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM: number = 9711;
 
 // Blank tells the engine server to use the default
 const DEFAULT_API_CONTAINER_VERSION_TAG = "";
@@ -59,28 +56,18 @@ export class KurtosisContext {
     public static async newKurtosisContextFromLocalEngine():Promise<Result<KurtosisContext, Error>>  {
         let genericEngineClient: GenericEngineClient
         try {
-            if(isExecutionEnvNode){
+            //These imports are dynamically imported here, otherwise compiling in Web environment fails for 2 reasons:
+            // 1. "@grpc/grpc-js" could ONLY be run in Node environment(because of it's own dependencies). So importing it on top of the file will break compilation.
+            // 2. WebPack compiler intents to check the libs no matter if those are behind IF statement. Which also break. That's why /* webpackIgnore: true */, avoid checkings.
 
-                //These imports are dynamically imported here, otherwise compiling in Web environment fails for 2 reasons:
-                // 1. "@grpc/grpc-js" could ONLY be run in Node environment(because of it's own dependencies). So importing it on top of the file will break compilation.
-                // 2. WebPack compiler intents to check the libs no matter if those are behind IF statement. Which also break. That's why /* webpackIgnore: true */, avoid checkings.
+            // 'engine_service_grpc_pb' has it's own "@grpc/grpc-js" import, that's why we import it dynamically also.
 
-                // 'engine_service_grpc_pb' has it's own "@grpc/grpc-js" import, that's why we import it dynamically also.
+            const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
+            const engineServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb")
 
-                const grpc_node = await import( /* webpackIgnore: true */ "@grpc/grpc-js")
-                const engineServiceNode = await import( /* webpackIgnore: true */ "../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_pb")
-
-                const kurtosisEngineSocketStr: string = `${LOCAL_HOSTNAME}:${DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM}`
-                const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpc_node.credentials.createInsecure())
-                genericEngineClient = new GrpcNodeEngineClient(engineServiceClientNode)
-            }else {
-                // For the symmetricity purpose, we import 'engine_service_grpc_web_pb' here. But this wouldn't affect anything if imported normally.
-                const engineServiceWeb = await import("../../kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb")
-
-                const kurtosisEngineSocketStr: string = `http://${LOCAL_HOSTNAME}:${DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM}`
-                const engineServiceClientWeb = new engineServiceWeb.EngineServiceClient(kurtosisEngineSocketStr)
-                genericEngineClient = new GrpcWebEngineClient(engineServiceClientWeb)
-            }
+            const kurtosisEngineSocketStr: string = `${LOCAL_HOSTNAME}:${DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM}`
+            const engineServiceClientNode = new engineServiceNode.EngineServiceClient(kurtosisEngineSocketStr, grpc_node.credentials.createInsecure())
+            genericEngineClient = new GrpcNodeEngineClient(engineServiceClientNode)
         } catch(error) {
             if (error instanceof Error) {
                 return err(error);
@@ -305,21 +292,12 @@ export class KurtosisContext {
         }
 
         let newEnclaveContextResult: Result<EnclaveContext, Error>
-        if(isExecutionEnvNode){
-            newEnclaveContextResult = await EnclaveContext.newGrpcNodeEnclaveContext(
-                LOCAL_HOSTNAME,
-                apiContainerHostMachineInfo.getGrpcPortOnHostMachine(),
-                enclaveInfo.getEnclaveUuid(),
-                enclaveInfo.getName(),
-            )
-        }else{
-            newEnclaveContextResult = await EnclaveContext.newGrpcWebEnclaveContext(
-                LOCAL_HOSTNAME,
-                apiContainerHostMachineInfo.getGrpcProxyPortOnHostMachine(),
-                enclaveInfo.getEnclaveUuid(),
-                enclaveInfo.getName(),
-            )
-        }
+        newEnclaveContextResult = await EnclaveContext.newGrpcNodeEnclaveContext(
+            LOCAL_HOSTNAME,
+            apiContainerHostMachineInfo.getGrpcPortOnHostMachine(),
+            enclaveInfo.getEnclaveUuid(),
+            enclaveInfo.getName(),
+        )
         if(newEnclaveContextResult.isErr()){
             return err(newEnclaveContextResult.error)
         }

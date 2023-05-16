@@ -28,8 +28,6 @@ type DockerObjectAttributesProvider interface {
 		guid engine.EngineGUID,
 		grpcPortId string,
 		grpcPortSpec *port_spec.PortSpec,
-		grpcProxyPortId string,
-		grpcProxyPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForEnclave(enclaveUuid enclave.EnclaveUUID) (DockerEnclaveObjectAttributesProvider, error)
 	ForLogsDatabase(
@@ -54,8 +52,6 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	guid engine.EngineGUID,
 	grpcPortId string,
 	grpcPortSpec *port_spec.PortSpec,
-	grpcProxyPortId string,
-	grpcProxyPortSpec *port_spec.PortSpec,
 ) (DockerObjectAttributes, error) {
 
 	nameStr := strings.Join(
@@ -81,7 +77,6 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 
 	usedPorts := map[string]*port_spec.PortSpec{
 		grpcPortId:      grpcPortSpec,
-		grpcProxyPortId: grpcProxyPortSpec,
 	}
 	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {

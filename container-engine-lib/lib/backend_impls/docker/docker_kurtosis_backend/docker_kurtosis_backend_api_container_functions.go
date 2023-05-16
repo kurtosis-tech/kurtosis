@@ -23,8 +23,7 @@ import (
 )
 
 const (
-	// The API container uses gRPC so MUST listen on TCP (no other protocols are supported), which also
-	// means that its grpc-proxy must listen on TCP
+	// The API container uses gRPC so MUST listen on TCP (no other protocols are supported)
 	apiContainerTransportProtocol = port_spec.TransportProtocol_TCP
 
 	maxWaitForApiContainerAvailabilityRetries         = 10
@@ -38,7 +37,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	image string,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
-	grpcProxyPortNum uint16,
 	// The dirpath on the API container where the enclave data volume should be mounted
 	enclaveDataVolumeDirpath string,
 	ownIpAddressEnvVar string,
@@ -106,15 +104,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 			consts.EngineTransportProtocol.String(),
 		)
 	}
-	privateGrpcProxyPortSpec, err := port_spec.NewPortSpec(grpcProxyPortNum, apiContainerTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating the API container's private grpc proxy port spec object using number '%v' and protocol '%v'",
-			grpcProxyPortNum,
-			consts.EngineTransportProtocol.String(),
-		)
-	}
 
 	enclaveObjAttrProvider, err := backend.objAttrsProvider.ForEnclave(enclaveUuid)
 	if err != nil {
@@ -125,8 +114,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 		consts.KurtosisInternalContainerGrpcPortId,
 		privateGrpcPortSpec,
-		consts.KurtosisInternalContainerGrpcProxyPortId,
-		privateGrpcProxyPortSpec,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the object attributes for the API container")
@@ -136,13 +123,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
-	privateGrpcProxyDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(privateGrpcProxyPortSpec)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc proxy port spec to a Docker port")
-	}
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort:      docker_manager.NewAutomaticPublishingSpec(),
-		privateGrpcProxyDockerPort: docker_manager.NewAutomaticPublishingSpec(),
 	}
 
 	bindMounts := map[string]string{
@@ -421,7 +403,7 @@ func getApiContainerObjectFromContainerInfo(
 		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
 	}
 
-	privateGrpcPortSpec, privateGrpcProxyPortSpec, err := getPrivateApiContainerPorts(labels)
+	privateGrpcPortSpec, err := getPrivateApiContainerPorts(labels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the API container's private port specs from container '%v' with labels: %+v", containerId, labels)
 	}
@@ -440,27 +422,12 @@ func getApiContainerObjectFromContainerInfo(
 
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
-	var publicGrpcProxyPortSpec *port_spec.PortSpec
 	if apiContainerStatus == container_status.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
 		}
 		publicGrpcPortSpec = candidatePublicGrpcPortSpec
-
-		publicGrpcProxyPortIpAddr, candidatePublicGrpcProxyPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcProxyPortSpec, allHostMachinePortBindings)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
-		}
-		publicGrpcProxyPortSpec = candidatePublicGrpcProxyPortSpec
-
-		if publicGrpcPortIpAddr.String() != publicGrpcProxyPortIpAddr.String() {
-			return nil, stacktrace.NewError(
-				"Expected the engine's grpc port public IP address '%v' and grpc-proxy port public IP address '%v' to be the same, but they were different",
-				publicGrpcPortIpAddr.String(),
-				publicGrpcProxyPortIpAddr.String(),
-			)
-		}
 		publicIpAddr = publicGrpcPortIpAddr
 	}
 
@@ -469,10 +436,8 @@ func getApiContainerObjectFromContainerInfo(
 		apiContainerStatus,
 		privateIpAddr,
 		privateGrpcPortSpec,
-		privateGrpcProxyPortSpec,
 		publicIpAddr,
 		publicGrpcPortSpec,
-		publicGrpcProxyPortSpec,
 	)
 
 	return result, nil
@@ -480,30 +445,24 @@ func getApiContainerObjectFromContainerInfo(
 
 func getPrivateApiContainerPorts(containerLabels map[string]string) (
 	resultGrpcPortSpec *port_spec.PortSpec,
-	resultGrpcProxyPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
 	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
 	if !found {
-		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
 	}
 
 	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", serializedPortSpecs)
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing port specs string '%v'", serializedPortSpecs)
 	}
 
 	grpcPortSpec, foundGrpcPort := portSpecs[consts.KurtosisInternalContainerGrpcPortId]
 	if !foundGrpcPort {
-		return nil, nil, stacktrace.NewError("No grpc port with ID '%v' found in the port specs", consts.KurtosisInternalContainerGrpcPortId)
+		return nil, stacktrace.NewError("No grpc port with ID '%v' found in the port specs", consts.KurtosisInternalContainerGrpcPortId)
 	}
 
-	grpcProxyPortSpec, foundGrpcProxyPort := portSpecs[consts.KurtosisInternalContainerGrpcProxyPortId]
-	if !foundGrpcProxyPort {
-		return nil, nil, stacktrace.NewError("No grpc-proxy port with ID '%v' found in the port specs", consts.KurtosisInternalContainerGrpcProxyPortId)
-	}
-
-	return grpcPortSpec, grpcProxyPortSpec, nil
+	return grpcPortSpec, nil
 }
 
 func extractEnclaveIdFromUncastedApiContainerObj(uncastedApiContainerObj interface{}) (string, error) {

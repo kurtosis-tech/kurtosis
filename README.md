@@ -153,7 +153,6 @@ On MacOS:
 ```bash
 brew install protoc-gen-go
 brew install protoc-gen-go-grpc
-brew install protoc-gen-grpc-web
 npm install -g ts-protoc-gen
 npm install -g grpc-tools
 ```

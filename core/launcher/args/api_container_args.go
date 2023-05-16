@@ -24,7 +24,6 @@ type APIContainerArgs struct {
 	LogLevel string `json:"logLevel"`
 
 	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
-	GrpcProxyListenPortNum uint16 `json:"grpcProxyListenPortNum"`
 
 	EnclaveUUID string `json:"enclaveUuid"`
 
@@ -83,7 +82,6 @@ func NewAPIContainerArgs(
 	version string,
 	logLevel string,
 	grpcListenPortNum uint16,
-	grpcProxyListenPortNum uint16,
 	enclaveUuid string,
 	isPartitioningEnabled bool,
 	metricsUserID string,
@@ -96,7 +94,6 @@ func NewAPIContainerArgs(
 		Version:                     version,
 		LogLevel:                    logLevel,
 		GrpcListenPortNum:           grpcListenPortNum,
-		GrpcProxyListenPortNum:      grpcProxyListenPortNum,
 		EnclaveUUID:                 enclaveUuid,
 		IsPartitioningEnabled:       isPartitioningEnabled,
 		MetricsUserID:               metricsUserID,

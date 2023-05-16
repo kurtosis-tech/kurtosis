@@ -82,9 +82,6 @@ export class EnclaveAPIContainerInfo extends jspb.Message {
   getGrpcPortInsideEnclave(): number;
   setGrpcPortInsideEnclave(value: number): EnclaveAPIContainerInfo;
 
-  getGrpcProxyPortInsideEnclave(): number;
-  setGrpcProxyPortInsideEnclave(value: number): EnclaveAPIContainerInfo;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveAPIContainerInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveAPIContainerInfo): EnclaveAPIContainerInfo.AsObject;
@@ -98,7 +95,6 @@ export namespace EnclaveAPIContainerInfo {
     containerId: string,
     ipInsideEnclave: string,
     grpcPortInsideEnclave: number,
-    grpcProxyPortInsideEnclave: number,
   }
 }
 
@@ -108,9 +104,6 @@ export class EnclaveAPIContainerHostMachineInfo extends jspb.Message {
 
   getGrpcPortOnHostMachine(): number;
   setGrpcPortOnHostMachine(value: number): EnclaveAPIContainerHostMachineInfo;
-
-  getGrpcProxyPortOnHostMachine(): number;
-  setGrpcProxyPortOnHostMachine(value: number): EnclaveAPIContainerHostMachineInfo;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveAPIContainerHostMachineInfo.AsObject;
@@ -124,7 +117,6 @@ export namespace EnclaveAPIContainerHostMachineInfo {
   export type AsObject = {
     ipOnHostMachine: string,
     grpcPortOnHostMachine: number,
-    grpcProxyPortOnHostMachine: number,
   }
 }
 

@@ -19,7 +19,7 @@ export { newExecCommandArgs, newStartServicesArgs, newGetServicesArgs, newRemove
 export { PartitionConnections } from "./core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 // TODO Remove this - shouldn't be necessary to be exported due to the newKurtosisContextFromLocalEngine() method
-export { KurtosisContext, DEFAULT_GRPC_PROXY_ENGINE_SERVER_PORT_NUM, DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM } from "./engine/lib/kurtosis_context/kurtosis_context";
+export { KurtosisContext, DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM } from "./engine/lib/kurtosis_context/kurtosis_context";
 export {ServiceLogsStreamContent} from "./engine/lib/kurtosis_context/service_logs_stream_content";
 export {ServiceLog} from "./engine/lib/kurtosis_context/service_log";
 export { LogLineFilter } from "./engine/lib/kurtosis_context/log_line_filter";

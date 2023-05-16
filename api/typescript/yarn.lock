@@ -431,11 +431,6 @@ growl@1.10.5:
   resolved "https://registry.npmjs.org/growl/-/growl-1.10.5.tgz"
   integrity sha512-qBr4OuELkhPenW6goKVXiv47US3clb3/IbuWF9KNKEijAy9oeHxU9IgzjvJhHkUzhaj7rOUD7+YGWqUjLp5oSA==
 
-grpc-web@^1.3.0:
-  version "1.4.0"
-  resolved "https://registry.npmjs.org/grpc-web/-/grpc-web-1.4.0.tgz"
-  integrity sha512-8TgBK93KmutGNOrazO85ZONfWqmdckp+fEu7qbg1hEJUNj5/L7RCJoG75ucbsvIRZzxUs8iom8tLuSpZzYRj0w==
-
 has-flag@^4.0.0:
   version "4.0.0"
   resolved "https://registry.npmjs.org/has-flag/-/has-flag-4.0.0.tgz"

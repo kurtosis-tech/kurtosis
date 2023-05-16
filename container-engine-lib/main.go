@@ -94,7 +94,7 @@ func runKurtosisBackendTesting() error {
 	}
 
 	serializedArgs := map[string]string{
-		"SERIALIZED_ARGS": `{"grpcListenPortNum":9710,"grpcProxyListenPortNum":9711,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
+		"SERIALIZED_ARGS": `{"grpcListenPortNum":9710,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
 	}
 
 	engine, err := backend.CreateEngine(
@@ -102,7 +102,6 @@ func runKurtosisBackendTesting() error {
 		"kurtosistech/engine",
 		"0.49.5",
 		9710,
-		9711,
 		serializedArgs,
 	)
 	if err != nil {
@@ -127,7 +126,7 @@ func runKurtosisBackendTesting() error {
 	*/
 
 	serializedArgs2 := map[string]string{
-		"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"grpcProxyListenPortNum":9811,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
+		"SERIALIZED_ARGS": `{"grpcListenPortNum":9810,"logLevelStr":"debug","imageVersionTag":"1.29.0","metricsUserId":"552f","didUserAcceptSendingMetrics":false,"kurtosisBackendType":"docker","kurtosisBackendConfig":{}}`,
 	}
 
 	engine2, err := backend.CreateEngine(
@@ -135,7 +134,6 @@ func runKurtosisBackendTesting() error {
 		"kurtosistech/kurtosis-engine-server",
 		"1.29.0",
 		9810,
-		9811,
 		serializedArgs2,
 	)
 	if err != nil {

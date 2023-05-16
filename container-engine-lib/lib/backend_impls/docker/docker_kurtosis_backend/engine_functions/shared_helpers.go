@@ -82,7 +82,7 @@ func getEngineObjectFromContainerInfo(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
-	privateGrpcPortSpec, privateGrpcProxyPortSpec, err := getEnginePrivatePorts(labels)
+	privateGrpcPortSpec, err := getEnginePrivatePorts(labels)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the engine container's private port specs from container '%v' with labels: %+v", containerId, labels)
 	}
@@ -101,30 +101,12 @@ func getEngineObjectFromContainerInfo(
 
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
-	var publicGrpcProxyPortSpec *port_spec.PortSpec
 	if engineStatus == container_status.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
 		}
 		publicGrpcPortSpec = candidatePublicGrpcPortSpec
-
-		// TODO REMOVE THIS CONDITIONAL AFTER 2022-05-03 WHEN WE'RE CONFIDENT NOBODY IS USING ENGINES WITHOUT A PROXY
-		if privateGrpcProxyPortSpec != nil {
-			publicGrpcProxyPortIpAddr, candidatePublicGrpcProxyPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcProxyPortSpec, allHostMachinePortBindings)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
-			}
-			publicGrpcProxyPortSpec = candidatePublicGrpcProxyPortSpec
-
-			if publicGrpcPortIpAddr.String() != publicGrpcProxyPortIpAddr.String() {
-				return nil, stacktrace.NewError(
-					"Expected the engine's grpc port public IP address '%v' and grpc-proxy port public IP address '%v' to be the same, but they were different",
-					publicGrpcPortIpAddr.String(),
-					publicGrpcProxyPortIpAddr.String(),
-				)
-			}
-		}
 		publicIpAddr = publicGrpcPortIpAddr
 	}
 
@@ -133,7 +115,6 @@ func getEngineObjectFromContainerInfo(
 		engineStatus,
 		publicIpAddr,
 		publicGrpcPortSpec,
-		publicGrpcProxyPortSpec,
 	)
 
 	return result, nil
@@ -141,13 +122,12 @@ func getEngineObjectFromContainerInfo(
 
 func getEnginePrivatePorts(containerLabels map[string]string) (
 	resultGrpcPortSpec *port_spec.PortSpec,
-	resultGrpcProxyPortSpec *port_spec.PortSpec,
 	resultErr error,
 ) {
 
 	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
 	if !found {
-		return nil, nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
+		return nil, stacktrace.NewError("Expected to find port specs label '%v' but none was found", label_key_consts.PortSpecsDockerLabelKey.GetString())
 	}
 
 	portSpecs, err := docker_port_spec_serializer.DeserializePortSpecs(serializedPortSpecs)
@@ -155,24 +135,17 @@ func getEnginePrivatePorts(containerLabels map[string]string) (
 		// TODO AFTER 2022-05-02 SWITCH THIS TO A PLAIN ERROR WHEN WE'RE SURE NOBODY WILL BE USING THE OLD PORT SPEC STRING!
 		oldPortSpecs, err := deserialize_pre_2022_03_02_PortSpecs(serializedPortSpecs)
 		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v' even when trying the old method", serializedPortSpecs)
+			return nil, stacktrace.Propagate(err, "Couldn't deserialize port spec string '%v' even when trying the old method", serializedPortSpecs)
 		}
 		portSpecs = oldPortSpecs
 	}
 
 	grpcPortSpec, foundGrpcPort := portSpecs[consts.KurtosisInternalContainerGrpcPortId]
 	if !foundGrpcPort {
-		return nil, nil, stacktrace.NewError("No engine grpc port with GUID '%v' found in the engine server port specs", consts.KurtosisInternalContainerGrpcPortId)
+		return nil, stacktrace.NewError("No engine grpc port with GUID '%v' found in the engine server port specs", consts.KurtosisInternalContainerGrpcPortId)
 	}
 
-	grpcProxyPortSpec, foundGrpcProxyPort := portSpecs[consts.KurtosisInternalContainerGrpcProxyPortId]
-	if !foundGrpcProxyPort {
-		grpcProxyPortSpec = nil
-		// TODO AFTER 2022-05-02 SWITCH THIS TO AN ERROR WHEN WE'RE SURE NOBODY WILL HAVE AN ENGINE WITHOUT THE PROXY
-		// return nil, nil, stacktrace.NewError("No engine grpc-proxy port with GUID '%v' found in the engine server port specs", kurtosisInternalContainerGrpcProxyPortId)
-	}
-
-	return grpcPortSpec, grpcProxyPortSpec, nil
+	return grpcPortSpec, nil
 }
 
 // TODO DELETE THIS AFTER 2022-05-02, WHEN WE'RE CONFIDENT NO ENGINES WILL BE USING THE OLD PORT SPEC!

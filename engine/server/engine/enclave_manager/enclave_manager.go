@@ -23,8 +23,6 @@ import (
 const (
 	apiContainerListenGrpcPortNumInsideNetwork = uint16(7443)
 
-	apiContainerListenGrpcProxyPortNumInsideNetwork = uint16(7444)
-
 	getRandomEnclaveIdRetries = uint16(5)
 
 	validNumberOfUuidMatches = 1
@@ -141,7 +139,6 @@ func (manager *EnclaveManager) CreateEnclave(
 		apiContainerLogLevel,
 		enclaveUuid,
 		apiContainerListenGrpcPortNumInsideNetwork,
-		apiContainerListenGrpcProxyPortNumInsideNetwork,
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
@@ -169,13 +166,11 @@ func (manager *EnclaveManager) CreateEnclave(
 
 	var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if apiContainer.GetPublicIPAddress() != nil &&
-		apiContainer.GetPublicGRPCPort() != nil &&
-		apiContainer.GetPublicGRPCProxyPort() != nil {
+		apiContainer.GetPublicGRPCPort() != nil {
 
 		apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
 			IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
 			GrpcPortOnHostMachine:      uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
-			GrpcProxyPortOnHostMachine: uint32(apiContainer.GetPublicGRPCProxyPort().GetNumber()),
 		}
 	}
 
@@ -194,7 +189,6 @@ func (manager *EnclaveManager) CreateEnclave(
 			ContainerId:                "",
 			IpInsideEnclave:            apiContainer.GetPrivateIPAddress().String(),
 			GrpcPortInsideEnclave:      uint32(apiContainerListenGrpcPortNumInsideNetwork),
-			GrpcProxyPortInsideEnclave: uint32(apiContainerListenGrpcProxyPortNumInsideNetwork),
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,
@@ -407,20 +401,17 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 		ContainerId:                "",
 		IpInsideEnclave:            apiContainer.GetPrivateIPAddress().String(),
 		GrpcPortInsideEnclave:      uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
-		GrpcProxyPortInsideEnclave: uint32(apiContainer.GetPrivateGRPCProxyPort().GetNumber()),
 	}
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if resultApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
 
 		var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 		if apiContainer.GetPublicIPAddress() != nil &&
-			apiContainer.GetPublicGRPCPort() != nil &&
-			apiContainer.GetPublicGRPCProxyPort() != nil {
+			apiContainer.GetPublicGRPCPort() != nil {
 
 			apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
 				IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
 				GrpcPortOnHostMachine:      uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
-				GrpcProxyPortOnHostMachine: uint32(apiContainer.GetPublicGRPCProxyPort().GetNumber()),
 			}
 		}
 
@@ -543,7 +534,6 @@ func (manager *EnclaveManager) launchApiContainer(
 	logLevel logrus.Level,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcListenPort uint16,
-	grpcProxyListenPort uint16,
 	isPartitioningEnabled bool,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
@@ -561,7 +551,6 @@ func (manager *EnclaveManager) launchApiContainer(
 			logLevel,
 			enclaveUuid,
 			grpcListenPort,
-			grpcProxyListenPort,
 			isPartitioningEnabled,
 			metricsUserID,
 			didUserAcceptSendingMetrics,
@@ -577,7 +566,6 @@ func (manager *EnclaveManager) launchApiContainer(
 		logLevel,
 		enclaveUuid,
 		grpcListenPort,
-		grpcProxyListenPort,
 		isPartitioningEnabled,
 		metricsUserID,
 		didUserAcceptSendingMetrics,

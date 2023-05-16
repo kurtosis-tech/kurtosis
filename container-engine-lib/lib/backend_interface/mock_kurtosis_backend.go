@@ -87,25 +87,25 @@ func (_c *MockKurtosisBackend_CopyFilesFromUserService_Call) RunAndReturn(run fu
 	return _c
 }
 
-// CreateAPIContainer provides a mock function with given fields: ctx, image, enclaveUuid, grpcPortNum, grpcProxyPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars
-func (_m *MockKurtosisBackend) CreateAPIContainer(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, grpcProxyPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string) (*api_container.APIContainer, error) {
-	ret := _m.Called(ctx, image, enclaveUuid, grpcPortNum, grpcProxyPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
+// CreateAPIContainer provides a mock function with given fields: ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars
+func (_m *MockKurtosisBackend) CreateAPIContainer(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string) (*api_container.APIContainer, error) {
+	ret := _m.Called(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
 
 	var r0 *api_container.APIContainer
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, uint16, string, string, map[string]string) (*api_container.APIContainer, error)); ok {
-		return rf(ctx, image, enclaveUuid, grpcPortNum, grpcProxyPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
+	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string) (*api_container.APIContainer, error)); ok {
+		return rf(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, uint16, string, string, map[string]string) *api_container.APIContainer); ok {
-		r0 = rf(ctx, image, enclaveUuid, grpcPortNum, grpcProxyPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
+	if rf, ok := ret.Get(0).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string) *api_container.APIContainer); ok {
+		r0 = rf(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*api_container.APIContainer)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, enclave.EnclaveUUID, uint16, uint16, string, string, map[string]string) error); ok {
-		r1 = rf(ctx, image, enclaveUuid, grpcPortNum, grpcProxyPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
+	if rf, ok := ret.Get(1).(func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string) error); ok {
+		r1 = rf(ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -123,17 +123,16 @@ type MockKurtosisBackend_CreateAPIContainer_Call struct {
 //   - image string
 //   - enclaveUuid enclave.EnclaveUUID
 //   - grpcPortNum uint16
-//   - grpcProxyPortNum uint16
 //   - enclaveDataVolumeDirpath string
 //   - ownIpAddressEnvVar string
 //   - customEnvVars map[string]string
-func (_e *MockKurtosisBackend_Expecter) CreateAPIContainer(ctx interface{}, image interface{}, enclaveUuid interface{}, grpcPortNum interface{}, grpcProxyPortNum interface{}, enclaveDataVolumeDirpath interface{}, ownIpAddressEnvVar interface{}, customEnvVars interface{}) *MockKurtosisBackend_CreateAPIContainer_Call {
-	return &MockKurtosisBackend_CreateAPIContainer_Call{Call: _e.mock.On("CreateAPIContainer", ctx, image, enclaveUuid, grpcPortNum, grpcProxyPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)}
+func (_e *MockKurtosisBackend_Expecter) CreateAPIContainer(ctx interface{}, image interface{}, enclaveUuid interface{}, grpcPortNum interface{}, enclaveDataVolumeDirpath interface{}, ownIpAddressEnvVar interface{}, customEnvVars interface{}) *MockKurtosisBackend_CreateAPIContainer_Call {
+	return &MockKurtosisBackend_CreateAPIContainer_Call{Call: _e.mock.On("CreateAPIContainer", ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)}
 }
 
-func (_c *MockKurtosisBackend_CreateAPIContainer_Call) Run(run func(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, grpcProxyPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string)) *MockKurtosisBackend_CreateAPIContainer_Call {
+func (_c *MockKurtosisBackend_CreateAPIContainer_Call) Run(run func(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string)) *MockKurtosisBackend_CreateAPIContainer_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(enclave.EnclaveUUID), args[3].(uint16), args[4].(uint16), args[5].(string), args[6].(string), args[7].(map[string]string))
+		run(args[0].(context.Context), args[1].(string), args[2].(enclave.EnclaveUUID), args[3].(uint16), args[4].(string), args[5].(string), args[6].(map[string]string))
 	})
 	return _c
 }
@@ -205,25 +204,25 @@ func (_c *MockKurtosisBackend_CreateEnclave_Call) RunAndReturn(run func(context.
 	return _c
 }
 
-// CreateEngine provides a mock function with given fields: ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, envVars
-func (_m *MockKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, envVars map[string]string) (*engine.Engine, error) {
-	ret := _m.Called(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, envVars)
+// CreateEngine provides a mock function with given fields: ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars
+func (_m *MockKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, envVars map[string]string) (*engine.Engine, error) {
+	ret := _m.Called(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars)
 
 	var r0 *engine.Engine
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint16, uint16, map[string]string) (*engine.Engine, error)); ok {
-		return rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, envVars)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint16, map[string]string) (*engine.Engine, error)); ok {
+		return rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint16, uint16, map[string]string) *engine.Engine); ok {
-		r0 = rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, envVars)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, uint16, map[string]string) *engine.Engine); ok {
+		r0 = rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*engine.Engine)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, uint16, uint16, map[string]string) error); ok {
-		r1 = rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, envVars)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, uint16, map[string]string) error); ok {
+		r1 = rf(ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -241,15 +240,14 @@ type MockKurtosisBackend_CreateEngine_Call struct {
 //   - imageOrgAndRepo string
 //   - imageVersionTag string
 //   - grpcPortNum uint16
-//   - grpcProxyPortNum uint16
 //   - envVars map[string]string
-func (_e *MockKurtosisBackend_Expecter) CreateEngine(ctx interface{}, imageOrgAndRepo interface{}, imageVersionTag interface{}, grpcPortNum interface{}, grpcProxyPortNum interface{}, envVars interface{}) *MockKurtosisBackend_CreateEngine_Call {
-	return &MockKurtosisBackend_CreateEngine_Call{Call: _e.mock.On("CreateEngine", ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, grpcProxyPortNum, envVars)}
+func (_e *MockKurtosisBackend_Expecter) CreateEngine(ctx interface{}, imageOrgAndRepo interface{}, imageVersionTag interface{}, grpcPortNum interface{}, envVars interface{}) *MockKurtosisBackend_CreateEngine_Call {
+	return &MockKurtosisBackend_CreateEngine_Call{Call: _e.mock.On("CreateEngine", ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars)}
 }
 
-func (_c *MockKurtosisBackend_CreateEngine_Call) Run(run func(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, grpcProxyPortNum uint16, envVars map[string]string)) *MockKurtosisBackend_CreateEngine_Call {
+func (_c *MockKurtosisBackend_CreateEngine_Call) Run(run func(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, envVars map[string]string)) *MockKurtosisBackend_CreateEngine_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(uint16), args[4].(uint16), args[5].(map[string]string))
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(uint16), args[4].(map[string]string))
 	})
 	return _c
 }
