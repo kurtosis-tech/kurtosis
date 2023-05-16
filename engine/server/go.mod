@@ -6,9 +6,9 @@ replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
-	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../../core/launcher
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../launcher
+	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
 )
@@ -30,7 +30,7 @@ require (
 require (
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/docker/distribution v2.8.0+incompatible // indirect
+	github.com/docker/distribution v2.8.2+incompatible // indirect
 	github.com/docker/docker v20.10.24+incompatible // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
@@ -54,7 +54,6 @@ require (
 require github.com/gorilla/websocket v1.4.2
 
 require (
-	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
 )
