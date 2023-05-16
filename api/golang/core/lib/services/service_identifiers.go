@@ -10,7 +10,7 @@ const (
 	validUuidMatchesAllowed = 1
 )
 
-// Docs available at https://docs.kurtosistech.com/sdk#service-identifiers
+// Docs available at https://docs.kurtosis.com/sdk#service-identifiers
 type ServiceIdentifiers struct {
 	serviceNameToUuids          map[ServiceName][]ServiceUUID
 	serviceUuids                map[ServiceUUID]bool
