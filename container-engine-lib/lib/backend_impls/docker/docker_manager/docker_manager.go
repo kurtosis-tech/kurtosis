@@ -185,8 +185,10 @@ func (manager *DockerManager) CreateNetwork(context context.Context, name string
 		Ingress:    false,
 		ConfigOnly: false,
 		ConfigFrom: nil,
-		Options:    nil,
-		Labels:     labels,
+		Options: map[string]string{
+			"com.docker.network.driver.mtu": "1440",
+		},
+		Labels: labels,
 	})
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed to create network %s with subnet %s", name, subnetMask)
