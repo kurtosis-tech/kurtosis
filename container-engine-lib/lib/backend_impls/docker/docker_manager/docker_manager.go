@@ -177,7 +177,9 @@ func (manager *DockerManager) CreateNetwork(context context.Context, name string
 		EnableIPv6:     false,
 		IPAM: &network.IPAM{
 			Driver:  "",
-			Options: nil,
+			Options: map[string]{
+				"com.docker.network.driver.mtu": "1440",
+			},
 			Config:  ipamConfig,
 		},
 		Internal:   false,
