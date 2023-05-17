@@ -20,7 +20,7 @@ require (
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0 // Local dependency
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // Local dependency
-	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20211201000847-a204edc5a0b3
+	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230120102313-4adf4f054260
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.1
