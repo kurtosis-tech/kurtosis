@@ -91,18 +91,7 @@ If you want to run a non-main branch, tag or commit use the following syntax
 All these will call the `run(plan)` function of the package's `main.star`.
 
 ### Arguments
-To accept parameters to the `run(plan)` function, the function should accept an `args` parameter:
-
-```python
-def run(plan, args):
-    print("Hello, " + args["name"])
-```
-
-To pass parameters to the `run(plan, args)` function, a JSON object should be passed as the second positional argument after the script or package path:
-
-```
-kurtosis run github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml '{"name": "Joseph"}'
-```
+Kurtosis packages can be parameterized with arguments by adding an `args` parameter to the `run` function. Read more about package arguments [here][args-reference].
 
 <!-------------------- ONLY LINKS BELOW HERE -------------------------->
 [kurtosis-yml]: ./kurtosis-yml.md
@@ -110,3 +99,4 @@ kurtosis run github.com/package-author/package-repo/path/to/directory-with-kurto
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=package+in%3Aname&type=all&language=&sort=
 [how-do-kurtosis-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
 [plan]: ./plan.md
+[args-reference]: ./args.md
