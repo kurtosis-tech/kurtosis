@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.76.7](https://github.com/kurtosis-tech/kurtosis/compare/0.76.6...0.76.7) (2023-05-17)
+
+
+### Bug Fixes
+
+* Exclude resources dir from the internal testsuites ([#622](https://github.com/kurtosis-tech/kurtosis/issues/622)) ([ffd2031](https://github.com/kurtosis-tech/kurtosis/commit/ffd203174db8d515752ddf832a8dbfc924687520))
+* Remove the GRPC proxy port from the engine and from the APIC ([#626](https://github.com/kurtosis-tech/kurtosis/issues/626)) ([de284be](https://github.com/kurtosis-tech/kurtosis/commit/de284bed4f9031e51fb4ccafc934e39bea3879d5))
+* set MTU to 1440 to fix GitPod networking ([#627](https://github.com/kurtosis-tech/kurtosis/issues/627)) ([19ec18e](https://github.com/kurtosis-tech/kurtosis/commit/19ec18e4174555b51c917e13f34f7275c6ddab1a))
+
 ## [0.76.6](https://github.com/kurtosis-tech/kurtosis/compare/0.76.5...0.76.6) (2023-05-12)
 
 
