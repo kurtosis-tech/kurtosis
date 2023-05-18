@@ -7,6 +7,6 @@ WORKDIR /run
 COPY ./build/kurtosis-engine ./
 
 # Plugin
-COPY ./kubernetes-engine-apic.so /tmp/
+COPY ./kubernetes-engine-apic.so /tmp/plugins/
 
 CMD ./kurtosis-engine
