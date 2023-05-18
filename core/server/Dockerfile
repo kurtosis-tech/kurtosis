@@ -7,4 +7,7 @@ WORKDIR /run
 
 COPY ./build/api-container ./
 
+# Plugin
+COPY ./kubernetes-engine-apic.so /tmp/
+
 CMD ./api-container
