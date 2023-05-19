@@ -75,7 +75,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 				command_str_consts.ClusterSetCmdStr, clusterPriorToUpdate)
 		}
 	}()
-	logrus.Infof("Clustet set to '%s', Kurtosis engine will now be restarted", clusterName)
+	logrus.Infof("Cluster set to '%s', Kurtosis engine will now be restarted", clusterName)
 
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
