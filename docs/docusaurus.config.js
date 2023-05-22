@@ -93,7 +93,7 @@ const config = {
             activeBasePath: '/sdk'
           },
           {
-            href: 'web3.kurtosis.com',
+            href: 'https://web3.kurtosis.com',
             position: 'left',
             label: 'Kurtosis for Web3',
           },
@@ -129,7 +129,7 @@ const config = {
               },
               {
                 label: 'Kurtosis for Web3',
-                href: 'web3.kurtosis.com',
+                href: 'https://web3.kurtosis.com',
               },
             ],
           },
