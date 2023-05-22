@@ -95,13 +95,14 @@ func Test_printWarningIfArgumentIsDeprecated(t *testing.T) {
 	require.Len(t, warnings, 2)
 
 	// just checking only one warning to make sure that the string formatting works
-	require.Contains(t, warnings[0],
-		fmt.Sprintf("%q field for %q will be deprecated by %v. %v",
-			"config",
-			"kurtosis_builtin",
-			deprecatedDate.GetFormattedDate(),
-			deprecatedMitigation,
-		))
+	expectedWarning := fmt.Sprintf("[WARN]: %q field for %q will be deprecated by %v. %v",
+		"config",
+		"kurtosis_builtin",
+		deprecatedDate.GetFormattedDate(),
+		deprecatedMitigation,
+	)
+	require.Contains(t, warnings, expectedWarning)
+
 }
 
 func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
