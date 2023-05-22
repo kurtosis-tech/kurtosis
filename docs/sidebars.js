@@ -18,7 +18,7 @@ const sidebars = {
         {
             "type": "link",
             "label": "Kurtosis for Web3",
-            "href": "web3.kurtosis.com",
+            "href": "https://web3.kurtosis.com",
         },
         'quickstart',
         {
