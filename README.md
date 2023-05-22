@@ -10,6 +10,8 @@ To read more about "why Kurtosis?", go [here](https://docs.kurtosis.com/#why-use
 
 To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
 
+To read about Kurtosis use cases in web3, go [here](https://web3.kurtosis.com).
+
 Kurtosis Kloud Early Access
 ===========================
 
