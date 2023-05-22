@@ -93,6 +93,11 @@ const config = {
             activeBasePath: '/sdk'
           },
           {
+            href: 'web3.kurtosis.com',
+            position: 'left',
+            label: 'Kurtosis for Web3',
+          },
+          {
             type: 'docsVersionDropdown',
             position: 'right',
             dropdownActiveClassDisabled: true,
@@ -121,6 +126,10 @@ const config = {
               {
                 label: 'Starlark',
                 to: '/starlark-reference',
+              },
+              {
+                label: 'Kurtosis for Web3',
+                href: 'web3.kurtosis.com',
               },
             ],
           },
