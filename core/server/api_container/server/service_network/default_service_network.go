@@ -145,7 +145,7 @@ func NewDefaultServiceNetwork(
 		apiContainerIpAddress:               apiContainerIpAddr,
 		apiContainerGrpcPortNum:             apiContainerGrpcPortNum,
 		apiContainerVersion:                 apiContainerVersion,
-		mutex:                               &sync.Mutex{},
+		mutex:                               &sync.RWMutex{},
 		isPartitioningEnabled:               isPartitioningEnabled,
 		kurtosisBackend:                     kurtosisBackend,
 		enclaveDataDir:                      enclaveDataDir,
