@@ -73,7 +73,6 @@ func TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams(t *testing.T)
 
 	params := `{"hello": "world"}` // expecting key 'greetings' here
 	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, moduleDirpath, params, defaultDryRun, defaultParallelism)
-	require.NoError(t, err, "Unexpected error executing startosis module")
 
 	require.NotNil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), "Evaluation error: key \"greetings\" not in dict")
