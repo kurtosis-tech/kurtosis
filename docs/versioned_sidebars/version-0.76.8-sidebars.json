@@ -1,6 +1,11 @@
 {
   "main": [
     "home",
+    {
+      "type": "link",
+      "label": "Kurtosis for Web3",
+      "href": "https://web3.kurtosis.com"
+    },
     "quickstart",
     {
       "type": "category",
@@ -66,16 +71,8 @@
       ]
     },
     "client-libs-reference",
-    {
-      "type": "link",
-      "label": "Examples",
-      "href": "https://github.com/kurtosis-tech/awesome-kurtosis"
-    },
-    {
-      "type": "link",
-      "label": "Kurtosis-Managed Packages",
-      "href": "https://github.com/kurtosis-tech?q=package+in%3Aname&type=all&language=&sort="
-    },
+    "best-practices",
+    "package-index",
     "changelog"
   ]
 }
