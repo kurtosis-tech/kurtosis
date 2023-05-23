@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.76.9](https://github.com/kurtosis-tech/kurtosis/compare/0.76.8...0.76.9) (2023-05-23)
+
+
+### Bug Fixes
+
+* 'engine stop' now waits for engine to report STOPPED status ([#635](https://github.com/kurtosis-tech/kurtosis/issues/635)) ([e16e123](https://github.com/kurtosis-tech/kurtosis/commit/e16e12304a260c0b6bcbcb6ab119e5b8380880db))
+
 ## [0.76.8](https://github.com/kurtosis-tech/kurtosis/compare/0.76.7...0.76.8) (2023-05-23)
 
 
