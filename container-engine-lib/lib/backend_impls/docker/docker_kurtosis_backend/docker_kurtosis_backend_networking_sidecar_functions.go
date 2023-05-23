@@ -280,7 +280,7 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 		ctx,
 		matchingUncastedObjectsByContainerId,
 		backend.dockerManager,
-		extractServiceUUIDFromNetworkSidecarObj,
+		extractServiceUUIDFromNetworkSidecar,
 		dockerOperation,
 	)
 	if err != nil {
@@ -332,7 +332,7 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 		ctx,
 		matchingUncastedObjectsByContainerId,
 		backend.dockerManager,
-		extractServiceUUIDFromNetworkSidecarObj,
+		extractServiceUUIDFromNetworkSidecar,
 		dockerOperation,
 	)
 	if err != nil {
@@ -441,6 +441,6 @@ func getNetworkingSidecarObjectFromContainerInfo(
 	return newObject, nil
 }
 
-func extractServiceUUIDFromNetworkSidecarObj(networkingSidecar *networking_sidecar.NetworkingSidecar) (string, error) {
-	return string(networkingSidecar.GetServiceUUID()), nil
+func extractServiceUUIDFromNetworkSidecar(networkingSidecar *networking_sidecar.NetworkingSidecar) string {
+	return string(networkingSidecar.GetServiceUUID())
 }

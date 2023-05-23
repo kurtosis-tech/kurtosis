@@ -45,7 +45,7 @@ func StopEngines(
 		ctx,
 		matchingUncastedEnginesByContainerId,
 		dockerManager,
-		extractEngineGuidFromUncastedEngineObj,
+		extractEngineGuidFromEngine,
 		killEngineOperation,
 	)
 	if err != nil {

@@ -223,6 +223,6 @@ func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spe
 	return result, nil
 }
 
-func extractEngineGuidFromUncastedEngineObj(uncastedEngineObj *engine.Engine) (string, error) {
-	return string(uncastedEngineObj.GetGUID()), nil
+func extractEngineGuidFromEngine(engine *engine.Engine) string {
+	return string(engine.GetGUID())
 }

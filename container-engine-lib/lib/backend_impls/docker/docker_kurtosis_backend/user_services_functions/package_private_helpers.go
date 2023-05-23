@@ -201,7 +201,7 @@ func removeUserServiceDockerResources(
 		ctx,
 		uncastedKurtosisObjectsToRemoveByContainerId,
 		dockerManager,
-		extractServiceUUIDFromServiceObj,
+		extractServiceUUIDFromService,
 		dockerOperation,
 	)
 	if err != nil {
@@ -271,6 +271,6 @@ func removeUserServiceDockerResources(
 	return successUuids, erroredUuids, nil
 }
 
-func extractServiceUUIDFromServiceObj(uncastedObj *service.Service) (string, error) {
-	return string(uncastedObj.GetRegistration().GetUUID()), nil
+func extractServiceUUIDFromService(service *service.Service) string {
+	return string(service.GetRegistration().GetUUID())
 }

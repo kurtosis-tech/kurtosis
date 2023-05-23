@@ -45,7 +45,7 @@ func DestroyEngines(
 		ctx,
 		matchingUncastedEnginesByContainerId,
 		dockerManager,
-		extractEngineGuidFromUncastedEngineObj,
+		extractEngineGuidFromEngine,
 		removeEngineOperation,
 	)
 	if err != nil {

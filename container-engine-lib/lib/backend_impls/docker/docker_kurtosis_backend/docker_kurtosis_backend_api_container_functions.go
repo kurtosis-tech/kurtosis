@@ -264,7 +264,7 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		ctx,
 		matchingUncastedApiContainersByContainerId,
 		backend.dockerManager,
-		extractEnclaveIdFromUncastedApiContainerObj,
+		extractEnclaveIdApiContainer,
 		killApiContainerOperation,
 	)
 	if err != nil {
@@ -310,7 +310,7 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 		ctx,
 		matchingUncastedApiContainersByContainerId,
 		backend.dockerManager,
-		extractEnclaveIdFromUncastedApiContainerObj,
+		extractEnclaveIdApiContainer,
 		removeApiContainerOperation,
 	)
 	if err != nil {
@@ -465,6 +465,6 @@ func getPrivateApiContainerPorts(containerLabels map[string]string) (
 	return grpcPortSpec, nil
 }
 
-func extractEnclaveIdFromUncastedApiContainerObj(apiContainer *api_container.APIContainer) (string, error) {
-	return string(apiContainer.GetEnclaveID()), nil
+func extractEnclaveIdApiContainer(apiContainer *api_container.APIContainer) string {
+	return string(apiContainer.GetEnclaveID())
 }

@@ -51,7 +51,7 @@ func StopUserServices(
 		ctx,
 		servicesToStopByContainerId,
 		dockerManager,
-		extractServiceUUIDFromServiceObj,
+		extractServiceUUIDFromService,
 		dockerOperation,
 	)
 	if err != nil {
