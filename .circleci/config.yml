@@ -715,6 +715,12 @@ jobs:
       - run: "${KURTOSIS_BINPATH} clean -a"
       - run: "${KURTOSIS_BINPATH} engine stop"
 
+      # Execute engine functions
+      - run: "${KURTOSIS_BINPATH} engine start"
+      - run: "${KURTOSIS_BINPATH} engine restart"
+      - run: "${KURTOSIS_BINPATH} engine start"
+      - run: "${KURTOSIS_BINPATH} engine status"
+
       # Ensure Kubernetes resources clean up successfully
       - when:
           condition:
