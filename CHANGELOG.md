@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.76.8](https://github.com/kurtosis-tech/kurtosis/compare/0.76.7...0.76.8) (2023-05-23)
+
+
+### Features
+
+* Return error on SDK if Starlark run on any step  ([#634](https://github.com/kurtosis-tech/kurtosis/issues/634)) ([8a01cff](https://github.com/kurtosis-tech/kurtosis/commit/8a01cfffc92c47d44d0a73593bf91d4c990f72ed))
+
+
+### Bug Fixes
+
+* Make printWarningIfArgumentIsDeprecated unit test deterministic ([#633](https://github.com/kurtosis-tech/kurtosis/issues/633)) ([46bbee5](https://github.com/kurtosis-tech/kurtosis/commit/46bbee5dcd67346f0007d6d83326fd9200fa9dda))
+* Rollback to previous cluster when cluster set fails ([#631](https://github.com/kurtosis-tech/kurtosis/issues/631)) ([0e212c9](https://github.com/kurtosis-tech/kurtosis/commit/0e212c93f05fc174a6ad47bafb25975e0b95b892))
+
 ## [0.76.7](https://github.com/kurtosis-tech/kurtosis/compare/0.76.6...0.76.7) (2023-05-17)
 
 
