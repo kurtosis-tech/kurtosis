@@ -32,7 +32,7 @@ def run(plan):
 
 func TestStartosis_TimeoutWait(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, timeoutWaitTestName, timeoutWaitStartosisScript)
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, timeoutWaitTestName, timeoutWaitStartosisScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

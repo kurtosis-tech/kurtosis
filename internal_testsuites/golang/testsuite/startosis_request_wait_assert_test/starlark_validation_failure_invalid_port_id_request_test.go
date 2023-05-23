@@ -32,7 +32,7 @@ def run(plan):
 
 func TestStarlark_InvalidPortIdRequest(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, requestInvalidPortIDTest, requestInvalidPortIDFailScript)
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, requestInvalidPortIDTest, requestInvalidPortIDFailScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation errors")

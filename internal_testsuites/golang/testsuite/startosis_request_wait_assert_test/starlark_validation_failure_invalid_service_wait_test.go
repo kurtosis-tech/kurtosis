@@ -32,7 +32,7 @@ def run(plan):
 
 func TestStarlark_InvalidServiceWait(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, waitInvalidServiceTest, waitInvalidServiceTestScript)
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, waitInvalidServiceTest, waitInvalidServiceTestScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation error")
