@@ -25,7 +25,7 @@ func StopUserServices(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
 
-	servicesToStopByContainerId := map[string]interface{}{}
+	servicesToStopByContainerId := map[string]*service.Service{}
 	for uuid, serviceResources := range allDockerResources {
 		serviceObj, found := allServiceObjs[uuid]
 		if !found {

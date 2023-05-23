@@ -176,7 +176,7 @@ func removeUserServiceDockerResources(
 		}
 	}
 
-	uncastedKurtosisObjectsToRemoveByContainerId := map[string]interface{}{}
+	uncastedKurtosisObjectsToRemoveByContainerId := map[string]*service.Service{}
 	for serviceUuid, resources := range resourcesToRemove {
 		// Safe to skip the is-found check because we verified the map keys are identical earlier
 		serviceObj := serviceObjectsToRemove[serviceUuid]
@@ -271,10 +271,6 @@ func removeUserServiceDockerResources(
 	return successUuids, erroredUuids, nil
 }
 
-func extractServiceUUIDFromServiceObj(uncastedObj interface{}) (string, error) {
-	castedObj, ok := uncastedObj.(*service.Service)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the user service object")
-	}
-	return string(castedObj.GetRegistration().GetUUID()), nil
+func extractServiceUUIDFromServiceObj(uncastedObj *service.Service) (string, error) {
+	return string(uncastedObj.GetRegistration().GetUUID()), nil
 }

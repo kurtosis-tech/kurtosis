@@ -260,10 +260,9 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedObjectsByContainerId := map[string]interface{}{}
+	matchingUncastedObjectsByContainerId := map[string]*networking_sidecar.NetworkingSidecar{}
 	for containerId, object := range matchingNetworkingSidecarsByContainerId {
-		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
+		matchingUncastedObjectsByContainerId[containerId] = object
 	}
 
 	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
@@ -313,10 +312,9 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedObjectsByContainerId := map[string]interface{}{}
+	matchingUncastedObjectsByContainerId := map[string]*networking_sidecar.NetworkingSidecar{}
 	for containerId, object := range networkingSidecars {
-		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
+		matchingUncastedObjectsByContainerId[containerId] = object
 	}
 
 	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
@@ -443,10 +441,6 @@ func getNetworkingSidecarObjectFromContainerInfo(
 	return newObject, nil
 }
 
-func extractServiceUUIDFromNetworkSidecarObj(uncastedObj interface{}) (string, error) {
-	castedObj, ok := uncastedObj.(*networking_sidecar.NetworkingSidecar)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the networking sidecar object")
-	}
-	return string(castedObj.GetServiceUUID()), nil
+func extractServiceUUIDFromNetworkSidecarObj(networkingSidecar *networking_sidecar.NetworkingSidecar) (string, error) {
+	return string(networkingSidecar.GetServiceUUID()), nil
 }

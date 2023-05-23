@@ -23,9 +23,9 @@ func StopEngines(
 	}
 
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedEnginesByContainerId := map[string]interface{}{}
+	matchingUncastedEnginesByContainerId := map[string]*engine.Engine{}
 	for containerId, engineObj := range matchingEnginesByContainerId {
-		matchingUncastedEnginesByContainerId[containerId] = interface{}(engineObj)
+		matchingUncastedEnginesByContainerId[containerId] = engineObj
 	}
 
 	var killEngineOperation docker_operation_parallelizer.DockerOperation = func(
@@ -68,4 +68,3 @@ func StopEngines(
 
 	return successfulGuids, erroredGuids, nil
 }
-

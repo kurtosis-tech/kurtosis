@@ -124,7 +124,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateGrpcDockerPort:      docker_manager.NewAutomaticPublishingSpec(),
+		privateGrpcDockerPort: docker_manager.NewAutomaticPublishingSpec(),
 	}
 
 	bindMounts := map[string]string{
@@ -244,9 +244,9 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 	}
 
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedApiContainersByContainerId := map[string]interface{}{}
+	matchingUncastedApiContainersByContainerId := map[string]*api_container.APIContainer{}
 	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
-		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
+		matchingUncastedApiContainersByContainerId[containerId] = apiContainerObj
 	}
 
 	var killApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
@@ -290,9 +290,9 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 	}
 
 	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedApiContainersByContainerId := map[string]interface{}{}
+	matchingUncastedApiContainersByContainerId := map[string]*api_container.APIContainer{}
 	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
-		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
+		matchingUncastedApiContainersByContainerId[containerId] = apiContainerObj
 	}
 
 	var removeApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
@@ -465,10 +465,6 @@ func getPrivateApiContainerPorts(containerLabels map[string]string) (
 	return grpcPortSpec, nil
 }
 
-func extractEnclaveIdFromUncastedApiContainerObj(uncastedApiContainerObj interface{}) (string, error) {
-	castedObj, ok := uncastedApiContainerObj.(*api_container.APIContainer)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the API container object")
-	}
-	return string(castedObj.GetEnclaveID()), nil
+func extractEnclaveIdFromUncastedApiContainerObj(apiContainer *api_container.APIContainer) (string, error) {
+	return string(apiContainer.GetEnclaveID()), nil
 }
