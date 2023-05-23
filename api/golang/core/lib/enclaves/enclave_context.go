@@ -30,6 +30,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"path"
+	"strings"
 )
 
 type EnclaveUUID string
@@ -96,9 +97,10 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, seriali
 func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context, serializedScript string, serializedParams string, dryRun bool, parallelism int32) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkScript(ctx, serializedScript, serializedParams, dryRun, parallelism)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error running Starlark Script")
+		return nil, stacktrace.Propagate(err, "Error requesting Starlark Script run")
 	}
-	return ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan), nil
+	starlarkResponse := ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan)
+	return starlarkResponse, getErrFromStarlarkRunResult(starlarkResponse)
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
@@ -138,7 +140,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error running Starlark package")
 	}
-	return ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan), nil
+	starlarkResponse := ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan)
+	return starlarkResponse, getErrFromStarlarkRunResult(starlarkResponse)
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
@@ -371,6 +374,23 @@ func runReceiveStarlarkResponseLineRoutine(cancelCtxFunc context.CancelFunc, str
 		}
 		kurtosisResponseLineChan <- responseLine
 	}
+}
+
+func getErrFromStarlarkRunResult(result *StarlarkRunResult) error {
+	if result.InterpretationError != nil {
+		return stacktrace.NewError(result.InterpretationError.GetErrorMessage())
+	}
+	if len(result.ValidationErrors) > 0 {
+		errorMessages := []string{}
+		for _, validationErr := range result.ValidationErrors {
+			errorMessages = append(errorMessages, validationErr.GetErrorMessage())
+		}
+		return stacktrace.NewError("Found %v validation errors: %v", len(result.ValidationErrors), strings.Join(errorMessages, "\n"))
+	}
+	if result.ExecutionError != nil {
+		return stacktrace.NewError(result.ExecutionError.GetErrorMessage())
+	}
+	return nil
 }
 
 func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(packageRootPath string, serializedParams string, dryRun bool, parallelism int32) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
