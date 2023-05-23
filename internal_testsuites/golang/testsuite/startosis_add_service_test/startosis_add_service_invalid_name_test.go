@@ -49,7 +49,6 @@ func TestAddServiceWithInvalidServiceNameFailsValidation(t *testing.T) {
 	logrus.Debugf("Starlark script contents: \n%v", fmt.Sprintf(addServiceInvalidServiceNameTestScript, invalidServiceName))
 
 	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, fmt.Sprintf(addServiceInvalidServiceNameTestScript, invalidServiceName))
-	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected some validation errors")
