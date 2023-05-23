@@ -79,7 +79,16 @@ Download the appropriate artifact from [the release artifacts page][release-arti
 
 <TabItem value="windows" label="Windows">
 
-The Kurtosis CLI cannot be installed directly on Windows. Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
+Windows users are encouraged to use [Windows Subsystem for Linux (WSL)][windows-susbsystem-for-linux] to use Kurtosis.
+If you want to run a native executable, you can download the latest build for your architechture [here](https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/tags).
+
+Or do it using PowerShell:
+
+```bash
+Invoke-WebRequest -Uri "https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases/download/REPLACE_VERSION/kurtosis-cli_REPLACE_VERSION_windows_REPLACE_ARCH.tar.gz" -OutFile kurtosis.tar.gz
+tar -xvzf kurtosis.tar.gz
+kurtosis.exe
+```
 
 </TabItem>
 
