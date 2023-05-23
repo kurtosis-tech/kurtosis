@@ -72,7 +72,7 @@ func TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams(t *testing.T)
 	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
 
 	params := `{"hello": "world"}` // expecting key 'greetings' here
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, moduleDirpath, params, defaultDryRun, defaultParallelism)
+	runResult, _ := enclaveCtx.RunStarlarkPackageBlocking(ctx, moduleDirpath, params, defaultDryRun, defaultParallelism)
 
 	require.NotNil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), "Evaluation error: key \"greetings\" not in dict")
