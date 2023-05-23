@@ -1,5 +1,48 @@
 # Changelog
 
+## [0.76.9](https://github.com/kurtosis-tech/kurtosis/compare/0.76.8...0.76.9) (2023-05-23)
+
+
+### Bug Fixes
+
+* 'engine stop' now waits for engine to report STOPPED status ([#635](https://github.com/kurtosis-tech/kurtosis/issues/635)) ([e16e123](https://github.com/kurtosis-tech/kurtosis/commit/e16e12304a260c0b6bcbcb6ab119e5b8380880db))
+
+## [0.76.8](https://github.com/kurtosis-tech/kurtosis/compare/0.76.7...0.76.8) (2023-05-23)
+
+
+### Features
+
+* Return error on SDK if Starlark run on any step  ([#634](https://github.com/kurtosis-tech/kurtosis/issues/634)) ([8a01cff](https://github.com/kurtosis-tech/kurtosis/commit/8a01cfffc92c47d44d0a73593bf91d4c990f72ed))
+
+
+### Bug Fixes
+
+* Make printWarningIfArgumentIsDeprecated unit test deterministic ([#633](https://github.com/kurtosis-tech/kurtosis/issues/633)) ([46bbee5](https://github.com/kurtosis-tech/kurtosis/commit/46bbee5dcd67346f0007d6d83326fd9200fa9dda))
+* Rollback to previous cluster when cluster set fails ([#631](https://github.com/kurtosis-tech/kurtosis/issues/631)) ([0e212c9](https://github.com/kurtosis-tech/kurtosis/commit/0e212c93f05fc174a6ad47bafb25975e0b95b892))
+
+## [0.76.7](https://github.com/kurtosis-tech/kurtosis/compare/0.76.6...0.76.7) (2023-05-17)
+
+
+### Bug Fixes
+
+* Exclude resources dir from the internal testsuites ([#622](https://github.com/kurtosis-tech/kurtosis/issues/622)) ([ffd2031](https://github.com/kurtosis-tech/kurtosis/commit/ffd203174db8d515752ddf832a8dbfc924687520))
+* Remove the GRPC proxy port from the engine and from the APIC ([#626](https://github.com/kurtosis-tech/kurtosis/issues/626)) ([de284be](https://github.com/kurtosis-tech/kurtosis/commit/de284bed4f9031e51fb4ccafc934e39bea3879d5))
+* set MTU to 1440 to fix GitPod networking ([#627](https://github.com/kurtosis-tech/kurtosis/issues/627)) ([19ec18e](https://github.com/kurtosis-tech/kurtosis/commit/19ec18e4174555b51c917e13f34f7275c6ddab1a))
+
+## [0.76.6](https://github.com/kurtosis-tech/kurtosis/compare/0.76.5...0.76.6) (2023-05-12)
+
+
+### Bug Fixes
+
+* ips are on the range 172.16.0.0/16 ([#618](https://github.com/kurtosis-tech/kurtosis/issues/618)) ([b48cb73](https://github.com/kurtosis-tech/kurtosis/commit/b48cb73dadffdb23922c73b68fed1485840eb846))
+
+## [0.76.5](https://github.com/kurtosis-tech/kurtosis/compare/0.76.4...0.76.5) (2023-05-11)
+
+
+### Features
+
+* Support path argument autocomplete in all CLI commands ([#607](https://github.com/kurtosis-tech/kurtosis/issues/607)) ([e5a5fe1](https://github.com/kurtosis-tech/kurtosis/commit/e5a5fe1f4c690a4ceeea63e718fb4c446e921940))
+
 ## [0.76.4](https://github.com/kurtosis-tech/kurtosis/compare/0.76.3...0.76.4) (2023-05-11)
 
 

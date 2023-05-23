@@ -21,7 +21,6 @@ Enclave Status:                       RUNNING
 Creation Time:                        Tue, 24 Jan 2023 16:45:13 GMT
 API Container Status:                 RUNNING
 API Container Host GRPC Port:         127.0.0.1:54433
-API Container Host GRPC Proxy Port:   127.0.0.1:54434
 
 ========================================== User Services ==========================================
 UUID   Name   Ports   Status
@@ -37,7 +36,6 @@ Enclave Status:                       RUNNING
 Creation Time:                        Tue, 24 Jan 2023 16:45:13 GMT
 API Container Status:                 RUNNING
 API Container Host GRPC Port:         127.0.0.1:54433
-API Container Host GRPC Proxy Port:   127.0.0.1:54434
 
 ========================================== User Services ==========================================
 UUID   Name   Ports   Status
