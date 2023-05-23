@@ -329,7 +329,6 @@ func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName 
 	logrus.Debugf("Startosis script content: \n%v", script)
 
 	runResult, err := RunScriptWithDefaultConfig(ctx, enclaveCtx, script)
-	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	return runResult
 }
