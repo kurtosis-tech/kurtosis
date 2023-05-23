@@ -94,7 +94,7 @@ type DefaultServiceNetwork struct {
 	apiContainerGrpcPortNum uint16
 	apiContainerVersion     string
 
-	mutex *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
+	mutex *sync.RWMutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
 	// Whether partitioning has been enabled for this particular test
 	isPartitioningEnabled bool
@@ -813,8 +813,8 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	network.mutex.RLock()
+	defer network.mutex.RUnlock()
 
 	serviceName, err := network.getServiceNameForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
@@ -882,8 +882,8 @@ func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, 
 }
 
 func (network *DefaultServiceNetwork) GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
+	network.mutex.RLock()
+	defer network.mutex.RUnlock()
 	registration, found := network.registeredServiceInfo[serviceName]
 	if !found {
 		return nil, false
