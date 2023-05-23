@@ -173,7 +173,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(ctx context.C
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error running remote Starlark package")
 	}
-	return ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan), nil
+	starlarkResponse := ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLineChan)
+	return starlarkResponse, getErrFromStarlarkRunResult(starlarkResponse)
 }
 
 // Docs available at https://docs.kurtosis.com/sdk#getservicecontextstring-serviceidentifier---servicecontext-servicecontext
