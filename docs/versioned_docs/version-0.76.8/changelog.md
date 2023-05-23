@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.76.8](https://github.com/kurtosis-tech/kurtosis/compare/0.76.7...0.76.8) (2023-05-23)
+
+
+### Features
+
+* Return error on SDK if Starlark run on any step  ([#634](https://github.com/kurtosis-tech/kurtosis/issues/634)) ([8a01cff](https://github.com/kurtosis-tech/kurtosis/commit/8a01cfffc92c47d44d0a73593bf91d4c990f72ed))
+
+
+### Bug Fixes
+
+* Make printWarningIfArgumentIsDeprecated unit test deterministic ([#633](https://github.com/kurtosis-tech/kurtosis/issues/633)) ([46bbee5](https://github.com/kurtosis-tech/kurtosis/commit/46bbee5dcd67346f0007d6d83326fd9200fa9dda))
+* Rollback to previous cluster when cluster set fails ([#631](https://github.com/kurtosis-tech/kurtosis/issues/631)) ([0e212c9](https://github.com/kurtosis-tech/kurtosis/commit/0e212c93f05fc174a6ad47bafb25975e0b95b892))
+
+## [0.76.7](https://github.com/kurtosis-tech/kurtosis/compare/0.76.6...0.76.7) (2023-05-17)
+
+
+### Bug Fixes
+
+* Exclude resources dir from the internal testsuites ([#622](https://github.com/kurtosis-tech/kurtosis/issues/622)) ([ffd2031](https://github.com/kurtosis-tech/kurtosis/commit/ffd203174db8d515752ddf832a8dbfc924687520))
+* Remove the GRPC proxy port from the engine and from the APIC ([#626](https://github.com/kurtosis-tech/kurtosis/issues/626)) ([de284be](https://github.com/kurtosis-tech/kurtosis/commit/de284bed4f9031e51fb4ccafc934e39bea3879d5))
+* set MTU to 1440 to fix GitPod networking ([#627](https://github.com/kurtosis-tech/kurtosis/issues/627)) ([19ec18e](https://github.com/kurtosis-tech/kurtosis/commit/19ec18e4174555b51c917e13f34f7275c6ddab1a))
+
+## [0.76.6](https://github.com/kurtosis-tech/kurtosis/compare/0.76.5...0.76.6) (2023-05-12)
+
+
+### Bug Fixes
+
+* ips are on the range 172.16.0.0/16 ([#618](https://github.com/kurtosis-tech/kurtosis/issues/618)) ([b48cb73](https://github.com/kurtosis-tech/kurtosis/commit/b48cb73dadffdb23922c73b68fed1485840eb846))
+
+## [0.76.5](https://github.com/kurtosis-tech/kurtosis/compare/0.76.4...0.76.5) (2023-05-11)
+
+
+### Features
+
+* Support path argument autocomplete in all CLI commands ([#607](https://github.com/kurtosis-tech/kurtosis/issues/607)) ([e5a5fe1](https://github.com/kurtosis-tech/kurtosis/commit/e5a5fe1f4c690a4ceeea63e718fb4c446e921940))
+
+## [0.76.4](https://github.com/kurtosis-tech/kurtosis/compare/0.76.3...0.76.4) (2023-05-11)
+
+
+### Features
+
+* Add Windows support for CLI ([#608](https://github.com/kurtosis-tech/kurtosis/issues/608)) ([4cc1c56](https://github.com/kurtosis-tech/kurtosis/commit/4cc1c56e3cebf41c5a033df718938a4d805a3400))
+* added sign-up for kcloud ([#591](https://github.com/kurtosis-tech/kurtosis/issues/591)) ([16641e9](https://github.com/kurtosis-tech/kurtosis/commit/16641e9ed0947ea34d44b0c521b429ace5ab5b50))
+* Help developers to work across the project modules ([#596](https://github.com/kurtosis-tech/kurtosis/issues/596)) ([e7f845e](https://github.com/kurtosis-tech/kurtosis/commit/e7f845ecd67c8218b28ff284b12ac18949108364))
+* return deprecation warnings to users in yellow in colour. ([#586](https://github.com/kurtosis-tech/kurtosis/issues/586)) ([7609fd8](https://github.com/kurtosis-tech/kurtosis/commit/7609fd8c77994875eae77fd458f1744f267c17fb))
+
+
+### Bug Fixes
+
+* Enable autocomplete for the `files upload` path argument ([#598](https://github.com/kurtosis-tech/kurtosis/issues/598)) ([be52f9e](https://github.com/kurtosis-tech/kurtosis/commit/be52f9e73c5cd63e09f5c2343add165886bd7313))
+* kurtosis --&gt; kurtosistech in readme ([#604](https://github.com/kurtosis-tech/kurtosis/issues/604)) ([d6c2ea2](https://github.com/kurtosis-tech/kurtosis/commit/d6c2ea2f6f8127c799701707e65c7697c8354452))
+* Pipe metric reporting logs to logger instead of stderr ([#576](https://github.com/kurtosis-tech/kurtosis/issues/576)) ([7060473](https://github.com/kurtosis-tech/kurtosis/commit/7060473563f12b9d097aeb20eb3e4c5cf3e58d55))
+* Refresh the README dev instructions ([#595](https://github.com/kurtosis-tech/kurtosis/issues/595)) ([0c71fac](https://github.com/kurtosis-tech/kurtosis/commit/0c71fac3ae3a36fdf6df56e567b3ba184a6756b6))
+* rename cloud--&gt;kloud in readme ([#602](https://github.com/kurtosis-tech/kurtosis/issues/602)) ([a998d39](https://github.com/kurtosis-tech/kurtosis/commit/a998d39a3511cf6ba84759f4b91cb20795cefd3d))
+* Support redirects with cookies in the user support URLs validation test ([#600](https://github.com/kurtosis-tech/kurtosis/issues/600)) ([ce9718e](https://github.com/kurtosis-tech/kurtosis/commit/ce9718ed55e60cd227f036149da0c410ba99be09)), closes [#599](https://github.com/kurtosis-tech/kurtosis/issues/599)
+
 ## [0.76.3](https://github.com/kurtosis-tech/kurtosis/compare/0.76.2...0.76.3) (2023-04-27)
 
 

@@ -45,7 +45,8 @@ ready_conditions = ReadyCondition(
 )
 ```
 
-Let us show you how to use it with an easy example:
+An example of using `ReadyCondition`:
+
 ```python
 def run(plan):
     # we define the recipe first
