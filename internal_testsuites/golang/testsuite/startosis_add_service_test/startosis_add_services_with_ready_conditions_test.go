@@ -54,11 +54,9 @@ func TestStartosis_AddServicesWithReadyConditionsCheck(t *testing.T) {
 
 	script := fmt.Sprintf(addServicesWithReadyConditionsScript, okStatusCode)
 
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServicesWithReadyConditionsTestName, script)
+	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServicesWithReadyConditionsTestName, script)
 
-	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
-	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
-	require.Empty(t, runResult.ExecutionError, "Unexpected execution error")
+	require.Nil(t, err)
 }
 
 func TestStartosis_AddServicesWithReadyConditionsCheckFail(t *testing.T) {
@@ -68,7 +66,7 @@ func TestStartosis_AddServicesWithReadyConditionsCheckFail(t *testing.T) {
 
 	script := fmt.Sprintf(addServicesWithReadyConditionsScript, serverErrorStatusCode)
 
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServicesWithReadyConditionsTestName, script)
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServicesWithReadyConditionsTestName, script)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

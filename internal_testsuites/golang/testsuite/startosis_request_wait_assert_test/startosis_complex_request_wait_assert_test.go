@@ -85,10 +85,8 @@ def run(plan):
 
 func TestStartosis_ComplexRequestWaitAssert(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, complexRequestWaitAssertTestName, complexRequestWaitAssertStartosisScript)
+	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, complexRequestWaitAssertTestName, complexRequestWaitAssertStartosisScript)
 
-	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
-	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
-	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
+	require.Nil(t, err)
 	logrus.Infof("Successfully ran Startosis script")
 }

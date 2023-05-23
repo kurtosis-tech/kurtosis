@@ -317,7 +317,7 @@ func RunScriptWithDefaultConfig(ctx context.Context, enclaveCtx *enclaves.Enclav
 	return enclaveCtx.RunStarlarkScriptBlocking(ctx, script, emptyParams, defaultDryRun, defaultParallelism)
 }
 
-func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) *enclaves.StarlarkRunResult {
+func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) (*enclaves.StarlarkRunResult, error) {
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, _, destroyEnclaveFunc, err := CreateEnclave(t, ctx, testName, partitioningDisabled)
@@ -328,9 +328,7 @@ func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName 
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", script)
 
-	runResult, err := RunScriptWithDefaultConfig(ctx, enclaveCtx, script)
-
-	return runResult
+	return RunScriptWithDefaultConfig(ctx, enclaveCtx, script)
 }
 
 func WaitForHealthy(ctx context.Context, client GrpcAvailabilityChecker, retries uint32, retriesDelayMilliseconds uint32) error {
