@@ -712,14 +712,17 @@ jobs:
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
       - run: "${KURTOSIS_BINPATH} enclave stop test-datastore"
       - run: "${KURTOSIS_BINPATH} enclave inspect test-enclave"   # Ensure we can still inspect stopped enclaves
-      - run: "${KURTOSIS_BINPATH} clean -a"
-      - run: "${KURTOSIS_BINPATH} engine stop"
 
       # Execute engine functions
+      - run: "${KURTOSIS_BINPATH} engine stop"
+      - run: "${KURTOSIS_BINPATH} engine stop"
+      - run: "${KURTOSIS_BINPATH} engine start"
       - run: "${KURTOSIS_BINPATH} engine start"
       - run: "${KURTOSIS_BINPATH} engine restart"
-      - run: "${KURTOSIS_BINPATH} engine start"
+      - run: "${KURTOSIS_BINPATH} engine restart"
       - run: "${KURTOSIS_BINPATH} engine status"
+
+      - run: "${KURTOSIS_BINPATH} clean -a"
 
       # Ensure Kubernetes resources clean up successfully
       - when:
