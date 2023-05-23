@@ -23,11 +23,6 @@ func DestroyEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	matchingUncastedEnginesByContainerId := map[string]*engine.Engine{}
-	for containerId, engineObj := range matchingEnginesByContainerId {
-		matchingUncastedEnginesByContainerId[containerId] = engineObj
-	}
-
 	var removeEngineOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -43,7 +38,7 @@ func DestroyEngines(
 
 	successfulEngineGuidStrs, erroredEngineGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedEnginesByContainerId,
+		matchingEnginesByContainerId,
 		dockerManager,
 		extractEngineGuidFromEngine,
 		removeEngineOperation,

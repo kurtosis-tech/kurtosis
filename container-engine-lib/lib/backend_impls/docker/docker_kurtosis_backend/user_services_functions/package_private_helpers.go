@@ -176,13 +176,13 @@ func removeUserServiceDockerResources(
 		}
 	}
 
-	uncastedKurtosisObjectsToRemoveByContainerId := map[string]*service.Service{}
+	kurtosisObjectsToRemoveByContainerId := map[string]*service.Service{}
 	for serviceUuid, resources := range resourcesToRemove {
 		// Safe to skip the is-found check because we verified the map keys are identical earlier
 		serviceObj := serviceObjectsToRemove[serviceUuid]
 
 		containerId := resources.ServiceContainer.GetId()
-		uncastedKurtosisObjectsToRemoveByContainerId[containerId] = serviceObj
+		kurtosisObjectsToRemoveByContainerId[containerId] = serviceObj
 	}
 
 	// TODO Simplify this with Go generics
@@ -199,7 +199,7 @@ func removeUserServiceDockerResources(
 
 	successfulContainerRemoveUuidStrs, erroredContainerRemoveUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		uncastedKurtosisObjectsToRemoveByContainerId,
+		kurtosisObjectsToRemoveByContainerId,
 		dockerManager,
 		extractServiceUUIDFromService,
 		dockerOperation,

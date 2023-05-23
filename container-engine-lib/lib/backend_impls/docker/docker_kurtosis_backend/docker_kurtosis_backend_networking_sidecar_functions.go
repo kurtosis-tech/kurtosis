@@ -260,11 +260,6 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
-	matchingUncastedObjectsByContainerId := map[string]*networking_sidecar.NetworkingSidecar{}
-	for containerId, object := range matchingNetworkingSidecarsByContainerId {
-		matchingUncastedObjectsByContainerId[containerId] = object
-	}
-
 	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -278,7 +273,7 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 
 	successfulServiceUuidStrs, erroredServiceUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedObjectsByContainerId,
+		matchingNetworkingSidecarsByContainerId,
 		backend.dockerManager,
 		extractServiceUUIDFromNetworkSidecar,
 		dockerOperation,
@@ -312,11 +307,6 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
-	matchingUncastedObjectsByContainerId := map[string]*networking_sidecar.NetworkingSidecar{}
-	for containerId, object := range networkingSidecars {
-		matchingUncastedObjectsByContainerId[containerId] = object
-	}
-
 	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -330,7 +320,7 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 
 	successfulServiceUuidStrs, erroredServiceUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedObjectsByContainerId,
+		networkingSidecars,
 		backend.dockerManager,
 		extractServiceUUIDFromNetworkSidecar,
 		dockerOperation,

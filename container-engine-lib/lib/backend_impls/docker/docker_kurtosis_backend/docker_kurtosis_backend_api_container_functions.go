@@ -243,12 +243,6 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters '%+v'", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedApiContainersByContainerId := map[string]*api_container.APIContainer{}
-	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
-		matchingUncastedApiContainersByContainerId[containerId] = apiContainerObj
-	}
-
 	var killApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -262,7 +256,7 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 
 	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedApiContainersByContainerId,
+		matchingApiContainersByContainerId,
 		backend.dockerManager,
 		extractEnclaveIdApiContainer,
 		killApiContainerOperation,
@@ -289,12 +283,6 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedApiContainersByContainerId := map[string]*api_container.APIContainer{}
-	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
-		matchingUncastedApiContainersByContainerId[containerId] = apiContainerObj
-	}
-
 	var removeApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -308,7 +296,7 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 
 	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedApiContainersByContainerId,
+		matchingApiContainersByContainerId,
 		backend.dockerManager,
 		extractEnclaveIdApiContainer,
 		removeApiContainerOperation,
