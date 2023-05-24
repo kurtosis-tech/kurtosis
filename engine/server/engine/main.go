@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
@@ -173,21 +174,11 @@ func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBa
 		if !ok {
 			return nil, stacktrace.NewError("Failed to cast cluster configuration interface to the appropriate type, even though Kurtosis backend type is '%v'", args.KurtosisBackendType_Kubernetes.String())
 		}
-		pluginPath := backend_interface.GetPluginPathForEngine(backend_interface.KubernetesPluginName)
-		plugin, err := backend_interface.OpenBackendPlugin(pluginPath)
+		kurtosisBackend, err = kubernetes_kurtosis_backend.GetEngineServerBackend(ctx)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
-				"An error occurred loading a Kurtosis Kubernetes backend plugin on path '%s'",
-				pluginPath,
-			)
-		}
-		kurtosisBackend, err = plugin.GetEngineServerBackend(ctx)
-		if err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"An error occurred casting a Kurtosis Kubernetes backend loaded from plugin on path '%s'",
-				pluginPath,
+				"An error occurred getting Kurtosis Kubernetes backend for engine",
 			)
 		}
 	default:

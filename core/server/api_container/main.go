@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
@@ -144,21 +145,11 @@ func runMain() error {
 				args.KurtosisBackendType_Kubernetes.String(),
 			)
 		}
-		pluginPath := backend_interface.GetPluginPathForApiContainer(backend_interface.KubernetesPluginName)
-		plugin, err := backend_interface.OpenBackendPlugin(pluginPath)
+		kurtosisBackend, err = kubernetes_kurtosis_backend.GetApiContainerBackend(ctx)
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
-				"An error occurred loading a Kurtosis Kubernetes backend plugin on path '%s'",
-				pluginPath,
-			)
-		}
-		kurtosisBackend, err = plugin.GetApiContainerBackend(ctx)
-		if err != nil {
-			return stacktrace.Propagate(
-				err,
-				"An error occurred casting a Kurtosis Kubernetes backend loaded from plugin on path '%s'",
-				pluginPath,
+				"An error occurred getting Kurtosis Kubernetes backend for APIC",
 			)
 		}
 	default:

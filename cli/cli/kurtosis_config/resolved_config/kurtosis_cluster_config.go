@@ -4,6 +4,7 @@ import (
 	"context"
 	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
@@ -158,21 +159,11 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 					"Either switch to a local only context to use Kubernetes or switch the cluster to Docker to " +
 					"connect to a remote Kurtosis backend")
 			}
-
-			pluginPath := backend_interface.GetPluginPathForCLI(backend_interface.KubernetesPluginName)
-			plugin, err := backend_interface.OpenBackendPlugin(pluginPath)
+			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx)
 			if err != nil {
 				return nil, stacktrace.Propagate(
 					err,
-					"An error occurred loading a Kurtosis Kubernetes backend plugin on path '%s'",
-					pluginPath,
-				)
-			}
-			backend, err := plugin.GetCLIBackend(ctx)
-			if err != nil {
-				return nil, stacktrace.Propagate(
-					err,
-					"An error occurred getting a Kurtosis Kubernetes backend from cluster '%v' with storage class '%v' and enclave data volume size (in MB) '%v'",
+					"An error occurred getting Kurtosis Kubernetes backend for CLI from cluster '%v' with storage class '%v' and enclave data volume size (in MB) '%v'",
 					clusterId,
 					storageClass,
 					enclaveDataVolumeSizeInMb,
