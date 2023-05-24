@@ -24,7 +24,9 @@ const (
 	waitForEngineResponseTimeout = 5 * time.Second
 	defaultClusterName           = resolved_config.DefaultDockerClusterName
 
-	defaultEngineVersion = ""
+	defaultEngineVersion          = ""
+	waitUntilEngineStoppedTries   = 5
+	waitUntilEngineStoppedCoolOff = 5 * time.Second
 )
 
 type EngineManager struct {
@@ -124,12 +126,14 @@ func (manager *EngineManager) GetEngineStatus(
 			logrus.Warnf("Error closing the engine client:\n'%v'", err)
 		}
 	}()
+	logrus.Debugf("Successfully got engine client from host ip and port")
 
 	engineInfo, err := getEngineInfoWithTimeout(ctx, engineClient)
 	if err != nil {
 		return EngineStatus_ContainerRunningButServerNotResponding, runningEngineIpAndPort, "", nil
 	}
 
+	logrus.Debugf("Successfully got engine info from client")
 	return EngineStatus_Running, runningEngineIpAndPort, engineInfo.GetEngineVersion(), nil
 }
 
@@ -139,6 +143,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
+	logrus.Debugf("Engine status: '%v'", status)
 	clusterType := manager.clusterConfig.GetClusterType()
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
@@ -194,7 +199,7 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 	//  add a step here that will delete the engine data dirpath if it exists on the host machine
 	// host_machine_directories.GetEngineDataDirpath()
 
-	_, erroredEngineGuids, err := manager.kurtosisBackend.StopEngines(ctx, getRunningEnginesFilter())
+	successfulEngineGuids, erroredEngineGuids, err := manager.kurtosisBackend.StopEngines(ctx, getRunningEnginesFilter())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping ")
 	}
@@ -220,7 +225,9 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 		)
 	}
 
-	return nil
+	logrus.Debugf("Stopped signal sent to engines %v", successfulEngineGuids)
+
+	return manager.waitUntilEngineStoppedOrError(ctx)
 }
 
 // RestartEngineIdempotently restart the currently running engine.
@@ -230,11 +237,11 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 // running engine
 func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, logLevel logrus.Level, optionalVersionToUse string, restartEngineOnSameVersionIfAnyRunning bool) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	var versionOfNewEngine string
+	// We try to do our best to restart an engine on the same version the current on is on
+	_, _, currentEngineVersion, err := manager.GetEngineStatus(ctx)
 	if optionalVersionToUse != defaultEngineVersion || !restartEngineOnSameVersionIfAnyRunning {
 		versionOfNewEngine = optionalVersionToUse
 	} else {
-		// We try to do our best to restart an engine on the same version the current on is on
-		_, _, currentEngineVersion, err := manager.GetEngineStatus(ctx)
 		if err != nil {
 			logrus.Warnf("Error getting current engine information before restarting it. A default engine will be started")
 			// if useDefaultVersion = true, we were going to use the default version anyway
@@ -243,6 +250,7 @@ func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, log
 			versionOfNewEngine = currentEngineVersion
 		}
 	}
+	logrus.Debugf("Restarting engine with version '%v', current engine version is '%v'", versionOfNewEngine, currentEngineVersion)
 
 	if err := manager.StopEngineIdempotently(ctx); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping the engine currently running")
@@ -337,4 +345,18 @@ func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing the Kurtosis config")
 	}
 	return kurtosisConfig, nil
+}
+
+func (manager *EngineManager) waitUntilEngineStoppedOrError(ctx context.Context) error {
+	var err error
+	var status EngineStatus
+	for i := 0; i < waitUntilEngineStoppedTries; i += 1 {
+		status, _, _, err = manager.GetEngineStatus(ctx)
+		if status == EngineStatus_Stopped {
+			return nil
+		}
+		logrus.Debugf("Waiting engine to report stopped, currently reporting '%v'", status)
+		time.Sleep(waitUntilEngineStoppedCoolOff)
+	}
+	return stacktrace.Propagate(err, "Engine did not report stopped status, last status reported was '%v'", status)
 }

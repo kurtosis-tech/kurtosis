@@ -48,6 +48,10 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err = validateClusterName(clusterName); err != nil {
 		return stacktrace.Propagate(err, "'%s' is not a valid name for Kurtosis cluster", clusterName)
 	}
+<<<<<<< HEAD
+=======
+
+>>>>>>> main
 	clusterUpdateSuccessful := false
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	clusterPriorToUpdate, err := clusterSettingStore.GetClusterSetting()
@@ -81,7 +85,6 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
-
 	// We try to do our best to restart an engine on the same version the current on is on
 	_, engineClientCloseFunc, restartEngineErr := engineManager.RestartEngineIdempotently(ctx, logrus.InfoLevel, noEngineVersion, restartEngineOnSameVersionIfAnyRunning)
 	if restartEngineErr != nil {

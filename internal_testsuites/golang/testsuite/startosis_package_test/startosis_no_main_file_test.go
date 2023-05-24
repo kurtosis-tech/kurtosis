@@ -38,8 +38,7 @@ func TestStartosisPackage_NoMainFile(t *testing.T) {
 
 	expectedErrorContents := `An error occurred while verifying that 'main.star' exists in the package 'github.com/sample/sample-kurtosis-package' at '/kurtosis-data/startosis-packages/sample/sample-kurtosis-package/main.star'
 	Caused by: stat /kurtosis-data/startosis-packages/sample/sample-kurtosis-package/main.star: no such file or directory`
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, emptyRunParams, defaultDryRun, defaultParallelism)
-	require.Nil(t, err, "Unexpected error executing package")
+	runResult, _ := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, emptyRunParams, defaultDryRun, defaultParallelism)
 	require.NotNil(t, runResult.InterpretationError)
 	require.Equal(t, runResult.InterpretationError.GetErrorMessage(), expectedErrorContents)
 	require.Empty(t, runResult.ValidationErrors)

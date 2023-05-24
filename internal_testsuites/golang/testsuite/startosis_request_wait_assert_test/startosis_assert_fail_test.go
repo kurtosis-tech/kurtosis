@@ -36,7 +36,7 @@ def run(plan):
 
 func TestStartosis_AssertFail(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertFailTestName, assertFailScript)
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertFailTestName, assertFailScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

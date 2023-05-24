@@ -51,16 +51,14 @@ def run(plan):
 
 func TestStartosis_AssertSuccessPortChecks(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertSuccessTestName, assertSuccessScript)
+	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertSuccessTestName, assertSuccessScript)
 
-	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
-	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
-	require.Empty(t, runResult.ExecutionError, "Unexpected execution error")
+	require.Nil(t, err)
 }
 
 func TestStartosis_AssertFailBecausePortIsNotOpen(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertFailTestName, assertFailScript)
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertFailTestName, assertFailScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
@@ -69,7 +67,7 @@ func TestStartosis_AssertFailBecausePortIsNotOpen(t *testing.T) {
 
 func TestStartosis_AssertFailBecauseEmptyStringIsNotValid(t *testing.T) {
 	ctx := context.Background()
-	runResult := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertFailTestName2, assertFailScript2)
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertFailTestName2, assertFailScript2)
 
 	require.NotNil(t, runResult.InterpretationError, "Expected interpretation error coming from wait validation")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
