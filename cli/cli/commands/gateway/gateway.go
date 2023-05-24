@@ -13,8 +13,7 @@ import (
 )
 
 const (
-	emptyConfigMasterUrl       = ""
-	runEngineGatewaySymbolName = "RunEngineGateway"
+	emptyConfigMasterUrl = ""
 )
 
 // GatewayCmd Suppressing exhaustruct requirement because this struct has ~40 properties
