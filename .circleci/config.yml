@@ -14,7 +14,7 @@ param_cli_cluster_backend: &param_cli_cluster_backend
   cli-cluster-backend:
     description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'"
     type: enum
-    enum: ["docker"] # ["docker", "minikube"]
+    enum: ["docker", "minikube"]
 
 # Install go version 1.18 to run our integration tests on the minimal version we support
 steps_install_go_1_18: &steps_install_go_1_18
