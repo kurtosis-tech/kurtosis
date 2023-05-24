@@ -48,10 +48,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err = validateClusterName(clusterName); err != nil {
 		return stacktrace.Propagate(err, "'%s' is not a valid name for Kurtosis cluster", clusterName)
 	}
-<<<<<<< HEAD
-=======
 
->>>>>>> main
 	clusterUpdateSuccessful := false
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	clusterPriorToUpdate, err := clusterSettingStore.GetClusterSetting()
