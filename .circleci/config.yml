@@ -34,13 +34,12 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         name: Check status
         command: |
           minikube status
-    - run: "${KURTOSIS_BINPATH} cluster set minikube"
     - run: |
         eval $(minikube docker-env)
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
+    - run: "${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace"
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
@@ -1091,6 +1090,17 @@ workflows:
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
           cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+      - test_basic_cli_functionality:
+          name: "Test Basic CLI Functionality in Docker"
+          cli-cluster-backend: "minikube"
           context:
             - docker-user
           requires:
