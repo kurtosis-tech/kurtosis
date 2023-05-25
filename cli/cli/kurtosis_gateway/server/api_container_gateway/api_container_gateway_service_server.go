@@ -391,11 +391,11 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 		if !found {
 			continue
 		}
-		// TODO(vcolombo): Address waits?
-		localPublicApiPorts[portId] = &kurtosis_core_rpc_api_bindings.Port{ //nolint:exhaustruct
+		localPublicApiPorts[portId] = &kurtosis_core_rpc_api_bindings.Port{
 			Number:                   uint32(localPortSpec.GetNumber()),
 			TransportProtocol:        privateApiPort.GetTransportProtocol(),
 			MaybeApplicationProtocol: privateApiPort.GetMaybeApplicationProtocol(),
+			MaybeWaitTimeout:         privateApiPort.GetMaybeWaitTimeout(),
 		}
 	}
 

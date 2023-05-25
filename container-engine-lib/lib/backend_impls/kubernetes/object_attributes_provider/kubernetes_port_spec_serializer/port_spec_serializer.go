@@ -8,11 +8,13 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
 	portIdAndInfoSeparator      = ":"
 	portNumAndProtocolSeparator = "/"
+	portOptionalFieldsSeparator = "-"
 	portSpecsSeparator          = ","
 
 	numPortSpecFragmentsWithApplicationProtocol = 3
@@ -68,8 +70,16 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*kubernetes_annot
 
 		// add application protocol to the label value if present
 		maybeApplicationProtocol := portSpec.GetMaybeApplicationProtocol()
+		optionalPortSpec := ""
 		if maybeApplicationProtocol != nil {
-			portSpecStr = fmt.Sprintf("%v%v%v", portSpecStr, portNumAndProtocolSeparator, *maybeApplicationProtocol)
+			optionalPortSpec = *maybeApplicationProtocol
+		}
+		maybeWait := portSpec.GetWait()
+		if maybeWait != nil {
+			optionalPortSpec = fmt.Sprintf("%v%v%v", optionalPortSpec, portOptionalFieldsSeparator, maybeWait.String())
+		}
+		if len(optionalPortSpec) > 0 {
+			portSpecStr = fmt.Sprintf("%v%v%v", portSpecStr, portNumAndProtocolSeparator, optionalPortSpec)
 		}
 
 		if previousPortId, found := usedPortSpecStrs[portSpecStr]; found {
@@ -141,9 +151,29 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 		portNumStr := portSpecFragments[portNumIndex]
 		portProtocolStr := portSpecFragments[portProtocolIndex]
 		portApplicationProtocolStr := ""
+		var portWait *port_spec.Wait = nil
 
 		if numPortSpecFragments == numPortSpecFragmentsWithApplicationProtocol {
-			portApplicationProtocolStr = portSpecFragments[portApplicationProtocolIndex]
+			optionalFieldsFragments := strings.Split(portSpecFragments[portApplicationProtocolIndex], portOptionalFieldsSeparator)
+			if len(optionalFieldsFragments) >= 1 {
+				portApplicationProtocolStr = optionalFieldsFragments[0]
+			}
+			if len(optionalFieldsFragments) >= 2 {
+				parsedDuration, err := time.ParseDuration(optionalFieldsFragments[1])
+				if err != nil {
+					return nil, stacktrace.Propagate(err, "An error occurred parsing wait duration string '%v' to duration", optionalFieldsFragments[1])
+				}
+				portWait = port_spec.NewWait(parsedDuration)
+			}
+			if len(optionalFieldsFragments) >= 3 {
+				return nil, stacktrace.NewError(
+					"Expected splitting port spec string '%v' to yield '%v' to '%v' fragments but got '%v'",
+					portSpecFragments[portApplicationProtocolIndex],
+					1,
+					2,
+					len(optionalFieldsFragments),
+				)
+			}
 		}
 
 		portNumUint64, err := strconv.ParseUint(portNumStr, portUintBase, portUintBits)
@@ -162,9 +192,7 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 			return nil, stacktrace.Propagate(err, "An error occurred converting port protocol string '%v' to a port protocol enum", portProtocolStr)
 		}
 
-		// TODO: Serialize/Deserialize Waits!
-		// TODO(vcolombo): Is this nil correct?
-		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, portApplicationProtocolStr, nil)
+		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, portApplicationProtocolStr, portWait)
 		if err != nil {
 			return nil, stacktrace.Propagate(
 				err,
