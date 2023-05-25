@@ -215,7 +215,7 @@ func (manager *KubernetesManager) UpdateService(
 func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, namespace string, serviceLabels map[string]string) (*apiv1.ServiceList, error) {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
-	listOptions := metav1.ListOptions{
+	listOptions := metav1.ListOptions{ //nolint:exhaustruct
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -447,7 +447,7 @@ func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string)
 func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, namespaceLabels map[string]string) (*apiv1.NamespaceList, error) {
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
-	listOptions := metav1.ListOptions{
+	listOptions := metav1.ListOptions{ //nolint:exhaustruct
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -532,7 +532,7 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 func (manager *KubernetesManager) GetServiceAccountsByLabels(ctx context.Context, namespace string, serviceAccountsLabels map[string]string) (*apiv1.ServiceAccountList, error) {
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
-	opts := metav1.ListOptions{
+	opts := metav1.ListOptions{ //nolint:exhaustruct
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -635,7 +635,7 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 func (manager *KubernetesManager) GetRolesByLabels(ctx context.Context, namespace string, rolesLabels map[string]string) (*rbacv1.RoleList, error) {
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
-	opts := metav1.ListOptions{
+	opts := metav1.ListOptions{ //nolint:exhaustruct
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -739,7 +739,7 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, namespace string, roleBindingsLabels map[string]string) (*rbacv1.RoleBindingList, error) {
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
-	opts := metav1.ListOptions{
+	opts := metav1.ListOptions{ //nolint:exhaustruct
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -843,7 +843,7 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, clusterRoleLabels map[string]string) (*rbacv1.ClusterRoleList, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
-	opts := metav1.ListOptions{
+	opts := metav1.ListOptions{ //nolint:exhaustruct
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -946,7 +946,7 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Context, clusterRoleBindingsLabels map[string]string) (*rbacv1.ClusterRoleBindingList, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
-	opts := metav1.ListOptions{
+	opts := metav1.ListOptions{ //nolint:exhaustruct
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -1039,7 +1039,7 @@ func (manager *KubernetesManager) CreatePod(
 		Finalizers:                 nil,
 		ManagedFields:              nil,
 	}
-	podSpec := apiv1.PodSpec{
+	podSpec := apiv1.PodSpec{ //nolint:exhaustruct
 		Volumes:             podVolumes,
 		InitContainers:      initContainers,
 		Containers:          podContainers,
@@ -1086,7 +1086,7 @@ func (manager *KubernetesManager) CreatePod(
 		},
 		ObjectMeta: podMeta,
 		Spec:       podSpec,
-		Status: apiv1.PodStatus{
+		Status: apiv1.PodStatus{ //nolint:exhaustruct
 			Phase:                      "",
 			Conditions:                 nil,
 			Message:                    "",
@@ -1273,7 +1273,7 @@ func (manager *KubernetesManager) RunExecCommand(
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
 	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
-	opts := metav1.ListOptions{
+	opts := metav1.ListOptions{ //nolint:exhaustruct
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",

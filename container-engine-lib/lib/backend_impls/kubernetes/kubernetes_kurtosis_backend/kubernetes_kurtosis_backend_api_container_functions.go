@@ -36,8 +36,6 @@ const (
 	timeBetweenWaitForApiContainerContainerAvailabilityRetries = 1 * time.Second
 
 	enclaveDataDirVolumeName = "enclave-data"
-
-	kubernetesPluginVolumeName = "kurtosis-plugin-volume"
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
@@ -937,10 +935,6 @@ func getApiContainerContainersAndVolumes(
 					Name:      enclaveDataDirVolumeName,
 					MountPath: enclaveDataVolumeDirpath,
 				},
-				//{
-				//	Name:      kubernetesPluginVolumeName,
-				//	MountPath: backend_interface.GetPluginDirForApiContainer(),
-				//},
 			},
 		},
 	}
@@ -983,42 +977,6 @@ func getApiContainerContainersAndVolumes(
 				Ephemeral:             nil,
 			},
 		},
-		//{
-		//	Name: kubernetesPluginVolumeName,
-		//	VolumeSource: apiv1.VolumeSource{
-		//		HostPath: &apiv1.HostPathVolumeSource{
-		//			Path: backend_interface.GetPluginDirForApiContainer(),
-		//		},
-		//		EmptyDir:              nil,
-		//		GCEPersistentDisk:     nil,
-		//		AWSElasticBlockStore:  nil,
-		//		GitRepo:               nil,
-		//		Secret:                nil,
-		//		NFS:                   nil,
-		//		ISCSI:                 nil,
-		//		Glusterfs:             nil,
-		//		PersistentVolumeClaim: nil,
-		//		RBD:                   nil,
-		//		FlexVolume:            nil,
-		//		Cinder:                nil,
-		//		CephFS:                nil,
-		//		Flocker:               nil,
-		//		DownwardAPI:           nil,
-		//		FC:                    nil,
-		//		AzureFile:             nil,
-		//		ConfigMap:             nil,
-		//		VsphereVolume:         nil,
-		//		Quobyte:               nil,
-		//		AzureDisk:             nil,
-		//		PhotonPersistentDisk:  nil,
-		//		Projected:             nil,
-		//		PortworxVolume:        nil,
-		//		ScaleIO:               nil,
-		//		StorageOS:             nil,
-		//		CSI:                   nil,
-		//		Ephemeral:             nil,
-		//	},
-		//},
 	}
 
 	return containers, volumes, nil

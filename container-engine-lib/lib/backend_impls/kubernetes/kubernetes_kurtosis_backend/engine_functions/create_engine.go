@@ -22,7 +22,6 @@ import (
 
 const (
 	kurtosisEngineContainerName = "kurtosis-engine-container"
-	kubernetesPluginVolumeName  = "kurtosis-plugin-volume"
 
 	maxWaitForEngineContainerAvailabilityRetries         = 30
 	timeBetweenWaitForEngineContainerAvailabilityRetries = 1 * time.Second
@@ -389,54 +388,10 @@ func createEnginePod(
 			Image: containerImageAndTag,
 			Env:   engineContainerEnvVars,
 			Ports: containerPorts,
-			//VolumeMounts: []apiv1.VolumeMount{
-			//	{
-			//		MountPath: backend_interface.GetPluginDirForEngine(),
-			//		Name:      kubernetesPluginVolumeName,
-			//		ReadOnly:  true,
-			//	},
-			//},
 		},
 	}
 
-	engineVolumes := []apiv1.Volume{
-		//{
-		//	Name: kubernetesPluginVolumeName,
-		//	VolumeSource: apiv1.VolumeSource{
-		//		HostPath: &apiv1.HostPathVolumeSource{
-		//			Path: backend_interface.GetPluginDirForEngine(),
-		//		},
-		//		EmptyDir:              nil,
-		//		GCEPersistentDisk:     nil,
-		//		AWSElasticBlockStore:  nil,
-		//		GitRepo:               nil,
-		//		Secret:                nil,
-		//		NFS:                   nil,
-		//		ISCSI:                 nil,
-		//		Glusterfs:             nil,
-		//		PersistentVolumeClaim: nil,
-		//		RBD:                   nil,
-		//		FlexVolume:            nil,
-		//		Cinder:                nil,
-		//		CephFS:                nil,
-		//		Flocker:               nil,
-		//		DownwardAPI:           nil,
-		//		FC:                    nil,
-		//		AzureFile:             nil,
-		//		ConfigMap:             nil,
-		//		VsphereVolume:         nil,
-		//		Quobyte:               nil,
-		//		AzureDisk:             nil,
-		//		PhotonPersistentDisk:  nil,
-		//		Projected:             nil,
-		//		PortworxVolume:        nil,
-		//		ScaleIO:               nil,
-		//		StorageOS:             nil,
-		//		CSI:                   nil,
-		//		Ephemeral:             nil,
-		//	},
-		//},
-	}
+	engineVolumes := []apiv1.Volume{}
 	engineInitContainers := []apiv1.Container{}
 
 	// Create pods with engine containers and volumes in kubernetes
