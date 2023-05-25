@@ -542,7 +542,7 @@ func getUserServicePodContainerSpecs(
 		resourceLimitsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
 		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
 	}
-	resourceRequirements := apiv1.ResourceRequirements{
+	resourceRequirements := apiv1.ResourceRequirements{ //nolint:exhaustruct
 		Limits:   resourceLimitsList,
 		Requests: resourceRequestsList,
 	}

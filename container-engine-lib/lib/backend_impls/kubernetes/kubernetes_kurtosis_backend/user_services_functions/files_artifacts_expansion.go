@@ -119,7 +119,7 @@ func getFilesArtifactExpansionInitContainerSpecs(
 		expanderEnvVars = append(expanderEnvVars, envVar)
 	}
 
-	filesArtifactExpansionInitContainer := apiv1.Container{
+	filesArtifactExpansionInitContainer := apiv1.Container{ //nolint:exhaustruct
 		Name:       filesArtifactExpanderInitContainerName,
 		Image:      image,
 		Command:    nil,
@@ -128,7 +128,7 @@ func getFilesArtifactExpansionInitContainerSpecs(
 		Ports:      nil,
 		EnvFrom:    nil,
 		Env:        expanderEnvVars,
-		Resources: apiv1.ResourceRequirements{
+		Resources: apiv1.ResourceRequirements{ //nolint:exhaustruct
 			Limits:   nil,
 			Requests: nil,
 		},
