@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite
 
-go 1.18
+go 1.19
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang

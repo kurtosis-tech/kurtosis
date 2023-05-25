@@ -1,6 +1,6 @@
 module github.com/kurtosis-tech/kurtosis/container-engine-lib
 
-go 1.18
+go 1.19
 
 require (
 	github.com/dmarkham/enumer v1.5.5
