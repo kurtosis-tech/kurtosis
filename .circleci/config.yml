@@ -16,12 +16,12 @@ param_cli_cluster_backend: &param_cli_cluster_backend
     type: enum
     enum: ["docker", "minikube"]
 
-# Install go version 1.18 to run our integration tests on the minimal version we support
-steps_install_go_1_18: &steps_install_go_1_18
+# Install go version 1.19 to run our integration tests on the minimal version we support
+steps_install_go: &steps_install_go
   - run: |
-      wget https://go.dev/dl/go1.18.10.linux-amd64.tar.gz
+      wget https://go.dev/dl/go1.19.9.linux-amd64.tar.gz
       sudo rm -rf /usr/local/go
-      sudo tar -C /usr/local -xzf go1.18.10.linux-amd64.tar.gz
+      sudo tar -C /usr/local -xzf go1.19.9.linux-amd64.tar.gz
 
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_k8s: &steps_prepare_testing_k8s
@@ -441,7 +441,7 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *steps_install_go_1_18
+      - <<: *steps_install_go
 
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
@@ -587,7 +587,7 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *steps_install_go_1_18
+      - <<: *steps_install_go
 
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -662,7 +662,7 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *steps_install_go_1_18
+      - <<: *steps_install_go
 
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -783,7 +783,7 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *steps_install_go_1_18
+      - <<: *steps_install_go
 
       # We don't send metrics to avoid polluting our logs
       - run: |

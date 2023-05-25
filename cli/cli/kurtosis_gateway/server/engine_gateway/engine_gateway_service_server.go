@@ -237,7 +237,7 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 		return nil, stacktrace.Propagate(err, "Expected to be able to get a free, open TCP port on host, instead a non-nil error was returned")
 	}
 	// Channel for messages to stop the running server
-	gatewayStopChannel := make(chan interface{}, 1)
+	gatewayStopChannel := make(chan struct{}, 1)
 
 	// Info for how to connect to the api container through the gateway running on host machine
 	apiContainerHostMachineInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
@@ -250,7 +250,7 @@ func (service *EngineGatewayServiceServer) startRunningGatewayForEnclave(enclave
 	// Stop the running gateway
 	gatewayStopFunc := func() {
 		// Send message to stop the gateway server
-		gatewayStopChannel <- nil
+		gatewayStopChannel <- struct{}{}
 	}
 	// TODO: Modify MinimalGrpcServer.RunUntilStopped to take in a `ReadyChannel` to communicate when a GRPC server is ready to serve
 	// Currently, we have to make a health check request to verify that the API container gateway is ready
