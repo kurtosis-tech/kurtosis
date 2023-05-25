@@ -44,6 +44,7 @@ def run(plan):
 				"http": PortSpec(
 					number = 80,
 					transport_protocol = "TCP",
+					wait = None,
 				)
 			},
 			files = {

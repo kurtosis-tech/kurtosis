@@ -174,6 +174,9 @@ func portToStarlark(port *kurtosis_core_rpc_api_bindings.Port) string {
 	if port.GetTransportProtocol() != kurtosis_core_rpc_api_bindings.Port_TCP {
 		starlarkFields = append(starlarkFields, fmt.Sprintf(`transport_protocol="%s"`, port.GetTransportProtocol().String()))
 	}
+	if port.GetMaybeWaitTimeout() != "" {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`wait="%s"`, port.GetMaybeWaitTimeout()))
+	}
 	return fmt.Sprintf("PortSpec(%s)", strings.Join(starlarkFields, ","))
 }
 
