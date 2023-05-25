@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.77.0](https://github.com/kurtosis-tech/kurtosis/compare/0.76.9...0.77.0) (2023-05-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* Add Kubernetes implementation ([#638](https://github.com/kurtosis-tech/kurtosis/issues/638))
+
+### Features
+
+* Add Kubernetes implementation ([#638](https://github.com/kurtosis-tech/kurtosis/issues/638)) ([8ad708b](https://github.com/kurtosis-tech/kurtosis/commit/8ad708bca139c79312de60643db1691938f55861))
+
+## [0.76.9](https://github.com/kurtosis-tech/kurtosis/compare/0.76.8...0.76.9) (2023-05-23)
+
+
+### Bug Fixes
+
+* 'engine stop' now waits for engine to report STOPPED status ([#635](https://github.com/kurtosis-tech/kurtosis/issues/635)) ([e16e123](https://github.com/kurtosis-tech/kurtosis/commit/e16e12304a260c0b6bcbcb6ab119e5b8380880db))
+
+## [0.76.8](https://github.com/kurtosis-tech/kurtosis/compare/0.76.7...0.76.8) (2023-05-23)
+
+
+### Features
+
+* Return error on SDK if Starlark run on any step  ([#634](https://github.com/kurtosis-tech/kurtosis/issues/634)) ([8a01cff](https://github.com/kurtosis-tech/kurtosis/commit/8a01cfffc92c47d44d0a73593bf91d4c990f72ed))
+
+
+### Bug Fixes
+
+* Make printWarningIfArgumentIsDeprecated unit test deterministic ([#633](https://github.com/kurtosis-tech/kurtosis/issues/633)) ([46bbee5](https://github.com/kurtosis-tech/kurtosis/commit/46bbee5dcd67346f0007d6d83326fd9200fa9dda))
+* Rollback to previous cluster when cluster set fails ([#631](https://github.com/kurtosis-tech/kurtosis/issues/631)) ([0e212c9](https://github.com/kurtosis-tech/kurtosis/commit/0e212c93f05fc174a6ad47bafb25975e0b95b892))
+
 ## [0.76.7](https://github.com/kurtosis-tech/kurtosis/compare/0.76.6...0.76.7) (2023-05-17)
 
 
