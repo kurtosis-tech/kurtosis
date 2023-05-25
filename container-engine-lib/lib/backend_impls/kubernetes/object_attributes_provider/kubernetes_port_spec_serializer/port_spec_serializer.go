@@ -12,21 +12,25 @@ import (
 )
 
 const (
-	portIdAndInfoSeparator      = ":"
-	portNumAndProtocolSeparator = "/"
-	portOptionalFieldsSeparator = "-"
-	portSpecsSeparator          = ","
+	portIdAndInfoSeparator          = ":"
+	portNumAndProtocolSeparator     = "/"
+	portSpecOptionalFieldsSeparator = "-"
+	portSpecsSeparator              = ","
 
-	numPortSpecFragmentsWithApplicationProtocol = 3
-	expectedNumPortIdAndSpecFragments           = 2
-	minExpectedPortSpecFragments                = 2
-	maxExpectedPortSpecFragments                = 3
-	portUintBase                                = 10
-	portUintBits                                = 16
+	numPortSpecFragmentsWithOptionalFields = 3
+	minExpectedPortSpecOptionalFragments   = 1
+	maxExpectedPortSpecOptionalFragments   = 2
+	expectedNumPortIdAndSpecFragments      = 2
+	minExpectedPortSpecFragments           = 2
+	maxExpectedPortSpecFragments           = 3
+	portUintBase                           = 10
+	portUintBits                           = 16
 
-	portNumIndex                 = 0
-	portProtocolIndex            = 1
-	portApplicationProtocolIndex = 2
+	portNumIndex                             = 0
+	portProtocolIndex                        = 1
+	portSpecOptionalFieldsIndex              = 2
+	applicationProtocolOptionalFragmentIndex = 0
+	waitOptionalFragmentIndex                = 1
 	// The maximum number of bytes that a label value can be
 	// See https://github.com/docker/for-mac/issues/2208
 	// This is copied over from our Docker serializer
@@ -76,7 +80,7 @@ func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*kubernetes_annot
 		}
 		maybeWait := portSpec.GetWait()
 		if maybeWait != nil {
-			optionalPortSpec = fmt.Sprintf("%v%v%v", optionalPortSpec, portOptionalFieldsSeparator, maybeWait.String())
+			optionalPortSpec = fmt.Sprintf("%v%v%v", optionalPortSpec, portSpecOptionalFieldsSeparator, maybeWait.String())
 		}
 		if len(optionalPortSpec) > 0 {
 			portSpecStr = fmt.Sprintf("%v%v%v", portSpecStr, portNumAndProtocolSeparator, optionalPortSpec)
@@ -153,22 +157,22 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 		portApplicationProtocolStr := ""
 		var portWait *port_spec.Wait = nil
 
-		if numPortSpecFragments == numPortSpecFragmentsWithApplicationProtocol {
-			optionalFieldsFragments := strings.Split(portSpecFragments[portApplicationProtocolIndex], portOptionalFieldsSeparator)
-			if len(optionalFieldsFragments) >= 1 {
-				portApplicationProtocolStr = optionalFieldsFragments[0]
+		if numPortSpecFragments == numPortSpecFragmentsWithOptionalFields {
+			optionalFieldsFragments := strings.Split(portSpecFragments[portSpecOptionalFieldsIndex], portSpecOptionalFieldsSeparator)
+			if len(optionalFieldsFragments) >= minExpectedPortSpecOptionalFragments {
+				portApplicationProtocolStr = optionalFieldsFragments[applicationProtocolOptionalFragmentIndex]
 			}
-			if len(optionalFieldsFragments) >= 2 {
-				parsedDuration, err := time.ParseDuration(optionalFieldsFragments[1])
+			if len(optionalFieldsFragments) == maxExpectedPortSpecOptionalFragments {
+				parsedDuration, err := time.ParseDuration(optionalFieldsFragments[waitOptionalFragmentIndex])
 				if err != nil {
 					return nil, stacktrace.Propagate(err, "An error occurred parsing wait duration string '%v' to duration", optionalFieldsFragments[1])
 				}
 				portWait = port_spec.NewWait(parsedDuration)
 			}
-			if len(optionalFieldsFragments) >= 3 {
+			if len(optionalFieldsFragments) > maxExpectedPortSpecOptionalFragments {
 				return nil, stacktrace.NewError(
 					"Expected splitting port spec string '%v' to yield '%v' to '%v' fragments but got '%v'",
-					portSpecFragments[portApplicationProtocolIndex],
+					portSpecFragments[portSpecOptionalFieldsIndex],
 					1,
 					2,
 					len(optionalFieldsFragments),
