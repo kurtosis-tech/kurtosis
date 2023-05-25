@@ -223,7 +223,14 @@ func (service *ApiContainerGatewayServiceServer) UploadFilesArtifact(ctx context
 }
 
 func (service *ApiContainerGatewayServiceServer) UploadFilesArtifactV2(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactV2Server) error {
-	return stacktrace.NewError("UploadFilesArtifactV2 not implemented for Kubernetes")
+	client, err := service.remoteApiContainerClient.UploadFilesArtifactV2(server.Context())
+	if err != nil {
+		return stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+	if err := forwardDataChunkStreamWithClose[*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](server, client); err != nil {
+		return stacktrace.Propagate(err, "Error forwarding stream from UploadFilesArtifactV2 on gateway")
+	}
+	return nil
 }
 
 func (service *ApiContainerGatewayServiceServer) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
@@ -294,7 +301,7 @@ func (service *ApiContainerGatewayServiceServer) UploadStarlarkPackage(server ku
 	if err != nil {
 		return stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
-	if err := forwardDataChunkStream(server, client); err != nil {
+	if err := forwardDataChunkStreamWithClose[*emptypb.Empty](server, client); err != nil {
 		return stacktrace.Propagate(err, "Error forwarding stream from UploadStarlarkPackage on gateway")
 	}
 	return nil
@@ -447,11 +454,21 @@ type dataChunkStreamReceiver interface {
 	Recv() (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error)
 }
 
+type dataChunkStreamSenderCloserAndReceiver[T any] interface {
+	dataChunkStreamSender
+	CloseAndRecv() (T, error)
+}
+
 type dataChunkStreamSender interface {
 	Send(*kurtosis_core_rpc_api_bindings.StreamedDataChunk) error
 }
 
-func forwardDataChunkStream(streamToReadFrom dataChunkStreamReceiver, streamToWriteTo dataChunkStreamSender) error {
+type dataChunkStreamReceiverSenderAndCloser[T any] interface {
+	dataChunkStreamReceiver
+	SendAndClose(T) error
+}
+
+func forwardDataChunkStream[T dataChunkStreamReceiver, U dataChunkStreamSender](streamToReadFrom T, streamToWriteTo U) error {
 	for {
 		dataChunk, readErr := streamToReadFrom.Recv()
 		if readErr == io.EOF {
@@ -465,4 +482,20 @@ func forwardDataChunkStream(streamToReadFrom dataChunkStreamReceiver, streamToWr
 			return stacktrace.Propagate(readErr, "Received a Kurtosis execution line but failed forwarding it back to the user")
 		}
 	}
+}
+
+func forwardDataChunkStreamWithClose[T any, R dataChunkStreamReceiverSenderAndCloser[T], W dataChunkStreamSenderCloserAndReceiver[T]](streamToReadFrom R, streamToWriteTo W) error {
+	err := forwardDataChunkStream(streamToReadFrom, streamToWriteTo)
+	if err != nil {
+		return err
+	}
+	uploadResponse, closeErr := streamToWriteTo.CloseAndRecv()
+	if closeErr != nil {
+		return stacktrace.Propagate(closeErr, "Error during Kurtosis closing upload client")
+	}
+	closeErr = streamToReadFrom.SendAndClose(uploadResponse)
+	if closeErr != nil {
+		return stacktrace.Propagate(closeErr, "Error during Kurtosis closing upload server")
+	}
+	return nil
 }
