@@ -1124,9 +1124,33 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
+      - build_golang_testsuite:
+          name: "Build golang testsuite against Kubernetes"
+          cli-cluster-backend: "minikube"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
           cli-cluster-backend: "docker"
+          context:
+            - docker-user
+          requires:
+            - build_cli
+            - build_api_container_server
+            - build_engine_server
+            - build_files_artifacts_expander
+          <<: *filters_ignore_main
+
+      - build_typescript_testsuite:
+          name: "Build typescript testsuite against Kubernetes"
+          cli-cluster-backend: "minikube"
           context:
             - docker-user
           requires:
