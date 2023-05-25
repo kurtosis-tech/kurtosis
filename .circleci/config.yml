@@ -99,7 +99,7 @@ executors:
 parameters:
   go-version:
     type: string
-    default: "1.18"
+    default: "1.19"
   container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
@@ -114,7 +114,7 @@ parameters:
   # the same version as the server
   server-go-version:
     type: string
-    default: "1.18"
+    default: "1.19"
   api-node-version:
     type: string
     default: 16.13.0
@@ -126,7 +126,7 @@ parameters:
     default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
   cli-go-version:
     type: string
-    default: "1.18"
+    default: "1.19"
   workspace-with-cli-binary-and-images-mountpoint:
     type: string
     default: "/tmp/workspace"
