@@ -34,7 +34,7 @@ require (
 	golang.org/x/crypto v0.7.0
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.29.1
-	k8s.io/apimachinery v0.27.2 // indirect
+	k8s.io/apimachinery v0.27.2
 	k8s.io/client-go v0.27.2
 )
 
@@ -45,9 +45,11 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230328194643-b4dea3081e25
+	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230317105020-7ca453c242bd
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230406131103-c466e04f1b89
 	github.com/mholt/archiver v3.1.1+incompatible
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0
+	k8s.io/api v0.27.2
 )
 
 require (
@@ -123,7 +125,6 @@ require (
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/api v0.27.2 // indirect
 	k8s.io/klog/v2 v2.90.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20230501164219-8b0f38b5fd1f // indirect
 	k8s.io/utils v0.0.0-20230209194617-a36077c30491 // indirect

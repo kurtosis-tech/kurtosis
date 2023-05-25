@@ -2,8 +2,6 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/run/engine_gateway"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/metrics_reporting"
@@ -118,20 +116,6 @@ func GetApiContainerBackend(
 	}
 
 	return wrappedBackend, nil
-}
-
-func RunEngineGateway(
-	ctx context.Context, kubernetesConfig *rest.Config, kurtosisBackend backend_interface.KurtosisBackend,
-) error {
-	connectionProvider, err := connection.NewGatewayConnectionProvider(ctx, kubernetesConfig)
-	if err != nil {
-		return stacktrace.Propagate(err, "Expected to be able to instantiate a gateway connection provider, instead a non-nil error was returned")
-	}
-
-	if err := engine_gateway.RunEngineGatewayUntilInterrupted(kurtosisBackend, connectionProvider); err != nil {
-		return stacktrace.Propagate(err, "An error occurred running the engine gateway server.")
-	}
-	return nil
 }
 
 // ====================================================================================================

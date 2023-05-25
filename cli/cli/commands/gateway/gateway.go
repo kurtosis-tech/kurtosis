@@ -4,7 +4,8 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/run/engine_gateway"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/tools/clientcmd"
@@ -48,5 +49,13 @@ func run(cmd *cobra.Command, args []string) error {
 		return stacktrace.Propagate(err, "An error occurred creating Kubernetes configuration from flags in file '%v'", kubeConfigPath)
 	}
 
-	return kubernetes_kurtosis_backend.RunEngineGateway(cmd.Context(), kubernetesConfig, kurtosisBackend)
+	connectionProvider, err := connection.NewGatewayConnectionProvider(ctx, kubernetesConfig)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to instantiate a gateway connection provider, instead a non-nil error was returned")
+	}
+
+	if err := engine_gateway.RunEngineGatewayUntilInterrupted(kurtosisBackend, connectionProvider); err != nil {
+		return stacktrace.Propagate(err, "An error occurred running the engine gateway server.")
+	}
+	return nil
 }
