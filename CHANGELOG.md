@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.77.0](https://github.com/kurtosis-tech/kurtosis/compare/0.76.9...0.77.0) (2023-05-25)
+
+
+### ⚠ BREAKING CHANGES
+
+* Add Kubernetes implementation ([#638](https://github.com/kurtosis-tech/kurtosis/issues/638))
+
+### Features
+
+* Add Kubernetes implementation ([#638](https://github.com/kurtosis-tech/kurtosis/issues/638)) ([8ad708b](https://github.com/kurtosis-tech/kurtosis/commit/8ad708bca139c79312de60643db1691938f55861))
+
 ## [0.76.9](https://github.com/kurtosis-tech/kurtosis/compare/0.76.8...0.76.9) (2023-05-23)
 
 
