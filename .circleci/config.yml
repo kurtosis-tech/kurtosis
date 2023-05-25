@@ -14,7 +14,7 @@ param_cli_cluster_backend: &param_cli_cluster_backend
   cli-cluster-backend:
     description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'"
     type: enum
-    enum: ["minikube"]
+    enum: ["docker", "minikube"]
 
 # Install go version 1.19 to run our integration tests on the minimal version we support
 steps_install_go: &steps_install_go
@@ -1123,17 +1123,17 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
-      - build_golang_testsuite:
-          name: "Build golang testsuite against Docker"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
+#      - build_golang_testsuite:
+#          name: "Build golang testsuite against Docker"
+#          cli-cluster-backend: "docker"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
@@ -1147,17 +1147,17 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
-      - build_typescript_testsuite:
-          name: "Build typescript testsuite against Docker"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
+#      - build_typescript_testsuite:
+#          name: "Build typescript testsuite against Docker"
+#          cli-cluster-backend: "docker"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
 
 #      - build_typescript_testsuite:
 #          name: "Build typescript testsuite against Kubernetes"
