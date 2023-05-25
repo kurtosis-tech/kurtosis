@@ -85,7 +85,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	// We try to do our best to restart an engine on the same version the current on is on
 	_, engineClientCloseFunc, restartEngineErr := engineManager.RestartEngineIdempotently(ctx, logrus.InfoLevel, noEngineVersion, restartEngineOnSameVersionIfAnyRunning)
 	if restartEngineErr != nil {
-		return stacktrace.Propagate(err, "Engine could not be restarted after cluster was updated. The cluster"+
+		return stacktrace.Propagate(restartEngineErr, "Engine could not be restarted after cluster was updated. The cluster"+
 			"will be rolled back, but it is possible the engine will remain stopped. Its status can be retrieved "+
 			"running 'kurtosis %s %s' and it can potentially be restarted running 'kurtosis %s %s'",
 			command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,

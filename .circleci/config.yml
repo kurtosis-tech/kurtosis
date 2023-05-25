@@ -14,14 +14,14 @@ param_cli_cluster_backend: &param_cli_cluster_backend
   cli-cluster-backend:
     description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'"
     type: enum
-    enum: ["docker"] # ["docker", "minikube"]
+    enum: ["docker", "minikube"]
 
-# Install go version 1.18 to run our integration tests on the minimal version we support
-steps_install_go_1_18: &steps_install_go_1_18
+# Install go version 1.19 to run our integration tests on the minimal version we support
+steps_install_go: &steps_install_go
   - run: |
-      wget https://go.dev/dl/go1.18.10.linux-amd64.tar.gz
+      wget https://go.dev/dl/go1.19.9.linux-amd64.tar.gz
       sudo rm -rf /usr/local/go
-      sudo tar -C /usr/local -xzf go1.18.10.linux-amd64.tar.gz
+      sudo tar -C /usr/local -xzf go1.19.9.linux-amd64.tar.gz
 
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_k8s: &steps_prepare_testing_k8s
@@ -34,18 +34,17 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         name: Check status
         command: |
           minikube status
-    - run: "${KURTOSIS_BINPATH} cluster set minikube"
     - run: |
         eval $(minikube docker-env)
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-    - run: "${KURTOSIS_BINPATH} engine start --cli-log-level trace"
+    - run: "${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace"
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
 
-# Steps to prepare a job for Kubernetes testing
+# Steps to prepare a job for Docker testing
 steps_prepare_testing_docker: &steps_prepare_testing_docker
   steps:
     - run: |
@@ -99,7 +98,7 @@ executors:
 parameters:
   go-version:
     type: string
-    default: "1.18"
+    default: "1.19"
   container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
@@ -114,7 +113,7 @@ parameters:
   # the same version as the server
   server-go-version:
     type: string
-    default: "1.18"
+    default: "1.19"
   api-node-version:
     type: string
     default: 16.13.0
@@ -126,7 +125,7 @@ parameters:
     default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
   cli-go-version:
     type: string
-    default: "1.18"
+    default: "1.19"
   workspace-with-cli-binary-and-images-mountpoint:
     type: string
     default: "/tmp/workspace"
@@ -441,7 +440,7 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *steps_install_go_1_18
+      - <<: *steps_install_go
 
       # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
       - run: |
@@ -587,7 +586,7 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *steps_install_go_1_18
+      - <<: *steps_install_go
 
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -662,7 +661,7 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *steps_install_go_1_18
+      - <<: *steps_install_go
 
       - run: |
           echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
@@ -783,7 +782,7 @@ jobs:
       - attach_workspace:
           at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
 
-      - <<: *steps_install_go_1_18
+      - <<: *steps_install_go
 
       # We don't send metrics to avoid polluting our logs
       - run: |
@@ -1100,6 +1099,18 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
+#      - test_basic_cli_functionality:
+#          name: "Test Basic CLI Functionality in Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
+
       - test_ci_for_failure:
           name: "Test Basic CLI for failure"
           cli-cluster-backend: "docker"
@@ -1124,6 +1135,18 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
+#      - build_golang_testsuite:
+#          name: "Build golang testsuite against Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
+
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
           cli-cluster-backend: "docker"
@@ -1135,6 +1158,18 @@ workflows:
             - build_engine_server
             - build_files_artifacts_expander
           <<: *filters_ignore_main
+
+#      - build_typescript_testsuite:
+#          name: "Build typescript testsuite against Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
 
       - test_old_enclave_continuity:
           context:

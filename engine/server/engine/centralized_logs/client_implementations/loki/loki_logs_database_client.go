@@ -660,7 +660,7 @@ func getKurtosisGuidParamValues(kurtosisGuids []string) string {
 }
 
 func createUrl(scheme string, host string, path string) *url.URL {
-	return &url.URL{
+	return &url.URL{ //nolint:exhaustruct
 		Scheme:      scheme,
 		Opaque:      "",
 		User:        nil,

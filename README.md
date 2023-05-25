@@ -124,13 +124,13 @@ On MacOS:
 brew install docker
 ```
 
-#### Go (1.18 or above)
+#### Go (1.19 or above)
 
 On MacOS:
 ```bash
-brew install go@1.18
+brew install go@1.19
 # Add the Go binary dir to your PATH
-PATH="${BREW_PREFIX}/opt/go@1.18/bin:$PATH"
+PATH="${BREW_PREFIX}/opt/go@1.19/bin:$PATH"
 ```
 
 #### Goreleaser
