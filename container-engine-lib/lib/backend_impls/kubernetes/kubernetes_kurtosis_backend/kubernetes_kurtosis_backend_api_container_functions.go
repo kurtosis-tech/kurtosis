@@ -91,6 +91,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.NewError("Found existing API container(s) in enclave '%v'; cannot start a new one", enclaveId)
 	}
 
+	// TODO(vcolombo): Is this nil correct?
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, consts.HttpApplicationProtocol, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(

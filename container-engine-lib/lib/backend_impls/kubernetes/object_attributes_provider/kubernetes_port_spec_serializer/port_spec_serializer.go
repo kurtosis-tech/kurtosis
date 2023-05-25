@@ -163,6 +163,7 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 		}
 
 		// TODO: Serialize/Deserialize Waits!
+		// TODO(vcolombo): Is this nil correct?
 		portSpec, err := port_spec.NewPortSpec(portNumUint16, portProtocol, portApplicationProtocolStr, nil)
 		if err != nil {
 			return nil, stacktrace.Propagate(

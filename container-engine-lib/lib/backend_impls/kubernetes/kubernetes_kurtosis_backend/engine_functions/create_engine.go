@@ -47,6 +47,7 @@ func CreateEngine(
 	}
 	engineGuid := engine.EngineGUID(engineGuidStr)
 
+	// TODO(vcolombo): Is this nil correct?
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, nil)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -464,6 +465,7 @@ func createEngineService(
 	podMatchLabels map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
 ) (*apiv1.Service, error) {
+	// TODO(vcolombo): Is this nil correct?
 	engineServiceAttributes, err := engineAttributesProvider.ForEngineService(
 		consts.KurtosisInternalContainerGrpcPortSpecId,
 		privateGrpcPortSpec,
