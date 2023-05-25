@@ -223,10 +223,6 @@ func deserialize_pre_2022_03_02_PortSpecs(specsStr string) (map[string]*port_spe
 	return result, nil
 }
 
-func extractEngineGuidFromUncastedEngineObj(uncastedEngineObj interface{}) (string, error) {
-	castedObj, ok := uncastedEngineObj.(*engine.Engine)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the engine object")
-	}
-	return string(castedObj.GetGUID()), nil
+func extractEngineGuidFromEngine(engine *engine.Engine) string {
+	return string(engine.GetGUID())
 }

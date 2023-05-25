@@ -124,7 +124,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateGrpcDockerPort:      docker_manager.NewAutomaticPublishingSpec(),
+		privateGrpcDockerPort: docker_manager.NewAutomaticPublishingSpec(),
 	}
 
 	bindMounts := map[string]string{
@@ -243,12 +243,6 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching filters '%+v'", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedApiContainersByContainerId := map[string]interface{}{}
-	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
-		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
-	}
-
 	var killApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -262,9 +256,9 @@ func (backend *DockerKurtosisBackend) StopAPIContainers(
 
 	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedApiContainersByContainerId,
+		matchingApiContainersByContainerId,
 		backend.dockerManager,
-		extractEnclaveIdFromUncastedApiContainerObj,
+		extractEnclaveIdApiContainer,
 		killApiContainerOperation,
 	)
 	if err != nil {
@@ -289,12 +283,6 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting API containers matching the following filters: %+v", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedApiContainersByContainerId := map[string]interface{}{}
-	for containerId, apiContainerObj := range matchingApiContainersByContainerId {
-		matchingUncastedApiContainersByContainerId[containerId] = interface{}(apiContainerObj)
-	}
-
 	var removeApiContainerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -308,9 +296,9 @@ func (backend *DockerKurtosisBackend) DestroyAPIContainers(ctx context.Context, 
 
 	successfulEnclaveIdStrs, erroredEnclaveIdStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedApiContainersByContainerId,
+		matchingApiContainersByContainerId,
 		backend.dockerManager,
-		extractEnclaveIdFromUncastedApiContainerObj,
+		extractEnclaveIdApiContainer,
 		removeApiContainerOperation,
 	)
 	if err != nil {
@@ -465,10 +453,6 @@ func getPrivateApiContainerPorts(containerLabels map[string]string) (
 	return grpcPortSpec, nil
 }
 
-func extractEnclaveIdFromUncastedApiContainerObj(uncastedApiContainerObj interface{}) (string, error) {
-	castedObj, ok := uncastedApiContainerObj.(*api_container.APIContainer)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the API container object")
-	}
-	return string(castedObj.GetEnclaveID()), nil
+func extractEnclaveIdApiContainer(apiContainer *api_container.APIContainer) string {
+	return string(apiContainer.GetEnclaveID())
 }

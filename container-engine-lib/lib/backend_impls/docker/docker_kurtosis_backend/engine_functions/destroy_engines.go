@@ -23,12 +23,6 @@ func DestroyEngines(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting engines matching the following filters: %+v", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedEnginesByContainerId := map[string]interface{}{}
-	for containerId, engineObj := range matchingEnginesByContainerId {
-		matchingUncastedEnginesByContainerId[containerId] = interface{}(engineObj)
-	}
-
 	var removeEngineOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -44,9 +38,9 @@ func DestroyEngines(
 
 	successfulEngineGuidStrs, erroredEngineGuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedEnginesByContainerId,
+		matchingEnginesByContainerId,
 		dockerManager,
-		extractEngineGuidFromUncastedEngineObj,
+		extractEngineGuidFromEngine,
 		removeEngineOperation,
 	)
 	if err != nil {
@@ -62,7 +56,7 @@ func DestroyEngines(
 	for guidStr, err := range erroredEngineGuidStrs {
 		erroredGuids[engine.EngineGUID(guidStr)] = stacktrace.Propagate(
 			err,
-		"An error occurred destroying engine '%v'",
+			"An error occurred destroying engine '%v'",
 			guidStr,
 		)
 	}
