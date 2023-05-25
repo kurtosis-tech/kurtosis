@@ -196,7 +196,7 @@ func getUserMsgFromArgs(args *args.ParsedArgs) (string, error) {
 	if userMsg == userMsgArgDefaultValue {
 		userMsg = ""
 	}
-	userEncodedMsg := &url.URL{
+	userEncodedMsg := &url.URL{ //nolint:exhaustruct
 		Path:        userMsg,
 		Scheme:      "",
 		Opaque:      "",
@@ -285,7 +285,7 @@ func getGitHubIssueURL(
 	return gitHubIssueURL, nil
 }
 
-//TODO we could add this to the command framework
+// TODO we could add this to the command framework
 func validateMutuallyExclusiveBooleanFlagsAndGetSelectedKey(flags *flags.ParsedFlags, flagKeys []string) (string, error) {
 	anyPreviousFlagSet := false
 	selectedKey := ""
