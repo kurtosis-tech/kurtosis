@@ -48,7 +48,7 @@ echo "Tests succeeded"
 
 # Build binary for packaging inside an Alpine Linux image
 echo "Building server main.go '${MAIN_GO_FILEPATH}'..."
-if ! CGO_ENABLED=1 CC="x86_64-linux-musl-gcc" CXX="x86_64-linux-musl-g++" GOOS=linux GOARCH=amd64 go build -o "${MAIN_BINARY_OUTPUT_FILEPATH}" "${MAIN_GO_FILEPATH}"; then
+if ! GOOS=linux GOARCH=amd64 go build -o "${MAIN_BINARY_OUTPUT_FILEPATH}" "${MAIN_GO_FILEPATH}"; then
   echo "Error: An error occurred building the server code" >&2
   exit 1
 fi
