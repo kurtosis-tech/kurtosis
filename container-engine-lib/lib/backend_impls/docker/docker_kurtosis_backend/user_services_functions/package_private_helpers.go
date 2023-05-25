@@ -176,13 +176,13 @@ func removeUserServiceDockerResources(
 		}
 	}
 
-	uncastedKurtosisObjectsToRemoveByContainerId := map[string]interface{}{}
+	kurtosisObjectsToRemoveByContainerId := map[string]*service.Service{}
 	for serviceUuid, resources := range resourcesToRemove {
 		// Safe to skip the is-found check because we verified the map keys are identical earlier
 		serviceObj := serviceObjectsToRemove[serviceUuid]
 
 		containerId := resources.ServiceContainer.GetId()
-		uncastedKurtosisObjectsToRemoveByContainerId[containerId] = serviceObj
+		kurtosisObjectsToRemoveByContainerId[containerId] = serviceObj
 	}
 
 	// TODO Simplify this with Go generics
@@ -199,9 +199,9 @@ func removeUserServiceDockerResources(
 
 	successfulContainerRemoveUuidStrs, erroredContainerRemoveUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		uncastedKurtosisObjectsToRemoveByContainerId,
+		kurtosisObjectsToRemoveByContainerId,
 		dockerManager,
-		extractServiceUUIDFromServiceObj,
+		extractServiceUUIDFromService,
 		dockerOperation,
 	)
 	if err != nil {
@@ -271,10 +271,6 @@ func removeUserServiceDockerResources(
 	return successUuids, erroredUuids, nil
 }
 
-func extractServiceUUIDFromServiceObj(uncastedObj interface{}) (string, error) {
-	castedObj, ok := uncastedObj.(*service.Service)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the user service object")
-	}
-	return string(castedObj.GetRegistration().GetUUID()), nil
+func extractServiceUUIDFromService(service *service.Service) string {
+	return string(service.GetRegistration().GetUUID())
 }

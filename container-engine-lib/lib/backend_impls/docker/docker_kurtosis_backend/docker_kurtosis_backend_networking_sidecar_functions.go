@@ -260,12 +260,6 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedObjectsByContainerId := map[string]interface{}{}
-	for containerId, object := range matchingNetworkingSidecarsByContainerId {
-		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
-	}
-
 	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -279,9 +273,9 @@ func (backend *DockerKurtosisBackend) StopNetworkingSidecars(
 
 	successfulServiceUuidStrs, erroredServiceUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedObjectsByContainerId,
+		matchingNetworkingSidecarsByContainerId,
 		backend.dockerManager,
-		extractServiceUUIDFromNetworkSidecarObj,
+		extractServiceUUIDFromNetworkSidecar,
 		dockerOperation,
 	)
 	if err != nil {
@@ -313,12 +307,6 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars matching filters '%+v'", filters)
 	}
 
-	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
-	matchingUncastedObjectsByContainerId := map[string]interface{}{}
-	for containerId, object := range networkingSidecars {
-		matchingUncastedObjectsByContainerId[containerId] = interface{}(object)
-	}
-
 	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
 		ctx context.Context,
 		dockerManager *docker_manager.DockerManager,
@@ -332,9 +320,9 @@ func (backend *DockerKurtosisBackend) DestroyNetworkingSidecars(
 
 	successfulServiceUuidStrs, erroredServiceUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
-		matchingUncastedObjectsByContainerId,
+		networkingSidecars,
 		backend.dockerManager,
-		extractServiceUUIDFromNetworkSidecarObj,
+		extractServiceUUIDFromNetworkSidecar,
 		dockerOperation,
 	)
 	if err != nil {
@@ -443,10 +431,6 @@ func getNetworkingSidecarObjectFromContainerInfo(
 	return newObject, nil
 }
 
-func extractServiceUUIDFromNetworkSidecarObj(uncastedObj interface{}) (string, error) {
-	castedObj, ok := uncastedObj.(*networking_sidecar.NetworkingSidecar)
-	if !ok {
-		return "", stacktrace.NewError("An error occurred downcasting the networking sidecar object")
-	}
-	return string(castedObj.GetServiceUUID()), nil
+func extractServiceUUIDFromNetworkSidecar(networkingSidecar *networking_sidecar.NetworkingSidecar) string {
+	return string(networkingSidecar.GetServiceUUID())
 }
