@@ -25,7 +25,7 @@ II. Add you Kubernetes Cluster credentials to your `kubeconfig`
 
 This step will depend highly on how your cluster was created. But generally you will need to either:
 
-1. Manually edit the kubeconfig file to contain cluster and authentication data. For more information, see [Kubernetes docs](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
+1. Manually edit the `kubeconfig` file to contain cluster and authentication data. For more information, see [Kubernetes docs](https://kubernetes.io/docs/tasks/access-application-cluster/configure-access-multiple-clusters/).
 1. Use your cloud provider CLI to automatically edit the kubeconfig file to contain your cluster and authentication data. For example, you if you are using AWS Managed Kubernetes Service (EKS), [this tutorial](https://docs.aws.amazon.com/eks/latest/userguide/create-kubeconfig.html) is comprehensive.
 
 
