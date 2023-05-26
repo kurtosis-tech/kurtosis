@@ -63,5 +63,5 @@ IV. Configure Kurtosis
 Done! Now you can run any Kurtosis command or package just like if you were doing it locally.
 
 :::tip Kurtosis Kloud Early Access
-To go back to run kurtosis locally, just `kurtosis cluster set docker`
+To switch back to using Kurtosis locally, simply use: `kurtosis cluster set docker`
 :::
