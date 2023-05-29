@@ -120,7 +120,6 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 		if !isFound {
 			return nil, stacktrace.NewError("Expected to be able to find port_spec id of remote port '%v', instead found nothing", remotePort)
 		}
-		// TODO(vcolombo): Is this nil correct?
 		// Port forwarding in kubernetes only supports TCP
 		localPortSpec, err := port_spec.NewPortSpec(localPort, port_spec.TransportProtocol_TCP, emptyApplicationProtocol, noWait)
 		if err != nil {
