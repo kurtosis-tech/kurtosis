@@ -14,7 +14,7 @@ def run(plan):
 	service_config = ServiceConfig(
 		image = "mendhak/http-https-echo:26",
 		ports = {
-			"http-port": PortSpec(number = 8080, transport_protocol = "TCP", wait="2s"),
+			"http-port": PortSpec(number = 8080, transport_protocol = "TCP", wait="20s"),
 		}
 	)
 
@@ -28,7 +28,7 @@ def run(plan):
 		image = "mendhak/http-https-echo:26",
 		ports = {
 			"http-port": PortSpec(number = 8080, transport_protocol = "TCP"),
-			"not-opened-port": PortSpec(number = 1234, wait="2s")
+			"not-opened-port": PortSpec(number = 1234, wait="20s")
 		}
 	)
 

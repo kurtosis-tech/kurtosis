@@ -1950,8 +1950,7 @@ func waitUntilPortIsOpenWithTimeout(
 				timeout.String(),
 			)
 		}
-		now := time.Now()
-		scanPortTimeout := finishTime.Sub(now)
+		scanPortTimeout := 200 * time.Millisecond
 		if err = scanPort(ipAddr, &portSpec, scanPortTimeout); err == nil {
 			logrus.Debugf(
 				"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+
