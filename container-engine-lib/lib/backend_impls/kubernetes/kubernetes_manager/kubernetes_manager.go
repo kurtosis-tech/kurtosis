@@ -56,7 +56,7 @@ const (
 	shouldFollowContainerLogsWhenPrintingPodInfo = false
 	shouldAddTimestampsWhenPrintingPodInfo       = true
 
-	listOptionsTimeoutSeconds int64 = 10
+	listOptionsTimeoutSeconds int64 = 30
 )
 
 var (
