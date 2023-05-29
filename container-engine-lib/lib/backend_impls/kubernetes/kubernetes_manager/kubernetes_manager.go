@@ -56,7 +56,7 @@ const (
 	shouldFollowContainerLogsWhenPrintingPodInfo = false
 	shouldAddTimestampsWhenPrintingPodInfo       = true
 
-	listOptionsTimeoutSeconds int64 = 30
+	listOptionsTimeoutSeconds int64 = 10
 )
 
 var (
@@ -230,7 +230,7 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       nil,
+		TimeoutSeconds:       i64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
 	}
