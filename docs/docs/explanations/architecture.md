@@ -4,11 +4,11 @@ sidebar_label: Architecture
 sidebar_position: 2
 ---
 
-![Kurtosis Architecture](/img/explanations/kurtosis-architecture.png)
-
 Kurtosis At A Macro Level
 -------------------------
 At a macro level, Kurtosis is a set of containers, deployed on top of a container orchestrator (e.g. Docker, Kubernetes), that expose APIs. All interaction with Kurtosis is done via APIs. After Kurtosis receives a request, it usually reads or modifies some state in the container orchestrator. Kurtosis therefore serves as an abstraction layer atop the container orchestrator.
+
+![Kurtosis Architecture](/img/explanations/kurtosis-highlevel-architecture.png)
 
 One Layer Deeper
 ----------------
@@ -18,6 +18,9 @@ Therefore, the job of Kurtosis is to receive requests from the user and translat
 
 Enclaves
 --------
+
+![Kurtosis Architecture](/img/explanations/kurtosis-architecture.png)
+
 Kurtosis implements environments as a first-class concept using [enclaves][enclaves-reference]. An enclave can be thought of as an "environment container" - an isolated place for a user to run an environment that is easy to create, manage, and destroy. Each enclave is separated from the other enclaves: no network communication can happen between them. Enclaves are also cheap: Kurtosis can manage arbitrary numbers of enclaves, limited only by the underlying hardware.
 
 Example: Some enclaves running in, as displayed by [the Kurtosis CLI][cli-reference]:
