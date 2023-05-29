@@ -230,7 +230,7 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       i64Ptr(listOptionsTimeoutSeconds),
+		TimeoutSeconds:       nil,
 		Limit:                0,
 		Continue:             "",
 	}
