@@ -39,7 +39,7 @@ func ExecuteServiceAssertionWithRecipe(
 	}()
 	// By passing 'contextWithDeadline' to recipe execution, we can make sure that when timeout is reached, the underlying
 	// request is aborted. 'timeoutChan' serves as an exit signal for the loop repeating the recipe execution.
-	contextWithDeadline, cancelContext := context.WithTimeout(ctx, timeout)
+	contextWithDeadline, cancelContext := context.WithTimeout(ctx, 5 * time.Second)
 	defer cancelContext()
 	timeoutChan := time.After(timeout)
 

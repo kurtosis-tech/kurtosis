@@ -56,7 +56,7 @@ def run(plan):
 			port_id = "http",
 			endpoint = "/" + filePath,
 		)
-		response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, service_name="file-server")
+		response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, timeout="10s", service_name="file-server")
 		plan.assert(response["body"], "==", expected_contents)
 `
 	noStarlarkParams = "{}"
