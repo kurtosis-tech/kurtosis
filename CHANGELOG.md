@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.77.1](https://github.com/kurtosis-tech/kurtosis/compare/0.77.0...0.77.1) (2023-05-30)
+
+
+### Features
+
+* Implement PortSpec Wait on Kubernetes backend ([#640](https://github.com/kurtosis-tech/kurtosis/issues/640)) ([7c9989d](https://github.com/kurtosis-tech/kurtosis/commit/7c9989d3119c51c7325de077db1b4f44e4876ce0))
+* Run the golang testsuite against K8S (Minikube) ([#653](https://github.com/kurtosis-tech/kurtosis/issues/653)) ([8ddf5ef](https://github.com/kurtosis-tech/kurtosis/commit/8ddf5ef18536b7ae654309f94292ad377373092b))
+
 ## [0.77.0](https://github.com/kurtosis-tech/kurtosis/compare/0.76.9...0.77.0) (2023-05-25)
 
 
