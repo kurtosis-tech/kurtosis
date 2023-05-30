@@ -294,8 +294,6 @@ jobs:
 
       - <<: *abort_job_if_only_docs_changes
 
-      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
       - run: |
           sudo apt update
@@ -352,8 +350,6 @@ jobs:
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
-
-      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
 
       # Generate Kurtosis Version
       - run: "<<pipeline.parameters.generate-kurtosis-version-script-path>>"
@@ -869,8 +865,6 @@ jobs:
           # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
           template: basic_fail_1
 
-      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
-
       # Install proto compiler. To compile startosis proto files on the fly, the APIC needs `protoc`
       - run: |
           sudo apt update
@@ -908,8 +902,6 @@ jobs:
           event: fail
           # You can preview this template and know more about templates here: https://github.com/CircleCI-Public/slack-orb/wiki#templates
           template: basic_fail_1
-
-      - run: sudo apt-get update -y &&  sudo apt-get install -y musl-dev
 
       - checkout
 

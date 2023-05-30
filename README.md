@@ -158,12 +158,6 @@ brew install protoc-gen-go-grpc
 npm install -g ts-protoc-gen
 npm install -g grpc-tools
 ```
-#### Musl
-
-On MacOS:
-```bash
-brew install filosottile/musl-cross/musl-cross
-```
 
 Build Instructions
 ------------------
