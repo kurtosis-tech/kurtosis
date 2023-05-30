@@ -1123,7 +1123,7 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
-      - build_golang_testsuite_docker:
+      - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
           cli-cluster-backend: "docker"
           context:
@@ -1135,7 +1135,7 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
-      - build_golang_testsuite_kubernetes:
+      - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
           cli-cluster-backend: "minikube"
           context:
