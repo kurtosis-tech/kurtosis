@@ -10,7 +10,7 @@ lang_root_dirpath="$(dirname "${script_dirpath}")"
 # ==================================================================================================
 #                                             Constants
 # ==================================================================================================
-PARALLELISM=2
+PARALLELISM=4
 DOCKER_TIMEOUT="3m"   # This must be Go-parseable timeout
 KUBERNETES_TIMEOUT="8m" # K8S takes longer than docker
 
