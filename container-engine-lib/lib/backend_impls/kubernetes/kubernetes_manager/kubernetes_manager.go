@@ -55,6 +55,8 @@ const (
 
 	shouldFollowContainerLogsWhenPrintingPodInfo = false
 	shouldAddTimestampsWhenPrintingPodInfo       = true
+
+	listOptionsTimeoutSeconds int64 = 10
 )
 
 var (
@@ -88,6 +90,8 @@ type KubernetesManager struct {
 	// Underlying restClient configuration
 	kuberneteRestConfig *rest.Config
 }
+
+func int64Ptr(i int64) *int64 { return &i }
 
 func NewKubernetesManager(kubernetesClientSet *kubernetes.Clientset, kuberneteRestConfig *rest.Config) *KubernetesManager {
 	return &KubernetesManager{
@@ -226,7 +230,7 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       nil,
+		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
 	}
@@ -458,7 +462,7 @@ func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, nam
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       nil,
+		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
 	}
@@ -543,7 +547,7 @@ func (manager *KubernetesManager) GetServiceAccountsByLabels(ctx context.Context
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       nil,
+		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
 	}
@@ -646,7 +650,7 @@ func (manager *KubernetesManager) GetRolesByLabels(ctx context.Context, namespac
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       nil,
+		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
 	}
@@ -750,7 +754,7 @@ func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, n
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       nil,
+		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
 	}
@@ -854,7 +858,7 @@ func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, c
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       nil,
+		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
 	}
@@ -957,7 +961,7 @@ func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Con
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       nil,
+		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
 	}
@@ -1284,7 +1288,7 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 		AllowWatchBookmarks:  false,
 		ResourceVersion:      "",
 		ResourceVersionMatch: "",
-		TimeoutSeconds:       nil,
+		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
 	}

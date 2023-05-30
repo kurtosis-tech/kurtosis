@@ -107,7 +107,7 @@ func TestDuration_Invalid(t *testing.T) {
 }
 
 func TestDurationOrNone_ValidDurationString(t *testing.T) {
-	value := starlark.String("15s")
+	value := starlark.String("2m")
 	err := DurationOrNone(value, "test_duration_or_none_valid_duration_string")
 	require.Nil(t, err)
 }
