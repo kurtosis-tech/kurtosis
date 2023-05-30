@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	DefaultWaitTimeoutDurationStr = "2m"
+	DefaultWaitTimeoutDurationStr = "15s"
 	DisableWaitTimeoutDurationStr = ""
 )
 
