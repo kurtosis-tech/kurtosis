@@ -6,6 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestValidSerDe(t *testing.T) {
@@ -87,6 +88,49 @@ func TestDuplicatedPortNumDifferentProtoSerialization(t *testing.T) {
 
 	_, err = SerializePortSpecs(input)
 	require.NoError(t, err, "Expected two ports with the same number but different protocols to serialize successfully, but an error was thrown")
+}
+
+func TestWaitSerDer(t *testing.T) {
+
+	port0Id := "port0"
+	port0Num := uint16(22)
+	port0Protocol := port_spec.TransportProtocol_TCP
+	port0Spec, err := port_spec.NewPortSpec(port0Num, port0Protocol, "", nil)
+	require.NoError(t, err, "An unexpected error occurred creating port 0 spec")
+
+	port1Id := "port1"
+	port1Num := uint16(123)
+	port1Protocol := port_spec.TransportProtocol_TCP
+	port1Spec, err := port_spec.NewPortSpec(port1Num, port1Protocol, "", port_spec.NewWait(6*time.Second))
+	require.NoError(t, err, "An unexpected error occurred creating port 1 spec")
+
+	port2Id := "port2"
+	port2Num := uint16(321)
+	port2Protocol := port_spec.TransportProtocol_UDP
+	port2Spec, err := port_spec.NewPortSpec(port2Num, port2Protocol, "http", nil)
+	require.NoError(t, err, "An unexpected error occurred creating port 2 spec")
+
+	port3Id := "port3"
+	port3Num := uint16(11)
+	port3Protocol := port_spec.TransportProtocol_TCP
+	port3Spec, err := port_spec.NewPortSpec(port3Num, port3Protocol, "postgres", port_spec.NewWait(5*time.Millisecond))
+	require.NoError(t, err, "An unexpected error occurred creating port 3 spec")
+
+	portIds := []string{port0Id, port1Id, port2Id, port3Id}
+	input := map[string]*port_spec.PortSpec{
+		port0Id: port0Spec,
+		port1Id: port1Spec,
+		port2Id: port2Spec,
+		port3Id: port3Spec,
+	}
+
+	serializedPortSpecs, err := SerializePortSpecs(input)
+	require.NoError(t, err)
+	derializedPortSpecs, err := DeserializePortSpecs(serializedPortSpecs.GetString())
+	require.NoError(t, err)
+	for _, portId := range portIds {
+		require.Equal(t, derializedPortSpecs[portId], input[portId])
+	}
 }
 
 func TestDuplicatedPortNumSameProtoSerialization(t *testing.T) {

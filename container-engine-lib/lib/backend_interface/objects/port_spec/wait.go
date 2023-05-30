@@ -44,3 +44,7 @@ func CreateWait(timeoutStr string) (*Wait, error) {
 func (wait *Wait) GetTimeout() time.Duration {
 	return wait.timeout
 }
+
+func (wait *Wait) String() string {
+	return wait.timeout.String()
+}

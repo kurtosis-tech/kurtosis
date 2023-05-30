@@ -38,6 +38,8 @@ const (
 	enclaveDataDirVolumeName = "enclave-data"
 )
 
+var noWait *port_spec.Wait = nil
+
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
 
 // Any of these values being nil indicates that the resource doesn't exist
@@ -89,8 +91,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.NewError("Found existing API container(s) in enclave '%v'; cannot start a new one", enclaveId)
 	}
 
-	// TODO(vcolombo): Is this nil correct?
-	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, consts.HttpApplicationProtocol, nil)
+	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, consts.HttpApplicationProtocol, noWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
