@@ -12,6 +12,8 @@ const (
 	emptyApplicationProtocol = ""
 )
 
+var noWait *port_spec.Wait = nil
+
 // GetFreePort asks the kernel for a free open port that is ready to use.
 func GetFreeTcpPort(networkInterface string) (resultFreePortSpec *port_spec.PortSpec, err error) {
 	zeroPortOnNetworkInterfaceAddress := fmt.Sprintf("%v:0", networkInterface)
@@ -29,8 +31,7 @@ func GetFreeTcpPort(networkInterface string) (resultFreePortSpec *port_spec.Port
 	portNumber := localHostPortListener.Addr().(*net.TCPAddr).Port
 	portNumberUint16 := uint16(portNumber)
 
-	// TODO(vcolombo): Is this nil correct?
-	localHostPortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.TransportProtocol_TCP, emptyApplicationProtocol, nil)
+	localHostPortSpec, err := port_spec.NewPortSpec(portNumberUint16, port_spec.TransportProtocol_TCP, emptyApplicationProtocol, noWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create a port spec describing a free open port on localhost, instead a non-nil error was returned")
 	}
