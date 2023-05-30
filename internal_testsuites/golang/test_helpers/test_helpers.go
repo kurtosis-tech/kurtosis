@@ -109,7 +109,7 @@ def run(plan, args):
 
 	defaultParallelism = 4
 
-	defaultWaitTimeoutForTest = "2m"
+	defaultWaitTimeoutForTest = "15s"
 )
 
 var (

@@ -94,7 +94,7 @@ func TestFloatInRange_Valid(t *testing.T) {
 }
 
 func TestDuration_Valid(t *testing.T) {
-	value := starlark.String("2m")
+	value := starlark.String("15s")
 	err := Duration(value, "test_duration")
 	require.Nil(t, err)
 }
