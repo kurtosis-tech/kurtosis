@@ -23,7 +23,7 @@ type APIContainerArgs struct {
 
 	LogLevel string `json:"logLevel"`
 
-	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
+	GrpcListenPortNum uint16 `json:"grpcListenPortNum"`
 
 	EnclaveUUID string `json:"enclaveUuid"`
 

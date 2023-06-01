@@ -5,4 +5,4 @@
 
 package kurtosis_backend_config
 
-type DockerBackendConfig struct {}
+type DockerBackendConfig struct{}
