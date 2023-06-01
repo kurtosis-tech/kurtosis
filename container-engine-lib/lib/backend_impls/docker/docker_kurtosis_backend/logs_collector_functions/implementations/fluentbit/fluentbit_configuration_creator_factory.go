@@ -10,4 +10,3 @@ func createFluentbitConfigurationCreatorForKurtosis(
 	fluentbitContainerConfigProvider := newFluentbitConfigurationCreator(config)
 	return fluentbitContainerConfigProvider
 }
-

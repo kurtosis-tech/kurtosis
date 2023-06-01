@@ -10,6 +10,7 @@ type ConcurrentWriter struct {
 	underlying io.Writer
 	mutex      *sync.Mutex
 }
+
 func NewConcurrentWriter(underlying io.Writer) *ConcurrentWriter {
 	return &ConcurrentWriter{
 		underlying: underlying,

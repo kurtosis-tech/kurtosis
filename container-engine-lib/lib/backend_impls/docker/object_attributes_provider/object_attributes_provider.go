@@ -76,7 +76,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	}
 
 	usedPorts := map[string]*port_spec.PortSpec{
-		grpcPortId:      grpcPortSpec,
+		grpcPortId: grpcPortSpec,
 	}
 	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {

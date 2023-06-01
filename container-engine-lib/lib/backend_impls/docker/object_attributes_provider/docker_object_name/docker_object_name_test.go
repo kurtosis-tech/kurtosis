@@ -7,13 +7,13 @@ import (
 )
 
 var testNamesWithValidity = map[string]bool{
-	"": false,
-	" ": false,
-	"a": true,
-	"aaa": true,
-	"FoOBaR": true,
-	"aAa": true,
-	"a99a9": true,
+	"":        false,
+	" ":       false,
+	"a":       true,
+	"aaa":     true,
+	"FoOBaR":  true,
+	"aAa":     true,
+	"a99a9":   true,
 	"a.7.3.5": true,
 	"2021-12-02_kurtosis-engine-server_82388239": true,
 	"foo.bar": true,
@@ -32,7 +32,7 @@ func TestEdgeCases(t *testing.T) {
 }
 
 func TestTooLongLabel(t *testing.T) {
-	invalidLabel := strings.Repeat("a", maxLength + 1)
+	invalidLabel := strings.Repeat("a", maxLength+1)
 	_, err := CreateNewDockerObjectName(invalidLabel)
 	require.Error(t, err)
 }

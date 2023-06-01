@@ -39,7 +39,7 @@ func getLogsDatabasePrivatePorts(containerLabels map[string]string) (
 		return nil, stacktrace.NewError("No logs database http port with ID '%v' found in the logs database port specs", logsDatabaseHttpPortId)
 	}
 
-	return httpPortSpec,  nil
+	return httpPortSpec, nil
 }
 
 func getLogsDatabaseObjectFromContainerInfo(
@@ -101,7 +101,7 @@ func getAllLogsDatabaseContainers(ctx context.Context, dockerManager *docker_man
 	return matchingLogsDatabaseContainers, nil
 }
 
-//If nothing is found returns nil
+// If nothing is found returns nil
 func getLogsDatabaseObjectAndContainerId(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
