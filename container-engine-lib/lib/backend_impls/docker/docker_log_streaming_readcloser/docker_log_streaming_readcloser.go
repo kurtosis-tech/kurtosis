@@ -16,7 +16,7 @@ type DockerLogStreamingReadCloser struct {
 	// The pipe that the Docker demultiplexer will write to
 	pipeWriter *io.PipeWriter
 
-	output     *io.PipeReader
+	output *io.PipeReader
 }
 
 func NewDockerLogStreamingReadCloser(dockerLogStream io.ReadCloser) *DockerLogStreamingReadCloser {
@@ -51,9 +51,8 @@ func (streamer DockerLogStreamingReadCloser) Close() error {
 	streamer.source.Close()
 
 	// Wait until the Docker thread exits
-	<- streamer.dockerCopyEndedChan
+	<-streamer.dockerCopyEndedChan
 
 	streamer.output.Close()
 	return nil
 }
-

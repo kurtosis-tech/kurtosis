@@ -28,4 +28,3 @@ func TestKubernetesTransportProtocolLookupCompleteness(t *testing.T) {
 		require.True(t, found, "No Kubernetes port protocol defined for Kurtosis port protocol '%v'", kurtosisTransportProtocol.String())
 	}
 }
-

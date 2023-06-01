@@ -162,7 +162,7 @@ type kubernetesResource interface {
 func postFilterKubernetesResources[T kubernetesResource](
 	resources []T,
 	postFilterLabelKey string,
-// A nil or empty map will match all values
+	// A nil or empty map will match all values
 	postFilterLabelValues map[string]bool,
 ) (
 	map[string][]T,

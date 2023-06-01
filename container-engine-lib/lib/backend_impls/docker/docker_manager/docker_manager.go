@@ -41,7 +41,7 @@ const (
 
 	expectedHostIp = "0.0.0.0"
 
-	// When Docker binds a contianer port to the host machine, it binds it to host interface 0.0.0.0
+	// When Docker binds a container port to the host machine, it binds it to host interface 0.0.0.0
 	// Linux machines will use 127.0.0.1 for 0.0.0.0, but Windows machines don't
 	// We therefore return 127.0.0.1 to the users rather than 0.0.0.0 so everybody can use them
 	hostPortBindingInterfaceForUserConsumption = "127.0.0.1"
@@ -308,7 +308,7 @@ func (manager *DockerManager) CreateVolume(context context.Context, volumeName s
 	/*
 		We don't use the return value of VolumeCreate because there's not much useful information on there - Docker doesn't
 		use UUIDs to identify volumes - only the name - so there's no UUID to retrieve, and the volume's Mountpoint (what you'd
-		think would be the path of the volume on the local machine) isn't useful either becuase Docker itself runs inside a VM
+		think would be the path of the volume on the local machine) isn't useful either because Docker itself runs inside a VM
 		so *this path is only a path inside the Docker VM* (meaning we can't use it to read/write files). AFAICT, the only way
 		to read/write data to a volume is to mount it in a container. ~ ktoday, 2020-07-01
 	*/
