@@ -7,13 +7,13 @@ import (
 )
 
 var testLabelsWithValidity = map[string]bool{
-	"": false,
-	" ": false, // whitespace not allowed
-	"a": true,
-	"aaa": true,
-	"aAa": false, // caps not allowed
-	"a99a9": true,
-	"a.7.3.5": true,
+	"":                        false,
+	" ":                       false, // whitespace not allowed
+	"a":                       true,
+	"aaa":                     true,
+	"aAa":                     false, // caps not allowed
+	"a99a9":                   true,
+	"a.7.3.5":                 true,
 	"com.kurtosistech.app-id": true,
 }
 

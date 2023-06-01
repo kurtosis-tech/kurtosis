@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T){
+func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T) {
 	memoryAllocationMegabytes := uint64(400) // 400 megabytes
 
 	memoryAllocationBytes := convertMegabytesToBytes(memoryAllocationMegabytes)

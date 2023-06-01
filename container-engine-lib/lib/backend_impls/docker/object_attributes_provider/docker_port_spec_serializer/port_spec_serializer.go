@@ -46,7 +46,7 @@ var disallowedCharactersMatcher = regexp.MustCompile(fmt.Sprintf("[%v%v%v]", por
 var validApplicationProtocolMatcher = regexp.MustCompile(`^[a-zA-Z0-9+.-]*$`)
 
 // NOTE: We use a custom serialization format here (rather than, e.g., JSON) because there's a max label value size
-//  so brevity is important here
+// so brevity is important here
 func SerializePortSpecs(ports map[string]*port_spec.PortSpec) (*docker_label_value.DockerLabelValue, error) {
 	portIdAndSpecStrs := []string{}
 	usedPortSpecStrs := map[string]string{}
@@ -225,10 +225,8 @@ func deserializePortSpecStrUsingDelimiters(
 	return result, nil
 }
 
-/*
-  This method is used to validate port id - it must not have any disallowed characters.
-  This is not needed for protocol, because it is defined as enums.
-*/
+// validatePortSpec is used to validate port id - it must not have any disallowed characters.
+// This is not needed for protocol, because it is defined as enums.
 func validatePortSpec(portId string, spec *port_spec.PortSpec) error {
 	// validate port id - it should not contain disallowed characters
 	firstDisallowedCharacterInPortId := disallowedCharactersMatcher.FindString(portId)

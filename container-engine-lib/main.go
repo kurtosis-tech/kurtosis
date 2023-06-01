@@ -121,7 +121,7 @@ func runKurtosisBackendTesting() error {
 	if err != nil {
 		return err
 	}
-	logrus.Infof("Successfull stopped engines: %+v", stoppedEngineGuids)
+	logrus.Infof("Successful stopped engines: %+v", stoppedEngineGuids)
 	logrus.Infof("Errored stopped engines: %+v", erroredEngineGuids)
 	*/
 
@@ -152,7 +152,7 @@ func runKurtosisBackendTesting() error {
 		if err != nil {
 			return err
 		}
-		logrus.Infof("Successfull destroyed engines: %+v", destroyedEngineGuids)
+		logrus.Infof("Successful destroyed engines: %+v", destroyedEngineGuids)
 		logrus.Infof("Errored destroyed engines: %+v", erroredDestroyedEngineGuids)
 
 		/*
@@ -179,7 +179,7 @@ func runKurtosisBackendTesting() error {
 			if err != nil {
 				return err
 			}
-			logrus.Infof("Successfull user service registrations: %+v", successfulUserServiceRegistrations)
+			logrus.Infof("Successful user service registrations: %+v", successfulUserServiceRegistrations)
 			logrus.Infof("Errored user service registrations: %+v", erroredUserServiceRegistrations)
 
 			serviceConfig := service.NewServiceConfig(
@@ -206,7 +206,7 @@ func runKurtosisBackendTesting() error {
 			if err != nil {
 				return err
 			}
-			logrus.Infof("Successfull user service started: %+v", successfulUserServiceStarted)
+			logrus.Infof("Successful user service started: %+v", successfulUserServiceStarted)
 			logrus.Infof("Errored user service started: %+v", erroredUserServiceStarted)
 	*/
 

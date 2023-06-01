@@ -175,7 +175,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
 
 	usedPorts := map[string]*port_spec.PortSpec{
-		privateGrpcPortId:      privateGrpcPortSpec,
+		privateGrpcPortId: privateGrpcPortSpec,
 	}
 	serializedPortsSpec, err := docker_port_spec_serializer.SerializePortSpecs(usedPorts)
 	if err != nil {

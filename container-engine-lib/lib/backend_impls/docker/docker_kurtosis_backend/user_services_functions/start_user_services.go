@@ -177,7 +177,7 @@ func StartUserServices(
 		failedServicesPool[serviceUuid] = serviceErr
 	}
 
-	logrus.Debugf("Started services '%v' succesfully while '%v' failed", successfulServicesPool, failedServicesPool)
+	logrus.Debugf("Started services '%v' successfully while '%v' failed", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
 }
 
