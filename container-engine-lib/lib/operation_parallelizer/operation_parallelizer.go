@@ -55,12 +55,12 @@ func RunOperationsInParallel(operations map[OperationID]Operation) (map[Operatio
 	return successfulOperations, failedOperations
 }
 
-func getWorkerTask(id OperationID, operation Operation, resultsChan chan operationResult) func(){
+func getWorkerTask(id OperationID, operation Operation, resultsChan chan operationResult) func() {
 	return func() {
 		data, err := operation()
 		resultsChan <- operationResult{
-			id: id,
-			data: data,
+			id:        id,
+			data:      data,
 			resultErr: err,
 		}
 	}

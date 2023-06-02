@@ -23,7 +23,7 @@ func CreateLogsDatabase(
 ) (
 	*logs_database.LogsDatabase,
 	error,
-){
+) {
 
 	preExistingLogsDatabaseContainers, err := getAllLogsDatabaseContainers(ctx, dockerManager)
 	if err != nil {

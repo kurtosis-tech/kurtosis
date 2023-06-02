@@ -16,18 +16,17 @@ var (
 		}
 		return nil, nil
 	}
-	doSomethingError Operation = func() (interface{}, error){
+	doSomethingError Operation = func() (interface{}, error) {
 		// do something
 		return nil, randomError
 	}
 )
 
-
-func TestOperationsInParallelReturnsSuccessfulOperations(t *testing.T){
+func TestOperationsInParallelReturnsSuccessfulOperations(t *testing.T) {
 	operations := map[OperationID]Operation{
-		"first": doSomething,
+		"first":  doSomething,
 		"second": doSomething,
-		"third": doSomething,
+		"third":  doSomething,
 	}
 
 	success, failed := RunOperationsInParallel(operations)
@@ -39,18 +38,17 @@ func TestOperationsInParallelReturnsSuccessfulOperations(t *testing.T){
 	require.Equal(t, 3, numSucceeded)
 }
 
-func TestOperationInParallelReturnsFailedOperations(t *testing.T){
+func TestOperationInParallelReturnsFailedOperations(t *testing.T) {
 	operations := map[OperationID]Operation{
-		"first": doSomethingError,
+		"first":  doSomethingError,
 		"second": doSomethingError,
-		"third": doSomethingError,
+		"third":  doSomethingError,
 	}
 
 	success, failed := RunOperationsInParallel(operations)
 
 	numSucceeded := len(success)
 	numFailed := len(failed)
-
 
 	require.Equal(t, 3, numFailed)
 	require.Equal(t, 0, numSucceeded)
@@ -59,7 +57,7 @@ func TestOperationInParallelReturnsFailedOperations(t *testing.T){
 	}
 }
 
-func TestOperationInParallelReturnsBothSuccessAndFailedOperations(t *testing.T){
+func TestOperationInParallelReturnsBothSuccessAndFailedOperations(t *testing.T) {
 	operations := map[OperationID]Operation{
 		"first":  doSomethingError,
 		"second": doSomething,
@@ -71,7 +69,6 @@ func TestOperationInParallelReturnsBothSuccessAndFailedOperations(t *testing.T){
 	numSucceeded := len(success)
 	numFailed := len(failed)
 
-
 	require.Equal(t, 1, numFailed)
 	require.Equal(t, 2, numSucceeded)
 	for id, err := range failed {
@@ -80,7 +77,7 @@ func TestOperationInParallelReturnsBothSuccessAndFailedOperations(t *testing.T){
 	}
 }
 
-func TestOperationsInParallelUsingSharedVariablesReturnsCorrectResults(t *testing.T){
+func TestOperationsInParallelUsingSharedVariablesReturnsCorrectResults(t *testing.T) {
 	p := 0
 	incLock := sync.Mutex{}
 	var doSomethingTogether Operation = func() (interface{}, error) {
@@ -109,7 +106,7 @@ func TestOperationsInParallelUsingSharedVariablesReturnsCorrectResults(t *testin
 func TestOperationsInParallelReturnsDataCorrectly(t *testing.T) {
 	type CustomType string
 
-	var doSomethingWithData Operation = func() (interface{}, error){
+	var doSomethingWithData Operation = func() (interface{}, error) {
 		return CustomType("Hello!"), nil
 	}
 
@@ -131,7 +128,7 @@ func TestOperationsInParallelReturnsDataCorrectly(t *testing.T) {
 	require.Equal(t, "Hello!", string(val))
 }
 
-func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing.T){
+func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing.T) {
 	operationData := make(chan string, 1)
 	var operationWithDeferError Operation = func() (interface{}, error) {
 		undo := true
@@ -182,12 +179,12 @@ func TestOperationsInParallelUsingDeferFunctionsExecuteDeferCorrectly(t *testing
 	_, found = failed["first"]
 	require.True(t, found)
 	require.Equal(t, 1, len(operationData))
-	chanData :=<- operationData
+	chanData := <-operationData
 	require.Equal(t, "Hello!", chanData)
 }
 
 // Most users of RunOperationsInParallel should opt for using the return interface{} to return results, but we still test this case
-func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.T){
+func TestOperationsInParallelUsingSharedChannelReturnsCorrectResults(t *testing.T) {
 	operationData := make(chan string, 3)
 	var sendDataInChannel Operation = func() (interface{}, error) {
 		operationData <- "Hello!"

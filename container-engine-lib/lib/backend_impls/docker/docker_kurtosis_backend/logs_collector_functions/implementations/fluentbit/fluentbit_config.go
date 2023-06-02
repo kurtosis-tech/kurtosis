@@ -16,8 +16,6 @@ const (
 	//This is the "record accesor" character used by Fluentbit to dinamically get content from
 	//a log stream in JSON format
 	labelsVarPrefix = "$"
-
-
 )
 
 type FluentbitConfig struct {
@@ -36,9 +34,9 @@ type Service struct {
 }
 
 type Input struct {
-	Name   string
-	Listen string
-	Port   uint16
+	Name        string
+	Listen      string
+	Port        uint16
 	StorageType string
 }
 

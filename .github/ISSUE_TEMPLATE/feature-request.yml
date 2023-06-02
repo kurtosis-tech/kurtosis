@@ -29,6 +29,7 @@ body:
     attributes:
       label: How important is this to you?
       multiple: false
+      # Update .github/issue-labeler.yml when updating the list of options
       options:
       - Critical; Kurtosis is unusable for me without it.
       - Painful; the lack of this feature makes using Kurtosis frictionful.

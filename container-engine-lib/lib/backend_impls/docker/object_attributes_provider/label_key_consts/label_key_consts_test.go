@@ -6,21 +6,21 @@ import (
 	"testing"
 )
 
-//We expect these strings to be reliable between versions.
+// We expect these strings to be reliable between versions.
 const (
 	expectedLabelNamespaceStr = "com.kurtosistech."
 	expectedAppIdLabelKeyStr  = "com.kurtosistech.app-id"
 )
 
-//When Kurtosis versions change, these particular label key strings must be equal.
-//If these change between versions, Kurtosis will not be able to find and manage resources with these label keys.
-//They will effectively be lost to Kurtosis and the user will have to clean up any mess.
+// When Kurtosis versions change, these particular label key strings must be equal.
+// If these change between versions, Kurtosis will not be able to find and manage resources with these label keys.
+// They will effectively be lost to Kurtosis and the user will have to clean up any mess.
 var crossVersionLabelKeyStringsToEnsure = map[string]string{
 	labelNamespaceStr: expectedLabelNamespaceStr,
 	appIdLabelKeyStr:  expectedAppIdLabelKeyStr,
 }
 
-//These are the publicly accessible keys that correspond to the private string constants. They need to stay the same.
+// These are the publicly accessible keys that correspond to the private string constants. They need to stay the same.
 var crossVersionLabelKeysToEnsure = map[*docker_label_key.DockerLabelKey]string{
 	AppIDDockerLabelKey: expectedAppIdLabelKeyStr,
 }

@@ -72,14 +72,10 @@ func (lokiContainer *lokiLogsDatabaseContainer) CreateAndStart(
 	//This method will create the volume if it doesn't exist, or it will get it if it exists
 	//From Docker docs: If you specify a volume name already in use on the current driver, Docker assumes you want to re-use the existing volume and does not return an error.
 	//https://docs.docker.com/engine/reference/commandline/volume_create/
-	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
+	if err = dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
 		return "", nil, nil,
-		stacktrace.Propagate(
-			err,
-			"An error occurred creating logs database volume with name '%v' and labels '%+v'",
-			volumeName,
-			volumeLabelStrs,
-		)
+			stacktrace.Propagate(err, "An error occurred creating logs database volume with name '%v' and labels '%+v'",
+				volumeName, volumeLabelStrs)
 	}
 	//We do not defer undo volume creation because the volume could already exist from previous executions
 	//for this reason the logs database volume creation has to be idempotent, we ALWAYS want to create it if it doesn't exist, no matter what

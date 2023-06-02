@@ -75,7 +75,7 @@ func CreateEngine(
 	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateGrpcDockerPort:      docker_manager.NewManualPublishingSpec(grpcPortNum),
+		privateGrpcDockerPort: docker_manager.NewManualPublishingSpec(grpcPortNum),
 	}
 
 	bindMounts := map[string]string{

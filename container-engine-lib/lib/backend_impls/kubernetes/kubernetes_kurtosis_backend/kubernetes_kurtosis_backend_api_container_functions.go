@@ -635,7 +635,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 		namespaceName := namespacesForEnclaveId[0].GetName()
 
 		// Services (canonical defining resource for an API container)
-		// TODO switch to GetSerivcesByLabels since we're already filtering on encalve ID by virtue of passing in namespace
+		// TODO switch to GetSerivcesByLabels since we're already filtering on enclave ID by virtue of passing in namespace
 		services, err := kubernetes_resource_collectors.CollectMatchingServices(
 			ctx,
 			backend.kubernetesManager,

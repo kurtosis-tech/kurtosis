@@ -30,4 +30,3 @@ func TestTooLongLabel(t *testing.T) {
 	_, err := CreateNewKubernetesAnnotationKey(invalidLabel)
 	require.Error(t, err)
 }
-

@@ -7,15 +7,15 @@ import (
 )
 
 var testLabelValuesWithValidity = map[string]bool{
-	"": true,
-	" ": true,
-	"a": true,
-	"aaa": true,
-	"aAa": true,
-	"a99a9": true,
+	"":        true,
+	" ":       true,
+	"a":       true,
+	"aaa":     true,
+	"aAa":     true,
+	"a99a9":   true,
 	"a.7.3.5": true,
 	"my-port:8080/TCP,your-port:9090/TCP,his-port:9091/UDP,her-port:9091/TCP": true,
-	"myPort.8080-TCP_yourPort.9090-TCP_hisPort.9091-UDP_herPort.9091-TCP": true,
+	"myPort.8080-TCP_yourPort.9090-TCP_hisPort.9091-UDP_herPort.9091-TCP":     true,
 }
 
 func TestEdgeCases(t *testing.T) {
@@ -27,7 +27,7 @@ func TestEdgeCases(t *testing.T) {
 }
 
 func TestTooLongValue(t *testing.T) {
-	invalidLabel := strings.Repeat("a", maxLabelValueBytes + 1)
+	invalidLabel := strings.Repeat("a", maxLabelValueBytes+1)
 	_, err := CreateNewDockerLabelValue(invalidLabel)
 	require.Error(t, err)
 }

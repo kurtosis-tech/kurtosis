@@ -15,7 +15,7 @@ const (
 )
 
 type fluentbitAvailabilityChecker struct {
-	ipAddr net.IP
+	ipAddr         net.IP
 	httpPortNumber uint16
 }
 
