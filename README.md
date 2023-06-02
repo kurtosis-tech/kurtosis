@@ -4,13 +4,29 @@
 ----
 What is Kurtosis?
 =================
-[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding. 
+[Kurtosis](https://www.kurtosis.com) is a developer tool for platform engineers to more easily define and build web3 testing and development environments. 
 
-To read more about "why Kurtosis?", go [here](https://docs.kurtosis.com/#why-use-kurtosis).
+1. :memo: Engineers write _environment definitions_ to describe how their system should be set up 
+2. :wrench: Kurtosis interprets those _environment definitions_ to build an isolated, ephemeral environment
+3. 🏠 Engineers get a reproducible, portable, and easy to use environment for all their testing and development needs
 
-To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
+Why should I use Kurtosis?
+==========================
+Kurtosis is valuable to protocol developers because, when compared to alterantives, our _environment definitions_ are:
+* **Modular** 🧱 - can be combined or taken apart at the container level
+* **Easy to write** ✏️ - using a Python dialect called Starlark, written and used by Google ([Bazel](https://bazel.build/)) and Meta ([Buck](https://buck2.build/))
+* **Sequential** 🪜 - catering to the specific node-bootstrapping needs of blockchains
+* **Scale-able** 📈 - can operate at any scale you need, limited only by the underlying hardware
+* **Integratable** 🔌 - plug & play integration with your existing infrastructure & made to be built on-top-of.
+* **Reproducable** ♻️ - Completely deterministic and indempotent: given the same inputs, the system will start up the exact same way, every time
+* **Open source** 🆓 - Transparent and free, forever.
 
-To read about Kurtosis use cases in web3, go [here](https://web3.kurtosis.com).
+Still curious?
+==============
+* Kurtosis Web3 use cases [here](https://web3.kurtosis.com).
+* Learn about "why Kurtosis?" [here](https://docs.kurtosis.com/#why-use-kurtosis).
+* To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
+* For real examples, go [here](https://github.com/kurtosis-tech/awesome-kurtosis)
 
 Kurtosis Kloud Early Access
 ===========================
