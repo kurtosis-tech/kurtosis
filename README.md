@@ -4,15 +4,15 @@
 ----
 What is Kurtosis?
 =================
-[Kurtosis](https://www.kurtosis.com) is a developer tool for platform engineers to more easily define and build web3 testing and development environments. 
+[Kurtosis](https://www.kurtosis.com) is a portable build, packaging, and run system for containerized testing environments. Kurtosis is most useful for building and interacting with private testnets for layer 1 blockchains, and is extensible to include any associated infrastructure that can be containerized.
 
 1. :memo: Engineers write _environment definitions_ to describe how their system should be set up 
 2. :wrench: Kurtosis interprets those _environment definitions_ to build an isolated, ephemeral environment
-3. 🏠 Engineers get a reproducible, portable, and easy to use environment for all their testing and development needs
+3. 🏠 Engineers get a reproducible, composable, and portable environment for all their testing and development needs
 
 Why should I use Kurtosis?
 ==========================
-Kurtosis is valuable to protocol developers because, when compared to alterantives, our _environment definitions_ are:
+Kurtosis is valuable to blockchain infrastructure developers because, when compared to alterantives, our _environment definitions_ are:
 * 🧱 **Modular** - parts of the system can be combined or be taken apart at the container level
 * ✏️ **Easy to write** - we know `.yaml` doesn't cut it, so we use a Python dialect called Starlark, written and used by Google ([Bazel](https://bazel.build/)) and Meta ([Buck](https://buck2.build/))
 * 🪜 **Sequential** - catering to the specific node-bootstrapping needs of blockchains
@@ -31,7 +31,7 @@ Still curious?
 Kurtosis Kloud Early Access
 ===========================
 
-If you're looking to run a distributed system on the cloud, look no further! 
+If you're looking to run Kurtosis environments on the cloud, look no further! 
 We're excited to launch an early access offering for Kurtosis Kloud. Once you [sign up](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H), we'll reach out to you with the next steps.
 
 Running Kurtosis
