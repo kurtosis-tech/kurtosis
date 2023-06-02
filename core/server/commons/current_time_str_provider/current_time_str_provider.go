@@ -16,7 +16,7 @@ const (
 )
 
 // Provides the current time in string form, for use as a suffix to a container ID (e.g. service ID, module ID) that will
-//  make it unique so it won't collide with other containers with the same ID
+// make it unique so it won't collide with other containers with the same ID
 func GetCurrentTimeStr() string {
 	now := time.Now()
 	// TODO make this UnixNano to reduce risk of collisions???

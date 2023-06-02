@@ -15,11 +15,11 @@ import (
 	"testing"
 )
 
-type failedReader struct {}
+type failedReader struct{}
 
 func (reader failedReader) Read(b []byte) (int, error) {
 	return 0, stacktrace.Propagate(stacktrace.NewError("This is a test failure."),
-		 "You are not supposed to see this test failure. Please contact developers if you are.")
+		"You are not supposed to see this test failure. Please contact developers if you are.")
 }
 
 func TestFileCache_AddAndGetAndRemoveArtifact(t *testing.T) {
@@ -27,7 +27,7 @@ func TestFileCache_AddAndGetAndRemoveArtifact(t *testing.T) {
 	testKey := "test-key"
 	testContents := "test-file-contents"
 
-	reader := strings.NewReader(testContents);
+	reader := strings.NewReader(testContents)
 	addedFileObj, err := fileCache.AddFile(testKey, reader)
 	assert.Nil(t, err)
 
