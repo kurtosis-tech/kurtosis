@@ -13,10 +13,10 @@ What is Kurtosis?
 Why should I use Kurtosis?
 ==========================
 Kurtosis is valuable to protocol developers because, when compared to alterantives, our _environment definitions_ are:
-* **Modular** 🧱 - can be combined or taken apart at the container level
-* **Easy to write** ✏️ - using a Python dialect called Starlark, written and used by Google ([Bazel](https://bazel.build/)) and Meta ([Buck](https://buck2.build/))
+* **Modular** 🧱 - parts of the system can be combined or be taken apart at the container level
+* **Easy to write** ✏️ - we know `.yaml` doesnt cut it, so we use a Python dialect called Starlark, written and used by Google ([Bazel](https://bazel.build/)) and Meta ([Buck](https://buck2.build/))
 * **Sequential** 🪜 - catering to the specific node-bootstrapping needs of blockchains
-* **Scale-able** 📈 - can operate at any scale you need, limited only by the underlying hardware
+* **Scale-able** 📈 - operate at any scale you need, limited only by the underlying hardware
 * **Integratable** 🔌 - plug & play integration with your existing infrastructure & made to be built on-top-of.
 * **Reproducable** ♻️ - Completely deterministic and indempotent: given the same inputs, the system will start up the exact same way, every time
 * **Open source** 🆓 - Transparent and free, forever.
