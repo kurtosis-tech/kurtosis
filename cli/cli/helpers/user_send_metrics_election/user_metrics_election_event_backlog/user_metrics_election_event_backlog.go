@@ -21,7 +21,7 @@ var (
 )
 
 type userMetricsElectionEventBacklog struct {
-	mutex    *sync.RWMutex
+	mutex *sync.RWMutex
 }
 
 func GetUserMetricsElectionEventBacklog() *userMetricsElectionEventBacklog {
@@ -29,7 +29,7 @@ func GetUserMetricsElectionEventBacklog() *userMetricsElectionEventBacklog {
 	//the file, and we don't ever want multiple userMetricsElectionEventBacklog instances in existence
 	once.Do(func() {
 		currentUserMetricsElectionEventBacklog = &userMetricsElectionEventBacklog{
-			mutex:    &sync.RWMutex{},
+			mutex: &sync.RWMutex{},
 		}
 	})
 	return currentUserMetricsElectionEventBacklog
@@ -45,7 +45,7 @@ func (eventBacklog *userMetricsElectionEventBacklog) Set(shouldSendMetrics bool)
 
 	filepath, err := host_machine_directories.GetUserSendMetricsElectionFilepath()
 	if err != nil {
-		logrus.Debugf( "An error occurred getting the user-send-metrics-election filepath\n%v", err)
+		logrus.Debugf("An error occurred getting the user-send-metrics-election filepath\n%v", err)
 	}
 
 	if err := ioutil.WriteFile(filepath, fileContent, filePermissions); err != nil {
@@ -62,7 +62,7 @@ func (eventBacklog *userMetricsElectionEventBacklog) Get() (shouldSendMetrics bo
 
 	filepath, err := host_machine_directories.GetUserSendMetricsElectionFilepath()
 	if err != nil {
-		logrus.Debugf( "An error occurred getting the user-send-metrics-election filepath\n%v", err)
+		logrus.Debugf("An error occurred getting the user-send-metrics-election filepath\n%v", err)
 	}
 
 	fileContent, err := ioutil.ReadFile(filepath)
@@ -87,7 +87,7 @@ func (eventBacklog *userMetricsElectionEventBacklog) Clear() error {
 
 	filepath, err := host_machine_directories.GetUserSendMetricsElectionFilepath()
 	if err != nil {
-		logrus.Debugf( "An error occurred getting the user-send-metrics-election filepath\n%v", err)
+		logrus.Debugf("An error occurred getting the user-send-metrics-election filepath\n%v", err)
 	}
 
 	_, err = os.Stat(filepath)

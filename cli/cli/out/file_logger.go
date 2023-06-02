@@ -25,8 +25,7 @@ const (
 	numberOfLogFilesForCommands = 7
 )
 
-// TODO: In commands like inspect we use out.PrintOutLn - will need to add this fileLogger
-//  to print commands' output as well.
+// TODO: In commands like inspect we use out.PrintOutLn - will need to add this fileLogger to print commands' output as well.
 // fileLogger this logger will only log to a file
 var fileLogger *logrus.Logger
 var permission = fs.FileMode(0666)

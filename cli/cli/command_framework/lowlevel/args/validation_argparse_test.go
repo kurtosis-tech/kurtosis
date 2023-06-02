@@ -44,7 +44,7 @@ func TestParseArgsForValidation_AllTokensSupplied(t *testing.T) {
 }
 
 // Technically, the validation that we do in creating the KurtosisCommand should force the greedy arg to be last,
-//  but even if that validation breaks we should still catch the issue here
+// but even if that validation breaks we should still catch the issue here
 func TestParseArgsForValidation_InappropriateGreedyArg(t *testing.T) {
 	args := []*ArgConfig{
 		{
@@ -71,7 +71,7 @@ func TestParseArgsForValidation_InappropriateGreedyArg(t *testing.T) {
 }
 
 // Technically, the validation that we do in creating the KurtosisCommand should force the optional arg to be last,
-//  but even if that validation breaks we should still catch the issue here
+// but even if that validation breaks we should still catch the issue here
 func TestParseArgsForValidation_InappropriateOptionalArg(t *testing.T) {
 	args := []*ArgConfig{
 		{
