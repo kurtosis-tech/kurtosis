@@ -15,9 +15,6 @@ import (
 
 const (
 	clusterNameArgKey = "cluster-name"
-
-	noEngineVersion                        = ""
-	restartEngineOnSameVersionIfAnyRunning = true
 )
 
 var SetCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -62,6 +59,17 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return nil
 	}
 
+	engineManagerOldCluster, err := engine_manager.NewEngineManager(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
+	}
+	if err = engineManagerOldCluster.StopEngineIdempotently(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping the currently running engine prior to "+
+			"updating the cluster. The current engine needs to be stopped before the cluster can be updated. "+
+			"It can be done manually running `kurtosis %s %s`", command_str_consts.EngineCmdStr,
+			command_str_consts.EngineStopCmdStr)
+	}
+
 	if err = clusterSettingStore.SetClusterSetting(clusterName); err != nil {
 		return stacktrace.Propagate(err, "Failed to set cluster name to '%v'.", clusterName)
 	}
@@ -70,24 +78,23 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 			return
 		}
 		if err = clusterSettingStore.SetClusterSetting(clusterPriorToUpdate); err != nil {
-			logrus.Errorf("An error happened updating cluster to '%s'. KUrtosis tried to roll back to the "+
+			logrus.Errorf("An error happened updating cluster to '%s'. Kurtosis tried to roll back to the "+
 				"previous value '%s' but the roll back failed. You have to roll back manually running "+
 				"'kurtosis %s %s %s'", clusterName, clusterPriorToUpdate, command_str_consts.ClusterCmdStr,
 				command_str_consts.ClusterSetCmdStr, clusterPriorToUpdate)
 		}
 	}()
-	logrus.Infof("Cluster set to '%s', Kurtosis engine will now be restarted", clusterName)
-
-	engineManager, err := engine_manager.NewEngineManager(ctx)
+	logrus.Infof("Cluster set to '%s', Kurtosis engine will now be started", clusterName)
+	engineManagerNewCluster, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
-	// We try to do our best to restart an engine on the same version the current on is on
-	_, engineClientCloseFunc, restartEngineErr := engineManager.RestartEngineIdempotently(ctx, logrus.InfoLevel, noEngineVersion, restartEngineOnSameVersionIfAnyRunning)
-	if restartEngineErr != nil {
-		return stacktrace.Propagate(restartEngineErr, "Engine could not be restarted after cluster was updated. The cluster"+
+	// Start the engine inside the new cluster
+	_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel)
+	if err != nil {
+		return stacktrace.Propagate(err, "Engine could not be started after cluster was updated. The cluster "+
 			"will be rolled back, but it is possible the engine will remain stopped. Its status can be retrieved "+
-			"running 'kurtosis %s %s' and it can potentially be restarted running 'kurtosis %s %s'",
+			"running 'kurtosis %s %s' and it can potentially be started running 'kurtosis %s %s'",
 			command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,
 			command_str_consts.EngineStartCmdStr)
 	}
