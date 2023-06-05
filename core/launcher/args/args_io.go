@@ -49,7 +49,7 @@ func GetArgsFromEnv() (*APIContainerArgs, net.IP, error) {
 	paramsJsonBytes := []byte(serializedParamsStr)
 	var args APIContainerArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-		return nil, nil, stacktrace.Propagate(err,"An error occurred deserializing the args JSON '%v'", serializedParamsStr)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred deserializing the args JSON '%v'", serializedParamsStr)
 	}
 
 	ownIpAddrStr, found := os.LookupEnv(ownIpAddressEnvVar)
