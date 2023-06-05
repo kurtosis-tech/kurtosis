@@ -21,11 +21,8 @@ const (
 var (
 	// NOTE: This will be initialized exactly once (singleton pattern)
 	currentKurtosisConfigStore *kurtosisConfigStore
-	once sync.Once
+	once                       sync.Once
 )
-
-
-
 
 type kurtosisConfigStore struct {
 	mutex *sync.RWMutex
@@ -71,7 +68,7 @@ func (configStore *kurtosisConfigStore) HasConfig() (bool, error) {
 	return false, nil
 }
 
-//TDOD if this process tends to be slow we could improve performance applying "Write Through and Write Back in Cache"
+// TODO if this process tends to be slow we could improve performance applying "Write Through and Write Back in Cache"
 func (configStore *kurtosisConfigStore) GetConfig() (*resolved_config.KurtosisConfig, error) {
 	configStore.mutex.RLock()
 	defer configStore.mutex.RUnlock()
@@ -94,10 +91,12 @@ func (configStore *kurtosisConfigStore) SetConfig(kurtosisConfig *resolved_confi
 
 	return nil
 }
-// ====================================================================================================
-//                                     Private Helper Functions
-// ====================================================================================================
 
+// ====================================================================================================
+//
+//	Private Helper Functions
+//
+// ====================================================================================================
 func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfig *resolved_config.KurtosisConfig) error {
 	kurtosisConfigYAMLContent, err := yaml.Marshal(kurtosisConfig.GetOverrides())
 	if err != nil {
@@ -166,13 +165,13 @@ func (configStore *kurtosisConfigStore) readConfigFileBytes() ([]byte, error) {
 }
 
 /*
-	Takes in user overrides (which make come from any version from v0->current version), and migrates them across version upgrades
-	to maintain as much backwards compatibility as possible.
-	This is a delicate operation: be careful to write override migration logic carefully.
-	Overrides are partial fillings of YAML structs for v0->current version. The correct process for ensuring backwards compatibility is:
-		1. Migrate overrides sequentially from their own version up to the latest version
-		2. Overlay migrated overrides on top of the "default" latest version YAML struct
- */
+Takes in user overrides (which make come from any version from v0->current version), and migrates them across version upgrades
+to maintain as much backwards compatibility as possible.
+This is a delicate operation: be careful to write override migration logic carefully.
+Overrides are partial fillings of YAML structs for v0->current version. The correct process for ensuring backwards compatibility is:
+ 1. Migrate overrides sequentially from their own version up to the latest version
+ 2. Overlay migrated overrides on top of the "default" latest version YAML struct
+*/
 func migrateConfigOverridesToLatest(configFileBytes []byte) (interface{}, error) {
 	versionDetectingConfig := &versionDetectingKurtosisConfig{
 		ConfigVersion: config_version.ConfigVersion_v0,
@@ -191,8 +190,8 @@ func migrateConfigOverridesToLatest(configFileBytes []byte) (interface{}, error)
 	}
 	if configVersionOnDisk > latestConfigVersion {
 		return nil, stacktrace.NewError(
-			"The config version '%v' declared in your config file is newer than the latest config that version this " +
-				"CLI knows how to process (%v); this likely indicates that the config was copied from a newer CLI " +
+			"The config version '%v' declared in your config file is newer than the latest config that version this "+
+				"CLI knows how to process (%v); this likely indicates that the config was copied from a newer CLI "+
 				"version and you need to upgrade your CLI to use this config",
 			configVersionOnDisk,
 			latestConfigVersion,
@@ -223,7 +222,7 @@ func migrateConfigOverridesToLatest(configFileBytes []byte) (interface{}, error)
 		if !found {
 			// Should never happen because we enforce completeness of the migrators map via unit test
 			return nil, stacktrace.NewError(
-				"Needed to migrate from config version '%v' to the next version, but no migrator for this version " +
+				"Needed to migrate from config version '%v' to the next version, but no migrator for this version "+
 					"was defined; this is a bug in Kurtosis",
 				versionToUpgradeFrom,
 			)
@@ -236,4 +235,3 @@ func migrateConfigOverridesToLatest(configFileBytes []byte) (interface{}, error)
 	}
 	return uncastedConfig, nil
 }
-

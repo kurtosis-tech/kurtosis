@@ -70,7 +70,9 @@ func DisplayConfirmationPromptAndGetBooleanResult(label string, defaultValue boo
 }
 
 // ====================================================================================================
-//                                       Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func validateConfirmationInput(input string) error {
 	isValid := contains(allValidDecisionInputs, input)

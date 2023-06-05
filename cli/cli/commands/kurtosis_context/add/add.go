@@ -2,8 +2,8 @@ package add
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -16,9 +16,9 @@ import (
 )
 
 const (
-	contextFilePathArgKey = "context-config"
+	contextFilePathArgKey        = "context-config"
 	isContextFilePathArgOptional = false
-	defaultContextFilePathArg = ""
+	defaultContextFilePathArg    = ""
 )
 
 var ContextAddCmd = &lowlevel.LowlevelKurtosisCommand{

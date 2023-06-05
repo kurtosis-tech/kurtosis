@@ -549,7 +549,9 @@ func TestMustGetCobraCommand_OptionalGreedyArgWithWrongDefaultTypePanics(t *test
 }
 
 // ====================================================================================================
-//                                   Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
 func requirePanicWithSubstring(t *testing.T, expectedSubstringInPanic string, toTest func() *cobra.Command, msgAndArgs ...interface{}) {
 	didPanic := false

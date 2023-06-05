@@ -13,11 +13,11 @@ type configOverridesDeserializer func(configFileBytes []byte) (interface{}, erro
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // Adding a new version here is as simple as:
-//   1) copy-pasting a version block
-//   2) changing the key to your new config version
-//   3) changing the struct that's being deserialized into
-// We keep these sorted in REVERSE chronological order so you don't need to scroll
-//  to the bottom each time
+//  1. copy-pasting a version block
+//  2. changing the key to your new config version
+//  3. changing the struct that's being deserialized into
+//
+// We keep these sorted in REVERSE chronological order so you don't need to scroll to the bottom each time
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 var AllConfigOverridesDeserializers = map[config_version.ConfigVersion]configOverridesDeserializer{
 	config_version.ConfigVersion_v2: func(configFileBytes []byte) (interface{}, error) {

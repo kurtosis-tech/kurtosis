@@ -24,5 +24,5 @@ jobs:
     - run: scripts/generate-kurtosis-version.sh
     - uses: Jerome1337/gofmt-action@v1.0.5
       with:
-        gofmt-path: './api/golang/ ./container-engine-lib/ ./name_generator/ ./grpc-file-transfer/ ./contexts-config-store/ ./core/files_artifacts_expander/ ./core/launcher/ ./core/server/ ./engine/launcher ./engine/server/'
+        gofmt-path: './'
         gofmt-flags: '-l -d -s'

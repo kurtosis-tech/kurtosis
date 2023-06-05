@@ -21,9 +21,9 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	pathArgKey          = "path"
-	isPathArgOptional   = false
-	defaultPathArg      = ""
+	pathArgKey        = "path"
+	isPathArgOptional = false
+	defaultPathArg    = ""
 
 	nameFlagKey = "name"
 	defaultName = ""
