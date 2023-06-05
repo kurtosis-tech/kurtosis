@@ -21,4 +21,3 @@ func (backendConfigSupplier DockerBackendConfigSupplier) getKurtosisBackendConfi
 	dockerBackendConfig := kurtosis_backend_config.DockerBackendConfig{}
 	return args.KurtosisBackendType_Docker, dockerBackendConfig
 }
-

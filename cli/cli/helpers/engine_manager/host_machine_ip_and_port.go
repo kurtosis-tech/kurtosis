@@ -20,8 +20,9 @@ func (host hostMachineIpAndPort) GetURL() string {
 	return fmt.Sprintf("%v:%v", host.ipAddr.String(), host.portNum)
 }
 
+// getDefaultKurtosisEngineLocalhostMachineIpAndPort is Used to default our engine connections to a server running on
+// localhost on an expected port
 // TODO Remove this hacky method
-//getDefaultKurtosisEngineLocalhostMachineIpAndPort is Used to default our engine connections to a server running on localhost on an expected port
 func getDefaultKurtosisEngineLocalhostMachineIpAndPort() *hostMachineIpAndPort {
 	engineIp := net.ParseIP(localHostIpStr)
 

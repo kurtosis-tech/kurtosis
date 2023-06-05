@@ -43,7 +43,7 @@ const (
 	doNotFollowLogs = false
 )
 
-//We created this buffer type just to implement io.ReaderCloser
+// We created this buffer type just to implement io.ReaderCloser
 type closingBuffer struct {
 	*bytes.Buffer
 }

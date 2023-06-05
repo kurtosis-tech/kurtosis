@@ -17,7 +17,7 @@ func TestOverridesDeserializerCompletenessTest(t *testing.T) {
 		t,
 		numConfigVersions,
 		numDeserializers,
-		"There are %v Kurtosis config versions but %v config overrides deserializers were declared; this likely means " +
+		"There are %v Kurtosis config versions but %v config overrides deserializers were declared; this likely means "+
 			"an extra deserializer that shouldn't be",
 	)
 }

@@ -30,7 +30,7 @@ const (
 	dataJSONFilepathArgKey = "data-json-filepath"
 	destRelFilepathArgKey  = "destination-relative-filepath"
 	defaultFilepathArg     = ""
-	
+
 	isTemplateFilepathArgOptional = false
 	isDataJSONFilepathArgOptional = false
 	isDestRelFilepathArgOptional  = false

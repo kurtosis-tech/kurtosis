@@ -506,6 +506,6 @@ func scriptPathValidation(scriptPath string) (error, bool) {
 	if strings.HasPrefix(scriptPath, githubDomainPrefix) {
 		return nil, file_system_path_arg.DoNotContinueWithDefaultValidation
 	}
-	
+
 	return nil, file_system_path_arg.ContinueWithDefaultValidation
 }

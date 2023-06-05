@@ -23,7 +23,7 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	outputDirpathArg        = "output-dirpath"
+	outputDirpathArg = "output-dirpath"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"

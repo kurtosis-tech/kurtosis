@@ -30,7 +30,7 @@ func NewScriptPosition(filename string, line int32, col int32) *ScriptPosition {
 }
 
 func (pos *ScriptPosition) String() string {
-	if _, found := skipFilenamesValueSet[pos.filename]; found{
+	if _, found := skipFilenamesValueSet[pos.filename]; found {
 		return fmt.Sprintf("[%d:%d]", pos.line, pos.col)
 	}
 	return fmt.Sprintf("[%s:%d:%d]", pos.filename, pos.line, pos.col)

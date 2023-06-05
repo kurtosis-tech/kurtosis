@@ -3,6 +3,7 @@ package engine_manager
 import "github.com/kurtosis-tech/stacktrace"
 
 type EngineStatus string
+
 const (
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	// vvvvvvvvvv Whenever you change these, update the Accept function switch statement! vvvvvvvvvvvvv
@@ -12,6 +13,7 @@ const (
 	// ^^^^^^^^^^ Whenever you change these, update the Accept function switch statement! ^^^^^^^^^^^^^
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 )
+
 func (status EngineStatus) Accept(visitor EngineStatusVisitor) error {
 	switch status {
 	case EngineStatus_Stopped:
@@ -31,4 +33,3 @@ type EngineStatusVisitor interface {
 	VisitContainerRunningButServerNotResponding() error
 	VisitRunning() error
 }
-

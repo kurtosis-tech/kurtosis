@@ -141,7 +141,7 @@ const (
                 ]
             }
         ],
-        `+ commonStatsResultStr +`
+        ` + commonStatsResultStr + `
     }
 }`
 
@@ -187,7 +187,7 @@ const (
                 ]
             }
         ],
-        `+ commonStatsResultStr +`
+        ` + commonStatsResultStr + `
     }
 }`
 )

@@ -17,13 +17,13 @@ func NewDoesNotContainTextLokiLineFilter(text string) *LokiLineFilter {
 	return &LokiLineFilter{operator: operator, textOrRegexp: text}
 }
 
-//Loki accepts re2 regex syntax type, more here: https://github.com/google/re2/wiki/Syntax
+// Loki accepts re2 regex syntax type, more here: https://github.com/google/re2/wiki/Syntax
 func NewDoesContainMatchRegexLokiLineFilter(regex string) *LokiLineFilter {
 	operator := lokiLineFilterOperatorDoesContainMatchRegex
 	return &LokiLineFilter{operator: operator, textOrRegexp: regex}
 }
 
-//Loki accepts re2 regex syntax type, more here: https://github.com/google/re2/wiki/Syntax
+// Loki accepts re2 regex syntax type, more here: https://github.com/google/re2/wiki/Syntax
 func NewDoesNotContainMatchRegexLokiLineFilter(regex string) *LokiLineFilter {
 	operator := lokiLineFilterOperatorDoesNotContainMatchRegex
 	return &LokiLineFilter{operator: operator, textOrRegexp: regex}

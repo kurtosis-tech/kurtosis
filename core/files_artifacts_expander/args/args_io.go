@@ -26,7 +26,7 @@ func GetEnvFromArgs(args *FilesArtifactsExpanderArgs) (resultEnvVars map[string]
 	}
 	argsStr := string(argBytes)
 
-	envVars := map[string]string {
+	envVars := map[string]string{
 		serializedArgsEnvVar: argsStr,
 	}
 	return envVars, nil

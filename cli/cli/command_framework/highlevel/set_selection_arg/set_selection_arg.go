@@ -39,11 +39,11 @@ func NewSetSelectionArg(argKey string, validValues map[string]bool) *args.ArgCon
 	}
 
 	return &args.ArgConfig{
-		Key:             argKey,
-		ValidationFunc: validationFunc,
+		Key:                   argKey,
+		ValidationFunc:        validationFunc,
 		ArgCompletionProvider: args.NewManualCompletionsProvider(completionsFunc),
-		IsOptional:      false,
-		DefaultValue:    nil,
-		IsGreedy:        false,
+		IsOptional:            false,
+		DefaultValue:          nil,
+		IsGreedy:              false,
 	}
 }

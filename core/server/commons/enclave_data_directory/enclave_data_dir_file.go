@@ -24,5 +24,3 @@ func (file EnclaveDataDirFile) GetAbsoluteFilepath() string {
 func (file EnclaveDataDirFile) GetFilepathRelativeToDataDirRoot() string {
 	return file.filepathRelativeToDataDirRoot
 }
-
-

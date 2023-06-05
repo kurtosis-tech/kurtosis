@@ -21,7 +21,8 @@ jobs:
       with:
         go-version: 1.19
     - uses: actions/checkout@v3
+    - run: scripts/generate-kurtosis-version.sh
     - uses: Jerome1337/gofmt-action@v1.0.5
       with:
-        gofmt-path: './api/golang/ ./container-engine-lib/'
+        gofmt-path: './'
         gofmt-flags: '-l -d -s'

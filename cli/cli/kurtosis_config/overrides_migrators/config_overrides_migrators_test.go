@@ -26,9 +26,9 @@ func TestOverridesMigratorsCompletenessTest(t *testing.T) {
 	numConfigVersions := len(config_version.ConfigVersionValues())
 	require.Equal(
 		t,
-		numConfigVersions - 1,
+		numConfigVersions-1,
 		numMigrators,
-		"There are %v Kurtosis config versions but %v config overrides migrators were declared; this likely means " +
+		"There are %v Kurtosis config versions but %v config overrides migrators were declared; this likely means "+
 			"extra migrators were declared that shouldn't be (there should always be migrators = num_versions - 1)",
 	)
 }
