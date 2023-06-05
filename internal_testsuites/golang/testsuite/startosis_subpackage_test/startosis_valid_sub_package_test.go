@@ -25,7 +25,7 @@ func TestStarlarkValidLocalSubPackage(t *testing.T) {
 		err = destroyEnclaveFunc()
 		require.Nil(t, err, "Unexpected Error Occurred")
 	}()
-	
+
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Starlark Package")
 

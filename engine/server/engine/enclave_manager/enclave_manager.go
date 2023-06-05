@@ -169,8 +169,8 @@ func (manager *EnclaveManager) CreateEnclave(
 		apiContainer.GetPublicGRPCPort() != nil {
 
 		apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-			IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
-			GrpcPortOnHostMachine:      uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
+			IpOnHostMachine:       apiContainer.GetPublicIPAddress().String(),
+			GrpcPortOnHostMachine: uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
 		}
 	}
 
@@ -186,9 +186,9 @@ func (manager *EnclaveManager) CreateEnclave(
 		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
 		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
 		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-			ContainerId:                "",
-			IpInsideEnclave:            apiContainer.GetPrivateIPAddress().String(),
-			GrpcPortInsideEnclave:      uint32(apiContainerListenGrpcPortNumInsideNetwork),
+			ContainerId:           "",
+			IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
+			GrpcPortInsideEnclave: uint32(apiContainerListenGrpcPortNumInsideNetwork),
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,
@@ -398,9 +398,9 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container status for enclave '%v'", enclaveId)
 	}
 	resultApiContainerInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-		ContainerId:                "",
-		IpInsideEnclave:            apiContainer.GetPrivateIPAddress().String(),
-		GrpcPortInsideEnclave:      uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
+		ContainerId:           "",
+		IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
+		GrpcPortInsideEnclave: uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
 	}
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if resultApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
@@ -410,8 +410,8 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 			apiContainer.GetPublicGRPCPort() != nil {
 
 			apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-				IpOnHostMachine:            apiContainer.GetPublicIPAddress().String(),
-				GrpcPortOnHostMachine:      uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
+				IpOnHostMachine:       apiContainer.GetPublicIPAddress().String(),
+				GrpcPortOnHostMachine: uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
 			}
 		}
 
