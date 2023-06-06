@@ -2,6 +2,7 @@ package user_services_functions
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
@@ -523,6 +524,17 @@ func getUserServicePodContainerSpecs(image string, entrypointArgs []string, cmdA
 
 	resourceLimitsList := apiv1.ResourceList{}
 	resourceRequestsList := apiv1.ResourceList{}
+
+	err = checkIfResourcesAreSetProperly(minCpuAllocationMilliCpus, cpuAllocationMillicpus, apiv1.ResourceCPU)
+	if err != nil {
+		return nil, err
+	}
+
+	err = checkIfResourcesAreSetProperly(minMemoryAllocationMegabytes, cpuAllocationMillicpus, apiv1.ResourceMemory)
+	if err != nil {
+		return nil, err
+	}
+
 	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
 	if cpuAllocationMillicpus != 0 {
 		resourceLimitsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
@@ -567,6 +579,14 @@ func getUserServicePodContainerSpecs(image string, entrypointArgs []string, cmdA
 	}
 
 	return containers, nil
+}
+
+func checkIfResourcesAreSetProperly(resourceRequest uint64, resourceLimit uint64, resourceName apiv1.ResourceName) error {
+	if resourceRequest > resourceLimit {
+		return stacktrace.NewError(fmt.Sprintf("Minimum Resource Requirement for the container is set higher than Maximum resource requirement for resource: %v", resourceName))
+	}
+
+	return nil
 }
 
 func getKubernetesServicePortsFromPrivatePortSpecs(privatePorts map[string]*port_spec.PortSpec) ([]apiv1.ServicePort, error) {
