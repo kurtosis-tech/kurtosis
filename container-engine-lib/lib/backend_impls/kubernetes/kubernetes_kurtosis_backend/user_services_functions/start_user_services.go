@@ -517,7 +517,7 @@ func getUserServicePodContainerSpecs(
 	memoryAllocationMegabytes uint64,
 	minCpuAllocationMilliCpus uint64,
 	minMemoryAllocationMegabytes uint64,
-) ([]apiv1.Container, error, ) {
+) ([]apiv1.Container, error) {
 
 	var containerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVarStrs {
@@ -597,7 +597,7 @@ func checkIfResourcesAreSetProperly(
 	resourceRequest uint64,
 	resourceLimit uint64,
 	resourceName apiv1.ResourceName) error {
-	
+
 	if resourceRequest > resourceLimit {
 		return stacktrace.NewError(fmt.Sprintf("Minimum Resource Requirement for the container is set higher than Maximum resource requirement for resource: %v", resourceName))
 	}
