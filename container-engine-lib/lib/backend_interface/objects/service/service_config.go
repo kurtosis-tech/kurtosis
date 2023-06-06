@@ -3,6 +3,7 @@ package service
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/sirupsen/logrus"
 )
 
 // Config options for the underlying container of a service
@@ -27,6 +28,10 @@ type ServiceConfig struct {
 	memoryAllocationMegabytes uint64
 
 	privateIPAddrPlaceholder string
+
+	minCpuAllocationMilliCpus uint64
+
+	minMemoryAllocationMegabytes uint64
 }
 
 func NewServiceConfig(
@@ -40,6 +45,8 @@ func NewServiceConfig(
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 	privateIPAddrPlaceholder string) *ServiceConfig {
+
+	logrus.Infof("YOLOLOL %v %v", cpuAllocationMillicpus, memoryAllocationMegabytes)
 	return &ServiceConfig{
 		containerImageName:        containerImageName,
 		privatePorts:              privatePorts,
@@ -51,6 +58,9 @@ func NewServiceConfig(
 		cpuAllocationMillicpus:    cpuAllocationMillicpus,
 		memoryAllocationMegabytes: memoryAllocationMegabytes,
 		privateIPAddrPlaceholder:  privateIPAddrPlaceholder,
+		// TODO: WILL CHANGE THIS IN NEXT PR
+		minCpuAllocationMilliCpus:    cpuAllocationMillicpus,
+		minMemoryAllocationMegabytes: memoryAllocationMegabytes,
 	}
 }
 
@@ -92,4 +102,12 @@ func (serviceConfig *ServiceConfig) GetMemoryAllocationMegabytes() uint64 {
 
 func (serviceConfig *ServiceConfig) GetPrivateIPAddrPlaceholder() string {
 	return serviceConfig.privateIPAddrPlaceholder
+}
+
+func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
+	return serviceConfig.minCpuAllocationMilliCpus
+}
+
+func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
+	return serviceConfig.minMemoryAllocationMegabytes
 }
