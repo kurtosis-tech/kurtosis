@@ -506,7 +506,19 @@ func updateServiceWhenContainerStarted(
 	return updatedService, undoUpdateFunc, nil
 }
 
-func getUserServicePodContainerSpecs(image string, entrypointArgs []string, cmdArgs []string, envVarStrs map[string]string, privatePorts map[string]*port_spec.PortSpec, containerMounts []apiv1.VolumeMount, cpuAllocationMillicpus uint64, memoryAllocationMegabytes uint64, minCpuAllocationMilliCpus uint64, minMemoryAllocationMegabytes uint64, ) ([]apiv1.Container, error, ) {
+func getUserServicePodContainerSpecs(
+	image string,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVarStrs map[string]string,
+	privatePorts map[string]*port_spec.PortSpec,
+	containerMounts []apiv1.VolumeMount,
+	cpuAllocationMillicpus uint64,
+	memoryAllocationMegabytes uint64,
+	minCpuAllocationMilliCpus uint64,
+	minMemoryAllocationMegabytes uint64,
+) ([]apiv1.Container, error, ) {
+
 	var containerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVarStrs {
 		envVar := apiv1.EnvVar{
