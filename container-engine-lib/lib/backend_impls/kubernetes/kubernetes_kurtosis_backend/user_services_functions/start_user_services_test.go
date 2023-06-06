@@ -20,5 +20,5 @@ func Test_checkIfResourcesAreSetProperly(t *testing.T) {
 
 	err := checkIfResourcesAreSetProperly(resourceRequst, resourceLimit, apiv1.ResourceCPU)
 	require.NotNil(t, err)
-	require.ErrorContains(t, err, fmt.Sprintf("Minimum Resource Requirement for the container is set higher than Maximum resource requirement for resource: %v", apiv1.ResourceCPU))
+	require.ErrorContains(t, err, fmt.Sprintf("Minimum resource requirement for the container is set higher than Maximum resource requirement for resource: %v", apiv1.ResourceCPU))
 }
