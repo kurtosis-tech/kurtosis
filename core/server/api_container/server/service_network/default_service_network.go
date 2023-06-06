@@ -711,6 +711,7 @@ func (network *DefaultServiceNetwork) StartServices(
 
 	successfulUuids := map[service.ServiceUUID]bool{}
 	erroredUuids := map[service.ServiceUUID]error{}
+	serviceConfigs := map[service.ServiceUUID]*service.ServiceConfig{}
 	serviceRegistrations := map[service.ServiceUUID]*service.ServiceRegistration{}
 
 	for _, serviceIdentifier := range serviceIdentifiers {
@@ -719,15 +720,30 @@ func (network *DefaultServiceNetwork) StartServices(
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 		}
 		if serviceRegistration.GetStatus() == service.ServiceStatus_Started {
-			return nil, nil, stacktrace.Propagate(err, "Service '%v' is already stopped", serviceRegistration.GetName())
+			return nil, nil, stacktrace.Propagate(err, "Service '%v' is already started", serviceRegistration.GetName())
 		}
 		serviceRegistrations[serviceRegistration.GetUUID()] = serviceRegistration
 	}
 
-	// TODO: Get service configs and call backend.StartUserServices
+	for serviceUuid, serviceRegistration := range serviceRegistrations {
+		serviceConfigs[serviceUuid] = serviceRegistration.GetConfig()
+	}
+	
+	successfulServices, failedServices, err := network.kurtosisBackend.StartRegisteredUserServices(ctx, network.enclaveUuid, serviceConfigs)
+	if err != nil {
+		return nil, nil, err
+	}
 	
 	for successfulUuid := range successfulUuids {
-		serviceRegistrations[successfulUuid].SetStatus(service.ServiceStatus_Stopped)
+		serviceRegistrations[successfulUuid].SetStatus(service.ServiceStatus_Started)
+	}
+
+	for successfulUuid := range successfulServices {
+		successfulUuids[successfulUuid] = true
+	}
+
+	for erroredUuid, err := range failedServices {
+		erroredUuids[erroredUuid] = err
 	}
 
 	return successfulUuids, erroredUuids, nil 
