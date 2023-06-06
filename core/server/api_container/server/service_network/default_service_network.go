@@ -67,6 +67,8 @@ const (
 
 	serviceLogsHeader = "== SERVICE '%s' LOGS ==================================="
 	serviceLogsFooter = "== FINISHED SERVICE '%s' LOGS ==================================="
+
+	scanPortTimeout = 200 * time.Millisecond
 )
 
 var (
@@ -1950,8 +1952,6 @@ func waitUntilPortIsOpenWithTimeout(
 				timeout.String(),
 			)
 		}
-		now := time.Now()
-		scanPortTimeout := finishTime.Sub(now)
 		if err = scanPort(ipAddr, &portSpec, scanPortTimeout); err == nil {
 			logrus.Debugf(
 				"Successful port open check for IP '%s' and port spec '%+v' after retry number '%v', "+

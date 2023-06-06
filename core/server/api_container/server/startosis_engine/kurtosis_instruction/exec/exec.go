@@ -81,7 +81,8 @@ func NewExec(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *r
 		},
 
 		DefaultDisplayArguments: map[string]bool{
-			RecipeArgName: true,
+			RecipeArgName:      true,
+			ServiceNameArgName: true,
 		},
 	}
 }

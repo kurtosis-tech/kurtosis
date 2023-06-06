@@ -18,7 +18,7 @@ type LogsDatabaseContainer interface {
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,
 	) (
-		resultContainerId  string,
+		resultContainerId string,
 		resultContainerLabels map[string]string,
 		resultRemoveLogsDatabaseContainerFunc func(),
 		resultErr error,

@@ -15,8 +15,8 @@ import (
 	"testing"
 )
 
-//This test case is for testing positional arguments retro-compatibility for those script
-//that are using the recipe value as the first positional argument
+// This test case is for testing positional arguments retro-compatibility for those script
+// that are using the recipe value as the first positional argument
 type waitTestCase2 struct {
 	*testing.T
 }

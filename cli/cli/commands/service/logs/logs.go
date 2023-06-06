@@ -189,7 +189,7 @@ func run(
 	if clusterType == resolved_config.KurtosisClusterType_Kubernetes {
 		//These Kurtosis primitives came from the backend (container-engine-lib) and this is the reason
 		//why are different from the same defined earlier (which came from the Kurtosis SDK)
-		kurtosisBackendServiceUUID := service.ServiceUUID(serviceIdentifier)
+		kurtosisBackendServiceUUID := service.ServiceUUID(serviceUuid)
 
 		userServiceFilters := &service.ServiceFilters{
 			Names: nil,

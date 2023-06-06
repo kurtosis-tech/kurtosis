@@ -44,6 +44,7 @@ body:
     attributes:
       label: What is the severity of this bug?
       multiple: false
+      # Update .github/issue-labeler.yml when updating the list of options
       options:
       - Critical; I am blocked and Kurtosis is unusable for me because of this bug.
       - Painful; this is causing significant friction in my workflow.

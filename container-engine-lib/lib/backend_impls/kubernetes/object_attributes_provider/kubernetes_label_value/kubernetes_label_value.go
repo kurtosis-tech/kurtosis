@@ -13,7 +13,7 @@ type KubernetesLabelValue struct {
 }
 
 // NOTE: This is ONLY for areas where the label value is declared statically!! Any sort of dynamic/runtime label value creation
-//  should use CreateNewKubernetesLabelValue
+// should use CreateNewKubernetesLabelValue
 func MustCreateNewKubernetesLabelValue(str string) *KubernetesLabelValue {
 	key, err := CreateNewKubernetesLabelValue(str)
 	if err != nil {

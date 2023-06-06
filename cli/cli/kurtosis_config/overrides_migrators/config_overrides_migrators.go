@@ -10,17 +10,18 @@ import (
 
 /*
 This file contains functions that will migrate version N of the config overrides to version N+1
- */
+*/
 
 // Takes a version of the config, casts it, migrates it to the N+1 version, and returns it
 type configOverridesMigrator = func(uncastedOldConfig interface{}) (interface{}, error)
 
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 // Adding a new version here is:
-//   1) creating a new migrateFromVX function, where X = the latest-1 config version
-//   2) adding an entry for the latest-1 config version with your new function
+//  1. creating a new migrateFromVX function, where X = the latest-1 config version
+//  2. adding an entry for the latest-1 config version with your new function
+//
 // We keep these sorted in REVERSE chronological order so you don't need to scroll
-//  to the bottom each time
+// to the bottom each time
 // >>>>>>>>>>>>>>>>>>>>>>>>>>>>> INSTRUCTIONS <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 var AllConfigOverridesMigrators = map[config_version.ConfigVersion]configOverridesMigrator{
 	config_version.ConfigVersion_v1: migrateFromV1,
@@ -89,4 +90,3 @@ func migrateFromV0(uncastedConfig interface{}) (interface{}, error) {
 	}
 	return newConfig, nil
 }
-

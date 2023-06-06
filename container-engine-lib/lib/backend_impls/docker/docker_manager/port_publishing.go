@@ -1,11 +1,14 @@
 package docker_manager
 
 // ====================================================================================================
-//                                            Interface
+//
+// # Interface
+//
 // ====================================================================================================
 // "Enum" dictating the various types of port publishing available; this enum will be used for downcasting the
-//  PortPublishSpec
+// PortPublishSpec
 type portPublishSpecType string
+
 const (
 	// The port should not be published to the host machine at all
 	noPublishing portPublishSpecType = "NONE"
@@ -28,13 +31,16 @@ type PortPublishSpec interface {
 }
 
 // ====================================================================================================
-//                                         Simple Publish Spec
+//
+// # Simple Publish Spec
+//
 // ====================================================================================================
 // A PortPublishSpec implementation that only contains a type
 type simplePortPublishSpec struct {
 	publishType                   portPublishSpecType
 	shouldFindAfterContainerStart bool
 }
+
 func (spec *simplePortPublishSpec) getType() portPublishSpecType {
 	return spec.publishType
 }
@@ -60,7 +66,9 @@ func NewAutomaticPublishingSpec() PortPublishSpec {
 }
 
 // ====================================================================================================
-//                                         Manual Publish Spec
+//
+// # Manual Publish Spec
+//
 // ====================================================================================================
 // A PortPublishSpec implementation, used for the manualPublishing option type, that also contains the manual port to publish to
 type manuallySpecifiedPortPublishSpec struct {
@@ -68,6 +76,7 @@ type manuallySpecifiedPortPublishSpec struct {
 
 	hostMachinePortNum uint16
 }
+
 func (option *manuallySpecifiedPortPublishSpec) getHostMachinePortNum() uint16 {
 	return option.hostMachinePortNum
 }

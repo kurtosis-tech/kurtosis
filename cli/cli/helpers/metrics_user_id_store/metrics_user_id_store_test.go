@@ -12,8 +12,8 @@ const (
 	expectedApplicationID = "kurtosis"
 )
 
-//The application ID constant in this package has to be always "kurtosis"
-//so we control that it does not change
+// The application ID constant in this package has to be always "kurtosis"
+// so we control that it does not change
 func TestApplicationIdDoesNotChange(t *testing.T) {
 	require.Equal(t, expectedApplicationID, applicationID)
 }

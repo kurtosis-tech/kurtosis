@@ -22,5 +22,5 @@ func (metricsClientCallbackObject *metricsElectionEventBacklogClearingCallback) 
 func (metricsClientCallbackObject *metricsElectionEventBacklogClearingCallback) Failure(err error) {
 	//We do nothing when sending metrics consent request fails, it will be retried next time
 	//users run the CLI
-	logrus.Debugf("Metrics client failure callback executed with error: %v",  err)
+	logrus.Debugf("Metrics client failure callback executed with error: %v", err)
 }

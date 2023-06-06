@@ -12,7 +12,7 @@ import (
 	"testing"
 )
 
-//This test case is for testing positional arguments
+// This test case is for testing positional arguments
 type execTestCase2 struct {
 	*testing.T
 }

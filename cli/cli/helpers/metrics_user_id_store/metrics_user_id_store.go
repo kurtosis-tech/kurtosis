@@ -24,7 +24,7 @@ const (
 var (
 	// NOTE: This will be initialized exactly once (singleton pattern)
 	currentMetricsUserIDStore *MetricsUserIDStore
-	once sync.Once
+	once                      sync.Once
 )
 
 type MetricsUserIDStore struct {
@@ -70,9 +70,11 @@ func (store *MetricsUserIDStore) GetUserID() (string, error) {
 }
 
 // ====================================================================================================
-//                                     Private Helper Functions
+//
+//	Private Helper Functions
+//
 // ====================================================================================================
-func (store *MetricsUserIDStore) doesMetricsUserIDFilepathExist() (bool, error){
+func (store *MetricsUserIDStore) doesMetricsUserIDFilepathExist() (bool, error) {
 	filepath, err := host_machine_directories.GetMetricsUserIdFilepath()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the metrics user id filepath")

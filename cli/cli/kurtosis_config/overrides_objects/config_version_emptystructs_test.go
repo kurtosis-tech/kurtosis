@@ -17,7 +17,7 @@ func TestConfigVersionEmptystructsCompleteness(t *testing.T) {
 		t,
 		numConfigVersions,
 		numEmptystructs,
-		"There are %v Kurtosis config versions but %v config version emptystructs were declared; this likely means " +
+		"There are %v Kurtosis config versions but %v config version emptystructs were declared; this likely means "+
 			"an extra emptystruct was declared that shouldn't be",
 	)
 }

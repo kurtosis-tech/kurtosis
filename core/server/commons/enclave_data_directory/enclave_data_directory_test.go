@@ -29,5 +29,4 @@ func TestGetFilesArtifactStore(t *testing.T) {
 
 	expectedRelativeDirpath := artifactStoreDirname
 	assert.Equal(t, expectedRelativeDirpath, artifactStore.fileCache.dirpathRelativeToDataDirRoot)
-
 }

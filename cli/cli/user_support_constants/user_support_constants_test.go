@@ -15,7 +15,7 @@ import (
 func TestValidUrls(t *testing.T) {
 	for _, url := range urlsToValidateInTest {
 		jar, err := cookiejar.New(nil)
-		if err != nil { 
+		if err != nil {
 			assert.NoError(t, err, "Got an unexpected error creating the cookie jar")
 		}
 		// nolint: exhaustruct

@@ -12,15 +12,14 @@ import "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version
 */
 
 // NOTE: All new YAML property names here should be kebab-case because
-//a) it's easier to read b) it's easier to write
-//c) it's consistent with previous properties and changing the format of
-//an already-written config file is very difficult
-
+//  1. it's easier to read
+//  2. it's easier to write
+//  3. it's consistent with previous properties and changing the format of an already-written config file is very difficult
 type KurtosisConfigV1 struct {
 	// vvvvvvvvv Every new Kurtosis config version must have this key vvvvvvvv
 	ConfigVersion config_version.ConfigVersion `yaml:"config-version"`
 	// ^^^^^^^^^ Every new Kurtosis config version must have this key ^^^^^^^^
 
-	ShouldSendMetrics *bool                               `yaml:"should-send-metrics,omitempty"`
-	KurtosisClusters *map[string]*KurtosisClusterConfigV1 `yaml:"kurtosis-clusters,omitempty"`
+	ShouldSendMetrics *bool                                `yaml:"should-send-metrics,omitempty"`
+	KurtosisClusters  *map[string]*KurtosisClusterConfigV1 `yaml:"kurtosis-clusters,omitempty"`
 }
