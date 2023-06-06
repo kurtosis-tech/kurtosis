@@ -214,7 +214,7 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		)
 	}
 
-	successfullyStartedService, failedService, err := user_service_functions.StartUserServices(
+	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
 		services,
@@ -307,6 +307,19 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 	resultErr error,
 ) {
 	return user_service_functions.StopUserServices(ctx, enclaveUuid, filters, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) StartUserServices(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	services map[service.ServiceUUID]*service.ServiceConfig,
+) (
+	resultSuccessfulServiceUUIDs map[service.ServiceUUID]bool,
+	resultErroredServiceUUIDs map[service.ServiceUUID]error,
+	resultErr error,
+) {
+	// TODO: Convert service configs to filters, the key is the service uuid
+	return user_service_functions.StartUserServices(ctx, enclaveUuid, filters, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) DestroyUserServices(

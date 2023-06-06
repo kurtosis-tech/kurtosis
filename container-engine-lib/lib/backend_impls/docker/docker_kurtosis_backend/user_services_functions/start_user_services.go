@@ -5,6 +5,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -91,7 +92,7 @@ func UnregisterUserServices(
 	return servicesSuccessfullyUnregistered, servicesFailed
 }
 
-func StartUserServices(
+func StartRegisteredUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	services map[service.ServiceUUID]*service.ServiceConfig,
@@ -109,7 +110,8 @@ func StartUserServices(
 
 	serviceConfigsToStart := map[service.ServiceUUID]*service.ServiceConfig{}
 	for serviceUuid, serviceConfig := range services {
-		if _, found := serviceRegistrations[serviceUuid]; !found {
+		serviceRegistration, found := serviceRegistrations[serviceUuid]
+		if !found {
 			failedServicesPool[serviceUuid] = stacktrace.NewError("Attempted to start a service '%s' that is not registered to this enclave yet.", serviceUuid)
 			continue
 		}
@@ -118,6 +120,7 @@ func StartUserServices(
 			continue
 		}
 		serviceConfigsToStart[serviceUuid] = serviceConfig
+		serviceRegistration.SetConfig(serviceConfig)
 	}
 
 	// If no services had successful registrations, return immediately
@@ -179,6 +182,71 @@ func StartUserServices(
 
 	logrus.Debugf("Started services '%v' successfully while '%v' failed", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
+}
+
+func StartUserServices(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	filters *service.ServiceFilters,
+	dockerManager *docker_manager.DockerManager,
+) (
+	resultSuccessfulServiceUUIDs map[service.ServiceUUID]bool,
+	resultErroredServiceUUIDs map[service.ServiceUUID]error,
+	resultErr error,
+) {
+	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveUuid, filters, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
+	}
+
+	servicesToStartByContainerId := map[string]*service.Service{}
+	for uuid, serviceResources := range allDockerResources {
+		serviceObj, found := allServiceObjs[uuid]
+		if !found {
+			// Should never happen; there should be a 1:1 mapping between service_objects:docker_resources by GUID
+			return nil, nil, stacktrace.NewError("No service object found for service '%v' that had Docker resources", uuid)
+		}
+		servicesToStartByContainerId[serviceResources.ServiceContainer.GetId()] = serviceObj
+	}
+
+	// TODO PLEAAASE GO GENERICS... but we can't use 1.18 yet because it'll break all Kurtosis clients :(
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.StartContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred killing user service container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulUuidStrs, erroredUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		servicesToStartByContainerId,
+		dockerManager,
+		extractServiceUUIDFromService,
+		dockerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred restarting user service containers matching filters '%+v'", filters)
+	}
+
+	successfulUuids := map[service.ServiceUUID]bool{}
+	for uuidStr := range successfulUuidStrs {
+		successfulUuids[service.ServiceUUID(uuidStr)] = true
+	}
+
+	erroredUuids := map[service.ServiceUUID]error{}
+	for uuidStr, err := range erroredUuidStrs {
+		erroredUuids[service.ServiceUUID(uuidStr)] = stacktrace.Propagate(
+			err,
+			"An error occurred restarting service '%v'",
+			uuidStr,
+		)
+	}
+
+	return successfulUuids, erroredUuids, nil
 }
 
 // ====================================================================================================

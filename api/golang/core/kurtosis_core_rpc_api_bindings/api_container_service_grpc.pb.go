@@ -23,7 +23,7 @@ const (
 	ApiContainerService_RunStarlarkScript_FullMethodName                          = "/api_container_api.ApiContainerService/RunStarlarkScript"
 	ApiContainerService_UploadStarlarkPackage_FullMethodName                      = "/api_container_api.ApiContainerService/UploadStarlarkPackage"
 	ApiContainerService_RunStarlarkPackage_FullMethodName                         = "/api_container_api.ApiContainerService/RunStarlarkPackage"
-	ApiContainerService_StartServices_FullMethodName                              = "/api_container_api.ApiContainerService/StartServices"
+	ApiContainerService_AddServices_FullMethodName                                = "/api_container_api.ApiContainerService/AddServices"
 	ApiContainerService_GetServices_FullMethodName                                = "/api_container_api.ApiContainerService/GetServices"
 	ApiContainerService_GetExistingAndHistoricalServiceIdentifiers_FullMethodName = "/api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers"
 	ApiContainerService_RemoveService_FullMethodName                              = "/api_container_api.ApiContainerService/RemoveService"
@@ -54,7 +54,7 @@ type ApiContainerServiceClient interface {
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkPackageClient, error)
 	// Start services by creating containers for them
-	StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error)
+	AddServices(ctx context.Context, in *AddServicesArgs, opts ...grpc.CallOption) (*AddServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error)
 	// Returns information about all existing & historical services
@@ -200,9 +200,9 @@ func (x *apiContainerServiceRunStarlarkPackageClient) Recv() (*StarlarkRunRespon
 	return m, nil
 }
 
-func (c *apiContainerServiceClient) StartServices(ctx context.Context, in *StartServicesArgs, opts ...grpc.CallOption) (*StartServicesResponse, error) {
-	out := new(StartServicesResponse)
-	err := c.cc.Invoke(ctx, ApiContainerService_StartServices_FullMethodName, in, out, opts...)
+func (c *apiContainerServiceClient) AddServices(ctx context.Context, in *AddServicesArgs, opts ...grpc.CallOption) (*AddServicesResponse, error) {
+	out := new(AddServicesResponse)
+	err := c.cc.Invoke(ctx, ApiContainerService_AddServices_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -421,7 +421,7 @@ type ApiContainerServiceServer interface {
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error
 	// Start services by creating containers for them
-	StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error)
+	AddServices(context.Context, *AddServicesArgs) (*AddServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error)
 	// Returns information about all existing & historical services
@@ -474,8 +474,8 @@ func (UnimplementedApiContainerServiceServer) UploadStarlarkPackage(ApiContainer
 func (UnimplementedApiContainerServiceServer) RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error {
 	return status.Errorf(codes.Unimplemented, "method RunStarlarkPackage not implemented")
 }
-func (UnimplementedApiContainerServiceServer) StartServices(context.Context, *StartServicesArgs) (*StartServicesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method StartServices not implemented")
+func (UnimplementedApiContainerServiceServer) AddServices(context.Context, *AddServicesArgs) (*AddServicesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method AddServices not implemented")
 }
 func (UnimplementedApiContainerServiceServer) GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
@@ -608,20 +608,20 @@ func (x *apiContainerServiceRunStarlarkPackageServer) Send(m *StarlarkRunRespons
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ApiContainerService_StartServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(StartServicesArgs)
+func _ApiContainerService_AddServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AddServicesArgs)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).StartServices(ctx, in)
+		return srv.(ApiContainerServiceServer).AddServices(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: ApiContainerService_StartServices_FullMethodName,
+		FullMethod: ApiContainerService_AddServices_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).StartServices(ctx, req.(*StartServicesArgs))
+		return srv.(ApiContainerServiceServer).AddServices(ctx, req.(*AddServicesArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -951,8 +951,8 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ApiContainerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "StartServices",
-			Handler:    _ApiContainerService_StartServices_Handler,
+			MethodName: "AddServices",
+			Handler:    _ApiContainerService_AddServices_Handler,
 		},
 		{
 			MethodName: "GetServices",

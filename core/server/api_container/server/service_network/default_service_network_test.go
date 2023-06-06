@@ -68,7 +68,7 @@ var (
 	portWaitForTest = port_spec.NewWait(5 * time.Second)
 )
 
-func TestStartService_Successful(t *testing.T) {
+func TestAddService_Successful(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -160,7 +160,7 @@ func TestStartService_Successful(t *testing.T) {
 		enclaveName,
 		mock.Anything).Maybe().Times(0)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
+	startedService, err := network.AddService(ctx, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.NotNil(t, startedService)
 
@@ -185,7 +185,7 @@ func TestStartService_Successful(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
-func TestStartService_FailedToStart(t *testing.T) {
+func TestAddService_FailedToStart(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -279,7 +279,7 @@ func TestStartService_FailedToStart(t *testing.T) {
 		nil,
 	)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
+	startedService, err := network.AddService(ctx, serviceName, serviceConfig)
 	require.NotNil(t, err)
 	require.Nil(t, startedService)
 
@@ -299,7 +299,7 @@ func TestStartService_FailedToStart(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
-func TestStartService_SidecarFailedToStart(t *testing.T) {
+func TestAddService_SidecarFailedToStart(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -406,7 +406,7 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 		nil,
 	)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
+	startedService, err := network.AddService(ctx, serviceName, serviceConfig)
 	require.NotNil(t, err)
 	require.Nil(t, startedService)
 
@@ -423,7 +423,7 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
-func TestStartServices_Success(t *testing.T) {
+func TestAddServices_Success(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -512,7 +512,7 @@ func TestStartServices_Success(t *testing.T) {
 		map[service.ServiceUUID]error{},
 		nil)
 
-	success, failure, err := network.StartServices(
+	success, failure, err := network.AddServices(
 		ctx,
 		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 			successfulServiceName: successfulServiceConfig,
@@ -543,7 +543,7 @@ func TestStartServices_Success(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
-func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
+func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -796,7 +796,7 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 		nil,
 	)
 
-	success, failure, err := network.StartServices(
+	success, failure, err := network.AddServices(
 		ctx,
 		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 			successfulServiceName:    successfulServiceConfig,

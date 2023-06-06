@@ -62,7 +62,7 @@ func (m *MockServiceNetworkCustom) SetDefaultConnection(ctx context.Context, con
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) StartService(
+func (m *MockServiceNetworkCustom) AddService(
 	ctx context.Context,
 	serviceName service.ServiceName,
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
@@ -74,7 +74,7 @@ func (m *MockServiceNetworkCustom) StartService(
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) StartServices(
+func (m *MockServiceNetworkCustom) AddServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 	batchSize int,
@@ -93,6 +93,26 @@ func (m *MockServiceNetworkCustom) UpdateService(ctx context.Context, updateServ
 }
 
 func (m *MockServiceNetworkCustom) RemoveService(ctx context.Context, serviceIdentifier string) (service.ServiceUUID, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) StartService(ctx context.Context, serviceIdentifier string) error {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) StartServices(ctx context.Context, serviceIdentifier[] string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) StopService(ctx context.Context, serviceIdentifier string) error {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) StopServices(ctx context.Context, serviceIdentifier[] string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }

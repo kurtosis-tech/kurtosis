@@ -179,7 +179,6 @@ type KurtosisBackend interface {
 			            '-------------> DESTROYED
 
 			- Note the above state diagram doesn't account for PauseService or UnpauseService
-			- As of 2022-05-15, Kurtosis services can never be restarted once stopped.
 	*/
 
 	// RegisterUserServices registers the services allocating them an IP address and a UUID. The service is not started!
@@ -280,7 +279,6 @@ type KurtosisBackend interface {
 	) error
 
 	// StopUserServices stops the user containers for the services matching the given filters
-	// A stopped service cannot be activated again as of 2022-05-14
 	StopUserServices(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
@@ -291,6 +289,17 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
+	// StartUserServices starts the user containers for the services matching the given filters
+	StartUserServices(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		services map[service.ServiceUUID]*service.ServiceConfig,
+	) (
+		successfulUserServiceUuids map[service.ServiceUUID]bool, // "set" of user service UUIDs that were successfully started
+		erroredUserServiceUuids map[service.ServiceUUID]error, // "set" of user service UUIDs that errored when starting, with the error
+		resultErr error, // Represents an error with the function itself, rather than the user services
+	)
+	
 	// DestroyUserServices destroys user services matching the given filters, removing all resources associated with it
 	DestroyUserServices(
 		ctx context.Context,

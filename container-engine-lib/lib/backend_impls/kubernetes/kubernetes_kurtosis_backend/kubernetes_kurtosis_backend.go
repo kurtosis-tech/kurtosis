@@ -380,6 +380,18 @@ func (backend *KubernetesKurtosisBackend) StopUserServices(ctx context.Context, 
 		backend.kubernetesManager)
 }
 
+func (backend *KubernetesKurtosisBackend) StartUserServices(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	services map[service.ServiceUUID]*service.ServiceConfig,
+) (
+	resultSuccessfulGuids map[service.ServiceUUID]bool,
+	resultErroredGuids map[service.ServiceUUID]error,
+	resultErr error,
+) {
+	return backend.StartRegisteredUserServices(ctx, enclaveUuid, services)
+}
+
 func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (resultSuccessfulGuids map[service.ServiceUUID]bool, resultErroredGuids map[service.ServiceUUID]error, resultErr error) {
 	return user_services_functions.DestroyUserServices(
 		ctx,
