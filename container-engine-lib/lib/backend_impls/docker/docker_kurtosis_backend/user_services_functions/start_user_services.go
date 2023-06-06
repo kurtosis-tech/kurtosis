@@ -109,6 +109,7 @@ func StartRegisteredUserServices(
 	failedServicesPool := map[service.ServiceUUID]error{}
 
 	serviceConfigsToStart := map[service.ServiceUUID]*service.ServiceConfig{}
+	serviceRegistrationsToStart := map[service.ServiceUUID]*service.ServiceRegistration{}
 	for serviceUuid, serviceConfig := range services {
 		serviceRegistration, found := serviceRegistrations[serviceUuid]
 		if !found {
@@ -120,13 +121,16 @@ func StartRegisteredUserServices(
 			continue
 		}
 		serviceConfigsToStart[serviceUuid] = serviceConfig
+		serviceRegistrationsToStart[serviceUuid] = serviceRegistration
 		serviceRegistration.SetConfig(serviceConfig)
 	}
 
-	for _, serviceRegistration := range serviceRegistrations {
-		if serviceRegistration.GetStatus() == service.ServiceStatus_Stopped {
-			// Restarting services is a much lighter operation so we branch out to a simpler function
-			return restartUserServices(ctx, enclaveUuid, serviceRegistrations, dockerManager) 
+	for _, serviceRegistrationToStart := range serviceRegistrationsToStart {
+		if serviceRegistrationToStart.GetStatus() == service.ServiceStatus_Stopped {
+			// If the first service to start is stopped, we know that the other ones are too because
+			// of a check done at the service network layer.
+			// Restarting stopped services is a much lighter operation so we branch out to a simpler function
+			return restartUserServices(ctx, enclaveUuid, serviceRegistrationsToStart, dockerManager)
 		}
 	}
 
