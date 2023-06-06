@@ -593,7 +593,11 @@ func getUserServicePodContainerSpecs(
 	return containers, nil
 }
 
-func checkIfResourcesAreSetProperly(resourceRequest uint64, resourceLimit uint64, resourceName apiv1.ResourceName) error {
+func checkIfResourcesAreSetProperly(
+	resourceRequest uint64,
+	resourceLimit uint64,
+	resourceName apiv1.ResourceName) error {
+	
 	if resourceRequest > resourceLimit {
 		return stacktrace.NewError(fmt.Sprintf("Minimum Resource Requirement for the container is set higher than Maximum resource requirement for resource: %v", resourceName))
 	}
