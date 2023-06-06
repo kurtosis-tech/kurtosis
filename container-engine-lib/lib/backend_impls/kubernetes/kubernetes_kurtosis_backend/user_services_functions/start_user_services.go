@@ -599,7 +599,7 @@ func checkIfResourcesAreSetProperly(
 	resourceName apiv1.ResourceName) error {
 
 	if resourceRequest > resourceLimit {
-		return stacktrace.NewError(fmt.Sprintf("Minimum Resource Requirement for the container is set higher than Maximum resource requirement for resource: %v", resourceName))
+		return stacktrace.NewError(fmt.Sprintf("Minimum resource requirement for the container is set higher than Maximum resource requirement for resource: %v", resourceName))
 	}
 
 	return nil
