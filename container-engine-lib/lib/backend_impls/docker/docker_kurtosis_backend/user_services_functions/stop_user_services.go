@@ -14,6 +14,7 @@ func StopUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
+	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	resultSuccessfulServiceUUIDs map[service.ServiceUUID]bool,
@@ -60,7 +61,9 @@ func StopUserServices(
 
 	successfulUuids := map[service.ServiceUUID]bool{}
 	for uuidStr := range successfulUuidStrs {
-		successfulUuids[service.ServiceUUID(uuidStr)] = true
+		serviceUuid := service.ServiceUUID(uuidStr)
+		successfulUuids[serviceUuid] = true
+		serviceRegistrations[serviceUuid].SetStatus(service.ServiceStatus_Stopped)
 	}
 
 	erroredUuids := map[service.ServiceUUID]error{}

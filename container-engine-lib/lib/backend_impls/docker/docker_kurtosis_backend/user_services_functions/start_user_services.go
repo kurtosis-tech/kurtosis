@@ -123,6 +123,13 @@ func StartRegisteredUserServices(
 		serviceRegistration.SetConfig(serviceConfig)
 	}
 
+	for _, serviceRegistration := range serviceRegistrations {
+		if serviceRegistration.GetStatus() == service.ServiceStatus_Stopped {
+			// Restarting services is a much lighter operation so we branch out to a simpler function
+			return restartUserServices(ctx, enclaveUuid, serviceRegistrations, dockerManager) 
+		}
+	}
+
 	// If no services had successful registrations, return immediately
 	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
 	// and causing logic to break (eg. check for duplicate service GUIDs)
@@ -136,7 +143,7 @@ func StartRegisteredUserServices(
 	// Sanity check for port bindings on all services
 	for serviceUuid, serviceConfig := range serviceConfigsToStart {
 		publicPorts := serviceConfig.GetPublicPorts()
-		if publicPorts != nil && len(publicPorts) > 0 {
+		if len(publicPorts) > 0 {
 			privatePorts := serviceConfig.GetPrivatePorts()
 			err := checkPrivateAndPublicPortsAreOneToOne(privatePorts, publicPorts)
 			if err != nil {
@@ -174,6 +181,7 @@ func StartRegisteredUserServices(
 	// Add operations to their respective pools
 	for serviceUuid, successfullyStartedService := range successfulStarts {
 		successfulServicesPool[serviceUuid] = successfullyStartedService
+		serviceRegistrations[serviceUuid].SetStatus(service.ServiceStatus_Started)
 	}
 
 	for serviceUuid, serviceErr := range failedStarts {
@@ -184,19 +192,37 @@ func StartRegisteredUserServices(
 	return successfulServicesPool, failedServicesPool, nil
 }
 
-func StartUserServices(
+// ====================================================================================================
+//
+//	Private helper functions
+//
+// ====================================================================================================
+
+// Restart a stopped user service
+func restartUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
-	filters *service.ServiceFilters,
+	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
 	dockerManager *docker_manager.DockerManager,
 ) (
-	resultSuccessfulServiceUUIDs map[service.ServiceUUID]bool,
-	resultErroredServiceUUIDs map[service.ServiceUUID]error,
-	resultErr error,
+	map[service.ServiceUUID]*service.Service,
+	map[service.ServiceUUID]error,
+	error,
 ) {
-	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveUuid, filters, dockerManager)
+
+	serviceUuids := map[service.ServiceUUID]bool{}
+	for serviceUuid := range serviceRegistrations {
+		serviceUuids[serviceUuid] = true
+	}
+	startServiceFilters := &service.ServiceFilters{
+		Names: nil,
+		UUIDs: serviceUuids,
+		Statuses: nil,
+	}
+
+	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveUuid, startServiceFilters, dockerManager)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", startServiceFilters)
 	}
 
 	servicesToStartByContainerId := map[string]*service.Service{}
@@ -216,7 +242,7 @@ func StartUserServices(
 		dockerObjectId string,
 	) error {
 		if err := dockerManager.StartContainer(ctx, dockerObjectId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred killing user service container with ID '%v'", dockerObjectId)
+			return stacktrace.Propagate(err, "An error occurred starting user service container with ID '%v'", dockerObjectId)
 		}
 		return nil
 	}
@@ -229,31 +255,33 @@ func StartUserServices(
 		dockerOperation,
 	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred restarting user service containers matching filters '%+v'", filters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred starting user service containers matching filters '%+v'", startServiceFilters)
 	}
 
-	successfulUuids := map[service.ServiceUUID]bool{}
+	successfulServices := map[service.ServiceUUID]*service.Service{}
 	for uuidStr := range successfulUuidStrs {
-		successfulUuids[service.ServiceUUID(uuidStr)] = true
+		serviceUuid := service.ServiceUUID(uuidStr)
+		successfulServices[service.ServiceUUID(serviceUuid)] = service.NewService(
+			serviceRegistrations[serviceUuid],
+			container_status.ContainerStatus_Running,
+			nil,
+			nil,
+			nil)
+		serviceRegistrations[serviceUuid].SetStatus(service.ServiceStatus_Started)
 	}
 
 	erroredUuids := map[service.ServiceUUID]error{}
 	for uuidStr, err := range erroredUuidStrs {
 		erroredUuids[service.ServiceUUID(uuidStr)] = stacktrace.Propagate(
 			err,
-			"An error occurred restarting service '%v'",
+			"An error occurred starting service '%v'",
 			uuidStr,
 		)
 	}
 
-	return successfulUuids, erroredUuids, nil
+	return successfulServices, erroredUuids, nil
 }
 
-// ====================================================================================================
-//
-//	Private helper functions
-//
-// ====================================================================================================
 func runStartServiceOperationsInParallel(
 	ctx context.Context,
 	enclaveNetworkId string,
@@ -401,7 +429,7 @@ func createStartServiceOperation(
 				return nil, stacktrace.Propagate(err, "An error occurred converting private port spec '%v' to a Docker port", portId)
 			}
 			//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-			if publicPorts != nil && len(publicPorts) > 0 {
+			if len(publicPorts) > 0 {
 				publicPortSpec, found := publicPorts[portId]
 				if !found {
 					return nil, stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portId, privatePortSpec.GetNumber())

@@ -306,20 +306,14 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 	resultErroredServiceUUIDs map[service.ServiceUUID]error,
 	resultErr error,
 ) {
-	return user_service_functions.StopUserServices(ctx, enclaveUuid, filters, backend.dockerManager)
-}
-
-func (backend *DockerKurtosisBackend) StartUserServices(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	services map[service.ServiceUUID]*service.ServiceConfig,
-) (
-	resultSuccessfulServiceUUIDs map[service.ServiceUUID]bool,
-	resultErroredServiceUUIDs map[service.ServiceUUID]error,
-	resultErr error,
-) {
-	// TODO: Convert service configs to filters, the key is the service uuid
-	return user_service_functions.StartUserServices(ctx, enclaveUuid, filters, backend.dockerManager)
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'",
+			enclaveUuid,
+		)
+	}
+	return user_service_functions.StopUserServices(ctx, enclaveUuid, filters, serviceRegistrationsForEnclave, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) DestroyUserServices(
