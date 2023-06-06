@@ -715,7 +715,7 @@ func (network *DefaultServiceNetwork) StartServices(
 	serviceRegistrations := map[service.ServiceUUID]*service.ServiceRegistration{}
 
 	for _, serviceIdentifier := range serviceIdentifiers {
-		serviceRegistration, err := network.getServiceRegistrationForIdentifier(serviceIdentifier)
+		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 		}
@@ -782,7 +782,7 @@ func (network *DefaultServiceNetwork) StopServices(
 	serviceRegistrations := map[service.ServiceUUID]*service.ServiceRegistration{}
 
 	for _, serviceIdentifier := range serviceIdentifiers {
-		serviceRegistration, err := network.getServiceRegistrationForIdentifier(serviceIdentifier)
+		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 		if err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 		}
@@ -815,7 +815,7 @@ func (network *DefaultServiceNetwork) PauseService(ctx context.Context, serviceI
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceRegistration, err := network.getServiceRegistrationForIdentifier(serviceIdentifier)
+	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 	}
@@ -831,7 +831,7 @@ func (network *DefaultServiceNetwork) UnpauseService(ctx context.Context, servic
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceRegistration, err := network.getServiceRegistrationForIdentifier(serviceIdentifier)
+	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 	}
@@ -848,7 +848,7 @@ func (network *DefaultServiceNetwork) ExecCommand(ctx context.Context, serviceId
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceRegistration, err := network.getServiceRegistrationForIdentifier(serviceIdentifier)
+	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return 0, "", stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 	}
@@ -931,7 +931,7 @@ func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIde
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceRegistration, err := network.getServiceRegistrationForIdentifier(serviceIdentifier)
+	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching registration for service identifier '%v'", serviceIdentifier)
 	}
@@ -2113,12 +2113,10 @@ func mergeAndGetAllPrivateAndPublicServicePorts(service *service.Service) map[st
 	return allPrivateAndPublicPorts
 }
 
-func (network *DefaultServiceNetwork) getServiceRegistrationForIdentifier(
+// This isn't thread safe and must be called from a thread safe context
+func (network *DefaultServiceNetwork) getServiceRegistrationForIdentifierUnlocked(
 	serviceIdentifier string,
 ) (*service.ServiceRegistration, error) {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
 	serviceName, err := network.getServiceNameForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching name for service identifier '%v'", serviceIdentifier)
