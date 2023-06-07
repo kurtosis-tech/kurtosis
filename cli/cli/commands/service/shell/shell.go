@@ -123,21 +123,13 @@ func run(
 	// From this point on down, I don't know why it works.... but it does
 	// I just followed the solution here: https://stackoverflow.com/questions/58732588/accept-user-input-os-stdin-to-container-using-golang-docker-sdk-interactive-co
 	// This channel is being used to know the user exited the ContainerExec
-	stdoutChan := make(chan bool)
+	finishChan := make(chan bool)
 	go func() {
 		io.Copy(os.Stdout, newReader)
-		stdoutChan <- true
+		finishChan <- true
 	}()
-	stderrChan := make(chan bool)
-	go func() {
-		io.Copy(os.Stderr, newReader)
-		stderrChan <- true
-	}()
-	stdinChan := make(chan bool)
-	go func() {
-		io.Copy(conn, os.Stdin)
-		stdinChan <- true
-	}()
+	go io.Copy(os.Stderr, newReader)
+	go io.Copy(conn, os.Stdin)
 
 	stdinFd := int(os.Stdin.Fd())
 	var oldState *terminal.State
@@ -150,9 +142,7 @@ func run(
 		defer terminal.Restore(stdinFd, oldState)
 	}
 
-	<-stdoutChan
-	<-stderrChan
-	<-stdinChan
+	<-finishChan
 
 	return nil
 }

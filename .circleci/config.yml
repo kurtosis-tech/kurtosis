@@ -688,8 +688,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} service add test-enclave test2 httpd --ports http=80"
 
       # Shell
-      - run: "touch dummy"
-      - run: "${KURTOSIS_BINPATH} service shell test-enclave test1 --exec "cat" < dummy"
+      - run: "${KURTOSIS_BINPATH} service shell test-enclave test1 --exec "echo 1" < /dev/null"
 
       # File commands
       - run: "${KURTOSIS_BINPATH} files rendertemplate test-enclave << pipeline.parameters.rendertemplate-cli-test-template-relative-path >> << pipeline.parameters.rendertemplate-cli-test-data-json-relative-path >> ./rendered --name rendered-file"
