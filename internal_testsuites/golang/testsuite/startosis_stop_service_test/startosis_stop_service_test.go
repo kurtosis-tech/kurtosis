@@ -1,4 +1,4 @@
-package startosis_remove_service_test
+package startosis_stop_service_test
 
 import (
 	"context"
@@ -39,7 +39,7 @@ def run(plan):
 	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
 `
 	// We stop the service we created through the script above with a different script
-	removeScript = `
+	stopScript = `
 DATASTORE_SERVICE_NAME = "` + serviceName + `"
 def run(plan):
 	plan.stop_service(DATASTORE_SERVICE_NAME)
@@ -84,7 +84,7 @@ Service example-datastore-server-1 deployed successfully.
 	logrus.Infof("Validated that all services are healthy")
 
 	// we run the stop script and validate that the service is unreachable.
-	runResult, err = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, removeScript)
+	runResult, err = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, stopScript)
 	require.NoError(t, err, "Unexpected error executing stop script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
@@ -105,7 +105,7 @@ Service example-datastore-server-1 deployed successfully.
 	logrus.Infof("Validated that the service is stopped")
 
 	// we run the stop script one more time and validate that an error is returned since the service is already stopped.
-	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, removeScript)
+	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, stopScript)
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.NotEmpty(t, runResult.ExecutionError, "Expected execution error coming from already stopped service")
