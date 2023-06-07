@@ -32,6 +32,8 @@ import (
 const (
 	podWaitForAvailabilityTimeout          = 15 * time.Minute
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
+	podWaitForTerminationTimeout           = 5 * time.Minute
+	podWaitForTerminationTimeBetweenPolls  = 500 * time.Millisecond
 
 	// This is a container "reason" (machine-readable string) indicating that the container has some issue with
 	// pulling the image (usually, a typo in the image name or the image doesn't exist)
@@ -1132,6 +1134,10 @@ func (manager *KubernetesManager) RemovePod(ctx context.Context, pod *apiv1.Pod)
 		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, globalDeleteOptions)
 	}
 
+	if err := manager.waitForPodTermination(ctx, namespace, name); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting for pod '%v' to terminate", name)
+	}
+
 	return nil
 }
 
@@ -1147,10 +1153,6 @@ func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, 
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get pod with name '%s'", name)
-	}
-	deletionTimestamp := pod.GetObjectMeta().GetDeletionTimestamp()
-	if deletionTimestamp != nil {
-		return nil, stacktrace.Propagate(err, "Pod with name '%s' in namespace '%s' has been marked for deletion", name, namespace)
 	}
 
 	return pod, nil
@@ -1554,6 +1556,37 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 			"The pod's container states are as follows:\n%v",
 		podName,
 		podWaitForAvailabilityTimeout,
+		latestPodStatus.Phase,
+		latestPodStatus.Message,
+		strings.Join(containerStatusStrs, "\n"),
+	)
+}
+
+func (manager *KubernetesManager) waitForPodTermination(ctx context.Context, namespaceName string, podName string) error {
+	// Wait for the pod to start running
+	deadline := time.Now().Add(podWaitForTerminationTimeout)
+	var latestPodStatus *apiv1.PodStatus
+	for time.Now().Before(deadline) {
+		pod, err := manager.GetPod(ctx, namespaceName, podName)
+		if err != nil {
+			return nil
+		}
+
+		latestPodStatus = &pod.Status
+		switch latestPodStatus.Phase {
+		case apiv1.PodSucceeded:
+		case apiv1.PodFailed:
+			return nil
+		}
+		time.Sleep(podWaitForTerminationTimeBetweenPolls)
+	}
+
+	containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
+	return stacktrace.NewError(
+		"Pod '%v' did not terminate after %v; its latest state is '%v' and status message is: %v\n"+
+			"The pod's container states are as follows:\n%v",
+		podName,
+		podWaitForTerminationTimeout,
 		latestPodStatus.Phase,
 		latestPodStatus.Message,
 		strings.Join(containerStatusStrs, "\n"),
