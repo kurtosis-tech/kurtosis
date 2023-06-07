@@ -75,15 +75,17 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			}
 		}
 
-		scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
-		if err != nil {
-			propagatedErr := stacktrace.Propagate(err, "An error occurred while replacing the runtime values in the output of the script")
-			serializedError := binding_constructors.NewStarlarkExecutionError(propagatedErr.Error())
-			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
-			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
-			return
+		if !dryRun {
+			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
+			if err != nil {
+				propagatedErr := stacktrace.Propagate(err, "An error occurred while replacing the runtime values in the output of the script")
+				serializedError := binding_constructors.NewStarlarkExecutionError(propagatedErr.Error())
+				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
+				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+				return
+			}
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced)
 		}
-		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced)
 	}()
 	return starlarkRunResponseLineStream
 }
