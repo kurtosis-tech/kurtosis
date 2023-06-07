@@ -689,8 +689,8 @@ jobs:
 
       # Shell
       # Emulates GitHub Actions
-      - run: "${KURTOSIS_BINPATH} service shell test-enclave test1 --exec "echo 1" < /dev/null > /dev/null"
-      - run: "${KURTOSIS_BINPATH} service shell test-enclave test1 --exec "echo 1"
+      - run: "${KURTOSIS_BINPATH} service shell test-enclave test1 --exec 'echo 1' < /dev/null > /dev/null"
+      - run: "${KURTOSIS_BINPATH} service shell test-enclave test1 --exec 'echo 1'
 
       # File commands
       - run: "${KURTOSIS_BINPATH} files rendertemplate test-enclave << pipeline.parameters.rendertemplate-cli-test-template-relative-path >> << pipeline.parameters.rendertemplate-cli-test-data-json-relative-path >> ./rendered --name rendered-file"
