@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
@@ -82,10 +83,16 @@ func GetDockerKurtosisBackend(
 		networkIp := network.GetIpAndMask().IP
 		apiContainerIp := optionalApiContainerModeArgs.APIContainerIP
 
+		logsCollectorObj, err := logs_collector_functions.GetLogsCollectorForEnclave(ctx, enclaveUuid, dockerManager)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector object for enclave '%v'; This is a bug in Kurtosis", enclaveUuid)
+		}
+
 		alreadyTakenIps := map[string]bool{
 			networkIp.String():      true,
 			network.GetGatewayIp():  true,
 			apiContainerIp.String(): true,
+			logsCollectorObj.GetEnclaveNetworkIpAddress().String(): true,
 		}
 
 		freeIpAddrProvider, err := free_ip_addr_tracker.GetOrCreateNewFreeIpAddrTracker(

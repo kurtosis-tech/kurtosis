@@ -6,7 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/fluentd"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -214,11 +214,28 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		)
 	}
 
+	logsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
+		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
+	}
+
+	logsCollectorIpAddressInEnclaveNetwork := logsCollector.GetEnclaveNetworkIpAddress()
+	if logsCollectorIpAddressInEnclaveNetwork == nil {
+		return nil, nil, stacktrace.NewError("Expected the logs collector has ip address in enclave network but this is nil")
+	}
+
+	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorIpAddressInEnclaveNetwork, logsCollector.GetPrivateHttpPort().GetNumber())
+
 	successfullyStartedService, failedService, err := user_service_functions.StartUserServices(
 		ctx,
 		enclaveUuid,
 		services,
 		serviceRegistrationsForEnclave,
+		logsCollector,
+		logsCollectorAvailabilityChecker,
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager)
@@ -359,7 +376,7 @@ func (backend *DockerKurtosisBackend) CreateLogsDatabase(
 ) {
 
 	//Declaring the implementation
-	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
+	logsDatabaseContainer := fluentd.NewFluentdContainer()
 
 	logsDatabase, err := logs_database_functions.CreateLogsDatabase(
 		ctx,

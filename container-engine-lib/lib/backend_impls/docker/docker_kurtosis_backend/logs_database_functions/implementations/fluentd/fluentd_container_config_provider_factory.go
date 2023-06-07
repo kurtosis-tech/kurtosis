@@ -1,0 +1,7 @@
+package fluentd
+
+func createFluentdContainerConfigProviderForKurtosis(httpPortNumber uint16) *fluentdContainerConfigProvider {
+	fluentdConfig := newDefaultFluentdConfigForKurtosisCentralizedLogs(httpPortNumber)
+	fluentdContainerConfigProviderObj := newFluentdContainerConfigProvider(fluentdConfig, httpPortNumber)
+	return fluentdContainerConfigProviderObj
+}

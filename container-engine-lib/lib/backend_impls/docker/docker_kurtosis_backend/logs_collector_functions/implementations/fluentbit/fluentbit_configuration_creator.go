@@ -107,10 +107,13 @@ func (fluent *fluentbitConfigurationCreator) createFluentbitConfigFileInVolume(
 	}
 
 	commandStr := fmt.Sprintf(
-		"%v '%v' > %v",
+		"%v '%v' > %v && %v '%v' > %v",
 		printfCmdName,
 		configFileContentStr,
 		configFilepathInContainer,
+		printfCmdName,
+		parserFileContent,
+		parserFilepathInContainer,
 	)
 
 	execCmd := []string{

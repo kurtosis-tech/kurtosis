@@ -16,6 +16,7 @@ const (
 
 	configDirpathInContainer  = rootDirpath + "/etc"
 	configFilepathInContainer = configDirpathInContainer + "/fluent-bit.conf"
+	parserFilepathInContainer = configDirpathInContainer + "/parsers.conf"
 
 	//these two values are used for configuring the filesystem buffer. See more here: https://docs.fluentbit.io/manual/administration/buffering-and-storage#filesystem-buffering-to-the-rescue
 	filesystemBufferStorageDirpath = configDirpathInContainer + "/storage/"
@@ -29,6 +30,7 @@ const (
 	http_listen {{.Service.HttpServerHost}}
 	http_port {{.Service.HttpServerPort}}
 	storage.path {{.Service.StoragePath}}
+	parsers_file ` + parserFilepathInContainer + `
 [INPUT]
 	name {{.Input.Name}}
 	listen {{.Input.Listen}}
@@ -38,15 +40,27 @@ const (
 	name {{.Filter.Name}}
 	match {{.Filter.Match}}
 	{{.Filter.GetRulesStr}}
+[FILTER]
+	name parser
+	match *
+	parser json
+	key_name log
+	reserve_data On
+[OUTPUT]
+	name stdout
+	match *
 [OUTPUT]
 	name {{.Output.Name}}
 	match {{.Output.Match}}
 	host {{.Output.Host}}
 	port {{.Output.Port}}
-	labels {{.Output.GetLabelsStr}}
-	line_format {{.Output.LineFormat}}
-	tenant_id_key {{.Output.TenantIDKey}}
-	retry_limit {{.Output.RetryLimit}}
+	tag  {{.Output.Tag}}
+`
+
+	parserFileContent = `
+[PARSER]
+    Name   json
+    Format json
 `
 
 	healthCheckEndpointPath = "api/v1/health"

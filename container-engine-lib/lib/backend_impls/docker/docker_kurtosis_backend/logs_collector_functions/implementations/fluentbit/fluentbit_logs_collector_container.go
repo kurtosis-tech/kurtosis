@@ -36,8 +36,8 @@ func (fluentbitContainer *fluentbitLogsCollectorContainer) CreateAndStart(
 	resultErr error,
 ) {
 
-	logsCollectorConfigurationCreator := createFluentbitConfigurationCreatorForKurtosis(logsDatabaseHost, logsDatabasePort, tcpPortNumber, httpPortNumber)
-	logsCollectorContainerConfigProvider := createFluentbitContainerConfigProviderForKurtosis(logsDatabaseHost, logsDatabasePort, tcpPortNumber, httpPortNumber)
+	logsCollectorConfigurationCreator := createFluentbitConfigurationCreatorForKurtosis(enclaveUuid, logsDatabaseHost, logsDatabasePort, tcpPortNumber, httpPortNumber)
+	logsCollectorContainerConfigProvider := createFluentbitContainerConfigProviderForKurtosis(enclaveUuid, logsDatabaseHost, logsDatabasePort, tcpPortNumber, httpPortNumber)
 
 	privateTcpPortSpec, err := logsCollectorContainerConfigProvider.GetPrivateTcpPortSpec()
 	if err != nil {

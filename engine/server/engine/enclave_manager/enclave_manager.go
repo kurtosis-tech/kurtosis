@@ -117,7 +117,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with name `%v` and uuid '%v'", enclaveName, enclaveUuid)
 	}
-	shouldDestroyEnclave := true
+	shouldDestroyEnclave := false
 	defer func() {
 		if shouldDestroyEnclave {
 			_, destroyEnclaveErrs, err := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveUuid))
@@ -147,7 +147,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
 	}
-	shouldStopApiContainer := true
+	shouldStopApiContainer := false
 	defer func() {
 		if shouldStopApiContainer {
 			_, destroyApiContainerErrs, err := manager.kurtosisBackend.DestroyAPIContainers(teardownCtx, getApiContainerByEnclaveIdFilter(enclaveUuid))

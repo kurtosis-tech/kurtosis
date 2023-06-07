@@ -9,6 +9,7 @@ func TestGetOutputKurtosisLabelsForLogs(t *testing.T) {
 	expectedKurtosisFluentbitOutputLabels := []string{
 		"$comKurtosistechGuid",
 		"$comKurtosistechContainerType",
+		"$comKurtosistechEnclaveId",
 	}
 
 	fluentbitKurtosisOutputLabels := getOutputKurtosisLabelsForLogs()
@@ -19,10 +20,11 @@ func TestGetModifyFilterRulesKurtosisLabels(t *testing.T) {
 
 	expectedKurtosisGUIDDockerLabelRenameFilterRule := "rename com.kurtosistech.guid comKurtosistechGuid"
 	expectedKurtosisContainerTypeDockerLabelRenameFilterRule := "rename com.kurtosistech.guid comKurtosistechGuid"
-	expectedAmountFilterRules := 2
+	expectedKurtosisEnclaveIdDockerLabelRenameFilterRule := "rename com.kurtosistech.enclave-id comKurtosistechGuid"
+	expectedAmountFilterRules := 3
 
 	filterRulesKurtosisLabels := getModifyFilterRulesKurtosisLabels()
-	require.Contains(t, filterRulesKurtosisLabels, expectedKurtosisGUIDDockerLabelRenameFilterRule)
-	require.Contains(t, filterRulesKurtosisLabels, expectedKurtosisContainerTypeDockerLabelRenameFilterRule)
+	require.Contains(t, filterRulesKurtosisLabels, expectedKurtosisGUIDDockerLabelRenameFilterRule, expectedKurtosisEnclaveIdDockerLabelRenameFilterRule)
+	require.Contains(t, filterRulesKurtosisLabels, expectedKurtosisContainerTypeDockerLabelRenameFilterRule, expectedKurtosisEnclaveIdDockerLabelRenameFilterRule)
 	require.Equal(t, expectedAmountFilterRules, len(filterRulesKurtosisLabels))
 }

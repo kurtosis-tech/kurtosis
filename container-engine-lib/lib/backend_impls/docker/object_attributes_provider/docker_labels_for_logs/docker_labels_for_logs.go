@@ -10,6 +10,7 @@ import (
 var LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream = []*docker_label_key.DockerLabelKey{
 	label_key_consts.GUIDDockerLabelKey,
 	label_key_consts.ContainerTypeDockerLabelKey,
+	label_key_consts.EnclaveUUIDDockerLabelKey,
 }
 
 // The 'enclaveID' value is used for Fluentbit to send it to Loki as the "X-Scope-OrgID" request's header
