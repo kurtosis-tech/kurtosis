@@ -327,8 +327,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 
 		numPodsForGuid := len(kubernetesPodsForGuid)
 		if numPodsForGuid == 0 {
-			// This would indicate a bug in our pod retrieval logic because we shouldn't even have a map entry if there's nothing matching it
-			return nil, stacktrace.NewError("Got entry of result pods for service GUID '%v', but no Kubernetes pods were returned; this is a bug in Kurtosis", serviceUuid)
+			continue
 		}
 		if numPodsForGuid > 1 {
 			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", numPodsForGuid, serviceUuid)
