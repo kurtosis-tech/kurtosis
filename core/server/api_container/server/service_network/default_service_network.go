@@ -688,11 +688,11 @@ func (network *DefaultServiceNetwork) StartService(
 	serviceIdentifiers := []string{serviceIdentifier}
 	_, erroredUuids, err := network.StartServices(ctx, serviceIdentifiers)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "An error occurred while starting services")
 	}
 	
-	for _, err := range erroredUuids {
-		return err
+	for serviceUuid, erroredUuid := range erroredUuids {
+		return stacktrace.Propagate(erroredUuid, "An error occurred while starting service '%v'", serviceUuid)
 	}
 
 	return nil
@@ -720,7 +720,7 @@ func (network *DefaultServiceNetwork) StartServices(
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 		}
 		if serviceRegistration.GetStatus() == service.ServiceStatus_Started {
-			return nil, nil, stacktrace.Propagate(err, "Service '%v' is already started", serviceRegistration.GetName())
+			return nil, nil, stacktrace.NewError("Service '%v' is already started", serviceRegistration.GetName())
 		}
 		serviceRegistrations[serviceRegistration.GetUUID()] = serviceRegistration
 	}
@@ -757,11 +757,11 @@ func (network *DefaultServiceNetwork) StopService(
 	serviceIdentifiers := []string{serviceIdentifier}
 	_, erroredUuids, err := network.StopServices(ctx, serviceIdentifiers)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "An error occurred while stopping services")
 	}
 	
-	for _, err := range erroredUuids {
-		return err
+	for serviceUuid, erroredUuid := range erroredUuids {
+		return stacktrace.Propagate(erroredUuid, "An error occurred while stopping service '%v'", serviceUuid)
 	}
 
 	return nil
@@ -787,7 +787,7 @@ func (network *DefaultServiceNetwork) StopServices(
 			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 		}
 		if serviceRegistration.GetStatus() == service.ServiceStatus_Stopped {
-			return nil, nil, stacktrace.Propagate(err, "Service '%v' is already stopped", serviceRegistration.GetName())
+			return nil, nil, stacktrace.NewError("Service '%v' is already stopped", serviceRegistration.GetName())
 		}
 		serviceUuids[serviceRegistration.GetUUID()] = true
 		serviceRegistrations[serviceRegistration.GetUUID()] = serviceRegistration
