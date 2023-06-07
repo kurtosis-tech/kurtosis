@@ -176,6 +176,9 @@ message RunStarlarkScriptArgs {
 
   // Defaults to 4
   optional int32 parallelism = 4;
+
+  // The name of the main function, the default value is "run"
+  string main_function_name = 5;
 }
 
 message RunStarlarkPackageArgs {
@@ -204,6 +207,12 @@ message RunStarlarkPackageArgs {
   // have been uploaded using UploadStarlarkPackage prior to calling RunStarlarkPackage.
   // If true, then the package will be cloned from GitHub before execution starts
   optional bool clone_package = 8;
+
+  // The relative main file filepath, the default value is the "main.star" file in the root of a package
+  string relative_path_to_main_file = 9;
+
+  // The name of the main function, the default value is "run"
+  string main_function_name = 10;
 }
 
 // ==============================================================================================

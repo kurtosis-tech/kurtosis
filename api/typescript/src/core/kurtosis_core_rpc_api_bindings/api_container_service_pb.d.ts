@@ -1,24 +1,27 @@
-import * as jspb from 'google-protobuf'
+// package: api_container_api
+// file: api_container_service.proto
 
-import * as google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb';
-
+import * as jspb from "google-protobuf";
+import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 
 export class Port extends jspb.Message {
   getNumber(): number;
-  setNumber(value: number): Port;
+  setNumber(value: number): void;
 
-  getTransportProtocol(): Port.TransportProtocol;
-  setTransportProtocol(value: Port.TransportProtocol): Port;
+  getTransportProtocol(): Port.TransportProtocolMap[keyof Port.TransportProtocolMap];
+  setTransportProtocol(value: Port.TransportProtocolMap[keyof Port.TransportProtocolMap]): void;
 
   getMaybeApplicationProtocol(): string;
-  setMaybeApplicationProtocol(value: string): Port;
+  setMaybeApplicationProtocol(value: string): void;
 
   getMaybeWaitTimeout(): string;
-  setMaybeWaitTimeout(value: string): Port;
+  setMaybeWaitTimeout(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): Port.AsObject;
   static toObject(includeInstance: boolean, msg: Port): Port.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: Port, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): Port;
   static deserializeBinaryFromReader(message: Port, reader: jspb.BinaryReader): Port;
@@ -27,43 +30,45 @@ export class Port extends jspb.Message {
 export namespace Port {
   export type AsObject = {
     number: number,
-    transportProtocol: Port.TransportProtocol,
+    transportProtocol: Port.TransportProtocolMap[keyof Port.TransportProtocolMap],
     maybeApplicationProtocol: string,
     maybeWaitTimeout: string,
   }
 
-  export enum TransportProtocol { 
-    TCP = 0,
-    SCTP = 1,
-    UDP = 2,
+  export interface TransportProtocolMap {
+    TCP: 0;
+    SCTP: 1;
+    UDP: 2;
   }
+
+  export const TransportProtocol: TransportProtocolMap;
 }
 
 export class ServiceInfo extends jspb.Message {
   getServiceUuid(): string;
-  setServiceUuid(value: string): ServiceInfo;
+  setServiceUuid(value: string): void;
 
   getPrivateIpAddr(): string;
-  setPrivateIpAddr(value: string): ServiceInfo;
+  setPrivateIpAddr(value: string): void;
 
   getPrivatePortsMap(): jspb.Map<string, Port>;
-  clearPrivatePortsMap(): ServiceInfo;
-
+  clearPrivatePortsMap(): void;
   getMaybePublicIpAddr(): string;
-  setMaybePublicIpAddr(value: string): ServiceInfo;
+  setMaybePublicIpAddr(value: string): void;
 
   getMaybePublicPortsMap(): jspb.Map<string, Port>;
-  clearMaybePublicPortsMap(): ServiceInfo;
-
+  clearMaybePublicPortsMap(): void;
   getName(): string;
-  setName(value: string): ServiceInfo;
+  setName(value: string): void;
 
   getShortenedUuid(): string;
-  setShortenedUuid(value: string): ServiceInfo;
+  setShortenedUuid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ServiceInfo, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ServiceInfo;
   static deserializeBinaryFromReader(message: ServiceInfo, reader: jspb.BinaryReader): ServiceInfo;
@@ -83,47 +88,45 @@ export namespace ServiceInfo {
 
 export class ServiceConfig extends jspb.Message {
   getContainerImageName(): string;
-  setContainerImageName(value: string): ServiceConfig;
+  setContainerImageName(value: string): void;
 
   getPrivatePortsMap(): jspb.Map<string, Port>;
-  clearPrivatePortsMap(): ServiceConfig;
-
+  clearPrivatePortsMap(): void;
   getPublicPortsMap(): jspb.Map<string, Port>;
-  clearPublicPortsMap(): ServiceConfig;
-
+  clearPublicPortsMap(): void;
+  clearEntrypointArgsList(): void;
   getEntrypointArgsList(): Array<string>;
-  setEntrypointArgsList(value: Array<string>): ServiceConfig;
-  clearEntrypointArgsList(): ServiceConfig;
-  addEntrypointArgs(value: string, index?: number): ServiceConfig;
+  setEntrypointArgsList(value: Array<string>): void;
+  addEntrypointArgs(value: string, index?: number): string;
 
+  clearCmdArgsList(): void;
   getCmdArgsList(): Array<string>;
-  setCmdArgsList(value: Array<string>): ServiceConfig;
-  clearCmdArgsList(): ServiceConfig;
-  addCmdArgs(value: string, index?: number): ServiceConfig;
+  setCmdArgsList(value: Array<string>): void;
+  addCmdArgs(value: string, index?: number): string;
 
   getEnvVarsMap(): jspb.Map<string, string>;
-  clearEnvVarsMap(): ServiceConfig;
-
+  clearEnvVarsMap(): void;
   getFilesArtifactMountpointsMap(): jspb.Map<string, string>;
-  clearFilesArtifactMountpointsMap(): ServiceConfig;
-
+  clearFilesArtifactMountpointsMap(): void;
   getCpuAllocationMillicpus(): number;
-  setCpuAllocationMillicpus(value: number): ServiceConfig;
+  setCpuAllocationMillicpus(value: number): void;
 
   getMemoryAllocationMegabytes(): number;
-  setMemoryAllocationMegabytes(value: number): ServiceConfig;
+  setMemoryAllocationMegabytes(value: number): void;
 
   getPrivateIpAddrPlaceholder(): string;
-  setPrivateIpAddrPlaceholder(value: string): ServiceConfig;
+  setPrivateIpAddrPlaceholder(value: string): void;
 
-  getSubnetwork(): string;
-  setSubnetwork(value: string): ServiceConfig;
   hasSubnetwork(): boolean;
-  clearSubnetwork(): ServiceConfig;
+  clearSubnetwork(): void;
+  getSubnetwork(): string;
+  setSubnetwork(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceConfig.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceConfig): ServiceConfig.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ServiceConfig, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ServiceConfig;
   static deserializeBinaryFromReader(message: ServiceConfig, reader: jspb.BinaryReader): ServiceConfig;
@@ -141,24 +144,21 @@ export namespace ServiceConfig {
     cpuAllocationMillicpus: number,
     memoryAllocationMegabytes: number,
     privateIpAddrPlaceholder: string,
-    subnetwork?: string,
-  }
-
-  export enum SubnetworkCase { 
-    _SUBNETWORK_NOT_SET = 0,
-    SUBNETWORK = 11,
+    subnetwork: string,
   }
 }
 
 export class UpdateServiceConfig extends jspb.Message {
-  getSubnetwork(): string;
-  setSubnetwork(value: string): UpdateServiceConfig;
   hasSubnetwork(): boolean;
-  clearSubnetwork(): UpdateServiceConfig;
+  clearSubnetwork(): void;
+  getSubnetwork(): string;
+  setSubnetwork(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UpdateServiceConfig.AsObject;
   static toObject(includeInstance: boolean, msg: UpdateServiceConfig): UpdateServiceConfig.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: UpdateServiceConfig, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): UpdateServiceConfig;
   static deserializeBinaryFromReader(message: UpdateServiceConfig, reader: jspb.BinaryReader): UpdateServiceConfig;
@@ -166,35 +166,35 @@ export class UpdateServiceConfig extends jspb.Message {
 
 export namespace UpdateServiceConfig {
   export type AsObject = {
-    subnetwork?: string,
-  }
-
-  export enum SubnetworkCase { 
-    _SUBNETWORK_NOT_SET = 0,
-    SUBNETWORK = 1,
+    subnetwork: string,
   }
 }
 
 export class RunStarlarkScriptArgs extends jspb.Message {
   getSerializedScript(): string;
-  setSerializedScript(value: string): RunStarlarkScriptArgs;
+  setSerializedScript(value: string): void;
 
   getSerializedParams(): string;
-  setSerializedParams(value: string): RunStarlarkScriptArgs;
+  setSerializedParams(value: string): void;
 
-  getDryRun(): boolean;
-  setDryRun(value: boolean): RunStarlarkScriptArgs;
   hasDryRun(): boolean;
-  clearDryRun(): RunStarlarkScriptArgs;
+  clearDryRun(): void;
+  getDryRun(): boolean;
+  setDryRun(value: boolean): void;
 
-  getParallelism(): number;
-  setParallelism(value: number): RunStarlarkScriptArgs;
   hasParallelism(): boolean;
-  clearParallelism(): RunStarlarkScriptArgs;
+  clearParallelism(): void;
+  getParallelism(): number;
+  setParallelism(value: number): void;
+
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RunStarlarkScriptArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RunStarlarkScriptArgs;
   static deserializeBinaryFromReader(message: RunStarlarkScriptArgs, reader: jspb.BinaryReader): RunStarlarkScriptArgs;
@@ -204,56 +204,58 @@ export namespace RunStarlarkScriptArgs {
   export type AsObject = {
     serializedScript: string,
     serializedParams: string,
-    dryRun?: boolean,
-    parallelism?: number,
-  }
-
-  export enum DryRunCase { 
-    _DRY_RUN_NOT_SET = 0,
-    DRY_RUN = 3,
-  }
-
-  export enum ParallelismCase { 
-    _PARALLELISM_NOT_SET = 0,
-    PARALLELISM = 4,
+    dryRun: boolean,
+    parallelism: number,
+    mainFunctionName: string,
   }
 }
 
 export class RunStarlarkPackageArgs extends jspb.Message {
   getPackageId(): string;
-  setPackageId(value: string): RunStarlarkPackageArgs;
+  setPackageId(value: string): void;
 
+  hasLocal(): boolean;
+  clearLocal(): void;
   getLocal(): Uint8Array | string;
   getLocal_asU8(): Uint8Array;
   getLocal_asB64(): string;
-  setLocal(value: Uint8Array | string): RunStarlarkPackageArgs;
+  setLocal(value: Uint8Array | string): void;
 
+  hasRemote(): boolean;
+  clearRemote(): void;
   getRemote(): boolean;
-  setRemote(value: boolean): RunStarlarkPackageArgs;
+  setRemote(value: boolean): void;
 
   getSerializedParams(): string;
-  setSerializedParams(value: string): RunStarlarkPackageArgs;
+  setSerializedParams(value: string): void;
 
-  getDryRun(): boolean;
-  setDryRun(value: boolean): RunStarlarkPackageArgs;
   hasDryRun(): boolean;
-  clearDryRun(): RunStarlarkPackageArgs;
+  clearDryRun(): void;
+  getDryRun(): boolean;
+  setDryRun(value: boolean): void;
 
-  getParallelism(): number;
-  setParallelism(value: number): RunStarlarkPackageArgs;
   hasParallelism(): boolean;
-  clearParallelism(): RunStarlarkPackageArgs;
+  clearParallelism(): void;
+  getParallelism(): number;
+  setParallelism(value: number): void;
 
-  getClonePackage(): boolean;
-  setClonePackage(value: boolean): RunStarlarkPackageArgs;
   hasClonePackage(): boolean;
-  clearClonePackage(): RunStarlarkPackageArgs;
+  clearClonePackage(): void;
+  getClonePackage(): boolean;
+  setClonePackage(value: boolean): void;
+
+  getRelativePathToMainFile(): string;
+  setRelativePathToMainFile(value: string): void;
+
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): void;
 
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkPackageArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkPackageArgs): RunStarlarkPackageArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RunStarlarkPackageArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RunStarlarkPackageArgs;
   static deserializeBinaryFromReader(message: RunStarlarkPackageArgs, reader: jspb.BinaryReader): RunStarlarkPackageArgs;
@@ -265,69 +267,57 @@ export namespace RunStarlarkPackageArgs {
     local: Uint8Array | string,
     remote: boolean,
     serializedParams: string,
-    dryRun?: boolean,
-    parallelism?: number,
-    clonePackage?: boolean,
+    dryRun: boolean,
+    parallelism: number,
+    clonePackage: boolean,
+    relativePathToMainFile: string,
+    mainFunctionName: string,
   }
 
-  export enum StarlarkPackageContentCase { 
+  export enum StarlarkPackageContentCase {
     STARLARK_PACKAGE_CONTENT_NOT_SET = 0,
     LOCAL = 3,
     REMOTE = 4,
   }
-
-  export enum DryRunCase { 
-    _DRY_RUN_NOT_SET = 0,
-    DRY_RUN = 6,
-  }
-
-  export enum ParallelismCase { 
-    _PARALLELISM_NOT_SET = 0,
-    PARALLELISM = 7,
-  }
-
-  export enum ClonePackageCase { 
-    _CLONE_PACKAGE_NOT_SET = 0,
-    CLONE_PACKAGE = 8,
-  }
 }
 
 export class StarlarkRunResponseLine extends jspb.Message {
-  getInstruction(): StarlarkInstruction | undefined;
-  setInstruction(value?: StarlarkInstruction): StarlarkRunResponseLine;
   hasInstruction(): boolean;
-  clearInstruction(): StarlarkRunResponseLine;
+  clearInstruction(): void;
+  getInstruction(): StarlarkInstruction | undefined;
+  setInstruction(value?: StarlarkInstruction): void;
 
-  getError(): StarlarkError | undefined;
-  setError(value?: StarlarkError): StarlarkRunResponseLine;
   hasError(): boolean;
-  clearError(): StarlarkRunResponseLine;
+  clearError(): void;
+  getError(): StarlarkError | undefined;
+  setError(value?: StarlarkError): void;
 
-  getProgressInfo(): StarlarkRunProgress | undefined;
-  setProgressInfo(value?: StarlarkRunProgress): StarlarkRunResponseLine;
   hasProgressInfo(): boolean;
-  clearProgressInfo(): StarlarkRunResponseLine;
+  clearProgressInfo(): void;
+  getProgressInfo(): StarlarkRunProgress | undefined;
+  setProgressInfo(value?: StarlarkRunProgress): void;
 
-  getInstructionResult(): StarlarkInstructionResult | undefined;
-  setInstructionResult(value?: StarlarkInstructionResult): StarlarkRunResponseLine;
   hasInstructionResult(): boolean;
-  clearInstructionResult(): StarlarkRunResponseLine;
+  clearInstructionResult(): void;
+  getInstructionResult(): StarlarkInstructionResult | undefined;
+  setInstructionResult(value?: StarlarkInstructionResult): void;
 
-  getRunFinishedEvent(): StarlarkRunFinishedEvent | undefined;
-  setRunFinishedEvent(value?: StarlarkRunFinishedEvent): StarlarkRunResponseLine;
   hasRunFinishedEvent(): boolean;
-  clearRunFinishedEvent(): StarlarkRunResponseLine;
+  clearRunFinishedEvent(): void;
+  getRunFinishedEvent(): StarlarkRunFinishedEvent | undefined;
+  setRunFinishedEvent(value?: StarlarkRunFinishedEvent): void;
 
-  getWarning(): StarlarkWarning | undefined;
-  setWarning(value?: StarlarkWarning): StarlarkRunResponseLine;
   hasWarning(): boolean;
-  clearWarning(): StarlarkRunResponseLine;
+  clearWarning(): void;
+  getWarning(): StarlarkWarning | undefined;
+  setWarning(value?: StarlarkWarning): void;
 
   getRunResponseLineCase(): StarlarkRunResponseLine.RunResponseLineCase;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkRunResponseLine.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkRunResponseLine): StarlarkRunResponseLine.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkRunResponseLine, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkRunResponseLine;
   static deserializeBinaryFromReader(message: StarlarkRunResponseLine, reader: jspb.BinaryReader): StarlarkRunResponseLine;
@@ -343,7 +333,7 @@ export namespace StarlarkRunResponseLine {
     warning?: StarlarkWarning.AsObject,
   }
 
-  export enum RunResponseLineCase { 
+  export enum RunResponseLineCase {
     RUN_RESPONSE_LINE_NOT_SET = 0,
     INSTRUCTION = 1,
     ERROR = 2,
@@ -356,11 +346,13 @@ export namespace StarlarkRunResponseLine {
 
 export class StarlarkWarning extends jspb.Message {
   getWarningMessage(): string;
-  setWarningMessage(value: string): StarlarkWarning;
+  setWarningMessage(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkWarning.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkWarning): StarlarkWarning.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkWarning, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkWarning;
   static deserializeBinaryFromReader(message: StarlarkWarning, reader: jspb.BinaryReader): StarlarkWarning;
@@ -373,25 +365,27 @@ export namespace StarlarkWarning {
 }
 
 export class StarlarkInstruction extends jspb.Message {
-  getPosition(): StarlarkInstructionPosition | undefined;
-  setPosition(value?: StarlarkInstructionPosition): StarlarkInstruction;
   hasPosition(): boolean;
-  clearPosition(): StarlarkInstruction;
+  clearPosition(): void;
+  getPosition(): StarlarkInstructionPosition | undefined;
+  setPosition(value?: StarlarkInstructionPosition): void;
 
   getInstructionName(): string;
-  setInstructionName(value: string): StarlarkInstruction;
+  setInstructionName(value: string): void;
 
+  clearArgumentsList(): void;
   getArgumentsList(): Array<StarlarkInstructionArg>;
-  setArgumentsList(value: Array<StarlarkInstructionArg>): StarlarkInstruction;
-  clearArgumentsList(): StarlarkInstruction;
+  setArgumentsList(value: Array<StarlarkInstructionArg>): void;
   addArguments(value?: StarlarkInstructionArg, index?: number): StarlarkInstructionArg;
 
   getExecutableInstruction(): string;
-  setExecutableInstruction(value: string): StarlarkInstruction;
+  setExecutableInstruction(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstruction.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstruction): StarlarkInstruction.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkInstruction, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkInstruction;
   static deserializeBinaryFromReader(message: StarlarkInstruction, reader: jspb.BinaryReader): StarlarkInstruction;
@@ -408,11 +402,13 @@ export namespace StarlarkInstruction {
 
 export class StarlarkInstructionResult extends jspb.Message {
   getSerializedInstructionResult(): string;
-  setSerializedInstructionResult(value: string): StarlarkInstructionResult;
+  setSerializedInstructionResult(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstructionResult.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstructionResult): StarlarkInstructionResult.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkInstructionResult, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkInstructionResult;
   static deserializeBinaryFromReader(message: StarlarkInstructionResult, reader: jspb.BinaryReader): StarlarkInstructionResult;
@@ -426,19 +422,21 @@ export namespace StarlarkInstructionResult {
 
 export class StarlarkInstructionArg extends jspb.Message {
   getSerializedArgValue(): string;
-  setSerializedArgValue(value: string): StarlarkInstructionArg;
+  setSerializedArgValue(value: string): void;
 
-  getArgName(): string;
-  setArgName(value: string): StarlarkInstructionArg;
   hasArgName(): boolean;
-  clearArgName(): StarlarkInstructionArg;
+  clearArgName(): void;
+  getArgName(): string;
+  setArgName(value: string): void;
 
   getIsRepresentative(): boolean;
-  setIsRepresentative(value: boolean): StarlarkInstructionArg;
+  setIsRepresentative(value: boolean): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstructionArg.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstructionArg): StarlarkInstructionArg.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkInstructionArg, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkInstructionArg;
   static deserializeBinaryFromReader(message: StarlarkInstructionArg, reader: jspb.BinaryReader): StarlarkInstructionArg;
@@ -447,29 +445,26 @@ export class StarlarkInstructionArg extends jspb.Message {
 export namespace StarlarkInstructionArg {
   export type AsObject = {
     serializedArgValue: string,
-    argName?: string,
+    argName: string,
     isRepresentative: boolean,
-  }
-
-  export enum ArgNameCase { 
-    _ARG_NAME_NOT_SET = 0,
-    ARG_NAME = 2,
   }
 }
 
 export class StarlarkInstructionPosition extends jspb.Message {
   getFilename(): string;
-  setFilename(value: string): StarlarkInstructionPosition;
+  setFilename(value: string): void;
 
   getLine(): number;
-  setLine(value: number): StarlarkInstructionPosition;
+  setLine(value: number): void;
 
   getColumn(): number;
-  setColumn(value: number): StarlarkInstructionPosition;
+  setColumn(value: number): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstructionPosition.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstructionPosition): StarlarkInstructionPosition.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkInstructionPosition, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkInstructionPosition;
   static deserializeBinaryFromReader(message: StarlarkInstructionPosition, reader: jspb.BinaryReader): StarlarkInstructionPosition;
@@ -484,26 +479,27 @@ export namespace StarlarkInstructionPosition {
 }
 
 export class StarlarkError extends jspb.Message {
-  getInterpretationError(): StarlarkInterpretationError | undefined;
-  setInterpretationError(value?: StarlarkInterpretationError): StarlarkError;
   hasInterpretationError(): boolean;
-  clearInterpretationError(): StarlarkError;
+  clearInterpretationError(): void;
+  getInterpretationError(): StarlarkInterpretationError | undefined;
+  setInterpretationError(value?: StarlarkInterpretationError): void;
 
-  getValidationError(): StarlarkValidationError | undefined;
-  setValidationError(value?: StarlarkValidationError): StarlarkError;
   hasValidationError(): boolean;
-  clearValidationError(): StarlarkError;
+  clearValidationError(): void;
+  getValidationError(): StarlarkValidationError | undefined;
+  setValidationError(value?: StarlarkValidationError): void;
 
-  getExecutionError(): StarlarkExecutionError | undefined;
-  setExecutionError(value?: StarlarkExecutionError): StarlarkError;
   hasExecutionError(): boolean;
-  clearExecutionError(): StarlarkError;
+  clearExecutionError(): void;
+  getExecutionError(): StarlarkExecutionError | undefined;
+  setExecutionError(value?: StarlarkExecutionError): void;
 
   getErrorCase(): StarlarkError.ErrorCase;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkError.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkError): StarlarkError.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkError, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkError;
   static deserializeBinaryFromReader(message: StarlarkError, reader: jspb.BinaryReader): StarlarkError;
@@ -516,7 +512,7 @@ export namespace StarlarkError {
     executionError?: StarlarkExecutionError.AsObject,
   }
 
-  export enum ErrorCase { 
+  export enum ErrorCase {
     ERROR_NOT_SET = 0,
     INTERPRETATION_ERROR = 1,
     VALIDATION_ERROR = 2,
@@ -526,11 +522,13 @@ export namespace StarlarkError {
 
 export class StarlarkInterpretationError extends jspb.Message {
   getErrorMessage(): string;
-  setErrorMessage(value: string): StarlarkInterpretationError;
+  setErrorMessage(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInterpretationError.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInterpretationError): StarlarkInterpretationError.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkInterpretationError, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkInterpretationError;
   static deserializeBinaryFromReader(message: StarlarkInterpretationError, reader: jspb.BinaryReader): StarlarkInterpretationError;
@@ -544,11 +542,13 @@ export namespace StarlarkInterpretationError {
 
 export class StarlarkValidationError extends jspb.Message {
   getErrorMessage(): string;
-  setErrorMessage(value: string): StarlarkValidationError;
+  setErrorMessage(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkValidationError.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkValidationError): StarlarkValidationError.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkValidationError, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkValidationError;
   static deserializeBinaryFromReader(message: StarlarkValidationError, reader: jspb.BinaryReader): StarlarkValidationError;
@@ -562,11 +562,13 @@ export namespace StarlarkValidationError {
 
 export class StarlarkExecutionError extends jspb.Message {
   getErrorMessage(): string;
-  setErrorMessage(value: string): StarlarkExecutionError;
+  setErrorMessage(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkExecutionError.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkExecutionError): StarlarkExecutionError.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkExecutionError, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkExecutionError;
   static deserializeBinaryFromReader(message: StarlarkExecutionError, reader: jspb.BinaryReader): StarlarkExecutionError;
@@ -579,20 +581,22 @@ export namespace StarlarkExecutionError {
 }
 
 export class StarlarkRunProgress extends jspb.Message {
+  clearCurrentStepInfoList(): void;
   getCurrentStepInfoList(): Array<string>;
-  setCurrentStepInfoList(value: Array<string>): StarlarkRunProgress;
-  clearCurrentStepInfoList(): StarlarkRunProgress;
-  addCurrentStepInfo(value: string, index?: number): StarlarkRunProgress;
+  setCurrentStepInfoList(value: Array<string>): void;
+  addCurrentStepInfo(value: string, index?: number): string;
 
   getTotalSteps(): number;
-  setTotalSteps(value: number): StarlarkRunProgress;
+  setTotalSteps(value: number): void;
 
   getCurrentStepNumber(): number;
-  setCurrentStepNumber(value: number): StarlarkRunProgress;
+  setCurrentStepNumber(value: number): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkRunProgress.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkRunProgress): StarlarkRunProgress.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkRunProgress, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkRunProgress;
   static deserializeBinaryFromReader(message: StarlarkRunProgress, reader: jspb.BinaryReader): StarlarkRunProgress;
@@ -608,16 +612,18 @@ export namespace StarlarkRunProgress {
 
 export class StarlarkRunFinishedEvent extends jspb.Message {
   getIsrunsuccessful(): boolean;
-  setIsrunsuccessful(value: boolean): StarlarkRunFinishedEvent;
+  setIsrunsuccessful(value: boolean): void;
 
-  getSerializedOutput(): string;
-  setSerializedOutput(value: string): StarlarkRunFinishedEvent;
   hasSerializedOutput(): boolean;
-  clearSerializedOutput(): StarlarkRunFinishedEvent;
+  clearSerializedOutput(): void;
+  getSerializedOutput(): string;
+  setSerializedOutput(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkRunFinishedEvent.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkRunFinishedEvent): StarlarkRunFinishedEvent.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StarlarkRunFinishedEvent, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StarlarkRunFinishedEvent;
   static deserializeBinaryFromReader(message: StarlarkRunFinishedEvent, reader: jspb.BinaryReader): StarlarkRunFinishedEvent;
@@ -626,22 +632,18 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
 export namespace StarlarkRunFinishedEvent {
   export type AsObject = {
     isrunsuccessful: boolean,
-    serializedOutput?: string,
-  }
-
-  export enum SerializedOutputCase { 
-    _SERIALIZED_OUTPUT_NOT_SET = 0,
-    SERIALIZED_OUTPUT = 2,
+    serializedOutput: string,
   }
 }
 
 export class StartServicesArgs extends jspb.Message {
   getServiceNamesToConfigsMap(): jspb.Map<string, ServiceConfig>;
-  clearServiceNamesToConfigsMap(): StartServicesArgs;
-
+  clearServiceNamesToConfigsMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServicesArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StartServicesArgs): StartServicesArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StartServicesArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StartServicesArgs;
   static deserializeBinaryFromReader(message: StartServicesArgs, reader: jspb.BinaryReader): StartServicesArgs;
@@ -655,14 +657,14 @@ export namespace StartServicesArgs {
 
 export class StartServicesResponse extends jspb.Message {
   getSuccessfulServiceNameToServiceInfoMap(): jspb.Map<string, ServiceInfo>;
-  clearSuccessfulServiceNameToServiceInfoMap(): StartServicesResponse;
-
+  clearSuccessfulServiceNameToServiceInfoMap(): void;
   getFailedServiceNameToErrorMap(): jspb.Map<string, string>;
-  clearFailedServiceNameToErrorMap(): StartServicesResponse;
-
+  clearFailedServiceNameToErrorMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StartServicesResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StartServicesResponse): StartServicesResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StartServicesResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StartServicesResponse;
   static deserializeBinaryFromReader(message: StartServicesResponse, reader: jspb.BinaryReader): StartServicesResponse;
@@ -677,11 +679,12 @@ export namespace StartServicesResponse {
 
 export class GetServicesArgs extends jspb.Message {
   getServiceIdentifiersMap(): jspb.Map<string, boolean>;
-  clearServiceIdentifiersMap(): GetServicesArgs;
-
+  clearServiceIdentifiersMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServicesArgs.AsObject;
   static toObject(includeInstance: boolean, msg: GetServicesArgs): GetServicesArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetServicesArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetServicesArgs;
   static deserializeBinaryFromReader(message: GetServicesArgs, reader: jspb.BinaryReader): GetServicesArgs;
@@ -695,11 +698,12 @@ export namespace GetServicesArgs {
 
 export class GetServicesResponse extends jspb.Message {
   getServiceInfoMap(): jspb.Map<string, ServiceInfo>;
-  clearServiceInfoMap(): GetServicesResponse;
-
+  clearServiceInfoMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServicesResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetServicesResponse): GetServicesResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetServicesResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetServicesResponse;
   static deserializeBinaryFromReader(message: GetServicesResponse, reader: jspb.BinaryReader): GetServicesResponse;
@@ -713,17 +717,19 @@ export namespace GetServicesResponse {
 
 export class ServiceIdentifiers extends jspb.Message {
   getServiceUuid(): string;
-  setServiceUuid(value: string): ServiceIdentifiers;
+  setServiceUuid(value: string): void;
 
   getName(): string;
-  setName(value: string): ServiceIdentifiers;
+  setName(value: string): void;
 
   getShortenedUuid(): string;
-  setShortenedUuid(value: string): ServiceIdentifiers;
+  setShortenedUuid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceIdentifiers.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceIdentifiers): ServiceIdentifiers.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ServiceIdentifiers, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ServiceIdentifiers;
   static deserializeBinaryFromReader(message: ServiceIdentifiers, reader: jspb.BinaryReader): ServiceIdentifiers;
@@ -738,14 +744,16 @@ export namespace ServiceIdentifiers {
 }
 
 export class GetExistingAndHistoricalServiceIdentifiersResponse extends jspb.Message {
+  clearAllidentifiersList(): void;
   getAllidentifiersList(): Array<ServiceIdentifiers>;
-  setAllidentifiersList(value: Array<ServiceIdentifiers>): GetExistingAndHistoricalServiceIdentifiersResponse;
-  clearAllidentifiersList(): GetExistingAndHistoricalServiceIdentifiersResponse;
+  setAllidentifiersList(value: Array<ServiceIdentifiers>): void;
   addAllidentifiers(value?: ServiceIdentifiers, index?: number): ServiceIdentifiers;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetExistingAndHistoricalServiceIdentifiersResponse.AsObject;
   static toObject(includeInstance: boolean, msg: GetExistingAndHistoricalServiceIdentifiersResponse): GetExistingAndHistoricalServiceIdentifiersResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: GetExistingAndHistoricalServiceIdentifiersResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): GetExistingAndHistoricalServiceIdentifiersResponse;
   static deserializeBinaryFromReader(message: GetExistingAndHistoricalServiceIdentifiersResponse, reader: jspb.BinaryReader): GetExistingAndHistoricalServiceIdentifiersResponse;
@@ -759,11 +767,13 @@ export namespace GetExistingAndHistoricalServiceIdentifiersResponse {
 
 export class RemoveServiceArgs extends jspb.Message {
   getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): RemoveServiceArgs;
+  setServiceIdentifier(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RemoveServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RemoveServiceArgs): RemoveServiceArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RemoveServiceArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RemoveServiceArgs;
   static deserializeBinaryFromReader(message: RemoveServiceArgs, reader: jspb.BinaryReader): RemoveServiceArgs;
@@ -777,11 +787,13 @@ export namespace RemoveServiceArgs {
 
 export class RemoveServiceResponse extends jspb.Message {
   getServiceUuid(): string;
-  setServiceUuid(value: string): RemoveServiceResponse;
+  setServiceUuid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RemoveServiceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: RemoveServiceResponse): RemoveServiceResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RemoveServiceResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RemoveServiceResponse;
   static deserializeBinaryFromReader(message: RemoveServiceResponse, reader: jspb.BinaryReader): RemoveServiceResponse;
@@ -795,19 +807,19 @@ export namespace RemoveServiceResponse {
 
 export class RepartitionArgs extends jspb.Message {
   getPartitionServicesMap(): jspb.Map<string, PartitionServices>;
-  clearPartitionServicesMap(): RepartitionArgs;
-
+  clearPartitionServicesMap(): void;
   getPartitionConnectionsMap(): jspb.Map<string, PartitionConnections>;
-  clearPartitionConnectionsMap(): RepartitionArgs;
-
-  getDefaultConnection(): PartitionConnectionInfo | undefined;
-  setDefaultConnection(value?: PartitionConnectionInfo): RepartitionArgs;
+  clearPartitionConnectionsMap(): void;
   hasDefaultConnection(): boolean;
-  clearDefaultConnection(): RepartitionArgs;
+  clearDefaultConnection(): void;
+  getDefaultConnection(): PartitionConnectionInfo | undefined;
+  setDefaultConnection(value?: PartitionConnectionInfo): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RepartitionArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RepartitionArgs): RepartitionArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RepartitionArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RepartitionArgs;
   static deserializeBinaryFromReader(message: RepartitionArgs, reader: jspb.BinaryReader): RepartitionArgs;
@@ -823,11 +835,12 @@ export namespace RepartitionArgs {
 
 export class PartitionServices extends jspb.Message {
   getServiceNameSetMap(): jspb.Map<string, boolean>;
-  clearServiceNameSetMap(): PartitionServices;
-
+  clearServiceNameSetMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PartitionServices.AsObject;
   static toObject(includeInstance: boolean, msg: PartitionServices): PartitionServices.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: PartitionServices, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): PartitionServices;
   static deserializeBinaryFromReader(message: PartitionServices, reader: jspb.BinaryReader): PartitionServices;
@@ -841,11 +854,12 @@ export namespace PartitionServices {
 
 export class PartitionConnections extends jspb.Message {
   getConnectionInfoMap(): jspb.Map<string, PartitionConnectionInfo>;
-  clearConnectionInfoMap(): PartitionConnections;
-
+  clearConnectionInfoMap(): void;
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PartitionConnections.AsObject;
   static toObject(includeInstance: boolean, msg: PartitionConnections): PartitionConnections.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: PartitionConnections, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): PartitionConnections;
   static deserializeBinaryFromReader(message: PartitionConnections, reader: jspb.BinaryReader): PartitionConnections;
@@ -859,11 +873,13 @@ export namespace PartitionConnections {
 
 export class PartitionConnectionInfo extends jspb.Message {
   getPacketLossPercentage(): number;
-  setPacketLossPercentage(value: number): PartitionConnectionInfo;
+  setPacketLossPercentage(value: number): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PartitionConnectionInfo.AsObject;
   static toObject(includeInstance: boolean, msg: PartitionConnectionInfo): PartitionConnectionInfo.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: PartitionConnectionInfo, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): PartitionConnectionInfo;
   static deserializeBinaryFromReader(message: PartitionConnectionInfo, reader: jspb.BinaryReader): PartitionConnectionInfo;
@@ -877,16 +893,18 @@ export namespace PartitionConnectionInfo {
 
 export class ExecCommandArgs extends jspb.Message {
   getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): ExecCommandArgs;
+  setServiceIdentifier(value: string): void;
 
+  clearCommandArgsList(): void;
   getCommandArgsList(): Array<string>;
-  setCommandArgsList(value: Array<string>): ExecCommandArgs;
-  clearCommandArgsList(): ExecCommandArgs;
-  addCommandArgs(value: string, index?: number): ExecCommandArgs;
+  setCommandArgsList(value: Array<string>): void;
+  addCommandArgs(value: string, index?: number): string;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecCommandArgs.AsObject;
   static toObject(includeInstance: boolean, msg: ExecCommandArgs): ExecCommandArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ExecCommandArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ExecCommandArgs;
   static deserializeBinaryFromReader(message: ExecCommandArgs, reader: jspb.BinaryReader): ExecCommandArgs;
@@ -901,11 +919,13 @@ export namespace ExecCommandArgs {
 
 export class PauseServiceArgs extends jspb.Message {
   getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): PauseServiceArgs;
+  setServiceIdentifier(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): PauseServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: PauseServiceArgs): PauseServiceArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: PauseServiceArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): PauseServiceArgs;
   static deserializeBinaryFromReader(message: PauseServiceArgs, reader: jspb.BinaryReader): PauseServiceArgs;
@@ -919,11 +939,13 @@ export namespace PauseServiceArgs {
 
 export class UnpauseServiceArgs extends jspb.Message {
   getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): UnpauseServiceArgs;
+  setServiceIdentifier(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UnpauseServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: UnpauseServiceArgs): UnpauseServiceArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: UnpauseServiceArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): UnpauseServiceArgs;
   static deserializeBinaryFromReader(message: UnpauseServiceArgs, reader: jspb.BinaryReader): UnpauseServiceArgs;
@@ -937,14 +959,16 @@ export namespace UnpauseServiceArgs {
 
 export class ExecCommandResponse extends jspb.Message {
   getExitCode(): number;
-  setExitCode(value: number): ExecCommandResponse;
+  setExitCode(value: number): void;
 
   getLogOutput(): string;
-  setLogOutput(value: string): ExecCommandResponse;
+  setLogOutput(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ExecCommandResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ExecCommandResponse): ExecCommandResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ExecCommandResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ExecCommandResponse;
   static deserializeBinaryFromReader(message: ExecCommandResponse, reader: jspb.BinaryReader): ExecCommandResponse;
@@ -959,29 +983,31 @@ export namespace ExecCommandResponse {
 
 export class WaitForHttpGetEndpointAvailabilityArgs extends jspb.Message {
   getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): WaitForHttpGetEndpointAvailabilityArgs;
+  setServiceIdentifier(value: string): void;
 
   getPort(): number;
-  setPort(value: number): WaitForHttpGetEndpointAvailabilityArgs;
+  setPort(value: number): void;
 
   getPath(): string;
-  setPath(value: string): WaitForHttpGetEndpointAvailabilityArgs;
+  setPath(value: string): void;
 
   getInitialDelayMilliseconds(): number;
-  setInitialDelayMilliseconds(value: number): WaitForHttpGetEndpointAvailabilityArgs;
+  setInitialDelayMilliseconds(value: number): void;
 
   getRetries(): number;
-  setRetries(value: number): WaitForHttpGetEndpointAvailabilityArgs;
+  setRetries(value: number): void;
 
   getRetriesDelayMilliseconds(): number;
-  setRetriesDelayMilliseconds(value: number): WaitForHttpGetEndpointAvailabilityArgs;
+  setRetriesDelayMilliseconds(value: number): void;
 
   getBodyText(): string;
-  setBodyText(value: string): WaitForHttpGetEndpointAvailabilityArgs;
+  setBodyText(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WaitForHttpGetEndpointAvailabilityArgs.AsObject;
   static toObject(includeInstance: boolean, msg: WaitForHttpGetEndpointAvailabilityArgs): WaitForHttpGetEndpointAvailabilityArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: WaitForHttpGetEndpointAvailabilityArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): WaitForHttpGetEndpointAvailabilityArgs;
   static deserializeBinaryFromReader(message: WaitForHttpGetEndpointAvailabilityArgs, reader: jspb.BinaryReader): WaitForHttpGetEndpointAvailabilityArgs;
@@ -1001,32 +1027,34 @@ export namespace WaitForHttpGetEndpointAvailabilityArgs {
 
 export class WaitForHttpPostEndpointAvailabilityArgs extends jspb.Message {
   getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  setServiceIdentifier(value: string): void;
 
   getPort(): number;
-  setPort(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  setPort(value: number): void;
 
   getPath(): string;
-  setPath(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  setPath(value: string): void;
 
   getRequestBody(): string;
-  setRequestBody(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  setRequestBody(value: string): void;
 
   getInitialDelayMilliseconds(): number;
-  setInitialDelayMilliseconds(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  setInitialDelayMilliseconds(value: number): void;
 
   getRetries(): number;
-  setRetries(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  setRetries(value: number): void;
 
   getRetriesDelayMilliseconds(): number;
-  setRetriesDelayMilliseconds(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  setRetriesDelayMilliseconds(value: number): void;
 
   getBodyText(): string;
-  setBodyText(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  setBodyText(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WaitForHttpPostEndpointAvailabilityArgs.AsObject;
   static toObject(includeInstance: boolean, msg: WaitForHttpPostEndpointAvailabilityArgs): WaitForHttpPostEndpointAvailabilityArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: WaitForHttpPostEndpointAvailabilityArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): WaitForHttpPostEndpointAvailabilityArgs;
   static deserializeBinaryFromReader(message: WaitForHttpPostEndpointAvailabilityArgs, reader: jspb.BinaryReader): WaitForHttpPostEndpointAvailabilityArgs;
@@ -1049,19 +1077,21 @@ export class StreamedDataChunk extends jspb.Message {
   getData(): Uint8Array | string;
   getData_asU8(): Uint8Array;
   getData_asB64(): string;
-  setData(value: Uint8Array | string): StreamedDataChunk;
+  setData(value: Uint8Array | string): void;
 
   getPreviousChunkHash(): string;
-  setPreviousChunkHash(value: string): StreamedDataChunk;
+  setPreviousChunkHash(value: string): void;
 
-  getMetadata(): DataChunkMetadata | undefined;
-  setMetadata(value?: DataChunkMetadata): StreamedDataChunk;
   hasMetadata(): boolean;
-  clearMetadata(): StreamedDataChunk;
+  clearMetadata(): void;
+  getMetadata(): DataChunkMetadata | undefined;
+  setMetadata(value?: DataChunkMetadata): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StreamedDataChunk.AsObject;
   static toObject(includeInstance: boolean, msg: StreamedDataChunk): StreamedDataChunk.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StreamedDataChunk, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StreamedDataChunk;
   static deserializeBinaryFromReader(message: StreamedDataChunk, reader: jspb.BinaryReader): StreamedDataChunk;
@@ -1077,11 +1107,13 @@ export namespace StreamedDataChunk {
 
 export class DataChunkMetadata extends jspb.Message {
   getName(): string;
-  setName(value: string): DataChunkMetadata;
+  setName(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DataChunkMetadata.AsObject;
   static toObject(includeInstance: boolean, msg: DataChunkMetadata): DataChunkMetadata.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: DataChunkMetadata, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): DataChunkMetadata;
   static deserializeBinaryFromReader(message: DataChunkMetadata, reader: jspb.BinaryReader): DataChunkMetadata;
@@ -1097,14 +1129,16 @@ export class UploadFilesArtifactArgs extends jspb.Message {
   getData(): Uint8Array | string;
   getData_asU8(): Uint8Array;
   getData_asB64(): string;
-  setData(value: Uint8Array | string): UploadFilesArtifactArgs;
+  setData(value: Uint8Array | string): void;
 
   getName(): string;
-  setName(value: string): UploadFilesArtifactArgs;
+  setName(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UploadFilesArtifactArgs.AsObject;
   static toObject(includeInstance: boolean, msg: UploadFilesArtifactArgs): UploadFilesArtifactArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: UploadFilesArtifactArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): UploadFilesArtifactArgs;
   static deserializeBinaryFromReader(message: UploadFilesArtifactArgs, reader: jspb.BinaryReader): UploadFilesArtifactArgs;
@@ -1119,14 +1153,16 @@ export namespace UploadFilesArtifactArgs {
 
 export class UploadFilesArtifactResponse extends jspb.Message {
   getUuid(): string;
-  setUuid(value: string): UploadFilesArtifactResponse;
+  setUuid(value: string): void;
 
   getName(): string;
-  setName(value: string): UploadFilesArtifactResponse;
+  setName(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): UploadFilesArtifactResponse.AsObject;
   static toObject(includeInstance: boolean, msg: UploadFilesArtifactResponse): UploadFilesArtifactResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: UploadFilesArtifactResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): UploadFilesArtifactResponse;
   static deserializeBinaryFromReader(message: UploadFilesArtifactResponse, reader: jspb.BinaryReader): UploadFilesArtifactResponse;
@@ -1141,11 +1177,13 @@ export namespace UploadFilesArtifactResponse {
 
 export class DownloadFilesArtifactArgs extends jspb.Message {
   getIdentifier(): string;
-  setIdentifier(value: string): DownloadFilesArtifactArgs;
+  setIdentifier(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DownloadFilesArtifactArgs.AsObject;
   static toObject(includeInstance: boolean, msg: DownloadFilesArtifactArgs): DownloadFilesArtifactArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: DownloadFilesArtifactArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): DownloadFilesArtifactArgs;
   static deserializeBinaryFromReader(message: DownloadFilesArtifactArgs, reader: jspb.BinaryReader): DownloadFilesArtifactArgs;
@@ -1161,11 +1199,13 @@ export class DownloadFilesArtifactResponse extends jspb.Message {
   getData(): Uint8Array | string;
   getData_asU8(): Uint8Array;
   getData_asB64(): string;
-  setData(value: Uint8Array | string): DownloadFilesArtifactResponse;
+  setData(value: Uint8Array | string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): DownloadFilesArtifactResponse.AsObject;
   static toObject(includeInstance: boolean, msg: DownloadFilesArtifactResponse): DownloadFilesArtifactResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: DownloadFilesArtifactResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): DownloadFilesArtifactResponse;
   static deserializeBinaryFromReader(message: DownloadFilesArtifactResponse, reader: jspb.BinaryReader): DownloadFilesArtifactResponse;
@@ -1179,14 +1219,16 @@ export namespace DownloadFilesArtifactResponse {
 
 export class StoreWebFilesArtifactArgs extends jspb.Message {
   getUrl(): string;
-  setUrl(value: string): StoreWebFilesArtifactArgs;
+  setUrl(value: string): void;
 
   getName(): string;
-  setName(value: string): StoreWebFilesArtifactArgs;
+  setName(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StoreWebFilesArtifactArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StoreWebFilesArtifactArgs): StoreWebFilesArtifactArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StoreWebFilesArtifactArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StoreWebFilesArtifactArgs;
   static deserializeBinaryFromReader(message: StoreWebFilesArtifactArgs, reader: jspb.BinaryReader): StoreWebFilesArtifactArgs;
@@ -1201,11 +1243,13 @@ export namespace StoreWebFilesArtifactArgs {
 
 export class StoreWebFilesArtifactResponse extends jspb.Message {
   getUuid(): string;
-  setUuid(value: string): StoreWebFilesArtifactResponse;
+  setUuid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StoreWebFilesArtifactResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StoreWebFilesArtifactResponse): StoreWebFilesArtifactResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StoreWebFilesArtifactResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StoreWebFilesArtifactResponse;
   static deserializeBinaryFromReader(message: StoreWebFilesArtifactResponse, reader: jspb.BinaryReader): StoreWebFilesArtifactResponse;
@@ -1219,17 +1263,19 @@ export namespace StoreWebFilesArtifactResponse {
 
 export class StoreFilesArtifactFromServiceArgs extends jspb.Message {
   getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): StoreFilesArtifactFromServiceArgs;
+  setServiceIdentifier(value: string): void;
 
   getSourcePath(): string;
-  setSourcePath(value: string): StoreFilesArtifactFromServiceArgs;
+  setSourcePath(value: string): void;
 
   getName(): string;
-  setName(value: string): StoreFilesArtifactFromServiceArgs;
+  setName(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StoreFilesArtifactFromServiceArgs.AsObject;
   static toObject(includeInstance: boolean, msg: StoreFilesArtifactFromServiceArgs): StoreFilesArtifactFromServiceArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StoreFilesArtifactFromServiceArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StoreFilesArtifactFromServiceArgs;
   static deserializeBinaryFromReader(message: StoreFilesArtifactFromServiceArgs, reader: jspb.BinaryReader): StoreFilesArtifactFromServiceArgs;
@@ -1245,11 +1291,13 @@ export namespace StoreFilesArtifactFromServiceArgs {
 
 export class StoreFilesArtifactFromServiceResponse extends jspb.Message {
   getUuid(): string;
-  setUuid(value: string): StoreFilesArtifactFromServiceResponse;
+  setUuid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StoreFilesArtifactFromServiceResponse.AsObject;
   static toObject(includeInstance: boolean, msg: StoreFilesArtifactFromServiceResponse): StoreFilesArtifactFromServiceResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: StoreFilesArtifactFromServiceResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): StoreFilesArtifactFromServiceResponse;
   static deserializeBinaryFromReader(message: StoreFilesArtifactFromServiceResponse, reader: jspb.BinaryReader): StoreFilesArtifactFromServiceResponse;
@@ -1263,14 +1311,15 @@ export namespace StoreFilesArtifactFromServiceResponse {
 
 export class RenderTemplatesToFilesArtifactArgs extends jspb.Message {
   getTemplatesAndDataByDestinationRelFilepathMap(): jspb.Map<string, RenderTemplatesToFilesArtifactArgs.TemplateAndData>;
-  clearTemplatesAndDataByDestinationRelFilepathMap(): RenderTemplatesToFilesArtifactArgs;
-
+  clearTemplatesAndDataByDestinationRelFilepathMap(): void;
   getName(): string;
-  setName(value: string): RenderTemplatesToFilesArtifactArgs;
+  setName(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RenderTemplatesToFilesArtifactArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RenderTemplatesToFilesArtifactArgs): RenderTemplatesToFilesArtifactArgs.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RenderTemplatesToFilesArtifactArgs, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RenderTemplatesToFilesArtifactArgs;
   static deserializeBinaryFromReader(message: RenderTemplatesToFilesArtifactArgs, reader: jspb.BinaryReader): RenderTemplatesToFilesArtifactArgs;
@@ -1284,14 +1333,16 @@ export namespace RenderTemplatesToFilesArtifactArgs {
 
   export class TemplateAndData extends jspb.Message {
     getTemplate(): string;
-    setTemplate(value: string): TemplateAndData;
+    setTemplate(value: string): void;
 
     getDataAsJson(): string;
-    setDataAsJson(value: string): TemplateAndData;
+    setDataAsJson(value: string): void;
 
     serializeBinary(): Uint8Array;
     toObject(includeInstance?: boolean): TemplateAndData.AsObject;
     static toObject(includeInstance: boolean, msg: TemplateAndData): TemplateAndData.AsObject;
+    static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+    static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
     static serializeBinaryToWriter(message: TemplateAndData, writer: jspb.BinaryWriter): void;
     static deserializeBinary(bytes: Uint8Array): TemplateAndData;
     static deserializeBinaryFromReader(message: TemplateAndData, reader: jspb.BinaryReader): TemplateAndData;
@@ -1303,16 +1354,17 @@ export namespace RenderTemplatesToFilesArtifactArgs {
       dataAsJson: string,
     }
   }
-
 }
 
 export class RenderTemplatesToFilesArtifactResponse extends jspb.Message {
   getUuid(): string;
-  setUuid(value: string): RenderTemplatesToFilesArtifactResponse;
+  setUuid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RenderTemplatesToFilesArtifactResponse.AsObject;
   static toObject(includeInstance: boolean, msg: RenderTemplatesToFilesArtifactResponse): RenderTemplatesToFilesArtifactResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: RenderTemplatesToFilesArtifactResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): RenderTemplatesToFilesArtifactResponse;
   static deserializeBinaryFromReader(message: RenderTemplatesToFilesArtifactResponse, reader: jspb.BinaryReader): RenderTemplatesToFilesArtifactResponse;
@@ -1326,14 +1378,16 @@ export namespace RenderTemplatesToFilesArtifactResponse {
 
 export class FilesArtifactNameAndUuid extends jspb.Message {
   getFilename(): string;
-  setFilename(value: string): FilesArtifactNameAndUuid;
+  setFilename(value: string): void;
 
   getFileuuid(): string;
-  setFileuuid(value: string): FilesArtifactNameAndUuid;
+  setFileuuid(value: string): void;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): FilesArtifactNameAndUuid.AsObject;
   static toObject(includeInstance: boolean, msg: FilesArtifactNameAndUuid): FilesArtifactNameAndUuid.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: FilesArtifactNameAndUuid, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): FilesArtifactNameAndUuid;
   static deserializeBinaryFromReader(message: FilesArtifactNameAndUuid, reader: jspb.BinaryReader): FilesArtifactNameAndUuid;
@@ -1347,14 +1401,16 @@ export namespace FilesArtifactNameAndUuid {
 }
 
 export class ListFilesArtifactNamesAndUuidsResponse extends jspb.Message {
+  clearFileNamesAndUuidsList(): void;
   getFileNamesAndUuidsList(): Array<FilesArtifactNameAndUuid>;
-  setFileNamesAndUuidsList(value: Array<FilesArtifactNameAndUuid>): ListFilesArtifactNamesAndUuidsResponse;
-  clearFileNamesAndUuidsList(): ListFilesArtifactNamesAndUuidsResponse;
+  setFileNamesAndUuidsList(value: Array<FilesArtifactNameAndUuid>): void;
   addFileNamesAndUuids(value?: FilesArtifactNameAndUuid, index?: number): FilesArtifactNameAndUuid;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ListFilesArtifactNamesAndUuidsResponse.AsObject;
   static toObject(includeInstance: boolean, msg: ListFilesArtifactNamesAndUuidsResponse): ListFilesArtifactNamesAndUuidsResponse.AsObject;
+  static extensions: {[key: number]: jspb.ExtensionFieldInfo<jspb.Message>};
+  static extensionsBinary: {[key: number]: jspb.ExtensionFieldBinaryInfo<jspb.Message>};
   static serializeBinaryToWriter(message: ListFilesArtifactNamesAndUuidsResponse, writer: jspb.BinaryWriter): void;
   static deserializeBinary(bytes: Uint8Array): ListFilesArtifactNamesAndUuidsResponse;
   static deserializeBinaryFromReader(message: ListFilesArtifactNamesAndUuidsResponse, reader: jspb.BinaryReader): ListFilesArtifactNamesAndUuidsResponse;

@@ -83,6 +83,12 @@ const (
 	runSucceeded = true
 
 	portMappingSeparatorForLogs = ", "
+
+	mainFileFlagKey      = "main-file"
+	mainFileDefaultValue = ""
+
+	mainFunctionNameFlagKey      = "main-function-name"
+	mainFunctionNameDefaultValue = ""
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -151,6 +157,20 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 				"local context, all services are always reachable locally on their ephemeral ports. Default true",
 			Type:    flags.FlagType_Bool,
 			Default: defaultMapPortsFlagKey,
+		},
+		{
+			Key: mainFileFlagKey,
+			Usage: "This is the relative (to the package root) main file filepath, the main file is the script file that will be executed first" +
+				" and this should contains the main function. The default value is 'main.star'.",
+			Type:    flags.FlagType_String,
+			Default: mainFileDefaultValue,
+		},
+		{
+			Key: mainFunctionNameFlagKey,
+			Usage: "This is the name of the main function which will be executed first as the entrypoint of the package " +
+				"or the module. The default value is 'run'.",
+			Type:    flags.FlagType_String,
+			Default: mainFunctionNameDefaultValue,
 		},
 	},
 	Args: []*args.ArgConfig{
@@ -232,6 +252,16 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mapPortsFlagKey)
 	}
 
+	relativePathToTheMainFile, err := flags.GetString(mainFileFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFileFlagKey)
+	}
+
+	mainFunctionName, err := flags.GetString(mainFunctionNameFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFunctionNameFlagKey)
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -261,7 +291,7 @@ func run(
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 	isStandAloneScript := false
 	if isRemotePackage {
-		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, serializedJsonArgs, dryRun, castedParallelism)
+		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism)
 	} else {
 		fileOrDir, err := os.Stat(starlarkScriptOrPackagePath)
 		if err != nil {
@@ -391,8 +421,17 @@ func executePackage(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, pa
 	return enclaveCtx.RunStarlarkPackage(ctx, packagePath, serializedParams, dryRun, parallelism)
 }
 
-func executeRemotePackage(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, packageId string, serializedParams string, dryRun bool, parallelism int32) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
-	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun, parallelism)
+func executeRemotePackage(
+	ctx context.Context,
+	enclaveCtx *enclaves.EnclaveContext,
+	packageId string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism)
 }
 
 func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity, dryRun bool) error {

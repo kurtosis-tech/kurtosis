@@ -90,7 +90,14 @@ func NewRunStarlarkPackageArgs(packageId string, serializedParams string, dryRun
 	}
 }
 
-func NewRunStarlarkRemotePackageArgs(packageId string, serializedParams string, dryRun bool, parallelism int32) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
+func NewRunStarlarkRemotePackageArgs(
+	packageId string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	clonePackage := true
@@ -101,6 +108,8 @@ func NewRunStarlarkRemotePackageArgs(packageId string, serializedParams string, 
 		SerializedParams:       serializedParams,
 		DryRun:                 &dryRun,
 		Parallelism:            parallelismCopy,
+		RelativePathToMainFile: relativePathToMainFile,
+		MainFunctionName:       mainFunctionName,
 	}
 }
 

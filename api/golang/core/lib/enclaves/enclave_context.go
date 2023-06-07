@@ -145,7 +145,15 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
-func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, packageId string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
+	ctx context.Context,
+	packageId string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	defer func() {
@@ -155,7 +163,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, 
 	}()
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, serializedParams, dryRun, parallelism)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism)
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
@@ -168,8 +176,16 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, 
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
-func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(ctx context.Context, packageId string, serializedParams string, dryRun bool, parallelism int32) (*StarlarkRunResult, error) {
-	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun, parallelism)
+func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(
+	ctx context.Context,
+	packageId string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) (*StarlarkRunResult, error) {
+	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error running remote Starlark package")
 	}
