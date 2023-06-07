@@ -3,7 +3,6 @@ package service
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/sirupsen/logrus"
 )
 
 // Config options for the underlying container of a service
@@ -46,7 +45,6 @@ func NewServiceConfig(
 	memoryAllocationMegabytes uint64,
 	privateIPAddrPlaceholder string) *ServiceConfig {
 
-	logrus.Infof("YOLOLOL %v %v", cpuAllocationMillicpus, memoryAllocationMegabytes)
 	return &ServiceConfig{
 		containerImageName:        containerImageName,
 		privatePorts:              privatePorts,
@@ -59,6 +57,7 @@ func NewServiceConfig(
 		memoryAllocationMegabytes: memoryAllocationMegabytes,
 		privateIPAddrPlaceholder:  privateIPAddrPlaceholder,
 		// TODO: WILL CHANGE THIS IN NEXT PR
+		// The minimum resources specification is only available for kubernetes
 		minCpuAllocationMilliCpus:    cpuAllocationMillicpus,
 		minMemoryAllocationMegabytes: memoryAllocationMegabytes,
 	}
