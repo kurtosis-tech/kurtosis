@@ -125,15 +125,6 @@ func StartRegisteredUserServices(
 		serviceRegistration.SetConfig(serviceConfig)
 	}
 
-	for _, serviceRegistrationToStart := range serviceRegistrationsToStart {
-		if serviceRegistrationToStart.GetStatus() == service.ServiceStatus_Stopped {
-			// If the first service to start is stopped, we know that the other ones are too because
-			// of a check done at the service network layer.
-			// Restarting stopped services is a much lighter operation so we branch out to a simpler function
-			return restartUserServices(ctx, enclaveUuid, serviceRegistrationsToStart, dockerManager)
-		}
-	}
-
 	// If no services had successful registrations, return immediately
 	// This is to prevent an empty filter being used to query for matching objects and resources, returning all services
 	// and causing logic to break (eg. check for duplicate service GUIDs)
@@ -141,6 +132,15 @@ func StartRegisteredUserServices(
 	// are 1:1 with serviceUUIDs
 	if len(serviceConfigsToStart) == 0 {
 		return successfulServicesPool, failedServicesPool, nil
+	}
+
+	for _, serviceRegistrationToStart := range serviceRegistrationsToStart {
+		if serviceRegistrationToStart.GetStatus() == service.ServiceStatus_Stopped {
+			// If the first service to start is stopped, we know that the other ones are too because
+			// of a check done at the service network layer.
+			// Restarting stopped services is a much lighter operation so we branch out to a simpler function
+			return restartUserServices(ctx, enclaveUuid, serviceRegistrationsToStart, dockerManager)
+		}
 	}
 
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
