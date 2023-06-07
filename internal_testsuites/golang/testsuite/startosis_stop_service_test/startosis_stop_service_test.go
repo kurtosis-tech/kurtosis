@@ -2,6 +2,7 @@ package startosis_remove_service_test
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -82,7 +83,7 @@ Service example-datastore-server-1 deployed successfully.
 
 	logrus.Infof("Validated that all services are healthy")
 
-	// we run the stop script and validate that the service is unreachable
+	// we run the stop script and validate that the service is unreachable.
 	runResult, err = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, removeScript)
 	require.NoError(t, err, "Unexpected error executing stop script")
 
@@ -100,8 +101,18 @@ Service example-datastore-server-1 deployed successfully.
 		"Error validating datastore server '%s' is not healthy",
 		serviceName,
 	)
+	
+	logrus.Infof("Validated that the service is stopped")
 
 	// Ensure that the service is still there.
 	_, err = enclaveCtx.GetServiceContext(serviceName)
 	require.Nil(t, err)
+
+	// we run the stop script one more time and validate that an error is returned since the service is already stopped.
+	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, removeScript)
+	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
+	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
+	require.NotEmpty(t, runResult.ExecutionError, "Expected execution error coming from already stopped service")
+	expectedErrorStr := fmt.Sprintf("Service '%v' is already stopped", serviceName)
+	require.Contains(t, runResult.ExecutionError.ErrorMessage, expectedErrorStr)
 }
