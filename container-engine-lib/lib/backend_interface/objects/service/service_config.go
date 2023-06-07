@@ -103,10 +103,12 @@ func (serviceConfig *ServiceConfig) GetPrivateIPAddrPlaceholder() string {
 	return serviceConfig.privateIPAddrPlaceholder
 }
 
+// only available for Kubernetes
 func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
 	return serviceConfig.minCpuAllocationMilliCpus
 }
 
+// only available for Kubernetes
 func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.minMemoryAllocationMegabytes
 }
