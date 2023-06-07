@@ -37,7 +37,6 @@ func WrapKurtosisBaseBuiltin(baseBuiltin *KurtosisBaseBuiltin, thread *starlark.
 	}
 
 	printWarningForArguments(arguments.GetDefinition(), baseBuiltin)
-
 	// Second store the position at which the builtin is called within the source script
 	callFrame := thread.CallStack().At(1)
 	position := NewKurtosisBuiltinPosition(callFrame.Pos.Filename(), callFrame.Pos.Line, callFrame.Pos.Col)

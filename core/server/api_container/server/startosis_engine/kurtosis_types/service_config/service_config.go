@@ -28,6 +28,10 @@ const (
 	CpuAllocationAttr               = "cpu_allocation"
 	MemoryAllocationAttr            = "memory_allocation"
 	ReadyConditionsAttr             = "ready_conditions"
+	MinCpuMilliCoresAttr            = "min_cpu"
+	MinMemoryMegaBytesAttr          = "min_memory"
+	MaxCpuMilliCoresAttr            = "max_cpu"
+	MaxMemoryMegaBytesAttr          = "max_memory"
 )
 
 func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -111,6 +115,34 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.Uint64InRange(value, MemoryAllocationAttr, 6, math.MaxUint64)
 					},
+				},
+				{
+					Name:              MaxCpuMilliCoresAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.Uint64InRange(value, CpuAllocationAttr, 0, math.MaxUint64)
+					},
+				},
+				{
+					Name:              MinCpuMilliCoresAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
+					Validator:         nil,
+				},
+				{
+					Name:              MaxMemoryMegaBytesAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.Uint64InRange(value, MemoryAllocationAttr, 6, math.MaxUint64)
+					},
+				},
+				{
+					Name:              MinMemoryMegaBytesAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Int],
+					Validator:         nil,
 				},
 				{
 					Name:              ReadyConditionsAttr,
@@ -258,28 +290,80 @@ func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.S
 		builder.WithSubnetwork(subnetworkStarlark.GoString())
 	}
 
-	cpuAllocationStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, CpuAllocationAttr)
+	maxCpuStarlark, foundMaxCpu, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MaxCpuMilliCoresAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	if found {
-		cpuAllocation, ok := cpuAllocationStarlark.Uint64()
+	if foundMaxCpu {
+		maxCpu, ok := maxCpuStarlark.Uint64()
 		if !ok {
-			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", CpuAllocationAttr, cpuAllocationStarlark)
+			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MaxCpuMilliCoresAttr, maxCpuStarlark)
 		}
-		builder.WithCpuAllocationMillicpus(cpuAllocation)
+		builder.WithMaxCpuMilliCores(maxCpu)
 	}
 
-	memoryAllocationStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MemoryAllocationAttr)
+	if !foundMaxCpu {
+		cpuAllocationStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, CpuAllocationAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+		if found {
+			cpuAllocation, ok := cpuAllocationStarlark.Uint64()
+			if !ok {
+				return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", CpuAllocationAttr, cpuAllocationStarlark)
+			}
+			builder.WithMaxCpuMilliCores(cpuAllocation)
+		}
+	}
+
+	maxMemoryStarlark, foundMaxMemory, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MaxMemoryMegaBytesAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found {
-		memoryAllocation, ok := memoryAllocationStarlark.Uint64()
+		maxMemory, ok := maxMemoryStarlark.Uint64()
 		if !ok {
-			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MemoryAllocationAttr, memoryAllocationStarlark)
+			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MaxMemoryMegaBytesAttr, maxMemoryStarlark)
 		}
-		builder.WithMemoryAllocationMegabytes(memoryAllocation)
+		builder.WithMaxMemoryMegabytes(maxMemory)
+	}
+
+	if !foundMaxMemory {
+		memoryAllocationStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MemoryAllocationAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+		if found {
+			memoryAllocation, ok := memoryAllocationStarlark.Uint64()
+			if !ok {
+				return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MemoryAllocationAttr, memoryAllocationStarlark)
+			}
+			builder.WithMaxMemoryMegabytes(memoryAllocation)
+		}
+	}
+
+	minCpuStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MinCpuMilliCoresAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		minCpu, ok := minCpuStarlark.Uint64()
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MinCpuMilliCoresAttr, minCpuStarlark)
+		}
+		builder.WithMinCpuMilliCores(minCpu)
+	}
+
+	minMemoryStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MinMemoryMegaBytesAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found {
+		minMemory, ok := minMemoryStarlark.Uint64()
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MinMemoryMegaBytesAttr, minMemoryStarlark)
+		}
+		builder.WithMinMemoryMegabytes(minMemory)
 	}
 
 	return builder.Build(), nil

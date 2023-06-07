@@ -34,9 +34,9 @@ func TestServiceConfigBuilderFrom_Invariant(t *testing.T) {
 		map[string]string{
 			"/path/to/file": "artifact",
 		},
-	).WithCpuAllocationMillicpus(
+	).WithMaxCpuMilliCores(
 		1000,
-	).WithMemoryAllocationMegabytes(
+	).WithMaxMemoryMegabytes(
 		1024,
 	).WithPrivateIPAddressPlaceholder(
 		"<IP_ADDRESS>",

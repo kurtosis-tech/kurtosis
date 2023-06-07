@@ -43,7 +43,10 @@ func NewServiceConfig(
 	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
-	privateIPAddrPlaceholder string) *ServiceConfig {
+	privateIPAddrPlaceholder string,
+	minCpuMilliCores uint64,
+	minMemoryMegaBytes uint64,
+) *ServiceConfig {
 
 	return &ServiceConfig{
 		containerImageName:        containerImageName,
@@ -56,10 +59,9 @@ func NewServiceConfig(
 		cpuAllocationMillicpus:    cpuAllocationMillicpus,
 		memoryAllocationMegabytes: memoryAllocationMegabytes,
 		privateIPAddrPlaceholder:  privateIPAddrPlaceholder,
-		// TODO: WILL CHANGE THIS IN NEXT PR
 		// The minimum resources specification is only available for kubernetes
-		minCpuAllocationMilliCpus:    cpuAllocationMillicpus,
-		minMemoryAllocationMegabytes: memoryAllocationMegabytes,
+		minCpuAllocationMilliCpus:    minCpuMilliCores,
+		minMemoryAllocationMegabytes: minMemoryMegaBytes,
 	}
 }
 

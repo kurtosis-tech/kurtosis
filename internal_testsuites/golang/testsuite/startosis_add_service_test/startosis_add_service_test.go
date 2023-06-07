@@ -29,8 +29,9 @@ def run(plan):
 	
 	config = ServiceConfig(
 		image = CONTAINER_IMAGE,
-		cpu_allocation=500,
+		max_cpu=500,
 		memory_allocation=256,
+		max_memory=1024,
 		ports = {
 			"grpc": PortSpec(number = GRPC_PORT, transport_protocol = "TCP")
 		}

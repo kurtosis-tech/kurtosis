@@ -30,15 +30,17 @@ func NewPort(
 func NewServiceConfig(
 	containerImageName string,
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
+	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	entrypointArgs []string, cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactMountDirpaths map[string]string,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 	privateIPAddrPlaceholder string,
-	subnetwork string) *kurtosis_core_rpc_api_bindings.ServiceConfig {
+	subnetwork string,
+	minCpuMilliCores uint64,
+	minMemoryMegaBytes uint64,
+) *kurtosis_core_rpc_api_bindings.ServiceConfig {
 	return &kurtosis_core_rpc_api_bindings.ServiceConfig{
 		ContainerImageName:        containerImageName,
 		PrivatePorts:              privatePorts,
@@ -51,6 +53,8 @@ func NewServiceConfig(
 		MemoryAllocationMegabytes: memoryAllocationMegabytes,
 		PrivateIpAddrPlaceholder:  privateIPAddrPlaceholder,
 		Subnetwork:                &subnetwork,
+		MinCpuMilliCores:          minCpuMilliCores,
+		MinMemoryMegabytes:        minMemoryMegaBytes,
 	}
 }
 

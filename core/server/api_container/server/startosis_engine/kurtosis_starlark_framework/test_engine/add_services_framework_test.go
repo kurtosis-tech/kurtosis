@@ -50,7 +50,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 			actualServiceConfig1 := services.NewServiceConfigBuilderFromServiceConfig(configs[TestServiceName]).Build()
 			assert.Equal(t, expectedServiceConfig1, actualServiceConfig1)
 			actualServiceConfig2 := services.NewServiceConfigBuilderFromServiceConfig(configs[TestServiceName2]).Build()
-			expectedServiceConfig2 := services.NewServiceConfigBuilder(TestContainerImageName).WithCpuAllocationMillicpus(TestCpuAllocation).WithMemoryAllocationMegabytes(TestMemoryAllocation).Build()
+			expectedServiceConfig2 := services.NewServiceConfigBuilder(TestContainerImageName).WithMaxCpuMilliCores(TestCpuAllocation).WithMaxMemoryMegabytes(TestMemoryAllocation).Build()
 			assert.Equal(t, expectedServiceConfig2, actualServiceConfig2)
 			return true
 		}),

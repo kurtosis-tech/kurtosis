@@ -64,6 +64,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisTypeConstructor(t, newPostHttpRequestRecipeMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceConfigFullTestCaseBackwardCompatible(t))
 	testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
 	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 	testKurtosisTypeConstructor(t, newReadyConditionsHttpRecipeTestCase(t))

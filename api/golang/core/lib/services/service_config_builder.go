@@ -23,10 +23,17 @@ type ServiceConfigBuilder struct {
 	cmdArgs                    []string
 	envVars                    map[string]string
 	filesArtifactMountDirpaths map[string]string
-	cpuAllocationMillicpus     uint64
-	memoryAllocationMegabytes  uint64
-	privateIPAddrPlaceholder   string
-	subnetwork                 string
+
+	// these two fields will be deprecated soon
+	maxCpuMilliCores   uint64
+	maxMemoryMegabytes uint64
+
+	// these two fields are only applicable for kubernetes
+	minCpuMilliCores   uint64
+	minMemoryMegabytes uint64
+
+	privateIPAddrPlaceholder string
+	subnetwork               string
 }
 
 func NewServiceConfigBuilder(containerImageName string) *ServiceConfigBuilder {
@@ -38,8 +45,10 @@ func NewServiceConfigBuilder(containerImageName string) *ServiceConfigBuilder {
 		cmdArgs:                    nil,
 		envVars:                    map[string]string{},
 		filesArtifactMountDirpaths: map[string]string{},
-		cpuAllocationMillicpus:     0,
-		memoryAllocationMegabytes:  0,
+		maxCpuMilliCores:           0,
+		maxMemoryMegabytes:         0,
+		minMemoryMegabytes:         0,
+		minCpuMilliCores:           0,
 		privateIPAddrPlaceholder:   defaultPrivateIPAddrPlaceholder,
 		subnetwork:                 defaultSubnetwork,
 	}
@@ -56,9 +65,11 @@ func NewServiceConfigBuilderFromServiceConfig(serviceConfig *kurtosis_core_rpc_a
 		cmdArgs:                    copySlice(serviceConfig.CmdArgs),
 		envVars:                    copyMap(serviceConfig.EnvVars),
 		filesArtifactMountDirpaths: copyMap(serviceConfig.FilesArtifactMountpoints),
-		cpuAllocationMillicpus:     serviceConfig.CpuAllocationMillicpus,
-		memoryAllocationMegabytes:  serviceConfig.MemoryAllocationMegabytes,
+		maxCpuMilliCores:           serviceConfig.CpuAllocationMillicpus,
+		maxMemoryMegabytes:         serviceConfig.MemoryAllocationMegabytes,
 		privateIPAddrPlaceholder:   serviceConfig.PrivateIpAddrPlaceholder,
+		minMemoryMegabytes:         serviceConfig.MinMemoryMegabytes,
+		minCpuMilliCores:           serviceConfig.MinCpuMilliCores,
 		subnetwork:                 *serviceConfig.Subnetwork,
 	}
 }
@@ -108,13 +119,23 @@ func (builder *ServiceConfigBuilder) WithSubnetwork(subnetwork string) *ServiceC
 	return builder
 }
 
-func (builder *ServiceConfigBuilder) WithCpuAllocationMillicpus(cpuAllocationMillicpus uint64) *ServiceConfigBuilder {
-	builder.cpuAllocationMillicpus = cpuAllocationMillicpus
+func (builder *ServiceConfigBuilder) WithMaxCpuMilliCores(maxCpuMilliCores uint64) *ServiceConfigBuilder {
+	builder.maxCpuMilliCores = maxCpuMilliCores
 	return builder
 }
 
-func (builder *ServiceConfigBuilder) WithMemoryAllocationMegabytes(memoryAllocationMegabytes uint64) *ServiceConfigBuilder {
-	builder.memoryAllocationMegabytes = memoryAllocationMegabytes
+func (builder *ServiceConfigBuilder) WithMaxMemoryMegabytes(maxMemoryMegabytes uint64) *ServiceConfigBuilder {
+	builder.maxMemoryMegabytes = maxMemoryMegabytes
+	return builder
+}
+
+func (builder *ServiceConfigBuilder) WithMinCpuMilliCores(minCpuMilliCores uint64) *ServiceConfigBuilder {
+	builder.minCpuMilliCores = minCpuMilliCores
+	return builder
+}
+
+func (builder *ServiceConfigBuilder) WithMinMemoryMegabytes(minMemoryMegabytes uint64) *ServiceConfigBuilder {
+	builder.minMemoryMegabytes = minMemoryMegabytes
 	return builder
 }
 
@@ -127,10 +148,12 @@ func (builder *ServiceConfigBuilder) Build() *kurtosis_core_rpc_api_bindings.Ser
 		builder.cmdArgs,
 		builder.envVars,
 		builder.filesArtifactMountDirpaths,
-		builder.cpuAllocationMillicpus,
-		builder.memoryAllocationMegabytes,
+		builder.maxCpuMilliCores,
+		builder.maxMemoryMegabytes,
 		builder.privateIPAddrPlaceholder,
 		builder.subnetwork,
+		builder.minCpuMilliCores,
+		builder.minMemoryMegabytes,
 	)
 }
 
@@ -190,7 +213,10 @@ func GetServiceConfigStarlark(
 	subnetwork string,
 	privateIpAddrPlaceholder string,
 	cpuAllocationMillicpus int,
-	memoryAllocationMegabytes int) string {
+	memoryAllocationMegabytes int,
+	minCpuMilliCores int,
+	minMemoryMegaBytes int,
+) string {
 	starlarkFields := []string{}
 
 	starlarkFields = append(starlarkFields, fmt.Sprintf(`image=%q`, containerImageName))
@@ -237,5 +263,12 @@ func GetServiceConfigStarlark(
 	if memoryAllocationMegabytes != 0 {
 		starlarkFields = append(starlarkFields, fmt.Sprintf(`memory_allocation=%d`, memoryAllocationMegabytes))
 	}
+	if minCpuMilliCores != 0 {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`min_cpu=%d`, minCpuMilliCores))
+	}
+	if minMemoryMegaBytes != 0 {
+		starlarkFields = append(starlarkFields, fmt.Sprintf(`min_memory=%d`, minMemoryMegaBytes))
+	}
+
 	return fmt.Sprintf("ServiceConfig(%s)", strings.Join(starlarkFields, ","))
 }

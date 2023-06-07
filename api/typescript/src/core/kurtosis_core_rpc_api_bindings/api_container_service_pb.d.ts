@@ -121,6 +121,12 @@ export class ServiceConfig extends jspb.Message {
   hasSubnetwork(): boolean;
   clearSubnetwork(): ServiceConfig;
 
+  getMinCpuMilliCores(): number;
+  setMinCpuMilliCores(value: number): ServiceConfig;
+
+  getMinMemoryMegabytes(): number;
+  setMinMemoryMegabytes(value: number): ServiceConfig;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceConfig.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceConfig): ServiceConfig.AsObject;
@@ -142,6 +148,8 @@ export namespace ServiceConfig {
     memoryAllocationMegabytes: number,
     privateIpAddrPlaceholder: string,
     subnetwork?: string,
+    minCpuMilliCores: number,
+    minMemoryMegabytes: number,
   }
 
   export enum SubnetworkCase { 

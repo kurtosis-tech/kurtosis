@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = (function() {
-  if (this) { return this; }
-  if (typeof window !== 'undefined') { return window; }
-  if (typeof global !== 'undefined') { return global; }
-  if (typeof self !== 'undefined') { return self; }
-  return Function('return this')();
-}.call(null));
+var global = Function('return this')();
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
@@ -1743,7 +1737,9 @@ proto.api_container_api.ServiceConfig.toObject = function(includeInstance, msg) 
     cpuAllocationMillicpus: jspb.Message.getFieldWithDefault(msg, 8, 0),
     memoryAllocationMegabytes: jspb.Message.getFieldWithDefault(msg, 9, 0),
     privateIpAddrPlaceholder: jspb.Message.getFieldWithDefault(msg, 10, ""),
-    subnetwork: jspb.Message.getFieldWithDefault(msg, 11, "")
+    subnetwork: jspb.Message.getFieldWithDefault(msg, 11, ""),
+    minCpuMilliCores: jspb.Message.getFieldWithDefault(msg, 12, 0),
+    minMemoryMegabytes: jspb.Message.getFieldWithDefault(msg, 13, 0)
   };
 
   if (includeInstance) {
@@ -1831,6 +1827,14 @@ proto.api_container_api.ServiceConfig.deserializeBinaryFromReader = function(msg
     case 11:
       var value = /** @type {string} */ (reader.readString());
       msg.setSubnetwork(value);
+      break;
+    case 12:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setMinCpuMilliCores(value);
+      break;
+    case 13:
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setMinMemoryMegabytes(value);
       break;
     default:
       reader.skipField();
@@ -1923,6 +1927,20 @@ proto.api_container_api.ServiceConfig.serializeBinaryToWriter = function(message
   if (f != null) {
     writer.writeString(
       11,
+      f
+    );
+  }
+  f = message.getMinCpuMilliCores();
+  if (f !== 0) {
+    writer.writeUint64(
+      12,
+      f
+    );
+  }
+  f = message.getMinMemoryMegabytes();
+  if (f !== 0) {
+    writer.writeUint64(
+      13,
       f
     );
   }
@@ -2196,6 +2214,42 @@ proto.api_container_api.ServiceConfig.prototype.clearSubnetwork = function() {
  */
 proto.api_container_api.ServiceConfig.prototype.hasSubnetwork = function() {
   return jspb.Message.getField(this, 11) != null;
+};
+
+
+/**
+ * optional uint64 min_cpu_milli_cores = 12;
+ * @return {number}
+ */
+proto.api_container_api.ServiceConfig.prototype.getMinCpuMilliCores = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 12, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.ServiceConfig} returns this
+ */
+proto.api_container_api.ServiceConfig.prototype.setMinCpuMilliCores = function(value) {
+  return jspb.Message.setProto3IntField(this, 12, value);
+};
+
+
+/**
+ * optional uint64 min_memory_megabytes = 13;
+ * @return {number}
+ */
+proto.api_container_api.ServiceConfig.prototype.getMinMemoryMegabytes = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 13, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.api_container_api.ServiceConfig} returns this
+ */
+proto.api_container_api.ServiceConfig.prototype.setMinMemoryMegabytes = function(value) {
+  return jspb.Message.setProto3IntField(this, 13, value);
 };
 
 
