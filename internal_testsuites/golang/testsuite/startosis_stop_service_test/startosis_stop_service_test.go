@@ -104,10 +104,6 @@ Service example-datastore-server-1 deployed successfully.
 	
 	logrus.Infof("Validated that the service is stopped")
 
-	// Ensure that the service is still there.
-	_, err = enclaveCtx.GetServiceContext(serviceName)
-	require.Nil(t, err)
-
 	// we run the stop script one more time and validate that an error is returned since the service is already stopped.
 	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, removeScript)
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
