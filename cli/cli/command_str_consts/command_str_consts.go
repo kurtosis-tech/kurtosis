@@ -52,6 +52,7 @@ const (
 	PortalStopCmdStr        = "stop"
 	ServiceCmdStr           = "service"
 	ServiceAddCmdStr        = "add"
+	ServiceExecCmdStr       = "exec"
 	ServiceLogsCmdStr       = "logs"
 	ServiceRmCmdStr         = "rm"
 	ServiceShellCmdStr      = "shell"

@@ -44,6 +44,8 @@ GO_MOD_FILE_MODULE_KEYWORD="module"  # Keyword in the go.mod file for specifying
 NODE_GRPC_TOOLS_PROTOC_BIN_FILENAME="grpc_tools_node_protoc"    # For some reason, Node gRPC has its own 'protoc' binary
 NODE_GRPC_TOOLS_PROTOC_PLUGIN_BIN_FILENAME="grpc_tools_node_protoc_plugin"  # The name of the plugin binary that will be used by 'protoc'
 NODE_GRPC_TOOLS_INSTALL_COMMAND="npm install -g grpc-tools"
+WEB_GRPC_PROTOC_BIN_FILENAME="protoc-gen-grpc-web"
+WEB_GRPC_INSTALL_COMMAND="brew install protoc-gen-grpc-web"
 
 # ==================================================================================================
 #                                           Main Logic
@@ -204,6 +206,14 @@ generate_typescript_bindings() {
         echo "Error: Got an empty filepath when looking for the Node gRPC tools protoc binary '${NODE_GRPC_TOOLS_PROTOC_BIN_FILENAME}'; have you installed the tools with '${NODE_GRPC_TOOLS_INSTALL_COMMAND}'?" >&2
         return 1
     fi
+    if ! web_protoc_bin_filepath="$(which "${WEB_GRPC_PROTOC_BIN_FILENAME}")"; then
+        echo "Error: Couldn't find gRPC Web tool protoc binary '${WEB_GRPC_PROTOC_BIN_FILENAME}' on the PATH; have you installed the tools with '${WEB_GRPC_INSTALL_COMMAND}'?" >&2
+        return 1
+    fi
+    if [ -z "${web_protoc_bin_filepath}" ]; then
+        echo "Error: Got an empty filepath when looking for the gRPC Web tool protoc binary '${WEB_GRPC_PROTOC_BIN_FILENAME}'; have you installed the tools with '${WEB_GRPC_INSTALL_COMMAND}'?" >&2
+        return 1
+    fi
     if ! node_protoc_plugin_bin_filepath="$(which "${NODE_GRPC_TOOLS_PROTOC_PLUGIN_BIN_FILENAME}")"; then
         echo "Error: Couldn't find Node gRPC tools protoc plugin binary '${NODE_GRPC_TOOLS_PROTOC_PLUGIN_BIN_FILENAME}' on the PATH; have you installed the tools with '${NODE_GRPC_TOOLS_INSTALL_COMMAND}'?" >&2
         return 1
@@ -225,6 +235,15 @@ generate_typescript_bindings() {
                 "--ts_out=service=grpc-node,mode=grpc-js:${output_abs_dirpath}" \
                 "${input_filepath}"; then
             echo "Error: An error occurred generating TypeScript Node bindings for file '${input_filepath}'" >&2
+            return 1
+        fi
+        # NOTE: Generating Web bindings
+        if ! "${node_protoc_bin_filepath}" \
+                -I="${input_abs_dirpath}" \
+                "--js_out=import_style=commonjs:${output_abs_dirpath}" \
+                "--grpc-web_out=import_style=commonjs+dts,mode=grpcwebtext:${output_abs_dirpath}" \
+                "${input_filepath}"; then
+            echo "Error: An error occurred generating TypeScript Web bindings for file '${input_filepath}'" >&2
             return 1
         fi
     done
