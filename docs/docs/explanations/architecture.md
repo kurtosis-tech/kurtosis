@@ -92,7 +92,7 @@ def run(plan, args):
 
 For a list of all the Kurtosis Starlark instructions, [see here][starlark-code-reference].
 
-Client Libraries or SDK
+SDK
 ----------------
 All interactions with Kurtosis happen through API requests to the Kurtosis containers. To assist with calling the API, [we provide an SDK in various languages](https://github.com/kurtosis-tech/kurtosis/tree/main/api). Anything the Kurtosis can do will be available via the API and, therefore, via the SDK.
 
