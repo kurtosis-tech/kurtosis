@@ -373,7 +373,7 @@ We’d love to hear from you on what went well for you, what could be improved, 
 ### Other exercises you can do with your Cassandra cluster
 With your parameterized, reusable environment definition for a multi-node Cassandra cluster, feel free to:
 * Turn your local `main.star` file into a runnable Kurtosis package and upload it on Github for others to use following [these instructions][runnable-packages]
-* Use our [Go or Typescript SDK][sdk] to write backend integration tests, like this [network partitioning test][network-partitioning-test]
+* Use our [Go or Typescript SDK][sdk-reference] to write backend integration tests, like this [network partitioning test][network-partitioning-test]
 
 ### Other examples
 We encourage you to check out our [quickstart][quickstart] (where you’ll build a postgres database and API on top) and our other examples in our [awesome-kurtosis repository][awesome-kurtosis] where you will find other Kurtosis packages for you to check out as well, including a package that spins up a local [Ethereum testnet][eth-package-example] or one that sets up a [voting app using a Redis cluster][redis-package-example]. 
@@ -387,7 +387,7 @@ We encourage you to check out our [quickstart][quickstart] (where you’ll build
 [kurtosis-yml]: ../concepts-reference/kurtosis-yml.md
 [locator]: ../concepts-reference/locators.md
 [packages]: ../concepts-reference/packages.md
-[sdk]: ../client-libs-reference.md
+[sdk-reference]: ../sdk.md
 [network-partitioning-test]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/cassandra-network-partition-test
 [redis-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app
 [eth-package-example]: https://github.com/kurtosis-tech/eth-network-package
