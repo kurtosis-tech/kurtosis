@@ -1377,4 +1377,3 @@ export namespace ListFilesArtifactNamesAndUuidsResponse {
     fileNamesAndUuidsList: Array<FilesArtifactNameAndUuid.AsObject>,
   }
 }
-
