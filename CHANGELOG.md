@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.77.3](https://github.com/kurtosis-tech/kurtosis/compare/0.77.2...0.77.3) (2023-06-08)
+
+
+### Features
+
+* Add `kurtosis service exec` command ([#690](https://github.com/kurtosis-tech/kurtosis/issues/690)) ([ece4937](https://github.com/kurtosis-tech/kurtosis/commit/ece49371552f0f9c03fe73b879363c0599f65106))
+
 ## [0.77.2](https://github.com/kurtosis-tech/kurtosis/compare/0.77.1...0.77.2) (2023-06-08)
 
 
