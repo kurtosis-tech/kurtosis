@@ -34,7 +34,7 @@ func TestStartosisPackage_NoMainInMainStar(t *testing.T) {
 	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
 	expectedInterpretationErr := "No 'run' function found in file 'github.com/sample/sample-kurtosis-package/main.star'; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in the main.star file of any Kurtosis package"
-	runResult, _ := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, emptyRunParams, defaultDryRun, defaultParallelism)
+	runResult, _ := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism)
 	require.NotNil(t, runResult.InterpretationError)
 	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), expectedInterpretationErr)
 	require.Empty(t, runResult.ValidationErrors)

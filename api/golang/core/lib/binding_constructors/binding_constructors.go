@@ -65,7 +65,13 @@ func NewUpdateServiceConfig(subnetwork string) *kurtosis_core_rpc_api_bindings.U
 //	Execute Starlark Arguments
 //
 // ==============================================================================================
-func NewRunStarlarkScriptArgs(serializedString string, serializedParams string, dryRun bool, parallelism int32) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
+func NewRunStarlarkScriptArgs(
+	mainFunctionName string,
+	serializedString string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
@@ -73,10 +79,18 @@ func NewRunStarlarkScriptArgs(serializedString string, serializedParams string, 
 		SerializedParams: serializedParams,
 		DryRun:           &dryRun,
 		Parallelism:      parallelismCopy,
+		MainFunctionName: mainFunctionName,
 	}
 }
 
-func NewRunStarlarkPackageArgs(packageId string, serializedParams string, dryRun bool, parallelism int32) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
+func NewRunStarlarkPackageArgs(
+	packageId string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	clonePackage := false
@@ -87,6 +101,8 @@ func NewRunStarlarkPackageArgs(packageId string, serializedParams string, dryRun
 		SerializedParams:       serializedParams,
 		DryRun:                 &dryRun,
 		Parallelism:            parallelismCopy,
+		RelativePathToMainFile: relativePathToMainFile,
+		MainFunctionName:       mainFunctionName,
 	}
 }
 

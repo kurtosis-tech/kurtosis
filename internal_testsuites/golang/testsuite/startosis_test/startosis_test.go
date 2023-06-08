@@ -93,6 +93,7 @@ def run(plan, args):
 	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 	return {"ip-address": deployed_service.ip_address}
 `
+	useDefaultMainFile = ""
 )
 
 func TestStartosis(t *testing.T) {
@@ -107,7 +108,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, greetingsArg, defaultDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, startosisScript, greetingsArg, defaultDryRun, defaultParallelism)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
