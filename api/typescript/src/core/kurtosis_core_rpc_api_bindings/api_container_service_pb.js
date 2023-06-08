@@ -2887,10 +2887,10 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.setPackageId = function
 
 /**
  * optional bytes local = 3;
- * @return {!(string|Uint8Array)}
+ * @return {string}
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.getLocal = function() {
-  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 3, ""));
 };
 
 
@@ -8756,10 +8756,10 @@ proto.api_container_api.StreamedDataChunk.serializeBinaryToWriter = function(mes
 
 /**
  * optional bytes data = 1;
- * @return {!(string|Uint8Array)}
+ * @return {string}
  */
 proto.api_container_api.StreamedDataChunk.prototype.getData = function() {
-  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
@@ -9107,10 +9107,10 @@ proto.api_container_api.UploadFilesArtifactArgs.serializeBinaryToWriter = functi
 
 /**
  * optional bytes data = 1;
- * @return {!(string|Uint8Array)}
+ * @return {string}
  */
 proto.api_container_api.UploadFilesArtifactArgs.prototype.getData = function() {
-  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
@@ -9569,10 +9569,10 @@ proto.api_container_api.DownloadFilesArtifactResponse.serializeBinaryToWriter = 
 
 /**
  * optional bytes data = 1;
- * @return {!(string|Uint8Array)}
+ * @return {string}
  */
 proto.api_container_api.DownloadFilesArtifactResponse.prototype.getData = function() {
-  return /** @type {!(string|Uint8Array)} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
 };
 
 
