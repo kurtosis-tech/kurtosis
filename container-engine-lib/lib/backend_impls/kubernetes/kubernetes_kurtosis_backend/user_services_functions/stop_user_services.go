@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 func StopUserServices(
@@ -43,6 +44,22 @@ func StopUserServices(
 				)
 				continue
 			}
+		}
+
+		kubernetesService := resources.Service
+		serviceName := kubernetesService.Name
+		updateConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
+			specUpdates := applyconfigurationsv1.ServiceSpec().WithSelector(nil)
+			updatesToApply.WithSpec(specUpdates)
+		}
+		if _, err := kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updateConfigurator); err != nil {
+			erroredUuids[serviceUuid] = stacktrace.Propagate(
+				err,
+				"An error occurred updating service '%v' in namespace '%v' to reflect that it's no longer running",
+				serviceName,
+				namespaceName,
+			)
+			continue
 		}
 
 		successfulUuids[serviceUuid] = true

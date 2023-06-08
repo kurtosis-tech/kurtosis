@@ -39,7 +39,7 @@ const (
 )
 
 var (
-	apiContainerLogLevel = logrus.TraceLevel
+	apiContainerLogLevel = logrus.DebugLevel
 
 	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
 )

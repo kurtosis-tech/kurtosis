@@ -89,8 +89,6 @@ Service example-datastore-server-1 deployed successfully.
 
 	logrus.Infof("Validated that all services are healthy")
 
-	// return
-
 	// we run the start script and validate that an error is returned since the service is already started.
 	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, startScript)
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
@@ -138,6 +136,8 @@ Service example-datastore-server-1 deployed successfully.
 		"Error validating datastore server '%s' is healthy",
 		serviceName,
 	)
+
+	logrus.Infof("Validated that the service is started")
 
 	// we run the start script and validate that an error is returned since the service is already started.
 	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, startScript)

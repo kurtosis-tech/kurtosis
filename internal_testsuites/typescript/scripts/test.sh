@@ -16,11 +16,12 @@ TESTSUITE_CLUSTER_BACKEND_MINIKUBE="minikube"
 DEFAULT_TESTSUITE_CLUSTER_BACKEND="${TESTSUITE_CLUSTER_BACKEND_DOCKER}"
 
 # Pattern for tests to ignore when running against kubernetes
-# Four tests are ignored
-# network_partition_test,network_soft_partition_test - Networking partitioning is not implemented in kubernetes
+# Four groups of tests are ignored
+# network_partition_starlark,network_partition_test,network_soft_partition_test - Networking partitioning is not implemented in kubernetes
 # service_pause_test - Service pausing not implemented in Kubernetes
-# stream_log_test - The centralized logs feature is not implemented in Kubernetes yet
-KUBERNETES_TEST_IGNORE_PATTERNS="/build/testsuite/(network_partition_starlark|network_partition_test|network_soft_partition_test|service_pause_test|stream_log_test|search_logs_test)"
+# stream_log_test,search_log_test - The centralized logs feature is not implemented in Kubernetes yet
+# start_service_test - The start service feature does not work in Kubernetes due to a required update in the gateway
+KUBERNETES_TEST_IGNORE_PATTERNS="/build/testsuite/(network_partition_starlark|network_partition_test|network_soft_partition_test|service_pause_test|stream_log_test|search_logs_test|start_service_test)"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation

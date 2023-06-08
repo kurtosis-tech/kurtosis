@@ -1563,12 +1563,13 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 }
 
 func (manager *KubernetesManager) waitForPodTermination(ctx context.Context, namespaceName string, podName string) error {
-	// Wait for the pod to start running
 	deadline := time.Now().Add(podWaitForTerminationTimeout)
 	var latestPodStatus *apiv1.PodStatus
 	for time.Now().Before(deadline) {
 		pod, err := manager.GetPod(ctx, namespaceName, podName)
 		if err != nil {
+			// The pod info is not always available after deletion so we handle that gracefully
+			logrus.Warnf("An error occured trying to retrieve the just-deleted pod '%v': %v", podName, err)
 			return nil
 		}
 

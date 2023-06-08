@@ -326,23 +326,21 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 		serviceUuid := service.ServiceUUID(serviceGuidStr)
 
 		numPodsForGuid := len(kubernetesPodsForGuid)
-		if numPodsForGuid == 0 {
-			continue
-		}
 		if numPodsForGuid > 1 {
 			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", numPodsForGuid, serviceUuid)
-		}
-		kubernetesPod := kubernetesPodsForGuid[0]
+		} else if numPodsForGuid == 1 {
+			kubernetesPod := kubernetesPodsForGuid[0]
 
-		resultObj, found := results[serviceUuid]
-		if !found {
-			resultObj = &UserServiceKubernetesResources{
-				Service: nil,
-				Pod:     nil,
+			resultObj, found := results[serviceUuid]
+			if !found {
+				resultObj = &UserServiceKubernetesResources{
+					Service: nil,
+					Pod:     nil,
+				}
 			}
+			resultObj.Pod = kubernetesPod
+			results[serviceUuid] = resultObj
 		}
-		resultObj.Pod = kubernetesPod
-		results[serviceUuid] = resultObj
 	}
 
 	return results, nil
@@ -489,7 +487,7 @@ func GetPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, e
 		return nil, stacktrace.Propagate(err, "An error occurred deserializing private port specs string '%v'", privatePortSpecs)
 	}
 
-	if expectedPortIds != nil && len(expectedPortIds) > 0 {
+	if len(expectedPortIds) > 0 {
 		for portId := range expectedPortIds {
 			if _, found := privatePortSpecs[portId]; !found {
 				return nil, stacktrace.NewError("Missing private port with ID '%v' in the private ports", portId)

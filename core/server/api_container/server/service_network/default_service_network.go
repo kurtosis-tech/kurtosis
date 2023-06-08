@@ -640,6 +640,7 @@ func (network *DefaultServiceNetwork) RemoveService(
 	if !found {
 		return "", stacktrace.NewError("No service found with ID '%v'", serviceName)
 	}
+	serviceUuid := serviceToRemove.GetUUID()
 
 	err = network.topology.RemoveService(serviceName)
 	if err != nil {
@@ -648,26 +649,17 @@ func (network *DefaultServiceNetwork) RemoveService(
 
 	network.cleanupInternalMapsUnlocked(serviceName)
 
-	serviceUuid := serviceToRemove.GetUUID()
-	serviceUuids := map[service.ServiceUUID]bool{
-		serviceUuid: true,
-	}
+	// We stop the service, rather than destroying it, so that we can keep logs around
 	stopServiceFilters := &service.ServiceFilters{
 		Names: nil,
-		UUIDs: serviceUuids,
+		UUIDs: map[service.ServiceUUID]bool{
+			serviceUuid: true,
+		},
 		Statuses: nil,
 	}
 	_, erroredUuids, err := network.kurtosisBackend.StopUserServices(ctx, network.enclaveUuid, stopServiceFilters)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred during the call to stop service '%v'", serviceUuid)
-	}
-	if err, found := erroredUuids[serviceUuid]; found {
-		return "", stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceUuid)
-	}
-
-	_, erroredUuids, err = network.kurtosisBackend.UnregisterUserServices(ctx, network.enclaveUuid, serviceUuids)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred during the call to unregister service '%v'", serviceUuid)
 	}
 	if err, found := erroredUuids[serviceUuid]; found {
 		return "", stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceUuid)
