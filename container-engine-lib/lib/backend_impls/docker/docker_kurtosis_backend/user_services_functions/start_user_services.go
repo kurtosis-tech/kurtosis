@@ -122,7 +122,6 @@ func StartRegisteredUserServices(
 		}
 		serviceConfigsToStart[serviceUuid] = serviceConfig
 		serviceRegistrationsToStart[serviceUuid] = serviceRegistration
-		serviceRegistration.SetConfig(serviceConfig)
 	}
 
 	// If no services had successful registrations, return immediately

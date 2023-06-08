@@ -1,4 +1,4 @@
-package stop_service
+package start_service
 
 import (
 	"context"
@@ -15,15 +15,15 @@ import (
 )
 
 const (
-	StopServiceBuiltinName = "stop_service"
+	StartServiceBuiltinName = "start_service"
 
 	ServiceNameArgName = "name"
 )
 
-func NewStopService(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewStartService(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
-			Name: StopServiceBuiltinName,
+			Name: StartServiceBuiltinName,
 
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
@@ -39,7 +39,7 @@ func NewStopService(serviceNetwork service_network.ServiceNetwork) *kurtosis_pla
 		},
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
-			return &StopServiceCapabilities{
+			return &StartServiceCapabilities{
 				serviceNetwork: serviceNetwork,
 
 				serviceName: "", // populated at interpretation time
@@ -52,13 +52,13 @@ func NewStopService(serviceNetwork service_network.ServiceNetwork) *kurtosis_pla
 	}
 }
 
-type StopServiceCapabilities struct {
+type StartServiceCapabilities struct {
 	serviceNetwork service_network.ServiceNetwork
 
 	serviceName service.ServiceName
 }
 
-func (builtin *StopServiceCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *StartServiceCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -68,18 +68,18 @@ func (builtin *StopServiceCapabilities) Interpret(arguments *builtin_argument.Ar
 	return starlark.None, nil
 }
 
-func (builtin *StopServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+func (builtin *StartServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	if !validatorEnvironment.DoesServiceNameExist(builtin.serviceName) {
-		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' doesn't exist", StopServiceBuiltinName, builtin.serviceName)
+		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' doesn't exist", StartServiceBuiltinName, builtin.serviceName)
 	}
 	return nil
 }
 
-func (builtin *StopServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	err := builtin.serviceNetwork.StopService(ctx, string(builtin.serviceName))
+func (builtin *StartServiceCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	err := builtin.serviceNetwork.StartService(ctx, string(builtin.serviceName))
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Failed stopping service with unexpected error")
+		return "", stacktrace.Propagate(err, "Failed starting service with unexpected error")
 	}
-	instructionResult := fmt.Sprintf("Service '%s' stopped", builtin.serviceName)
+	instructionResult := fmt.Sprintf("Service '%s' started", builtin.serviceName)
 	return instructionResult, nil
 }

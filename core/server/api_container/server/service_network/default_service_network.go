@@ -484,7 +484,8 @@ func (network *DefaultServiceNetwork) AddServices(
 
 	for _, startedService := range startedServices {
 		serviceRegistration := startedService.GetRegistration()
-		serviceNameStr := string(serviceRegistration.GetName())
+		serviceName := serviceRegistration.GetName()
+		serviceNameStr := string(serviceName)
 		serviceUuidStr := string(serviceRegistration.GetUUID())
 		shortenedUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
 		network.allExistingAndHistoricalIdentifiers = append(network.allExistingAndHistoricalIdentifiers, &kurtosis_core_rpc_api_bindings.ServiceIdentifiers{
@@ -492,7 +493,7 @@ func (network *DefaultServiceNetwork) AddServices(
 			Name:          serviceNameStr,
 			ShortenedUuid: shortenedUuidStr,
 		})
-		serviceRegistration.SetStatus(service.ServiceStatus_Started)
+		network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Started)
 	}
 
 	batchSuccessfullyStarted = true
@@ -1450,6 +1451,7 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	}
 
 	serviceStartedSuccessfully = true
+	network.registeredServiceInfo[startedService.GetRegistration().GetName()].SetConfig(serviceConfig)
 	return startedService, nil
 }
 
