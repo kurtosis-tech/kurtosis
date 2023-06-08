@@ -38,7 +38,7 @@ func GetArgsFromEnv() (*EngineServerArgs, error) {
 	paramsJsonBytes := []byte(serializedParamsStr)
 	var args EngineServerArgs
 	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
-		return nil, stacktrace.Propagate(err,"An error occurred deserializing the args JSON '%v'", serializedParamsStr)
+		return nil, stacktrace.Propagate(err, "An error occurred deserializing the args JSON '%v'", serializedParamsStr)
 	}
 	return &args, nil
 }

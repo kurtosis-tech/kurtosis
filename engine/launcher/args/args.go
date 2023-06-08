@@ -16,7 +16,7 @@ const (
 
 // Fields are public for JSON de/serialization
 type EngineServerArgs struct {
-	GrpcListenPortNum      uint16 `json:"grpcListenPortNum"`
+	GrpcListenPortNum uint16 `json:"grpcListenPortNum"`
 
 	LogLevelStr string `json:"logLevelStr"`
 

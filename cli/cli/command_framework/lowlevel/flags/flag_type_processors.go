@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	uintBase = 10
+	uintBase   = 10
 	uint32Bits = 32
 )
 
@@ -25,7 +25,7 @@ type flagTypeProcessor func(
 var AllFlagTypeProcessors = map[FlagType]flagTypeProcessor{
 	FlagType_String: processStringFlag,
 	FlagType_Uint32: processUint32Flag,
-	FlagType_Bool: processBoolFlag,
+	FlagType_Bool:   processBoolFlag,
 }
 
 func processStringFlag(
@@ -44,7 +44,6 @@ func processStringFlag(
 	)
 	return nil
 }
-
 
 func processUint32Flag(
 	flagKey string,

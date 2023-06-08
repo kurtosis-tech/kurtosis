@@ -18,8 +18,9 @@ func (deprecationDate *DeprecationDate) GetFormattedDate() string {
 }
 
 // DeprecationNotice
-//TODO: enforce that these fields are required
-// give examples for good mitigation examples; currently it's free form for folks to start using right away
+// TODO: enforce that these fields are required
+//
+//	give examples for good mitigation examples; currently it's free form for folks to start using right away
 type DeprecationNotice struct {
 	deprecationDate DeprecationDate
 	mitigation      string

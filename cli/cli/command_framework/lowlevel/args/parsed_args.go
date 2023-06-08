@@ -10,12 +10,12 @@ type ParsedArgs struct {
 }
 
 // Takes in the currently-entered arg strings, categorizes them according to the arg configs defined, and
-//  returns the kurtosis_command.ArgConfig whose completion function should be used
+// returns the kurtosis_command.ArgConfig whose completion function should be used
 // NOTES:
-//  - If the user presses TAB in the middle of several args (e.g. "arg1 arg2  TAB   arg3"), then `input` will only contain
+//   - If the user presses TAB in the middle of several args (e.g. "arg1 arg2  TAB   arg3"), then `input` will only contain
 //     the previous args (which is actually good behaviour)
-//  - If the input isn't long enough, the resulting ParsedArgs object won't have arg strings for all the args
-//  - A nil value for the returned kurtosis_command.ArgConfig indicates that no completion should be used
+//   - If the input isn't long enough, the resulting ParsedArgs object won't have arg strings for all the args
+//   - A nil value for the returned kurtosis_command.ArgConfig indicates that no completion should be used
 func ParseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArgs, *ArgConfig) {
 	nonGreedyArgValues := map[string]string{}
 	greedyArgValues := map[string][]string{}
@@ -35,7 +35,7 @@ func ParseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArg
 		if config.IsGreedy {
 			greedyArgValues[key] = input[inputIdx:]
 			inputIdx += len(input) - inputIdx
-			nextArg = config  // Greedy args must always be at the end, so they'll be infinitely-completable
+			nextArg = config // Greedy args must always be at the end, so they'll be infinitely-completable
 			break
 		}
 
@@ -45,7 +45,7 @@ func ParseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArg
 		inputIdx += 1
 		if configIdx >= len(argConfigs) {
 			// If there's not another kurtosis_command.ArgConfig (indicating we've used them all) then we return nil to indicate
-			//  that tab completion shouldn't be done (since no more args are needed)
+			// that tab completion shouldn't be done (since no more args are needed)
 			nextArg = nil
 		} else {
 			nextArg = argConfigs[configIdx]
@@ -60,14 +60,14 @@ func ParseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArg
 
 // Parses all the args, guaranteeing that the required args are filled out and that default values for non-optional arguments get applied
 // This means that if no error was returned, the returned ParsedArgs object is guaranteed to have all the args that were
-//  passed in
+// passed in
 func ParseArgsForValidation(argConfigs []*ArgConfig, input []string) (*ParsedArgs, error) {
 	nonGreedyArgValues := map[string]string{}
 	greedyArgValues := map[string][]string{}
 	inputIdx := 0
 	for configIdx, config := range argConfigs {
 		key := config.Key
-		if config.IsOptional && configIdx < len(argConfigs) - 1 {
+		if config.IsOptional && configIdx < len(argConfigs)-1 {
 			return nil, stacktrace.NewError("Arg '%v' is marked as optional, but isn't the last argument; this is a bug in Kurtosis!", key)
 		}
 		if inputIdx >= len(input) {
@@ -110,7 +110,6 @@ func ParseArgsForValidation(argConfigs []*ArgConfig, input []string) (*ParsedArg
 		)
 	}
 
-
 	result := &ParsedArgs{
 		nonGreedyArgs: nonGreedyArgValues,
 		greedyArgs:    greedyArgValues,
@@ -135,4 +134,3 @@ func (args *ParsedArgs) GetGreedyArg(key string) ([]string, error) {
 	}
 	return elems, nil
 }
-

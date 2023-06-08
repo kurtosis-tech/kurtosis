@@ -16,7 +16,7 @@ const (
 var (
 	// NOTE: This will be initialized exactly once (singleton pattern)
 	currentKurtosisClusterSettingStore *kurtosisClusterSettingStore
-	once sync.Once
+	once                               sync.Once
 )
 
 type kurtosisClusterSettingStore struct {
@@ -62,9 +62,8 @@ func (settingStore *kurtosisClusterSettingStore) GetClusterSetting() (string, er
 	return name, nil
 }
 
-
 // ======================================== Private Helpers ===========================================
-func (settingStore *kurtosisClusterSettingStore)  doesClusterSettingFilepathExist() (bool, error){
+func (settingStore *kurtosisClusterSettingStore) doesClusterSettingFilepathExist() (bool, error) {
 	filepath, err := host_machine_directories.GetKurtosisClusterSettingFilepath()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred getting the cluster setting filepath")
@@ -96,7 +95,6 @@ func (settingStore *kurtosisClusterSettingStore) getClusterSettingFromFile() (st
 
 	return fileContentStr, nil
 }
-
 
 func (settingStore *kurtosisClusterSettingStore) saveClusterSettingFile(clusterName string) error {
 	fileContent := []byte(clusterName)

@@ -142,9 +142,7 @@ func run(
 		defer terminal.Restore(stdinFd, oldState)
 	}
 
-	_ = <-finishChan
-
-	terminal.Restore(stdinFd, oldState)
+	<-finishChan
 
 	return nil
 }
