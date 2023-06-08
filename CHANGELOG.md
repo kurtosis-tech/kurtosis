@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.77.2](https://github.com/kurtosis-tech/kurtosis/compare/0.77.1...0.77.2) (2023-06-08)
+
+
+### Features
+
+* added min resource constraint for kubernetes ([#687](https://github.com/kurtosis-tech/kurtosis/issues/687)) ([0aadb91](https://github.com/kurtosis-tech/kurtosis/commit/0aadb912c443c93fe27cebeb727a8ce5f16ced38))
+* Label issue based on severity ([#662](https://github.com/kurtosis-tech/kurtosis/issues/662)) ([13b51c6](https://github.com/kurtosis-tech/kurtosis/commit/13b51c6f409432e12b95e9275f5ece788e22989d))
+
+
+### Bug Fixes
+
+* Auto-restart engine when cluster is updated ([#661](https://github.com/kurtosis-tech/kurtosis/issues/661)) ([479b9f4](https://github.com/kurtosis-tech/kurtosis/commit/479b9f48507def91d76a17731aa84d76c69eff76))
+* display service name in exec ([#682](https://github.com/kurtosis-tech/kurtosis/issues/682)) ([6faafea](https://github.com/kurtosis-tech/kurtosis/commit/6faafea86afac1056e529b026743675a5bbfcbf6))
+* Fix error propagation in context switch ([#658](https://github.com/kurtosis-tech/kurtosis/issues/658)) ([a7c9bd1](https://github.com/kurtosis-tech/kurtosis/commit/a7c9bd1380d81e7f367daf964021a89086099872))
+* Fix typo in the configuration path of the issue labeler workflow ([#667](https://github.com/kurtosis-tech/kurtosis/issues/667)) ([ec6c8e8](https://github.com/kurtosis-tech/kurtosis/commit/ec6c8e885ada06b0adadd44b6d698320a7b43511))
+* Fix user service logs when backend is kubernetes ([#678](https://github.com/kurtosis-tech/kurtosis/issues/678)) ([099d046](https://github.com/kurtosis-tech/kurtosis/commit/099d04649f7922adf82dad295f9a701369ee7531))
+* fixed the error we see while running the package(s) in dry-mode ([#679](https://github.com/kurtosis-tech/kurtosis/issues/679)) ([af5138c](https://github.com/kurtosis-tech/kurtosis/commit/af5138c1c68ef245c1fd9fce6bd04827ef6c048f))
+* Kurtosis shell exec panics if stdin is not terminal ([#686](https://github.com/kurtosis-tech/kurtosis/issues/686)) ([5fad486](https://github.com/kurtosis-tech/kurtosis/commit/5fad4867f9b76498c04c4037ea367161f2c0bb8a))
+
 ## [0.77.1](https://github.com/kurtosis-tech/kurtosis/compare/0.77.0...0.77.1) (2023-05-30)
 
 
