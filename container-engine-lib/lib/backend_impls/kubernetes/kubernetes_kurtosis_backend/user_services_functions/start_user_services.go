@@ -547,7 +547,6 @@ func getUserServicePodContainerSpecs(
 	if memoryAllocationMegabytes != 0 {
 		memoryAllocationInBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
 		resourceLimitsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
-		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
 	}
 
 	if minMemoryAllocationMegabytes != 0 {
