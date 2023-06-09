@@ -1,7 +1,7 @@
 ---
-title: Client Libraries
-sidebar_label: Client Libraries Reference
-slug: /client-libs-reference
+title: SDK
+sidebar_label: SDK
+slug: /SDK
 toc_min_heading_level: 2
 toc_max_heading_level: 2
 ---
