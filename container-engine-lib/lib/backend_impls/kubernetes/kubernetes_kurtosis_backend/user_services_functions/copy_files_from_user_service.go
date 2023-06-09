@@ -56,7 +56,11 @@ func CopyFilesFromUserService(
 		)
 	}
 
+	// we remove trailing slash
+	srcPath = filepath.Clean(srcPath)
+	// we get the base dir | file
 	srcPathBase := filepath.Base(srcPath)
+	// we get the dir that holds base the dir | file
 	srcPathDir := filepath.Dir(srcPath)
 
 	commandToRun := fmt.Sprintf(
