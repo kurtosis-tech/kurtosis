@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.77.4](https://github.com/kurtosis-tech/kurtosis/compare/0.77.3...0.77.4) (2023-06-09)
+
+
+### Bug Fixes
+
+* make k8s store service files match docker ([#695](https://github.com/kurtosis-tech/kurtosis/issues/695)) ([dc2d8cb](https://github.com/kurtosis-tech/kurtosis/commit/dc2d8cb59d305fa96a2784cd1219352ce235b420))
+
 ## [0.77.3](https://github.com/kurtosis-tech/kurtosis/compare/0.77.2...0.77.3) (2023-06-08)
 
 
