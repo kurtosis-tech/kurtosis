@@ -92,11 +92,11 @@ func (service *ApiContainerGatewayServiceServer) RunStarlarkPackage(args *kurtos
 	return nil
 }
 
-func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
+func (service *ApiContainerGatewayServiceServer) AddServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.AddServicesArgs) (*kurtosis_core_rpc_api_bindings.AddServicesResponse, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
 	failedServicesPool := map[string]string{}
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.StartServices(ctx, args)
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.AddServices(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
@@ -134,7 +134,7 @@ func (service *ApiContainerGatewayServiceServer) StartServices(ctx context.Conte
 	for serviceNameStr := range successfulServices {
 		delete(shouldRemoveServices, serviceNameStr)
 	}
-	startServicesResp := binding_constructors.NewStartServicesResponse(successfulServices, failedServicesPool)
+	startServicesResp := binding_constructors.NewAddServicesResponse(successfulServices, failedServicesPool)
 	return startServicesResp, nil
 }
 

@@ -18,7 +18,7 @@ service ApiContainerService {
   rpc RunStarlarkPackage(RunStarlarkPackageArgs) returns (stream StarlarkRunResponseLine) {};
 
   // Start services by creating containers for them
-  rpc StartServices(StartServicesArgs) returns (StartServicesResponse) {};
+  rpc AddServices(AddServicesArgs) returns (AddServicesResponse) {};
 
   // Returns the IDs of the current services in the enclave
   rpc GetServices(GetServicesArgs) returns (GetServicesResponse) {};
@@ -110,7 +110,7 @@ message ServiceInfo {
   string maybe_public_ip_addr = 4;
 
   // Mapping defining the ports that the service can be reached at *outside* the enclave, in the user_defined_port_id -> port_info where user_defined_port_id
-  //  corresponds to the ID that was passed in in StartServiceArgs
+  //  corresponds to the ID that was passed in in AddServiceArgs
   // NOTE: Will be empty if the service isn't running, the service didn't define any ports, or the backend doesn't support reporting public service info
   map<string, Port> maybe_public_ports = 5;
 
@@ -291,11 +291,11 @@ message StarlarkRunFinishedEvent {
 // ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-message StartServicesArgs {
+message AddServicesArgs {
   map<string, ServiceConfig> service_names_to_configs = 1;
 }
 
-message StartServicesResponse {
+message AddServicesResponse {
   // A map of Service Names to info describing that newly started service
   map<string, ServiceInfo> successful_service_name_to_service_info = 1;
 

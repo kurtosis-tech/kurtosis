@@ -223,7 +223,7 @@ func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.E
 
 	publicPort, found := serviceCtx.GetPublicPorts()[portId]
 	if !found {
-		return stacktrace.Propagate(err, "No public port found for service '%s' and port ID '%s'", serviceName, portId)
+		return stacktrace.NewError("No public port found for service '%s' and port ID '%s'", serviceName, portId)
 	}
 
 	datastoreClient, datastoreClientConnCloseFunc, err := createDatastoreClient(

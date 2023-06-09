@@ -20,7 +20,7 @@ import {
     newPort,
     newRemoveServiceArgs,
     newServiceConfig,
-    newStartServicesArgs,
+    newAddServicesArgs,
     newStoreWebFilesArtifactArgs,
     newUploadFilesArtifactArgs,
 } from "../constructor_calls";
@@ -32,7 +32,7 @@ import type { GenericPathJoiner } from "./generic_path_joiner";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ServiceInfo,
-    StartServicesArgs,
+    AddServicesArgs,
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs, FilesArtifactNameAndUuid,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
@@ -313,16 +313,16 @@ export class EnclaveContext {
             )
             serviceConfigs.set(serviceName, serviceConfig);
         }
-        log.trace("Starting new services with Kurtosis API...");
-        const startServicesArgs: StartServicesArgs = newStartServicesArgs(serviceConfigs)
-        const startServicesResponseResult = await this.backend.startServices(startServicesArgs)
-        if (startServicesResponseResult.isErr()) {
-            return err(startServicesResponseResult.error)
+        log.trace("Adding new services with Kurtosis API...");
+        const addServicesArgs: AddServicesArgs = newAddServicesArgs(serviceConfigs)
+        const addServicesResponseResult = await this.backend.addServices(addServicesArgs)
+        if (addServicesResponseResult.isErr()) {
+            return err(addServicesResponseResult.error)
         }
-        const startServicesResponse = startServicesResponseResult.value;
-        const successfulServicesInfo: jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceNameToServiceInfoMap();
+        const addServicesResponse = addServicesResponseResult.value;
+        const successfulServicesInfo: jspb.Map<String, ServiceInfo> | undefined = addServicesResponse.getSuccessfulServiceNameToServiceInfoMap();
         if (successfulServicesInfo === undefined) {
-            return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
+            return err(new Error("Expected AddServicesResponse to contain a field that does not exist."))
         }
         // defer-undo removes all successfully started services in case of errors in the future phases
         const shouldRemoveServices: Map<ServiceName, boolean> = new Map<ServiceName, boolean>();
@@ -332,9 +332,9 @@ export class EnclaveContext {
 
         try {
             // Add services that failed to start to failed services pool
-            const failedServices: jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceNameToErrorMap();
+            const failedServices: jspb.Map<string, string> | undefined = addServicesResponse.getFailedServiceNameToErrorMap();
             if (failedServices === undefined) {
-                return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
+                return err(new Error("Expected AddServicesResponse to contain a field that does not exist."))
             }
             for (const [serviceNameStr, serviceErrStr] of failedServices.entries()) {
                 const serviceName: ServiceName = <ServiceName>serviceNameStr;
