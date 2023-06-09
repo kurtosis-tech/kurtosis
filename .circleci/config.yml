@@ -425,6 +425,7 @@ jobs:
             - "./<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
   build_golang_testsuite:
+    resource_class: xlarge
     executor: ubuntu_vm
     parameters:
       <<: *param_cli_cluster_backend
