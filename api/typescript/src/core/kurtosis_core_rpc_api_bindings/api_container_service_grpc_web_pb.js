@@ -191,61 +191,61 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.runStarlarkPa
 /**
  * @const
  * @type {!grpc.web.MethodDescriptor<
- *   !proto.api_container_api.StartServicesArgs,
- *   !proto.api_container_api.StartServicesResponse>}
+ *   !proto.api_container_api.AddServicesArgs,
+ *   !proto.api_container_api.AddServicesResponse>}
  */
-const methodDescriptor_ApiContainerService_StartServices = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/StartServices',
+const methodDescriptor_ApiContainerService_AddServices = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/AddServices',
   grpc.web.MethodType.UNARY,
-  proto.api_container_api.StartServicesArgs,
-  proto.api_container_api.StartServicesResponse,
+  proto.api_container_api.AddServicesArgs,
+  proto.api_container_api.AddServicesResponse,
   /**
-   * @param {!proto.api_container_api.StartServicesArgs} request
+   * @param {!proto.api_container_api.AddServicesArgs} request
    * @return {!Uint8Array}
    */
   function(request) {
     return request.serializeBinary();
   },
-  proto.api_container_api.StartServicesResponse.deserializeBinary
+  proto.api_container_api.AddServicesResponse.deserializeBinary
 );
 
 
 /**
- * @param {!proto.api_container_api.StartServicesArgs} request The
+ * @param {!proto.api_container_api.AddServicesArgs} request The
  *     request proto
  * @param {?Object<string, string>} metadata User defined
  *     call metadata
- * @param {function(?grpc.web.RpcError, ?proto.api_container_api.StartServicesResponse)}
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.AddServicesResponse)}
  *     callback The callback function(error, response)
- * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StartServicesResponse>|undefined}
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.AddServicesResponse>|undefined}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServiceClient.prototype.startServices =
+proto.api_container_api.ApiContainerServiceClient.prototype.addServices =
     function(request, metadata, callback) {
   return this.client_.rpcCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/StartServices',
+      '/api_container_api.ApiContainerService/AddServices',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_StartServices,
+      methodDescriptor_ApiContainerService_AddServices,
       callback);
 };
 
 
 /**
- * @param {!proto.api_container_api.StartServicesArgs} request The
+ * @param {!proto.api_container_api.AddServicesArgs} request The
  *     request proto
  * @param {?Object<string, string>=} metadata User defined
  *     call metadata
- * @return {!Promise<!proto.api_container_api.StartServicesResponse>}
+ * @return {!Promise<!proto.api_container_api.AddServicesResponse>}
  *     Promise that resolves to the response
  */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.startServices =
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.addServices =
     function(request, metadata) {
   return this.client_.unaryCall(this.hostname_ +
-      '/api_container_api.ApiContainerService/StartServices',
+      '/api_container_api.ApiContainerService/AddServices',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_StartServices);
+      methodDescriptor_ApiContainerService_AddServices);
 };
 
 
