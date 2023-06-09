@@ -320,7 +320,7 @@ func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.S
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	if found {
+	if foundMaxMemory {
 		maxMemory, ok := maxMemoryStarlark.Uint64()
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MaxMemoryMegaBytesAttr, maxMemoryStarlark)
