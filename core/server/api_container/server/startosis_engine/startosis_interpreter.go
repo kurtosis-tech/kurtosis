@@ -96,8 +96,13 @@ func (interpreter *StartosisInterpreter) Interpret(
 
 	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
 
+	var isUsingDefaultMainFunction bool
+	var shouldInjectPlanArg bool
 	if mainFunctionName == "" {
 		mainFunctionName = runFunctionName
+		isUsingDefaultMainFunction = true
+	} else {
+		shouldInjectPlanArg = true //TODO now we inject the plan arg by default as the first argument on any random function, we have to make it optional and set by the users
 	}
 	if !globalVariables.Has(mainFunctionName) {
 		return missingMainFunctionReturnValue(packageId, mainFunctionName)
@@ -111,11 +116,12 @@ func (interpreter *StartosisInterpreter) Interpret(
 
 	runFunctionExecutionThread := newStarlarkThread(starlarkGoThreadName)
 
-	if mainFunction.NumParams() > maximumParamsAllowedForRunFunction {
+	if isUsingDefaultMainFunction && mainFunction.NumParams() > maximumParamsAllowedForRunFunction {
 		return "", nil, startosis_errors.NewInterpretationError("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, mainFunction.NumParams()).ToAPIType()
 	}
 
 	var argsTuple starlark.Tuple
+	var kwArgs []starlark.Tuple
 
 	if mainFunction.NumParams() >= minimumParamsRequiredForPlan {
 		if paramName, _ := mainFunction.Param(planParamIndex); paramName != planParamName {
@@ -126,16 +132,28 @@ func (interpreter *StartosisInterpreter) Interpret(
 		argsTuple = append(argsTuple, planModule)
 	}
 
-	if mainFunction.NumParams() == paramsRequiredForArgs {
-		if paramName, _ := mainFunction.Param(argsParamIndex); paramName != argsParamName {
-			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
+	if shouldInjectPlanArg || (isUsingDefaultMainFunction && mainFunction.NumParams() == paramsRequiredForArgs) {
+		if isUsingDefaultMainFunction {
+			if paramName, _ := mainFunction.Param(argsParamIndex); paramName != argsParamName {
+				return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
+			}
+			// run function has an argument so we parse input args
+			inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
+			if interpretationError != nil {
+				return "", nil, interpretationError.ToAPIType()
+			}
+			argsTuple = append(argsTuple, inputArgs)
+		} else {
+			inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
+			if interpretationError != nil {
+				return "", nil, interpretationError.ToAPIType()
+			}
+			newDic, ok := inputArgs.(*starlark.Dict)
+			if !ok {
+				return "", nil, startosis_errors.NewInterpretationError("Error text").ToAPIType()
+			}
+			noKwargs = append(kwArgs, newDic.Items()...)
 		}
-		// run function has an argument so we parse input args
-		inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
-		if interpretationError != nil {
-			return "", nil, interpretationError.ToAPIType()
-		}
-		argsTuple = append(argsTuple, inputArgs)
 	}
 
 	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, noKwargs)
