@@ -511,15 +511,9 @@ func (manager *DockerManager) CreateAndStartContainer(
 	}
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
-	options := types.ContainerStartOptions{
-		CheckpointID:  "",
-		CheckpointDir: "",
-	}
-	if err = manager.dockerClient.ContainerStart(ctx, containerId, options); err != nil {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image '%v'; logs are below:%v%v%v", dockerImage, containerLogsHeader, containerLogs, containerLogsFooter)
+	err = manager.StartContainer(ctx, containerId)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image '%v'.", dockerImage)
 	}
 
 	functionFinishedSuccessfully := false
