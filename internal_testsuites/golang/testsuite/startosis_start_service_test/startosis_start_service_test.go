@@ -1,3 +1,8 @@
+//go:build !minikube
+// +build !minikube
+
+// We don't run this test in Kubernetes because the gateway does not support start and stop services
+
 package startosis_stop_service_test
 
 import (
