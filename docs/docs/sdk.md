@@ -233,12 +233,13 @@ Gets the UUID of the enclave that this [EnclaveContext][enclavecontext] object r
 ### `getEnclaveName() -> String`
 Gets the name of the enclave that this [EnclaveContext][enclavecontext] object represents.
 
-### `runStarlarkScript(String serializedStarlarkScript, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkScript(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a provided Starlark script inside the enclave.
 
 **Args**
 
+* `mainFunctionName`: The main function name, an empty string can be passed to use the default value 'run'
 * `serializedStarlarkScript`: The Starlark script provided as a string
 * `dryRun`: When set to true, the Kurtosis instructions are not executed.
 
@@ -246,13 +247,15 @@ Run a provided Starlark script inside the enclave.
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkPackage(String packageRootPath, String serializedParams, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkPackage(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a provided Starlark script inside the enclave.
 
 **Args**
 
 * `packageRootPath`: The path to the root of the package
+* `relativePathToMainFile`: The relative filepath (relative to the package's root) to the main file, and empty string can be passed to use the default value 'main.star'. Example: if your main file is located in a path like this `github.com/my-org/my-package/src/internal/my-file.star` you should set `src/internal/my-file.star` as the relative path.
+* `mainFunctionName`: The main function name, an empty string can be passed to use the default value 'run'.
 * `serializedParams`: The parameters to pass to the package for the run. It should be a serialized JSON string.
 * `dryRun`: When set to true, the Kurtosis instructions are not executed.
 
@@ -260,13 +263,15 @@ Run a provided Starlark script inside the enclave.
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkRemotePackage(String packageId, String serializedParams, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkRemotePackage(String packageId, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a Starlark script hosted in a remote github.com repo inside the enclave.
 
 **Args**
 
 * `packageId`: The ID of the package pointing to the github.com repo hosting the package. For example `github.com/kurtosistech/datastore-army-package`
+* `relativePathToMainFile`: The relative filepath (relative to the package's root) to the main file, and empty string can be passed to use the default value 'main.star'. Example: if your main file is located in a path like this `github.com/my-org/my-package/src/internal/my-file.star` you should set `src/internal/my-file.star` as the relative path.
+* `mainFunctionName`: The main function name, an empty string can be passed to use the default value 'run'.
 * `serializedParams`: The parameters to pass to the package for the run. It should be a serialized JSON string.
 * `dryRun`: When set to true, the Kurtosis instructions are not executed.
 
@@ -274,15 +279,15 @@ Run a Starlark script hosted in a remote github.com repo inside the enclave.
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkScriptBlocking(String serializedStarlarkScript, Boolean dryRun) -> (StarlarkRunResult runResult, Error error)`
+### `runStarlarkScriptBlocking(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun) -> (StarlarkRunResult runResult, Error error)`
 
 Convenience wrapper around [EnclaveContext.runStarlarkScript][enclavecontext_runstarlarkscript], that blocks until the execution of the script is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
-### `runStarlarkPackageBlocking(String packageRootPath, String serializedParams, Boolean dryRun) -> (StarlarkRunResult runResult, Error error)`
+### `runStarlarkPackageBlocking(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun) -> (StarlarkRunResult runResult, Error error)`
 
 Convenience wrapper around [EnclaveContext.runStarlarkPackage][enclavecontext_runstarlarkpackage], that blocks until the execution of the package is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
-### `runStarlarkRemotePackageBlocking(String packageId, String serializedParams, Boolean dryRun) -> (StarlarkRunResult runResult, Error error)`
+### `runStarlarkRemotePackageBlocking(String packageId, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun) -> (StarlarkRunResult runResult, Error error)`
 
 Convenience wrapper around [EnclaveContext.runStarlarkRemotePackage][enclavecontext_runstarlarkremotepackage], that blocks until the execution of the package is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
