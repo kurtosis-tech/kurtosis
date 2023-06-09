@@ -735,11 +735,8 @@ func (network *DefaultServiceNetwork) StartServices(
 		return nil, nil, err
 	}
 	
-	for successfulUuid := range successfulUuids {
-		serviceRegistrations[successfulUuid].SetStatus(service.ServiceStatus_Started)
-	}
-
-	for successfulUuid := range successfulServices {
+	for successfulUuid, successfulService := range successfulServices {
+		serviceRegistrations[successfulService.GetRegistration().GetUUID()].SetStatus(service.ServiceStatus_Started)
 		successfulUuids[successfulUuid] = true
 	}
 
