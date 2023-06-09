@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
+	"path/filepath"
 )
 
 const (
@@ -55,9 +56,17 @@ func CopyFilesFromUserService(
 		)
 	}
 
+	// we remove trailing slash
+	srcPath = filepath.Clean(srcPath)
+	// we get the base dir | file
+	srcPathBase := filepath.Base(srcPath)
+	// we get the dir that holds base the dir | file
+	srcPathDir := filepath.Dir(srcPath)
+
 	commandToRun := fmt.Sprintf(
-		`if command -v 'tar' > /dev/null; then tar cf - '%v'; else echo "Cannot copy files from path '%v' because the tar binary doesn't exist on the machine" >&2; exit 1; fi`,
-		srcPath,
+		`if command -v 'tar' > /dev/null; then cd '%v' && tar cf - '%v'; else echo "Cannot copy files from path '%v' because the tar binary doesn't exist on the machine" >&2; exit 1; fi`,
+		srcPathDir,
+		srcPathBase,
 		srcPath,
 	)
 	shWrappedCommandToRun := []string{
