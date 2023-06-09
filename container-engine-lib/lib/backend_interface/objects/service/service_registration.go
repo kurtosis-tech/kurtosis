@@ -1,8 +1,9 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"net"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 )
 
 // A ServiceRegistration is a stub for a started service
@@ -41,8 +42,8 @@ func NewServiceRegistration(name ServiceName, guid ServiceUUID, enclaveId enclav
 		enclaveId: enclaveId,
 		privateIp: privateIp,
 		hostname:  hostname,
-		status: ServiceStatus_Registered,
-		config: nil,
+		status:    ServiceStatus_Registered,
+		config:    nil,
 	}
 }
 

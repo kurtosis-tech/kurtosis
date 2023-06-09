@@ -11,6 +11,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math"
+	"net"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+	"sync"
+	"text/template"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
@@ -28,16 +39,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
-	"io"
-	"math"
-	"net"
-	"net/http"
-	"os"
-	"path"
-	"strings"
-	"sync"
-	"text/template"
-	"time"
 )
 
 const (
@@ -691,7 +692,7 @@ func (network *DefaultServiceNetwork) StartService(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while starting services")
 	}
-	
+
 	for serviceUuid, erroredUuid := range erroredUuids {
 		return stacktrace.Propagate(erroredUuid, "An error occurred while starting service '%v'", serviceUuid)
 	}
@@ -729,12 +730,12 @@ func (network *DefaultServiceNetwork) StartServices(
 	for serviceUuid, serviceRegistration := range serviceRegistrations {
 		serviceConfigs[serviceUuid] = serviceRegistration.GetConfig()
 	}
-	
+
 	successfulServices, failedServices, err := network.kurtosisBackend.StartRegisteredUserServices(ctx, network.enclaveUuid, serviceConfigs)
 	if err != nil {
 		return nil, nil, err
 	}
-	
+
 	for successfulUuid, successfulService := range successfulServices {
 		serviceRegistrations[successfulService.GetRegistration().GetUUID()].SetStatus(service.ServiceStatus_Started)
 		successfulUuids[successfulUuid] = true
@@ -744,9 +745,8 @@ func (network *DefaultServiceNetwork) StartServices(
 		erroredUuids[erroredUuid] = err
 	}
 
-	return successfulUuids, erroredUuids, nil 
+	return successfulUuids, erroredUuids, nil
 }
-
 
 func (network *DefaultServiceNetwork) StopService(
 	ctx context.Context,
@@ -757,7 +757,7 @@ func (network *DefaultServiceNetwork) StopService(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while stopping services")
 	}
-	
+
 	for serviceUuid, erroredUuid := range erroredUuids {
 		return stacktrace.Propagate(erroredUuid, "An error occurred while stopping service '%v'", serviceUuid)
 	}
@@ -792,8 +792,8 @@ func (network *DefaultServiceNetwork) StopServices(
 	}
 
 	stopServiceFilters := &service.ServiceFilters{
-		Names: nil,
-		UUIDs: serviceUuids,
+		Names:    nil,
+		UUIDs:    serviceUuids,
 		Statuses: nil,
 	}
 	successfulUuids, erroredUuids, err := network.kurtosisBackend.StopUserServices(ctx, network.enclaveUuid, stopServiceFilters)

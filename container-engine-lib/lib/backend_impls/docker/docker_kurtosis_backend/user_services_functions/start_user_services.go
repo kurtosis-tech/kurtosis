@@ -2,6 +2,9 @@ package user_service_functions
 
 import (
 	"context"
+	"strings"
+	"sync"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -16,8 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strings"
-	"sync"
 )
 
 const (
@@ -218,8 +219,8 @@ func restartUserServices(
 		serviceUuids[serviceUuid] = true
 	}
 	startServiceFilters := &service.ServiceFilters{
-		Names: nil,
-		UUIDs: serviceUuids,
+		Names:    nil,
+		UUIDs:    serviceUuids,
 		Statuses: nil,
 	}
 

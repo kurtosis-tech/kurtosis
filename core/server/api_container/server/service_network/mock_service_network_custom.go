@@ -3,13 +3,14 @@ package service_network
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	"net"
-	"net/http"
 )
 
 const (
@@ -102,7 +103,7 @@ func (m *MockServiceNetworkCustom) StartService(ctx context.Context, serviceIden
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) StartServices(ctx context.Context, serviceIdentifier[] string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
+func (m *MockServiceNetworkCustom) StartServices(ctx context.Context, serviceIdentifier []string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
@@ -112,7 +113,7 @@ func (m *MockServiceNetworkCustom) StopService(ctx context.Context, serviceIdent
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) StopServices(ctx context.Context, serviceIdentifier[] string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
+func (m *MockServiceNetworkCustom) StopServices(ctx context.Context, serviceIdentifier []string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }

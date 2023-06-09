@@ -8,10 +8,11 @@ package startosis_stop_service_test
 import (
 	"context"
 	"fmt"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
@@ -57,7 +58,13 @@ func TestStartosis(t *testing.T) {
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFunc()
+	defer func() {
+		destroyErr := destroyEnclaveFunc()
+		if destroyErr != nil {
+			logrus.Errorf("Error destroying enclave at the end of integration test '%s'",
+				testName)
+		}
+	}()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Starlark script to first add the datastore service...")
@@ -106,7 +113,7 @@ Service example-datastore-server-1 deployed successfully.
 		"Error validating datastore server '%s' is not healthy",
 		serviceName,
 	)
-	
+
 	logrus.Infof("Validated that the service is stopped")
 
 	// we run the stop script one more time and validate that an error is returned since the service is already stopped.

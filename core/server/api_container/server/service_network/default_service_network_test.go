@@ -8,6 +8,13 @@ package service_network
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/netip"
+	"os"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -29,12 +36,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"net"
-	"net/netip"
-	"os"
-	"strconv"
-	"testing"
-	"time"
 )
 
 const (
@@ -1005,7 +1006,7 @@ func TestStartService_Successful(t *testing.T) {
 	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "")
 	serviceRegistration.SetConfig(serviceConfig)
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
-	
+
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
 	require.Nil(t, err)
@@ -1116,7 +1117,7 @@ func TestStartService_ServiceAlreadyStarted(t *testing.T) {
 	serviceRegistration.SetStatus(service.ServiceStatus_Started)
 	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "")
 	serviceRegistration.SetConfig(serviceConfig)
-	
+
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
 	require.Nil(t, err)
