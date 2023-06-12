@@ -48,8 +48,22 @@ This command has options available to customize its execution:
 1. The `--enclave` flag can be used to instruct Kurtosis to run the script inside the specified enclave or create a new enclave (with the given enclave [identifier](../concepts-reference/resource-identifier.md)) if one does not exist. If this flag is not used, Kurtosis will create a new enclave with an auto-generated name, and run the script or package inside it.
 1. The `--with-subnetworks` flag can be used to enable [subnetwork capabilties](../concepts-reference/subnetworks.md) within the specified enclave that the script or package is instructed to run within. This flag is false by default.
 1. The `--verbosity` flag can be used to set the verbosity of the command output. The options include `BRIEF`, `DETAILED`, or `EXECUTABLE`. If unset, this flag defaults to `BRIEF` for a concise and explicit output. Use `DETAILED` to display the exhaustive list of arguments for each command. Meanwhile, `EXECUTABLE` will generate executable Starlark instructions. 
-1. The `--main-file` flag can be used to set the main file filepath, the main file is the files containing the main method (the package's entrypoint) which will be executed first; the filepath has to be relative to the package's root. The default value is 'main.star'. This flag is only used for running packages.
+1. The `--main-file` flag can be used to set the main file filepath, the "main" file is a file for the main method (i.e. the package's entrypoint) which will be executed first; the filepath has to be relative to the package's root. The default value is 'main.star'. This flag is only used for running packages. Example: if your main file is located in a path like this `github.com/my-org/my-package/src/internal/my-file.star` you should set `src/internal/my-file.star` as the relative path.
 1. The `--main-function-name` flag can be used to set the main function name, which will be executed first as the entrypoint of the package or the module. The default value is 'run'.
+
+Example of using setting the --main-function-name flag
+
+For example, to run the `start-node` function in a `main.star` file, simple use:
+```bash
+kurtosis run main.star --main-function-name start-node
+```
+
+Where start-node is a function defined in `main.star` as so:
+```python
+# main.star code
+def start-node(plan,args):
+    # your code
+```
 
 <!--------------------------------------- ONLY LINKS BELOW HERE -------------------------------->
 [add-services-reference]: ../starlark-reference/plan.md#add_services
