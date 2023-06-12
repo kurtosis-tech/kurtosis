@@ -41,6 +41,25 @@ kurtosis run /path/to/package/on/your/machine '{"company":"Kurtosis"}'
 kurtosis run github.com/package-author/package-repo '{"company":"Kurtosis"}'
 ```
 
+:::info
+If the flag `--main-function-name` is set, the JSON-serialized object will be used for passing the function arguments.
+
+For example, if the main function signature (inside this file github.com/my-org/my-package/src/entry.star) has this shape:
+```python
+# the plan object is injected always as the first argument
+def my_main_function(plan, first_argument, second_argument, their_argument):
+    # your code
+```
+
+It can be called like this:
+```bash
+# you don't have to pass the plan object as an argument because it will be automatically injected by default at the first position
+kurtosis run main.star '{"first_argument": "Foo", "second_argument": "Bar", "their_argument": {"first-key:"first-value", "second-key":"second-value"}}'  --main-file src/entry.star --main-function-name my_main_function
+```
+
+THIS IS A TEMPORARY OPTION AND IT WILL BE REMOVED SOON!!!
+:::
+
 This command has options available to customize its execution:
 
 1. The `--dry-run` flag can be used to print the changes proposed by the script without executing them
@@ -53,15 +72,15 @@ This command has options available to customize its execution:
 
 Example of using setting the --main-function-name flag
 
-For example, to run the `start-node` function in a `main.star` file, simple use:
+For example, to run the `start_node` function in a `main.star` file, simple use:
 ```bash
-kurtosis run main.star --main-function-name start-node
+kurtosis run main.star --main-function-name start_node
 ```
 
 Where start-node is a function defined in `main.star` as so:
 ```python
 # main.star code
-def start-node(plan,args):
+def start_node(plan,args):
     # your code
 ```
 

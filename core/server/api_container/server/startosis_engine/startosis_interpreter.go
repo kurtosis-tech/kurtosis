@@ -96,8 +96,13 @@ func (interpreter *StartosisInterpreter) Interpret(
 
 	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
 
+	var isUsingDefaultMainFunction bool
+	var shouldInjectPlanArg bool
 	if mainFunctionName == "" {
 		mainFunctionName = runFunctionName
+		isUsingDefaultMainFunction = true
+	} else {
+		shouldInjectPlanArg = true //TODO now we inject the plan arg by default as the first argument on any random function, we have to make it optional and set by the users
 	}
 	if !globalVariables.Has(mainFunctionName) {
 		return missingMainFunctionReturnValue(packageId, mainFunctionName)
@@ -111,13 +116,14 @@ func (interpreter *StartosisInterpreter) Interpret(
 
 	runFunctionExecutionThread := newStarlarkThread(starlarkGoThreadName)
 
-	if mainFunction.NumParams() > maximumParamsAllowedForRunFunction {
+	if isUsingDefaultMainFunction && mainFunction.NumParams() > maximumParamsAllowedForRunFunction {
 		return "", nil, startosis_errors.NewInterpretationError("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, mainFunction.NumParams()).ToAPIType()
 	}
 
 	var argsTuple starlark.Tuple
+	var kwArgs []starlark.Tuple
 
-	if mainFunction.NumParams() >= minimumParamsRequiredForPlan {
+	if shouldInjectPlanArg || (isUsingDefaultMainFunction && mainFunction.NumParams() >= minimumParamsRequiredForPlan) {
 		if paramName, _ := mainFunction.Param(planParamIndex); paramName != planParamName {
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, planParamIndex, planParamName, paramName).ToAPIType()
 		}
@@ -126,19 +132,33 @@ func (interpreter *StartosisInterpreter) Interpret(
 		argsTuple = append(argsTuple, planModule)
 	}
 
-	if mainFunction.NumParams() == paramsRequiredForArgs {
-		if paramName, _ := mainFunction.Param(argsParamIndex); paramName != argsParamName {
-			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
+	mainFuncParamsNum := mainFunction.NumParams()
+
+	if (isUsingDefaultMainFunction && mainFuncParamsNum == paramsRequiredForArgs) ||
+		(!isUsingDefaultMainFunction && mainFuncParamsNum > 0) {
+		if isUsingDefaultMainFunction {
+			if paramName, _ := mainFunction.Param(argsParamIndex); paramName != argsParamName {
+				return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
+			}
 		}
 		// run function has an argument so we parse input args
 		inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
 		if interpretationError != nil {
 			return "", nil, interpretationError.ToAPIType()
 		}
-		argsTuple = append(argsTuple, inputArgs)
+		if isUsingDefaultMainFunction {
+			argsTuple = append(argsTuple, inputArgs)
+			kwArgs = noKwargs
+		} else {
+			argsDict, ok := inputArgs.(*starlark.Dict)
+			if !ok {
+				return "", nil, startosis_errors.NewInterpretationError("An error occurred casting input args '%s' to Starlark Dict", inputArgs).ToAPIType()
+			}
+			kwArgs = append(kwArgs, argsDict.Items()...)
+		}
 	}
 
-	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, noKwargs)
+	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, kwArgs)
 	if err != nil {
 		return "", nil, generateInterpretationError(err).ToAPIType()
 	}
@@ -284,7 +304,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
 		return "", nil, startosis_errors.NewInterpretationError(
-			"No '%s' function found in the script; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in any Kurtosis script",
+			"No '%s' function found in the script; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the Kurtosis script",
 			mainFunctionName,
 			mainFunctionName,
 			mainFunctionName,
@@ -293,7 +313,7 @@ func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (
 	}
 
 	return "", nil, startosis_errors.NewInterpretationError(
-		"No '%s' function found in the main file of package '%s'; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the main file of any Kurtosis package",
+		"No '%s' function found in the main file of package '%s'; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the main file of the Kurtosis package",
 		mainFunctionName,
 		packageId,
 		mainFunctionName,

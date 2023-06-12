@@ -139,7 +139,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	packageId := args.GetPackageId()
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-	serializedParams := args.SerializedParams
+	serializedParams := args.GetSerializedParams()
 	relativePathToMainFile := args.GetRelativePathToMainFile()
 	mainFuncName := args.GetMainFunctionName()
 
