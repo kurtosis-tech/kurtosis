@@ -24,7 +24,6 @@ type ServiceConfigBuilder struct {
 	envVars                    map[string]string
 	filesArtifactMountDirpaths map[string]string
 
-	// these two fields will be deprecated soon
 	maxCpuMilliCores   uint64
 	maxMemoryMegabytes uint64
 
