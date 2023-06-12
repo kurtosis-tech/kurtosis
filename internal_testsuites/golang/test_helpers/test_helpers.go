@@ -110,6 +110,8 @@ def run(plan, args):
 	defaultParallelism = 4
 
 	defaultWaitTimeoutForTest = "2m"
+
+	useDefaultMainFile = ""
 )
 
 var (
@@ -153,7 +155,7 @@ func AddService(
 	enclaveCtx *enclaves.EnclaveContext,
 	serviceName services.ServiceName,
 	serviceConfigStarlark string) (*services.ServiceContext, error) {
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, fmt.Sprintf(`def run(plan):
 	plan.add_service(name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
@@ -314,7 +316,7 @@ func AddAPIServiceToPartition(ctx context.Context, serviceName services.ServiceN
 }
 
 func RunScriptWithDefaultConfig(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, script string) (*enclaves.StarlarkRunResult, error) {
-	return enclaveCtx.RunStarlarkScriptBlocking(ctx, script, emptyParams, defaultDryRun, defaultParallelism)
+	return enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, script, emptyParams, defaultDryRun, defaultParallelism)
 }
 
 func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) (*enclaves.StarlarkRunResult, error) {
@@ -675,7 +677,7 @@ func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bin
 }
 
 func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, portId string, endpoint string, initialDelayMilliseconds uint32, timeoutMilliseconds uint32) error {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, waitForGetAvaliabilityStalarkScript, fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceName, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds), false, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, waitForGetAvaliabilityStalarkScript, fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceName, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds), false, defaultParallelism)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error has occurred getting endpoint availability using Starlark")
 	}
