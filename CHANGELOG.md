@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.78.0](https://github.com/kurtosis-tech/kurtosis/compare/0.77.4...0.78.0) (2023-06-12)
+
+
+### ⚠ BREAKING CHANGES
+
+* Added `main-file` and `main-function-name` flags to the `kurtosis run` CLI command. These new options were also added in the  `RunStarlarkScript`, `RunStarlarkPackage` and  the `RunStarlarkRemotePackage` SDKs methods, users will have to update the calls. ([#693](https://github.com/kurtosis-tech/kurtosis/issues/693))
+
+### Features
+
+* Added `main-file` and `main-function-name` flags to the `kurtosis run` CLI command. These new options were also added in the  `RunStarlarkScript`, `RunStarlarkPackage` and  the `RunStarlarkRemotePackage` SDKs methods, users will have to update the calls. ([#693](https://github.com/kurtosis-tech/kurtosis/issues/693)) ([1693237](https://github.com/kurtosis-tech/kurtosis/commit/16932374043560daf45689570ec3cbe4e8e174f9))
+* random function args ([#703](https://github.com/kurtosis-tech/kurtosis/issues/703)) ([e650a20](https://github.com/kurtosis-tech/kurtosis/commit/e650a20101ee1190b1491ca4ccc8acb58c0bc7dd))
+* Start and Stop service Starlark instructions for Docker ([#694](https://github.com/kurtosis-tech/kurtosis/issues/694)) ([10b6b91](https://github.com/kurtosis-tech/kurtosis/commit/10b6b91dc9e8f370bab307297de9b8fe07ca51ce))
+
 ## [0.77.4](https://github.com/kurtosis-tech/kurtosis/compare/0.77.3...0.77.4) (2023-06-09)
 
 
