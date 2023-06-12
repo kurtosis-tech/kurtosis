@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"math"
@@ -107,6 +108,9 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.Uint64InRange(value, CpuAllocationAttr, 0, math.MaxUint64)
 					},
+					Deprecation: starlark_warning.Deprecation(starlark_warning.DeprecationDate{
+						Day: 25, Year: 2023, Month: 6,
+					}, "This field is being deprecated in favour of `max_cpu` to set a maximum cpu a container can use"),
 				},
 				{
 					Name:              MemoryAllocationAttr,
@@ -115,6 +119,9 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.Uint64InRange(value, MemoryAllocationAttr, 6, math.MaxUint64)
 					},
+					Deprecation: starlark_warning.Deprecation(starlark_warning.DeprecationDate{
+						Day: 25, Year: 2023, Month: 6,
+					}, "This field is being deprecated in favour of `max_memory` to set maximum memory a container can use"),
 				},
 				{
 					Name:              MaxCpuMilliCoresAttr,
