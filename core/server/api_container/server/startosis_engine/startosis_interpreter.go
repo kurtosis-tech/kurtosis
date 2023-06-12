@@ -304,7 +304,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
 		return "", nil, startosis_errors.NewInterpretationError(
-			"No '%s' function found in the script; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in any Kurtosis script",
+			"No '%s' function found in the script; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the Kurtosis script",
 			mainFunctionName,
 			mainFunctionName,
 			mainFunctionName,
@@ -313,7 +313,7 @@ func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (
 	}
 
 	return "", nil, startosis_errors.NewInterpretationError(
-		"No '%s' function found in the main file of package '%s'; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the main file of any Kurtosis package",
+		"No '%s' function found in the main file of package '%s'; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the main file of the Kurtosis package",
 		mainFunctionName,
 		packageId,
 		mainFunctionName,
