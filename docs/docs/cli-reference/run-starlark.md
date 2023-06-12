@@ -46,7 +46,7 @@ If the flag `--main-function-name` is set, the JSON-serialized object will be us
 
 For example, if the main function signature (inside this file github.com/my-org/my-package/src/entry.star) has this shape:
 ```python
-# the plan object is inject always as the first argument
+# the plan object is injected always as the first argument
 def my_main_function(plan, first_argument, second_argument, their_argument):
     # your code
 ```
