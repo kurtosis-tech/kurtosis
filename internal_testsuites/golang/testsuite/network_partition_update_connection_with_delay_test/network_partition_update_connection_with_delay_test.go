@@ -125,7 +125,7 @@ func TestNetworkPartitionWithSomeDelay(t *testing.T) {
 				starlarkSubnetworkTestName)
 		}
 	}()
-	
+
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	result, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, subnetworkInStarlarkScript)
 	require.Nil(t, err, "Unexpected error happened executing Starlark script")

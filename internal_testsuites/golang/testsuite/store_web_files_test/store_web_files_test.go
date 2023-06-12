@@ -45,7 +45,7 @@ func TestStoreWebFiles(t *testing.T) {
 				testName)
 		}
 	}()
-	
+
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl, testArtifactName)
 	require.NoError(t, err, "An error occurred storing the files artifact")
