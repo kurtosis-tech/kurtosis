@@ -83,7 +83,7 @@ config = ServiceConfig(
     # The minimum amount of memory, in megabytes, the service must have.
     # CAUTION: This is only available for Kubernetes, andd will be ignored for Docker.
     # OPTIONAL (Default: no limit)
-    min_memory = 512
+    min_memory = 512,
 
     # Defines the subnetwork in which the service will be started.
     # OPTIONAL (Default: "default")
