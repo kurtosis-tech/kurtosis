@@ -37,13 +37,25 @@ func DestroyUserServices(
 	for serviceUuid, serviceObjsAndResources := range allObjectsAndResources {
 		resources := serviceObjsAndResources.KubernetesResources
 
-		pod := resources.Pod
-		if pod != nil {
-			if err := kubernetesManager.RemovePod(ctx, pod); err != nil {
+		serviceToRemove := resources.Service
+		if serviceToRemove != nil {
+			if err := kubernetesManager.RemoveService(ctx, serviceToRemove); err != nil {
+				erroredGuids[serviceUuid] = stacktrace.Propagate(
+					err,
+					"An error occurred removing Kubernetes service '%v' in namespace '%v'",
+					serviceToRemove.Name,
+					namespaceName,
+				)
+				continue
+			}
+		}
+		podToRemove := resources.Pod
+		if podToRemove != nil {
+			if err := kubernetesManager.RemovePod(ctx, podToRemove); err != nil {
 				erroredGuids[serviceUuid] = stacktrace.Propagate(
 					err,
 					"An error occurred removing Kubernetes pod '%v' in namespace '%v'",
-					pod.Name,
+					podToRemove.Name,
 					namespaceName,
 				)
 				continue

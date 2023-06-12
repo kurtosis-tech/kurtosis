@@ -164,7 +164,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	return nil
 }
 
-func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
+func (apicService ApiContainerService) AddServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.AddServicesArgs) (*kurtosis_core_rpc_api_bindings.AddServicesResponse, error) {
 	failedServicesPool := map[kurtosis_backend_service.ServiceName]error{}
 	serviceNamesToAPIConfigs := map[kurtosis_backend_service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 
@@ -173,7 +173,7 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		serviceNamesToAPIConfigs[kurtosis_backend_service.ServiceName(serviceNameStr)] = apiServiceConfig
 	}
 
-	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceNamesToAPIConfigs, defaultParallelism)
+	successfulServices, failedServices, err := apicService.serviceNetwork.AddServices(ctx, serviceNamesToAPIConfigs, defaultParallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "None of the services '%v' mentioned in the request were able to start due to an unexpected error", serviceNamesToAPIConfigs)
 	}
@@ -225,7 +225,7 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		failedServiceNamesToErrorStr[string(id)] = serviceErr.Error()
 	}
 
-	return binding_constructors.NewStartServicesResponse(serviceNamesToServiceInfo, failedServiceNamesToErrorStr), nil
+	return binding_constructors.NewAddServicesResponse(serviceNamesToServiceInfo, failedServiceNamesToErrorStr), nil
 }
 
 func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
@@ -759,6 +759,7 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	return serviceInfoResponse, nil
 }
 
+//"/services/jvm/icon/src/node-setup/contract-deploy.star"
 func (apicService ApiContainerService) runStarlarkPackageSetup(
 	packageId string,
 	clonePackage bool,

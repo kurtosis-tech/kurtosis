@@ -39,7 +39,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
-	serviceNetwork.EXPECT().StartServices(
+	serviceNetwork.EXPECT().AddServices(
 		mock.Anything,
 		mock.MatchedBy(func(configs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig) bool {
 			require.Len(t, configs, 2)

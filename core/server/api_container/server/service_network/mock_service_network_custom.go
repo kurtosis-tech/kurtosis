@@ -3,13 +3,14 @@ package service_network
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/http"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	"net"
-	"net/http"
 )
 
 const (
@@ -62,7 +63,7 @@ func (m *MockServiceNetworkCustom) SetDefaultConnection(ctx context.Context, con
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) StartService(
+func (m *MockServiceNetworkCustom) AddService(
 	ctx context.Context,
 	serviceName service.ServiceName,
 	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
@@ -74,7 +75,7 @@ func (m *MockServiceNetworkCustom) StartService(
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) StartServices(
+func (m *MockServiceNetworkCustom) AddServices(
 	ctx context.Context,
 	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 	batchSize int,
@@ -93,6 +94,26 @@ func (m *MockServiceNetworkCustom) UpdateService(ctx context.Context, updateServ
 }
 
 func (m *MockServiceNetworkCustom) RemoveService(ctx context.Context, serviceIdentifier string) (service.ServiceUUID, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) StartService(ctx context.Context, serviceIdentifier string) error {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) StartServices(ctx context.Context, serviceIdentifier []string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) StopService(ctx context.Context, serviceIdentifier string) error {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) StopServices(ctx context.Context, serviceIdentifier []string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }

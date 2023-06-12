@@ -297,14 +297,14 @@ func NewStarlarkExecutionError(errorMessage string) *kurtosis_core_rpc_api_bindi
 
 // ==============================================================================================
 //
-//	Start Service
+//	Add Services
 //
 // ==============================================================================================
 
-func NewStartServicesResponse(
+func NewAddServicesResponse(
 	successfulServicesInfo map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo,
-	failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.StartServicesResponse {
-	return &kurtosis_core_rpc_api_bindings.StartServicesResponse{
+	failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.AddServicesResponse {
+	return &kurtosis_core_rpc_api_bindings.AddServicesResponse{
 		SuccessfulServiceNameToServiceInfo: successfulServicesInfo,
 		FailedServiceNameToError:           failedServicesErrors,
 	}
