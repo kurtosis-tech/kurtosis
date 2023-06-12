@@ -17,6 +17,9 @@ const (
 
 	expectedActorName   = "Chase"
 	expectedServiceName = "postgres"
+
+	useDefaultMainFile     = ""
+	useDefaultFunctionName = ""
 )
 
 func TestStarlarkRemotePackage(t *testing.T) {
@@ -32,7 +35,7 @@ func TestStarlarkRemotePackage(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Starlark Package: '%v'", remotePackage)
 
-	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, emptyParams, defaultDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, emptyParams, defaultDryRun, defaultParallelism)
 	require.NoError(t, err, "Unexpected error executing starlark package")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")

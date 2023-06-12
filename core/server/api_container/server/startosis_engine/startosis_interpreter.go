@@ -78,7 +78,13 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 //     code, inconsistent). Can be nil if the script was successfully interpreted
 //   - The list of Kurtosis instructions that was generated based on the interpretation of the script. It can be empty
 //     if the interpretation of the script failed
-func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId string, serializedStarlark string, serializedJsonParams string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+func (interpreter *StartosisInterpreter) Interpret(
+	_ context.Context,
+	packageId string,
+	mainFunctionName string,
+	serializedStarlark string,
+	serializedJsonParams string,
+) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
@@ -90,26 +96,29 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 
 	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
 
-	if !globalVariables.Has(runFunctionName) {
-		return missingRunFunctionReturnValue(packageId)
+	if mainFunctionName == "" {
+		mainFunctionName = runFunctionName
+	}
+	if !globalVariables.Has(mainFunctionName) {
+		return missingMainFunctionReturnValue(packageId, mainFunctionName)
 	}
 
-	runFunction, ok := globalVariables[runFunctionName].(*starlark.Function)
-	// if there is a `run` but it isn't a function we have to error as well
+	mainFunction, ok := globalVariables[mainFunctionName].(*starlark.Function)
+	// if there is a element with the `mainFunctionName` but it isn't a function we have to error as well
 	if !ok {
-		return missingRunFunctionReturnValue(packageId)
+		return missingMainFunctionReturnValue(packageId, mainFunctionName)
 	}
 
 	runFunctionExecutionThread := newStarlarkThread(starlarkGoThreadName)
 
-	if runFunction.NumParams() > maximumParamsAllowedForRunFunction {
-		return "", nil, startosis_errors.NewInterpretationError("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, runFunction.NumParams()).ToAPIType()
+	if mainFunction.NumParams() > maximumParamsAllowedForRunFunction {
+		return "", nil, startosis_errors.NewInterpretationError("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, mainFunction.NumParams()).ToAPIType()
 	}
 
 	var argsTuple starlark.Tuple
 
-	if runFunction.NumParams() >= minimumParamsRequiredForPlan {
-		if paramName, _ := runFunction.Param(planParamIndex); paramName != planParamName {
+	if mainFunction.NumParams() >= minimumParamsRequiredForPlan {
+		if paramName, _ := mainFunction.Param(planParamIndex); paramName != planParamName {
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, planParamIndex, planParamName, paramName).ToAPIType()
 		}
 		kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
@@ -117,8 +126,8 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 		argsTuple = append(argsTuple, planModule)
 	}
 
-	if runFunction.NumParams() == paramsRequiredForArgs {
-		if paramName, _ := runFunction.Param(argsParamIndex); paramName != argsParamName {
+	if mainFunction.NumParams() == paramsRequiredForArgs {
+		if paramName, _ := mainFunction.Param(argsParamIndex); paramName != argsParamName {
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
 		}
 		// run function has an argument so we parse input args
@@ -129,7 +138,7 @@ func (interpreter *StartosisInterpreter) Interpret(_ context.Context, packageId 
 		argsTuple = append(argsTuple, inputArgs)
 	}
 
-	outputObject, err := starlark.Call(runFunctionExecutionThread, runFunction, argsTuple, noKwargs)
+	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, noKwargs)
 	if err != nil {
 		return "", nil, generateInterpretationError(err).ToAPIType()
 	}
@@ -272,11 +281,25 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
 }
 
-func missingRunFunctionReturnValue(packageId string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
-		return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in the script; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in any Kurtosis script").ToAPIType()
+		return "", nil, startosis_errors.NewInterpretationError(
+			"No '%s' function found in the script; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in any Kurtosis script",
+			mainFunctionName,
+			mainFunctionName,
+			mainFunctionName,
+			mainFunctionName,
+		).ToAPIType()
 	}
-	return "", nil, startosis_errors.NewInterpretationError("No 'run' function found in file '%v/main.star'; a 'run' entrypoint function with the signature `run(args)` or `run()` is required in the main.star file of any Kurtosis package", packageId).ToAPIType()
+
+	return "", nil, startosis_errors.NewInterpretationError(
+		"No '%s' function found in the main file of package '%s'; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the main file of any Kurtosis package",
+		mainFunctionName,
+		packageId,
+		mainFunctionName,
+		mainFunctionName,
+		mainFunctionName,
+	).ToAPIType()
 }
 
 func newStarlarkThread(threadName string) *starlark.Thread {

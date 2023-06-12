@@ -2382,7 +2382,8 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
     serializedScript: jspb.Message.getFieldWithDefault(msg, 1, ""),
     serializedParams: jspb.Message.getFieldWithDefault(msg, 2, ""),
     dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
-    parallelism: jspb.Message.getFieldWithDefault(msg, 4, 0)
+    parallelism: jspb.Message.getFieldWithDefault(msg, 4, 0),
+    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 5, "")
   };
 
   if (includeInstance) {
@@ -2434,6 +2435,10 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
     case 4:
       var value = /** @type {number} */ (reader.readInt32());
       msg.setParallelism(value);
+      break;
+    case 5:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setMainFunctionName(value);
       break;
     default:
       reader.skipField();
@@ -2489,6 +2494,13 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
   if (f != null) {
     writer.writeInt32(
       4,
+      f
+    );
+  }
+  f = message.getMainFunctionName();
+  if (f.length > 0) {
+    writer.writeString(
+      5,
       f
     );
   }
@@ -2603,6 +2615,24 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.hasParallelism = functio
 };
 
 
+/**
+ * optional string main_function_name = 5;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getMainFunctionName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 5, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setMainFunctionName = function(value) {
+  return jspb.Message.setProto3StringField(this, 5, value);
+};
+
+
 
 /**
  * Oneof group definitions for this message. Each group defines the field
@@ -2667,7 +2697,9 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     serializedParams: jspb.Message.getFieldWithDefault(msg, 5, ""),
     dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 6, false),
     parallelism: jspb.Message.getFieldWithDefault(msg, 7, 0),
-    clonePackage: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
+    clonePackage: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
+    relativePathToMainFile: jspb.Message.getFieldWithDefault(msg, 9, ""),
+    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 10, "")
   };
 
   if (includeInstance) {
@@ -2731,6 +2763,14 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
     case 8:
       var value = /** @type {boolean} */ (reader.readBool());
       msg.setClonePackage(value);
+      break;
+    case 9:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setRelativePathToMainFile(value);
+      break;
+    case 10:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setMainFunctionName(value);
       break;
     default:
       reader.skipField();
@@ -2807,6 +2847,20 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f != null) {
     writer.writeBool(
       8,
+      f
+    );
+  }
+  f = message.getRelativePathToMainFile();
+  if (f.length > 0) {
+    writer.writeString(
+      9,
+      f
+    );
+  }
+  f = message.getMainFunctionName();
+  if (f.length > 0) {
+    writer.writeString(
+      10,
       f
     );
   }
@@ -3050,6 +3104,42 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.clearClonePackage = fun
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.hasClonePackage = function() {
   return jspb.Message.getField(this, 8) != null;
+};
+
+
+/**
+ * optional string relative_path_to_main_file = 9;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getRelativePathToMainFile = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setRelativePathToMainFile = function(value) {
+  return jspb.Message.setProto3StringField(this, 9, value);
+};
+
+
+/**
+ * optional string main_function_name = 10;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getMainFunctionName = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 10, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setMainFunctionName = function(value) {
+  return jspb.Message.setProto3StringField(this, 10, value);
 };
 
 

@@ -36,6 +36,8 @@ def run(plan, args):
 `
 	doNotDryRun        = false
 	defaultParallelism = 4
+
+	useDefaultMainFile = ""
 )
 
 var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -103,7 +105,7 @@ func run(
 }
 
 func removeServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, fmt.Sprintf(`{"service_name": "%s"}`, serviceName), doNotDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, fmt.Sprintf(`{"service_name": "%s"}`, serviceName), doNotDryRun, defaultParallelism)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for rendering template")
 	}

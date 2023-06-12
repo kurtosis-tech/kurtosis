@@ -95,8 +95,9 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	serializedParams := args.GetSerializedParams()
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
+	mainFuncName := args.GetMainFunctionName()
 
-	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, serializedStarlarkScript, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, serializedStarlarkScript, serializedParams, stream)
 	return nil
 }
 
@@ -139,17 +140,19 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	serializedParams := args.SerializedParams
+	relativePathToMainFile := args.GetRelativePathToMainFile()
+	mainFuncName := args.GetMainFunctionName()
 
 	// TODO: remove this fork once everything uses the UploadStarlarkPackage endpoint prior to calling this
 	//  right now the TS SDK still uses the old deprecated behavior
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
 	if args.ClonePackage != nil {
-		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil)
+		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
 	} else {
 		// old deprecated syntax in use
 		moduleContentIfLocal := args.GetLocal()
-		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal)
+		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
 	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
@@ -157,7 +160,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		}
 		return nil
 	}
-	apicService.runStarlark(parallelism, dryRun, packageId, scriptWithRunFunction, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, packageId, mainFuncName, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
 
@@ -756,7 +759,13 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	return serviceInfoResponse, nil
 }
 
-func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string, clonePackage bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
+//"/services/jvm/icon/src/node-setup/contract-deploy.star"
+func (apicService ApiContainerService) runStarlarkPackageSetup(
+	packageId string,
+	clonePackage bool,
+	moduleContentIfLocal []byte,
+	relativePathToMainFile string,
+) (string, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
 	if clonePackage {
@@ -774,7 +783,13 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 		return "", interpretationError
 	}
 
-	pathToMainFile := path.Join(packageRootPathOnDisk, startosis_constants.MainFileName)
+	var pathToMainFile string
+	if relativePathToMainFile == "" {
+		pathToMainFile = path.Join(packageRootPathOnDisk, startosis_constants.MainFileName)
+	} else {
+		pathToMainFile = path.Join(packageRootPathOnDisk, relativePathToMainFile)
+	}
+
 	if _, err := os.Stat(pathToMainFile); err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
@@ -787,8 +802,16 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 	return string(mainScriptToExecute), nil
 }
 
-func (apicService ApiContainerService) runStarlark(parallelism int, dryRun bool, packageId string, serializedStarlark string, serializedParams string, stream grpc.ServerStream) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, serializedStarlark, serializedParams)
+func (apicService ApiContainerService) runStarlark(
+	parallelism int,
+	dryRun bool,
+	packageId string,
+	mainFunctionName string,
+	serializedStarlark string,
+	serializedParams string,
+	stream grpc.ServerStream,
+) {
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, serializedStarlark, serializedParams)
 	for {
 		select {
 		case <-stream.Context().Done():

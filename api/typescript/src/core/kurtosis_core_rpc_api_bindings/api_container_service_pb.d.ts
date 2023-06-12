@@ -192,6 +192,9 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasParallelism(): boolean;
   clearParallelism(): RunStarlarkScriptArgs;
 
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -206,6 +209,7 @@ export namespace RunStarlarkScriptArgs {
     serializedParams: string,
     dryRun?: boolean,
     parallelism?: number,
+    mainFunctionName: string,
   }
 
   export enum DryRunCase { 
@@ -249,6 +253,12 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasClonePackage(): boolean;
   clearClonePackage(): RunStarlarkPackageArgs;
 
+  getRelativePathToMainFile(): string;
+  setRelativePathToMainFile(value: string): RunStarlarkPackageArgs;
+
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -268,6 +278,8 @@ export namespace RunStarlarkPackageArgs {
     dryRun?: boolean,
     parallelism?: number,
     clonePackage?: boolean,
+    relativePathToMainFile: string,
+    mainFunctionName: string,
   }
 
   export enum StarlarkPackageContentCase { 
