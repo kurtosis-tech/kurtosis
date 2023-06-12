@@ -16,8 +16,8 @@ import {
     RepartitionArgs,
     RunStarlarkPackageArgs,
     RunStarlarkScriptArgs,
-    StartServicesArgs,
-    StartServicesResponse,
+    AddServicesArgs,
+    AddServicesResponse,
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
     UnpauseServiceArgs,
@@ -34,7 +34,7 @@ export interface GenericApiContainerClient {
     getEnclaveName(): string
     runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>>
     runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>>
-    startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>
+    addServices(addServicesArgs: AddServicesArgs): Promise<Result<AddServicesResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
     repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>
     waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>>

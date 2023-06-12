@@ -8,6 +8,13 @@ package service_network
 import (
 	"context"
 	"fmt"
+	"net"
+	"net/netip"
+	"os"
+	"strconv"
+	"testing"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -29,12 +36,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
-	"net"
-	"net/netip"
-	"os"
-	"strconv"
-	"testing"
-	"time"
 )
 
 const (
@@ -68,7 +69,7 @@ var (
 	portWaitForTest = port_spec.NewWait(5 * time.Second)
 )
 
-func TestStartService_Successful(t *testing.T) {
+func TestAddService_Successful(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -160,7 +161,7 @@ func TestStartService_Successful(t *testing.T) {
 		enclaveName,
 		mock.Anything).Maybe().Times(0)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
+	startedService, err := network.AddService(ctx, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.NotNil(t, startedService)
 
@@ -185,7 +186,7 @@ func TestStartService_Successful(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
-func TestStartService_FailedToStart(t *testing.T) {
+func TestAddService_FailedToStart(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -279,7 +280,7 @@ func TestStartService_FailedToStart(t *testing.T) {
 		nil,
 	)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
+	startedService, err := network.AddService(ctx, serviceName, serviceConfig)
 	require.NotNil(t, err)
 	require.Nil(t, startedService)
 
@@ -299,7 +300,7 @@ func TestStartService_FailedToStart(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
-func TestStartService_SidecarFailedToStart(t *testing.T) {
+func TestAddService_SidecarFailedToStart(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -406,7 +407,7 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 		nil,
 	)
 
-	startedService, err := network.StartService(ctx, serviceName, serviceConfig)
+	startedService, err := network.AddService(ctx, serviceName, serviceConfig)
 	require.NotNil(t, err)
 	require.Nil(t, startedService)
 
@@ -423,7 +424,7 @@ func TestStartService_SidecarFailedToStart(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
-func TestStartServices_Success(t *testing.T) {
+func TestAddServices_Success(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -512,7 +513,7 @@ func TestStartServices_Success(t *testing.T) {
 		map[service.ServiceUUID]error{},
 		nil)
 
-	success, failure, err := network.StartServices(
+	success, failure, err := network.AddServices(
 		ctx,
 		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 			successfulServiceName: successfulServiceConfig,
@@ -543,7 +544,7 @@ func TestStartServices_Success(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
-func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
+func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -796,7 +797,7 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 		nil,
 	)
 
-	success, failure, err := network.StartServices(
+	success, failure, err := network.AddServices(
 		ctx,
 		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 			successfulServiceName:    successfulServiceConfig,
@@ -822,6 +823,337 @@ func TestStartServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	partitionServices, err := network.topology.GetPartitionServices()
 	require.Nil(t, err)
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
+}
+
+func TestStopService_Successful(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	serviceInternalTestId := 1
+	serviceName := testServiceNameFromInt(serviceInternalTestId)
+	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
+	successfulServiceIp := testIpFromInt(serviceInternalTestId)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
+	serviceRegistration.SetStatus(service.ServiceStatus_Started)
+
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
+		enclaveName,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		nil,
+		enclaveDb,
+	)
+	require.Nil(t, err)
+	network.registeredServiceInfo[serviceName] = serviceRegistration
+
+	// The service is registered before being started
+	backend.EXPECT().StopUserServices(
+		ctx,
+		enclaveName,
+		&service.ServiceFilters{
+			Names: nil,
+			UUIDs: map[service.ServiceUUID]bool{
+				serviceUuid: true,
+			},
+			Statuses: nil,
+		},
+	).Times(1).Return(
+		map[service.ServiceUUID]bool{
+			serviceUuid: true,
+		},
+		map[service.ServiceUUID]error{},
+		nil,
+	)
+
+	err = network.StopService(ctx, string(serviceName))
+	require.Nil(t, err)
+	require.Equal(t, serviceRegistration.GetStatus(), service.ServiceStatus_Stopped)
+}
+
+func TestStopService_StopUserServicesFailed(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	serviceInternalTestId := 1
+	serviceName := testServiceNameFromInt(serviceInternalTestId)
+	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
+	successfulServiceIp := testIpFromInt(serviceInternalTestId)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
+	serviceRegistration.SetStatus(service.ServiceStatus_Started)
+
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
+		enclaveName,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
+	)
+	require.Nil(t, err)
+	network.registeredServiceInfo[serviceName] = serviceRegistration
+
+	// The service is registered before being started
+	backend.EXPECT().StopUserServices(
+		ctx,
+		enclaveName,
+		&service.ServiceFilters{
+			Names: nil,
+			UUIDs: map[service.ServiceUUID]bool{
+				serviceUuid: true,
+			},
+			Statuses: nil,
+		},
+	).Times(1).Return(
+		map[service.ServiceUUID]bool{},
+		map[service.ServiceUUID]error{
+			serviceUuid: stacktrace.NewError("Failed stopping service"),
+		},
+		nil,
+	)
+
+	err = network.StopService(ctx, string(serviceName))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Failed stopping service")
+	require.Equal(t, serviceRegistration.GetStatus(), service.ServiceStatus_Started)
+}
+
+func TestStopService_ServiceAlreadyStopped(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	serviceInternalTestId := 1
+	serviceName := testServiceNameFromInt(serviceInternalTestId)
+	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
+	successfulServiceIp := testIpFromInt(serviceInternalTestId)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
+	serviceRegistration.SetStatus(service.ServiceStatus_Stopped)
+
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
+		enclaveName,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
+	)
+	require.Nil(t, err)
+	network.registeredServiceInfo[serviceName] = serviceRegistration
+
+	// The service is registered before being started
+	backend.EXPECT().StopUserServices(
+		ctx,
+		enclaveName,
+		&service.ServiceFilters{
+			Names: nil,
+			UUIDs: map[service.ServiceUUID]bool{
+				serviceUuid: true,
+			},
+			Statuses: nil,
+		},
+	).Maybe().Times(0)
+
+	err = network.StopService(ctx, string(serviceName))
+	require.NotNil(t, err)
+	expectedErrorMsg := fmt.Sprintf("Service '%s' is already stopped", string(serviceName))
+	require.Contains(t, err.Error(), expectedErrorMsg)
+	require.Equal(t, service.ServiceStatus_Stopped, serviceRegistration.GetStatus())
+}
+
+func TestStartService_Successful(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	serviceInternalTestId := 1
+	serviceName := testServiceNameFromInt(serviceInternalTestId)
+	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
+	successfulServiceIp := testIpFromInt(serviceInternalTestId)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
+	serviceRegistration.SetStatus(service.ServiceStatus_Stopped)
+	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "")
+	serviceRegistration.SetConfig(serviceConfig)
+	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
+
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
+		enclaveName,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
+	)
+	require.Nil(t, err)
+	network.registeredServiceInfo[serviceName] = serviceRegistration
+
+	// The service is registered before being started
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveName,
+		map[service.ServiceUUID]*service.ServiceConfig{
+			serviceUuid: serviceConfig,
+		},
+	).Times(1).Return(
+		map[service.ServiceUUID]*service.Service{
+			serviceUuid: serviceObj,
+		},
+		map[service.ServiceUUID]error{},
+		nil,
+	)
+
+	err = network.StartService(ctx, string(serviceName))
+	require.Nil(t, err)
+	require.Equal(t, serviceRegistration.GetStatus(), service.ServiceStatus_Started)
+}
+
+func TestStartService_StartRegisteredUserServicesFailed(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	serviceInternalTestId := 1
+	serviceName := testServiceNameFromInt(serviceInternalTestId)
+	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
+	successfulServiceIp := testIpFromInt(serviceInternalTestId)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
+	serviceRegistration.SetStatus(service.ServiceStatus_Stopped)
+	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "")
+	serviceRegistration.SetConfig(serviceConfig)
+
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
+		enclaveName,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
+	)
+	require.Nil(t, err)
+	network.registeredServiceInfo[serviceName] = serviceRegistration
+
+	// The service is registered before being started
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveName,
+		map[service.ServiceUUID]*service.ServiceConfig{
+			serviceUuid: serviceConfig,
+		},
+	).Times(1).Return(
+		map[service.ServiceUUID]*service.Service{},
+		map[service.ServiceUUID]error{
+			serviceUuid: stacktrace.NewError("Failed starting service"),
+		},
+		nil,
+	)
+
+	err = network.StartService(ctx, string(serviceName))
+	require.NotNil(t, err)
+	require.Contains(t, err.Error(), "Failed starting service")
+	require.Equal(t, serviceRegistration.GetStatus(), service.ServiceStatus_Stopped)
+}
+
+func TestStartService_ServiceAlreadyStarted(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	serviceInternalTestId := 1
+	serviceName := testServiceNameFromInt(serviceInternalTestId)
+	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
+	successfulServiceIp := testIpFromInt(serviceInternalTestId)
+	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
+	serviceRegistration.SetStatus(service.ServiceStatus_Started)
+	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "")
+	serviceRegistration.SetConfig(serviceConfig)
+
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
+		enclaveName,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
+	)
+	require.Nil(t, err)
+	network.registeredServiceInfo[serviceName] = serviceRegistration
+
+	// The service is registered before being started
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveName,
+		map[service.ServiceUUID]*service.ServiceConfig{
+			serviceUuid: serviceConfig,
+		},
+	).Maybe().Times(0)
+
+	err = network.StartService(ctx, string(serviceName))
+	require.NotNil(t, err)
+	expectedErrorMsg := fmt.Sprintf("Service '%s' is already started", string(serviceName))
+	require.Contains(t, err.Error(), expectedErrorMsg)
+	require.Equal(t, serviceRegistration.GetStatus(), service.ServiceStatus_Started)
 }
 
 func TestUpdateService(t *testing.T) {
