@@ -322,7 +322,13 @@ func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, _, destroyEnclaveFunc, err := CreateEnclave(t, ctx, testName, partitioningDisabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer func() { _ = destroyEnclaveFunc() }()
+	defer func() {
+		destroyErr := destroyEnclaveFunc()
+		if destroyErr != nil {
+			logrus.Errorf("Error destroying enclave at the end of integration test '%s'",
+				testName)
+		}
+	}()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Startosis script...")
