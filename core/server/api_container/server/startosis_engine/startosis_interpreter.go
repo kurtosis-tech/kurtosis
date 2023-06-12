@@ -123,7 +123,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	var argsTuple starlark.Tuple
 	var kwArgs []starlark.Tuple
 
-	if mainFunction.NumParams() >= minimumParamsRequiredForPlan {
+	if shouldInjectPlanArg || (isUsingDefaultMainFunction && mainFunction.NumParams() >= minimumParamsRequiredForPlan) {
 		if paramName, _ := mainFunction.Param(planParamIndex); paramName != planParamName {
 			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, planParamIndex, planParamName, paramName).ToAPIType()
 		}
@@ -132,31 +132,33 @@ func (interpreter *StartosisInterpreter) Interpret(
 		argsTuple = append(argsTuple, planModule)
 	}
 
-	if shouldInjectPlanArg || (isUsingDefaultMainFunction && mainFunction.NumParams() == paramsRequiredForArgs) {
+	mainFuncParamsNum := mainFunction.NumParams()
+
+	if (isUsingDefaultMainFunction && mainFuncParamsNum == paramsRequiredForArgs) ||
+		(!isUsingDefaultMainFunction && mainFuncParamsNum > 0) {
 		if isUsingDefaultMainFunction {
 			if paramName, _ := mainFunction.Param(argsParamIndex); paramName != argsParamName {
 				return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
 			}
-			// run function has an argument so we parse input args
-			inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
-			if interpretationError != nil {
-				return "", nil, interpretationError.ToAPIType()
-			}
+		}
+		// run function has an argument so we parse input args
+		inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
+		if interpretationError != nil {
+			return "", nil, interpretationError.ToAPIType()
+		}
+		if isUsingDefaultMainFunction {
 			argsTuple = append(argsTuple, inputArgs)
+			kwArgs = noKwargs
 		} else {
-			inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
-			if interpretationError != nil {
-				return "", nil, interpretationError.ToAPIType()
-			}
 			newDic, ok := inputArgs.(*starlark.Dict)
 			if !ok {
 				return "", nil, startosis_errors.NewInterpretationError("Error text").ToAPIType()
 			}
-			noKwargs = append(kwArgs, newDic.Items()...)
+			kwArgs = append(kwArgs, newDic.Items()...)
 		}
 	}
 
-	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, noKwargs)
+	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, kwArgs)
 	if err != nil {
 		return "", nil, generateInterpretationError(err).ToAPIType()
 	}
