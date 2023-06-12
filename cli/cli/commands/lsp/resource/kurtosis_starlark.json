@@ -200,6 +200,34 @@
       ]
     },
     {
+      "name": "start_service",
+      "detail": "The start_service instruction on the plan object restarts a stopped service",
+      "documentation": "",
+      "returnType": "",
+      "params": [
+        {
+          "name": "name",
+          "type": "string",
+          "content": "name",
+          "detail": "The service name of the service to be started."
+        }
+      ]
+    },
+    {
+      "name": "stop_service",
+      "detail": "The stop_service instruction on the plan object stops a service",
+      "documentation": "",
+      "returnType": "",
+      "params": [
+        {
+          "name": "name",
+          "type": "string",
+          "content": "name",
+          "detail": "The service name of the service to be stopped."
+        }
+      ]
+    },
+    {
       "name": "store_service_files",
       "detail": "store_service_files on the plan object copies files or directories from an existing service in the enclave into a files artifact. This is useful when work produced on one container is needed elsewhere.",
       "documentation": "",

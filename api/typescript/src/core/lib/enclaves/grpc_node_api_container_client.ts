@@ -2,8 +2,8 @@ import {ok, err, Result} from "neverthrow";
 import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
-    StartServicesArgs,
-    StartServicesResponse,
+    AddServicesArgs,
+    AddServicesResponse,
     RemoveServiceArgs,
     RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
@@ -73,9 +73,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(runStarlarkPackageResult.value)
     }
 
-    public async startServices(startServicesArgs: StartServicesArgs): Promise<Result<StartServicesResponse, Error>>{
-        const promiseStartServices: Promise<Result<StartServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.startServices(startServicesArgs, (error: ServiceError | null, response?: StartServicesResponse) => {
+    public async addServices(addServicesArgs: AddServicesArgs): Promise<Result<AddServicesResponse, Error>>{
+        const promiseAddServices: Promise<Result<AddServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.addServices(addServicesArgs, (error: ServiceError | null, response?: AddServicesResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -87,13 +87,13 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
                 }
             })
         });
-        const resultStartServices: Result<StartServicesResponse, Error> = await promiseStartServices;
-        if (resultStartServices.isErr()) {
-            return err(resultStartServices.error);
+        const resultAddServices: Result<AddServicesResponse, Error> = await promiseAddServices;
+        if (resultAddServices.isErr()) {
+            return err(resultAddServices.error);
         }
 
-        const startServicesResponse: StartServicesResponse = resultStartServices.value;
-        return ok(startServicesResponse)
+        const addServicesResponse: AddServicesResponse = resultAddServices.value;
+        return ok(addServicesResponse)
     }
 
     public async removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>> {

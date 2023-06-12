@@ -511,15 +511,9 @@ func (manager *DockerManager) CreateAndStartContainer(
 	}
 	// TODO defer a disconnct-from-network if this function doesn't succeed??
 
-	options := types.ContainerStartOptions{
-		CheckpointID:  "",
-		CheckpointDir: "",
-	}
-	if err = manager.dockerClient.ContainerStart(ctx, containerId, options); err != nil {
-		containerLogs := manager.getFailedContainerLogsOrErrorString(ctx, containerId)
-		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
-		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
-		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image '%v'; logs are below:%v%v%v", dockerImage, containerLogsHeader, containerLogs, containerLogsFooter)
+	err = manager.StartContainer(ctx, containerId)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "Could not start Docker container from image '%v'.", dockerImage)
 	}
 
 	functionFinishedSuccessfully := false
@@ -684,6 +678,31 @@ func (manager *DockerManager) AttachToContainer(ctx context.Context, containerId
 		return types.HijackedResponse{}, stacktrace.Propagate(err, "An error occurred attaching to container '%v'", containerId)
 	}
 	return hijackedResponse, nil
+}
+
+/*
+StartContainer
+Starts the container with the given container ID
+
+Args:
+
+	context: The context that the starting runs in (useful for cancellation)
+	containerId: ID of Docker container to start
+*/
+func (manager *DockerManager) StartContainer(context context.Context, containerId string) error {
+	options := types.ContainerStartOptions{
+		CheckpointID:  "",
+		CheckpointDir: "",
+	}
+	err := manager.dockerClient.ContainerStart(context, containerId, options)
+	if err != nil {
+		containerLogs := manager.getFailedContainerLogsOrErrorString(context, containerId)
+		containerLogsHeader := "\n--------------------- CONTAINER LOGS -----------------------\n"
+		containerLogsFooter := "\n------------------- END CONTAINER LOGS --------------------"
+		return stacktrace.Propagate(err, "Could not start Docker container with ID '%v'; logs are below:%v%v%v", containerId, containerLogsHeader, containerLogs, containerLogsFooter)
+	}
+
+	return nil
 }
 
 /*

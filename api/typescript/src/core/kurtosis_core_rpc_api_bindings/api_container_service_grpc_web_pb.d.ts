@@ -19,12 +19,12 @@ export class ApiContainerServiceClient {
     metadata?: grpcWeb.Metadata
   ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
-  startServices(
-    request: api_container_service_pb.StartServicesArgs,
+  addServices(
+    request: api_container_service_pb.AddServicesArgs,
     metadata: grpcWeb.Metadata | undefined,
     callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.StartServicesResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.StartServicesResponse>;
+               response: api_container_service_pb.AddServicesResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.AddServicesResponse>;
 
   getServices(
     request: api_container_service_pb.GetServicesArgs,
@@ -153,10 +153,10 @@ export class ApiContainerServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
-  startServices(
-    request: api_container_service_pb.StartServicesArgs,
+  addServices(
+    request: api_container_service_pb.AddServicesArgs,
     metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.StartServicesResponse>;
+  ): Promise<api_container_service_pb.AddServicesResponse>;
 
   getServices(
     request: api_container_service_pb.GetServicesArgs,

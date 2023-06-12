@@ -270,10 +270,6 @@ func createStartServiceOperation(
 			return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service UUID '%v'; this is a bug in Kurtosis", serviceUuid)
 		}
 		kubernetesService := matchingObjectAndResources.KubernetesResources.Service
-		serviceObj := matchingObjectAndResources.Service
-		if serviceObj != nil {
-			return nil, stacktrace.NewError("Cannot start service with UUID '%v' because the service has already been started previously", serviceUuid)
-		}
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddr := matchingObjectAndResources.ServiceRegistration.GetPrivateIP().String()

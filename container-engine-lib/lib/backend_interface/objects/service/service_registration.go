@@ -1,8 +1,9 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"net"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 )
 
 // A ServiceRegistration is a stub for a started service
@@ -25,6 +26,13 @@ type ServiceRegistration struct {
 	// to the "Kubernetes Service Name", which is something like user-services-<SERVICE_UUID>
 	// TODO: for consistency we should probably set the hostname to user-services-<SERVICE_UUID> in docker as well
 	hostname string
+
+	// Service state: registered, started or stopped
+	status ServiceStatus
+
+	// Service config used during service creation
+	// Used when the service is restarted
+	config *ServiceConfig
 }
 
 func NewServiceRegistration(name ServiceName, guid ServiceUUID, enclaveId enclave.EnclaveUUID, privateIp net.IP, hostname string) *ServiceRegistration {
@@ -34,6 +42,8 @@ func NewServiceRegistration(name ServiceName, guid ServiceUUID, enclaveId enclav
 		enclaveId: enclaveId,
 		privateIp: privateIp,
 		hostname:  hostname,
+		status:    ServiceStatus_Registered,
+		config:    nil,
 	}
 }
 
@@ -55,4 +65,20 @@ func (registration *ServiceRegistration) GetPrivateIP() net.IP {
 
 func (registration *ServiceRegistration) GetHostname() string {
 	return registration.hostname
+}
+
+func (registration *ServiceRegistration) GetStatus() ServiceStatus {
+	return registration.status
+}
+
+func (registration *ServiceRegistration) SetStatus(status ServiceStatus) {
+	registration.status = status
+}
+
+func (registration *ServiceRegistration) GetConfig() *ServiceConfig {
+	return registration.config
+}
+
+func (registration *ServiceRegistration) SetConfig(config *ServiceConfig) {
+	registration.config = config
 }

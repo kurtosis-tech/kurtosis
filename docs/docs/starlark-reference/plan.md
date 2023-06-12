@@ -431,6 +431,44 @@ set_connection(
 If serviceA is in subnetworkA and serviceB is in subnetworkB, the effective latency for a TCP request between serviceA and serviceB will be 1000ms = 500ms x 2. This is because the latency is applied to both the request (serviceA -> serviceB) and the response (serviceB -> serviceA)
 :::
 
+start_service
+-------------
+
+The `start_service` instruction restarts a service that was stopped temporarily by [`stop_service`][stop-service].
+
+```python
+plan.start_service(
+    # The service name of the service to be restarted.
+    # MANDATORY
+    name = "my_service",
+)
+```
+
+:::caution
+
+`start_service` is only available with the Docker backend.
+
+:::
+
+
+stop_service
+------------
+
+The `stop_service` instruction stops a service temporarily.  The container ends but its configuration stays around so it can be restarted quickly using [`start_service`][start-service].
+
+```python
+plan.stop_service(
+    # The service name of the service to be stopped.
+    # MANDATORY
+    name = "my_service",
+)
+```
+
+:::caution
+
+`stop_service` is only available with the Docker backend.
+
+:::
 
 store_service_files
 -------------------
@@ -551,12 +589,14 @@ plan.print(response["code"])
 
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
-[set-connection]: #set_connection
 [add-service]: #add_service
 [add-services]: #add_services
-[wait]: #wait
 [assert]: #assert
 [extract]: #extract
+[set-connection]: #set_connection
+[start-service]: #start_service
+[stop-service]: #stop_service
+[wait]: #wait
 
 [cli-run-reference]: ../cli-reference/run-starlark.md
 

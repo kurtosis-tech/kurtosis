@@ -36,7 +36,7 @@ type ServiceNetwork interface {
 		connection partition_topology.PartitionConnection,
 	) error
 
-	StartService(
+	AddService(
 		ctx context.Context,
 		serviceName service.ServiceName,
 		serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
@@ -45,7 +45,7 @@ type ServiceNetwork interface {
 		error,
 	)
 
-	StartServices(
+	AddServices(
 		ctx context.Context,
 		serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 		batchSize int,
@@ -65,6 +65,28 @@ type ServiceNetwork interface {
 	)
 
 	RemoveService(ctx context.Context, serviceIdentifier string) (service.ServiceUUID, error)
+
+	StartService(ctx context.Context, serviceIdentifier string) error
+
+	StartServices(
+		ctx context.Context,
+		serviceIdentifiers []string,
+	) (
+		map[service.ServiceUUID]bool,
+		map[service.ServiceUUID]error,
+		error,
+	)
+
+	StopService(ctx context.Context, serviceIdentifier string) error
+
+	StopServices(
+		ctx context.Context,
+		serviceIdentifiers []string,
+	) (
+		map[service.ServiceUUID]bool,
+		map[service.ServiceUUID]error,
+		error,
+	)
 
 	PauseService(ctx context.Context, serviceIdentifier string) error
 
