@@ -117,7 +117,6 @@ func TestNetworkPartitionWithSomeDelay(t *testing.T) {
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, starlarkSubnetworkTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFunc()
 	defer func() {
 		destroyErr := destroyEnclaveFunc()
 		if destroyErr != nil {
