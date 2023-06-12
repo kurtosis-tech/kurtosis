@@ -150,11 +150,11 @@ func (interpreter *StartosisInterpreter) Interpret(
 			argsTuple = append(argsTuple, inputArgs)
 			kwArgs = noKwargs
 		} else {
-			newDic, ok := inputArgs.(*starlark.Dict)
+			argsDict, ok := inputArgs.(*starlark.Dict)
 			if !ok {
-				return "", nil, startosis_errors.NewInterpretationError("Error text").ToAPIType()
+				return "", nil, startosis_errors.NewInterpretationError("An error occurred casting input args '%s' to Starlark Dict", inputArgs).ToAPIType()
 			}
-			kwArgs = append(kwArgs, newDic.Items()...)
+			kwArgs = append(kwArgs, argsDict.Items()...)
 		}
 	}
 
