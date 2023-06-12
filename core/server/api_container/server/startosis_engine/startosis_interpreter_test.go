@@ -76,12 +76,12 @@ def deploy_contract(plan,service_name,contract_name,init_message,args):
 	mainFunctionName := "deploy_contract"
 	inputArgs := `{"service_name": "my-service", "contract_name": "my-contract", "init_message": "Init message", "args": {"arg1": "arg1-value", "arg2": "arg2-value"}}`
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFunctionName, script, inputArgs)
+	result, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFunctionName, script, inputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3) // The three print functions
-	//require.NotNil(t, result)
-	//expectedResult := "\"arg1-value:arg2-value\""
-	//require.Equal(t, expectedResult, result)
+	require.NotNil(t, result)
+	expectedResult := "\"arg1-value:arg2-value\""
+	require.Equal(t, expectedResult, result)
 	expectedOutput := "Service name: service_name\nContract name: contract_name\nInit message: init_message\n"
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
