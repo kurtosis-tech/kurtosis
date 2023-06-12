@@ -602,16 +602,28 @@
           "detail": "ENTRYPOINT, CMD, and ENV variables sometimes need to refer to the container's own IP address. \n If this placeholder string is referenced inside the 'entrypoint', 'cmd', or 'env_vars' properties, the Kurtosis engine will replace it at launch time\n with the container's actual IP address."
         },
         {
-          "name": "cpu_allocation",
+          "name": "max_cpu",
           "type": "number",
-          "content": "cpu_allocation?",
+          "content": "max_cpu?",
           "detail": "The maximum amount of CPUs the service can use, in millicpu/millicore."
         },
         {
-          "name": "memory_allocation",
+          "name": "min_cpu",
           "type": "number",
-          "content": "memory_allocation?",
+          "content": "min_cpu?",
+          "detail": "The mimimum amout of CPUs the service must have, in millicpu/millicore. CAUTION: This is only available for Kubernetes, andd will be ignored for Docker."
+        },
+        {
+          "name": "max_memory",
+          "type": "number",
+          "content": "max_memory?",
           "detail": "The maximum amount of memory, in megabytes, the service can use."
+        },
+        {
+          "name": "min_memory",
+          "type": "number",
+          "content": "min_memory?",
+          "detail": "The minimum amount of memory, in megabytes, the service must have. CAUTION: This is only available for Kubernetes, andd will be ignored for Docker."
         },
         {
           "name": "subnetwork",
