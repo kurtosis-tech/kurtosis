@@ -78,9 +78,16 @@ func (enclaveCtx *EnclaveContext) GetEnclaveName() string {
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
-func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, serializedScript string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) RunStarlarkScript(
+	ctx context.Context,
+	mainFunctionName string,
+	serializedScript string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(serializedScript, serializedParams, dryRun, parallelism)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(mainFunctionName, serializedScript, serializedParams, dryRun, parallelism)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	stream, err := enclaveCtx.client.RunStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
@@ -94,8 +101,8 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(ctx context.Context, seriali
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
-func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context, serializedScript string, serializedParams string, dryRun bool, parallelism int32) (*StarlarkRunResult, error) {
-	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkScript(ctx, serializedScript, serializedParams, dryRun, parallelism)
+func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context, mainFunctionName string, serializedScript string, serializedParams string, dryRun bool, parallelism int32) (*StarlarkRunResult, error) {
+	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkScript(ctx, mainFunctionName, serializedScript, serializedParams, dryRun, parallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error requesting Starlark Script run")
 	}
@@ -104,7 +111,15 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context,
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
-func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
+	ctx context.Context,
+	packageRootPath string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	defer func() {
@@ -114,7 +129,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packag
 	}()
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(packageRootPath, serializedParams, dryRun, parallelism)
+	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -135,8 +150,16 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(ctx context.Context, packag
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
-func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context, packageRootPath string, serializedParams string, dryRun bool, parallelism int32) (*StarlarkRunResult, error) {
-	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageRootPath, serializedParams, dryRun, parallelism)
+func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(
+	ctx context.Context,
+	packageRootPath string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) (*StarlarkRunResult, error) {
+	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error running Starlark package")
 	}
@@ -145,7 +168,15 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(ctx context.Context
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
-func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, packageId string, serializedParams string, dryRun bool, parallelism int32) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
+	ctx context.Context,
+	packageId string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	defer func() {
@@ -155,7 +186,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, 
 	}()
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, serializedParams, dryRun, parallelism)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism)
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
@@ -168,8 +199,16 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(ctx context.Context, 
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
-func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(ctx context.Context, packageId string, serializedParams string, dryRun bool, parallelism int32) (*StarlarkRunResult, error) {
-	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, serializedParams, dryRun, parallelism)
+func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(
+	ctx context.Context,
+	packageId string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) (*StarlarkRunResult, error) {
+	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error running remote Starlark package")
 	}
@@ -394,14 +433,21 @@ func getErrFromStarlarkRunResult(result *StarlarkRunResult) error {
 	return nil
 }
 
-func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(packageRootPath string, serializedParams string, dryRun bool, parallelism int32) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
+func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
+	packageRootPath string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 	kurtosisYamlFilepath := path.Join(packageRootPath, kurtosisYamlFilename)
 
 	kurtosisYaml, err := parseKurtosisYaml(kurtosisYamlFilepath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, packageRootPath)
 	}
-	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, serializedParams, dryRun, parallelism), nil
+	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism), nil
 }
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
