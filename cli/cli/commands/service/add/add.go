@@ -438,7 +438,7 @@ func getServiceConfigStarlark(
 	if entrypoint != "" {
 		entryPointArgs = []string{entrypoint}
 	}
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entryPointArgs, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, 0, 0), nil
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entryPointArgs, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, 0, 0, 0, 0), nil
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings

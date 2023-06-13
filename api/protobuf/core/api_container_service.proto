@@ -153,6 +153,10 @@ message ServiceConfig {
 
   // The subnetwork the service should be part of. If unset, the service will be placed in the 'default' subnetwork
   optional string subnetwork = 11;
+
+  uint64 min_cpu_milli_cores = 12;
+
+  uint64 min_memory_megabytes = 13;
 }
 
 // Subset of ServiceConfig attributes containing only the fields that are "live-updatable"

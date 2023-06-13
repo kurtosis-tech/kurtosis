@@ -36,8 +36,7 @@ func WrapKurtosisBaseBuiltin(baseBuiltin *KurtosisBaseBuiltin, thread *starlark.
 		return nil, interpretationErr
 	}
 
-	printWarningForArguments(arguments.GetDefinition(), baseBuiltin)
-
+	printWarningForArguments(arguments, baseBuiltin)
 	// Second store the position at which the builtin is called within the source script
 	callFrame := thread.CallStack().At(1)
 	position := NewKurtosisBuiltinPosition(callFrame.Pos.Filename(), callFrame.Pos.Line, callFrame.Pos.Col)
@@ -65,16 +64,17 @@ func (builtin *KurtosisBaseBuiltinInternal) GetPosition() *KurtosisBuiltinPositi
 	return builtin.position
 }
 
-func printWarningForArguments(arguments []*builtin_argument.BuiltinArgument, builtin *KurtosisBaseBuiltin) {
+func printWarningForArguments(argumentSet *builtin_argument.ArgumentValuesSet, builtin *KurtosisBaseBuiltin) {
 	// if instruction is deprecated, print the deprecated warning for the instruction
 	// ignore the warnings associated with arguments
+	arguments := argumentSet.GetDefinition()
 	if builtin.Deprecation != nil {
 		warningMessage := getFormattedWarningMessageForInstruction(builtin.Deprecation, builtin.Name)
 		starlark_warning.PrintOnceAtTheEndOfExecutionf("%v %v", starlark_warning.WarningConstant, warningMessage)
 	} else {
 		// print if arguments for this builtIn is deprecated.
 		for _, argument := range arguments {
-			if argument.IsDeprecated() {
+			if argumentSet.IsSet(argument.Name) && argument.IsDeprecated() {
 				warningMessage := getFormattedWarningMessageForArgument(argument.Deprecation, builtin.Name, argument.Name)
 				starlark_warning.PrintOnceAtTheEndOfExecutionf("%v %v", starlark_warning.WarningConstant, warningMessage)
 			}

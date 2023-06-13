@@ -1003,7 +1003,7 @@ func TestStartService_Successful(t *testing.T) {
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceRegistration.SetStatus(service.ServiceStatus_Stopped)
-	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "")
+	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0)
 	serviceRegistration.SetConfig(serviceConfig)
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 
@@ -1059,7 +1059,7 @@ func TestStartService_StartRegisteredUserServicesFailed(t *testing.T) {
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceRegistration.SetStatus(service.ServiceStatus_Stopped)
-	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "")
+	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0)
 	serviceRegistration.SetConfig(serviceConfig)
 
 	file, err := os.CreateTemp("/tmp", "*.db")
@@ -1115,7 +1115,7 @@ func TestStartService_ServiceAlreadyStarted(t *testing.T) {
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceRegistration.SetStatus(service.ServiceStatus_Started)
-	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "")
+	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0)
 	serviceRegistration.SetConfig(serviceConfig)
 
 	file, err := os.CreateTemp("/tmp", "*.db")

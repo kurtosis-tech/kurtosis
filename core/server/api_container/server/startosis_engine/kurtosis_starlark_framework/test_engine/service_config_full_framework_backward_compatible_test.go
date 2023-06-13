@@ -11,22 +11,22 @@ import (
 	"testing"
 )
 
-type serviceConfigFullTestCase struct {
+type serviceConfigFullTestCaseBackwardCompatible struct {
 	*testing.T
 }
 
-func newServiceConfigFullTestCase(t *testing.T) *serviceConfigFullTestCase {
-	return &serviceConfigFullTestCase{
+func newServiceConfigFullTestCaseBackwardCompatible(t *testing.T) *serviceConfigFullTestCaseBackwardCompatible {
+	return &serviceConfigFullTestCaseBackwardCompatible{
 		T: t,
 	}
 }
 
-func (t *serviceConfigFullTestCase) GetId() string {
+func (t *serviceConfigFullTestCaseBackwardCompatible) GetId() string {
 	return service_config.ServiceConfigTypeName
 }
 
-func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
-	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s)",
+func (t *serviceConfigFullTestCaseBackwardCompatible) GetStarlarkCode() string {
+	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%q, %s=%d, %s=%d, %s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, TestContainerImageName,
 		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol, TestWaitConfiguration),
@@ -37,17 +37,15 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 		service_config.EnvVarsAttr, fmt.Sprintf("{%q: %q, %q: %q}", TestEnvVarName1, TestEnvVarValue1, TestEnvVarName2, TestEnvVarValue2),
 		service_config.PrivateIpAddressPlaceholderAttr, TestPrivateIPAddressPlaceholder,
 		service_config.SubnetworkAttr, TestSubnetwork,
-		service_config.MaxCpuMilliCoresAttr, TestCpuAllocation,
-		service_config.MinCpuMilliCoresAttr, TestMinCpuMilliCores,
-		service_config.MaxMemoryMegaBytesAttr, TestMemoryAllocation,
-		service_config.MinMemoryMegaBytesAttr, TestMinMemoryMegabytes,
+		service_config.CpuAllocationAttr, TestCpuAllocation,
+		service_config.MemoryAllocationAttr, TestMemoryAllocation,
 		service_config.ReadyConditionsAttr,
 		getDefaultReadyConditionsScriptPart(),
 	)
 	return starlarkCode
 }
 
-func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t *serviceConfigFullTestCaseBackwardCompatible) Assert(typeValue builtin_argument.KurtosisValueType) {
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
@@ -78,10 +76,6 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 		TestCpuAllocation,
 	).WithMaxMemoryMegabytes(
 		TestMemoryAllocation,
-	).WithMinCpuMilliCores(
-		TestMinCpuMilliCores,
-	).WithMinMemoryMegabytes(
-		TestMinMemoryMegabytes,
 	)
 
 	expectedServiceConfig := expectedServiceConfigBuilder.Build()
