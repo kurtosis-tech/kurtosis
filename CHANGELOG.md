@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.78.1](https://github.com/kurtosis-tech/kurtosis/compare/0.78.0...0.78.1) (2023-06-13)
+
+
+### Features
+
+* added min/max cpu and memory for kubernetes via starlark ([#689](https://github.com/kurtosis-tech/kurtosis/issues/689)) ([faffc07](https://github.com/kurtosis-tech/kurtosis/commit/faffc071e8617e19bf5b23252a6661cf8b7ff81b))
+* use kurtosis service name as the kubernetes service name ([#713](https://github.com/kurtosis-tech/kurtosis/issues/713)) ([b0d6b8e](https://github.com/kurtosis-tech/kurtosis/commit/b0d6b8ebe30f99d1baeaef4d68c08ebd9ca8a9f3))
+
 ## [0.78.0](https://github.com/kurtosis-tech/kurtosis/compare/0.77.4...0.78.0) (2023-06-12)
 
 
