@@ -162,19 +162,32 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 	return nil
 }
 
+// Execute This is just v0 for run_sh task - we can later improve on it.
+//	TODO: stop the container as soon as task completed.
+//   Create an mechanism for other services to retrieve files from the task container
+//   Make task as it's own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	// cmd string for default workdir
+	// create work directory and cd into that directory
 	createAndSwitchTheDirectory := fmt.Sprintf("mkdir -p %v && cd %v", builtin.workdir, builtin.workdir)
+
+	// replace future references to actual strings
 	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in the command of the exec recipe")
+		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in run_sh")
 	}
 
-	cleanString := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, "\n", " ")
-	completeRunCommand := fmt.Sprintf("%v && %v", createAndSwitchTheDirectory, cleanString)
+	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, "\n", " ")
+
+	completeRunCommand := fmt.Sprintf("%v && %v", createAndSwitchTheDirectory, commandWithNoNewLines)
 	createDefaultDirectory := []string{"/bin/sh", "-c", completeRunCommand}
 	serviceConfigBuilder := services.NewServiceConfigBuilder(builtin.image)
 	serviceConfigBuilder.WithFilesArtifactMountDirpaths(builtin.files)
+	// This make sure that the container does not stop as soon as it starts
+	// This only is needed for kubernetes at the moment
+	// TODO: Instead of creating a service and running exec commands
+	//  we could probably run the command as an entrypoint and retrieve the results as soon as the
+	//  command is completed
+	serviceConfigBuilder.WithCmdArgs([]string{"tail", "-f", "/dev/null"})
 
 	serviceConfig := serviceConfigBuilder.Build()
 	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfig)
@@ -183,6 +196,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		return "", err
 	}
 
+	// run the command passed in by user in the container
 	code, output, err := builtin.serviceNetwork.ExecCommand(ctx, builtin.name, createDefaultDirectory)
 	if err != nil {
 		return "", err
@@ -198,6 +212,8 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	return instructionResult, err
 }
 
+// Copied some of the command from: exec_recipe.ResultMapToString
+// TODO: create a utility method that can be used by add_service(s) and run_sh method.
 func resultMapToString(resultMap map[string]starlark.Comparable) string {
 	exitCode := resultMap[runshCodeKey]
 	rawOutput := resultMap[runshOutputKey]
