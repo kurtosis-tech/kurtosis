@@ -102,7 +102,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	go func() {
 		if err := portForwarder.ForwardPorts(); err != nil {
 			if err == portforward.ErrLostConnectionToPod {
-				logrus.Infof("Lost connection to pod:\n%v", portForwarder)
+				logrus.Infof("Lost connection to pod: %s", podProxyEndpointUrl.String())
 				close(portforwardClosedChannel)
 			} else {
 				logrus.Errorf("Expected to be able to start forwarding local ports to remote ports, instead our portforwarder has returned a non-nil err:\n%v", err)
