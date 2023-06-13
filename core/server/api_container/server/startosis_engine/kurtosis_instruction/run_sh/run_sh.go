@@ -76,6 +76,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				run:               "",               // populated at interpretation time
 				workdir:           DefaultWorkDir,   // populated at interpretation time
 				files:             nil,
+				resultUuid:        "", // populated at interpretation time
 			}
 		},
 
@@ -91,13 +92,13 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 type RunShCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	serviceNetwork    service_network.ServiceNetwork
-	resultUuid        string
 
-	name    string
-	run     string
-	image   string
-	workdir string
-	files   map[string]string
+	resultUuid string
+	name       string
+	run        string
+	image      string
+	workdir    string
+	files      map[string]string
 }
 
 func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
