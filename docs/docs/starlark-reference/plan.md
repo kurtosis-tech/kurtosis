@@ -375,7 +375,7 @@ For more details see [ `jq`'s builtin operators and functions](https://stedolan.
 run_sh
 -------------
 
-The `run_sh` instruction executes a one-time execution task. It runs the shell command specified by the mandatory field `run` on an image specified by the optional `image` field.
+The `run_sh` instruction executes a one-time execution task. It runs the bash command specified by the mandatory field `run` on an image specified by the optional `image` field.
 
 ```python
     result = plan.run_sh(
