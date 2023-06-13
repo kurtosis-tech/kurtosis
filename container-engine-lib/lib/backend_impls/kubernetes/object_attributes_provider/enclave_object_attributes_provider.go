@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_object_name"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
@@ -18,8 +19,7 @@ import (
 )
 
 const (
-	namespacePrefix   = "kurtosis-enclave"
-	userServicePrefix = "user-service"
+	namespacePrefix = "kurtosis-enclave"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
@@ -127,14 +127,8 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSide
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService(
 	serviceUUID service.ServiceUUID,
 	serviceName service.ServiceName,
-) (
-	KubernetesObjectAttributes,
-	error,
-) {
-	name, err := getCompositeKubernetesObjectName([]string{
-		userServicePrefix,
-		string(serviceUUID),
-	})
+) (KubernetesObjectAttributes, error) {
+	name, err := getKubernetesObjectName(serviceName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get name for user service service.")
 	}
@@ -162,14 +156,11 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceSer
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod(
-	uuid service.ServiceUUID,
-	id service.ServiceName,
+	serviceUUID service.ServiceUUID,
+	serviceName service.ServiceName,
 	privatePorts map[string]*port_spec.PortSpec,
 ) (KubernetesObjectAttributes, error) {
-	name, err := getCompositeKubernetesObjectName([]string{
-		userServicePrefix,
-		string(uuid),
-	})
+	name, err := getKubernetesObjectName(serviceName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get name for user service pod")
 	}
@@ -179,13 +170,13 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following user service port specs to a string for storing in the ports label: %+v", privatePorts)
 	}
 
-	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(id), string(uuid))
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(serviceName), string(serviceUUID))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"Failed to get labels for user service pod with ID '%s' and UUID '%s'",
-			id,
-			uuid,
+			"Failed to get labels for user service pod with name '%s' and UUID '%s'",
+			serviceName,
+			serviceUUID,
 		)
 	}
 	labels[label_key_consts.KurtosisResourceTypeKubernetesLabelKey] = label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue
@@ -207,6 +198,16 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 //	Private Helper Functions
 //
 // ====================================================================================================
+func getKubernetesObjectName(
+	serviceName service.ServiceName,
+) (*kubernetes_object_name.KubernetesObjectName, error) {
+	name, err := getCompositeKubernetesObjectName(
+		[]string{
+			string(serviceName),
+		})
+	return name, err
+}
+
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() (map[*kubernetes_label_key.KubernetesLabelKey]*kubernetes_label_value.KubernetesLabelValue, error) {
 	enclaveIdLabelValue, err := kubernetes_label_value.CreateNewKubernetesLabelValue(provider.enclaveId)
 	if err != nil {
