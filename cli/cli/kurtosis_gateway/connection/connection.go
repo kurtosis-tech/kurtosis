@@ -27,6 +27,7 @@ type GatewayConnectionToKurtosis interface {
 	// GetLocalPorts returns a map keyed with an identifier string describing local ports being forwarded
 	GetLocalPorts() map[string]*port_spec.PortSpec
 	GetGrpcClientConn() (*grpc.ClientConn, error)
+	GetClosedChannel() chan(struct{})
 	Stop()
 }
 
@@ -42,6 +43,8 @@ type gatewayConnectionToKurtosisImpl struct {
 
 	portforwarderStopChannel  chan struct{}
 	portforwarderReadyChannel chan struct{}
+	// Connection to the pod closes
+	portforwarderClosedChannel chan struct{}
 
 	// RemotePort -> port-spec ID
 	remotePortNumberToPortSpecIdMap map[uint16]string
@@ -56,6 +59,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	var portforwardStdErr bytes.Buffer
 	portforwardStopChannel := make(chan struct{}, 1)
 	portforwardReadyChannel := make(chan struct{}, 1)
+	portforwardClosedChannel := make(chan struct{}, 1)
 	portForwardAddresses := []string{localHostIpStr}
 	remotePortNumberToPortSpecIdMapping := map[uint16]string{}
 
@@ -97,7 +101,12 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	// Start forwarding ports asynchronously
 	go func() {
 		if err := portForwarder.ForwardPorts(); err != nil {
-			logrus.Warnf("Expected to be able to start forwarding local ports to remote ports, instead our portforwarder has returned a non-nil err:\n%v", err)
+			if err == portforward.ErrLostConnectionToPod {
+				logrus.Infof("Lost connection to pod:\n%v", portForwarder)
+				close(portforwardClosedChannel)
+			} else {
+				logrus.Errorf("Expected to be able to start forwarding local ports to remote ports, instead our portforwarder has returned a non-nil err:\n%v", err)
+			}
 		}
 	}()
 	// Wait for the portforwarder to be ready with timeout
@@ -139,6 +148,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 		portforwarderStdErr:             portforwardStdErr,
 		portforwarderStopChannel:        portforwardStopChannel,
 		portforwarderReadyChannel:       portforwardReadyChannel,
+		portforwarderClosedChannel:      portforwardClosedChannel,
 		remotePortNumberToPortSpecIdMap: remotePortNumberToPortSpecIdMapping,
 		urlString:                       podProxyEndpointUrl.String(),
 	}
@@ -152,6 +162,10 @@ func (connection *gatewayConnectionToKurtosisImpl) Stop() {
 
 func (connection *gatewayConnectionToKurtosisImpl) GetLocalPorts() map[string]*port_spec.PortSpec {
 	return connection.localPorts
+}
+
+func (connection *gatewayConnectionToKurtosisImpl) GetClosedChannel() chan(struct{}) {
+	return connection.portforwarderClosedChannel
 }
 
 // GetGrpcClientConn returns a client conn dialed in to the local port

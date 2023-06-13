@@ -413,6 +413,12 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 			delete(service.userServiceGuidToLocalConnectionMap, serviceUuid)
 		}
 	}()
+	
+	go func() {
+		// Wait on closed connection and remove the service entry local connection from the user service to local connection map
+		<- runingLocalServiceConnection.kurtosisConnection.GetClosedChannel()
+		delete(service.userServiceGuidToLocalConnectionMap, serviceUuid)
+	}()
 
 	cleanUpMapEntry = false
 	cleanUpConnection = false
