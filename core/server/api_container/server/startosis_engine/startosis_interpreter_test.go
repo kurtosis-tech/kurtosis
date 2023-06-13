@@ -58,7 +58,7 @@ def run(plan):
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
 }
 
-func TestStartosisInterpreter_RandomMainFunctionAndParams(t *testing.T) {
+func TestStartosisInterpreter_RandomMainFunctionAndParamsWithPlan(t *testing.T) {
 
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
@@ -84,6 +84,31 @@ def deploy_contract(plan,service_name,contract_name,init_message,args):
 	require.Equal(t, expectedResult, result)
 	expectedOutput := "Service name: service_name\nContract name: contract_name\nInit message: init_message\n"
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+}
+
+func TestStartosisInterpreter_RandomMainFunctionAndParams(t *testing.T) {
+
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	defer packageContentProvider.RemoveAll()
+	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	interpreter := startosisInterpreter
+	script := `
+def my_func(my_arg1, my_arg2, args):
+	
+	all_arg_values = my_arg1 + "--" + my_arg2 +  "--" + args["arg1"] + ":" + args["arg2"]
+
+	return all_arg_values
+`
+	mainFunctionName := "my_func"
+	inputArgs := `{"my_arg1": "foo", "my_arg2": "bar", "args": {"arg1": "arg1-value", "arg2": "arg2-value"}}`
+
+	result, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFunctionName, script, inputArgs)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 0) // There are no instructions to execute
+	require.NotNil(t, result)
+	expectedResult := "\"foo--bar--arg1-value:arg2-value\""
+	require.Equal(t, expectedResult, result)
 }
 
 func TestStartosisInterpreter_Test(t *testing.T) {
