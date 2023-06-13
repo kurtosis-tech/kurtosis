@@ -72,7 +72,7 @@ config = ServiceConfig(
     max_cpu = 1000,
 
     # The mimimum amout of CPUs the service must have, in millicpu/millicore.
-    # CAUTION: This is only available for Kubernetes, andd will be ignored for Docker.
+    # CAUTION: This is only available for Kubernetes, and will be ignored for Docker.
     # OPTIONAL (Default: no limit)
     min_cpu = 500,
 
@@ -81,7 +81,7 @@ config = ServiceConfig(
     max_memory = 1024,
 
     # The minimum amount of memory, in megabytes, the service must have.
-    # CAUTION: This is only available for Kubernetes, andd will be ignored for Docker.
+    # CAUTION: This is only available for Kubernetes, and will be ignored for Docker.
     # OPTIONAL (Default: no limit)
     min_memory = 512,
 
