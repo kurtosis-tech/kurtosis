@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.78.3](https://github.com/kurtosis-tech/kurtosis/compare/0.78.2...0.78.3) (2023-06-13)
+
+
+### Features
+
+* Remove `--exec` flag for `kurtosis service shell` ([#712](https://github.com/kurtosis-tech/kurtosis/issues/712)) ([d8bc320](https://github.com/kurtosis-tech/kurtosis/commit/d8bc3206be4ec3d6dec7973c3b31f8746b6089d3))
+
+
+### Bug Fixes
+
+* add `continue` to avoid segfault on service failing to register ([#719](https://github.com/kurtosis-tech/kurtosis/issues/719)) ([0cebb1f](https://github.com/kurtosis-tech/kurtosis/commit/0cebb1fe22ffd0e0e5e532164c3b0ef658b3ee55))
+
 ## [0.78.2](https://github.com/kurtosis-tech/kurtosis/compare/0.78.1...0.78.2) (2023-06-13)
 
 
