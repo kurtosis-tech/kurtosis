@@ -46,22 +46,6 @@ func StopUserServices(
 			}
 		}
 
-		/*kubernetesService := resources.Service
-		serviceName := kubernetesService.Name
-		updateConfigurator := func(updatesToApply *applyconfigurationsv1.ServiceApplyConfiguration) {
-			specUpdates := applyconfigurationsv1.ServiceSpec().WithSelector(nil)
-			updatesToApply.WithSpec(specUpdates)
-		}
-		if _, err := kubernetesManager.UpdateService(ctx, namespaceName, serviceName, updateConfigurator); err != nil {
-			erroredUuids[serviceUuid] = stacktrace.Propagate(
-				err,
-				"An error occurred updating service '%v' in namespace '%v' to reflect that it's no longer running",
-				serviceName,
-				namespaceName,
-			)
-			continue
-		}*/
-
 		successfulUuids[serviceUuid] = true
 	}
 	return successfulUuids, erroredUuids, nil
