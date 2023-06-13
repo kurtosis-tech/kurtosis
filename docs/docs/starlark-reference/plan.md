@@ -379,7 +379,9 @@ The `run_sh` instruction executes a one-time execution task. It runs the shell c
 
 ```python
     result = plan.run_sh(
-        # The service name of the service to be restarted.
+        # The command to run, as a string
+        # This will get executed via 'sh -c "$COMMAND"'.
+        # For example: 'sh -c "mkdir -p kurtosis && echo $(ls)"'
         # MANDATORY
         run = "mkdir -p kurtosis && echo $(ls)",
 
