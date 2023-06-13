@@ -6,6 +6,8 @@ import (
 	"net"
 )
 
+type LogsDatabaseGUID string
+
 type LogsDatabase struct {
 	status container_status.ContainerStatus
 

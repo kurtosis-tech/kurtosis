@@ -11,8 +11,9 @@ const (
 	//
 	//   If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 	//
-	appIdLabelValueStr                      = "kurtosis"
-	engineKurtosisResourceTypeLabelValueStr = "kurtosis-engine"
+	appIdLabelValueStr                            = "kurtosis"
+	engineKurtosisResourceTypeLabelValueStr       = "kurtosis-engine"
+	logsDatabaseKurtosisResourceTypeLabelValueStr = "kurtosis-logs-database"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 	enclaveKurtosisResourceTypeLabelValueStr           = "enclave"
@@ -34,6 +35,7 @@ const (
 // If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 var AppIDKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(appIdLabelValueStr)
 var EngineKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(engineKurtosisResourceTypeLabelValueStr)
+var LogsDatabaseKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(logsDatabaseKurtosisResourceTypeLabelValueStr)
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

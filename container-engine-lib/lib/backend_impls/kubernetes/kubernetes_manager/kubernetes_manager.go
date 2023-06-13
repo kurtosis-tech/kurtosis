@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	appsv1 "k8s.io/api/apps/v1"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -81,6 +82,13 @@ var (
 		// We need every object to have this field manager so that the Kurtosis objects can all seamlessly modify Kubernetes resources
 		FieldManager:    fieldManager,
 		FieldValidation: "",
+	}
+	globalGetOptions = metav1.GetOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ResourceVersion: "",
 	}
 )
 
@@ -431,13 +439,7 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace
 func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string) (*apiv1.Namespace, error) {
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
-	namespace, err := namespaceClient.Get(ctx, name, metav1.GetOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		ResourceVersion: "",
-	})
+	namespace, err := namespaceClient.Get(ctx, name, globalGetOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get namespace with name '%s'", name)
 	}
@@ -1009,7 +1011,7 @@ func (manager *KubernetesManager) RemoveClusterRoleBindings(ctx context.Context,
 	return nil
 }
 
-// ---------------------------pods---------------------------------------------------------------------------------------
+// ---------------------------pods--------------------------------------------------------------------------------------
 
 func (manager *KubernetesManager) CreatePod(
 	ctx context.Context,
@@ -1154,6 +1156,240 @@ func (manager *KubernetesManager) GetPod(ctx context.Context, namespace string, 
 	}
 
 	return pod, nil
+}
+
+// ---------------------------config map--------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateConfigMap(
+	ctx context.Context,
+	namespaceName string,
+	configMapName string,
+	configMapLabels map[string]string,
+	configMapAnnotations map[string]string,
+	configMap map[string][]byte,
+) (*apiv1.ConfigMap, error) {
+	configMapClient := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespaceName)
+
+	kubernetesConfigMap := apiv1.ConfigMap{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:                       configMapName,
+			GenerateName:               "",
+			Namespace:                  namespaceName,
+			SelfLink:                   "",
+			UID:                        "",
+			ResourceVersion:            "",
+			Generation:                 0,
+			CreationTimestamp:          metav1.Time{},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     configMapLabels,
+			Annotations:                configMapAnnotations,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ManagedFields:              nil,
+		},
+		Immutable:  nil,
+		Data:       nil,
+		BinaryData: configMap,
+	}
+
+	createdConfigMap, err := configMapClient.Create(ctx, &kubernetesConfigMap, globalCreateOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to create a Kubernetes ConfigMap with name '%v', instead a non-nil error was returned", configMapName)
+	}
+	return createdConfigMap, nil
+}
+
+func (manager *KubernetesManager) RemoveConfigMap(
+	ctx context.Context,
+	configMap *apiv1.ConfigMap,
+) error {
+	name := configMap.Name
+	namespace := configMap.Namespace
+	client := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)
+
+	if err := client.Delete(ctx, name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, globalDeleteOptions)
+	}
+	return nil
+}
+
+func (manager *KubernetesManager) GetConfigMap(ctx context.Context, namespace string, name string) (*apiv1.ConfigMap, error) {
+	client := manager.kubernetesClientSet.CoreV1().ConfigMaps(namespace)
+
+	configMap, err := client.Get(ctx, name, globalGetOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get ConfigMap with name '%s'", name)
+	}
+	deletionTimestamp := configMap.GetObjectMeta().GetDeletionTimestamp()
+	if deletionTimestamp != nil {
+		return nil, stacktrace.Propagate(err, "ConfigMap with name '%s' in namespace '%s' has been marked for deletion", name, namespace)
+	}
+	return configMap, nil
+}
+
+// ---------------------------daemon set--------------------------------------------------------------------------------
+
+func (manager *KubernetesManager) CreateDaemonSet(
+	ctx context.Context,
+	namespaceName string,
+	daemonSetName string,
+	daemonSetLabels map[string]string,
+	daemonSetAnnotations map[string]string,
+	daemonSetLabelSelector map[string]string,
+	daemonSetContainers []apiv1.Container,
+	daemonSetVolumes []apiv1.Volume,
+	daemonSetServiceAccountName string,
+	terminatingGracePeriodSeconds int64,
+) (*appsv1.DaemonSet, error) {
+	client := manager.kubernetesClientSet.AppsV1().DaemonSets(namespaceName)
+
+	daemonSet := appsv1.DaemonSet{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:                       daemonSetName,
+			GenerateName:               "",
+			Namespace:                  namespaceName,
+			SelfLink:                   "",
+			UID:                        "",
+			ResourceVersion:            "",
+			Generation:                 0,
+			CreationTimestamp:          metav1.Time{},
+			DeletionTimestamp:          nil,
+			DeletionGracePeriodSeconds: nil,
+			Labels:                     daemonSetLabels,
+			Annotations:                daemonSetAnnotations,
+			OwnerReferences:            nil,
+			Finalizers:                 nil,
+			ManagedFields:              nil,
+		},
+		Spec: appsv1.DaemonSetSpec{
+			Selector: &metav1.LabelSelector{
+				MatchLabels:      daemonSetLabelSelector,
+				MatchExpressions: nil,
+			},
+			Template: apiv1.PodTemplateSpec{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:                       daemonSetName,
+					GenerateName:               "",
+					Namespace:                  namespaceName,
+					SelfLink:                   "",
+					UID:                        "",
+					ResourceVersion:            "",
+					Generation:                 0,
+					CreationTimestamp:          metav1.Time{},
+					DeletionTimestamp:          nil,
+					DeletionGracePeriodSeconds: nil,
+					Labels:                     daemonSetLabels,
+					Annotations:                daemonSetAnnotations,
+					OwnerReferences:            nil,
+					Finalizers:                 nil,
+					ManagedFields:              nil,
+				},
+				Spec: apiv1.PodSpec{
+					Volumes:                       daemonSetVolumes,
+					InitContainers:                nil,
+					Containers:                    daemonSetContainers,
+					EphemeralContainers:           nil,
+					RestartPolicy:                 "",
+					TerminationGracePeriodSeconds: &terminatingGracePeriodSeconds,
+					ActiveDeadlineSeconds:         nil,
+					DNSPolicy:                     "",
+					NodeSelector:                  nil,
+					ServiceAccountName:            daemonSetServiceAccountName,
+					DeprecatedServiceAccount:      "",
+					AutomountServiceAccountToken:  nil,
+					NodeName:                      "",
+					HostNetwork:                   false,
+					HostPID:                       false,
+					HostIPC:                       false,
+					ShareProcessNamespace:         nil,
+					SecurityContext:               nil,
+					ImagePullSecrets:              nil,
+					Hostname:                      "",
+					Subdomain:                     "",
+					Affinity:                      nil,
+					SchedulerName:                 "",
+					Tolerations:                   nil,
+					HostAliases:                   nil,
+					PriorityClassName:             "",
+					Priority:                      nil,
+					DNSConfig:                     nil,
+					ReadinessGates:                nil,
+					RuntimeClassName:              nil,
+					EnableServiceLinks:            nil,
+					PreemptionPolicy:              nil,
+					Overhead:                      nil,
+					TopologySpreadConstraints:     nil,
+					SetHostnameAsFQDN:             nil,
+					OS:                            nil,
+					HostUsers:                     nil,
+					SchedulingGates:               nil,
+					ResourceClaims:                nil,
+				},
+			},
+			UpdateStrategy: appsv1.DaemonSetUpdateStrategy{
+				Type:          "",
+				RollingUpdate: nil,
+			},
+			MinReadySeconds:      0,
+			RevisionHistoryLimit: nil,
+		},
+		Status: appsv1.DaemonSetStatus{
+			CurrentNumberScheduled: 0,
+			NumberMisscheduled:     0,
+			DesiredNumberScheduled: 0,
+			NumberReady:            0,
+			ObservedGeneration:     0,
+			UpdatedNumberScheduled: 0,
+			NumberAvailable:        0,
+			NumberUnavailable:      0,
+			CollisionCount:         nil,
+			Conditions:             nil,
+		},
+	}
+
+	createdDaemonSet, err := client.Create(ctx, &daemonSet, globalCreateOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Expected to be able to create a Kubernetes DaemonSet with name '%s' in namespace '%s', instead a non-nil error was returned", daemonSetName, namespaceName)
+	}
+
+	return createdDaemonSet, nil
+}
+
+func (manager *KubernetesManager) RemoveDaemonSet(
+	ctx context.Context,
+	daemonSet *appsv1.DaemonSet,
+) error {
+	name := daemonSet.Name
+	namespace := daemonSet.Namespace
+	client := manager.kubernetesClientSet.AppsV1().DaemonSets(namespace)
+
+	if err := client.Delete(ctx, name, globalDeleteOptions); err != nil {
+		return stacktrace.Propagate(err, "Failed to delete pod with name '%s' with delete options '%+v'", name, globalDeleteOptions)
+	}
+	return nil
+}
+
+func (manager *KubernetesManager) GetDaemonSet(ctx context.Context, namespace string, name string) (*appsv1.DaemonSet, error) {
+	client := manager.kubernetesClientSet.AppsV1().DaemonSets(namespace)
+
+	daemonSet, err := client.Get(ctx, name, globalGetOptions)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get DaemonSet with name '%s'", name)
+	}
+	deletionTimestamp := daemonSet.GetObjectMeta().GetDeletionTimestamp()
+	if deletionTimestamp != nil {
+		return nil, stacktrace.Propagate(err, "ConfigMap with name '%s' in namespace '%s' has been marked for deletion", name, namespace)
+	}
+	return daemonSet, nil
 }
 
 // GetContainerLogs gets the logs for a given container running inside the given pod in the give namespace

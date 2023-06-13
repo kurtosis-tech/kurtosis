@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
@@ -32,6 +31,9 @@ var noWait *port_spec.Wait = nil
 
 func CreateEngine(
 	ctx context.Context,
+	engineGuid engine.EngineGUID,
+	engineNamespace *apiv1.Namespace,
+	engineServiceAccount *apiv1.ServiceAccount,
 	imageOrgAndRepo string,
 	imageVersionTag string,
 	grpcPortNum uint16,
@@ -42,12 +44,6 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
-	engineGuidStr, err := uuid_generator.GenerateUUIDString()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for the engine")
-	}
-	engineGuid := engine.EngineGUID(engineGuidStr)
-
 	privateGrpcPortSpec, err := port_spec.NewPortSpec(grpcPortNum, consts.KurtosisServersTransportProtocol, httpApplicationProtocol, noWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -63,35 +59,6 @@ func CreateEngine(
 
 	engineAttributesProvider := objAttrsProvider.ForEngine(engineGuid)
 
-	namespace, err := createEngineNamespace(ctx, engineAttributesProvider, kubernetesManager)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine namespace")
-	}
-	shouldRemoveNamespace := true
-	defer func() {
-		if shouldRemoveNamespace {
-			if err := kubernetesManager.RemoveNamespace(ctx, namespace); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes namespace '%v' that we created but an error was thrown:\n%v", namespace.Name, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes namespace with name '%v'!!!!!!!", namespace.Name)
-			}
-		}
-	}()
-	namespaceName := namespace.Name
-
-	serviceAccount, err := createEngineServiceAccount(ctx, namespaceName, engineAttributesProvider, kubernetesManager)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the engine service account")
-	}
-	shouldRemoveServiceAccount := true
-	defer func() {
-		if shouldRemoveServiceAccount {
-			if err := kubernetesManager.RemoveServiceAccount(ctx, serviceAccount); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete service account '%v' in namespace '%v' that we created but an error was thrown:\n%v", serviceAccount.Name, namespaceName, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove service account with name '%v'!!!!!!!", serviceAccount.Name)
-			}
-		}
-	}()
-
 	clusterRole, err := createEngineClusterRole(ctx, engineAttributesProvider, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine cluster role")
@@ -106,21 +73,21 @@ func CreateEngine(
 		}
 	}()
 
-	clusterRoleBindings, err := createEngineClusterRoleBindings(ctx, engineAttributesProvider, clusterRole.Name, namespaceName, serviceAccount.Name, kubernetesManager)
+	clusterRoleBindings, err := createEngineClusterRoleBindings(ctx, engineAttributesProvider, clusterRole.Name, engineNamespace.Name, engineServiceAccount.Name, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine cluster role bindings")
 	}
 	shouldRemoveClusterRoleBinding := true
 	defer func() {
 		if shouldRemoveClusterRoleBinding {
-			if err := kubernetesManager.RemoveClusterRoleBindings(ctx, clusterRoleBindings); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete cluster role bindings '%v' in namespace '%v' that we created but an error was thrown:\n%v", clusterRoleBindings.Name, namespaceName, err)
+			if err = kubernetesManager.RemoveClusterRoleBindings(ctx, clusterRoleBindings); err != nil {
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete cluster role bindings '%v' in namespace '%v' that we created but an error was thrown:\n%v", clusterRoleBindings.Name, engineNamespace, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove cluster role bindings with name '%v'!!!!!!!", clusterRoleBindings.Name)
 			}
 		}
 	}()
 
-	enginePod, enginePodLabels, err := createEnginePod(ctx, namespaceName, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, serviceAccount.Name, kubernetesManager)
+	enginePod, enginePodLabels, err := createEnginePod(ctx, engineNamespace.Name, engineAttributesProvider, imageOrgAndRepo, imageVersionTag, envVars, privatePortSpecs, engineServiceAccount.Name, kubernetesManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the engine pod")
 	}
@@ -136,7 +103,7 @@ func CreateEngine(
 
 	engineService, err := createEngineService(
 		ctx,
-		namespaceName,
+		engineNamespace.Name,
 		engineAttributesProvider,
 		privateGrpcPortSpec,
 		enginePodLabels,
@@ -158,8 +125,8 @@ func CreateEngine(
 	engineResources := &engineKubernetesResources{
 		clusterRole:        clusterRole,
 		clusterRoleBinding: clusterRoleBindings,
-		namespace:          namespace,
-		serviceAccount:     serviceAccount,
+		namespace:          engineNamespace,
+		serviceAccount:     engineServiceAccount,
 		service:            engineService,
 		pod:                enginePod,
 	}
@@ -176,7 +143,7 @@ func CreateEngine(
 
 	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		kubernetesManager,
-		namespaceName,
+		engineNamespace.Name,
 		enginePod.Name,
 		kurtosisEngineContainerName,
 		privateGrpcPortSpec,
@@ -200,8 +167,6 @@ func CreateEngine(
 			return nil, stacktrace.Propagate(err, "An error occurred waiting for the engine grpc proxy port '%v/%v' to become available", privateGrpcProxyPortSpec.GetTransportProtocol(), privateGrpcProxyPortSpec.GetNumber())
 		}*/
 
-	shouldRemoveNamespace = false
-	shouldRemoveServiceAccount = false
 	shouldRemoveClusterRole = false
 	shouldRemoveClusterRoleBinding = false
 	shouldRemovePod = false
@@ -209,7 +174,7 @@ func CreateEngine(
 	return resultEngine, nil
 }
 
-func createEngineNamespace(
+func CreateEngineNamespace(
 	ctx context.Context,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
@@ -234,7 +199,7 @@ func createEngineNamespace(
 	return engineNamespace, nil
 }
 
-func createEngineServiceAccount(
+func CreateEngineServiceAccount(
 	ctx context.Context,
 	namespace string,
 	engineAttributesProvider object_attributes_provider.KubernetesEngineObjectAttributesProvider,

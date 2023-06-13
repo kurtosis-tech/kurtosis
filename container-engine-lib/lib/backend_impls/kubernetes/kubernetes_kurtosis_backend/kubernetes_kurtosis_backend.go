@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/engine_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/logs_database_functions/implementations/fluentd"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
@@ -17,11 +19,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
 	"net"
 	"strings"
+)
+
+const (
+	defaultLogsDatabasePortNum = uint16(9714) // TODO: pipe it from the client, like what we do for the engine
 )
 
 type KubernetesKurtosisBackend struct {
@@ -136,8 +143,83 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 	*engine.Engine,
 	error,
 ) {
+	shouldRemoveNamespace := true
+	shouldRemoveServiceAccount := true
+
+	// Generate new engine GUID
+	engineGuidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for the engine")
+	}
+	engineGuid := engine.EngineGUID(engineGuidStr)
+	engineAttributesProvider := backend.objAttrsProvider.ForEngine(engineGuid)
+
+	// Create engine namespace
+	namespace, err := engine_functions.CreateEngineNamespace(ctx, engineAttributesProvider, backend.kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine namespace")
+	}
+	defer func() {
+		if shouldRemoveNamespace {
+			if err := backend.kubernetesManager.RemoveNamespace(ctx, namespace); err != nil {
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes namespace '%v' that we created but an error was thrown:\n%v", namespace.Name, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes namespace with name '%v'!!!!!!!", namespace.Name)
+			}
+		}
+	}()
+	namespaceName := namespace.Name
+
+	// Create engine Service Account
+	serviceAccount, err := engine_functions.CreateEngineServiceAccount(ctx, namespaceName, engineAttributesProvider, backend.kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the engine service account")
+	}
+	defer func() {
+		if shouldRemoveServiceAccount {
+			if err := backend.kubernetesManager.RemoveServiceAccount(ctx, serviceAccount); err != nil {
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete service account '%v' in namespace '%v' that we created but an error was thrown:\n%v", serviceAccount.Name, namespaceName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove service account with name '%v'!!!!!!!", serviceAccount.Name)
+			}
+		}
+	}()
+
+	logsDatabaseResources := fluentd.NewFluentdContainer()
+	logsDatabaseHostName, logsDatabasePortNum, err := logsDatabaseResources.CreateAndStart(
+		ctx,
+		namespace.Name,
+		serviceAccount.Name,
+		defaultLogsDatabasePortNum,
+		map[string]string{},
+		backend.kubernetesManager,
+		backend.objAttrsProvider)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to start logs database resources")
+	}
+	// TODO: remove if the creation of the engine failed downstream
+
+	// Create Logs collector
+	logsCollectorResources := fluentbit.NewFluentbitLogsCollectorDaemonSet()
+	err = logsCollectorResources.CreateAndStart(
+		ctx,
+		namespace.Name,
+		logsDatabaseHostName,
+		logsDatabasePortNum,
+		0, // unused for now
+		0, // unused for now
+		serviceAccount.Name,
+		backend.kubernetesManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to start logs collector resources")
+	}
+	// TODO: remove if the creation of the engine failed downstream
+
+	// Finally create engine
 	kubernetesEngine, err := engine_functions.CreateEngine(
 		ctx,
+		engineGuid,
+		namespace,
+		serviceAccount,
 		imageOrgAndRepo,
 		imageVersionTag,
 		grpcPortNum,
@@ -155,6 +237,9 @@ func (backend *KubernetesKurtosisBackend) CreateEngine(
 			envVars,
 		)
 	}
+
+	shouldRemoveServiceAccount = false
+	shouldRemoveNamespace = false
 	return kubernetesEngine, nil
 }
 
