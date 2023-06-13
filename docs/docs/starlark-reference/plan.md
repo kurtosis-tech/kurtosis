@@ -372,6 +372,44 @@ response = plan.request(
 
 For more details see [ `jq`'s builtin operators and functions](https://stedolan.github.io/jq/manual/#Builtinoperatorsandfunctions)
 
+run_sh
+-------------
+
+The `run_sh` instruction executes a one-time execution task. It runs the bash command specified by the mandatory field `run` on an image specified by the optional `image` field.
+
+```python
+    result = plan.run_sh(
+        # The command to run, as a string
+        # This will get executed via 'sh -c "$COMMAND"'.
+        # For example: 'sh -c "mkdir -p kurtosis && echo $(ls)"'
+        # MANDATORY
+        run = "mkdir -p kurtosis && echo $(ls)",
+
+        # Image the command will be run on
+        # OPTIONAL (Default: badouralix/curl-jq)
+        image = "badouralix/curl-jq",
+
+        # Sets the working dir in which the command will be run
+        # OPTIONAL (Default: task)
+        workdir = "task",
+
+        # A mapping of path_on_task_where_contents_will_be_mounted -> files_artifact_id_to_mount
+        # For more information about file artifacts, see below: 
+        # OPTIONAL (Default: {})
+        files = {
+            "/path/to/file/1": files_artifact_1,
+            "/path/to/file/2": files_artifact_2,
+        },
+    )
+
+    plan.print(result["code"])
+    plan.print(result["output"])
+```
+
+The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
+
+The instruction returns a `dict` whose values are [future reference][future-references-reference] to the output and exit code of the command. `result["output"]` is a future reference to the output of the command, and `result["code"]` is a future reference to the exit code.
+
 set_connection
 --------------
 
