@@ -404,9 +404,9 @@ The `run_sh` instruction executes a one-time execution task. It runs the shell c
     plan.print(result["output"])
 ```
 
-The instruction returns a `dict` whose values are [future reference][future-references-reference] to the output and exit code of the command. `result["output"]` is a future reference to the output of the command, and `result["code"]` is a future reference to the exit code.
+The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
-The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][upload-files-reference], [render_templates][render-templates-reference] and [store_service_files][store-service-reference] to learn more about on how to create file artifacts)
+The instruction returns a `dict` whose values are [future reference][future-references-reference] to the output and exit code of the command. `result["output"]` is a future reference to the output of the command, and `result["code"]` is a future reference to the exit code.
 
 set_connection
 --------------
