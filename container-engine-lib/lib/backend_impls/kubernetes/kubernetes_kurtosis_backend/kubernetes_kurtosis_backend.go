@@ -332,7 +332,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID, commandToRunInsteadOfBash string) (resultConn net.Conn, resultErr error) {
+func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID) (resultConn net.Conn, resultErr error) {
 	// See https://github.com/kubernetes/client-go/issues/912
 	/*
 		in := streams.NewIn(os.Stdin)
