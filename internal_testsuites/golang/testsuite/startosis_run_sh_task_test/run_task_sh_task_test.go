@@ -11,8 +11,8 @@ const (
 	runshTest     = "run-sh-test"
 	runshStarlark = `
 def run(plan):
-  result1 = plan.run_sh(run="echo kurtosis", workdir="src")
-  result2 = plan.run_sh(run="mkdir -p {0} && cd {0} && echo $(pwd)".format(result1["output"]))
+  result1 = plan.run_sh(run="echo kurtosis")
+  result2 = plan.run_sh(run="mkdir -p {0} && cd {0} && echo $(pwd)".format(result1["output"]), workdir="src")
   plan.assert(result2["output"], "==", "/src/kurtosis\n")
 `
 )
