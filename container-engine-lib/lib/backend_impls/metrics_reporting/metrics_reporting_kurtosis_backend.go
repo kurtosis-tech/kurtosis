@@ -320,8 +320,8 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	return succesfulUserServiceExecResults, erroredUserServiceUuids, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, commandToRunInsteadOfBash string) (resultConn net.Conn, resultErr error) {
-	newConn, err := backend.underlying.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, commandToRunInsteadOfBash)
+func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultConn net.Conn, resultErr error) {
+	newConn, err := backend.underlying.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting connection with user service with UUID '%v'", serviceUuid)
 	}
