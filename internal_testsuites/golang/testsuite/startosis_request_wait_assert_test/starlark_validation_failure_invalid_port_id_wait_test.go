@@ -1,14 +1,11 @@
-package startosis_request_wait_assert
+package startosis_request_wait_assert_test
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
-	waitInvalidPortIDTest       = "starlark-wait-invalid-portid"
 	waitInvalidPortIDFailScript = `
 def run(plan):
 	service_config = ServiceConfig(
@@ -18,7 +15,7 @@ def run(plan):
 		}
 	)
 
-	plan.add_service(name = "web-server", config = service_config)
+	plan.add_service(name = "web-server-invalid-port-id-wait-test", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
 		port_id = "invalid-port-id",
 		endpoint = "?input=foo/bar",
@@ -26,16 +23,17 @@ def run(plan):
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = plan.wait(service_name = "web-server", recipe = get_recipe, field = "code", assertion = "==", target_value = 200)
+	response = plan.wait(service_name = "web-server-invalid-port-id-wait-test", recipe = get_recipe, field = "code", assertion = "==", target_value = 200)
 `
 )
 
-func TestStarlark_InvalidPortIdWait(t *testing.T) {
+func (suite *StartosisRequestWaitAssertTestSuite) TestStarlark_InvalidPortIdWait() {
 	ctx := context.Background()
-	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, waitInvalidPortIDTest, waitInvalidPortIDFailScript)
+	t := suite.T()
+	runResult, _ := suite.RunScript(ctx, waitInvalidPortIDFailScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation error")
 	require.Len(t, runResult.ValidationErrors, 1)
-	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, "Request required port ID 'invalid-port-id' to exist on service 'web-server' but it doesn't")
+	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, "Request required port ID 'invalid-port-id' to exist on service 'web-server-invalid-port-id-wait-test' but it doesn't")
 }
