@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.78.2](https://github.com/kurtosis-tech/kurtosis/compare/0.78.1...0.78.2) (2023-06-13)
+
+
+### Bug Fixes
+
+* accept run as the default main function ([#714](https://github.com/kurtosis-tech/kurtosis/issues/714)) ([077cd4c](https://github.com/kurtosis-tech/kurtosis/commit/077cd4c45c7722891d58754fa8b3f4f48c2dfdcb))
+
 ## [0.78.1](https://github.com/kurtosis-tech/kurtosis/compare/0.78.0...0.78.1) (2023-06-13)
 
 
