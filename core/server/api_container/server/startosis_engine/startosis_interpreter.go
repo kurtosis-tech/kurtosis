@@ -98,7 +98,8 @@ func (interpreter *StartosisInterpreter) Interpret(
 
 	var isUsingDefaultMainFunction bool
 	var shouldInjectPlanArg bool
-	if mainFunctionName == "" {
+	// if the user sends "" or "run" we isUsingDefaultMainFunction to true
+	if mainFunctionName == "" || mainFunctionName == runFunctionName {
 		mainFunctionName = runFunctionName
 		isUsingDefaultMainFunction = true
 	} else {
