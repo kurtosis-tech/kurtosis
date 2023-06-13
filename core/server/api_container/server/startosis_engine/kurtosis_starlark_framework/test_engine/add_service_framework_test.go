@@ -63,9 +63,9 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 				TestPrivateIPAddressPlaceholder,
 			).WithSubnetwork(
 				string(TestSubnetwork),
-			).WithCpuAllocationMillicpus(
+			).WithMaxCpuMilliCores(
 				TestCpuAllocation,
-			).WithMemoryAllocationMegabytes(
+			).WithMaxMemoryMegabytes(
 				TestMemoryAllocation,
 			).Build()
 			actualServiceConfig := services.NewServiceConfigBuilderFromServiceConfig(serviceConfig).Build()

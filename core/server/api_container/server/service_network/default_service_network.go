@@ -1312,7 +1312,10 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 			filesArtifactsExpansion,
 			serviceConfigApi.CpuAllocationMillicpus,
 			serviceConfigApi.MemoryAllocationMegabytes,
-			serviceConfigApi.PrivateIpAddrPlaceholder)
+			serviceConfigApi.PrivateIpAddrPlaceholder,
+			serviceConfigApi.MinCpuMilliCores,
+			serviceConfigApi.MinMemoryMegabytes,
+		)
 	} else {
 		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
 		expanderDirpathToUserServiceDirpathMap := map[string]string{}
@@ -1363,7 +1366,10 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 			filesArtifactsExpansion,
 			serviceConfigApi.CpuAllocationMillicpus,
 			serviceConfigApi.MemoryAllocationMegabytes,
-			serviceConfigApi.PrivateIpAddrPlaceholder)
+			serviceConfigApi.PrivateIpAddrPlaceholder,
+			serviceConfigApi.MinCpuMilliCores,
+			serviceConfigApi.MinMemoryMegabytes,
+		)
 	}
 
 	// TODO(gb): make the backend also handle starting service sequentially to simplify the logic there as well
