@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.78.4](https://github.com/kurtosis-tech/kurtosis/compare/0.78.3...0.78.4) (2023-06-13)
+
+
+### Features
+
+* added run_sh instruction; users can run one time bash task ([#717](https://github.com/kurtosis-tech/kurtosis/issues/717)) ([566144a](https://github.com/kurtosis-tech/kurtosis/commit/566144a5c3cb73f8dc7b8aa13ffb20b9a802edfc))
+
 ## [0.78.3](https://github.com/kurtosis-tech/kurtosis/compare/0.78.2...0.78.3) (2023-06-13)
 
 
