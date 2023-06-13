@@ -54,7 +54,7 @@ func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, run
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		set_connection.NewSetConnection(serviceNetwork),
 		start_service.NewStartService(serviceNetwork),
-		run_sh.NewRunShService(serviceNetwork),
+		run_sh.NewRunShService(serviceNetwork, runtimeValueStore),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
 		update_service.NewUpdateService(serviceNetwork),
