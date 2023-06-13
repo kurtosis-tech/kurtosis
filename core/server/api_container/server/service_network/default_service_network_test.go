@@ -833,9 +833,6 @@ func TestAddServices_FailedToRegisterService(t *testing.T) {
 	failedServiceIndex := 1
 	failedServicePartitionId := testPartitionIdFromInt(failedServiceIndex)
 	failedServiceName := testServiceNameFromInt(failedServiceIndex)
-	failedServiceUuid := testServiceUuidFromInt(failedServiceIndex)
-	failedServiceIp := testIpFromInt(failedServiceIndex)
-	failedServiceRegistration := service.NewServiceRegistration(failedServiceName, failedServiceUuid, enclaveName, failedServiceIp, string(failedServiceName))
 	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(failedServicePartitionId)).Build()
 
 	file, err := os.CreateTemp("/tmp", "*.db")
@@ -859,9 +856,6 @@ func TestAddServices_FailedToRegisterService(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	// Configure the mock to also be testing that the right functions are called along the way
-
-	// The services are registered one by one before being started
 	backend.EXPECT().RegisterUserServices(
 		ctx,
 		enclaveName,
@@ -869,66 +863,23 @@ func TestAddServices_FailedToRegisterService(t *testing.T) {
 			failedServiceName: true,
 		},
 	).Times(1).Return(
-		map[service.ServiceName]*service.ServiceRegistration{
-			failedServiceName: failedServiceRegistration,
+		map[service.ServiceName]*service.ServiceRegistration{},
+		map[service.ServiceName]error{
+			failedServiceName: errors.New("Service failed to register"),
 		},
-		map[service.ServiceName]error{},
 		nil,
 	)
-
-	backend.EXPECT().UnregisterUserServices(
-		ctx,
-		enclaveName,
-		map[service.ServiceUUID]bool{
-			failedServiceUuid: true,
-		},
-	).Times(1).Return(
-		map[service.ServiceUUID]bool{
-			failedServiceUuid: true,
-		},
-		map[service.ServiceUUID]error{},
-		nil,
-	)
-
-	backend.EXPECT().StartRegisteredUserServices(
-		ctx,
-		enclaveName,
-		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
-			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {failedServiceName}
-			_, foundFailedService := services[failedServiceUuid]
-			return len(services) == 1 && foundFailedService
-		})).Times(1).Return(
-		map[service.ServiceUUID]*service.Service{},
-		map[service.ServiceUUID]error{
-			failedServiceUuid: stacktrace.NewError("Failed starting service"),
-		},
-		nil)
 
 	success, failure, err := network.AddServices(
 		ctx,
 		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
 			failedServiceName: failedServiceConfig,
 		},
-		2,
+		1,
 	)
 	require.Nil(t, err)
 	require.Empty(t, success) // as the full batch failed, the successful service should have been destroyed
 	require.Len(t, failure, 1)
-	//require.Contains(t, failure, failedServiceName)
-	//require.Contains(t, failure, sidecarFailedServiceName)
-	//
-	//require.Empty(t, network.registeredServiceInfo)
-	//require.Empty(t, network.allExistingAndHistoricalIdentifiers)
-	//
-	//require.Empty(t, network.networkingSidecars)
-	//
-	//expectedPartitionsInTopolody := map[service_network_types.PartitionID]map[service.ServiceName]bool{
-	//	partition_topology.DefaultPartitionId: {},
-	//}
-	//partitionServices, err := network.topology.GetPartitionServices()
-	//require.Nil(t, err)
-	//require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
 func TestStopService_Successful(t *testing.T) {
