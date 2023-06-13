@@ -36,7 +36,13 @@ const (
 	runshCodeKey   = "code"
 	runshOutputKey = "output"
 	newlineChar    = "\n"
+
+	bashCommand = "/bin/sh"
+
+	createAndSwitchDirectoryTemplate = "mkdir -p %v && cd %v"
 )
+
+var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
 
 func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
@@ -146,14 +152,15 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 	randomUuid := uuid.NewRandom()
 	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
+	runShCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshCodeKey)
 	dict := &starlark.Dict{}
-	err = dict.SetKey(starlark.String(runshCodeKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshCodeKey)))
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error happened while creating exec return value, setting field '%v'", runshCodeKey)
+	if err := dict.SetKey(starlark.String(runshCodeKey), starlark.String(runShCodeValue)); err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error happened while creating run_sh return value, setting field '%v'", runshCodeKey)
 	}
-	err = dict.SetKey(starlark.String(runshOutputKey), starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshOutputKey)))
-	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error happened while creating exec return value, setting field '%v'", runshOutputKey)
+
+	runShOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshOutputKey)
+	if err := dict.SetKey(starlark.String(runshOutputKey), starlark.String(runShOutputValue)); err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error happened while creating run_sh return value, setting field '%v'", runshOutputKey)
 	}
 	dict.Freeze()
 	return dict, nil
@@ -169,7 +176,7 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //   Make task as it's own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// create work directory and cd into that directory
-	createAndSwitchTheDirectory := fmt.Sprintf("mkdir -p %v && cd %v", builtin.workdir, builtin.workdir)
+	createAndSwitchTheDirectoryCmd := fmt.Sprintf(createAndSwitchDirectoryTemplate, builtin.workdir, builtin.workdir)
 
 	// replace future references to actual strings
 	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)
@@ -177,10 +184,10 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in run_sh")
 	}
 
-	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, "\n", " ")
+	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, newlineChar, " ")
 
-	completeRunCommand := fmt.Sprintf("%v && %v", createAndSwitchTheDirectory, commandWithNoNewLines)
-	createDefaultDirectory := []string{"/bin/sh", "-c", completeRunCommand}
+	completeRunCommand := fmt.Sprintf("%v && %v", createAndSwitchTheDirectoryCmd, commandWithNoNewLines)
+	createDefaultDirectory := []string{bashCommand, "-c", completeRunCommand}
 	serviceConfigBuilder := services.NewServiceConfigBuilder(builtin.image)
 	serviceConfigBuilder.WithFilesArtifactMountDirpaths(builtin.files)
 	// This make sure that the container does not stop as soon as it starts
@@ -188,19 +195,19 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	// TODO: Instead of creating a service and running exec commands
 	//  we could probably run the command as an entrypoint and retrieve the results as soon as the
 	//  command is completed
-	serviceConfigBuilder.WithCmdArgs([]string{"tail", "-f", "/dev/null"})
+	serviceConfigBuilder.WithCmdArgs(runTailCommandToPreventContainerToStopOnCreating)
 
 	serviceConfig := serviceConfigBuilder.Build()
 	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfig)
 
 	if err != nil {
-		return "", err
+		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while creating a run_sh task with image: %v", builtin.image))
 	}
 
 	// run the command passed in by user in the container
 	code, output, err := builtin.serviceNetwork.ExecCommand(ctx, builtin.name, createDefaultDirectory)
 	if err != nil {
-		return "", err
+		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
 
 	result := map[string]starlark.Comparable{
@@ -220,7 +227,7 @@ func resultMapToString(resultMap map[string]starlark.Comparable) string {
 	rawOutput := resultMap[runshOutputKey]
 	outputStarlarkStr, ok := rawOutput.(starlark.String)
 	if !ok {
-		logrus.Errorf("Result of an exec recipe was not a string (was: '%v' of type '%s'). This is not fatal but the object might be malformed in CLI output. It is very unexpected and hides a Kurtosis internal bug. This issue should be reported", rawOutput, reflect.TypeOf(rawOutput))
+		logrus.Errorf("Result of run_sh was not a string (was: '%v' of type '%s'). This is not fatal but the object might be malformed in CLI output. It is very unexpected and hides a Kurtosis internal bug. This issue should be reported", rawOutput, reflect.TypeOf(rawOutput))
 		outputStarlarkStr = starlark.String(outputStarlarkStr.String())
 	}
 	outputStr := outputStarlarkStr.GoString()
