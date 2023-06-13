@@ -825,6 +825,63 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	require.Equal(t, expectedPartitionsInTopolody, partitionServices)
 }
 
+func TestAddServices_FailedToRegisterService(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	// One service will fail to be started
+	failedServiceIndex := 1
+	failedServicePartitionId := testPartitionIdFromInt(failedServiceIndex)
+	failedServiceName := testServiceNameFromInt(failedServiceIndex)
+	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(failedServicePartitionId)).Build()
+
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
+		enclaveName,
+		ip,
+		apiContainerPort,
+		fakeApiContainerVersion,
+		partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
+	)
+	require.Nil(t, err)
+
+	backend.EXPECT().RegisterUserServices(
+		ctx,
+		enclaveName,
+		map[service.ServiceName]bool{
+			failedServiceName: true,
+		},
+	).Times(1).Return(
+		map[service.ServiceName]*service.ServiceRegistration{},
+		map[service.ServiceName]error{
+			failedServiceName: errors.New("Service failed to register"),
+		},
+		nil,
+	)
+
+	success, failure, err := network.AddServices(
+		ctx,
+		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
+			failedServiceName: failedServiceConfig,
+		},
+		1,
+	)
+	require.Nil(t, err)
+	require.Empty(t, success) // as the full batch failed, the successful service should have been destroyed
+	require.Len(t, failure, 1)
+}
+
 func TestStopService_Successful(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
