@@ -267,7 +267,7 @@ type KurtosisBackend interface {
 	)
 
 	// Get a connection with user service to execute commands in
-	GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, commandToRunInsteadOfBash string) (resultConn net.Conn, resultErr error)
+	GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultConn net.Conn, resultErr error)
 
 	// Copy files, packaged as a TAR, from the given user service and writes the bytes to the given output writer
 	CopyFilesFromUserService(
