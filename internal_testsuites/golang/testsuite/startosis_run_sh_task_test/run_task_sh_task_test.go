@@ -16,7 +16,8 @@ def run(plan):
   plan.assert(result2["output"], "==", "/src/kurtosis\n")
 `
 	runshStarlarkFileArtifact = `def run(plan):
-  result, file_artifacts = plan.run_sh(run="echo kurtosis > tech.txt", store=["/task", "/task"])
+  result = plan.run_sh(run="echo kurtosis > tech.txt", store=["/task", "/task"])
+  file_artifacts = result["file_artifacts"]
   result2, _ = plan.run_sh(run="cat ./task/tech.txt", files={"/src": file_artifacts[0]}, workdir="src")
   plan.assert(result2["output"], "==", "kurtosis\n")`
 )

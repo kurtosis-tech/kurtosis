@@ -234,15 +234,9 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 			_ = artifactNamesList.Append(starlark.String(name))
 		}
 	}
+	_ = dict.SetKey(starlark.String(runshFileArtifactKey), artifactNamesList)
 	dict.Freeze()
-
-	response := &starlark.List{}
-	// purposely not checking error for list because it's mutable so should not throw any errors until this point
-	_ = response.Append(dict)
-	artifactNamesList.Freeze()
-	_ = response.Append(artifactNamesList)
-	response.Freeze()
-	return response, nil
+	return dict, nil
 }
 
 func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
