@@ -410,6 +410,7 @@ func (network *DefaultServiceNetwork) AddServices(
 		serviceRegistration, err := network.registerService(ctx, serviceName, servicePartitionId)
 		if err != nil {
 			failedServices[serviceName] = stacktrace.Propagate(err, "Failed registering service with name: '%s'", serviceName)
+			continue
 		}
 		serviceSuccessfullyRegistered[serviceName] = serviceRegistration
 		servicesToStart[serviceRegistration.GetUUID()] = serviceConfig
