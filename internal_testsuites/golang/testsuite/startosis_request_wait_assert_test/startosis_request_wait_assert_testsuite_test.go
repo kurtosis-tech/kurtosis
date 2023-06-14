@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	name                 = "example-test-suite"
+	name                 = "startosis-request-wait-assert"
 	partitioningDisabled = false
 )
 
