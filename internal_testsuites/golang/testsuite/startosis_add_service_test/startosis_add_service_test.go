@@ -11,8 +11,6 @@ import (
 const (
 	addServiceWithEmptyPortsTestName = "two-service-connection-test"
 	isPartitioningEnabled            = false
-	defaultDryRun                    = false
-	emptyArgs                        = "{}"
 
 	serviceName  = "datastore-1"
 	serviceName2 = "datastore-2"

@@ -36,7 +36,8 @@ func (suite *StartosisRequestWaitAssertTestSuite) SetupSuite() {
 }
 
 func (suite *StartosisRequestWaitAssertTestSuite) TearDownSuite() {
-	suite.destroyEnclaveFunc()
+	err := suite.destroyEnclaveFunc()
+	require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
 }
 
 func (suite *StartosisRequestWaitAssertTestSuite) RunScript(ctx context.Context, script string) (*enclaves.StarlarkRunResult, error) {
