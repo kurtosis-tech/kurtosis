@@ -400,15 +400,61 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
             "/path/to/file/1": files_artifact_1,
             "/path/to/file/2": files_artifact_2,
         },
+
+        # list of paths to directories or files that will be copied to a file artifact
+        # OPTIONAL (Default:[])
+        # CAUTION: paths in this list must be unique
+        store = [
+            # copies a file into a file artifact
+            "/src/kurtosis.txt,
+            
+            # copies the entire directory into a file artifact
+            "/src
+        ]
     )
 
-    plan.print(result["code"])
-    plan.print(result["output"])
+    plan.print(result.code)  # returns the future reference to the code
+    plan.print(result.output) # returns the future reference to the output
+    plan.print(result.file_artifacts) # returns the file artifact names that can be referenced later
 ```
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
-The instruction returns a `dict` whose values are [future reference][future-references-reference] to the output and exit code of the command. `result["output"]` is a future reference to the output of the command, and `result["code"]` is a future reference to the exit code.
+The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
+   * `result.output` is a future reference to the output of the command
+   * `result.code` is a future reference to the exit code
+   *  `result.file_artifacts` is a future reference to file artifact names that was generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
+
+```python
+
+    result = plan.run_sh(
+        run = "echo kurtosis > test.txt",
+        store = [
+            "/task",
+            "/task/test.txt",
+        ],
+        ...
+    )
+
+    plan.print(result.file_artifacts) # prints ["blue_moon", "green_planet"]
+    
+    # blue_moon is file artifact name that contains task directory
+    # green_planet is the file artifact name that conatins test.txt file
+
+    service_one = plan.add_service(..., 
+        ServiceConfig(
+            name="servce_one", 
+            files={"src": results.file_artifacts[0]}, # copies the directory task into servce_one 
+        )
+    )
+
+    service_two = plan.add_service(..., 
+        ServiceConfig(
+            name="servce_one", 
+            files={"src": results.file_artifacts[1]}, # copies the file test.txt into service_two
+        )
+    ) 
+```
 
 set_connection
 --------------
