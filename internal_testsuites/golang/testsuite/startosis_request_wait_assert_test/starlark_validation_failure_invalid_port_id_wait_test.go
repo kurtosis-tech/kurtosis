@@ -29,9 +29,9 @@ def run(plan):
 
 func (suite *StartosisRequestWaitAssertTestSuite) TestStarlark_InvalidPortIdWait() {
 	ctx := context.Background()
-	t := suite.T()
 	runResult, _ := suite.RunScript(ctx, waitInvalidPortIDFailScript)
 
+	t := suite.T()
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation error")
 	require.Len(t, runResult.ValidationErrors, 1)
