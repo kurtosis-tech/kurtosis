@@ -423,7 +423,10 @@ func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace
 	name := namespace.Name
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
-	if err := namespaceClient.Delete(ctx, name, globalDeleteOptions); err != nil {
+	deleteOptions := globalDeleteOptions
+	deleteBackgroundPropagation := metav1.DeletePropagationBackground
+	deleteOptions.PropagationPolicy = &deleteBackgroundPropagation
+	if err := namespaceClient.Delete(ctx, name, deleteOptions); err != nil {
 		return stacktrace.Propagate(err, "Failed to delete namespace with name '%s' with delete options '%+v'", name, globalDeleteOptions)
 	}
 
