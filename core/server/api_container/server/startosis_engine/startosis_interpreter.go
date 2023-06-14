@@ -97,14 +97,12 @@ func (interpreter *StartosisInterpreter) Interpret(
 	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
 
 	var isUsingDefaultMainFunction bool
-	var shouldInjectPlanArg bool
 	// if the user sends "" or "run" we isUsingDefaultMainFunction to true
 	if mainFunctionName == "" || mainFunctionName == runFunctionName {
 		mainFunctionName = runFunctionName
 		isUsingDefaultMainFunction = true
-	} else {
-		shouldInjectPlanArg = true //TODO now we inject the plan arg by default as the first argument on any random function, we have to make it optional and set by the users
 	}
+
 	if !globalVariables.Has(mainFunctionName) {
 		return missingMainFunctionReturnValue(packageId, mainFunctionName)
 	}
@@ -124,16 +122,21 @@ func (interpreter *StartosisInterpreter) Interpret(
 	var argsTuple starlark.Tuple
 	var kwArgs []starlark.Tuple
 
-	if shouldInjectPlanArg || (isUsingDefaultMainFunction && mainFunction.NumParams() >= minimumParamsRequiredForPlan) {
-		if paramName, _ := mainFunction.Param(planParamIndex); paramName != planParamName {
-			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, planParamIndex, planParamName, paramName).ToAPIType()
-		}
-		kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
-		planModule := plan_module.PlanModule(&instructionsQueue, kurtosisPlanInstructions)
-		argsTuple = append(argsTuple, planModule)
-	}
-
 	mainFuncParamsNum := mainFunction.NumParams()
+
+	if mainFuncParamsNum >= minimumParamsRequiredForPlan {
+		// the plan object will always be injected if the first argument name is 'plan'
+		firstParamName, _ := mainFunction.Param(planParamIndex)
+		if firstParamName == planParamName {
+			kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
+			planModule := plan_module.PlanModule(&instructionsQueue, kurtosisPlanInstructions)
+			argsTuple = append(argsTuple, planModule)
+		}
+
+		if firstParamName != planParamName && isUsingDefaultMainFunction {
+			return "", nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, planParamIndex, planParamName, firstParamName).ToAPIType()
+		}
+	}
 
 	if (isUsingDefaultMainFunction && mainFuncParamsNum == paramsRequiredForArgs) ||
 		(!isUsingDefaultMainFunction && mainFuncParamsNum > 0) {
