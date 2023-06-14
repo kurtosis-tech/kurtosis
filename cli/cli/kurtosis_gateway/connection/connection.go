@@ -16,10 +16,11 @@ import (
 )
 
 const (
-	localHostIpStr             = "127.0.0.1"
-	portForwardTimeoutDuration = 5 * time.Second
-	grpcPortId                 = "grpc"
-	emptyApplicationProtocol   = ""
+	localHostIpStr                = "127.0.0.1"
+	portForwardTimeoutDuration    = 5 * time.Second
+	grpcPortId                    = "grpc"
+	emptyApplicationProtocol      = ""
+	portForwardTimeBetweenRetries = 5 * time.Second
 )
 
 // GatewayConnectionToKurtosis represents a connection on localhost that can be used by the gateway to communicate with Kurtosis in the cluster
@@ -34,14 +35,11 @@ type GatewayConnectionToKurtosis interface {
 type gatewayConnectionToKurtosisImpl struct {
 	localAddresses []string
 	localPorts     map[string]*port_spec.PortSpec
-	// kubectl command to exec to to start the tunnel
-	portforwarder *portforward.PortForwarder
 
 	portforwarderStdOut bytes.Buffer
 	portforwarderStdErr bytes.Buffer
 
 	portforwarderStopChannel  chan struct{}
-	portforwarderReadyChannel chan struct{}
 
 	// RemotePort -> port-spec ID
 	remotePortNumberToPortSpecIdMap map[uint16]string
@@ -89,17 +87,46 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 		Timeout:       0,
 	}, dialerMethod, podProxyEndpointUrl)
 
-	// Create our k8s port forwarder
-	portForwarder, err := portforward.NewOnAddresses(dialer, portForwardAddresses, portStrings, portforwardStopChannel, portforwardReadyChannel, &portforwardStdOut, &portforwardStdErr)
-	if err != nil {
-		return nil, err
-	}
-	// Start forwarding ports asynchronously
+	// Start forwarding ports asynchronously with reconnect logic.
+	// The reconnect logic tries to reconnect after a working connection is lost.
+	// The port forward process can be interrupted using the port forwarder stop channel.  There is no retry after that.
+	var portForwarder *portforward.PortForwarder
 	go func() {
-		if err := portForwarder.ForwardPorts(); err != nil {
-			logrus.Warnf("Expected to be able to start forwarding local ports to remote ports, instead our portforwarder has returned a non-nil err:\n%v", err)
+		retries := 0
+		readyChannel := portforwardReadyChannel
+		for {
+			portForwarder, err = portforward.NewOnAddresses(dialer, portForwardAddresses, portStrings, portforwardStopChannel, readyChannel, &portforwardStdOut, &portforwardStdErr)
+			if err != nil {
+				// Addresses or ports cannot be parsed so there is nothing else to try
+				return
+			} else {
+				logrus.Infof("Opening connection to pod: %s", podProxyEndpointUrl.String())
+				if err = portForwarder.ForwardPorts(); err != nil {
+					if err == portforward.ErrLostConnectionToPod {
+						logrus.Infof("Lost connection to pod: %s", podProxyEndpointUrl.String())
+					} else {
+						if retries == 0 {
+							// Exit the retry logic if the first connection fails so we don't block the caller
+							logrus.Errorf("Expected to be able to start forwarding local ports to remote ports, instead our portforwarder has returned a non-nil err:\n%v", err)
+							return
+						}
+					}
+				} else {
+					// ForwardPorts() returns nil when we close the connection using the stop channel.
+					// Close the port forwarder and do not try to reconnect. 
+					//portForwarder.Close()
+					logrus.Infof("ForwardPorts returned nil")
+					return
+				}
+				time.Sleep(portForwardTimeBetweenRetries)
+				retries += 1
+				logrus.Debugf("Retrying (%d) connection to pod: %s", retries, podProxyEndpointUrl.String())
+				// No need to be notified when the reconnect is successful.
+				readyChannel = nil
+			}
 		}
 	}()
+
 	// Wait for the portforwarder to be ready with timeout
 	select {
 	case <-portforwardReadyChannel:
@@ -134,11 +161,9 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	connection := &gatewayConnectionToKurtosisImpl{
 		localAddresses:                  portForwardAddresses,
 		localPorts:                      localPortSpecs,
-		portforwarder:                   portForwarder,
 		portforwarderStdOut:             portforwardStdOut,
 		portforwarderStdErr:             portforwardStdErr,
 		portforwarderStopChannel:        portforwardStopChannel,
-		portforwarderReadyChannel:       portforwardReadyChannel,
 		remotePortNumberToPortSpecIdMap: remotePortNumberToPortSpecIdMapping,
 		urlString:                       podProxyEndpointUrl.String(),
 	}
@@ -147,7 +172,8 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 }
 
 func (connection *gatewayConnectionToKurtosisImpl) Stop() {
-	connection.portforwarder.Close()
+	logrus.Infof("Closing connection to pod: %s", connection.urlString)
+	close(connection.portforwarderStopChannel)
 }
 
 func (connection *gatewayConnectionToKurtosisImpl) GetLocalPorts() map[string]*port_spec.PortSpec {
