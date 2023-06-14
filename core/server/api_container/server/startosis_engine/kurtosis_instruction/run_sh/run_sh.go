@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -33,13 +34,15 @@ const (
 	DefaultImageName = "badouralix/curl-jq"
 	FilesAttr        = "files"
 
-	runshCodeKey   = "code"
-	runshOutputKey = "output"
-	newlineChar    = "\n"
+	runshCodeKey         = "code"
+	runshOutputKey       = "output"
+	runshFileArtifactKey = "file_artifacts"
+	newlineChar          = "\n"
 
 	bashCommand = "/bin/sh"
 
 	createAndSwitchDirectoryTemplate = "mkdir -p %v && cd %v"
+	storeFilesKey                    = "store"
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
@@ -70,19 +73,26 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 				},
+				{
+					Name:              storeFilesKey,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+				},
 			},
 		},
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
 			return &RunShCapabilities{
-				serviceNetwork:    serviceNetwork,
-				runtimeValueStore: runtimeValueStore,
-				name:              "",
-				image:             DefaultImageName, // populated at interpretation time
-				run:               "",               // populated at interpretation time
-				workdir:           DefaultWorkDir,   // populated at interpretation time
-				files:             nil,
-				resultUuid:        "", // populated at interpretation time
+				serviceNetwork:      serviceNetwork,
+				runtimeValueStore:   runtimeValueStore,
+				name:                "",
+				image:               DefaultImageName, // populated at interpretation time
+				run:                 "",               // populated at interpretation time
+				workdir:             DefaultWorkDir,   // populated at interpretation time
+				files:               nil,
+				resultUuid:          "", // populated at interpretation time
+				fileArtifactNames:   nil,
+				pathToFileArtifacts: nil,
 			}
 		},
 
@@ -99,12 +109,14 @@ type RunShCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	serviceNetwork    service_network.ServiceNetwork
 
-	resultUuid string
-	name       string
-	run        string
-	image      string
-	workdir    string
-	files      map[string]string
+	resultUuid          string
+	name                string
+	run                 string
+	image               string
+	workdir             string
+	files               map[string]string
+	fileArtifactNames   []string
+	pathToFileArtifacts []string
 }
 
 func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -144,6 +156,32 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		}
 	}
 
+	if arguments.IsSet(storeFilesKey) {
+		storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, storeFilesKey)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", storeFilesKey)
+		}
+		if storeFilesList.Len() > 0 {
+			storeFilesArray, interpretationErr := kurtosis_types.SafeCastToStringSlice(storeFilesList, storeFilesKey)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
+			builtin.pathToFileArtifacts = storeFilesArray
+
+			// generate unique names
+			var uniqueNames []string
+			for _ = range storeFilesArray {
+				uniqueNameForArtifact, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
+				if err != nil {
+					return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
+				}
+				uniqueNames = append(uniqueNames, uniqueNameForArtifact)
+			}
+
+			builtin.fileArtifactNames = uniqueNames
+		}
+	}
+
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunShBuiltinName)
@@ -162,11 +200,27 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 	if err := dict.SetKey(starlark.String(runshOutputKey), starlark.String(runShOutputValue)); err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error happened while creating run_sh return value, setting field '%v'", runshOutputKey)
 	}
+
+	artifactNamesList := &starlark.List{}
+	if len(builtin.fileArtifactNames) > 0 {
+		for _, name := range builtin.fileArtifactNames {
+			_ = artifactNamesList.Append(starlark.String(name))
+		}
+	}
+
 	dict.Freeze()
-	return dict, nil
+	response := &starlark.List{}
+	_ = response.Append(dict)
+	_ = response.Append(artifactNamesList)
+	return response, nil
 }
 
 func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+	if builtin.fileArtifactNames != nil {
+		for _, name := range builtin.fileArtifactNames {
+			validatorEnvironment.AddArtifactName(name)
+		}
+	}
 	return nil
 }
 
@@ -215,10 +269,35 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		runshOutputKey: starlark.String(createDefaultDirectoryResult.GetOutput()),
 		runshCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
 	}
-	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 
+	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := resultMapToString(result)
+
+	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
+		_, _ = copyFilesFromTask(ctx, builtin)
+	}
 	return instructionResult, err
+}
+
+func copyFilesFromTask(ctx context.Context, builtin *RunShCapabilities) (*starlark.List, error) {
+	if builtin.fileArtifactNames == nil || builtin.pathToFileArtifacts == nil {
+		return nil, nil
+	}
+
+	fileArtifactResponse := &starlark.List{}
+	for index, fileArtifactPath := range builtin.pathToFileArtifacts {
+		fileArtifactName := builtin.fileArtifactNames[index]
+
+		_, err := builtin.serviceNetwork.CopyFilesFromService(ctx, builtin.name, fileArtifactPath, fileArtifactName)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, fmt.Sprintf("error occurred while copying file or directory at path: %v", fileArtifactPath))
+		}
+
+		_ = fileArtifactResponse.Append(starlark.String(fileArtifactName))
+	}
+
+	starlark_warning.PrintOnceAtTheEndOfExecutionf("%+v", fileArtifactResponse)
+	return fileArtifactResponse, nil
 }
 
 // Copied some of the command from: exec_recipe.ResultMapToString
@@ -226,6 +305,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 func resultMapToString(resultMap map[string]starlark.Comparable) string {
 	exitCode := resultMap[runshCodeKey]
 	rawOutput := resultMap[runshOutputKey]
+
 	outputStarlarkStr, ok := rawOutput.(starlark.String)
 	if !ok {
 		logrus.Errorf("Result of run_sh was not a string (was: '%v' of type '%s'). This is not fatal but the object might be malformed in CLI output. It is very unexpected and hides a Kurtosis internal bug. This issue should be reported", rawOutput, reflect.TypeOf(rawOutput))
