@@ -1,0 +1,6 @@
+issues:
+  exclude-rules:
+    # Typecheck does not support embedded structs, so it fails when it tries to check this: suite.T() for this `type StartosisRequestWaitAssertTestSuite struct`.
+    - path: "testsuite/startosis_request_wait_assert_test"
+      linters:
+        - typecheck
