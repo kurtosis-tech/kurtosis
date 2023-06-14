@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -62,11 +61,17 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 					Name:              ImageNameArgName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(argumentValue starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(argumentValue, ImageNameArgName)
+					},
 				},
 				{
 					Name:              WorkDirArgName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+					Validator: func(argumentValue starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.NonEmptyString(argumentValue, WorkDirArgName)
+					},
 				},
 				{
 					Name:              FilesAttr,
@@ -77,6 +82,26 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 					Name:              storeFilesKey,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+					Validator: func(argumentValue starlark.Value) *startosis_errors.InterpretationError {
+						storeFilesList := argumentValue.(*starlark.List)
+						if storeFilesList.Len() > 0 {
+							duplicates := map[string]uint16{}
+
+							storeFiles, err := kurtosis_types.SafeCastToStringSlice(storeFilesList, storeFilesKey)
+							if err != nil {
+								return startosis_errors.WrapWithInterpretationError(err, "error occurred while validating %v", storeFilesKey)
+							}
+
+							for _, file := range storeFiles {
+								if duplicates[file] != 0 {
+									return startosis_errors.NewInterpretationError(
+										"error occurred while validating %v. The file paths in the array must be unique. Found multiple instances of %v", storeFilesKey, file)
+								}
+								duplicates[file] = 1
+							}
+						}
+						return nil
+					},
 				},
 			},
 		},
@@ -201,6 +226,7 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error happened while creating run_sh return value, setting field '%v'", runshOutputKey)
 	}
 
+	// converting go slice to starlark list
 	artifactNamesList := &starlark.List{}
 	if len(builtin.fileArtifactNames) > 0 {
 		for _, name := range builtin.fileArtifactNames {
@@ -219,6 +245,14 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 	if builtin.fileArtifactNames != nil {
 		for _, name := range builtin.fileArtifactNames {
 			validatorEnvironment.AddArtifactName(name)
+		}
+	}
+
+	if builtin.files != nil {
+		for _, artifactName := range builtin.files {
+			if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
+				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunShBuiltinName, artifactName)
+			}
 		}
 	}
 	return nil
@@ -274,30 +308,27 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	instructionResult := resultMapToString(result)
 
 	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
-		_, _ = copyFilesFromTask(ctx, builtin)
+		err = copyFilesFromTask(ctx, builtin)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "error occurred while copying files from  a task")
+		}
 	}
 	return instructionResult, err
 }
 
-func copyFilesFromTask(ctx context.Context, builtin *RunShCapabilities) (*starlark.List, error) {
+func copyFilesFromTask(ctx context.Context, builtin *RunShCapabilities) error {
 	if builtin.fileArtifactNames == nil || builtin.pathToFileArtifacts == nil {
-		return nil, nil
+		return nil
 	}
 
-	fileArtifactResponse := &starlark.List{}
 	for index, fileArtifactPath := range builtin.pathToFileArtifacts {
 		fileArtifactName := builtin.fileArtifactNames[index]
-
 		_, err := builtin.serviceNetwork.CopyFilesFromService(ctx, builtin.name, fileArtifactPath, fileArtifactName)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, fmt.Sprintf("error occurred while copying file or directory at path: %v", fileArtifactPath))
+			return stacktrace.Propagate(err, fmt.Sprintf("error occurred while copying file or directory at path: %v", fileArtifactPath))
 		}
-
-		_ = fileArtifactResponse.Append(starlark.String(fileArtifactName))
 	}
-
-	starlark_warning.PrintOnceAtTheEndOfExecutionf("%+v", fileArtifactResponse)
-	return fileArtifactResponse, nil
+	return nil
 }
 
 // Copied some of the command from: exec_recipe.ResultMapToString
