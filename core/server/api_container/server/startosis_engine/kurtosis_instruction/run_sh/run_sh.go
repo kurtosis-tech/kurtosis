@@ -18,6 +18,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"reflect"
 	"strings"
 )
@@ -216,15 +217,11 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
 	runShCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshCodeKey)
-	dict := &starlark.Dict{}
-	if err := dict.SetKey(starlark.String(runshCodeKey), starlark.String(runShCodeValue)); err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error happened while creating run_sh return value, setting field '%v'", runshCodeKey)
-	}
-
 	runShOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshOutputKey)
-	if err := dict.SetKey(starlark.String(runshOutputKey), starlark.String(runShOutputValue)); err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "An error happened while creating run_sh return value, setting field '%v'", runshOutputKey)
-	}
+
+	dict := map[string]starlark.Value{}
+	dict[runshCodeKey] = starlark.String(runShCodeValue)
+	dict[runshOutputKey] = starlark.String(runShOutputValue)
 
 	// converting go slice to starlark list
 	artifactNamesList := &starlark.List{}
@@ -234,9 +231,10 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 			_ = artifactNamesList.Append(starlark.String(name))
 		}
 	}
-	_ = dict.SetKey(starlark.String(runshFileArtifactKey), artifactNamesList)
-	dict.Freeze()
-	return dict, nil
+	dict[runshFileArtifactKey] = artifactNamesList
+
+	response := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	return response, nil
 }
 
 func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -257,10 +255,9 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 }
 
 // Execute This is just v0 for run_sh task - we can later improve on it.
-//
-//		TODO: stop the container as soon as task completed.
-//	  Create an mechanism for other services to retrieve files from the task container
-//	  Make task as it's own entity instead of currently shown under services
+//	TODO: stop the container as soon as task completed.
+//   Create an mechanism for other services to retrieve files from the task container
+//   Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// create work directory and cd into that directory
 	createAndSwitchTheDirectoryCmd := fmt.Sprintf(createAndSwitchDirectoryTemplate, builtin.workdir, builtin.workdir)
