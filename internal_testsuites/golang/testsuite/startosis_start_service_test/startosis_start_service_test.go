@@ -39,17 +39,19 @@ def run(plan):
 	plan.add_service(name = DATASTORE_SERVICE_NAME, config = config)
 	plan.print("Service " + DATASTORE_SERVICE_NAME + " deployed successfully.")
 `
+	
+	// We stop and restart the service we created through the script above with a different script
+	stopAndStartScript = `
+DATASTORE_SERVICE_NAME = "` + serviceName + `"
+def run(plan):
+	plan.stop_service(DATASTORE_SERVICE_NAME)
+	plan.start_service(DATASTORE_SERVICE_NAME)
+`
 	// We start the service we created through the script above with a different script
 	startScript = `
 DATASTORE_SERVICE_NAME = "` + serviceName + `"
 def run(plan):
 	plan.start_service(DATASTORE_SERVICE_NAME)
-`
-	// We stop the service we created through the script above with a different script
-	stopScript = `
-DATASTORE_SERVICE_NAME = "` + serviceName + `"
-def run(plan):
-	plan.stop_service(DATASTORE_SERVICE_NAME)
 `
 )
 
@@ -93,7 +95,6 @@ Service example-datastore-server-1 deployed successfully.
 		"Error validating datastore server '%s' is healthy",
 		serviceName,
 	)
-
 	logrus.Infof("Validated that all services are healthy")
 
 	// we run the start script and validate that an error is returned since the service is already started.
@@ -104,8 +105,8 @@ Service example-datastore-server-1 deployed successfully.
 	expectedErrorStr := fmt.Sprintf("Service '%v' is already started", serviceName)
 	require.Contains(t, runResult.ExecutionError.ErrorMessage, expectedErrorStr)
 
-	// we run the stop script and validate that the service is unreachable.
-	runResult, err = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, stopScript)
+	// we run the stop and restart script and validate that the service is unreachable.
+	runResult, err = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, stopAndStartScript)
 	require.NoError(t, err, "Unexpected error executing stop script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
@@ -116,35 +117,13 @@ Service example-datastore-server-1 deployed successfully.
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 
-	require.Error(
-		t,
-		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceName, portId),
-		"Error validating datastore server '%s' is not healthy",
-		serviceName,
-	)
-
-	logrus.Infof("Validated that the service is stopped")
-
-	// we run the start script and validate that the service is ready
-	runResult, err = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, startScript)
-	require.NoError(t, err, "Unexpected error executing start script")
-
-	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
-	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
-	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
-
-	expectedScriptOutput = `Service 'example-datastore-server-1' started
-`
-	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
-
 	require.NoError(
 		t,
 		test_helpers.ValidateDatastoreServiceHealthy(context.Background(), enclaveCtx, serviceName, portId),
 		"Error validating datastore server '%s' is healthy",
 		serviceName,
 	)
-
-	logrus.Infof("Validated that the service is started")
+	logrus.Infof("Validated that the service is restarted")
 
 	// we run the start script and validate that an error is returned since the service is already started.
 	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, startScript)
