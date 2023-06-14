@@ -759,7 +759,6 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	return serviceInfoResponse, nil
 }
 
-//"/services/jvm/icon/src/node-setup/contract-deploy.star"
 func (apicService ApiContainerService) runStarlarkPackageSetup(
 	packageId string,
 	clonePackage bool,
