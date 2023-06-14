@@ -89,13 +89,13 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 
 							storeFiles, err := kurtosis_types.SafeCastToStringSlice(storeFilesList, storeFilesKey)
 							if err != nil {
-								return startosis_errors.WrapWithInterpretationError(err, "error occurred while validating %v", storeFilesKey)
+								return startosis_errors.WrapWithInterpretationError(err, "error occurred while validating field: %v", storeFilesKey)
 							}
 
 							for _, file := range storeFiles {
 								if duplicates[file] != 0 {
 									return startosis_errors.NewInterpretationError(
-										"error occurred while validating %v. The file paths in the array must be unique. Found multiple instances of %v", storeFilesKey, file)
+										"error occurred while validating field: %v. The file paths in the array must be unique. Found multiple instances of %v", storeFilesKey, file)
 								}
 								duplicates[file] = 1
 							}
@@ -230,14 +230,18 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 	artifactNamesList := &starlark.List{}
 	if len(builtin.fileArtifactNames) > 0 {
 		for _, name := range builtin.fileArtifactNames {
+			// purposely not checking error for list because it's mutable so should not throw any errors until this point
 			_ = artifactNamesList.Append(starlark.String(name))
 		}
 	}
-
 	dict.Freeze()
+
 	response := &starlark.List{}
+	// purposely not checking error for list because it's mutable so should not throw any errors until this point
 	_ = response.Append(dict)
+	artifactNamesList.Freeze()
 	_ = response.Append(artifactNamesList)
+	response.Freeze()
 	return response, nil
 }
 
