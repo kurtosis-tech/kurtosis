@@ -195,7 +195,7 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 
 			// generate unique names
 			var uniqueNames []string
-			for _ = range storeFilesArray {
+			for range storeFilesArray {
 				uniqueNameForArtifact, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
 				if err != nil {
 					return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
