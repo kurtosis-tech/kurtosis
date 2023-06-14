@@ -239,6 +239,11 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 
 func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	if builtin.fileArtifactNames != nil {
+		if len(builtin.fileArtifactNames) != len(builtin.pathToFileArtifacts) {
+			return startosis_errors.NewValidationError("error occurred while validating file artifact name for each file in store array. "+
+				"This seems to be a bug, please create a ticket for it. names: %v paths: %v", len(builtin.fileArtifactNames), len(builtin.pathToFileArtifacts))
+		}
+
 		for _, name := range builtin.fileArtifactNames {
 			validatorEnvironment.AddArtifactName(name)
 		}
