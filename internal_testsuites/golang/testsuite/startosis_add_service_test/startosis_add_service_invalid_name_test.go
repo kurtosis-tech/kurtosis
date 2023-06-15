@@ -28,7 +28,7 @@ def run(plan):
 
 func (suite *StartosisAddServiceTestSuite) TestAddServiceWithInvalidServiceNameFailsValidation() {
 	ctx := context.Background()
-	runResult, _ := suite.RunScript(ctx, addServiceInvalidServiceNameTestScript)
+	runResult, _ := suite.RunScript(ctx, fmt.Sprintf(addServiceInvalidServiceNameTestScript, invalidServiceName))
 
 	t := suite.T()
 

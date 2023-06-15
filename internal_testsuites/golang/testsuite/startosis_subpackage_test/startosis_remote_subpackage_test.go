@@ -7,8 +7,7 @@ import (
 )
 
 const (
-	remotePackage = "github.com/kurtosis-tech/awesome-kurtosis/quickstart"
-
+	remotePackage        = "github.com/kurtosis-tech/awesome-kurtosis/quickstart"
 	expectedOutputLength = 22
 	expectedActorName    = "Chase"
 	expectedServiceName  = "postgres"
@@ -16,7 +15,8 @@ const (
 
 func (suite *StartosisSubpackageTestSuite) TestStarlarkRemotePackage() {
 	ctx := context.Background()
-	runResult, err := suite.RunPackage(ctx, remotePackage)
+	isRemotePackage := true
+	runResult, err := suite.RunPackage(ctx, remotePackage, isRemotePackage)
 
 	t := suite.T()
 	require.NoError(t, err, "Unexpected error executing starlark package")

@@ -45,10 +45,30 @@ func (suite *StartosisSubpackageTestSuite) TearDownSuite() {
 	require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
 }
 
-func (suite *StartosisSubpackageTestSuite) RunPackage(ctx context.Context, remotePackage string) (*enclaves.StarlarkRunResult, error) {
-	logrus.Infof("Executing Startosis remote package...")
+func (suite *StartosisSubpackageTestSuite) RunPackage(ctx context.Context, packageLocation string, remote bool) (*enclaves.StarlarkRunResult, error) {
+	logrus.Infof("Executing Startosis package...")
 
-	logrus.Debugf("Startosis remote package address: \n%v", remotePackage)
+	logrus.Debugf("Startosis package location: %v", packageLocation)
 
-	return suite.enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism)
+	if remote {
+		return suite.enclaveCtx.RunStarlarkRemotePackageBlocking(
+			ctx,
+			packageLocation,
+			useDefaultMainFile,
+			useDefaultFunctionName,
+			emptyRunParams,
+			defaultDryRun,
+			defaultParallelism,
+		)
+	}
+
+	return suite.enclaveCtx.RunStarlarkPackageBlocking(
+		ctx,
+		packageLocation,
+		useDefaultMainFile,
+		useDefaultFunctionName,
+		emptyRunParams,
+		defaultDryRun,
+		defaultParallelism,
+	)
 }

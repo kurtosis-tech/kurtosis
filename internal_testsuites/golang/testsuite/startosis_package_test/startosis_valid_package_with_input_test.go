@@ -12,7 +12,8 @@ const (
 
 func (suite *StartosisPackageTestSuite) TestStartosisPackage_ValidPackageWithInput() {
 	ctx := context.Background()
-	runResult, err := suite.RunPackage(ctx, validPackageWithInputRelPath)
+	params := `{"greetings": "bonjour!"}`
+	runResult, err := suite.RunPackageWithParams(ctx, validPackageWithInputRelPath, params)
 
 	t := suite.T()
 	require.NoError(t, err, "Unexpected error executing starlark package")
@@ -34,7 +35,8 @@ Hello World!
 
 func (suite *StartosisPackageTestSuite) TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams() {
 	ctx := context.Background()
-	runResult, _ := suite.RunPackage(ctx, validPackageWithInputRelPath)
+	params := `{"hello": "world"}` // expecting key 'greetings' here
+	runResult, _ := suite.RunPackageWithParams(ctx, validPackageWithInputRelPath, params)
 
 	t := suite.T()
 	require.NotNil(t, runResult.InterpretationError, "Unexpected interpretation error")

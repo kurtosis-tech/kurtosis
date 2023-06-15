@@ -9,7 +9,7 @@ import (
 const (
 	addServicesWithReadyConditionsScript = `
 HTTP_ECHO_IMAGE = "mendhak/http-https-echo:26"
-SERVICE_NAME_PREFIX = "service-"
+SERVICE_NAME_PREFIX = "service-%v"
 NUM_SERVICES = 4
 
 def run(plan):
@@ -47,7 +47,7 @@ def run(plan):
 
 func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyConditionsCheck() {
 	ctx := context.Background()
-	script := fmt.Sprintf(addServicesWithReadyConditionsScript, okStatusCode)
+	script := fmt.Sprintf(addServicesWithReadyConditionsScript, okStatusCode, okStatusCode)
 
 	_, err := suite.RunScript(ctx, script)
 
@@ -60,7 +60,7 @@ func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyCon
 	ctx := context.Background()
 
 	expectedLastAssertionErrorStr := fmt.Sprintf("Assertion failed '%v' '==' '%v'", okStatusCode, serverErrorStatusCode)
-	script := fmt.Sprintf(addServicesWithReadyConditionsScript, serverErrorStatusCode)
+	script := fmt.Sprintf(addServicesWithReadyConditionsScript, serverErrorStatusCode, serverErrorStatusCode)
 
 	runResult, _ := suite.RunScript(ctx, script)
 

@@ -31,7 +31,7 @@ def run(plan):
         ready_conditions = ready_conditions
 	)
 
-	plan.add_service(name = "web-server", config = service_config)
+	plan.add_service(name = "ws-ready-conditions-%v", config = service_config)
 `
 
 	okStatusCode          = 200
@@ -40,7 +40,8 @@ def run(plan):
 
 func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyConditionsCheck() {
 	ctx := context.Background()
-	_, err := suite.RunScript(ctx, addServiceWithReadyConditionsScript)
+	script := fmt.Sprintf(addServiceWithReadyConditionsScript, okStatusCode, okStatusCode)
+	_, err := suite.RunScript(ctx, script)
 
 	t := suite.T()
 
@@ -49,7 +50,8 @@ func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyCond
 
 func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyConditionsCheckFail() {
 	ctx := context.Background()
-	runResult, _ := suite.RunScript(ctx, addServiceWithReadyConditionsScript)
+	script := fmt.Sprintf(addServiceWithReadyConditionsScript, serverErrorStatusCode, serverErrorStatusCode)
+	runResult, _ := suite.RunScript(ctx, script)
 
 	t := suite.T()
 	expectedLastAssertionErrorStr := fmt.Sprintf("Assertion failed '%v' '==' '%v'", okStatusCode, serverErrorStatusCode)

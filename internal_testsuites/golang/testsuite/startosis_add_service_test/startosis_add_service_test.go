@@ -2,11 +2,15 @@ package startosis_add_service_test
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 const (
+	addServiceWithEmptyPortsTestName = "two-service-connection-test"
+
 	serviceName  = "datastore-1"
 	serviceName2 = "datastore-2"
 
@@ -54,12 +58,26 @@ def run(plan):
 `
 )
 
-func (suite *StartosisAddServiceTestSuite) TestAddTwoServicesAndTestConnection() {
+func TestAddTwoServicesAndTestConnection(t *testing.T) {
 	ctx := context.Background()
-	runResult, err := suite.RunScript(ctx, addServiceAndTestConnectionScript)
 
-	t := suite.T()
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, addServiceWithEmptyPortsTestName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer func() {
+		destroyErr := destroyEnclaveFunc()
+		if destroyErr != nil {
+			logrus.Errorf("Error destroying enclave at the end of integration test '%s'",
+				addServiceWithEmptyPortsTestName)
+		}
+	}()
 
+	// ------------------------------------- TEST RUN ----------------------------------------------
+
+	logrus.Infof("Executing Starlark script...")
+	logrus.Debugf("Starlark script contents: \n%v", addServiceAndTestConnectionScript)
+
+	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, addServiceAndTestConnectionScript)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	expectedScriptOutput := `Adding services ` + serviceName + ` and ` + serviceName2 + `
@@ -86,7 +104,7 @@ Assertion succeeded. Value is '0'.
 
 	// Ensure that the service is listed
 	expectedNumberOfServices := 2
-	serviceInfos, err := suite.enclaveCtx.GetServices()
+	serviceInfos, err := enclaveCtx.GetServices()
 	require.Nil(t, err)
 	actualNumberOfServices := len(serviceInfos)
 	require.Equal(t, expectedNumberOfServices, actualNumberOfServices)

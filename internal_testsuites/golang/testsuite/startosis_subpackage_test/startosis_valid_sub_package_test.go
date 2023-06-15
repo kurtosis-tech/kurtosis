@@ -11,7 +11,8 @@ const (
 
 func (suite *StartosisSubpackageTestSuite) TestStarlarkValidLocalSubPackage() {
 	ctx := context.Background()
-	runResult, err := suite.RunPackage(ctx, relPathToKurtosisSubpackage)
+	isRemotePackage := false
+	runResult, err := suite.RunPackage(ctx, relPathToKurtosisSubpackage, isRemotePackage)
 
 	t := suite.T()
 	require.NoError(t, err, "Unexpected error executing starlark package")

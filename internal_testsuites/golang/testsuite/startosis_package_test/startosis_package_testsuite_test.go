@@ -47,20 +47,24 @@ func (suite *StartosisPackageTestSuite) TearDownSuite() {
 }
 
 func (suite *StartosisPackageTestSuite) RunPackage(ctx context.Context, packageRelativeDirpath string) (*enclaves.StarlarkRunResult, error) {
+	return suite.RunPackageWithParams(ctx, packageRelativeDirpath, emptyRunParams)
+}
+
+func (suite *StartosisPackageTestSuite) RunPackageWithParams(ctx context.Context, packageRelativeDirpath string, params string) (*enclaves.StarlarkRunResult, error) {
 	logrus.Infof("Executing Startosis package...")
 
 	currentWorkingDirectory, err := os.Getwd()
 	require.Nil(suite.T(), err)
 	packageDirpath := path.Join(currentWorkingDirectory, packageRelativeDirpath)
 
-	logrus.Debugf("Startosis package dirpath: \n%v", packageDirpath)
+	logrus.Debugf("Startosis package dirpath: %v", packageDirpath)
 
 	return suite.enclaveCtx.RunStarlarkPackageBlocking(
 		ctx,
 		packageDirpath,
 		useDefaultMainFile,
 		useDefaultFunctionName,
-		emptyRunParams,
+		params,
 		defaultDryRun,
 		defaultParallelism,
 	)
