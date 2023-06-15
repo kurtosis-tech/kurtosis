@@ -100,7 +100,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 				// Addresses or ports cannot be parsed so there is nothing else to try
 				return
 			} else {
-				logrus.Infof("Opening connection to pod: %s", podProxyEndpointUrl.String())
+				logrus.Debugf("Opening connection to pod: %s", podProxyEndpointUrl.String())
 				if err = portForwarder.ForwardPorts(); err != nil {
 					if err == portforward.ErrLostConnectionToPod {
 						logrus.Infof("Lost connection to pod: %s", podProxyEndpointUrl.String())
@@ -110,6 +110,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 							logrus.Errorf("Expected to be able to start forwarding local ports to remote ports, instead our portforwarder has returned a non-nil err:\n%v", err)
 							return
 						}
+						logrus.Debugf("Error trying to forwarding ports:\n%v", err)
 					}
 				} else {
 					// ForwardPorts() returns nil when we close the connection using the stop channel.
@@ -119,8 +120,18 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 				time.Sleep(portForwardTimeBetweenRetries)
 				retries += 1
 				logrus.Debugf("Retrying (%d) connection to pod: %s", retries, podProxyEndpointUrl.String())
-				// No need to be notified when the reconnect is successful.
-				readyChannel = nil
+				readyChannel = make(chan struct{}, 1)
+
+				// Re-use the same local ports
+				ports, err := portForwarder.GetPorts()
+				if err != nil {
+					logrus.Errorf("An error occured retrieving the local ports to remote ports mapping for our portforwarder:\n%v", err)
+				}
+				portStrings = nil
+				for _, port := range ports {
+					portString := fmt.Sprintf("%v:%v", port.Local, port.Remote)
+					portStrings = append(portStrings, portString)
+				}
 			}
 		}
 	}()
