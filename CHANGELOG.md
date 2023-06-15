@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.78.5](https://github.com/kurtosis-tech/kurtosis/compare/0.78.4...0.78.5) (2023-06-15)
+
+
+### Features
+
+* added ability for folks to copy files from the one time execution task ([#723](https://github.com/kurtosis-tech/kurtosis/issues/723)) ([f1fcde1](https://github.com/kurtosis-tech/kurtosis/commit/f1fcde148fffe81bc15ea7ab62b00ecd0099e172))
+* added run_sh to vscode plugin ([#738](https://github.com/kurtosis-tech/kurtosis/issues/738)) ([337c994](https://github.com/kurtosis-tech/kurtosis/commit/337c9941f6686b2bf7b50416ee7fe71460a8aade))
+* Automatically inject the plan object if the first argument of the main function is `plan` ([#716](https://github.com/kurtosis-tech/kurtosis/issues/716)) ([142ce42](https://github.com/kurtosis-tech/kurtosis/commit/142ce42e5a349f468b5ebcbe9ec5f9a752825117))
+
+
+### Bug Fixes
+
+* Stopping engine not required before switching cluster ([#727](https://github.com/kurtosis-tech/kurtosis/issues/727)) ([af675c1](https://github.com/kurtosis-tech/kurtosis/commit/af675c13a2bcbb10e2619ce513b3c49efa7f642c))
+
 ## [0.78.4](https://github.com/kurtosis-tech/kurtosis/compare/0.78.3...0.78.4) (2023-06-13)
 
 
