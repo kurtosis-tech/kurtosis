@@ -19,6 +19,7 @@ import (
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"path"
 	"reflect"
 	"strings"
 )
@@ -30,7 +31,7 @@ const (
 	WorkDirArgName   = "workdir"
 	RunArgName       = "run"
 
-	DefaultWorkDir   = "task"
+	DefaultWorkDir   = "/task"
 	DefaultImageName = "badouralix/curl-jq"
 	FilesAttr        = "files"
 
@@ -83,26 +84,6 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 					Name:              storeFilesKey,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
-					Validator: func(argumentValue starlark.Value) *startosis_errors.InterpretationError {
-						storeFilesList := argumentValue.(*starlark.List)
-						if storeFilesList.Len() > 0 {
-							duplicates := map[string]uint16{}
-
-							storeFiles, err := kurtosis_types.SafeCastToStringSlice(storeFilesList, storeFilesKey)
-							if err != nil {
-								return startosis_errors.WrapWithInterpretationError(err, "error occurred while validating field: %v", storeFilesKey)
-							}
-
-							for _, file := range storeFiles {
-								if duplicates[file] != 0 {
-									return startosis_errors.NewInterpretationError(
-										"error occurred while validating field: %v. The file paths in the array must be unique. Found multiple instances of %v", storeFilesKey, file)
-								}
-								duplicates[file] = 1
-							}
-						}
-						return nil
-					},
 				},
 			},
 		},
@@ -165,7 +146,13 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", WorkDirArgName)
 		}
-		builtin.workdir = workDirStarlark.GoString()
+
+		maybeWorkDir := workDirStarlark.GoString()
+		if path.IsAbs(maybeWorkDir) {
+			builtin.workdir = maybeWorkDir
+		} else {
+			builtin.workdir = path.Join("/", maybeWorkDir)
+		}
 	}
 
 	if arguments.IsSet(FilesAttr) {
@@ -174,11 +161,15 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", FilesAttr)
 		}
 		if filesStarlark.Len() > 0 {
-			filesArtifactMountDirpaths, interpretationErr := kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesAttr)
+			filesArtifactMountDirPaths, interpretationErr := kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesAttr)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			builtin.files = filesArtifactMountDirpaths
+			fileArtifactProcessedPaths := map[string]string{}
+			for key, value := range filesArtifactMountDirPaths {
+				fileArtifactProcessedPaths[getAbsoluteFilePath(builtin.workdir, key)] = value
+			}
+			builtin.files = fileArtifactProcessedPaths
 		}
 	}
 
@@ -188,9 +179,14 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", storeFilesKey)
 		}
 		if storeFilesList.Len() > 0 {
+
 			storeFilesArray, interpretationErr := kurtosis_types.SafeCastToStringSlice(storeFilesList, storeFilesKey)
 			if interpretationErr != nil {
 				return nil, interpretationErr
+			}
+
+			for index, value := range storeFilesArray {
+				storeFilesArray[index] = getAbsoluteFilePath(builtin.workdir, value)
 			}
 			builtin.pathToFileArtifacts = storeFilesArray
 
@@ -232,7 +228,6 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		}
 	}
 	dict[runshFileArtifactKey] = artifactNamesList
-
 	response := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	return response, nil
 }
@@ -242,6 +237,11 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 		if len(builtin.fileArtifactNames) != len(builtin.pathToFileArtifacts) {
 			return startosis_errors.NewValidationError("error occurred while validating file artifact name for each file in store array. "+
 				"This seems to be a bug, please create a ticket for it. names: %v paths: %v", len(builtin.fileArtifactNames), len(builtin.pathToFileArtifacts))
+		}
+
+		err := validatePathIsUniqueWhileCreatingFileArtifact(builtin.pathToFileArtifacts)
+		if err != nil {
+			return startosis_errors.WrapWithValidationError(err, "error occurred while validating file paths to copy into file artifact")
 		}
 
 		for _, name := range builtin.fileArtifactNames {
@@ -353,4 +353,26 @@ func resultMapToString(resultMap map[string]starlark.Comparable) string {
 --------------------`, exitCode, outputStr)
 	}
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
+}
+
+// This method takes in a path specified by user and creates an absolute path if it's not already an absolute path
+func getAbsoluteFilePath(workdir string, filePath string) string {
+	if path.IsAbs(filePath) {
+		return filePath
+	}
+	return path.Join(workdir, filePath)
+}
+
+func validatePathIsUniqueWhileCreatingFileArtifact(storeFiles []string) *startosis_errors.ValidationError {
+	if len(storeFiles) > 0 {
+		duplicates := map[string]uint16{}
+		for _, filePath := range storeFiles {
+			if duplicates[filePath] != 0 {
+				return startosis_errors.NewValidationError(
+					"error occurred while validating field: %v. The file paths in the array must be unique. Found multiple instances of %v", storeFilesKey, filePath)
+			}
+			duplicates[filePath] = 1
+		}
+	}
+	return nil
 }
