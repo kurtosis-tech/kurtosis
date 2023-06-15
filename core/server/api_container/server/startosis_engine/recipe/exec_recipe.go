@@ -129,13 +129,14 @@ func (recipe *ExecRecipe) Execute(
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
-	exitCode, commandOutput, err := serviceNetwork.ExecCommand(ctx, serviceNameStr, commandWithRuntimeValue)
+	execResult, err := serviceNetwork.RunExec(ctx, serviceNameStr, commandWithRuntimeValue)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceName)
 	}
+	commandOutput := execResult.GetOutput()
 	resultDict := map[string]starlark.Comparable{
 		execOutputKey:   starlark.String(commandOutput),
-		execExitCodeKey: starlark.MakeInt(int(exitCode)),
+		execExitCodeKey: starlark.MakeInt(int(execResult.GetExitCode())),
 	}
 	extractDict, err := runExtractors([]byte(fmt.Sprintf("%q", commandOutput)), extractors)
 	if err != nil {

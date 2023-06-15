@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"io"
 	"math"
 	"net"
@@ -841,7 +842,7 @@ func (network *DefaultServiceNetwork) UnpauseService(ctx context.Context, servic
 	return nil
 }
 
-func (network *DefaultServiceNetwork) ExecCommand(ctx context.Context, serviceIdentifier string, command []string) (int32, string, error) {
+func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
@@ -849,79 +850,87 @@ func (network *DefaultServiceNetwork) ExecCommand(ctx context.Context, serviceId
 
 	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
-		return 0, "", stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
+		return nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
 	}
 
-	// NOTE: This is a SYNCHRONOUS command, meaning that the entire network will be blocked until the command finishes
-	// In the future, this will likely be insufficient
-
 	serviceUuid := serviceRegistration.GetUUID()
-	userServiceCommand := map[service.ServiceUUID][]string{
-		serviceUuid: command,
+	userServiceCommands := map[service.ServiceUUID][]string{
+		serviceUuid: userServiceCommand,
 	}
 
 	successfulExecCommands, failedExecCommands, err := network.kurtosisBackend.RunUserServiceExecCommands(
-		ctx,
-		network.enclaveUuid,
-		userServiceCommand)
+		ctx, network.enclaveUuid, userServiceCommands)
 	if err != nil {
-		return 0, "", stacktrace.Propagate(
+		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred calling kurtosis backend to exec command '%v' against service '%v'",
-			command,
+			"An error occurred running exec command '%v' against service '%v'",
+			userServiceCommand,
 			serviceIdentifier)
 	}
-	if len(failedExecCommands) > 0 {
-		serviceExecErrs := []string{}
-		for serviceUUID, err := range failedExecCommands {
-			wrappedErr := stacktrace.Propagate(
-				err,
-				"An error occurred attempting to run a command in a service with UUID `%v'",
-				serviceUUID,
-			)
-			serviceExecErrs = append(serviceExecErrs, wrappedErr.Error())
+
+	if execResult, found := successfulExecCommands[serviceUuid]; found {
+		if len(failedExecCommands) > 0 {
+			logrus.Warnf("An error was returned even though the exec command was successful. This is a Kurtosis"+
+				"internal bug. It is not critical, but should be reported for further investigation. Errors were:\n%v",
+				failedExecCommands)
 		}
-		return 0, "", stacktrace.NewError(
-			"One or more errors occurred attempting to exec command(s) in the service(s): \n%v",
-			strings.Join(
-				serviceExecErrs,
-				"\n\n",
-			),
-		)
+		return execResult, nil
 	}
 
-	execResult, isFound := successfulExecCommands[serviceUuid]
-	if !isFound {
-		return 0, "", stacktrace.NewError(
-			"Unable to find result from running exec command '%v' against service '%v'",
-			command,
-			serviceUuid)
+	if err, found := failedExecCommands[serviceUuid]; found {
+		return nil, stacktrace.Propagate(err, "An error occurred running exec command '%v' on service '%s' "+
+			"(uuid '%s')", userServiceCommand, serviceIdentifier, serviceUuid)
+	}
+	return nil, stacktrace.NewError("The status of the exec command '%v' on service '%s' (uuid '%s') is unknown. "+
+		"It did not return as a success nor as a failure. This is a Kurtosis internal bug.",
+		userServiceCommand, serviceIdentifier, serviceUuid)
+}
+
+func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceCommands map[string][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
+	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
+	// asynchronous
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+
+	userServiceCommandsByServiceUuid := map[service.ServiceUUID][]string{}
+	for serviceIdentifier, userServiceCommand := range userServiceCommands {
+		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
+		}
+		serviceUuid := serviceRegistration.GetUUID()
+		userServiceCommandsByServiceUuid[serviceUuid] = userServiceCommand
 	}
 
-	return execResult.GetExitCode(), execResult.GetOutput(), nil
+	successfulExecs, failedExecs, err := network.kurtosisBackend.RunUserServiceExecCommands(ctx, network.enclaveUuid, userServiceCommandsByServiceUuid)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An unexpected error occurred running multiple exec commands "+
+			"on user services:\n%v", userServiceCommands)
+	}
+	return successfulExecs, failedExecs, nil
 }
 
 func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error) {
 	logrus.Debugf("Making a request '%v' '%v' '%v' '%v' '%v' '%v'", serviceIdentifier, portId, method, contentType, endpoint, body)
-	service, getServiceErr := network.GetService(ctx, serviceIdentifier)
+	userService, getServiceErr := network.GetService(ctx, serviceIdentifier)
 	if getServiceErr != nil {
 		return nil, stacktrace.Propagate(getServiceErr, "An error occurred when getting service '%v' for HTTP request", serviceIdentifier)
 	}
-	port, found := service.GetPrivatePorts()[portId]
+	port, found := userService.GetPrivatePorts()[portId]
 	if !found {
 		return nil, stacktrace.NewError("An error occurred when getting port '%v' from service '%v' for HTTP request", serviceIdentifier, portId)
 	}
-	url := fmt.Sprintf("http://%v:%v%v", service.GetRegistration().GetPrivateIP(), port.GetNumber(), endpoint)
+	url := fmt.Sprintf("http://%v:%v%v", userService.GetRegistration().GetPrivateIP(), port.GetNumber(), endpoint)
 	req, err := http.NewRequestWithContext(ctx, method, url, strings.NewReader(body))
 	if err != nil {
-		return nil, stacktrace.NewError("An error occurred building HTTP request on service '%v', URL '%v'", service, url)
+		return nil, stacktrace.NewError("An error occurred building HTTP request on service '%v', URL '%v'", userService, url)
 	}
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred on HTTP request on service '%v', URL '%v'", service, url)
+		return nil, stacktrace.Propagate(err, "An error occurred on HTTP request on service '%v', URL '%v'", userService, url)
 	}
 	return resp, nil
 }
