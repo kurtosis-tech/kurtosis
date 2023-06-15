@@ -31,7 +31,6 @@ const (
 	WorkDirArgName   = "workdir"
 	RunArgName       = "run"
 
-	DefaultWorkDir   = "/task"
 	DefaultImageName = "badouralix/curl-jq"
 	FilesAttr        = "files"
 
@@ -95,7 +94,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				name:                "",
 				image:               DefaultImageName, // populated at interpretation time
 				run:                 "",               // populated at interpretation time
-				workdir:             DefaultWorkDir,   // populated at interpretation time
+				workdir:             "",               // populated at interpretation time
 				files:               nil,
 				resultUuid:          "", // populated at interpretation time
 				fileArtifactNames:   nil,
@@ -272,18 +271,8 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //   Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// create work directory and cd into that directory
-	createAndSwitchTheDirectoryCmd := fmt.Sprintf(createAndSwitchDirectoryTemplate, builtin.workdir, builtin.workdir)
-
-	// replace future references to actual strings
-	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in run_sh")
-	}
-
-	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, newlineChar, " ")
-
-	completeRunCommand := fmt.Sprintf("%v && %v", createAndSwitchTheDirectoryCmd, commandWithNoNewLines)
-	createDefaultDirectory := []string{bashCommand, "-c", completeRunCommand}
+	commandRunCommand, err := getCommandToRun(builtin)
+	createDefaultDirectory := []string{bashCommand, "-c", commandRunCommand}
 	serviceConfigBuilder := services.NewServiceConfigBuilder(builtin.image)
 	serviceConfigBuilder.WithFilesArtifactMountDirpaths(builtin.files)
 	// This make sure that the container does not stop as soon as it starts
@@ -291,8 +280,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	// TODO: Instead of creating a service and running exec commands
 	//  we could probably run the command as an entrypoint and retrieve the results as soon as the
 	//  command is completed
-	serviceConfigBuilder.WithCmdArgs(runTailCommandToPreventContainerToStopOnCreating)
-
+	serviceConfigBuilder.WithEntryPointArgs(runTailCommandToPreventContainerToStopOnCreating)
 	serviceConfig := serviceConfigBuilder.Build()
 	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfig)
 
@@ -360,6 +348,22 @@ func resultMapToString(resultMap map[string]starlark.Comparable) string {
 --------------------`, exitCode, outputStr)
 	}
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
+}
+
+func getCommandToRun(builtin *RunShCapabilities) (string, error) {
+	// replace future references to actual strings
+	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in run_sh")
+	}
+	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, newlineChar, " ")
+
+	if builtin.workdir == "" {
+		return commandWithNoNewLines, nil
+	}
+
+	createAndSwitchTheDirectoryCmd := fmt.Sprintf(createAndSwitchDirectoryTemplate, builtin.workdir, builtin.workdir)
+	return fmt.Sprintf("%v && %v", createAndSwitchTheDirectoryCmd, commandWithNoNewLines), nil
 }
 
 // This method takes in a path specified by user and creates an absolute path if it's not already an absolute path
