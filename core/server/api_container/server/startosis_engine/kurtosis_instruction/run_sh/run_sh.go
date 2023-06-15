@@ -36,7 +36,7 @@ const (
 
 	runshCodeKey         = "code"
 	runshOutputKey       = "output"
-	runshFileArtifactKey = "file_artifacts"
+	runshFileArtifactKey = "files_artifacts"
 	newlineChar          = "\n"
 
 	bashCommand = "/bin/sh"

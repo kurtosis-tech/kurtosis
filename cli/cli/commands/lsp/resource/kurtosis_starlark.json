@@ -183,7 +183,7 @@
       "name": "run_sh",
       "detail": "It executes a one-time execution task. It runs the bash command specified by the mandatory field `run` on an image specified by the optional `image` field",
       "documentation": "",
-      "returnType": "struct(output:string, code:number, file_artifacts:list)",
+      "returnType": "struct(output:string, code:number, files_artifacts:list)",
       "params": [
         {
           "name": "run",

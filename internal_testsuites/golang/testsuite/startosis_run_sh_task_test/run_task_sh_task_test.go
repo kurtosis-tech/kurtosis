@@ -18,10 +18,10 @@ def run(plan):
 	runshStarlarkFileArtifact = `
 def run(plan):
   result = plan.run_sh(run="mkdir -p src && echo kurtosis > /src/tech.txt", store=["/src/tech.txt", "/src"])
-  file_artifacts = result.file_artifacts
+  file_artifacts = result.files_artifacts
   result2 = plan.run_sh(run="cat /src/temp/tech.txt", files={"temp": file_artifacts[0]}, workdir="/src")
   plan.assert(result2.output, "==", "kurtosis\n")
-  result3 = plan.run_sh(run="cat ./src/tech.txt", files={"/task": file_artifacts[1]}, workdir="/task")
+  result3 = plan.run_sh(run="cat ./src/tech.txt", files={"/": file_artifacts[1]}, workdir="/task")
   plan.assert(result3.output, "==", "kurtosis\n")`
 )
 
