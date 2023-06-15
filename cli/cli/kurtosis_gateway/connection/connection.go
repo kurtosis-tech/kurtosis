@@ -39,7 +39,7 @@ type gatewayConnectionToKurtosisImpl struct {
 	portforwarderStdOut bytes.Buffer
 	portforwarderStdErr bytes.Buffer
 
-	portforwarderStopChannel  chan struct{}
+	portforwarderStopChannel chan struct{}
 
 	// RemotePort -> port-spec ID
 	remotePortNumberToPortSpecIdMap map[uint16]string
