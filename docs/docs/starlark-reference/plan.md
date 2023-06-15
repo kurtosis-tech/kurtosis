@@ -426,7 +426,7 @@ The `files` dictionary argument accepts a key value pair, where `key` is the pat
 The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
    * `result.output` is a future reference to the output of the command
    * `result.code` is a future reference to the exit code
-   *  `result.file_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
+   *  `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
 
 ```python
 
@@ -439,7 +439,7 @@ The instruction returns a `struct` with [future references][future-references-re
         ...
     )
 
-    plan.print(result.file_artifacts) # prints ["blue_moon", "green_planet"]
+    plan.print(result.files_artifacts) # prints ["blue_moon", "green_planet"]
     
     # blue_moon is name of the file artifact that contains task directory
     # green_planet is the name of the file artifact that conatins test.txt file
