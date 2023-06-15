@@ -306,7 +306,7 @@ func (service ApiContainerService) UnpauseService(ctx context.Context, args *kur
 func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	serviceIdentifier := args.ServiceIdentifier
 	command := args.CommandArgs
-	exitCode, logOutput, err := apicService.serviceNetwork.ExecCommand(ctx, serviceIdentifier, command)
+	execResult, err := apicService.serviceNetwork.RunExec(ctx, serviceIdentifier, command)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -314,7 +314,7 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 			command,
 			serviceIdentifier)
 	}
-	numLogOutputBytes := len(logOutput)
+	numLogOutputBytes := len(execResult.GetOutput())
 	if numLogOutputBytes > maxLogOutputSizeBytes {
 		return nil, stacktrace.NewError(
 			"Log output from docker exec command '%+v' was %v bytes, but maximum size allowed by Kurtosis is %v",
@@ -324,8 +324,8 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 		)
 	}
 	resp := &kurtosis_core_rpc_api_bindings.ExecCommandResponse{
-		ExitCode:  exitCode,
-		LogOutput: logOutput,
+		ExitCode:  execResult.GetExitCode(),
+		LogOutput: execResult.GetOutput(),
 	}
 	return resp, nil
 }

@@ -1,5 +1,53 @@
 # Changelog
 
+## [0.78.5](https://github.com/kurtosis-tech/kurtosis/compare/0.78.4...0.78.5) (2023-06-15)
+
+
+### Features
+
+* added ability for folks to copy files from the one time execution task ([#723](https://github.com/kurtosis-tech/kurtosis/issues/723)) ([f1fcde1](https://github.com/kurtosis-tech/kurtosis/commit/f1fcde148fffe81bc15ea7ab62b00ecd0099e172))
+* added run_sh to vscode plugin ([#738](https://github.com/kurtosis-tech/kurtosis/issues/738)) ([337c994](https://github.com/kurtosis-tech/kurtosis/commit/337c9941f6686b2bf7b50416ee7fe71460a8aade))
+* Automatically inject the plan object if the first argument of the main function is `plan` ([#716](https://github.com/kurtosis-tech/kurtosis/issues/716)) ([142ce42](https://github.com/kurtosis-tech/kurtosis/commit/142ce42e5a349f468b5ebcbe9ec5f9a752825117))
+
+
+### Bug Fixes
+
+* Stopping engine not required before switching cluster ([#727](https://github.com/kurtosis-tech/kurtosis/issues/727)) ([af675c1](https://github.com/kurtosis-tech/kurtosis/commit/af675c13a2bcbb10e2619ce513b3c49efa7f642c))
+
+## [0.78.4](https://github.com/kurtosis-tech/kurtosis/compare/0.78.3...0.78.4) (2023-06-13)
+
+
+### Features
+
+* added run_sh instruction; users can run one time bash task ([#717](https://github.com/kurtosis-tech/kurtosis/issues/717)) ([566144a](https://github.com/kurtosis-tech/kurtosis/commit/566144a5c3cb73f8dc7b8aa13ffb20b9a802edfc))
+
+## [0.78.3](https://github.com/kurtosis-tech/kurtosis/compare/0.78.2...0.78.3) (2023-06-13)
+
+
+### Features
+
+* Remove `--exec` flag for `kurtosis service shell` ([#712](https://github.com/kurtosis-tech/kurtosis/issues/712)) ([d8bc320](https://github.com/kurtosis-tech/kurtosis/commit/d8bc3206be4ec3d6dec7973c3b31f8746b6089d3))
+
+
+### Bug Fixes
+
+* add `continue` to avoid segfault on service failing to register ([#719](https://github.com/kurtosis-tech/kurtosis/issues/719)) ([0cebb1f](https://github.com/kurtosis-tech/kurtosis/commit/0cebb1fe22ffd0e0e5e532164c3b0ef658b3ee55))
+
+## [0.78.2](https://github.com/kurtosis-tech/kurtosis/compare/0.78.1...0.78.2) (2023-06-13)
+
+
+### Bug Fixes
+
+* accept run as the default main function ([#714](https://github.com/kurtosis-tech/kurtosis/issues/714)) ([077cd4c](https://github.com/kurtosis-tech/kurtosis/commit/077cd4c45c7722891d58754fa8b3f4f48c2dfdcb))
+
+## [0.78.1](https://github.com/kurtosis-tech/kurtosis/compare/0.78.0...0.78.1) (2023-06-13)
+
+
+### Features
+
+* added min/max cpu and memory for kubernetes via starlark ([#689](https://github.com/kurtosis-tech/kurtosis/issues/689)) ([faffc07](https://github.com/kurtosis-tech/kurtosis/commit/faffc071e8617e19bf5b23252a6661cf8b7ff81b))
+* use kurtosis service name as the kubernetes service name ([#713](https://github.com/kurtosis-tech/kurtosis/issues/713)) ([b0d6b8e](https://github.com/kurtosis-tech/kurtosis/commit/b0d6b8ebe30f99d1baeaef4d68c08ebd9ca8a9f3))
+
 ## [0.78.0](https://github.com/kurtosis-tech/kurtosis/compare/0.77.4...0.78.0) (2023-06-12)
 
 

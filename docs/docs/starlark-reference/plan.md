@@ -389,26 +389,80 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # OPTIONAL (Default: badouralix/curl-jq)
         image = "badouralix/curl-jq",
 
-        # Sets the working dir in which the command will be run
-        # OPTIONAL (Default: task)
-        workdir = "task",
+        # Sets the working dir in which:
+        # the command will be run 
+        # and files will be mounted at
+        # OPTIONAL (Default: /task)
+        workdir = "/task",
 
         # A mapping of path_on_task_where_contents_will_be_mounted -> files_artifact_id_to_mount
-        # For more information about file artifacts, see below: 
+        # The file path can be relative to workdir or absolute paths
+        # For more information about file artifacts, see below.
+        # CAUTION: duplicate paths to files or directories to be mounted is not supported, and it will fail
         # OPTIONAL (Default: {})
         files = {
             "/path/to/file/1": files_artifact_1,
-            "/path/to/file/2": files_artifact_2,
+            "path/to/file/2": files_artifact_2, # the path will interpreted as /workdir/path/to/file/2
         },
+
+        # list of paths to directories or files that will be copied to a file artifact
+        # these can be relative to workdir or absolute paths
+        # CAUTION: all the paths in this list must be unique 
+        # OPTIONAL (Default:[])
+        store = [
+            # copies a file into a file artifact
+            # this will be interpreted as /workdir/src/kurtosis.txt
+            "src/kurtosis.txt, 
+            
+            # copies the entire directory into a file artifact
+            "/workdir/src,
+        ],
     )
 
-    plan.print(result["code"])
-    plan.print(result["output"])
+    plan.print(result.code)  # returns the future reference to the code
+    plan.print(result.output) # returns the future reference to the output
+    plan.print(result.file_artifacts) # returns the file artifact names that can be referenced later
 ```
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
 
-The instruction returns a `dict` whose values are [future reference][future-references-reference] to the output and exit code of the command. `result["output"]` is a future reference to the output of the command, and `result["code"]` is a future reference to the exit code.
+The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
+   * `result.output` is a future reference to the output of the command
+   * `result.code` is a future reference to the exit code
+   *  `result.file_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
+
+```python
+
+    result = plan.run_sh(
+        run = "echo kurtosis > test.txt",
+        store = [
+            "/task",
+            "/task/test.txt",
+        ],
+        ...
+    )
+
+    plan.print(result.file_artifacts) # prints ["blue_moon", "green_planet"]
+    
+    # blue_moon is name of the file artifact that contains task directory
+    # green_planet is the name of the file artifact that conatins test.txt file
+
+    service_one = plan.add_service(
+        ..., 
+        config=ServiceConfig(
+            name="servce_one", 
+            files={"/src": results.file_artifacts[0]}, # copies the directory task into servce_one 
+        )
+    ) # the path to the file will look like: /src/task/test.txt
+
+    service_two = plan.add_service(
+        ..., 
+        config=ServiceConfig(
+            name="servce_one", 
+            files={"/src": results.file_artifacts[1]}, # copies the file test.txt into service_two
+        ),
+    ) # the path to the file will look like: /src/test.txt
+```
 
 set_connection
 --------------
@@ -576,7 +630,9 @@ The return value is a [future reference][future-references-reference] to the nam
 wait
 ----
 
-The `wait` instruction fails the Starlark script or package with an execution error if the provided [assertion][assert] does not succeed within a given period of time. If the assertion succeeds, `wait` returns a [future references][future-references-reference] with the result the last run of the assertion.
+The `wait` instruction fails the Starlark script or package with an execution error if the provided [assertion][assert] does not succeed within a given period of time. 
+
+If the assertion succeeds, `wait` returns the result of the given Recipe  - i.e. the same output as [`plan.request`][request] or [`plan.exec`][exec].
 
 This instruction is best used for asserting the system has reached a desired state, e.g. in testing. To wait until a service is ready, you are better off using automatic port availability waiting via [`PortSpec.wait`][starlark-types-port-spec] or [`ServiceConfig.ready_conditions`][starlark-types-update-service-config], as these will short-circuit a parallel [`add_services`][add-services] call if they fail.
 
@@ -585,7 +641,7 @@ To learn more about the accepted recipe types, please see [`ExecRecipe`][starlar
 
 ```python
 # This fails in runtime if response["code"] != 200 for each request in a 5 minute time span
-response = plan.wait(
+recipe_result = plan.wait(
     # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
     # MANDATORY
@@ -621,8 +677,9 @@ response = plan.wait(
     # OPTIONAL (Default: "10s")
     timeout = "5m",
 )
-# If this point of the code is reached, the assertion has passed therefore the print statement will print "200"
-plan.print(response["code"])
+
+# The assertion has passed, so we can use `recipe_result` just like the result of `plan.request` or `plan.exec`
+plan.print(recipe_result["code"])
 ```
 
 
@@ -631,6 +688,8 @@ plan.print(response["code"])
 [add-services]: #add_services
 [assert]: #assert
 [extract]: #extract
+[exec]: #exec
+[request]: #request
 [set-connection]: #set_connection
 [start-service]: #start_service
 [stop-service]: #stop_service

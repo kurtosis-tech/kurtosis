@@ -46,14 +46,14 @@ If the flag `--main-function-name` is set, the JSON-serialized object will be us
 
 For example, if the main function signature (inside this file github.com/my-org/my-package/src/entry.star) has this shape:
 ```python
-# the plan object is injected always as the first argument
+# the plan object will automatically be injected if the first argument name is 'plan'
 def my_main_function(plan, first_argument, second_argument, their_argument):
     # your code
 ```
 
 It can be called like this:
 ```bash
-# you don't have to pass the plan object as an argument because it will be automatically injected by default at the first position
+# you don't have to pass the plan object as an argument because it will automatically be injected by default if the first argument name is 'plan'
 kurtosis run main.star '{"first_argument": "Foo", "second_argument": "Bar", "their_argument": {"first-key:"first-value", "second-key":"second-value"}}'  --main-file src/entry.star --main-function-name my_main_function
 ```
 
