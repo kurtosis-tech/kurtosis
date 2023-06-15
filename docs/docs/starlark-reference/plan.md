@@ -392,30 +392,27 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # Sets the working dir in which:
         # the command will be run 
         # and files will be mounted at
-        # OPTIONAL (Default: /task)
+        # OPTIONAL (Default: "")
         workdir = "/task",
 
         # A mapping of path_on_task_where_contents_will_be_mounted -> files_artifact_id_to_mount
-        # The file path can be relative to workdir or absolute paths
         # For more information about file artifacts, see below.
         # CAUTION: duplicate paths to files or directories to be mounted is not supported, and it will fail
         # OPTIONAL (Default: {})
         files = {
             "/path/to/file/1": files_artifact_1,
-            "path/to/file/2": files_artifact_2, # the path will interpreted as /workdir/path/to/file/2
+            "/path/to/file/2": files_artifact_2,
         },
 
         # list of paths to directories or files that will be copied to a file artifact
-        # these can be relative to workdir or absolute paths
         # CAUTION: all the paths in this list must be unique 
         # OPTIONAL (Default:[])
         store = [
             # copies a file into a file artifact
-            # this will be interpreted as /workdir/src/kurtosis.txt
-            "src/kurtosis.txt, 
+            "/src/kurtosis.txt, 
             
             # copies the entire directory into a file artifact
-            "/workdir/src,
+            "/src,
         ],
     )
 
@@ -450,15 +447,15 @@ The instruction returns a `struct` with [future references][future-references-re
     service_one = plan.add_service(
         ..., 
         config=ServiceConfig(
-            name="servce_one", 
-            files={"/src": results.file_artifacts[0]}, # copies the directory task into servce_one 
+            name="service_one", 
+            files={"/src": results.file_artifacts[0]}, # copies the directory task into service_one 
         )
     ) # the path to the file will look like: /src/task/test.txt
 
     service_two = plan.add_service(
         ..., 
         config=ServiceConfig(
-            name="servce_one", 
+            name="service_two", 
             files={"/src": results.file_artifacts[1]}, # copies the file test.txt into service_two
         ),
     ) # the path to the file will look like: /src/test.txt
