@@ -104,13 +104,24 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 				if err = portForwarder.ForwardPorts(); err != nil {
 					if err == portforward.ErrLostConnectionToPod {
 						logrus.Infof("Lost connection to pod: %s", podProxyEndpointUrl.String())
+						// Copy the port forwarder assigned local ports so we re-use the same local ports when we reconnect
+						ports, err := portForwarder.GetPorts()
+						if err != nil {
+							logrus.Errorf("An error occured retrieving the local ports to remote ports mapping for our portforwarder:\n%v", err)
+							return
+						}
+						portStrings = nil
+						for _, port := range ports {
+							portString := fmt.Sprintf("%v:%v", port.Local, port.Remote)
+							portStrings = append(portStrings, portString)
+						}
 					} else {
 						if retries == 0 {
 							// Exit the retry logic if the first connection fails so we don't block the caller
 							logrus.Errorf("Expected to be able to start forwarding local ports to remote ports, instead our portforwarder has returned a non-nil err:\n%v", err)
 							return
 						}
-						logrus.Debugf("Error trying to forwarding ports:\n%v", err)
+						logrus.Debugf("Error trying to forward ports:\n%v", err)
 					}
 				} else {
 					// ForwardPorts() returns nil when we close the connection using the stop channel.
@@ -121,17 +132,6 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 				retries += 1
 				logrus.Debugf("Retrying (%d) connection to pod: %s", retries, podProxyEndpointUrl.String())
 				readyChannel = make(chan struct{}, 1)
-
-				// Re-use the same local ports
-				ports, err := portForwarder.GetPorts()
-				if err != nil {
-					logrus.Errorf("An error occured retrieving the local ports to remote ports mapping for our portforwarder:\n%v", err)
-				}
-				portStrings = nil
-				for _, port := range ports {
-					portString := fmt.Sprintf("%v:%v", port.Local, port.Remote)
-					portStrings = append(portStrings, portString)
-				}
 			}
 		}
 	}()
