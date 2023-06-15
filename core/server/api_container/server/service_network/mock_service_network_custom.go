@@ -3,6 +3,7 @@ package service_network
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"net"
 	"net/http"
 
@@ -128,7 +129,12 @@ func (m *MockServiceNetworkCustom) UnpauseService(ctx context.Context, serviceId
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) ExecCommand(ctx context.Context, serviceIdentifier string, command []string) (int32, string, error) {
+func (m *MockServiceNetworkCustom) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) RunExecs(ctx context.Context, userServiceCommands map[string][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
