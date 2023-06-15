@@ -171,9 +171,10 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 }
 
 // Execute This is just v0 for run_sh task - we can later improve on it.
-//	TODO: stop the container as soon as task completed.
-//   Create an mechanism for other services to retrieve files from the task container
-//   Make task as it's own entity instead of currently shown under services
+//
+//		TODO: stop the container as soon as task completed.
+//	  Create an mechanism for other services to retrieve files from the task container
+//	  Make task as it's own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// create work directory and cd into that directory
 	createAndSwitchTheDirectoryCmd := fmt.Sprintf(createAndSwitchDirectoryTemplate, builtin.workdir, builtin.workdir)
@@ -205,14 +206,14 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	}
 
 	// run the command passed in by user in the container
-	code, output, err := builtin.serviceNetwork.ExecCommand(ctx, builtin.name, createDefaultDirectory)
+	createDefaultDirectoryResult, err := builtin.serviceNetwork.RunExec(ctx, builtin.name, createDefaultDirectory)
 	if err != nil {
 		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
 
 	result := map[string]starlark.Comparable{
-		runshOutputKey: starlark.String(output),
-		runshCodeKey:   starlark.MakeInt(int(code)),
+		runshOutputKey: starlark.String(createDefaultDirectoryResult.GetOutput()),
+		runshCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
 	}
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 

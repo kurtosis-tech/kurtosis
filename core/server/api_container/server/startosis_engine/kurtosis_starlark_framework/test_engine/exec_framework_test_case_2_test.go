@@ -2,6 +2,7 @@ package test_engine
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -31,13 +32,12 @@ func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
-	serviceNetwork.EXPECT().ExecCommand(
+	serviceNetwork.EXPECT().RunExec(
 		mock.Anything,
 		string(execServiceName),
 		[]string{"mkdir", "-p", "/tmp/store"},
 	).Times(1).Return(
-		int32(0),
-		"",
+		exec_result.NewExecResult(0, ""),
 		nil,
 	)
 
