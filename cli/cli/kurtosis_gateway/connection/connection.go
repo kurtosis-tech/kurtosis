@@ -117,7 +117,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 						}
 					} else {
 						if retries == 0 {
-							// Exit the retry logic if the first connection fails so we don't block the caller
+							// Exit the retry logic if the first connection fails
 							logrus.Errorf("Expected to be able to start forwarding local ports to remote ports, instead our portforwarder has returned a non-nil err:\n%v", err)
 							return
 						}
