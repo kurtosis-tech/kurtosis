@@ -147,12 +147,12 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 	}
 
 	// Clean up the removed services when we have the full list of running services
-	cleanUpRemovedServices := len(args.ServiceIdentifiers) == 0
+	cleanupRemovedServices := len(args.ServiceIdentifiers) == 0
 
-	if err := service.updateServicesLocalConnection(remoteApiContainerResponse.ServiceInfo, cleanUpRemovedServices); err != nil {
+	if err := service.updateServicesLocalConnection(remoteApiContainerResponse.ServiceInfo, cleanupRemovedServices); err != nil {
 		return nil, stacktrace.Propagate(err, "Error updating the services local connection")
 	}
-	
+
 	return remoteApiContainerResponse, nil
 }
 
@@ -434,8 +434,8 @@ func (service *ApiContainerGatewayServiceServer) idempotentKillRunningConnection
 	delete(service.userServiceGuidToLocalConnectionMap, serviceUuid)
 }
 
-func (service *ApiContainerGatewayServiceServer) updateServicesLocalConnection(serviceInfos map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, cleanUpRemovedServices bool) error {
-	
+func (service *ApiContainerGatewayServiceServer) updateServicesLocalConnection(serviceInfos map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, cleanupRemovedServices bool) error {
+
 	serviceUuids := map[string]bool{}
 	for serviceId, serviceInfo := range serviceInfos {
 		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
@@ -444,7 +444,7 @@ func (service *ApiContainerGatewayServiceServer) updateServicesLocalConnection(s
 		serviceUuids[serviceInfo.GetServiceUuid()] = true
 	}
 
-	if cleanUpRemovedServices {
+	if cleanupRemovedServices {
 		// Clean up connection for removed services
 		for serviceUuid := range service.userServiceGuidToLocalConnectionMap {
 			if _, found := serviceUuids[serviceUuid]; !found {
