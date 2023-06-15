@@ -18,9 +18,10 @@ const (
 	serviceName                   = "example-datastore-server-1"
 	serviceIdForDependentService  = "example-datastore-server-2"
 	portId                        = "grpc"
-	fileToBeCreated               = "/tmp/foo"
+	filePathOnDataStoreService    = "/tmp/foo/"
+	fileToBeCreated               = filePathOnDataStoreService + "doo.txt"
 	mountPathOnDependentService   = "/tmp/doo"
-	pathToCheckOnDependentService = mountPathOnDependentService + "/foo"
+	pathToCheckOnDependentService = mountPathOnDependentService + "/foo/doo.txt"
 	renderedConfigMountPath       = "/config"
 	renderedConfigRelativePath    = "foo/bar.yml"
 	renderedConfigFile            = renderedConfigMountPath + "/" + renderedConfigRelativePath
@@ -31,6 +32,7 @@ DATASTORE_SERVICE_NAME = "` + serviceName + `"
 DATASTORE_PORT_ID = "` + portId + `"
 DATASTORE_PORT_NUMBER = 1323
 DATASTORE_PORT_PROTOCOL = "TCP"
+DIR_OF_FILE_TO_BE_CREATED = "` + filePathOnDataStoreService + `"
 FILE_TO_BE_CREATED = "` + fileToBeCreated + `"
 
 SERVICE_DEPENDENT_ON_DATASTORE_SERVICE = "` + serviceIdForDependentService + `"
@@ -55,12 +57,18 @@ def run(plan, args):
 	plan.print("Service " + result.name + " deployed successfully.")
 	plan.exec(
 		recipe = ExecRecipe(
+			command = ["mkdir", DIR_OF_FILE_TO_BE_CREATED],
+		),
+		service_name = DATASTORE_SERVICE_NAME,
+	)
+	plan.exec(
+		recipe = ExecRecipe(
 			command = ["touch", FILE_TO_BE_CREATED],
 		),
 		service_name = DATASTORE_SERVICE_NAME,
 	)
 	
-	artifact_name = plan.store_service_files(name = "stored-file", service_name = DATASTORE_SERVICE_NAME, src = FILE_TO_BE_CREATED)
+	artifact_name = plan.store_service_files(name = "stored-file", service_name = DATASTORE_SERVICE_NAME, src = DIR_OF_FILE_TO_BE_CREATED)
 	plan.print("Stored file at " + artifact_name)
 	
 	template_str = read_file(TEMPLATE_FILE_TO_RENDER)
@@ -93,6 +101,7 @@ def run(plan, args):
 	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 	return {"ip-address": deployed_service.ip_address}
 `
+	useDefaultMainFile = ""
 )
 
 func TestStartosis(t *testing.T) {
@@ -107,7 +116,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, greetingsArg, defaultDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, startosisScript, greetingsArg, defaultDryRun, defaultParallelism)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
@@ -118,6 +127,7 @@ func TestStartosis(t *testing.T) {
 Adding service example-datastore-server-1.
 Service 'example-datastore-server-1' added with service UUID '[a-z-0-9]+'
 Service example-datastore-server-1 deployed successfully.
+Command returned with exit code '0' with no output
 Command returned with exit code '0' with no output
 Files with artifact name 'stored-file' uploaded with artifact UUID '[a-f0-9]{32}'
 Stored file at stored-file

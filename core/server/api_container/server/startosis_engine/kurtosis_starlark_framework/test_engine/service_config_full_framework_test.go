@@ -26,7 +26,7 @@ func (t *serviceConfigFullTestCase) GetId() string {
 }
 
 func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
-	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%q, %s=%d, %s=%d, %s=%s)",
+	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, TestContainerImageName,
 		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol, TestWaitConfiguration),
@@ -37,8 +37,10 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 		service_config.EnvVarsAttr, fmt.Sprintf("{%q: %q, %q: %q}", TestEnvVarName1, TestEnvVarValue1, TestEnvVarName2, TestEnvVarValue2),
 		service_config.PrivateIpAddressPlaceholderAttr, TestPrivateIPAddressPlaceholder,
 		service_config.SubnetworkAttr, TestSubnetwork,
-		service_config.CpuAllocationAttr, TestCpuAllocation,
-		service_config.MemoryAllocationAttr, TestMemoryAllocation,
+		service_config.MaxCpuMilliCoresAttr, TestCpuAllocation,
+		service_config.MinCpuMilliCoresAttr, TestMinCpuMilliCores,
+		service_config.MaxMemoryMegaBytesAttr, TestMemoryAllocation,
+		service_config.MinMemoryMegaBytesAttr, TestMinMemoryMegabytes,
 		service_config.ReadyConditionsAttr,
 		getDefaultReadyConditionsScriptPart(),
 	)
@@ -72,10 +74,14 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 		TestPrivateIPAddressPlaceholder,
 	).WithSubnetwork(
 		string(TestSubnetwork),
-	).WithCpuAllocationMillicpus(
+	).WithMaxCpuMilliCores(
 		TestCpuAllocation,
-	).WithMemoryAllocationMegabytes(
+	).WithMaxMemoryMegabytes(
 		TestMemoryAllocation,
+	).WithMinCpuMilliCores(
+		TestMinCpuMilliCores,
+	).WithMinMemoryMegabytes(
+		TestMinMemoryMegabytes,
 	)
 
 	expectedServiceConfig := expectedServiceConfigBuilder.Build()

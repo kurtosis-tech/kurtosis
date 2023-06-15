@@ -3,6 +3,7 @@ package test_engine
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -22,13 +23,12 @@ type execRecipeTestCase struct {
 func newExecRecipeTestCase(t *testing.T) *execRecipeTestCase {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	serviceNetwork.EXPECT().ExecCommand(
+	serviceNetwork.EXPECT().RunExec(
 		mock.Anything,
 		string(TestServiceName),
 		[]string{"echo", "run"},
 	).Times(1).Return(
-		int32(0),
-		"run",
+		exec_result.NewExecResult(0, "run"),
 		nil,
 	)
 	return &execRecipeTestCase{

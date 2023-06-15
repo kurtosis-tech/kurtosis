@@ -5,6 +5,28 @@ var grpc = require('@grpc/grpc-js');
 var api_container_service_pb = require('./api_container_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 
+function serialize_api_container_api_AddServicesArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.AddServicesArgs)) {
+    throw new Error('Expected argument of type api_container_api.AddServicesArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_AddServicesArgs(buffer_arg) {
+  return api_container_service_pb.AddServicesArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_AddServicesResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.AddServicesResponse)) {
+    throw new Error('Expected argument of type api_container_api.AddServicesResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_AddServicesResponse(buffer_arg) {
+  return api_container_service_pb.AddServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_DownloadFilesArtifactArgs(arg) {
   if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactArgs)) {
     throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactArgs');
@@ -192,28 +214,6 @@ function deserialize_api_container_api_StarlarkRunResponseLine(buffer_arg) {
   return api_container_service_pb.StarlarkRunResponseLine.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_StartServicesArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.StartServicesArgs)) {
-    throw new Error('Expected argument of type api_container_api.StartServicesArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_StartServicesArgs(buffer_arg) {
-  return api_container_service_pb.StartServicesArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_StartServicesResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.StartServicesResponse)) {
-    throw new Error('Expected argument of type api_container_api.StartServicesResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_StartServicesResponse(buffer_arg) {
-  return api_container_service_pb.StartServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_StoreFilesArtifactFromServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.StoreFilesArtifactFromServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.StoreFilesArtifactFromServiceArgs');
@@ -374,16 +374,16 @@ runStarlarkPackage: {
     responseDeserialize: deserialize_api_container_api_StarlarkRunResponseLine,
   },
   // Start services by creating containers for them
-startServices: {
-    path: '/api_container_api.ApiContainerService/StartServices',
+addServices: {
+    path: '/api_container_api.ApiContainerService/AddServices',
     requestStream: false,
     responseStream: false,
-    requestType: api_container_service_pb.StartServicesArgs,
-    responseType: api_container_service_pb.StartServicesResponse,
-    requestSerialize: serialize_api_container_api_StartServicesArgs,
-    requestDeserialize: deserialize_api_container_api_StartServicesArgs,
-    responseSerialize: serialize_api_container_api_StartServicesResponse,
-    responseDeserialize: deserialize_api_container_api_StartServicesResponse,
+    requestType: api_container_service_pb.AddServicesArgs,
+    responseType: api_container_service_pb.AddServicesResponse,
+    requestSerialize: serialize_api_container_api_AddServicesArgs,
+    requestDeserialize: deserialize_api_container_api_AddServicesArgs,
+    responseSerialize: serialize_api_container_api_AddServicesResponse,
+    responseDeserialize: deserialize_api_container_api_AddServicesResponse,
   },
   // Returns the IDs of the current services in the enclave
 getServices: {

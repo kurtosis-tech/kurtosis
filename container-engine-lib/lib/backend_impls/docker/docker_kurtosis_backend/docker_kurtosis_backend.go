@@ -214,7 +214,7 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		)
 	}
 
-	successfullyStartedService, failedService, err := user_service_functions.StartUserServices(
+	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
 		services,
@@ -282,8 +282,8 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
 }
 
-func (backend *DockerKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, commandToRunInsteadOfBash string) (net.Conn, error) {
-	return user_service_functions.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, backend.dockerManager, commandToRunInsteadOfBash)
+func (backend *DockerKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (net.Conn, error) {
+	return user_service_functions.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, backend.dockerManager)
 }
 
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
@@ -306,7 +306,14 @@ func (backend *DockerKurtosisBackend) StopUserServices(
 	resultErroredServiceUUIDs map[service.ServiceUUID]error,
 	resultErr error,
 ) {
-	return user_service_functions.StopUserServices(ctx, enclaveUuid, filters, backend.dockerManager)
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'",
+			enclaveUuid,
+		)
+	}
+	return user_service_functions.StopUserServices(ctx, enclaveUuid, filters, serviceRegistrationsForEnclave, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) DestroyUserServices(

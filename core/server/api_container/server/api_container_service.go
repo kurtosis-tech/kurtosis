@@ -95,8 +95,9 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	serializedParams := args.GetSerializedParams()
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
+	mainFuncName := args.GetMainFunctionName()
 
-	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, serializedStarlarkScript, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, serializedStarlarkScript, serializedParams, stream)
 	return nil
 }
 
@@ -138,18 +139,20 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	packageId := args.GetPackageId()
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
-	serializedParams := args.SerializedParams
+	serializedParams := args.GetSerializedParams()
+	relativePathToMainFile := args.GetRelativePathToMainFile()
+	mainFuncName := args.GetMainFunctionName()
 
 	// TODO: remove this fork once everything uses the UploadStarlarkPackage endpoint prior to calling this
 	//  right now the TS SDK still uses the old deprecated behavior
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
 	if args.ClonePackage != nil {
-		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil)
+		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
 	} else {
 		// old deprecated syntax in use
 		moduleContentIfLocal := args.GetLocal()
-		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal)
+		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
 	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
@@ -157,11 +160,11 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		}
 		return nil
 	}
-	apicService.runStarlark(parallelism, dryRun, packageId, scriptWithRunFunction, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, packageId, mainFuncName, scriptWithRunFunction, serializedParams, stream)
 	return nil
 }
 
-func (apicService ApiContainerService) StartServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StartServicesArgs) (*kurtosis_core_rpc_api_bindings.StartServicesResponse, error) {
+func (apicService ApiContainerService) AddServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.AddServicesArgs) (*kurtosis_core_rpc_api_bindings.AddServicesResponse, error) {
 	failedServicesPool := map[kurtosis_backend_service.ServiceName]error{}
 	serviceNamesToAPIConfigs := map[kurtosis_backend_service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
 
@@ -170,7 +173,7 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		serviceNamesToAPIConfigs[kurtosis_backend_service.ServiceName(serviceNameStr)] = apiServiceConfig
 	}
 
-	successfulServices, failedServices, err := apicService.serviceNetwork.StartServices(ctx, serviceNamesToAPIConfigs, defaultParallelism)
+	successfulServices, failedServices, err := apicService.serviceNetwork.AddServices(ctx, serviceNamesToAPIConfigs, defaultParallelism)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "None of the services '%v' mentioned in the request were able to start due to an unexpected error", serviceNamesToAPIConfigs)
 	}
@@ -222,7 +225,7 @@ func (apicService ApiContainerService) StartServices(ctx context.Context, args *
 		failedServiceNamesToErrorStr[string(id)] = serviceErr.Error()
 	}
 
-	return binding_constructors.NewStartServicesResponse(serviceNamesToServiceInfo, failedServiceNamesToErrorStr), nil
+	return binding_constructors.NewAddServicesResponse(serviceNamesToServiceInfo, failedServiceNamesToErrorStr), nil
 }
 
 func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
@@ -303,7 +306,7 @@ func (service ApiContainerService) UnpauseService(ctx context.Context, args *kur
 func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	serviceIdentifier := args.ServiceIdentifier
 	command := args.CommandArgs
-	exitCode, logOutput, err := apicService.serviceNetwork.ExecCommand(ctx, serviceIdentifier, command)
+	execResult, err := apicService.serviceNetwork.RunExec(ctx, serviceIdentifier, command)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -311,7 +314,7 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 			command,
 			serviceIdentifier)
 	}
-	numLogOutputBytes := len(logOutput)
+	numLogOutputBytes := len(execResult.GetOutput())
 	if numLogOutputBytes > maxLogOutputSizeBytes {
 		return nil, stacktrace.NewError(
 			"Log output from docker exec command '%+v' was %v bytes, but maximum size allowed by Kurtosis is %v",
@@ -321,8 +324,8 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 		)
 	}
 	resp := &kurtosis_core_rpc_api_bindings.ExecCommandResponse{
-		ExitCode:  exitCode,
-		LogOutput: logOutput,
+		ExitCode:  execResult.GetExitCode(),
+		LogOutput: execResult.GetOutput(),
 	}
 	return resp, nil
 }
@@ -756,7 +759,12 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	return serviceInfoResponse, nil
 }
 
-func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string, clonePackage bool, moduleContentIfLocal []byte) (string, *startosis_errors.InterpretationError) {
+func (apicService ApiContainerService) runStarlarkPackageSetup(
+	packageId string,
+	clonePackage bool,
+	moduleContentIfLocal []byte,
+	relativePathToMainFile string,
+) (string, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
 	if clonePackage {
@@ -774,7 +782,13 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 		return "", interpretationError
 	}
 
-	pathToMainFile := path.Join(packageRootPathOnDisk, startosis_constants.MainFileName)
+	var pathToMainFile string
+	if relativePathToMainFile == "" {
+		pathToMainFile = path.Join(packageRootPathOnDisk, startosis_constants.MainFileName)
+	} else {
+		pathToMainFile = path.Join(packageRootPathOnDisk, relativePathToMainFile)
+	}
+
 	if _, err := os.Stat(pathToMainFile); err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
@@ -787,8 +801,16 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(packageId string,
 	return string(mainScriptToExecute), nil
 }
 
-func (apicService ApiContainerService) runStarlark(parallelism int, dryRun bool, packageId string, serializedStarlark string, serializedParams string, stream grpc.ServerStream) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, serializedStarlark, serializedParams)
+func (apicService ApiContainerService) runStarlark(
+	parallelism int,
+	dryRun bool,
+	packageId string,
+	mainFunctionName string,
+	serializedStarlark string,
+	serializedParams string,
+	stream grpc.ServerStream,
+) {
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, serializedStarlark, serializedParams)
 	for {
 		select {
 		case <-stream.Context().Done():

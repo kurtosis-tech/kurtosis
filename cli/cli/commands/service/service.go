@@ -8,6 +8,7 @@ package service
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/exec"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/logs"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/rm"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/shell"
@@ -24,6 +25,7 @@ var ServiceCmd = &cobra.Command{
 
 func init() {
 	ServiceCmd.AddCommand(add.ServiceAddCmd.MustGetCobraCommand())
+	ServiceCmd.AddCommand(exec.ServiceShellCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(logs.ServiceLogsCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(rm.ServiceRmCmd.MustGetCobraCommand())
 	ServiceCmd.AddCommand(shell.ServiceShellCmd.MustGetCobraCommand())

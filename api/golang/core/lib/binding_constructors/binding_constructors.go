@@ -30,15 +30,17 @@ func NewPort(
 func NewServiceConfig(
 	containerImageName string,
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port, //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	entrypointArgs []string,
-	cmdArgs []string,
+	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	entrypointArgs []string, cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactMountDirpaths map[string]string,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 	privateIPAddrPlaceholder string,
-	subnetwork string) *kurtosis_core_rpc_api_bindings.ServiceConfig {
+	subnetwork string,
+	minCpuMilliCores uint64,
+	minMemoryMegaBytes uint64,
+) *kurtosis_core_rpc_api_bindings.ServiceConfig {
 	return &kurtosis_core_rpc_api_bindings.ServiceConfig{
 		ContainerImageName:        containerImageName,
 		PrivatePorts:              privatePorts,
@@ -51,6 +53,8 @@ func NewServiceConfig(
 		MemoryAllocationMegabytes: memoryAllocationMegabytes,
 		PrivateIpAddrPlaceholder:  privateIPAddrPlaceholder,
 		Subnetwork:                &subnetwork,
+		MinCpuMilliCores:          minCpuMilliCores,
+		MinMemoryMegabytes:        minMemoryMegaBytes,
 	}
 }
 
@@ -65,7 +69,13 @@ func NewUpdateServiceConfig(subnetwork string) *kurtosis_core_rpc_api_bindings.U
 //	Execute Starlark Arguments
 //
 // ==============================================================================================
-func NewRunStarlarkScriptArgs(serializedString string, serializedParams string, dryRun bool, parallelism int32) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
+func NewRunStarlarkScriptArgs(
+	mainFunctionName string,
+	serializedString string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
@@ -73,10 +83,18 @@ func NewRunStarlarkScriptArgs(serializedString string, serializedParams string, 
 		SerializedParams: serializedParams,
 		DryRun:           &dryRun,
 		Parallelism:      parallelismCopy,
+		MainFunctionName: mainFunctionName,
 	}
 }
 
-func NewRunStarlarkPackageArgs(packageId string, serializedParams string, dryRun bool, parallelism int32) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
+func NewRunStarlarkPackageArgs(
+	packageId string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	clonePackage := false
@@ -87,10 +105,19 @@ func NewRunStarlarkPackageArgs(packageId string, serializedParams string, dryRun
 		SerializedParams:       serializedParams,
 		DryRun:                 &dryRun,
 		Parallelism:            parallelismCopy,
+		RelativePathToMainFile: relativePathToMainFile,
+		MainFunctionName:       mainFunctionName,
 	}
 }
 
-func NewRunStarlarkRemotePackageArgs(packageId string, serializedParams string, dryRun bool, parallelism int32) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
+func NewRunStarlarkRemotePackageArgs(
+	packageId string,
+	relativePathToMainFile string,
+	mainFunctionName string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	clonePackage := true
@@ -101,6 +128,8 @@ func NewRunStarlarkRemotePackageArgs(packageId string, serializedParams string, 
 		SerializedParams:       serializedParams,
 		DryRun:                 &dryRun,
 		Parallelism:            parallelismCopy,
+		RelativePathToMainFile: relativePathToMainFile,
+		MainFunctionName:       mainFunctionName,
 	}
 }
 
@@ -272,14 +301,14 @@ func NewStarlarkExecutionError(errorMessage string) *kurtosis_core_rpc_api_bindi
 
 // ==============================================================================================
 //
-//	Start Service
+//	Add Services
 //
 // ==============================================================================================
 
-func NewStartServicesResponse(
+func NewAddServicesResponse(
 	successfulServicesInfo map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo,
-	failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.StartServicesResponse {
-	return &kurtosis_core_rpc_api_bindings.StartServicesResponse{
+	failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.AddServicesResponse {
+	return &kurtosis_core_rpc_api_bindings.AddServicesResponse{
 		SuccessfulServiceNameToServiceInfo: successfulServicesInfo,
 		FailedServiceNameToError:           failedServicesErrors,
 	}

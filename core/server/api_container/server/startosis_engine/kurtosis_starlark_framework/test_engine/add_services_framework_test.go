@@ -39,7 +39,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
-	serviceNetwork.EXPECT().StartServices(
+	serviceNetwork.EXPECT().AddServices(
 		mock.Anything,
 		mock.MatchedBy(func(configs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig) bool {
 			require.Len(t, configs, 2)
@@ -50,7 +50,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 			actualServiceConfig1 := services.NewServiceConfigBuilderFromServiceConfig(configs[TestServiceName]).Build()
 			assert.Equal(t, expectedServiceConfig1, actualServiceConfig1)
 			actualServiceConfig2 := services.NewServiceConfigBuilderFromServiceConfig(configs[TestServiceName2]).Build()
-			expectedServiceConfig2 := services.NewServiceConfigBuilder(TestContainerImageName).WithCpuAllocationMillicpus(TestCpuAllocation).WithMemoryAllocationMegabytes(TestMemoryAllocation).Build()
+			expectedServiceConfig2 := services.NewServiceConfigBuilder(TestContainerImageName).WithMaxCpuMilliCores(TestCpuAllocation).WithMaxMemoryMegabytes(TestMemoryAllocation).Build()
 			assert.Equal(t, expectedServiceConfig2, actualServiceConfig2)
 			return true
 		}),

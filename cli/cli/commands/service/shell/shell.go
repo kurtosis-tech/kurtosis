@@ -27,11 +27,11 @@ import (
 )
 
 const (
-	enclaveIdentifierArgKey          = "enclave"
-	isEnclaveIdArgOptional           = false
-	isEnclaveIdArgGreedy             = false
-	commandToRunFlagKey              = "exec"
-	commandToRunInsteadOfBashFlagKey = ""
+	enclaveIdentifierArgKey = "enclave"
+	isEnclaveIdArgOptional  = false
+	isEnclaveIdArgGreedy    = false
+
+	commandToRunInsteadOfBashEmpty = ""
 
 	serviceIdentifierArgKey  = "service"
 	isServiceGuidArgOptional = false
@@ -47,14 +47,7 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 	LongDescription:           "Starts a shell on the specified service",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags: []*flags.FlagConfig{
-		{
-			Key:     commandToRunFlagKey,
-			Usage:   "If this flag is used Kurtosis will not run bash/sh on the container by default instead; Kurtosis will run the passed in command. Note if the command being run is multiple words you should wrap it in quotes",
-			Type:    flags.FlagType_String,
-			Default: commandToRunInsteadOfBashFlagKey,
-		},
-	},
+	Flags:                     []*flags.FlagConfig{},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIdentifierArg(
 			enclaveIdentifierArgKey,
@@ -89,11 +82,6 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the service identifier using arg key '%v'", serviceIdentifierArgKey)
 	}
 
-	commandToRunInsteadOfBash, err := flags.GetString(commandToRunFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting the command to run using key '%v'", commandToRunFlagKey)
-	}
-
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -112,7 +100,7 @@ func run(
 	}
 	serviceUuid := service.ServiceUUID(serviceCtx.GetServiceUUID())
 
-	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, commandToRunInsteadOfBash)
+	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting connection with user service with UUID '%v' in enclave '%v'", serviceUuid, enclaveIdentifier)
 	}
@@ -142,9 +130,7 @@ func run(
 		defer terminal.Restore(stdinFd, oldState)
 	}
 
-	_ = <-finishChan
-
-	terminal.Restore(stdinFd, oldState)
+	<-finishChan
 
 	return nil
 }

@@ -121,6 +121,12 @@ export class ServiceConfig extends jspb.Message {
   hasSubnetwork(): boolean;
   clearSubnetwork(): ServiceConfig;
 
+  getMinCpuMilliCores(): number;
+  setMinCpuMilliCores(value: number): ServiceConfig;
+
+  getMinMemoryMegabytes(): number;
+  setMinMemoryMegabytes(value: number): ServiceConfig;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceConfig.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceConfig): ServiceConfig.AsObject;
@@ -142,6 +148,8 @@ export namespace ServiceConfig {
     memoryAllocationMegabytes: number,
     privateIpAddrPlaceholder: string,
     subnetwork?: string,
+    minCpuMilliCores: number,
+    minMemoryMegabytes: number,
   }
 
   export enum SubnetworkCase { 
@@ -192,6 +200,9 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasParallelism(): boolean;
   clearParallelism(): RunStarlarkScriptArgs;
 
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -206,6 +217,7 @@ export namespace RunStarlarkScriptArgs {
     serializedParams: string,
     dryRun?: boolean,
     parallelism?: number,
+    mainFunctionName: string,
   }
 
   export enum DryRunCase { 
@@ -249,6 +261,12 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasClonePackage(): boolean;
   clearClonePackage(): RunStarlarkPackageArgs;
 
+  getRelativePathToMainFile(): string;
+  setRelativePathToMainFile(value: string): RunStarlarkPackageArgs;
+
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -268,6 +286,8 @@ export namespace RunStarlarkPackageArgs {
     dryRun?: boolean,
     parallelism?: number,
     clonePackage?: boolean,
+    relativePathToMainFile: string,
+    mainFunctionName: string,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -635,40 +655,40 @@ export namespace StarlarkRunFinishedEvent {
   }
 }
 
-export class StartServicesArgs extends jspb.Message {
+export class AddServicesArgs extends jspb.Message {
   getServiceNamesToConfigsMap(): jspb.Map<string, ServiceConfig>;
-  clearServiceNamesToConfigsMap(): StartServicesArgs;
+  clearServiceNamesToConfigsMap(): AddServicesArgs;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StartServicesArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: StartServicesArgs): StartServicesArgs.AsObject;
-  static serializeBinaryToWriter(message: StartServicesArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StartServicesArgs;
-  static deserializeBinaryFromReader(message: StartServicesArgs, reader: jspb.BinaryReader): StartServicesArgs;
+  toObject(includeInstance?: boolean): AddServicesArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: AddServicesArgs): AddServicesArgs.AsObject;
+  static serializeBinaryToWriter(message: AddServicesArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AddServicesArgs;
+  static deserializeBinaryFromReader(message: AddServicesArgs, reader: jspb.BinaryReader): AddServicesArgs;
 }
 
-export namespace StartServicesArgs {
+export namespace AddServicesArgs {
   export type AsObject = {
     serviceNamesToConfigsMap: Array<[string, ServiceConfig.AsObject]>,
   }
 }
 
-export class StartServicesResponse extends jspb.Message {
+export class AddServicesResponse extends jspb.Message {
   getSuccessfulServiceNameToServiceInfoMap(): jspb.Map<string, ServiceInfo>;
-  clearSuccessfulServiceNameToServiceInfoMap(): StartServicesResponse;
+  clearSuccessfulServiceNameToServiceInfoMap(): AddServicesResponse;
 
   getFailedServiceNameToErrorMap(): jspb.Map<string, string>;
-  clearFailedServiceNameToErrorMap(): StartServicesResponse;
+  clearFailedServiceNameToErrorMap(): AddServicesResponse;
 
   serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): StartServicesResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: StartServicesResponse): StartServicesResponse.AsObject;
-  static serializeBinaryToWriter(message: StartServicesResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): StartServicesResponse;
-  static deserializeBinaryFromReader(message: StartServicesResponse, reader: jspb.BinaryReader): StartServicesResponse;
+  toObject(includeInstance?: boolean): AddServicesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: AddServicesResponse): AddServicesResponse.AsObject;
+  static serializeBinaryToWriter(message: AddServicesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): AddServicesResponse;
+  static deserializeBinaryFromReader(message: AddServicesResponse, reader: jspb.BinaryReader): AddServicesResponse;
 }
 
-export namespace StartServicesResponse {
+export namespace AddServicesResponse {
   export type AsObject = {
     successfulServiceNameToServiceInfoMap: Array<[string, ServiceInfo.AsObject]>,
     failedServiceNameToErrorMap: Array<[string, string]>,

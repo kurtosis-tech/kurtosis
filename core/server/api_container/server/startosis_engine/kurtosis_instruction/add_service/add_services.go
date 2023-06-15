@@ -124,7 +124,7 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 		renderedServiceConfigs[renderedServiceName] = renderedServiceConfig
 	}
 
-	startedServices, failedServices, err := builtin.serviceNetwork.StartServices(ctx, renderedServiceConfigs, parallelism)
+	startedServices, failedServices, err := builtin.serviceNetwork.AddServices(ctx, renderedServiceConfigs, parallelism)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting a batch of services")
 	}

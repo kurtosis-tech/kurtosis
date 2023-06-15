@@ -66,9 +66,11 @@ var (
 	TestSubnetwork  = service_network_types.PartitionID("test-subnetwork")
 	TestSubnetwork2 = service_network_types.PartitionID("test-subnetwork-2")
 
-	TestCpuAllocation = uint64(2000)
-
+	TestCpuAllocation    = uint64(2000)
 	TestMemoryAllocation = uint64(1024)
+
+	TestMinCpuMilliCores   = uint64(1000)
+	TestMinMemoryMegabytes = uint64(512)
 
 	TestReadyConditionsRecipePortId   = "http"
 	TestReadyConditionsRecipeEndpoint = "/endpoint?input=data"

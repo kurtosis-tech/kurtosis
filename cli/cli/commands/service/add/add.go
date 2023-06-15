@@ -92,6 +92,8 @@ const (
 	portMappingSeparatorForLogs = ", "
 
 	defaultPortWaitTimeoutStr = "15s"
+
+	useDefaultMainFile = ""
 )
 
 var (
@@ -299,7 +301,7 @@ func run(
 	}
 
 	// TODO Allow adding services to an already-repartitioned enclave
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, fmt.Sprintf(`def run(plan):
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, fmt.Sprintf(`def run(plan):
 	plan.add_service(name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
@@ -436,7 +438,7 @@ func getServiceConfigStarlark(
 	if entrypoint != "" {
 		entryPointArgs = []string{entrypoint}
 	}
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entryPointArgs, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, 0, 0), nil
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entryPointArgs, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, 0, 0, 0, 0), nil
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings

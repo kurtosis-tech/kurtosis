@@ -262,16 +262,14 @@ func createStartServiceOperation(
 		cpuAllocationMillicpus := serviceConfig.GetCPUAllocationMillicpus()
 		memoryAllocationMegabytes := serviceConfig.GetMemoryAllocationMegabytes()
 		privateIPAddrPlaceholder := serviceConfig.GetPrivateIPAddrPlaceholder()
+		minCpuAllocationMilliCpus := serviceConfig.GetMinCPUAllocationMillicpus()
+		minMemoryAllocationMegabytes := serviceConfig.GetMinMemoryAllocationMegabytes()
 
 		matchingObjectAndResources, found := servicesObjectsAndResources[serviceUuid]
 		if !found {
 			return nil, stacktrace.NewError("Even though we pulled back some Kubernetes resources, no Kubernetes resources were available for requested service UUID '%v'; this is a bug in Kurtosis", serviceUuid)
 		}
 		kubernetesService := matchingObjectAndResources.KubernetesResources.Service
-		serviceObj := matchingObjectAndResources.Service
-		if serviceObj != nil {
-			return nil, stacktrace.NewError("Cannot start service with UUID '%v' because the service has already been started previously", serviceUuid)
-		}
 
 		// We replace the placeholder value with the actual private IP address
 		privateIPAddr := matchingObjectAndResources.ServiceRegistration.GetPrivateIP().String()
@@ -314,12 +312,13 @@ func createStartServiceOperation(
 		podContainers, err := getUserServicePodContainerSpecs(
 			containerImageName,
 			entrypointArgs,
-			cmdArgs,
-			envVars,
+			cmdArgs, envVars,
 			privatePorts,
 			userServiceContainerVolumeMounts,
 			cpuAllocationMillicpus,
 			memoryAllocationMegabytes,
+			minCpuAllocationMilliCpus,
+			minMemoryAllocationMegabytes,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating the container specs for the user service pod with image '%v'", containerImageName)
@@ -511,10 +510,10 @@ func getUserServicePodContainerSpecs(
 	containerMounts []apiv1.VolumeMount,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
-) (
-	[]apiv1.Container,
-	error,
-) {
+	minCpuAllocationMilliCpus uint64,
+	minMemoryAllocationMegabytes uint64,
+) ([]apiv1.Container, error) {
+
 	var containerEnvVars []apiv1.EnvVar
 	for varName, varValue := range envVarStrs {
 		envVar := apiv1.EnvVar{
@@ -535,13 +534,22 @@ func getUserServicePodContainerSpecs(
 	// 0 is considered the empty value (meaning the field was never set), so if either fields are 0, that resource is left unbounded
 	if cpuAllocationMillicpus != 0 {
 		resourceLimitsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
-		resourceRequestsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(cpuAllocationMillicpus), resource.DecimalSI)
 	}
+
+	if minCpuAllocationMilliCpus != 0 {
+		resourceRequestsList[apiv1.ResourceCPU] = *resource.NewMilliQuantity(int64(minCpuAllocationMilliCpus), resource.DecimalSI)
+	}
+
 	if memoryAllocationMegabytes != 0 {
 		memoryAllocationInBytes := convertMegabytesToBytes(memoryAllocationMegabytes)
 		resourceLimitsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
-		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(memoryAllocationInBytes), resource.DecimalSI)
 	}
+
+	if minMemoryAllocationMegabytes != 0 {
+		minMemoryAllocationInBytes := convertMegabytesToBytes(minMemoryAllocationMegabytes)
+		resourceRequestsList[apiv1.ResourceMemory] = *resource.NewQuantity(int64(minMemoryAllocationInBytes), resource.DecimalSI)
+	}
+
 	resourceRequirements := apiv1.ResourceRequirements{ //nolint:exhaustruct
 		Limits:   resourceLimitsList,
 		Requests: resourceRequestsList,

@@ -20,7 +20,7 @@ import {
     newPort,
     newRemoveServiceArgs,
     newServiceConfig,
-    newStartServicesArgs,
+    newAddServicesArgs,
     newStoreWebFilesArtifactArgs,
     newUploadFilesArtifactArgs,
 } from "../constructor_calls";
@@ -32,7 +32,7 @@ import type { GenericPathJoiner } from "./generic_path_joiner";
 import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ServiceInfo,
-    StartServicesArgs,
+    AddServicesArgs,
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs, FilesArtifactNameAndUuid,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
@@ -113,6 +113,7 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkScript(
+        mainFunctionName: string,
         serializedStartosisScript: string,
         serializedParams: string,
         dryRun: boolean,
@@ -121,6 +122,7 @@ export class EnclaveContext {
         args.setSerializedScript(serializedStartosisScript)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
+        args.setMainFunctionName(mainFunctionName)
         const scriptRunResult : Result<Readable, Error> = await this.backend.runStarlarkScript(args)
         if (scriptRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark script \n${scriptRunResult.error}`))
@@ -130,11 +132,12 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkScriptBlocking(
+        mainFunctionName: string,
         serializedStartosisScript: string,
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkScript(serializedStartosisScript, serializedParams, dryRun)
+        const runAsyncResponse = await this.runStarlarkScript(mainFunctionName, serializedStartosisScript, serializedParams, dryRun)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
@@ -145,10 +148,12 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkPackage(
         packageRootPath: string,
+        relativePathToMainFile: string,
+        mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<Readable, Error>> {
-        const args = await this.assembleRunStarlarkPackageArg(packageRootPath, serializedParams, dryRun)
+        const args = await this.assembleRunStarlarkPackageArg(packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun)
         if (args.isErr()) {
             return err(new Error(`Unexpected error while assembling arguments to pass to the Starlark executor \n${args.error}`))
         }
@@ -162,10 +167,12 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkPackageBlocking(
         packageRootPath: string,
+        relativePathToMainFile: string,
+        mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkPackage(packageRootPath, serializedParams, dryRun)
+        const runAsyncResponse = await this.runStarlarkPackage(packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
@@ -175,15 +182,19 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosis.com/sdk/#runremotestarlarkpackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkRemotePackage(
-        moduleId: string,
+        packageId: string,
+        relativePathToMainFile: string,
+        mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<Readable, Error>> {
         const args = new RunStarlarkPackageArgs();
-        args.setPackageId(moduleId)
+        args.setPackageId(packageId)
         args.setDryRun(dryRun)
         args.setSerializedParams(serializedParams)
         args.setRemote(true)
+        args.setRelativePathToMainFile(relativePathToMainFile)
+        args.setMainFunctionName(mainFunctionName)
         const remotePackageRunResult : Result<Readable, Error> = await this.backend.runStarlarkPackage(args)
         if (remotePackageRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark package \n${remotePackageRunResult.error}`))
@@ -193,11 +204,13 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkRemotePackageBlocking(
-        moduleId: string,
+        packageId: string,
+        relativePathToMainFile: string,
+        mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkRemotePackage(moduleId, serializedParams, dryRun)
+        const runAsyncResponse = await this.runStarlarkRemotePackage(packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
@@ -313,16 +326,16 @@ export class EnclaveContext {
             )
             serviceConfigs.set(serviceName, serviceConfig);
         }
-        log.trace("Starting new services with Kurtosis API...");
-        const startServicesArgs: StartServicesArgs = newStartServicesArgs(serviceConfigs)
-        const startServicesResponseResult = await this.backend.startServices(startServicesArgs)
-        if (startServicesResponseResult.isErr()) {
-            return err(startServicesResponseResult.error)
+        log.trace("Adding new services with Kurtosis API...");
+        const addServicesArgs: AddServicesArgs = newAddServicesArgs(serviceConfigs)
+        const addServicesResponseResult = await this.backend.addServices(addServicesArgs)
+        if (addServicesResponseResult.isErr()) {
+            return err(addServicesResponseResult.error)
         }
-        const startServicesResponse = startServicesResponseResult.value;
-        const successfulServicesInfo: jspb.Map<String, ServiceInfo> | undefined = startServicesResponse.getSuccessfulServiceNameToServiceInfoMap();
+        const addServicesResponse = addServicesResponseResult.value;
+        const successfulServicesInfo: jspb.Map<String, ServiceInfo> | undefined = addServicesResponse.getSuccessfulServiceNameToServiceInfoMap();
         if (successfulServicesInfo === undefined) {
-            return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
+            return err(new Error("Expected AddServicesResponse to contain a field that does not exist."))
         }
         // defer-undo removes all successfully started services in case of errors in the future phases
         const shouldRemoveServices: Map<ServiceName, boolean> = new Map<ServiceName, boolean>();
@@ -332,9 +345,9 @@ export class EnclaveContext {
 
         try {
             // Add services that failed to start to failed services pool
-            const failedServices: jspb.Map<string, string> | undefined = startServicesResponse.getFailedServiceNameToErrorMap();
+            const failedServices: jspb.Map<string, string> | undefined = addServicesResponse.getFailedServiceNameToErrorMap();
             if (failedServices === undefined) {
-                return err(new Error("Expected StartServicesResponse to contain a field that does not exist."))
+                return err(new Error("Expected AddServicesResponse to contain a field that does not exist."))
             }
             for (const [serviceNameStr, serviceErrStr] of failedServices.entries()) {
                 const serviceName: ServiceName = <ServiceName>serviceNameStr;
@@ -546,7 +559,13 @@ export class EnclaveContext {
         return ok(result);
     }
 
-    private async assembleRunStarlarkPackageArg(packageRootPath: string, serializedParams: string, dryRun: boolean,): Promise<Result<RunStarlarkPackageArgs, Error>> {
+    private async assembleRunStarlarkPackageArg(
+        packageRootPath: string,
+        relativePathToMainFile: string,
+        mainFunctionName: string,
+        serializedParams: string,
+        dryRun: boolean,
+        ): Promise<Result<RunStarlarkPackageArgs, Error>> {
         const kurtosisYamlFilepath = path.join(packageRootPath, KURTOSIS_YAML_FILENAME)
 
         const resultParseKurtosisYaml = await parseKurtosisYaml(kurtosisYamlFilepath)
@@ -565,6 +584,8 @@ export class EnclaveContext {
         args.setPackageId(kurtosisYaml.name)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
+        args.setRelativePathToMainFile(relativePathToMainFile)
+        args.setMainFunctionName(mainFunctionName)
         return ok(args)
     }
 }

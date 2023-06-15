@@ -3,6 +3,7 @@ package service_network
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
@@ -36,7 +37,7 @@ type ServiceNetwork interface {
 		connection partition_topology.PartitionConnection,
 	) error
 
-	StartService(
+	AddService(
 		ctx context.Context,
 		serviceName service.ServiceName,
 		serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
@@ -45,7 +46,7 @@ type ServiceNetwork interface {
 		error,
 	)
 
-	StartServices(
+	AddServices(
 		ctx context.Context,
 		serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
 		batchSize int,
@@ -66,11 +67,42 @@ type ServiceNetwork interface {
 
 	RemoveService(ctx context.Context, serviceIdentifier string) (service.ServiceUUID, error)
 
+	StartService(ctx context.Context, serviceIdentifier string) error
+
+	StartServices(
+		ctx context.Context,
+		serviceIdentifiers []string,
+	) (
+		map[service.ServiceUUID]bool,
+		map[service.ServiceUUID]error,
+		error,
+	)
+
+	StopService(ctx context.Context, serviceIdentifier string) error
+
+	StopServices(
+		ctx context.Context,
+		serviceIdentifiers []string,
+	) (
+		map[service.ServiceUUID]bool,
+		map[service.ServiceUUID]error,
+		error,
+	)
+
 	PauseService(ctx context.Context, serviceIdentifier string) error
 
 	UnpauseService(ctx context.Context, serviceIdentifier string) error
 
-	ExecCommand(ctx context.Context, serviceIdentifier string, command []string) (int32, string, error)
+	RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error)
+
+	RunExecs(
+		ctx context.Context,
+		userServiceCommands map[string][]string,
+	) (
+		map[service.ServiceUUID]*exec_result.ExecResult,
+		map[service.ServiceUUID]error,
+		error,
+	)
 
 	HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error)
 

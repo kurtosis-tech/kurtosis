@@ -23,7 +23,7 @@ import {
     ServiceInfo,
     ServiceConfig,
     RemoveServiceResponse,
-    GetServicesResponse, StartServicesArgs,
+    GetServicesResponse, AddServicesArgs,
     RenderTemplatesToFilesArtifactArgs, DownloadFilesArtifactArgs,
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceName } from './services/service';
@@ -94,8 +94,8 @@ export function newServiceConfig(
 // ==============================================================================================
 //                                        Start Service
 // ==============================================================================================
-export function newStartServicesArgs(serviceConfigs : Map<ServiceName, ServiceConfig>) : StartServicesArgs {
-    const result : StartServicesArgs = new StartServicesArgs();
+export function newAddServicesArgs(serviceConfigs : Map<ServiceName, ServiceConfig>) : AddServicesArgs {
+    const result : AddServicesArgs = new AddServicesArgs();
     const serviceNamesToConfig : jspb.Map<string, ServiceConfig> = result.getServiceNamesToConfigsMap();
     for (const [serviceName, serviceConfig] of serviceConfigs) {
         serviceNamesToConfig.set(String(serviceName), serviceConfig);

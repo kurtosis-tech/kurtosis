@@ -14,7 +14,7 @@ export type { EnclaveUUID, PartitionID } from "./core/lib/enclaves/enclave_conte
 export { UnblockedPartitionConnection, BlockedPartitionConnection, SoftPartitionConnection } from "./core/lib/enclaves/partition_connection"
 
 // Constructor Calls
-export { newExecCommandArgs, newStartServicesArgs, newGetServicesArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";
+export { newExecCommandArgs, newAddServicesArgs, newGetServicesArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";
 
 export { PartitionConnections } from "./core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 

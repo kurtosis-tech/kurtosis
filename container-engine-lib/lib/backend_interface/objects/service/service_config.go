@@ -27,6 +27,10 @@ type ServiceConfig struct {
 	memoryAllocationMegabytes uint64
 
 	privateIPAddrPlaceholder string
+
+	minCpuAllocationMilliCpus uint64
+
+	minMemoryAllocationMegabytes uint64
 }
 
 func NewServiceConfig(
@@ -39,7 +43,11 @@ func NewServiceConfig(
 	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
-	privateIPAddrPlaceholder string) *ServiceConfig {
+	privateIPAddrPlaceholder string,
+	minCpuMilliCores uint64,
+	minMemoryMegaBytes uint64,
+) *ServiceConfig {
+
 	return &ServiceConfig{
 		containerImageName:        containerImageName,
 		privatePorts:              privatePorts,
@@ -51,6 +59,9 @@ func NewServiceConfig(
 		cpuAllocationMillicpus:    cpuAllocationMillicpus,
 		memoryAllocationMegabytes: memoryAllocationMegabytes,
 		privateIPAddrPlaceholder:  privateIPAddrPlaceholder,
+		// The minimum resources specification is only available for kubernetes
+		minCpuAllocationMilliCpus:    minCpuMilliCores,
+		minMemoryAllocationMegabytes: minMemoryMegaBytes,
 	}
 }
 
@@ -92,4 +103,14 @@ func (serviceConfig *ServiceConfig) GetMemoryAllocationMegabytes() uint64 {
 
 func (serviceConfig *ServiceConfig) GetPrivateIPAddrPlaceholder() string {
 	return serviceConfig.privateIPAddrPlaceholder
+}
+
+// only available for Kubernetes
+func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
+	return serviceConfig.minCpuAllocationMilliCpus
+}
+
+// only available for Kubernetes
+func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
+	return serviceConfig.minMemoryAllocationMegabytes
 }

@@ -33,6 +33,8 @@ const (
 	testServiceName        = service.ServiceName("example-datastore-server")
 	testContainerImageName = "kurtosistech/example-datastore-server"
 	testArtifactName       = "test-artifact"
+
+	useDefaultMainFunctionName = ""
 )
 
 func TestStartosisInterpreter_SimplePrintScript(t *testing.T) {
@@ -47,13 +49,66 @@ def run(plan):
 	plan.print("` + testString + `")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1) // Only the print statement
 
 	expectedOutput := testString + `
 `
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+}
+
+func TestStartosisInterpreter_RandomMainFunctionAndParamsWithPlan(t *testing.T) {
+
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	defer packageContentProvider.RemoveAll()
+	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	interpreter := startosisInterpreter
+	script := `
+def deploy_contract(plan,service_name,contract_name,init_message,args):
+	plan.print("Service name: service_name")
+	plan.print("Contract name: contract_name")
+	plan.print("Init message: init_message")
+
+	return args["arg1"] + ":" + args["arg2"]
+`
+	mainFunctionName := "deploy_contract"
+	inputArgs := `{"service_name": "my-service", "contract_name": "my-contract", "init_message": "Init message", "args": {"arg1": "arg1-value", "arg2": "arg2-value"}}`
+
+	result, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFunctionName, script, inputArgs)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 3) // The three print functions
+	require.NotNil(t, result)
+	expectedResult := "\"arg1-value:arg2-value\""
+	require.Equal(t, expectedResult, result)
+	expectedOutput := "Service name: service_name\nContract name: contract_name\nInit message: init_message\n"
+	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
+}
+
+func TestStartosisInterpreter_RandomMainFunctionAndParams(t *testing.T) {
+
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	defer packageContentProvider.RemoveAll()
+	startosisInterpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	interpreter := startosisInterpreter
+	script := `
+def my_func(my_arg1, my_arg2, args):
+	
+	all_arg_values = my_arg1 + "--" + my_arg2 +  "--" + args["arg1"] + ":" + args["arg2"]
+
+	return all_arg_values
+`
+	mainFunctionName := "my_func"
+	inputArgs := `{"my_arg1": "foo", "my_arg2": "bar", "args": {"arg1": "arg1-value", "arg2": "arg2-value"}}`
+
+	result, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFunctionName, script, inputArgs)
+	require.Nil(t, interpretationError)
+	require.Len(t, instructions, 0) // There are no instructions to execute
+	require.NotNil(t, result)
+	expectedResult := "\"foo--bar--arg1-value:arg2-value\""
+	require.Equal(t, expectedResult, result)
 }
 
 func TestStartosisInterpreter_Test(t *testing.T) {
@@ -70,7 +125,7 @@ def run(plan):
 	plan.print(my_dict)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 2) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -92,7 +147,7 @@ def run(plan):
 unknownInstruction()
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -117,7 +172,7 @@ unknownVariable
 unknownInstruction2()
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
@@ -143,7 +198,7 @@ def run():
 load("otherScript.start") # fails b/c load takes in at least 2 args
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorFromStacktrace(
@@ -179,7 +234,7 @@ def run(plan):
 	plan.print("The grpc transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceName), startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, fmt.Sprintf(script, testServiceName), startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 5)
 
@@ -218,7 +273,7 @@ def run(plan):
 	plan.print("The transport protocol is " + datastore_service.ports["grpc"].transport_protocol)
 	plan.print("The application protocol is " + datastore_service.ports["grpc"].application_protocol)
 `
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, fmt.Sprintf(script, testServiceName), startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, fmt.Sprintf(script, testServiceName), startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 6)
 
@@ -252,7 +307,7 @@ def run(plan):
 	plan.add_service(name = service_name, config = config)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 
 	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
@@ -287,7 +342,7 @@ def run(plan):
 	plan.add_service(name = service_name, config = config)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
 		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"transport_protocol":"Invalid argument value for 'transport_protocol': 'TCPK'. Valid values are TCP, SCTP, UDP"}`),
@@ -321,7 +376,7 @@ def run(plan):
 	plan.add_service(name = service_name, config = config)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions)
 	expectedError := startosis_errors.NewInterpretationErrorWithCauseAndCustomMsg(
 		startosis_errors.NewInterpretationError(`The following argument(s) could not be parsed or did not pass validation: {"number":"Value for 'number' was expected to be an integer between 1 and 65535, but it was 'starlark.String'"}`),
@@ -365,7 +420,7 @@ def run(plan):
 	plan.print("Done!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 8)
 
@@ -397,7 +452,7 @@ load("` + barModulePath + `", "a")
 def run(plan):
 	plan.print("Hello " + a)
 `
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
 			*startosis_errors.NewCallFrame("<toplevel>", startosis_errors.NewScriptPosition(startosis_constants.PackageIdPlaceholderForStandaloneScript, 2, 1)),
@@ -424,7 +479,7 @@ my_module = import_module("` + barModulePath + `")
 def run(plan):
 	plan.print("Hello " + my_module.a)
 `
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -453,7 +508,7 @@ def run(plan):
 
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 1) // Only the print statement
 	require.Nil(t, interpretationError)
 
@@ -481,7 +536,7 @@ def run(plan):
 	plan.print(module_doo.b)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{
@@ -506,7 +561,7 @@ def run(plan):
 	plan.print(my_module.b)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Empty(t, instructions) // No kurtosis instruction
 
 	errorMsg := `Evaluation error: An error occurred while loading the module '` + nonExistentModule + `'
@@ -533,7 +588,7 @@ def run(plan):
 `
 
 	// assert that first load fails
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, instructions)
 	require.NotNil(t, interpretationError)
 
@@ -542,7 +597,7 @@ def run(plan):
 	expectedOutput := `Hello World!
 `
 	// assert that second load succeeds
-	_, instructions, interpretationError = interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError = interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1) // The print statement
 	validateScriptOutputFromPrintInstructions(t, instructions, expectedOutput)
@@ -573,7 +628,7 @@ def run(plan):
 	plan.add_service(name = module_bar.service_name, config = module_bar.config)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 3)
 	require.Nil(t, interpretationError)
 
@@ -621,7 +676,7 @@ def run(plan):
 	plan.print("Done!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 8)
 
@@ -654,7 +709,7 @@ def run(plan):
 	plan.print("World!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 1)
 	require.Nil(t, interpretationError)
 
@@ -696,7 +751,7 @@ Adding service example-datastore-server
 Starting Startosis script!
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, scriptA, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, scriptA, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, moduleBar, 12, 18)
@@ -721,7 +776,7 @@ def run(plan):
 Adding service example-datastore-server
 `
 
-	_, instructions, interpretationError = interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, scriptB, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError = interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, scriptB, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 	assertInstructionTypeAndPosition(t, instructions[2], add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 14, 18)
@@ -745,7 +800,7 @@ def run(plan):
 	plan.print(file_contents)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 2)
 
@@ -783,7 +838,7 @@ def run(plan):
 	plan.print(artifact_name)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 3)
 
@@ -829,7 +884,7 @@ def run(plan):
 	plan.print(uuid)
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 4)
 
@@ -855,7 +910,7 @@ def run(plan):
 	plan.print("The service example-datastore-server has been removed")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Len(t, instructions, 3)
 	require.Nil(t, interpretationError)
 
@@ -877,7 +932,7 @@ func TestStartosisInterpreter_NoPanicIfUploadIsPassedAPathNotOnDisk(t *testing.T
 def run(plan):
 	plan.upload_files("` + filePath + `")
 `
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, instructions)
 	require.NotNil(t, interpretationError)
 }
@@ -892,7 +947,7 @@ def run(plan):
 	plan.print("Hello World!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1)
 
@@ -911,7 +966,7 @@ def run(plan):
 	plan.print("Hello World!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, `{"number": 4}`)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, `{"number": 4}`)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1)
 
@@ -930,7 +985,7 @@ def run(plan, args):
 	plan.print("My favorite number is {0}".format(args["number"]))
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, `{"number": 4}`)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, `{"number": 4}`)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1)
 
@@ -952,7 +1007,7 @@ def run(plan, args):
 		plan.print("Sorry no args!")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.Nil(t, interpretationError)
 	require.Len(t, instructions, 1)
 
@@ -971,7 +1026,7 @@ def run(plan, args, invalid_arg):
 	plan.print("this wouldn't interpret so the text here doesnt matter")
 `
 
-	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, instructions, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.NotNil(t, interpretationError)
 	expectedError := fmt.Sprintf("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, 3)
 	require.Equal(t, expectedError, interpretationError.GetErrorMessage())
@@ -990,7 +1045,7 @@ def run(plan):
 	print("this doesnt matter")
 `
 
-	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, script, startosis_constants.EmptyInputArgs)
+	_, _, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs)
 	require.NotNil(t, interpretationError)
 	require.Equal(t, fmt.Sprintf("Evaluation error: %v\n\tat [3:7]: run\n\tat [0:0]: print", print_builtin.UsePlanFromKurtosisInstructionError), interpretationError.GetErrorMessage())
 }

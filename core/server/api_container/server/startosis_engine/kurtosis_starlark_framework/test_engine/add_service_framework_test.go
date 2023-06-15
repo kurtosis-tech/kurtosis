@@ -41,7 +41,7 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
-	serviceNetwork.EXPECT().StartService(
+	serviceNetwork.EXPECT().AddService(
 		mock.Anything,
 		TestServiceName,
 		mock.MatchedBy(func(serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) bool {
@@ -63,9 +63,9 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 				TestPrivateIPAddressPlaceholder,
 			).WithSubnetwork(
 				string(TestSubnetwork),
-			).WithCpuAllocationMillicpus(
+			).WithMaxCpuMilliCores(
 				TestCpuAllocation,
-			).WithMemoryAllocationMegabytes(
+			).WithMaxMemoryMegabytes(
 				TestMemoryAllocation,
 			).Build()
 			actualServiceConfig := services.NewServiceConfigBuilderFromServiceConfig(serviceConfig).Build()
