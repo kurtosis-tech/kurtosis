@@ -166,13 +166,13 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 				return nil, interpretationErr
 			}
 			fileArtifactProcessedPaths := map[string]string{}
-			for key, value := range filesArtifactMountDirPaths {
-				processedName := getAbsoluteFilePath(builtin.workdir, key)
+			for pathToFileArtifact, fileArtifactName := range filesArtifactMountDirPaths {
+				processedName := getAbsoluteFilePath(builtin.workdir, pathToFileArtifact)
 				if fileArtifactProcessedPaths[processedName] != "" {
 					return nil, startosis_errors.NewInterpretationError("error occurred because duplicate key was found in files argument. "+
-						"Found multiple occurrence for: %v. This occurred during generating absolute paths from relative path inputs.", key)
+						"Found multiple occurrence for: %v. This occurred during generating absolute paths from relative path inputs.", pathToFileArtifact)
 				}
-				fileArtifactProcessedPaths[processedName] = value
+				fileArtifactProcessedPaths[processedName] = fileArtifactName
 			}
 			builtin.files = fileArtifactProcessedPaths
 		}
@@ -190,8 +190,8 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 				return nil, interpretationErr
 			}
 
-			for index, value := range storeFilesArray {
-				storeFilesArray[index] = getAbsoluteFilePath(builtin.workdir, value)
+			for index, pathToFileArtifact := range storeFilesArray {
+				storeFilesArray[index] = getAbsoluteFilePath(builtin.workdir, pathToFileArtifact)
 			}
 			builtin.pathToFileArtifacts = storeFilesArray
 
