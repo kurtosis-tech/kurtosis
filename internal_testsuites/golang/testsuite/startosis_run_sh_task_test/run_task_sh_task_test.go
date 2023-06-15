@@ -17,10 +17,12 @@ def run(plan):
 `
 	runshStarlarkFileArtifact = `
 def run(plan):
-  result = plan.run_sh(run="echo kurtosis > tech.txt", store=["/task"])
+  result = plan.run_sh(run="mkdir -p src && echo kurtosis > /task/src/tech.txt", store=["src/tech.txt", "/task/src"])
   file_artifacts = result.file_artifacts
-  result2 = plan.run_sh(run="cat ./task/tech.txt", files={"/src": file_artifacts[0]}, workdir="src")
-  plan.assert(result2.output, "==", "kurtosis\n")`
+  result2 = plan.run_sh(run="cat /src/temp/tech.txt", files={"temp": file_artifacts[0]}, workdir="src")
+  plan.assert(result2.output, "==", "kurtosis\n")
+  result3 = plan.run_sh(run="cat ./src/tech.txt", files={"/task": file_artifacts[1]})
+  plan.assert(result3.output, "==", "kurtosis\n")`
 )
 
 func TestStarlark_RunshTaskSimple(t *testing.T) {
@@ -33,6 +35,6 @@ func TestStarlark_RunshTaskSimple(t *testing.T) {
 func TestStarlark_RunshTaskFileArtifact(t *testing.T) {
 	ctx := context.Background()
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkFileArtifact)
-	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nAssertion succeeded. Value is '\"kurtosis\\n\"'.\n"
+	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nAssertion succeeded. Value is '\"kurtosis\\n\"'.\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nAssertion succeeded. Value is '\"kurtosis\\n\"'.\n"
 	require.Equal(t, expectedOutput, string(runResult.RunOutput))
 }
