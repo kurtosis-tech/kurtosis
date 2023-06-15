@@ -272,6 +272,9 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// create work directory and cd into that directory
 	commandRunCommand, err := getCommandToRun(builtin)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "error occurred while preparing the bash command to execute on the image")
+	}
 	createDefaultDirectory := []string{bashCommand, "-c", commandRunCommand}
 	serviceConfigBuilder := services.NewServiceConfigBuilder(builtin.image)
 	serviceConfigBuilder.WithFilesArtifactMountDirpaths(builtin.files)
