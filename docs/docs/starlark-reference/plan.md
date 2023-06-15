@@ -630,7 +630,9 @@ The return value is a [future reference][future-references-reference] to the nam
 wait
 ----
 
-The `wait` instruction fails the Starlark script or package with an execution error if the provided [assertion][assert] does not succeed within a given period of time. If the assertion succeeds, `wait` returns a [future references][future-references-reference] with the result the last run of the assertion.
+The `wait` instruction fails the Starlark script or package with an execution error if the provided [assertion][assert] does not succeed within a given period of time. 
+
+If the assertion succeeds, `wait` returns the result of the given Recipe  - i.e. the same output as [`plan.request`][request] or [`plan.exec`][exec].
 
 This instruction is best used for asserting the system has reached a desired state, e.g. in testing. To wait until a service is ready, you are better off using automatic port availability waiting via [`PortSpec.wait`][starlark-types-port-spec] or [`ServiceConfig.ready_conditions`][starlark-types-update-service-config], as these will short-circuit a parallel [`add_services`][add-services] call if they fail.
 
@@ -639,7 +641,7 @@ To learn more about the accepted recipe types, please see [`ExecRecipe`][starlar
 
 ```python
 # This fails in runtime if response["code"] != 200 for each request in a 5 minute time span
-response = plan.wait(
+recipe_result = plan.wait(
     # A Service name designating a service that already exists inside the enclave
     # If it does not, a validation error will be thrown
     # MANDATORY
@@ -675,8 +677,9 @@ response = plan.wait(
     # OPTIONAL (Default: "10s")
     timeout = "5m",
 )
-# If this point of the code is reached, the assertion has passed therefore the print statement will print "200"
-plan.print(response["code"])
+
+# The assertion has passed, so we can use `recipe_result` just like the result of `plan.request` or `plan.exec`
+plan.print(recipe_result["code"])
 ```
 
 
@@ -685,6 +688,8 @@ plan.print(response["code"])
 [add-services]: #add_services
 [assert]: #assert
 [extract]: #extract
+[exec]: #exec
+[request]: #request
 [set-connection]: #set_connection
 [start-service]: #start_service
 [stop-service]: #stop_service
