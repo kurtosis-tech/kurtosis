@@ -870,9 +870,9 @@ func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdenti
 
 	if execResult, found := successfulExecCommands[serviceUuid]; found {
 		if len(failedExecCommands) > 0 {
-			logrus.Warnf("An error was returned even though the exec command was successful. This is a Kurtosis"+
-				"internal bug. It is not critical, but should be reported for further investigation. Errors were:\n%v",
-				failedExecCommands)
+			return nil, stacktrace.NewError("An error was returned even though the exec command was successful. "+
+				"This is a Kurtosis internal bug. The exec result was: '%s' (exit code %d) and the error(s) were:\n%v",
+				execResult.GetOutput(), execResult.GetExitCode(), failedExecCommands)
 		}
 		return execResult, nil
 	}

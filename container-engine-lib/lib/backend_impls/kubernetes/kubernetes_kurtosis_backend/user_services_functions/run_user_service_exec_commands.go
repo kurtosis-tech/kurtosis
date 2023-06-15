@@ -88,6 +88,7 @@ func runExecOperationsInParallel(
 				commandArgs,
 				serviceUuid,
 			)
+			continue
 		}
 		if userServiceKubernetesService.GetStatus() != container_status.ContainerStatus_Running {
 			failedExecs[serviceUuid] = stacktrace.NewError(
@@ -96,6 +97,7 @@ func runExecOperationsInParallel(
 				serviceUuid,
 				userServiceKubernetesService.GetStatus().String(),
 			)
+			continue
 		}
 
 		userServiceKubernetesPod := userServiceKubernetesResource.KubernetesResources.Pod

@@ -88,6 +88,10 @@ func runExecOperationsInParallel(
 		serviceUuid := service.ServiceUUID(operationUuid)
 		execResult, ok := operationResult.(*exec_result.ExecResult)
 		if !ok {
+			// There's no way currently for one execResult object to be of a different type, and the others being
+			// proper ExecResult. So, here we fail hard and do not continue other execResult are correct.
+			// This is an internal bug anyway that would point to a pretty bad issue, so failing hard is also fine in
+			// this sense.
 			return nil, nil, stacktrace.NewError("An error occurred processing the result of the exec command "+
 				"run on service '%s'. It seems the result object is of an unexpected type ('%v'). This is a Kurtosis "+
 				"internal bug.", serviceUuid, reflect.TypeOf(execResult))
