@@ -1,4 +1,4 @@
-package startosis_ports_wait_test
+package startosis_subpackage_test
 
 import (
 	"context"
@@ -13,19 +13,25 @@ import (
 const (
 	name                  = "startosis-ports-wait"
 	isPartitioningEnabled = false
+
+	emptyRunParams         = "{}"
+	defaultDryRun          = false
+	defaultParallelism     = 4
+	useDefaultMainFile     = ""
+	useDefaultFunctionName = ""
 )
 
-type StartosisPortsWaitTestSuite struct {
+type StartosisSubpackageTestSuite struct {
 	suite.Suite
 	enclaveCtx         *enclaves.EnclaveContext
 	destroyEnclaveFunc func() error
 }
 
-func TestStartosisPortsWaitTestSuite(t *testing.T) {
-	suite.Run(t, new(StartosisPortsWaitTestSuite))
+func TestStartosisSubpackageTestSuite(t *testing.T) {
+	suite.Run(t, new(StartosisSubpackageTestSuite))
 }
 
-func (suite *StartosisPortsWaitTestSuite) SetupSuite() {
+func (suite *StartosisSubpackageTestSuite) SetupSuite() {
 	ctx := context.Background()
 	t := suite.T()
 	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name, isPartitioningEnabled)
@@ -34,14 +40,15 @@ func (suite *StartosisPortsWaitTestSuite) SetupSuite() {
 	suite.destroyEnclaveFunc = destroyEnclaveFunc
 }
 
-func (suite *StartosisPortsWaitTestSuite) TearDownSuite() {
+func (suite *StartosisSubpackageTestSuite) TearDownSuite() {
 	err := suite.destroyEnclaveFunc()
 	require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
 }
 
-func (suite *StartosisPortsWaitTestSuite) RunScript(ctx context.Context, script string) (*enclaves.StarlarkRunResult, error) {
-	logrus.Infof("Executing Startosis script...")
-	logrus.Debugf("Startosis script content: \n%v", script)
+func (suite *StartosisSubpackageTestSuite) RunPackage(ctx context.Context, remotePackage string) (*enclaves.StarlarkRunResult, error) {
+	logrus.Infof("Executing Startosis remote package...")
 
-	return test_helpers.RunScriptWithDefaultConfig(ctx, suite.enclaveCtx, script)
+	logrus.Debugf("Startosis remote package address: \n%v", remotePackage)
+
+	return suite.enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism)
 }

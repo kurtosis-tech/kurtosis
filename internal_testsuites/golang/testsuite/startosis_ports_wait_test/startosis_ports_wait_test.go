@@ -1,4 +1,4 @@
-package startosis_request_wait_assert_test
+package startosis_ports_wait_test
 
 import (
 	"context"
