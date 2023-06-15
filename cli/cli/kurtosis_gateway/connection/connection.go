@@ -98,6 +98,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 			portForwarder, err = portforward.NewOnAddresses(dialer, portForwardAddresses, portStrings, portforwardStopChannel, readyChannel, &portforwardStdOut, &portforwardStdErr)
 			if err != nil {
 				// Addresses or ports cannot be parsed so there is nothing else to try
+				logrus.Errorf("An error occured parsing the port forwarder addresses or ports:\n%v", err)
 				return
 			} else {
 				logrus.Debugf("Opening connection to pod: %s", podProxyEndpointUrl.String())
