@@ -10,7 +10,7 @@ Kurtosis will work locally or over remote infrastructure. To determine the type 
 kurtosis cluster get
 ```
 
-The clusters that Kurtosis can connect to are defined in your `kurtosis-config.yml` file, located at `/Users/YOUR_USER/Library/Application Support/kurtosis/kurtosis-config.yml` on MacOS. See [this guide](https://docs.kurtosis.com/k8s#iii-add-your-cluster-information-to-kurtosis-configyml) to learn more about how to add cluster information to your `kurtosis-config.yml` file.
+The clusters that Kurtosis can connect to are defined in your `kurtosis-config.yml` file, located at `/Users/<YOUR_USER>/Library/Application Support/kurtosis/kurtosis-config.yml` on MacOS. See [this guide](https://docs.kurtosis.com/k8s#iii-add-your-cluster-information-to-kurtosis-configyml) to learn more about how to add cluster information to your `kurtosis-config.yml` file.
 
 Below is an example of what a valid `kurtosis-config.yml` file might look like with the clusters: `docker`, `minikube`, and `cloud`:
 ```yml
