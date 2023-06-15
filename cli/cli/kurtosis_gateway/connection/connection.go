@@ -114,8 +114,6 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 				} else {
 					// ForwardPorts() returns nil when we close the connection using the stop channel.
 					// Close the port forwarder and do not try to reconnect. 
-					//portForwarder.Close()
-					logrus.Infof("ForwardPorts returned nil")
 					return
 				}
 				time.Sleep(portForwardTimeBetweenRetries)
