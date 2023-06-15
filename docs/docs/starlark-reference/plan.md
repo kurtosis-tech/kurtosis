@@ -390,27 +390,31 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         image = "badouralix/curl-jq",
 
         # Sets the working dir in which the command will be run
-        # OPTIONAL (Default: task)
-        workdir = "task",
+        # OPTIONAL (Default: /task)
+        workdir = "/task",
 
         # A mapping of path_on_task_where_contents_will_be_mounted -> files_artifact_id_to_mount
-        # For more information about file artifacts, see below: 
+        # The file path can be relative to workdir or absolute paths
+        # For more information about file artifacts, see below.
+        # CAUTION: duplicate paths to files or directories to be mounted is not supported, and it will fail
         # OPTIONAL (Default: {})
         files = {
             "/path/to/file/1": files_artifact_1,
-            "/path/to/file/2": files_artifact_2,
+            "path/to/file/2": files_artifact_2, # the path will interpreted as /workdir/path/to/file/2
         },
 
         # list of paths to directories or files that will be copied to a file artifact
+        # these can be relative to workdir or absolute paths
+        # CAUTION: all the paths in this list must be unique 
         # OPTIONAL (Default:[])
-        # CAUTION: paths in this list must be unique
         store = [
             # copies a file into a file artifact
-            "/src/kurtosis.txt,
+            # this will be interpreted as /workdir/src/kurtosis.txt
+            "src/kurtosis.txt, 
             
             # copies the entire directory into a file artifact
-            "/src
-        ]
+            "/workdir/src,
+        ],
     )
 
     plan.print(result.code)  # returns the future reference to the code
@@ -441,19 +445,21 @@ The instruction returns a `struct` with [future references][future-references-re
     # blue_moon is file artifact name that contains task directory
     # green_planet is the file artifact name that conatins test.txt file
 
-    service_one = plan.add_service(..., 
-        ServiceConfig(
+    service_one = plan.add_service(
+        ..., 
+        config=ServiceConfig(
             name="servce_one", 
-            files={"src": results.file_artifacts[0]}, # copies the directory task into servce_one 
+            files={"/src": results.file_artifacts[0]}, # copies the directory task into servce_one 
         )
-    )
+    ) # the path to the file will look like: /src/task/test.txt
 
-    service_two = plan.add_service(..., 
-        ServiceConfig(
+    service_two = plan.add_service(
+        ..., 
+        config=ServiceConfig(
             name="servce_one", 
-            files={"src": results.file_artifacts[1]}, # copies the file test.txt into service_two
-        )
-    ) 
+            files={"/src": results.file_artifacts[1]}, # copies the file test.txt into service_two
+        ),
+    ) # the path to the file will look like: /src/test.txt
 ```
 
 set_connection
