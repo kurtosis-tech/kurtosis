@@ -14,7 +14,7 @@ import (
 )
 
 // TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
-func RunUserServiceExecCommands(
+func xRunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceUUID][]string,

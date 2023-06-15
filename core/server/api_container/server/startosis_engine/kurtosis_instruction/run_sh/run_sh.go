@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -22,6 +23,7 @@ import (
 	"path"
 	"reflect"
 	"strings"
+	"time"
 )
 
 const (
@@ -301,7 +303,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	}
 
 	// run the command passed in by user in the container
-	createDefaultDirectoryResult, err := builtin.serviceNetwork.RunExec(ctx, builtin.name, createDefaultDirectory)
+	createDefaultDirectoryResult, err := execUntilTimeoutOccurs(ctx, builtin, createDefaultDirectory)
 	if err != nil {
 		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
@@ -321,6 +323,34 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		}
 	}
 	return instructionResult, err
+}
+
+func execUntilTimeoutOccurs(ctx context.Context, builtin *RunShCapabilities, commandToRun []string) (*exec_result.ExecResult, error) {
+	resultChan := make(chan *exec_result.ExecResult, 1)
+	errChan := make(chan error, 1)
+	timeout := 30 * time.Second
+	timeoutChan := time.After(timeout)
+
+	contextWithDeadline, cancelContext := context.WithTimeout(ctx, timeout)
+	defer cancelContext()
+
+	go func() {
+		executionResult, err := builtin.serviceNetwork.RunExec(contextWithDeadline, builtin.name, commandToRun)
+		if err != nil {
+			errChan <- err
+		} else {
+			resultChan <- executionResult
+		}
+	}()
+
+	select {
+	case result := <-resultChan:
+		return result, nil
+	case err := <-errChan:
+		return nil, err
+	case <-timeoutChan: // Timeout duration
+		return nil, stacktrace.NewError("Time out error occurred")
+	}
 }
 
 func copyFilesFromTask(ctx context.Context, builtin *RunShCapabilities) error {

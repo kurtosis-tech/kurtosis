@@ -458,7 +458,7 @@ The instruction returns a `struct` with [future references][future-references-re
     service_two = plan.add_service(
         ..., 
         config=ServiceConfig(
-            name="servce_two", 
+            name="service_two", 
             files={"/src": results.file_artifacts[1]}, # copies the file test.txt into service_two
         ),
     ) # the path to the file will look like: /src/test.txt
