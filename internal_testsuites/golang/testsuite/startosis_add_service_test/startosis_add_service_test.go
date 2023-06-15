@@ -2,16 +2,11 @@ package startosis_add_service_test
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
-	addServiceWithEmptyPortsTestName = "two-service-connection-test"
-	isPartitioningEnabled            = false
-
 	serviceName  = "datastore-1"
 	serviceName2 = "datastore-2"
 
@@ -59,26 +54,12 @@ def run(plan):
 `
 )
 
-func TestAddTwoServicesAndTestConnection(t *testing.T) {
+func (suite *StartosisAddServiceTestSuite) TestAddTwoServicesAndTestConnection() {
 	ctx := context.Background()
+	runResult, err := suite.RunScript(ctx, addServiceAndTestConnectionScript)
 
-	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, addServiceWithEmptyPortsTestName, isPartitioningEnabled)
-	require.NoError(t, err, "An error occurred creating an enclave")
-	defer func() {
-		destroyErr := destroyEnclaveFunc()
-		if destroyErr != nil {
-			logrus.Errorf("Error destroying enclave at the end of integration test '%s'",
-				addServiceWithEmptyPortsTestName)
-		}
-	}()
+	t := suite.T()
 
-	// ------------------------------------- TEST RUN ----------------------------------------------
-
-	logrus.Infof("Executing Starlark script...")
-	logrus.Debugf("Starlark script contents: \n%v", addServiceAndTestConnectionScript)
-
-	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, addServiceAndTestConnectionScript)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	expectedScriptOutput := `Adding services ` + serviceName + ` and ` + serviceName2 + `
@@ -105,7 +86,7 @@ Assertion succeeded. Value is '0'.
 
 	// Ensure that the service is listed
 	expectedNumberOfServices := 2
-	serviceInfos, err := enclaveCtx.GetServices()
+	serviceInfos, err := suite.enclaveCtx.GetServices()
 	require.Nil(t, err)
 	actualNumberOfServices := len(serviceInfos)
 	require.Equal(t, expectedNumberOfServices, actualNumberOfServices)

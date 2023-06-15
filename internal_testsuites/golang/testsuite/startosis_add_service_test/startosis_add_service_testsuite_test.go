@@ -1,4 +1,4 @@
-package startosis_request_wait_assert_test
+package startosis_add_service_test
 
 import (
 	"context"
@@ -11,21 +11,21 @@ import (
 )
 
 const (
-	name                  = "startosis-request-wait-assert"
+	name                  = "startosis-add-service"
 	isPartitioningEnabled = false
 )
 
-type StartosisRequestWaitAssertTestSuite struct {
+type StartosisAddServiceTestSuite struct {
 	suite.Suite
 	enclaveCtx         *enclaves.EnclaveContext
 	destroyEnclaveFunc func() error
 }
 
-func TestStartosisRequestWaitAssertTestSuite(t *testing.T) {
-	suite.Run(t, new(StartosisRequestWaitAssertTestSuite))
+func TestStartosisAddServiceTestSuite(t *testing.T) {
+	suite.Run(t, new(StartosisAddServiceTestSuite))
 }
 
-func (suite *StartosisRequestWaitAssertTestSuite) SetupSuite() {
+func (suite *StartosisAddServiceTestSuite) SetupSuite() {
 	ctx := context.Background()
 	t := suite.T()
 	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name, isPartitioningEnabled)
@@ -34,12 +34,12 @@ func (suite *StartosisRequestWaitAssertTestSuite) SetupSuite() {
 	suite.destroyEnclaveFunc = destroyEnclaveFunc
 }
 
-func (suite *StartosisRequestWaitAssertTestSuite) TearDownSuite() {
+func (suite *StartosisAddServiceTestSuite) TearDownSuite() {
 	err := suite.destroyEnclaveFunc()
 	require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
 }
 
-func (suite *StartosisRequestWaitAssertTestSuite) RunScript(ctx context.Context, script string) (*enclaves.StarlarkRunResult, error) {
+func (suite *StartosisAddServiceTestSuite) RunScript(ctx context.Context, script string) (*enclaves.StarlarkRunResult, error) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", script)
 
