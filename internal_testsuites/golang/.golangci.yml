@@ -5,3 +5,15 @@ issues:
     - path: "testsuite/startosis_request_wait_assert_test"
       linters:
         - typecheck
+    - path: "testsuite/startosis_add_service_test"
+      linters:
+        - typecheck
+    - path: "testsuite/startosis_package_test"
+      linters:
+        - typecheck
+    - path: "testsuite/startosis_ports_wait_test"
+      linters:
+        - typecheck
+    - path: "testsuite/startosis_subpackage_test"
+      linters:
+        - typecheck
