@@ -450,15 +450,15 @@ The instruction returns a `struct` with [future references][future-references-re
     service_one = plan.add_service(
         ..., 
         config=ServiceConfig(
-            name="servce_one", 
-            files={"/src": results.file_artifacts[0]}, # copies the directory task into servce_one 
+            name="service_one", 
+            files={"/src": results.file_artifacts[0]}, # copies the directory task into service_one 
         )
     ) # the path to the file will look like: /src/task/test.txt
 
     service_two = plan.add_service(
         ..., 
         config=ServiceConfig(
-            name="servce_one", 
+            name="servce_two", 
             files={"/src": results.file_artifacts[1]}, # copies the file test.txt into service_two
         ),
     ) # the path to the file will look like: /src/test.txt
