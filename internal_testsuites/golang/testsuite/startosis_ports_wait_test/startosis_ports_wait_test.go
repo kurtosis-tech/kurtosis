@@ -1,15 +1,12 @@
-package startosis_request_wait_assert_test
+package startosis_ports_wait_test
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
-	assertSuccessTestName = "startosis_ports_wait_sucess_test"
-	assertSuccessScript   = `
+	assertSuccessScript = `
 def run(plan):
 	service_config = ServiceConfig(
 		image = "mendhak/http-https-echo:26",
@@ -21,8 +18,7 @@ def run(plan):
 	plan.add_service(name = "web-server", config = service_config)
 `
 
-	assertFailTestName = "startosis_ports_wait_fail_test"
-	assertFailScript   = `
+	assertFailScript = `
 def run(plan):
 	service_config = ServiceConfig(
 		image = "mendhak/http-https-echo:26",
@@ -35,8 +31,7 @@ def run(plan):
 	plan.add_service(name = "web-server", config = service_config)
 `
 
-	assertFailTestName2 = "startosis_ports_wait_fail_2_test"
-	assertFailScript2   = `
+	assertFailScript2 = `
 def run(plan):
 	service_config = ServiceConfig(
 		image = "mendhak/http-https-echo:26",
@@ -49,25 +44,31 @@ def run(plan):
 `
 )
 
-func TestStartosis_AssertSuccessPortChecks(t *testing.T) {
+func (suite *StartosisPortsWaitTestSuite) TestStartosis_AssertSuccessPortChecks() {
 	ctx := context.Background()
-	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertSuccessTestName, assertSuccessScript)
+	_, err := suite.RunScript(ctx, assertSuccessScript)
+
+	t := suite.T()
 
 	require.Nil(t, err)
 }
 
-func TestStartosis_AssertFailBecausePortIsNotOpen(t *testing.T) {
+func (suite *StartosisPortsWaitTestSuite) TestStartosis_AssertFailBecausePortIsNotOpen() {
 	ctx := context.Background()
-	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertFailTestName, assertFailScript)
+	runResult, _ := suite.RunScript(ctx, assertFailScript)
+
+	t := suite.T()
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.NotEmpty(t, runResult.ExecutionError, "Expected execution error coming from assert fail")
 }
 
-func TestStartosis_AssertFailBecauseEmptyStringIsNotValid(t *testing.T) {
+func (suite *StartosisPortsWaitTestSuite) TestStartosis_AssertFailBecauseEmptyStringIsNotValid() {
 	ctx := context.Background()
-	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertFailTestName2, assertFailScript2)
+	runResult, _ := suite.RunScript(ctx, assertFailScript2)
+
+	t := suite.T()
 
 	require.NotNil(t, runResult.InterpretationError, "Expected interpretation error coming from wait validation")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
