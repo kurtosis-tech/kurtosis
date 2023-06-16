@@ -8,12 +8,19 @@ import (
 )
 
 const (
-	ServiceNameRegex            = "[a-zA-Z0-9-_]+"
-	wordWrappedServiceNameRegex = "^" + ServiceNameRegex + "$"
+	// ServiceNameRegex implements the current Kubernetes standard for naming services, namely:
+	// * contain at most 63 characters
+	// * contain only lowercase alphanumeric characters or '-'
+	// * start with an alphanumeric character
+	// * end with an alphanumeric character
+	// Source: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+	ServiceNameRegex            = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+	WordWrappedServiceNameRegex = "^" + ServiceNameRegex + "$"
+	serviceNameMaxLength        = 63
 )
 
 var (
-	compiledWordWrappedServiceNameRegex = regexp.MustCompile(wordWrappedServiceNameRegex)
+	compiledWordWrappedServiceNameRegex = regexp.MustCompile(WordWrappedServiceNameRegex)
 )
 
 type ServiceName string
@@ -68,5 +75,10 @@ func (service *Service) GetMaybePublicPorts() map[string]*port_spec.PortSpec {
 }
 
 func IsServiceNameValid(serviceName ServiceName) bool {
-	return compiledWordWrappedServiceNameRegex.MatchString(string(serviceName))
+	return compiledWordWrappedServiceNameRegex.MatchString(string(serviceName)) &&
+		isServiceNameCorrectLength(serviceName)
+}
+
+func isServiceNameCorrectLength(name ServiceName) bool {
+	return len(string(name)) <= serviceNameMaxLength && len(string(name)) > 0
 }
