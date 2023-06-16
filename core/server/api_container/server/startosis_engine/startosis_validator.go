@@ -8,8 +8,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_optimizer"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
@@ -36,7 +36,7 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (validator *StartosisValidator) Validate(ctx context.Context, instructions []startosis_optimizer.PlannedInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		defer close(starlarkRunResponseLineStream)
@@ -77,9 +77,13 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 	return starlarkRunResponseLineStream
 }
 
-func (validator *StartosisValidator) validateAnUpdateEnvironment(instructions []kurtosis_instruction.KurtosisInstruction, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
+func (validator *StartosisValidator) validateAnUpdateEnvironment(instructions []startosis_optimizer.PlannedInstruction, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
 	isValidationFailure := false
-	for _, instruction := range instructions {
+	for _, plannedInstruction := range instructions {
+		if plannedInstruction.IsSkipped() {
+			continue
+		}
+		instruction := plannedInstruction.GetInstruction()
 		err := instruction.ValidateAndUpdateEnvironment(environment)
 		if err != nil {
 			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
@@ -182,12 +186,12 @@ func getServiceNameToPortIDsMap(serviceNames map[service.ServiceName]bool, netwo
 	serviceToPrivatePortIds := make(map[service.ServiceName][]string, len(serviceNames))
 	ctx := context.Background()
 	for serviceName := range serviceNames {
-		service, err := network.GetService(ctx, string(serviceName))
+		userService, err := network.GetService(ctx, string(serviceName))
 		if err != nil {
 			return nil, stacktrace.NewError("An error occurred while fetching service '%s' for its private port mappings", serviceName)
 		}
 		serviceToPrivatePortIds[serviceName] = []string{}
-		privatePorts := service.GetPrivatePorts()
+		privatePorts := userService.GetPrivatePorts()
 		for portId := range privatePorts {
 			serviceToPrivatePortIds[serviceName] = append(serviceToPrivatePortIds[serviceName], portId)
 		}

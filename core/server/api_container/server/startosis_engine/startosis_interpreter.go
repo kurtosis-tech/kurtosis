@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_optimizer/graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/lib/time"
@@ -84,7 +85,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	mainFunctionName string,
 	serializedStarlark string,
 	serializedJsonParams string,
-) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+) (string, *graph.InstructionGraph, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
@@ -167,6 +168,27 @@ func (interpreter *StartosisInterpreter) Interpret(
 		return "", nil, generateInterpretationError(err).ToAPIType()
 	}
 
+	// Convert the instruction queue into a graph
+	// TODO: ideally the graph is dynamically built during interpretation. But right now we're missing a
+	//  mechanism to infer dependencies between instructions we just take the sequence as the
+	//  most basic dependency system
+	instructionGraph := graph.NewInstructionGraph()
+	var previousInstructionNodeUuid *graph.NodeUuid
+	for _, instruction := range instructionsQueue {
+		var previousInstructionNodeHashValue graph.NodeUuid
+		var graphErr error
+		if previousInstructionNodeUuid == nil {
+			previousInstructionNodeHashValue, graphErr = instructionGraph.AddNode(instruction)
+		} else {
+			previousInstructionNodeHashValue, graphErr = instructionGraph.AddNode(instruction, *previousInstructionNodeUuid)
+		}
+		if graphErr != nil {
+			return "", nil, startosis_errors.WrapWithInterpretationError(err, "Instruction graph returned by the "+
+				"interpreter could not be processed").ToAPIType()
+		}
+		previousInstructionNodeUuid = &previousInstructionNodeHashValue
+	}
+
 	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
 	if outputObject != starlark.None {
 		logrus.Debugf("Starlark output object was: '%s'", outputObject)
@@ -174,9 +196,9 @@ func (interpreter *StartosisInterpreter) Interpret(
 		if interpretationError != nil {
 			return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
 		}
-		return serializedOutputObject, instructionsQueue, nil
+		return serializedOutputObject, instructionGraph, nil
 	}
-	return startosis_constants.NoOutputObject, instructionsQueue, nil
+	return startosis_constants.NoOutputObject, instructionGraph, nil
 }
 
 func (interpreter *StartosisInterpreter) interpretInternal(packageId string, serializedStarlark string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, *startosis_errors.InterpretationError) {
@@ -305,7 +327,7 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
 }
 
-func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (string, *graph.InstructionGraph, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
 		return "", nil, startosis_errors.NewInterpretationError(
 			"No '%s' function found in the script; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the Kurtosis script",

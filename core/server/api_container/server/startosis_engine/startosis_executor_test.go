@@ -5,10 +5,11 @@ import (
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_optimizer"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_optimizer/graph"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"strings"
@@ -37,10 +38,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
-	instructions := []kurtosis_instruction.KurtosisInstruction{
-		instruction1,
-		instruction2,
-	}
+	instructions := wrapMockedInstructions(instruction1, instruction2)
 
 	_, serializedInstruction, err := executeSynchronously(t, executor, executeForReal, instructions)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -63,11 +61,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
 	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully)
-	instructions := []kurtosis_instruction.KurtosisInstruction{
-		instruction1,
-		instruction2,
-		instruction3,
-	}
+	instructions := wrapMockedInstructions(instruction1, instruction2, instruction3)
 
 	_, serializedInstruction, executionError := executeSynchronously(t, executor, executeForReal, instructions)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -99,10 +93,7 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
-	instructions := []kurtosis_instruction.KurtosisInstruction{
-		instruction1,
-		instruction2,
-	}
+	instructions := wrapMockedInstructions(instruction1, instruction2)
 
 	_, serializedInstruction, err := executeSynchronously(t, executor, doDryRun, instructions)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -139,7 +130,22 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 	return instruction
 }
 
-func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
+func wrapMockedInstructions(instructions ...*mock_instruction.MockKurtosisInstruction) []startosis_optimizer.PlannedInstruction {
+	var plannedInstructions []startosis_optimizer.PlannedInstruction
+	for _, instruction := range instructions {
+		plannedInstruction := startosis_optimizer.NewPlannedInstruction(
+			graph.NodeUuid(""),        // unused for now
+			graph.InstructionHash(""), // unused for now
+			instruction,
+			false, // unused for now
+			false, // unused for now
+		)
+		plannedInstructions = append(plannedInstructions, *plannedInstruction)
+	}
+	return plannedInstructions
+}
+
+func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool, instructions []startosis_optimizer.PlannedInstruction) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
 	scriptOutput := strings.Builder{}
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.StarlarkInstruction
 

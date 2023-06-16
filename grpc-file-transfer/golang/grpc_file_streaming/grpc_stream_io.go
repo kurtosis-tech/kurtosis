@@ -35,12 +35,11 @@ func sendMessagesToStream[DataChunkProtoMessage any](
 
 	var previousChunkHash string
 	hasher := sha1.New()
-	chunkNumber := 0
 	totalChunksNumber := int(math.Ceil(float64(len(payload)) / chunkSize))
 	lastChunkIndex := totalChunksNumber - 1
 
 	for chunkIdx := 0; chunkIdx <= lastChunkIndex; chunkIdx++ {
-		logrus.Debugf("Sending content for %s. Block number %d/%d", payloadNameForLogging, chunkNumber, totalChunksNumber-1)
+		logrus.Debugf("Sending content for %s. Block number %d/%d", payloadNameForLogging, chunkIdx, totalChunksNumber)
 
 		var contentChunk []byte
 		payloadFirstByteIdx := chunkIdx * chunkSize

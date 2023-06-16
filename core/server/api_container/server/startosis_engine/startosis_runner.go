@@ -5,12 +5,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_optimizer"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_optimizer/graph"
 	"github.com/sirupsen/logrus"
 	"sync"
 )
 
 type StartosisRunner struct {
+	currentEnclaveState *graph.InstructionGraph
+
 	startosisInterpreter *StartosisInterpreter
+
+	startosisExecutionOptimizer *startosis_optimizer.StartosisExecutionOptimizer
 
 	startosisValidator *StartosisValidator
 
@@ -29,9 +35,10 @@ const (
 
 func NewStartosisRunner(interpreter *StartosisInterpreter, validator *StartosisValidator, executor *StartosisExecutor) *StartosisRunner {
 	return &StartosisRunner{
-		startosisInterpreter: interpreter,
-		startosisValidator:   validator,
-		startosisExecutor:    executor,
+		startosisInterpreter:        interpreter,
+		startosisExecutionOptimizer: startosis_optimizer.NewStartosisExecutionOptimizer(),
+		startosisValidator:          validator,
+		startosisExecutor:           executor,
 
 		// we only expect one starlark package to run at a time against an enclave
 		// this lock ensures that only warning set is accessed by one starlark run method
@@ -73,15 +80,22 @@ func (runner *StartosisRunner) Run(
 			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		starlarkRunResponseLines <- progressInfo
 
-		serializedScriptOutput, instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, packageId, mainFunctionName, serializedStartosis, serializedParams)
+		serializedScriptOutput, instructionsGraph, interpretationError := runner.startosisInterpreter.Interpret(ctx, packageId, mainFunctionName, serializedStartosis, serializedParams)
 		if interpretationError != nil {
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 			return
 		}
-		totalNumberOfInstructions := uint32(len(instructionsList))
-		logrus.Debugf("Successfully interpreted Starlark script into a series of Kurtosis instructions: \n%v",
-			instructionsList)
+		totalNumberOfInstructions := instructionsGraph.Size()
+		logrus.Debugf("Successfully interpreted Starlark script into a series of %d Kurtosis instructions",
+			totalNumberOfInstructions)
+
+		// Optimize the instruction graph and convert it to a queue of instructions to execute
+		instructionsList, validationError := startosis_optimizer.OptimizePlan(runner.startosisExecutor.GetEnclaveState(), instructionsGraph)
+		if validationError != nil {
+			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(validationError.ToAPIType())
+			return
+		}
 
 		// Validation starts > send progress info
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
@@ -103,7 +117,7 @@ func (runner *StartosisRunner) Run(
 		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
 		}
-		logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", len(instructionsList))
+		logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", totalNumberOfInstructions)
 
 	}()
 	return starlarkRunResponseLines
