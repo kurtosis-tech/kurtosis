@@ -1,14 +1,11 @@
-package startosis_request_wait_assert
+package startosis_request_wait_assert_test
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
-	waitInvalidServiceTest       = "starlark-wait-invalid-service"
 	waitInvalidServiceTestScript = `
 def run(plan):
 	service_config = ServiceConfig(
@@ -18,7 +15,7 @@ def run(plan):
 		}
 	)
 
-	plan.add_service(name = "web-server", config = service_config)
+	plan.add_service(name = "web-server-invalid-service-test", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
@@ -30,9 +27,10 @@ def run(plan):
 `
 )
 
-func TestStarlark_InvalidServiceWait(t *testing.T) {
+func (suite *StartosisRequestWaitAssertTestSuite) TestStarlark_InvalidServiceWait() {
 	ctx := context.Background()
-	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, waitInvalidServiceTest, waitInvalidServiceTestScript)
+	t := suite.T()
+	runResult, _ := suite.RunScript(ctx, waitInvalidServiceTestScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation error")
