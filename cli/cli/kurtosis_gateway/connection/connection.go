@@ -36,10 +36,10 @@ type gatewayConnectionToKurtosisImpl struct {
 	localAddresses []string
 	localPorts     map[string]*port_spec.PortSpec
 
-	portforwarderStdOut bytes.Buffer
-	portforwarderStdErr bytes.Buffer
-
+	portforwarder            *portforward.PortForwarder
 	portforwarderStopChannel chan struct{}
+
+	stopChannel chan struct{}
 
 	// RemotePort -> port-spec ID
 	remotePortNumberToPortSpecIdMap map[uint16]string
@@ -54,6 +54,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	var portforwardStdErr bytes.Buffer
 	portforwardStopChannel := make(chan struct{}, 1)
 	portforwardReadyChannel := make(chan struct{}, 1)
+	stopChannel := make(chan struct{}, 1)
 	portForwardAddresses := []string{localHostIpStr}
 	remotePortNumberToPortSpecIdMapping := map[uint16]string{}
 
@@ -74,6 +75,16 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 		remotePortNumberToPortSpecIdMapping[portSpec.GetNumber()] = portspecId
 	}
 
+	connection := &gatewayConnectionToKurtosisImpl{
+		localAddresses:                  portForwardAddresses,
+		localPorts:                      nil,
+		portforwarder:                   nil,
+		portforwarderStopChannel:        portforwardStopChannel,
+		stopChannel:                     stopChannel,
+		remotePortNumberToPortSpecIdMap: remotePortNumberToPortSpecIdMapping,
+		urlString:                       podProxyEndpointUrl.String(),
+	}
+
 	// Connection to pod portforwarder endpoint
 	transport, upgrader, err := spdy.RoundTripperFor(kubernetesRestConfig)
 	if err != nil {
@@ -90,23 +101,22 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 	// Start forwarding ports asynchronously with reconnect logic.
 	// The reconnect logic tries to reconnect after a working connection is lost.
 	// The port forward process can be interrupted using the port forwarder stop channel.  There is no retry after that.
-	var portForwarder *portforward.PortForwarder
 	go func() {
 		retries := 0
 		readyChannel := portforwardReadyChannel
 		for {
-			portForwarder, err = portforward.NewOnAddresses(dialer, portForwardAddresses, portStrings, portforwardStopChannel, readyChannel, &portforwardStdOut, &portforwardStdErr)
+			connection.portforwarder, err = portforward.NewOnAddresses(dialer, portForwardAddresses, portStrings, portforwardStopChannel, readyChannel, &portforwardStdOut, &portforwardStdErr)
 			if err != nil {
 				// Addresses or ports cannot be parsed so there is nothing else to try
 				logrus.Errorf("An error occured parsing the port forwarder addresses or ports:\n%v", err)
 				return
 			} else {
-				logrus.Debugf("Opening connection to pod: %s", podProxyEndpointUrl.String())
-				if err = portForwarder.ForwardPorts(); err != nil {
+				logrus.Debugf("Trying to forward ports for pod: %s", podProxyEndpointUrl.String())
+				if err = connection.portforwarder.ForwardPorts(); err != nil {
 					if err == portforward.ErrLostConnectionToPod {
 						logrus.Infof("Lost connection to pod: %s", podProxyEndpointUrl.String())
 						// Copy the port forwarder assigned local ports so we re-use the same local ports when we reconnect
-						ports, err := portForwarder.GetPorts()
+						ports, err := connection.portforwarder.GetPorts()
 						if err != nil {
 							logrus.Errorf("An error occured retrieving the local ports to remote ports mapping for our portforwarder:\n%v", err)
 							return
@@ -129,6 +139,11 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 					// Do not try to reconnect.
 					return
 				}
+				select {
+				case <-stopChannel:
+					return
+				default:
+				}
 				time.Sleep(portForwardTimeBetweenRetries)
 				retries += 1
 				logrus.Debugf("Retrying (%d) connection to pod: %s", retries, podProxyEndpointUrl.String())
@@ -144,7 +159,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 		return nil, stacktrace.NewError("Expected Kubernetes portforwarder to open local ports to the pod exposed by the portforward api at URL '%v', instead the Kubernetes portforwarder timed out binding local ports", podProxyEndpointUrl)
 	}
 	// Get local forwarded ports
-	forwardedPorts, err := portForwarder.GetPorts()
+	forwardedPorts, err := connection.portforwarder.GetPorts()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get forwarded ports from our running portforwarder, instead a non-nil err was returned")
 	}
@@ -167,22 +182,15 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 
 		localPortSpecs[portSpecId] = localPortSpec
 	}
-
-	connection := &gatewayConnectionToKurtosisImpl{
-		localAddresses:                  portForwardAddresses,
-		localPorts:                      localPortSpecs,
-		portforwarderStdOut:             portforwardStdOut,
-		portforwarderStdErr:             portforwardStdErr,
-		portforwarderStopChannel:        portforwardStopChannel,
-		remotePortNumberToPortSpecIdMap: remotePortNumberToPortSpecIdMapping,
-		urlString:                       podProxyEndpointUrl.String(),
-	}
+	connection.localPorts = localPortSpecs
 
 	return connection, nil
 }
 
 func (connection *gatewayConnectionToKurtosisImpl) Stop() {
 	logrus.Infof("Closing connection to pod: %s", connection.urlString)
+	connection.portforwarder.Close()
+	close(connection.stopChannel)
 	close(connection.portforwarderStopChannel)
 }
 
