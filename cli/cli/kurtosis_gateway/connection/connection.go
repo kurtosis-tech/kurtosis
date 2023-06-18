@@ -115,6 +115,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 				if err = connection.portforwarder.ForwardPorts(); err != nil {
 					if err == portforward.ErrLostConnectionToPod {
 						logrus.Infof("Lost connection to pod: %s", podProxyEndpointUrl.String())
+						retries = 0
 						// Copy the port forwarder assigned local ports so we re-use the same local ports when we reconnect
 						ports, err := connection.portforwarder.GetPorts()
 						if err != nil {
@@ -189,7 +190,6 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 
 func (connection *gatewayConnectionToKurtosisImpl) Stop() {
 	logrus.Infof("Closing connection to pod: %s", connection.urlString)
-	connection.portforwarder.Close()
 	close(connection.stopChannel)
 	close(connection.portforwarderStopChannel)
 }
