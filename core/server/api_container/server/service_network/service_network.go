@@ -89,10 +89,6 @@ type ServiceNetwork interface {
 		error,
 	)
 
-	PauseService(ctx context.Context, serviceIdentifier string) error
-
-	UnpauseService(ctx context.Context, serviceIdentifier string) error
-
 	RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error)
 
 	RunExecs(

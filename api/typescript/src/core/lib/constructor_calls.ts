@@ -18,8 +18,6 @@ import {
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,
     UploadFilesArtifactArgs,
-    PauseServiceArgs,
-    UnpauseServiceArgs,
     ServiceInfo,
     ServiceConfig,
     RemoveServiceResponse,
@@ -202,24 +200,6 @@ export function newExecCommandArgs(setServiceIdentifier: ServiceName, command: s
 
     return result;
 }
-
-// ==============================================================================================
-//                                          Pause/Unpause Service
-// ==============================================================================================
-export function newPauseServiceArgs(serviceIdentifier: string): PauseServiceArgs {
-    const result: PauseServiceArgs = new PauseServiceArgs();
-    result.setServiceIdentifier(serviceIdentifier);
-
-    return result;
-}
-
-export function newUnpauseServiceArgs(serviceIdentifier: string): UnpauseServiceArgs {
-    const result: UnpauseServiceArgs = new UnpauseServiceArgs();
-    result.setServiceIdentifier(serviceIdentifier);
-
-    return result;
-}
-
 
 // ==============================================================================================
 //                           Wait For Http Get Endpoint Availability

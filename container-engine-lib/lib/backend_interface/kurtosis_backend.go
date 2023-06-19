@@ -237,24 +237,6 @@ type KurtosisBackend interface {
 		resultError error,
 	)
 
-	// Pauses execution of all processes on a service, but does not shut down the service (memory state is preserved)
-	PauseService(
-		ctx context.Context,
-		enclaveUuid enclave.EnclaveUUID,
-		serviceUUID service.ServiceUUID,
-	) (
-		resultErr error,
-	)
-
-	// Unpauses a service, resuming execution of all processes on the service that were previously paused.
-	UnpauseService(
-		ctx context.Context,
-		enclaveUuid enclave.EnclaveUUID,
-		serviceUUID service.ServiceUUID,
-	) (
-		resultErr error,
-	)
-
 	// Executes a shell command inside an user service instance indenfified by its ID
 	RunUserServiceExecCommands(
 		ctx context.Context,

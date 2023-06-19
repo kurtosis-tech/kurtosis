@@ -61,20 +61,6 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.ExecCommandResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.ExecCommandResponse>;
 
-  pauseService(
-    request: api_container_service_pb.PauseServiceArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
-
-  unpauseService(
-    request: api_container_service_pb.UnpauseServiceArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: google_protobuf_empty_pb.Empty) => void
-  ): grpcWeb.ClientReadableStream<google_protobuf_empty_pb.Empty>;
-
   waitForHttpGetEndpointAvailability(
     request: api_container_service_pb.WaitForHttpGetEndpointAvailabilityArgs,
     metadata: grpcWeb.Metadata | undefined,
@@ -182,16 +168,6 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.ExecCommandArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.ExecCommandResponse>;
-
-  pauseService(
-    request: api_container_service_pb.PauseServiceArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
-
-  unpauseService(
-    request: api_container_service_pb.UnpauseServiceArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<google_protobuf_empty_pb.Empty>;
 
   waitForHttpGetEndpointAvailability(
     request: api_container_service_pb.WaitForHttpGetEndpointAvailabilityArgs,
