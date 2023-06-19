@@ -266,6 +266,13 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := resultMapToString(result)
 
+	// throw an error as execution of the command failed
+	if createDefaultDirectoryResult.GetExitCode() != 0 {
+		return "", stacktrace.NewError(
+			"error occurred while running shell command: %v with output: %v and code %v",
+			commandRunCommand, createDefaultDirectoryResult.GetOutput(), createDefaultDirectoryResult.GetExitCode())
+	}
+
 	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
 		err = copyFilesFromTask(ctx, builtin)
 		if err != nil {
