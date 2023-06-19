@@ -270,23 +270,6 @@ func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifactV2(args *k
 	return nil
 }
 
-func (service *ApiContainerGatewayServiceServer) PauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.PauseServiceArgs) (*emptypb.Empty, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.PauseService(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs) (*emptypb.Empty, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.UnpauseService(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-
 func (service *ApiContainerGatewayServiceServer) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.RenderTemplatesToFilesArtifact(ctx, args)
 	if err != nil {

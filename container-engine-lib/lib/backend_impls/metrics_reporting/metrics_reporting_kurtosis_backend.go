@@ -275,30 +275,6 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	return userServiceLogs, erroredUserServices, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) PauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceUUID,
-) error {
-	err := backend.underlying.PauseService(ctx, enclaveUuid, serviceId)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service '%v' in enclave '%v'", serviceId, enclaveUuid)
-	}
-	return nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) UnpauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceUUID,
-) error {
-	err := backend.underlying.UnpauseService(ctx, enclaveUuid, serviceId)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service '%v' in enclave '%v'", serviceId, enclaveUuid)
-	}
-	return nil
-}
-
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,

@@ -810,38 +810,6 @@ func (network *DefaultServiceNetwork) StopServices(
 	return successfulUuids, erroredUuids, nil
 }
 
-// TODO we could switch this to be a bulk command; the backend would support it
-func (network *DefaultServiceNetwork) PauseService(ctx context.Context, serviceIdentifier string) error {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
-	}
-
-	if err := network.kurtosisBackend.PauseService(ctx, network.enclaveUuid, serviceRegistration.GetUUID()); err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceIdentifier)
-	}
-	return nil
-}
-
-// TODO we could switch this to be a bulk command; the backend would support it
-func (network *DefaultServiceNetwork) UnpauseService(ctx context.Context, serviceIdentifier string) error {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
-	}
-
-	if err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveUuid, serviceRegistration.GetUUID()); err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceIdentifier)
-	}
-	return nil
-}
-
 func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous

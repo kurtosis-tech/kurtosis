@@ -285,24 +285,6 @@ func (apicService ApiContainerService) Repartition(ctx context.Context, args *ku
 	return &emptypb.Empty{}, nil
 }
 
-func (service ApiContainerService) PauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.PauseServiceArgs) (*emptypb.Empty, error) {
-	serviceIdentifier := args.ServiceIdentifier
-	err := service.serviceNetwork.PauseService(ctx, serviceIdentifier)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to pause service '%v'", serviceIdentifier)
-	}
-	return &emptypb.Empty{}, nil
-}
-
-func (service ApiContainerService) UnpauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs) (*emptypb.Empty, error) {
-	serviceIdentifier := args.ServiceIdentifier
-	err := service.serviceNetwork.UnpauseService(ctx, serviceIdentifier)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceIdentifier)
-	}
-	return &emptypb.Empty{}, nil
-}
-
 func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	serviceIdentifier := args.ServiceIdentifier
 	command := args.CommandArgs

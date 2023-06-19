@@ -11,8 +11,6 @@ import {
     GetServicesResponse,
     ExecCommandArgs,
     ExecCommandResponse,
-    PauseServiceArgs,
-    UnpauseServiceArgs,
     UploadFilesArtifactArgs,
     UploadFilesArtifactResponse,
     StoreWebFilesArtifactArgs,
@@ -217,42 +215,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         const execCommandResponse = execCommandResponseResult.value;
         return ok(execCommandResponse)
-    }
-
-    public async pauseService(pauseServiceArgs: PauseServiceArgs): Promise<Result<null, Error>> {
-        const pauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.pauseService(pauseServiceArgs, (error: ServiceError | null) => {
-                if (error === null) {
-                    resolve(ok(null))
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const pauseServiceResult: Result<null, Error> = await pauseServicePromise;
-        if(pauseServiceResult.isErr()){
-            return err(pauseServiceResult.error)
-        }
-
-        return ok(null)
-    }
-
-    public async unpauseService(unpauseServiceArgs: UnpauseServiceArgs): Promise<Result<null, Error>> {
-        const unpauseServicePromise: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.unpauseService(unpauseServiceArgs, (error: ServiceError | null) => {
-                if (error === null) {
-                    resolve(ok(null))
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const unpauseServiceResult: Result<null, Error> = await unpauseServicePromise;
-        if(unpauseServiceResult.isErr()){
-            return err(unpauseServiceResult.error)
-        }
-
-        return ok(null)
     }
 
     public async uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>> {

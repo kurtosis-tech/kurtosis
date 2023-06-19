@@ -119,16 +119,6 @@ func (m *MockServiceNetworkCustom) StopServices(ctx context.Context, serviceIden
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) PauseService(ctx context.Context, serviceIdentifier string) error {
-	//TODO implement me
-	panic(unimplementedMsg)
-}
-
-func (m *MockServiceNetworkCustom) UnpauseService(ctx context.Context, serviceIdentifier string) error {
-	//TODO implement me
-	panic(unimplementedMsg)
-}
-
 func (m *MockServiceNetworkCustom) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
