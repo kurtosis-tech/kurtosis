@@ -19,7 +19,6 @@ import (
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"path"
 	"reflect"
 	"strings"
 )
@@ -28,7 +27,6 @@ const (
 	RunShBuiltinName = "run_sh"
 
 	ImageNameArgName = "image"
-	WorkDirArgName   = "workdir"
 	RunArgName       = "run"
 
 	DefaultImageName = "badouralix/curl-jq"
@@ -67,14 +65,6 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 					},
 				},
 				{
-					Name:              WorkDirArgName,
-					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(argumentValue starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(argumentValue, WorkDirArgName)
-					},
-				},
-				{
 					Name:              FilesAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
@@ -94,7 +84,6 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				name:                "",
 				image:               DefaultImageName, // populated at interpretation time
 				run:                 "",               // populated at interpretation time
-				workdir:             "",               // populated at interpretation time
 				files:               nil,
 				resultUuid:          "", // populated at interpretation time
 				fileArtifactNames:   nil,
@@ -105,7 +94,6 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 		DefaultDisplayArguments: map[string]bool{
 			RunArgName:       true,
 			ImageNameArgName: true,
-			WorkDirArgName:   true,
 			FilesAttr:        true,
 		},
 	}
@@ -119,7 +107,6 @@ type RunShCapabilities struct {
 	name                string
 	run                 string
 	image               string
-	workdir             string
 	files               map[string]string
 	fileArtifactNames   []string
 	pathToFileArtifacts []string
@@ -140,20 +127,6 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		builtin.image = imageStarlark.GoString()
 	}
 
-	if arguments.IsSet(WorkDirArgName) {
-		workDirStarlark, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, WorkDirArgName)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", WorkDirArgName)
-		}
-
-		maybeWorkDir := workDirStarlark.GoString()
-		if path.IsAbs(maybeWorkDir) {
-			builtin.workdir = maybeWorkDir
-		} else {
-			builtin.workdir = path.Join("/", maybeWorkDir)
-		}
-	}
-
 	if arguments.IsSet(FilesAttr) {
 		filesStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, FilesAttr)
 		if err != nil {
@@ -164,16 +137,7 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			fileArtifactProcessedPaths := map[string]string{}
-			for pathToFileArtifact, fileArtifactName := range filesArtifactMountDirPaths {
-				processedName := getAbsoluteFilePath(builtin.workdir, pathToFileArtifact)
-				if fileArtifactProcessedPaths[processedName] != "" {
-					return nil, startosis_errors.NewInterpretationError("error occurred because duplicate key was found in files argument. "+
-						"Found multiple occurrence for: %v. This occurred during generating absolute paths from relative path inputs.", pathToFileArtifact)
-				}
-				fileArtifactProcessedPaths[processedName] = fileArtifactName
-			}
-			builtin.files = fileArtifactProcessedPaths
+			builtin.files = filesArtifactMountDirPaths
 		}
 	}
 
@@ -189,9 +153,6 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 				return nil, interpretationErr
 			}
 
-			for index, pathToFileArtifact := range storeFilesArray {
-				storeFilesArray[index] = getAbsoluteFilePath(builtin.workdir, pathToFileArtifact)
-			}
 			builtin.pathToFileArtifacts = storeFilesArray
 
 			// generate unique names
@@ -361,20 +322,7 @@ func getCommandToRun(builtin *RunShCapabilities) (string, error) {
 	}
 	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, newlineChar, " ")
 
-	if builtin.workdir == "" {
-		return commandWithNoNewLines, nil
-	}
-
-	createAndSwitchTheDirectoryCmd := fmt.Sprintf(createAndSwitchDirectoryTemplate, builtin.workdir, builtin.workdir)
-	return fmt.Sprintf("%v && %v", createAndSwitchTheDirectoryCmd, commandWithNoNewLines), nil
-}
-
-// This method takes in a path specified by user and creates an absolute path if it's not already an absolute path
-func getAbsoluteFilePath(workdir string, filePath string) string {
-	if path.IsAbs(filePath) {
-		return filePath
-	}
-	return path.Join(workdir, filePath)
+	return commandWithNoNewLines, nil
 }
 
 func validatePathIsUniqueWhileCreatingFileArtifact(storeFiles []string) *startosis_errors.ValidationError {
