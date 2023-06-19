@@ -75,7 +75,7 @@ Destroys enclaves in the Kurtosis engine.
 * `shouldCleanAll`: If set to true, destroys running enclaves in addition to stopped ones.
 
 **Returns**
-* `RemovedEnclaveNameAndUuids`: A list of enclave uuids and names that were removed succesfully
+* `RemovedEnclaveNameAndUuids`: A list of enclave uuids and names that were removed successfully
 
 ### `getServiceLogs(String enclaveIdentifier, Set<ServiceUUID> serviceUuids, Boolean shouldFollowLogs, LogLineFilter logLineFilter) -> ServiceLogsStreamContent serviceLogsStreamContent`
 Get and start a service container logs stream (showed in ascending order, with the oldest line first) from services identified by their UUID.
@@ -136,7 +136,7 @@ Returns the not found service UUIDs. The UUIDs may not be found either because t
 
 ServiceLog
 ----------
-This class represent single service's log line information
+This class represents single service's log line information
 
 ### `getContent() -> String content`
 
@@ -413,11 +413,11 @@ StarlarkError
 
 Errors can be of three kind:
 
-* Interpretation error: these errors happens before Kurtosis was able to execute the script. It typically means there's a syntax error in the provided Starlark code. The error message should point the users to where the code is incorrect.
+* Interpretation error: these errors happen before Kurtosis was able to execute the script. It typically means there's a syntax error in the provided Starlark code. The error message should point the users to where the code is incorrect.
 
-* Validation error: these errors happens after interpretation was successful, but before the execution actually started in Kurtosis. Before starting the execution, Kurtosis runs some validation on the instructions that are about to be executed. The error message should contain more information on which instruction is incorrect.
+* Validation error: these errors happen after interpretation was successful, but before the execution actually started in Kurtosis. Before starting the execution, Kurtosis runs some validation on the instructions that are about to be executed. The error message should contain more information on which instruction is incorrect.
 
-* Execution error: these errors happens during the execution of the script against Kurtosis engine. More information is available in the error message.
+* Execution error: these errors happen during the execution of the script against Kurtosis engine. More information is available in the error message.
 
 StarlarkRunProgress
 -------------------
