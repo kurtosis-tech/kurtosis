@@ -12,8 +12,8 @@ const (
 	runshStarlarkSimple = `
 def run(plan):
   result1 = plan.run_sh(run="echo kurtosis")
-  result2 = plan.run_sh(run="mkdir -p {0} && cd {0} && echo $(pwd)".format(result1.output))
-  plan.assert(result2.output, "==", "/src/kurtosis")
+  result2 = plan.run_sh(run="mkdir -p /src/{0} && cd /src/{0} && echo $(pwd)".format(result1.output))
+  plan.assert(result2.output, "==", "/src/kurtosis\n")
 `
 	runshStarlarkFileArtifact = `
 def run(plan):
@@ -21,7 +21,7 @@ def run(plan):
   file_artifacts = result.files_artifacts
   result2 = plan.run_sh(run="cat /temp/tech.txt", files={"/temp": file_artifacts[0]})
   plan.assert(result2.output, "==", "kurtosis\n")
-  result3 = plan.run_sh(run="cat /src/tech.txt", files={"/task": file_artifacts[1]})
+  result3 = plan.run_sh(run="cat /task/src/tech.txt", files={"/task": file_artifacts[1]})
   plan.assert(result3.output, "==", "kurtosis\n")
 `
 )
