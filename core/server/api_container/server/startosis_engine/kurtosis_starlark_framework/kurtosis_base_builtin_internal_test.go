@@ -31,9 +31,13 @@ func TestBasicFunctions(t *testing.T) {
 	arguments := builtin_argument.NewArgumentValuesSet(argumentDefinitions, values)
 	position := NewKurtosisBuiltinPosition(fileName, 12, 14)
 
-	kurtosisBaseBuiltinInternal := newKurtosisBaseBuiltinInternal(builtinName, position, arguments)
+	uuid, err := GenerateInstructionUuid()
+	require.NoError(t, err)
+	kurtosisBaseBuiltinInternal := newKurtosisBaseBuiltinInternal(uuid, builtinName, position, arguments)
 	require.Equal(t, builtinName, kurtosisBaseBuiltinInternal.GetName())
 	require.Equal(t, position, kurtosisBaseBuiltinInternal.GetPosition())
+
+	require.Equal(t, "8f3969c8728696bda73320fff1263037", kurtosisBaseBuiltinInternal.Hash())
 
 	expectedString := fmt.Sprintf(`%s(%s=%s, %s=%s)`, builtinName, serviceNameArgName, serviceName, shouldStartArgName, shouldStart)
 	require.Equal(t, expectedString, kurtosisBaseBuiltinInternal.String())

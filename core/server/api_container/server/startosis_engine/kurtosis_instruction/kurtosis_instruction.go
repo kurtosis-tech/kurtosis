@@ -18,6 +18,11 @@ var (
 )
 
 type KurtosisInstruction interface {
+	// Uuid returns a unique UUID for this instruction.
+	// UUID are randomly generated when the instruction is built. Each instruction in the plan will have a different
+	// UUID
+	Uuid() kurtosis_starlark_framework.InstructionUuid
+
 	GetPositionInOriginalScript() *kurtosis_starlark_framework.KurtosisBuiltinPosition
 
 	GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction
@@ -27,6 +32,11 @@ type KurtosisInstruction interface {
 	// String is only for easy printing in logs and error messages.
 	// Most of the time it will just call GetCanonicalInstruction()
 	String() string
+
+	// Hash hashes the instruction.
+	// The instruction hash is unique per instruction, provided that the code of the instruction is different. Two
+	// instructions with the same code will have the same hash.
+	Hash() string
 
 	// ValidateAndUpdateEnvironment validates if the instruction can be applied to an environment, and mutates that
 	// environment to reflect how Kurtosis would look like after this instruction is successfully executed.

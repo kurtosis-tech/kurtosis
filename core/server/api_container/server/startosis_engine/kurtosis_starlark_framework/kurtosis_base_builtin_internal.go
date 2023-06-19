@@ -1,6 +1,8 @@
 package kurtosis_starlark_framework
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
@@ -14,6 +16,8 @@ import (
 //
 // It implements several functions like String() or GetPosition() that each builtin will naturally inherit.
 type KurtosisBaseBuiltinInternal struct {
+	uuid InstructionUuid
+
 	builtinName string
 
 	position *KurtosisBuiltinPosition
@@ -21,8 +25,9 @@ type KurtosisBaseBuiltinInternal struct {
 	arguments *builtin_argument.ArgumentValuesSet
 }
 
-func newKurtosisBaseBuiltinInternal(builtinName string, position *KurtosisBuiltinPosition, arguments *builtin_argument.ArgumentValuesSet) *KurtosisBaseBuiltinInternal {
+func newKurtosisBaseBuiltinInternal(uuid InstructionUuid, builtinName string, position *KurtosisBuiltinPosition, arguments *builtin_argument.ArgumentValuesSet) *KurtosisBaseBuiltinInternal {
 	return &KurtosisBaseBuiltinInternal{
+		uuid:        uuid,
 		builtinName: builtinName,
 		position:    position,
 		arguments:   arguments,
@@ -30,6 +35,11 @@ func newKurtosisBaseBuiltinInternal(builtinName string, position *KurtosisBuilti
 }
 
 func WrapKurtosisBaseBuiltin(baseBuiltin *KurtosisBaseBuiltin, thread *starlark.Thread, args starlark.Tuple, kwargs []starlark.Tuple) (*KurtosisBaseBuiltinInternal, *startosis_errors.InterpretationError) {
+	uuid, err := GenerateInstructionUuid()
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to generate UUID for Kurtosis plan instruction")
+	}
+
 	// First store the argument values passed to the builtin
 	arguments, interpretationErr := builtin_argument.CreateNewArgumentValuesSet(baseBuiltin.Name, baseBuiltin.Arguments, args, kwargs)
 	if interpretationErr != nil {
@@ -42,6 +52,7 @@ func WrapKurtosisBaseBuiltin(baseBuiltin *KurtosisBaseBuiltin, thread *starlark.
 	position := NewKurtosisBuiltinPosition(callFrame.Pos.Filename(), callFrame.Pos.Line, callFrame.Pos.Col)
 
 	return &KurtosisBaseBuiltinInternal{
+		uuid:        uuid,
 		builtinName: baseBuiltin.Name,
 		position:    position,
 		arguments:   arguments,
@@ -52,8 +63,18 @@ func (builtin *KurtosisBaseBuiltinInternal) GetName() string {
 	return builtin.builtinName
 }
 
+func (builtin *KurtosisBaseBuiltinInternal) Uuid() InstructionUuid {
+	return builtin.uuid
+}
+
 func (builtin *KurtosisBaseBuiltinInternal) String() string {
 	return fmt.Sprintf("%s%s", builtin.GetName(), builtin.arguments.String())
+}
+
+func (builtin *KurtosisBaseBuiltinInternal) Hash() string {
+	hash := md5.New()
+	hash.Write([]byte(builtin.String()))
+	return hex.EncodeToString(hash.Sum(nil))
 }
 
 func (builtin *KurtosisBaseBuiltinInternal) GetArguments() *builtin_argument.ArgumentValuesSet {

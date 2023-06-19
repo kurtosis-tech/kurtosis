@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -36,7 +36,7 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (validator *StartosisValidator) Validate(ctx context.Context, instructionsGraph *instructions_graph.InstructionGraph) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		defer close(starlarkRunResponseLineStream)
@@ -61,7 +61,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 			serviceNamePortIdMapping)
 
 		isValidationFailure = isValidationFailure ||
-			validator.validateAnUpdateEnvironment(instructions, environment, starlarkRunResponseLineStream)
+			validator.validateAnUpdateEnvironment(instructionsGraph, environment, starlarkRunResponseLineStream)
 		logrus.Debug("Finished validating environment. Validating and downloading container images.")
 
 		isValidationFailure = isValidationFailure ||
@@ -77,12 +77,24 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 	return starlarkRunResponseLineStream
 }
 
-func (validator *StartosisValidator) validateAnUpdateEnvironment(instructions []kurtosis_instruction.KurtosisInstruction, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
+func (validator *StartosisValidator) validateAnUpdateEnvironment(instructionsGraph *instructions_graph.InstructionGraph, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
+	instructionsIterator, err := instructionsGraph.Iter()
+	if err != nil {
+		wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating the set of Kurtosis instructions about to be executed")
+		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
+		return true
+	}
+
 	isValidationFailure := false
-	for _, instruction := range instructions {
-		err := instruction.ValidateAndUpdateEnvironment(environment)
-		if err != nil {
-			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
+	for instructionNode := range instructionsIterator {
+		kurtosisInstruction := instructionNode.GetInstruction()
+		if err = kurtosisInstruction.ValidateAndUpdateEnvironment(environment); err != nil {
+			wrappedValidationError := startosis_errors.WrapWithValidationError(
+				err,
+				"Error while validating instruction %v. The instruction can be found at %v",
+				kurtosisInstruction.String(),
+				kurtosisInstruction.GetPositionInOriginalScript().String(),
+			)
 			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 			isValidationFailure = true
 		}

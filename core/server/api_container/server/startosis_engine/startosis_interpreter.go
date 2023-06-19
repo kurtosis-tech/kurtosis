@@ -7,8 +7,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
@@ -84,7 +86,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	mainFunctionName string,
 	serializedStarlark string,
 	serializedJsonParams string,
-) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+) (string, *instructions_graph.InstructionGraph, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
@@ -104,13 +106,13 @@ func (interpreter *StartosisInterpreter) Interpret(
 	}
 
 	if !globalVariables.Has(mainFunctionName) {
-		return missingMainFunctionReturnValue(packageId, mainFunctionName)
+		return "", nil, missingMainFunctionReturnValue(packageId, mainFunctionName)
 	}
 
 	mainFunction, ok := globalVariables[mainFunctionName].(*starlark.Function)
-	// if there is a element with the `mainFunctionName` but it isn't a function we have to error as well
+	// if there is an element with the `mainFunctionName` but it isn't a function we have to error as well
 	if !ok {
-		return missingMainFunctionReturnValue(packageId, mainFunctionName)
+		return "", nil, missingMainFunctionReturnValue(packageId, mainFunctionName)
 	}
 
 	runFunctionExecutionThread := newStarlarkThread(starlarkGoThreadName)
@@ -167,6 +169,23 @@ func (interpreter *StartosisInterpreter) Interpret(
 		return "", nil, generateInterpretationError(err).ToAPIType()
 	}
 
+	// TODO: For now, convert the instructionQueue to a single-chain graph here. In the future, the graph will need to
+	//  be built dynamically, inferring dependencies between instructions at each instruction level.
+	instructionsGraph := instructions_graph.NewInstructionGraph()
+	var errBuildingGraph error
+	previousInstructionUuidInQueue := kurtosis_starlark_framework.InstructionUuid("")
+	for _, instruction := range instructionsQueue {
+		if previousInstructionUuidInQueue == "" {
+			previousInstructionUuidInQueue, errBuildingGraph = instructionsGraph.AddInstructionToGraph(instruction)
+		} else {
+			previousInstructionUuidInQueue, errBuildingGraph = instructionsGraph.AddInstructionToGraph(instruction, previousInstructionUuidInQueue)
+		}
+		if errBuildingGraph != nil {
+			return "", nil, startosis_errors.WrapWithInterpretationError(errBuildingGraph, "Error building Kurtosis plan"+
+				"instruction graph from instruction queue. This is a Kurtosis bug").ToAPIType()
+		}
+	}
+
 	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
 	if outputObject != starlark.None {
 		logrus.Debugf("Starlark output object was: '%s'", outputObject)
@@ -174,9 +193,9 @@ func (interpreter *StartosisInterpreter) Interpret(
 		if interpretationError != nil {
 			return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
 		}
-		return serializedOutputObject, instructionsQueue, nil
+		return serializedOutputObject, instructionsGraph, nil
 	}
-	return startosis_constants.NoOutputObject, instructionsQueue, nil
+	return startosis_constants.NoOutputObject, instructionsGraph, nil
 }
 
 func (interpreter *StartosisInterpreter) interpretInternal(packageId string, serializedStarlark string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, *startosis_errors.InterpretationError) {
@@ -305,9 +324,9 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
 }
 
-func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+func missingMainFunctionReturnValue(packageId string, mainFunctionName string) *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError {
 	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
-		return "", nil, startosis_errors.NewInterpretationError(
+		return startosis_errors.NewInterpretationError(
 			"No '%s' function found in the script; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the Kurtosis script",
 			mainFunctionName,
 			mainFunctionName,
@@ -316,7 +335,7 @@ func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (
 		).ToAPIType()
 	}
 
-	return "", nil, startosis_errors.NewInterpretationError(
+	return startosis_errors.NewInterpretationError(
 		"No '%s' function found in the main file of package '%s'; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the main file of the Kurtosis package",
 		mainFunctionName,
 		packageId,

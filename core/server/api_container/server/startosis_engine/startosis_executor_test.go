@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -129,6 +130,7 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 	instruction.EXPECT().GetCanonicalInstruction().Maybe().Return(canonicalInstruction)
 	instruction.EXPECT().GetPositionInOriginalScript().Maybe().Return(dummyPosition)
 	instruction.EXPECT().String().Maybe().Return(stringifiedInstruction)
+	instruction.EXPECT().Uuid().Maybe().Return(kurtosis_starlark_framework.InstructionUuid(instructionName))
 
 	if executeSuccessfully {
 		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil, nil)
@@ -143,7 +145,19 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 	scriptOutput := strings.Builder{}
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.StarlarkInstruction
 
-	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject)
+	simpleInstructionGraph := instructions_graph.NewInstructionGraph()
+	var err error
+	var previousInstructionUuid kurtosis_starlark_framework.InstructionUuid
+	for _, instruction := range instructions {
+		if previousInstructionUuid == "" {
+			previousInstructionUuid, err = simpleInstructionGraph.AddInstructionToGraph(instruction)
+		} else {
+			previousInstructionUuid, err = simpleInstructionGraph.AddInstructionToGraph(instruction, previousInstructionUuid)
+		}
+		require.NoError(t, err)
+	}
+
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, simpleInstructionGraph, noScriptOutputObject)
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()

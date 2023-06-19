@@ -4,7 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_graph"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
@@ -39,19 +39,30 @@ func NewStartosisExecutor(runtimeValueStore *runtime_value_store.RuntimeValueSto
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructions []kurtosis_instruction.KurtosisInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
-	executor.mutex.Lock()
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructionsGraph *instructions_graph.InstructionGraph, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, ParallelismParam, parallelism)
+	executor.mutex.Lock()
 	go func() {
 		defer func() {
 			executor.mutex.Unlock()
 			close(starlarkRunResponseLineStream)
 		}()
 
-		totalNumberOfInstructions := uint32(len(instructions))
-		for index, instruction := range instructions {
-			instructionNumber := uint32(index + 1)
+		totalNumberOfInstructions := instructionsGraph.Size()
+		instructionsIterator, err := instructionsGraph.Iter()
+		if err != nil {
+			propagatedError := stacktrace.Propagate(err, "An error occurred computing the Kurtosis execution plan")
+			serializedError := binding_constructors.NewStarlarkExecutionError(propagatedError.Error())
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+			return
+		}
+
+		var instructionNumber = uint32(0)
+		for instructionNode := range instructionsIterator {
+			instruction := instructionNode.GetInstruction()
+			instructionNumber += 1
 			progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 				progressMsg, instructionNumber, totalNumberOfInstructions)
 			starlarkRunResponseLineStream <- progress
@@ -62,7 +73,6 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			if !dryRun {
 				instructionOutput, err := instruction.Execute(ctxWithParallelism)
 				if err != nil {
-
 					propagatedError := stacktrace.Propagate(err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
 					serializedError := binding_constructors.NewStarlarkExecutionError(propagatedError.Error())
 					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)

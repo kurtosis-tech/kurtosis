@@ -60,7 +60,6 @@ func (runner *StartosisRunner) Run(
 
 			if len(warnings) > 0 {
 				for _, warning := range warnings {
-					// TODO: create a new binding_constructor for warning message
 					starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromWarning(warning)
 				}
 			}
@@ -73,22 +72,22 @@ func (runner *StartosisRunner) Run(
 			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		starlarkRunResponseLines <- progressInfo
 
-		serializedScriptOutput, instructionsList, interpretationError := runner.startosisInterpreter.Interpret(ctx, packageId, mainFunctionName, serializedStartosis, serializedParams)
+		serializedScriptOutput, instructionsGraph, interpretationError := runner.startosisInterpreter.Interpret(ctx, packageId, mainFunctionName, serializedStartosis, serializedParams)
 		if interpretationError != nil {
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 			return
 		}
-		totalNumberOfInstructions := uint32(len(instructionsList))
-		logrus.Debugf("Successfully interpreted Starlark script into a series of Kurtosis instructions: \n%v",
-			instructionsList)
+		totalNumberOfInstructions := instructionsGraph.Size()
+		logrus.Debugf("Successfully interpreted Starlark script into a series of Kurtosis %d instructions",
+			totalNumberOfInstructions)
 
 		// Validation starts > send progress info
 		progressInfo = binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
-		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsList)
+		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsGraph)
 		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, starlarkRunResponseLines); isRunFinished {
 			return
 		}
@@ -99,11 +98,11 @@ func (runner *StartosisRunner) Run(
 			startingExecutionMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
-		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsList, serializedScriptOutput)
+		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsGraph, serializedScriptOutput)
 		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
 		}
-		logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", len(instructionsList))
+		logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", instructionsGraph.Size())
 
 	}()
 	return starlarkRunResponseLines
