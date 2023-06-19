@@ -162,32 +162,6 @@ func NewDefaultServiceNetwork(
 	}, nil
 }
 
-/*
-Completely repartitions the network, throwing away the old topology
-*/
-func (network *DefaultServiceNetwork) Repartition(
-	ctx context.Context,
-	newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool,
-	newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
-	newDefaultConnection partition_topology.PartitionConnection,
-) error {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	if !network.isPartitioningEnabled {
-		return stacktrace.NewError("Cannot repartition; partitioning is not enabled")
-	}
-
-	if err := network.topology.Repartition(newPartitionServices, newPartitionConnections, newDefaultConnection); err != nil {
-		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
-	}
-
-	if err := network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
-		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
-	}
-	return nil
-}
-
 func (network *DefaultServiceNetwork) SetConnection(
 	ctx context.Context,
 	partition1 service_network_types.PartitionID,
