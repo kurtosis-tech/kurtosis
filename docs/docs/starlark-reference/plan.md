@@ -425,7 +425,7 @@ The instruction returns a `struct` with [future references][future-references-re
 ```python
 
     result = plan.run_sh(
-        run = "echo kurtosis > test.txt",
+        run = "mkdir -p task && cd task && echo kurtosis > test.txt",
         store = [
             "/task",
             "/task/test.txt",

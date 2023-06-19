@@ -37,10 +37,9 @@ const (
 	runshFileArtifactKey = "files_artifacts"
 	newlineChar          = "\n"
 
-	bashCommand = "/bin/sh"
+	shellCommand = "/bin/sh"
 
-	createAndSwitchDirectoryTemplate = "mkdir -p %v && cd %v"
-	storeFilesKey                    = "store"
+	storeFilesKey = "store"
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
@@ -234,9 +233,9 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	// create work directory and cd into that directory
 	commandRunCommand, err := getCommandToRun(builtin)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "error occurred while preparing the bash command to execute on the image")
+		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
 	}
-	createDefaultDirectory := []string{bashCommand, "-c", commandRunCommand}
+	createDefaultDirectory := []string{shellCommand, "-c", commandRunCommand}
 	serviceConfigBuilder := services.NewServiceConfigBuilder(builtin.image)
 	serviceConfigBuilder.WithFilesArtifactMountDirpaths(builtin.files)
 	// This make sure that the container does not stop as soon as it starts
