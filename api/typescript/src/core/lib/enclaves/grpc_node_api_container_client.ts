@@ -5,7 +5,6 @@ import {
     AddServicesArgs,
     AddServicesResponse,
     RemoveServiceArgs,
-    RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
     GetServicesResponse,
@@ -114,24 +113,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         }
         
         return ok(resultRemoveService.value);
-    }
-
-    public async repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>> {
-        const promiseRepartition: Promise<Result<null, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.repartition(repartitionArgs, (error: ServiceError | null, _unusedResponse?: google_protobuf_empty_pb.Empty) => {
-                if (error === null) {
-                    resolve(ok(null));
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultRepartition: Result<null, Error> = await promiseRepartition;
-        if (resultRepartition.isErr()) {
-            return err(resultRepartition.error);
-        }
-
-        return ok(null);
     }
 
     public async waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>> {

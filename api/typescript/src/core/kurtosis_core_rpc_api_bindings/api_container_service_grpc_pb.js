@@ -159,17 +159,6 @@ function deserialize_api_container_api_RenderTemplatesToFilesArtifactResponse(bu
   return api_container_service_pb.RenderTemplatesToFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_RepartitionArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.RepartitionArgs)) {
-    throw new Error('Expected argument of type api_container_api.RepartitionArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_RepartitionArgs(buffer_arg) {
-  return api_container_service_pb.RepartitionArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_RunStarlarkPackageArgs(arg) {
   if (!(arg instanceof api_container_service_pb.RunStarlarkPackageArgs)) {
     throw new Error('Expected argument of type api_container_api.RunStarlarkPackageArgs');
@@ -398,18 +387,6 @@ removeService: {
     requestDeserialize: deserialize_api_container_api_RemoveServiceArgs,
     responseSerialize: serialize_api_container_api_RemoveServiceResponse,
     responseDeserialize: deserialize_api_container_api_RemoveServiceResponse,
-  },
-  // Instructs the API container to repartition the enclave
-repartition: {
-    path: '/api_container_api.ApiContainerService/Repartition',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.RepartitionArgs,
-    responseType: google_protobuf_empty_pb.Empty,
-    requestSerialize: serialize_api_container_api_RepartitionArgs,
-    requestDeserialize: deserialize_api_container_api_RepartitionArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
   },
   // Executes the given command inside a running container
 execCommand: {

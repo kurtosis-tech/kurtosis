@@ -12,7 +12,6 @@ import {
     GetServicesResponse, ListFilesArtifactNamesAndUuidsResponse,
     RemoveServiceArgs,
     RemoveServiceResponse,
-    RepartitionArgs,
     RunStarlarkPackageArgs,
     RunStarlarkScriptArgs,
     AddServicesArgs,
@@ -34,7 +33,6 @@ export interface GenericApiContainerClient {
     runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>>
     addServices(addServicesArgs: AddServicesArgs): Promise<Result<AddServicesResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
-    repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>
     waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>>
     waitForHttpPostEndpointAvailability(availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs): Promise<Result<null, Error>>
     getServices(getServicesArgs: GetServicesArgs): Promise<Result<GetServicesResponse, Error>>
