@@ -94,6 +94,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 			RunArgName:       true,
 			ImageNameArgName: true,
 			FilesAttr:        true,
+			storeFilesKey:    true,
 		},
 	}
 }
