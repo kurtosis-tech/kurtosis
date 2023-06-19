@@ -317,18 +317,15 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 }
 
 func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID) (resultConn net.Conn, resultErr error) {
-	// See https://github.com/kubernetes/client-go/issues/912
-	/*
-		in := streams.NewIn(os.Stdin)
-		if err := in.SetRawTerminal(); err != nil{
-					 // handle err
-		}
-		err = exec.Stream(remotecommand.StreamOptions{
-			Stdin:             in,
-			Stdout:           stdout,
-			Stderr:            stderr,
-		}
-	*/
+	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveUuid, backend.cliModeArgs, backend.apiContainerModeArgs, backend.engineServerModeArgs, backend.kubernetesManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveUuid)
+	}
+	objectAndResources, err := shared_helpers.GetSingleUserServiceObjectsAndResources(ctx, enclaveUuid, serviceUUID, backend.cliModeArgs, backend.apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceUuid, enclaveId)
+	}
+	pod := objectAndResources.KubernetesResources.Pod
 
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
