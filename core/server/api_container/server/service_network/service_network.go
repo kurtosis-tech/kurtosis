@@ -12,13 +12,6 @@ import (
 )
 
 type ServiceNetwork interface {
-	Repartition(
-		ctx context.Context,
-		newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool,
-		newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
-		newDefaultConnection partition_topology.PartitionConnection,
-	) error
-
 	SetConnection(
 		ctx context.Context,
 		partition1 service_network_types.PartitionID,
@@ -88,10 +81,6 @@ type ServiceNetwork interface {
 		map[service.ServiceUUID]error,
 		error,
 	)
-
-	PauseService(ctx context.Context, serviceIdentifier string) error
-
-	UnpauseService(ctx context.Context, serviceIdentifier string) error
 
 	RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error)
 

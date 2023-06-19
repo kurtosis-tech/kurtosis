@@ -44,11 +44,6 @@ func NewEmptyMockServiceNetwork() *MockServiceNetworkCustom {
 	}
 }
 
-func (m *MockServiceNetworkCustom) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
-	//TODO implement me
-	panic(unimplementedMsg)
-}
-
 func (m *MockServiceNetworkCustom) SetConnection(ctx context.Context, partition1 service_network_types.PartitionID, partition2 service_network_types.PartitionID, connection partition_topology.PartitionConnection) error {
 	//TODO implement me
 	panic(unimplementedMsg)
@@ -115,16 +110,6 @@ func (m *MockServiceNetworkCustom) StopService(ctx context.Context, serviceIdent
 }
 
 func (m *MockServiceNetworkCustom) StopServices(ctx context.Context, serviceIdentifier []string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
-	//TODO implement me
-	panic(unimplementedMsg)
-}
-
-func (m *MockServiceNetworkCustom) PauseService(ctx context.Context, serviceIdentifier string) error {
-	//TODO implement me
-	panic(unimplementedMsg)
-}
-
-func (m *MockServiceNetworkCustom) UnpauseService(ctx context.Context, serviceIdentifier string) error {
 	//TODO implement me
 	panic(unimplementedMsg)
 }

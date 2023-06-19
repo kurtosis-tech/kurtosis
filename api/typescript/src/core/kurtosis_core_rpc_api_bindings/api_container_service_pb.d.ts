@@ -813,88 +813,6 @@ export namespace RemoveServiceResponse {
   }
 }
 
-export class RepartitionArgs extends jspb.Message {
-  getPartitionServicesMap(): jspb.Map<string, PartitionServices>;
-  clearPartitionServicesMap(): RepartitionArgs;
-
-  getPartitionConnectionsMap(): jspb.Map<string, PartitionConnections>;
-  clearPartitionConnectionsMap(): RepartitionArgs;
-
-  getDefaultConnection(): PartitionConnectionInfo | undefined;
-  setDefaultConnection(value?: PartitionConnectionInfo): RepartitionArgs;
-  hasDefaultConnection(): boolean;
-  clearDefaultConnection(): RepartitionArgs;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): RepartitionArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: RepartitionArgs): RepartitionArgs.AsObject;
-  static serializeBinaryToWriter(message: RepartitionArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): RepartitionArgs;
-  static deserializeBinaryFromReader(message: RepartitionArgs, reader: jspb.BinaryReader): RepartitionArgs;
-}
-
-export namespace RepartitionArgs {
-  export type AsObject = {
-    partitionServicesMap: Array<[string, PartitionServices.AsObject]>,
-    partitionConnectionsMap: Array<[string, PartitionConnections.AsObject]>,
-    defaultConnection?: PartitionConnectionInfo.AsObject,
-  }
-}
-
-export class PartitionServices extends jspb.Message {
-  getServiceNameSetMap(): jspb.Map<string, boolean>;
-  clearServiceNameSetMap(): PartitionServices;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): PartitionServices.AsObject;
-  static toObject(includeInstance: boolean, msg: PartitionServices): PartitionServices.AsObject;
-  static serializeBinaryToWriter(message: PartitionServices, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): PartitionServices;
-  static deserializeBinaryFromReader(message: PartitionServices, reader: jspb.BinaryReader): PartitionServices;
-}
-
-export namespace PartitionServices {
-  export type AsObject = {
-    serviceNameSetMap: Array<[string, boolean]>,
-  }
-}
-
-export class PartitionConnections extends jspb.Message {
-  getConnectionInfoMap(): jspb.Map<string, PartitionConnectionInfo>;
-  clearConnectionInfoMap(): PartitionConnections;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): PartitionConnections.AsObject;
-  static toObject(includeInstance: boolean, msg: PartitionConnections): PartitionConnections.AsObject;
-  static serializeBinaryToWriter(message: PartitionConnections, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): PartitionConnections;
-  static deserializeBinaryFromReader(message: PartitionConnections, reader: jspb.BinaryReader): PartitionConnections;
-}
-
-export namespace PartitionConnections {
-  export type AsObject = {
-    connectionInfoMap: Array<[string, PartitionConnectionInfo.AsObject]>,
-  }
-}
-
-export class PartitionConnectionInfo extends jspb.Message {
-  getPacketLossPercentage(): number;
-  setPacketLossPercentage(value: number): PartitionConnectionInfo;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): PartitionConnectionInfo.AsObject;
-  static toObject(includeInstance: boolean, msg: PartitionConnectionInfo): PartitionConnectionInfo.AsObject;
-  static serializeBinaryToWriter(message: PartitionConnectionInfo, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): PartitionConnectionInfo;
-  static deserializeBinaryFromReader(message: PartitionConnectionInfo, reader: jspb.BinaryReader): PartitionConnectionInfo;
-}
-
-export namespace PartitionConnectionInfo {
-  export type AsObject = {
-    packetLossPercentage: number,
-  }
-}
-
 export class ExecCommandArgs extends jspb.Message {
   getServiceIdentifier(): string;
   setServiceIdentifier(value: string): ExecCommandArgs;
@@ -916,42 +834,6 @@ export namespace ExecCommandArgs {
   export type AsObject = {
     serviceIdentifier: string,
     commandArgsList: Array<string>,
-  }
-}
-
-export class PauseServiceArgs extends jspb.Message {
-  getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): PauseServiceArgs;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): PauseServiceArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: PauseServiceArgs): PauseServiceArgs.AsObject;
-  static serializeBinaryToWriter(message: PauseServiceArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): PauseServiceArgs;
-  static deserializeBinaryFromReader(message: PauseServiceArgs, reader: jspb.BinaryReader): PauseServiceArgs;
-}
-
-export namespace PauseServiceArgs {
-  export type AsObject = {
-    serviceIdentifier: string,
-  }
-}
-
-export class UnpauseServiceArgs extends jspb.Message {
-  getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): UnpauseServiceArgs;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): UnpauseServiceArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: UnpauseServiceArgs): UnpauseServiceArgs.AsObject;
-  static serializeBinaryToWriter(message: UnpauseServiceArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): UnpauseServiceArgs;
-  static deserializeBinaryFromReader(message: UnpauseServiceArgs, reader: jspb.BinaryReader): UnpauseServiceArgs;
-}
-
-export namespace UnpauseServiceArgs {
-  export type AsObject = {
-    serviceIdentifier: string,
   }
 }
 
