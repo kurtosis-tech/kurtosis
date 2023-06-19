@@ -20,9 +20,9 @@ def run(plan):
   result = plan.run_sh(run="mkdir -p src && echo kurtosis > /src/tech.txt", store=["/src/tech.txt", "/src"])
   file_artifacts = result.files_artifacts
   result2 = plan.run_sh(run="cat /temp/tech.txt", files={"/temp": file_artifacts[0]})
-  plan.assert(result2.output, "==", "kurtosis\n")
+  plan.assert(result2.output, "==", "kurtosis")
   result3 = plan.run_sh(run="cat /task/src/tech.txt", files={"/task": file_artifacts[1]})
-  plan.assert(result3.output, "==", "kurtosis\n")
+  plan.assert(result3.output, "==", "kurtosis")
 `
 )
 
