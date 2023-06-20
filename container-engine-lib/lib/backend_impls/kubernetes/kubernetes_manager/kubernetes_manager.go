@@ -1336,6 +1336,7 @@ func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string,
 func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.Pod) error {
 	containerName := pod.Spec.Containers[0].Name
 	request := manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).Namespace(pod.Namespace).SubResource("exec")
+	// lifted from https://github.com/kubernetes/client-go/issues/912
 	request.VersionedParams(&apiv1.PodExecOptions{
 		Container: containerName,
 		Command:   commandToRunWhenCreatingUserServiceShell,
@@ -1358,12 +1359,14 @@ func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.
 		}
 		defer terminal.Restore(stdinFd, oldState)
 	}
-	return exec.Stream(remotecommand.StreamOptions{
-		Stdin:  os.Stdin,
-		Stdout: os.Stdout,
-		Stderr: os.Stderr,
-		Tty:    true,
-	})
+	return exec.StreamWithContext(
+		ctx,
+		remotecommand.StreamOptions{
+			Stdin:  os.Stdin,
+			Stdout: os.Stdout,
+			Stderr: os.Stderr,
+			Tty:    true,
+		})
 }
 
 // TODO Delete this after 2022-08-01 if we're not using Jobs
