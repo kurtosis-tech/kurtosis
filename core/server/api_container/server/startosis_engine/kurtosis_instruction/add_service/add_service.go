@@ -36,7 +36,7 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, ServiceNameArgName)
+						return validateServiceName(value, ServiceNameArgName)
 					},
 				},
 				{
@@ -167,4 +167,26 @@ func validateAndConvertConfigAndReadyCondition(
 	}
 
 	return apiServiceConfig, readyCondition, nil
+}
+
+func validateServiceName(
+	value starlark.Value,
+	serviceNameArgName string,
+) *startosis_errors.InterpretationError {
+	e := builtin_argument.NonEmptyString(value, serviceNameArgName)
+	if e == nil {
+		valueStr, ok := value.(starlark.String)
+		if !ok {
+			return startosis_errors.NewInterpretationError("Expected a 'starlark.String', got '%s'", reflect.TypeOf(value))
+		}
+		serviceName := service.ServiceName(valueStr)
+		if !(service.IsServiceNameValid(serviceName)) {
+			return startosis_errors.NewInterpretationError(invalidServiceNameErrorText(serviceName))
+		} else {
+			return nil
+		}
+
+	} else {
+		return e
+	}
 }
