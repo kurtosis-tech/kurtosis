@@ -18,9 +18,9 @@ const (
 	executeNoDryRun            = false
 	emptyArgs                  = "{}"
 
-	serviceId1  = "service_1"
-	serviceId2  = "service_2"
-	serviceId3  = "service_3"
+	serviceId1  = "service-1"
+	serviceId2  = "service-2"
+	serviceId3  = "service-3"
 	subnetwork1 = "subnetwork_1"
 
 	subnetworkInStarlarkScript = `DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
