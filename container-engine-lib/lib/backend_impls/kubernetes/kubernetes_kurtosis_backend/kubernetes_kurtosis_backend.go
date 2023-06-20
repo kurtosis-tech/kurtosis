@@ -317,18 +317,16 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 }
 
 func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID) (resultConn net.Conn, resultErr error) {
-	namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveUuid, backend.cliModeArgs, backend.apiContainerModeArgs, backend.engineServerModeArgs, backend.kubernetesManager)
+	//namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveUuid, backend.cliModeArgs, backend.apiContainerModeArgs, backend.engineServerModeArgs, backend.kubernetesManager)
+	//if err != nil {
+	//	return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveUuid)
+	//}
+	objectAndResources, err := shared_helpers.GetSingleUserServiceObjectsAndResources(ctx, enclaveUuid, serviceUUID, backend.cliModeArgs, backend.apiContainerModeArgs, backend.engineServerModeArgs, backend.kubernetesManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveUuid)
-	}
-	objectAndResources, err := shared_helpers.GetSingleUserServiceObjectsAndResources(ctx, enclaveUuid, serviceUUID, backend.cliModeArgs, backend.apiContainerModeArgs, engineServerModeArgs, kubernetesManager)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceUuid, enclaveId)
+		return nil, stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceUUID, enclaveUuid)
 	}
 	pod := objectAndResources.KubernetesResources.Pod
-
-	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
+	return nil, backend.kubernetesManager.GetExecStream(ctx, pod)
 }
 
 func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(

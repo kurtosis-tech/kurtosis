@@ -24,6 +24,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -1318,6 +1319,26 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+}
+
+func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.Pod) error {
+	containerName := pod.Spec.Containers[0].Name
+	request := manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).Namespace(pod.Namespace).SubResource("exec")
+	request.VersionedParams(&apiv1.PodExecOptions{
+		Container: containerName,
+		Command:   []string{"sh", "-c"},
+		Stdin:     true,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       true,
+	}, scheme.ParameterCodec)
+	exec, _ := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, "POST", request.URL())
+	return exec.Stream(remotecommand.StreamOptions{
+		Stdin:  os.Stdin,
+		Stdout: os.Stdout,
+		Stderr: os.Stderr,
+		Tty:    true,
+	})
 }
 
 // TODO Delete this after 2022-08-01 if we're not using Jobs
