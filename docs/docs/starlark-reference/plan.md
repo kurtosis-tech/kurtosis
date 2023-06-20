@@ -403,10 +403,10 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # OPTIONAL (Default:[])
         store = [
             # copies a file into a file artifact
-            "/src/kurtosis.txt, 
+            "/src/kurtosis.txt", 
             
             # copies the entire directory into a file artifact
-            "/src,
+            "/src",
         ],
     )
 
