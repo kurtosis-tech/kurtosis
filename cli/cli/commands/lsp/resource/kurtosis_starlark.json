@@ -198,12 +198,6 @@
           "detail": "Image the bash command will be run on"
         },
         {
-          "name": "workdir",
-          "type": "string",
-          "content": "workdir?",
-          "detail": "Sets the working dir in which the command will be run and the files will be mounted at"
-        },
-        {
           "name": "files",
           "type": "dict<string, string>",
           "content": "files?",
