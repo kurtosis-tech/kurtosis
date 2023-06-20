@@ -8,12 +8,13 @@ import (
 )
 
 const (
-	// ServiceNameRegex implements the current Kubernetes standard for naming services, namely:
+	// ServiceNameRegex implements RFC-1123 for naming services, namely:
 	// * contain at most 63 characters
 	// * contain only lowercase alphanumeric characters or '-'
 	// * start with an alphanumeric character
 	// * end with an alphanumeric character
-	// Source: https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+	// The adoption of RFC-1123 is to maintain compatability with current Kubernetes service and pod naming standards:
+	// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
 	ServiceNameRegex            = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
 	WordWrappedServiceNameRegex = "^" + ServiceNameRegex + "$"
 	serviceNameMaxLength        = 63
