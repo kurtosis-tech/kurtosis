@@ -205,9 +205,9 @@ func (manager *KubernetesManager) UpdateService(
 	ctx context.Context,
 	namespaceName string,
 	serviceName string,
-	// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
-	// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
-	// would result in removing the object name)
+// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
+// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
+// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.ServiceApplyConfiguration),
 ) (*apiv1.Service, error) {
 	updatesToApply := applyconfigurationsv1.Service(serviceName, namespaceName)
@@ -1336,7 +1336,7 @@ func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string,
 func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.Pod) error {
 	containerName := pod.Spec.Containers[0].Name
 	request := manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).Namespace(pod.Namespace).SubResource("exec")
-	// lifted from https://github.com/kubernetes/client-go/issues/912
+	// lifted from https://github.com/kubernetes/client-go/issues/912 - the terminal magic is still magical
 	request.VersionedParams(&apiv1.PodExecOptions{
 		Container: containerName,
 		Command:   commandToRunWhenCreatingUserServiceShell,
@@ -1344,6 +1344,10 @@ func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.
 		Stdout:    true,
 		Stderr:    true,
 		TTY:       true,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
 	}, scheme.ParameterCodec)
 	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, "POST", request.URL())
 	if err != nil {
@@ -1357,15 +1361,20 @@ func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.
 			// print error
 			return stacktrace.Propagate(err, "An error occurred making STDIN stream raw")
 		}
-		defer terminal.Restore(stdinFd, oldState)
+		defer func() {
+			if err = terminal.Restore(stdinFd, oldState); err != nil {
+				logrus.Warn("An error occurred while restoring the terminal to its normal state. Your terminal might look funny; we recommend closing and starting a new terminal.")
+			}
+		}()
 	}
 	return exec.StreamWithContext(
 		ctx,
 		remotecommand.StreamOptions{
-			Stdin:  os.Stdin,
-			Stdout: os.Stdout,
-			Stderr: os.Stderr,
-			Tty:    true,
+			TerminalSizeQueue: nil,
+			Stdin:             os.Stdin,
+			Stdout:            os.Stdout,
+			Stderr:            os.Stderr,
+			Tty:               true,
 		})
 }
 
