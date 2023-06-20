@@ -27,8 +27,6 @@ const (
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
 
-	commandToRunInsteadOfBashEmpty = ""
-
 	serviceIdentifierArgKey  = "service"
 	isServiceGuidArgOptional = false
 	isServiceGuidArgGreedy   = false
