@@ -63,6 +63,17 @@ const (
 	listOptionsTimeoutSeconds int64 = 10
 )
 
+// We'll try to use the nicer-to-use shells first before we drop down to the lower shells
+var commandToRunWhenCreatingUserServiceShell = []string{
+	"sh",
+	"-c",
+	`if command -v 'bash' > /dev/null; then
+		echo "Found bash on container; creating bash shell..."; bash; 
+       else 
+		echo "No bash found on container; dropping down to sh shell..."; sh; 
+	fi`,
+}
+
 var (
 	globalDeletePolicy  = metav1.DeletePropagationForeground
 	globalDeleteOptions = metav1.DeleteOptions{
@@ -1327,16 +1338,25 @@ func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.
 	request := manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).Namespace(pod.Namespace).SubResource("exec")
 	request.VersionedParams(&apiv1.PodExecOptions{
 		Container: containerName,
-		Command:   []string{"sh"},
+		Command:   commandToRunWhenCreatingUserServiceShell,
 		Stdin:     true,
 		Stdout:    true,
 		Stderr:    true,
 		TTY:       true,
 	}, scheme.ParameterCodec)
-	exec, _ := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, "POST", request.URL())
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, "POST", request.URL())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating a new SPDY executor")
+	}
 	stdinFd := int(os.Stdin.Fd())
-	if _, err := terminal.MakeRaw(stdinFd); err != nil {
-		// handle err
+	var oldState *terminal.State
+	if terminal.IsTerminal(stdinFd) {
+		oldState, err = terminal.MakeRaw(stdinFd)
+		if err != nil {
+			// print error
+			return stacktrace.Propagate(err, "An error occurred making STDIN stream raw")
+		}
+		defer terminal.Restore(stdinFd, oldState)
 	}
 	return exec.Stream(remotecommand.StreamOptions{
 		Stdin:  os.Stdin,
