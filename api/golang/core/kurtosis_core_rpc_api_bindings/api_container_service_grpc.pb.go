@@ -27,7 +27,6 @@ const (
 	ApiContainerService_GetServices_FullMethodName                                = "/api_container_api.ApiContainerService/GetServices"
 	ApiContainerService_GetExistingAndHistoricalServiceIdentifiers_FullMethodName = "/api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers"
 	ApiContainerService_RemoveService_FullMethodName                              = "/api_container_api.ApiContainerService/RemoveService"
-	ApiContainerService_Repartition_FullMethodName                                = "/api_container_api.ApiContainerService/Repartition"
 	ApiContainerService_ExecCommand_FullMethodName                                = "/api_container_api.ApiContainerService/ExecCommand"
 	ApiContainerService_WaitForHttpGetEndpointAvailability_FullMethodName         = "/api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability"
 	ApiContainerService_WaitForHttpPostEndpointAvailability_FullMethodName        = "/api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability"
@@ -59,8 +58,6 @@ type ApiContainerServiceClient interface {
 	GetExistingAndHistoricalServiceIdentifiers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetExistingAndHistoricalServiceIdentifiersResponse, error)
 	// Instructs the API container to remove the given service
 	RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*RemoveServiceResponse, error)
-	// Instructs the API container to repartition the enclave
-	Repartition(ctx context.Context, in *RepartitionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
 	ExecCommand(ctx context.Context, in *ExecCommandArgs, opts ...grpc.CallOption) (*ExecCommandResponse, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
@@ -224,15 +221,6 @@ func (c *apiContainerServiceClient) GetExistingAndHistoricalServiceIdentifiers(c
 func (c *apiContainerServiceClient) RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*RemoveServiceResponse, error) {
 	out := new(RemoveServiceResponse)
 	err := c.cc.Invoke(ctx, ApiContainerService_RemoveService_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) Repartition(ctx context.Context, in *RepartitionArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
-	err := c.cc.Invoke(ctx, ApiContainerService_Repartition_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -404,8 +392,6 @@ type ApiContainerServiceServer interface {
 	GetExistingAndHistoricalServiceIdentifiers(context.Context, *emptypb.Empty) (*GetExistingAndHistoricalServiceIdentifiersResponse, error)
 	// Instructs the API container to remove the given service
 	RemoveService(context.Context, *RemoveServiceArgs) (*RemoveServiceResponse, error)
-	// Instructs the API container to repartition the enclave
-	Repartition(context.Context, *RepartitionArgs) (*emptypb.Empty, error)
 	// Executes the given command inside a running container
 	ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
@@ -457,9 +443,6 @@ func (UnimplementedApiContainerServiceServer) GetExistingAndHistoricalServiceIde
 }
 func (UnimplementedApiContainerServiceServer) RemoveService(context.Context, *RemoveServiceArgs) (*RemoveServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RemoveService not implemented")
-}
-func (UnimplementedApiContainerServiceServer) Repartition(context.Context, *RepartitionArgs) (*emptypb.Empty, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Repartition not implemented")
 }
 func (UnimplementedApiContainerServiceServer) ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecCommand not implemented")
@@ -642,24 +625,6 @@ func _ApiContainerService_RemoveService_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiContainerServiceServer).RemoveService(ctx, req.(*RemoveServiceArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_Repartition_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RepartitionArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).Repartition(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ApiContainerService_Repartition_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).Repartition(ctx, req.(*RepartitionArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -895,10 +860,6 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RemoveService",
 			Handler:    _ApiContainerService_RemoveService_Handler,
-		},
-		{
-			MethodName: "Repartition",
-			Handler:    _ApiContainerService_Repartition_Handler,
 		},
 		{
 			MethodName: "ExecCommand",

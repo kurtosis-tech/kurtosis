@@ -663,51 +663,6 @@ func (_c *MockServiceNetwork_RenderTemplates_Call) RunAndReturn(run func(map[str
 	return _c
 }
 
-// Repartition provides a mock function with given fields: ctx, newPartitionServices, newPartitionConnections, newDefaultConnection
-func (_m *MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
-	ret := _m.Called(ctx, newPartitionServices, newPartitionConnections, newDefaultConnection)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, map[service_network_types.PartitionID]map[service.ServiceName]bool, map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, partition_topology.PartitionConnection) error); ok {
-		r0 = rf(ctx, newPartitionServices, newPartitionConnections, newDefaultConnection)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockServiceNetwork_Repartition_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Repartition'
-type MockServiceNetwork_Repartition_Call struct {
-	*mock.Call
-}
-
-// Repartition is a helper method to define mock.On call
-//   - ctx context.Context
-//   - newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool
-//   - newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection
-//   - newDefaultConnection partition_topology.PartitionConnection
-func (_e *MockServiceNetwork_Expecter) Repartition(ctx interface{}, newPartitionServices interface{}, newPartitionConnections interface{}, newDefaultConnection interface{}) *MockServiceNetwork_Repartition_Call {
-	return &MockServiceNetwork_Repartition_Call{Call: _e.mock.On("Repartition", ctx, newPartitionServices, newPartitionConnections, newDefaultConnection)}
-}
-
-func (_c *MockServiceNetwork_Repartition_Call) Run(run func(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection)) *MockServiceNetwork_Repartition_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(map[service_network_types.PartitionID]map[service.ServiceName]bool), args[2].(map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection), args[3].(partition_topology.PartitionConnection))
-	})
-	return _c
-}
-
-func (_c *MockServiceNetwork_Repartition_Call) Return(_a0 error) *MockServiceNetwork_Repartition_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockServiceNetwork_Repartition_Call) RunAndReturn(run func(context.Context, map[service_network_types.PartitionID]map[service.ServiceName]bool, map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, partition_topology.PartitionConnection) error) *MockServiceNetwork_Repartition_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // RunExec provides a mock function with given fields: ctx, serviceIdentifier, userServiceCommand
 func (_m *MockServiceNetwork) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {
 	ret := _m.Called(ctx, serviceIdentifier, userServiceCommand)

@@ -179,14 +179,7 @@ func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Conte
 
 	return remoteApiContainerResponse, nil
 }
-func (service *ApiContainerGatewayServiceServer) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.Repartition(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
 
-	return remoteApiContainerResponse, nil
-}
 func (service *ApiContainerGatewayServiceServer) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecCommand(ctx, args)
 	if err != nil {
