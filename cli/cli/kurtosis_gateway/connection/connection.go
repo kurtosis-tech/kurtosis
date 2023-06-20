@@ -191,6 +191,7 @@ func newLocalPortToPodPortConnection(kubernetesRestConfig *k8s_rest.Config, podP
 func (connection *gatewayConnectionToKurtosisImpl) Stop() {
 	logrus.Infof("Closing connection to pod: %s", connection.urlString)
 	close(connection.stopChannel)
+	connection.portforwarder.Close()
 	close(connection.portforwarderStopChannel)
 }
 
