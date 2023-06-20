@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -1326,13 +1327,17 @@ func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.
 	request := manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).Namespace(pod.Namespace).SubResource("exec")
 	request.VersionedParams(&apiv1.PodExecOptions{
 		Container: containerName,
-		Command:   []string{"sh", "-c"},
+		Command:   []string{"sh"},
 		Stdin:     true,
 		Stdout:    true,
 		Stderr:    true,
 		TTY:       true,
 	}, scheme.ParameterCodec)
 	exec, _ := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, "POST", request.URL())
+	stdinFd := int(os.Stdin.Fd())
+	if _, err := terminal.MakeRaw(stdinFd); err != nil {
+		// handle err
+	}
 	return exec.Stream(remotecommand.StreamOptions{
 		Stdin:  os.Stdin,
 		Stdout: os.Stdout,
