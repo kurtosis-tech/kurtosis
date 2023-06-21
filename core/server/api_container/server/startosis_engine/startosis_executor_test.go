@@ -5,12 +5,13 @@ import (
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.starlark.net/starlark"
 	"strings"
 	"testing"
 )
@@ -37,12 +38,12 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
-	instructions := []kurtosis_instruction.KurtosisInstruction{
-		instruction1,
-		instruction2,
-	}
 
-	_, serializedInstruction, err := executeSynchronously(t, executor, executeForReal, instructions)
+	instructionsPlan := instructions_plan.NewInstructionsPlan()
+	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
+	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
+
+	_, serializedInstruction, err := executeSynchronously(t, executor, executeForReal, instructionsPlan)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -63,13 +64,13 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
 	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully)
-	instructions := []kurtosis_instruction.KurtosisInstruction{
-		instruction1,
-		instruction2,
-		instruction3,
-	}
 
-	_, serializedInstruction, executionError := executeSynchronously(t, executor, executeForReal, instructions)
+	instructionsPlan := instructions_plan.NewInstructionsPlan()
+	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
+	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
+	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
+
+	_, serializedInstruction, executionError := executeSynchronously(t, executor, executeForReal, instructionsPlan)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
 	instruction2.AssertNumberOfCalls(t, "String", 1)
@@ -99,12 +100,12 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
-	instructions := []kurtosis_instruction.KurtosisInstruction{
-		instruction1,
-		instruction2,
-	}
 
-	_, serializedInstruction, err := executeSynchronously(t, executor, doDryRun, instructions)
+	instructionsPlan := instructions_plan.NewInstructionsPlan()
+	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
+	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
+
+	_, serializedInstruction, err := executeSynchronously(t, executor, doDryRun, instructionsPlan)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	// both execute never called because dry run = true
@@ -139,11 +140,14 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 	return instruction
 }
 
-func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool, instructions []kurtosis_instruction.KurtosisInstruction) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
+func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool, instructionsPlan *instructions_plan.InstructionsPlan) (string, []*kurtosis_core_rpc_api_bindings.StarlarkInstruction, *kurtosis_core_rpc_api_bindings.StarlarkExecutionError) {
 	scriptOutput := strings.Builder{}
 	var serializedInstructions []*kurtosis_core_rpc_api_bindings.StarlarkInstruction
 
-	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, instructions, noScriptOutputObject)
+	scheduledInstructions, err := instructionsPlan.GeneratePlan()
+	require.Nil(t, err)
+
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, scheduledInstructions, noScriptOutputObject)
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()

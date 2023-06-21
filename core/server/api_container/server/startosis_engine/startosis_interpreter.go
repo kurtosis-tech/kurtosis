@@ -7,7 +7,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -73,28 +74,24 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 	}
 }
 
-// Interpret interprets the Starlark script and produce different outputs:
-//   - A potential interpretation error that the writer of the script should be aware of (syntax error in the Startosis
-//     code, inconsistent). Can be nil if the script was successfully interpreted
-//   - The list of Kurtosis instructions that was generated based on the interpretation of the script. It can be empty
-//     if the interpretation of the script failed
 func (interpreter *StartosisInterpreter) Interpret(
 	_ context.Context,
 	packageId string,
 	mainFunctionName string,
 	serializedStarlark string,
 	serializedJsonParams string,
-) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+	instructionsPlanMask *resolver.InstructionsPlanMask,
+) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
-	var instructionsQueue []kurtosis_instruction.KurtosisInstruction
+	newInstructionsPlan := instructions_plan.NewInstructionsPlan()
 	logrus.Debugf("Interpreting package '%v' with contents '%v' and params '%v'", packageId, serializedStarlark, serializedJsonParams)
-	globalVariables, interpretationErr := interpreter.interpretInternal(packageId, serializedStarlark, &instructionsQueue)
+	globalVariables, interpretationErr := interpreter.interpretInternal(packageId, serializedStarlark, newInstructionsPlan, instructionsPlanMask)
 	if interpretationErr != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
 	}
 
-	logrus.Debugf("Successfully interpreted Starlark code into instruction queue: \n%s", instructionsQueue)
+	logrus.Debugf("Successfully interpreted Starlark code into an instruction plan with %d steps", newInstructionsPlan.Size())
 
 	var isUsingDefaultMainFunction bool
 	// if the user sends "" or "run" we isUsingDefaultMainFunction to true
@@ -104,19 +101,22 @@ func (interpreter *StartosisInterpreter) Interpret(
 	}
 
 	if !globalVariables.Has(mainFunctionName) {
-		return missingMainFunctionReturnValue(packageId, mainFunctionName)
+		return startosis_constants.NoOutputObject, nil, missingMainFunctionInterpretationError(packageId, mainFunctionName)
 	}
 
 	mainFunction, ok := globalVariables[mainFunctionName].(*starlark.Function)
 	// if there is a element with the `mainFunctionName` but it isn't a function we have to error as well
 	if !ok {
-		return missingMainFunctionReturnValue(packageId, mainFunctionName)
+		return startosis_constants.NoOutputObject, nil, missingMainFunctionInterpretationError(packageId, mainFunctionName)
 	}
 
 	runFunctionExecutionThread := newStarlarkThread(starlarkGoThreadName)
 
 	if isUsingDefaultMainFunction && mainFunction.NumParams() > maximumParamsAllowedForRunFunction {
-		return "", nil, startosis_errors.NewInterpretationError("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, mainFunction.NumParams()).ToAPIType()
+		return startosis_constants.NoOutputObject, nil, startosis_errors.NewInterpretationError(
+			"The 'run' entrypoint function can have at most '%v' argument got '%v'",
+			maximumParamsAllowedForRunFunction,
+			mainFunction.NumParams()).ToAPIType()
 	}
 
 	var argsTuple starlark.Tuple
@@ -129,7 +129,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
 			kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
-			planModule := plan_module.PlanModule(&instructionsQueue, kurtosisPlanInstructions)
+			planModule := plan_module.PlanModule(newInstructionsPlan, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}
 
@@ -148,7 +148,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		// run function has an argument so we parse input args
 		inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
 		if interpretationError != nil {
-			return "", nil, interpretationError.ToAPIType()
+			return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
 		}
 		if isUsingDefaultMainFunction {
 			argsTuple = append(argsTuple, inputArgs)
@@ -156,7 +156,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		} else {
 			argsDict, ok := inputArgs.(*starlark.Dict)
 			if !ok {
-				return "", nil, startosis_errors.NewInterpretationError("An error occurred casting input args '%s' to Starlark Dict", inputArgs).ToAPIType()
+				return startosis_constants.NoOutputObject, nil, startosis_errors.NewInterpretationError("An error occurred casting input args '%s' to Starlark Dict", inputArgs).ToAPIType()
 			}
 			kwArgs = append(kwArgs, argsDict.Items()...)
 		}
@@ -164,7 +164,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 
 	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, kwArgs)
 	if err != nil {
-		return "", nil, generateInterpretationError(err).ToAPIType()
+		return startosis_constants.NoOutputObject, nil, generateInterpretationError(err).ToAPIType()
 	}
 
 	// Serialize and return the output object. It might contain magic strings that should be resolved post-execution
@@ -174,17 +174,17 @@ func (interpreter *StartosisInterpreter) Interpret(
 		if interpretationError != nil {
 			return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
 		}
-		return serializedOutputObject, instructionsQueue, nil
+		return serializedOutputObject, newInstructionsPlan, nil
 	}
-	return startosis_constants.NoOutputObject, instructionsQueue, nil
+	return startosis_constants.NoOutputObject, newInstructionsPlan, nil
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(packageId string, serializedStarlark string, instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) interpretInternal(packageId string, serializedStarlark string, instructionsPlan *instructions_plan.InstructionsPlan, instructionsPlanMask *resolver.InstructionsPlanMask) (starlark.StringDict, *startosis_errors.InterpretationError) {
 	// We spin up a new thread for every call to interpreterInternal such that the stacktrace provided by the Starlark
 	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
 	// previous calls inside the same thread
 	thread := newStarlarkThread(packageId)
-	predeclared, interpretationErr := interpreter.buildBindings(instructionsQueue)
+	predeclared, interpretationErr := interpreter.buildBindings(instructionsPlan, instructionsPlanMask)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -197,9 +197,9 @@ func (interpreter *StartosisInterpreter) interpretInternal(packageId string, ser
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(instructionsQueue *[]kurtosis_instruction.KurtosisInstruction) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) buildBindings(instructionsPlan *instructions_plan.InstructionsPlan, instructionsPlanMask *resolver.InstructionsPlanMask) (*starlark.StringDict, *startosis_errors.InterpretationError) {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
-		result, err := interpreter.interpretInternal(moduleId, serializedStartosis, instructionsQueue)
+		result, err := interpreter.interpretInternal(moduleId, serializedStartosis, instructionsPlan, instructionsPlanMask)
 		if err != nil {
 			return nil, err
 		}
@@ -305,9 +305,9 @@ func generateInterpretationError(err error) *startosis_errors.InterpretationErro
 	return startosis_errors.NewInterpretationError("UnknownError: %s\n", err.Error())
 }
 
-func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (string, []kurtosis_instruction.KurtosisInstruction, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+func missingMainFunctionInterpretationError(packageId string, mainFunctionName string) *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError {
 	if packageId == startosis_constants.PackageIdPlaceholderForStandaloneScript {
-		return "", nil, startosis_errors.NewInterpretationError(
+		return startosis_errors.NewInterpretationError(
 			"No '%s' function found in the script; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the Kurtosis script",
 			mainFunctionName,
 			mainFunctionName,
@@ -316,7 +316,7 @@ func missingMainFunctionReturnValue(packageId string, mainFunctionName string) (
 		).ToAPIType()
 	}
 
-	return "", nil, startosis_errors.NewInterpretationError(
+	return startosis_errors.NewInterpretationError(
 		"No '%s' function found in the main file of package '%s'; a '%s' entrypoint function with the signature `%s(plan, args)` or `%s()` is required in the main file of the Kurtosis package",
 		mainFunctionName,
 		packageId,
