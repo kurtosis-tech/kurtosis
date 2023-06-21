@@ -27,7 +27,6 @@ type GatewayConnectionToKurtosis interface {
 	// GetLocalPorts returns a map keyed with an identifier string describing local ports being forwarded
 	GetLocalPorts() map[string]*port_spec.PortSpec
 	GetGrpcClientConn() (*grpc.ClientConn, error)
-	GetClosedChannel() chan(struct{})
 	Stop()
 }
 

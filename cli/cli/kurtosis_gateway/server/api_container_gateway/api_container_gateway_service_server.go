@@ -389,13 +389,6 @@ func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtos
 			delete(service.userServiceGuidToLocalConnectionMap, serviceUuid)
 		}
 	}()
-	
-	go func() {
-		// Wait on closed connection and remove the service entry from the user service to local connection map
-		<- runingLocalServiceConnection.kurtosisConnection.GetClosedChannel()
-		delete(service.userServiceGuidToLocalConnectionMap, serviceUuid)
-		logrus.Debugf("Remove service with guid '%v' from the user service to local connection map", serviceUuid)
-	}()
 
 	cleanUpMapEntry = false
 	cleanUpConnection = false
