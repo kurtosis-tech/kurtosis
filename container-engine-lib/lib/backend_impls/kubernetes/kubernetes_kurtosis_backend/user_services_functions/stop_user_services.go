@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
-	//applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 )
 
 func StopUserServices(

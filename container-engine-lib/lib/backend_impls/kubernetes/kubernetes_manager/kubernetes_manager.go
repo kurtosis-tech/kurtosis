@@ -1064,7 +1064,7 @@ func (manager *KubernetesManager) CreatePod(
 		Containers:          podContainers,
 		EphemeralContainers: nil,
 		// We don't want Kubernetes auto-magically restarting our containers if they fail
-		RestartPolicy:                 apiv1.RestartPolicyAlways,
+		RestartPolicy:                 apiv1.RestartPolicyNever,
 		TerminationGracePeriodSeconds: nil,
 		ActiveDeadlineSeconds:         nil,
 		DNSPolicy:                     "",
