@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.80.0](https://github.com/kurtosis-tech/kurtosis/compare/0.79.0...0.80.0) (2023-06-21)
+
+
+### ⚠ BREAKING CHANGES
+
+* Applying RFC-1123 standard to service names ([#749](https://github.com/kurtosis-tech/kurtosis/issues/749))
+
+### Features
+
+* Applying RFC-1123 standard to service names ([#749](https://github.com/kurtosis-tech/kurtosis/issues/749)) ([66a5ebe](https://github.com/kurtosis-tech/kurtosis/commit/66a5ebe922559c4d7b8d10b7f7870af6d1700c6b))
+
 ## [0.79.0](https://github.com/kurtosis-tech/kurtosis/compare/0.78.5...0.79.0) (2023-06-21)
 
 
