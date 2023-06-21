@@ -11,6 +11,7 @@ kurtosis service add $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER $CONTAINER_
 ```
 
 where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../concepts-reference/resource-identifier.md) for the enclave and service, respectively. 
+Note, the service identifier needs to be formatted according to RFC 1123. Specifically, 1-63 lowercase alphanumeric characters with dashes and cannot start or end with dashes.
 
 Much like `docker run`, this command has multiple options available to customize the service that's started:
 
