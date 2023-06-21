@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
-	"net"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -296,12 +295,12 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	return succesfulUserServiceExecResults, erroredUserServiceUuids, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultConn net.Conn, resultErr error) {
-	newConn, err := backend.underlying.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid)
+func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {
+	err := backend.underlying.GetShellOnUserService(ctx, enclaveUuid, serviceUuid)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting connection with user service with UUID '%v'", serviceUuid)
+		return stacktrace.Propagate(err, "An error occurred getting connection with user service with UUID '%v'", serviceUuid)
 	}
-	return newConn, nil
+	return nil
 }
 
 func (backend *MetricsReportingKurtosisBackend) CopyFilesFromUserService(

@@ -1,7 +1,7 @@
 {
     "name": "kurtosis-sdk",
     "//": "NOTE: DO NOT UPDATE THIS VERSION MANUALLY - IT WILL BE UPDATED DURING THE RELEASE PROCESS!",
-    "version": "0.78.5",
+    "version": "0.79.0",
     "main": "./build/index",
     "description": "This repo contains a Typescript client for communicating with the Kurtosis Engine server, which is responsible for creating, managing and destroying Kurtosis Enclaves.",
     "types": "./build/index",

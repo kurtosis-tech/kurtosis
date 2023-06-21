@@ -1,8 +1,3 @@
-run:
-  skip-files:
-    # skipping this one as there is a disclaimer about not knowing why this works
-    - "commands/service/shell/shell.go"
-
 issues:
   exclude-rules:
     - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"

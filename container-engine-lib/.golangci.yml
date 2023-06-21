@@ -1,3 +1,8 @@
+run:
+  skip-files:
+    # skipping this one as there is a disclaimer about not knowing why this works
+    - "lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions/get_shell_on_user_service.go"
+
 issues:
   exclude-rules:
     - path: "lib/backend_impls/kubernetes/object_attributes_provider/engine_object_attributes_provider.go"

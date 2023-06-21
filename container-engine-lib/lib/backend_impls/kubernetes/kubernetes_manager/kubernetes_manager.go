@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -24,6 +25,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -60,6 +62,17 @@ const (
 
 	listOptionsTimeoutSeconds int64 = 10
 )
+
+// We'll try to use the nicer-to-use shells first before we drop down to the lower shells
+var commandToRunWhenCreatingUserServiceShell = []string{
+	"sh",
+	"-c",
+	`if command -v 'bash' > /dev/null; then
+		echo "Found bash on container; creating bash shell..."; bash; 
+       else 
+		echo "No bash found on container; dropping down to sh shell..."; sh; 
+	fi`,
+}
 
 var (
 	globalDeletePolicy  = metav1.DeletePropagationForeground
@@ -1318,6 +1331,51 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+}
+
+func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.Pod) error {
+	containerName := pod.Spec.Containers[0].Name
+	request := manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).Namespace(pod.Namespace).SubResource("exec")
+	// lifted from https://github.com/kubernetes/client-go/issues/912 - the terminal magic is still magical
+	request.VersionedParams(&apiv1.PodExecOptions{
+		Container: containerName,
+		Command:   commandToRunWhenCreatingUserServiceShell,
+		Stdin:     true,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       true,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+	}, scheme.ParameterCodec)
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, "POST", request.URL())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating a new SPDY executor")
+	}
+	stdinFd := int(os.Stdin.Fd())
+	var oldState *terminal.State
+	if terminal.IsTerminal(stdinFd) {
+		oldState, err = terminal.MakeRaw(stdinFd)
+		if err != nil {
+			// print error
+			return stacktrace.Propagate(err, "An error occurred making STDIN stream raw")
+		}
+		defer func() {
+			if err = terminal.Restore(stdinFd, oldState); err != nil {
+				logrus.Warn("An error occurred while restoring the terminal to its normal state. Your terminal might look funny; we recommend closing and starting a new terminal.")
+			}
+		}()
+	}
+	return exec.StreamWithContext(
+		ctx,
+		remotecommand.StreamOptions{
+			TerminalSizeQueue: nil,
+			Stdin:             os.Stdin,
+			Stdout:            os.Stdout,
+			Stderr:            os.Stderr,
+			Tty:               true,
+		})
 }
 
 // TODO Delete this after 2022-08-01 if we're not using Jobs
