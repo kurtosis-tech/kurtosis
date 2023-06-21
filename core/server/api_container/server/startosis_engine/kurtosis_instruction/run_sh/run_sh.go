@@ -19,7 +19,6 @@ import (
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"path"
 	"reflect"
 	"strings"
 )
@@ -28,22 +27,19 @@ const (
 	RunShBuiltinName = "run_sh"
 
 	ImageNameArgName = "image"
-	WorkDirArgName   = "workdir"
 	RunArgName       = "run"
 
-	DefaultWorkDir   = "/task"
 	DefaultImageName = "badouralix/curl-jq"
 	FilesAttr        = "files"
 
 	runshCodeKey         = "code"
 	runshOutputKey       = "output"
-	runshFileArtifactKey = "file_artifacts"
+	runshFileArtifactKey = "files_artifacts"
 	newlineChar          = "\n"
 
-	bashCommand = "/bin/sh"
+	shellCommand = "/bin/sh"
 
-	createAndSwitchDirectoryTemplate = "mkdir -p %v && cd %v"
-	storeFilesKey                    = "store"
+	storeFilesKey = "store"
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
@@ -68,14 +64,6 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 					},
 				},
 				{
-					Name:              WorkDirArgName,
-					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(argumentValue starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(argumentValue, WorkDirArgName)
-					},
-				},
-				{
 					Name:              FilesAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
@@ -95,7 +83,6 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				name:                "",
 				image:               DefaultImageName, // populated at interpretation time
 				run:                 "",               // populated at interpretation time
-				workdir:             DefaultWorkDir,   // populated at interpretation time
 				files:               nil,
 				resultUuid:          "", // populated at interpretation time
 				fileArtifactNames:   nil,
@@ -106,8 +93,8 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 		DefaultDisplayArguments: map[string]bool{
 			RunArgName:       true,
 			ImageNameArgName: true,
-			WorkDirArgName:   true,
 			FilesAttr:        true,
+			storeFilesKey:    true,
 		},
 	}
 }
@@ -120,7 +107,6 @@ type RunShCapabilities struct {
 	name                string
 	run                 string
 	image               string
-	workdir             string
 	files               map[string]string
 	fileArtifactNames   []string
 	pathToFileArtifacts []string
@@ -141,20 +127,6 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		builtin.image = imageStarlark.GoString()
 	}
 
-	if arguments.IsSet(WorkDirArgName) {
-		workDirStarlark, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, WorkDirArgName)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", WorkDirArgName)
-		}
-
-		maybeWorkDir := workDirStarlark.GoString()
-		if path.IsAbs(maybeWorkDir) {
-			builtin.workdir = maybeWorkDir
-		} else {
-			builtin.workdir = path.Join("/", maybeWorkDir)
-		}
-	}
-
 	if arguments.IsSet(FilesAttr) {
 		filesStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, FilesAttr)
 		if err != nil {
@@ -165,16 +137,7 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			fileArtifactProcessedPaths := map[string]string{}
-			for pathToFileArtifact, fileArtifactName := range filesArtifactMountDirPaths {
-				processedName := getAbsoluteFilePath(builtin.workdir, pathToFileArtifact)
-				if fileArtifactProcessedPaths[processedName] != "" {
-					return nil, startosis_errors.NewInterpretationError("error occurred because duplicate key was found in files argument. "+
-						"Found multiple occurrence for: %v. This occurred during generating absolute paths from relative path inputs.", pathToFileArtifact)
-				}
-				fileArtifactProcessedPaths[processedName] = fileArtifactName
-			}
-			builtin.files = fileArtifactProcessedPaths
+			builtin.files = filesArtifactMountDirPaths
 		}
 	}
 
@@ -190,9 +153,6 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 				return nil, interpretationErr
 			}
 
-			for index, pathToFileArtifact := range storeFilesArray {
-				storeFilesArray[index] = getAbsoluteFilePath(builtin.workdir, pathToFileArtifact)
-			}
 			builtin.pathToFileArtifacts = storeFilesArray
 
 			// generate unique names
@@ -272,18 +232,11 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //   Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	// create work directory and cd into that directory
-	createAndSwitchTheDirectoryCmd := fmt.Sprintf(createAndSwitchDirectoryTemplate, builtin.workdir, builtin.workdir)
-
-	// replace future references to actual strings
-	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)
+	commandRunCommand, err := getCommandToRun(builtin)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in run_sh")
+		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
 	}
-
-	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, newlineChar, " ")
-
-	completeRunCommand := fmt.Sprintf("%v && %v", createAndSwitchTheDirectoryCmd, commandWithNoNewLines)
-	createDefaultDirectory := []string{bashCommand, "-c", completeRunCommand}
+	createDefaultDirectory := []string{shellCommand, "-c", commandRunCommand}
 	serviceConfigBuilder := services.NewServiceConfigBuilder(builtin.image)
 	serviceConfigBuilder.WithFilesArtifactMountDirpaths(builtin.files)
 	// This make sure that the container does not stop as soon as it starts
@@ -291,8 +244,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	// TODO: Instead of creating a service and running exec commands
 	//  we could probably run the command as an entrypoint and retrieve the results as soon as the
 	//  command is completed
-	serviceConfigBuilder.WithCmdArgs(runTailCommandToPreventContainerToStopOnCreating)
-
+	serviceConfigBuilder.WithEntryPointArgs(runTailCommandToPreventContainerToStopOnCreating)
 	serviceConfig := serviceConfigBuilder.Build()
 	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfig)
 
@@ -313,6 +265,13 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := resultMapToString(result)
+
+	// throw an error as execution of the command failed
+	if createDefaultDirectoryResult.GetExitCode() != 0 {
+		return "", stacktrace.NewError(
+			"error occurred and shell command: %q exited with code %d with output %q",
+			commandRunCommand, createDefaultDirectoryResult.GetExitCode(), createDefaultDirectoryResult.GetOutput())
+	}
 
 	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
 		err = copyFilesFromTask(ctx, builtin)
@@ -362,12 +321,15 @@ func resultMapToString(resultMap map[string]starlark.Comparable) string {
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
-// This method takes in a path specified by user and creates an absolute path if it's not already an absolute path
-func getAbsoluteFilePath(workdir string, filePath string) string {
-	if path.IsAbs(filePath) {
-		return filePath
+func getCommandToRun(builtin *RunShCapabilities) (string, error) {
+	// replace future references to actual strings
+	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in run_sh")
 	}
-	return path.Join(workdir, filePath)
+	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, newlineChar, " ")
+
+	return commandWithNoNewLines, nil
 }
 
 func validatePathIsUniqueWhileCreatingFileArtifact(storeFiles []string) *startosis_errors.ValidationError {
