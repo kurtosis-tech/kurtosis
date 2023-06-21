@@ -275,30 +275,6 @@ func (backend *MetricsReportingKurtosisBackend) GetUserServiceLogs(
 	return userServiceLogs, erroredUserServices, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) PauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceUUID,
-) error {
-	err := backend.underlying.PauseService(ctx, enclaveUuid, serviceId)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service '%v' in enclave '%v'", serviceId, enclaveUuid)
-	}
-	return nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) UnpauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceUUID,
-) error {
-	err := backend.underlying.UnpauseService(ctx, enclaveUuid, serviceId)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service '%v' in enclave '%v'", serviceId, enclaveUuid)
-	}
-	return nil
-}
-
 func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
@@ -320,8 +296,8 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	return succesfulUserServiceExecResults, erroredUserServiceUuids, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, commandToRunInsteadOfBash string) (resultConn net.Conn, resultErr error) {
-	newConn, err := backend.underlying.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, commandToRunInsteadOfBash)
+func (backend *MetricsReportingKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultConn net.Conn, resultErr error) {
+	newConn, err := backend.underlying.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting connection with user service with UUID '%v'", serviceUuid)
 	}

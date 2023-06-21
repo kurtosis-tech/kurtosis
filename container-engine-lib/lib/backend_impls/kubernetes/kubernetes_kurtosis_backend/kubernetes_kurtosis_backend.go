@@ -296,22 +296,6 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) PauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceUUID,
-) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveUuid)
-}
-
-func (backend *KubernetesKurtosisBackend) UnpauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceUUID,
-) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveUuid)
-}
-
 // TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
@@ -332,7 +316,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID, commandToRunInsteadOfBash string) (resultConn net.Conn, resultErr error) {
+func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID) (resultConn net.Conn, resultErr error) {
 	// See https://github.com/kubernetes/client-go/issues/912
 	/*
 		in := streams.NewIn(os.Stdin)

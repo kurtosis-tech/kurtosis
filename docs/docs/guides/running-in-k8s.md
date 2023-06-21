@@ -32,7 +32,7 @@ This step will depend highly on how your cluster was created. But generally you 
 III. Add your cluster information to `kurtosis-config.yml`
 --------------------------------
 
-1. Open the file located at `"$(kurtosis config path)"`. This should look like `/Users/YOUR_USER/Library/Application Support/kurtosis/kurtosis-config.yml` on MacOS.
+1. Open the file located at `"$(kurtosis config path)"`. This should look like `/Users/<YOUR_USER>/Library/Application Support/kurtosis/kurtosis-config.yml` on MacOS.
 1. Paste the following contents, changing `NAME-OF-YOUR-CLUSTER` to the cluster you created and save:
 ```yaml
 config-version: 2

@@ -3,6 +3,7 @@ package service_network
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"net"
 	"net/http"
 
@@ -41,11 +42,6 @@ func NewEmptyMockServiceNetwork() *MockServiceNetworkCustom {
 	return &MockServiceNetworkCustom{
 		serviceRegistrations: nil,
 	}
-}
-
-func (m *MockServiceNetworkCustom) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
-	//TODO implement me
-	panic(unimplementedMsg)
 }
 
 func (m *MockServiceNetworkCustom) SetConnection(ctx context.Context, partition1 service_network_types.PartitionID, partition2 service_network_types.PartitionID, connection partition_topology.PartitionConnection) error {
@@ -118,17 +114,12 @@ func (m *MockServiceNetworkCustom) StopServices(ctx context.Context, serviceIden
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) PauseService(ctx context.Context, serviceIdentifier string) error {
+func (m *MockServiceNetworkCustom) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) UnpauseService(ctx context.Context, serviceIdentifier string) error {
-	//TODO implement me
-	panic(unimplementedMsg)
-}
-
-func (m *MockServiceNetworkCustom) ExecCommand(ctx context.Context, serviceIdentifier string, command []string) (int32, string, error) {
+func (m *MockServiceNetworkCustom) RunExecs(ctx context.Context, userServiceCommands map[string][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }

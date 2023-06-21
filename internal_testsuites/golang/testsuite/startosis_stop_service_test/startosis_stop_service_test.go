@@ -13,8 +13,6 @@ import (
 const (
 	testName              = "startosis_stop_service_test"
 	isPartitioningEnabled = false
-	defaultDryRun         = false
-	emptyArgs             = "{}"
 
 	serviceName = "example-datastore-server-1"
 	portId      = "grpc"

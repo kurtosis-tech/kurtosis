@@ -64,10 +64,10 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
 	if err = engineManagerOldCluster.StopEngineIdempotently(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping the currently running engine prior to "+
-			"updating the cluster. The current engine needs to be stopped before the cluster can be updated. "+
-			"It can be done manually running `kurtosis %s %s`", command_str_consts.EngineCmdStr,
-			command_str_consts.EngineStopCmdStr)
+		logrus.Warnf("Kurtosis was not able to stop a potentially running engine on the cluster '%s'. This is not "+
+			"critical, it might be that the current cluster is not reachable anymore. In the worst case scenario, the "+
+			"engine will continue running in cluster '%s' until Kurtosis is switched back to it.", clusterPriorToUpdate,
+			clusterPriorToUpdate)
 	}
 
 	if err = clusterSettingStore.SetClusterSetting(clusterName); err != nil {

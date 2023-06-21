@@ -3,17 +3,13 @@ package startosis_add_service_test
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
-	addServicesWithReadyConditionsTestName = "services-test"
-
 	addServicesWithReadyConditionsScript = `
 HTTP_ECHO_IMAGE = "mendhak/http-https-echo:26"
-SERVICE_NAME_PREFIX = "service-"
+SERVICE_NAME_PREFIX = "service-%v"
 NUM_SERVICES = 4
 
 def run(plan):
@@ -49,24 +45,26 @@ def run(plan):
 `
 )
 
-func TestStartosis_AddServicesWithReadyConditionsCheck(t *testing.T) {
+func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyConditionsCheck() {
 	ctx := context.Background()
+	script := fmt.Sprintf(addServicesWithReadyConditionsScript, okStatusCode, okStatusCode)
 
-	script := fmt.Sprintf(addServicesWithReadyConditionsScript, okStatusCode)
+	_, err := suite.RunScript(ctx, script)
 
-	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServicesWithReadyConditionsTestName, script)
+	t := suite.T()
 
 	require.Nil(t, err)
 }
 
-func TestStartosis_AddServicesWithReadyConditionsCheckFail(t *testing.T) {
+func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyConditionsCheckFail() {
 	ctx := context.Background()
 
 	expectedLastAssertionErrorStr := fmt.Sprintf("Assertion failed '%v' '==' '%v'", okStatusCode, serverErrorStatusCode)
+	script := fmt.Sprintf(addServicesWithReadyConditionsScript, serverErrorStatusCode, serverErrorStatusCode)
 
-	script := fmt.Sprintf(addServicesWithReadyConditionsScript, serverErrorStatusCode)
+	runResult, _ := suite.RunScript(ctx, script)
 
-	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServicesWithReadyConditionsTestName, script)
+	t := suite.T()
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

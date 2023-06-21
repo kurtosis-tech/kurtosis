@@ -26,8 +26,6 @@ const (
 def run(plan):
 	plan.remove_service("datastore")
 `
-	emptySerializedParams = ""
-	isNotDryRun           = false
 )
 
 func TestIdentifiers(t *testing.T) {

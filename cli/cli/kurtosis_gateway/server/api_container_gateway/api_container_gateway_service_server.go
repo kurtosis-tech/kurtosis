@@ -179,14 +179,7 @@ func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Conte
 
 	return remoteApiContainerResponse, nil
 }
-func (service *ApiContainerGatewayServiceServer) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.Repartition(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
 
-	return remoteApiContainerResponse, nil
-}
 func (service *ApiContainerGatewayServiceServer) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecCommand(ctx, args)
 	if err != nil {
@@ -268,23 +261,6 @@ func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifactV2(args *k
 		return stacktrace.Propagate(err, "Error forwarding stream from DownloadFilesArtifactV2 on gateway")
 	}
 	return nil
-}
-
-func (service *ApiContainerGatewayServiceServer) PauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.PauseServiceArgs) (*emptypb.Empty, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.PauseService(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs) (*emptypb.Empty, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.UnpauseService(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
 }
 
 func (service *ApiContainerGatewayServiceServer) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {

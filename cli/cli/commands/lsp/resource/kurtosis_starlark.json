@@ -180,6 +180,38 @@
       ]
     },
     {
+      "name": "run_sh",
+      "detail": "It executes a one-time execution task. It runs the bash command specified by the mandatory field `run` on an image specified by the optional `image` field",
+      "documentation": "",
+      "returnType": "struct(output:string, code:number, files_artifacts:list)",
+      "params": [
+        {
+          "name": "run",
+          "type": "string",
+          "content": "run",
+          "detail": "The bash command to run, as a string. It will be executed via 'sh -c $COMMAND'"
+        },
+        {
+          "name": "image",
+          "type": "string",
+          "content": "image?",
+          "detail": "Image the bash command will be run on"
+        },
+        {
+          "name": "files",
+          "type": "dict<string, string>",
+          "content": "files?",
+          "detail": "A mapping of path_on_container_where_contents_will_be_mounted -> files_artifact_id_to_mount"
+        },
+        {
+          "name": "store",
+          "type": "list<string>",
+          "content": "store?",
+          "detail": "List of paths to directories or files that will be copied to a file artifact"
+        }
+      ]
+    },
+    {
       "name": "set_connection",
       "detail": "The set_connection can be used to either update or replace the default connection settings",
       "documentation": "",
@@ -602,16 +634,28 @@
           "detail": "ENTRYPOINT, CMD, and ENV variables sometimes need to refer to the container's own IP address. \n If this placeholder string is referenced inside the 'entrypoint', 'cmd', or 'env_vars' properties, the Kurtosis engine will replace it at launch time\n with the container's actual IP address."
         },
         {
-          "name": "cpu_allocation",
+          "name": "max_cpu",
           "type": "number",
-          "content": "cpu_allocation?",
+          "content": "max_cpu?",
           "detail": "The maximum amount of CPUs the service can use, in millicpu/millicore."
         },
         {
-          "name": "memory_allocation",
+          "name": "min_cpu",
           "type": "number",
-          "content": "memory_allocation?",
+          "content": "min_cpu?",
+          "detail": "The mimimum amout of CPUs the service must have, in millicpu/millicore. CAUTION: This is only available for Kubernetes, and will be ignored for Docker."
+        },
+        {
+          "name": "max_memory",
+          "type": "number",
+          "content": "max_memory?",
           "detail": "The maximum amount of memory, in megabytes, the service can use."
+        },
+        {
+          "name": "min_memory",
+          "type": "number",
+          "content": "min_memory?",
+          "detail": "The minimum amount of memory, in megabytes, the service must have. CAUTION: This is only available for Kubernetes, and will be ignored for Docker."
         },
         {
           "name": "subnetwork",

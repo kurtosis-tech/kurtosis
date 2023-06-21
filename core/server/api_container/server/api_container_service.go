@@ -18,8 +18,6 @@ import (
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -239,74 +237,10 @@ func (apicService ApiContainerService) RemoveService(ctx context.Context, args *
 	return binding_constructors.NewRemoveServiceResponse(string(serviceUuid)), nil
 }
 
-func (apicService ApiContainerService) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
-	// No need to check for dupes here - that happens at the lowest-level call to ServiceNetwork.Repartition (as it should)
-	partitionServices := map[service_network_types.PartitionID]map[kurtosis_backend_service.ServiceName]bool{}
-	for partitionIdStr, servicesInPartition := range args.PartitionServices {
-		partitionId := service_network_types.PartitionID(partitionIdStr)
-		serviceIdSet := map[kurtosis_backend_service.ServiceName]bool{}
-		for serviceNameStr := range servicesInPartition.ServiceNameSet {
-			serviceId := kurtosis_backend_service.ServiceName(serviceNameStr)
-			serviceIdSet[serviceId] = true
-		}
-		partitionServices[partitionId] = serviceIdSet
-	}
-
-	partitionConnections := map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection{}
-	for partitionAStr, partitionBToConnection := range args.PartitionConnections {
-		partitionAId := service_network_types.PartitionID(partitionAStr)
-		for partitionBStr, connectionInfo := range partitionBToConnection.ConnectionInfo {
-			partitionBId := service_network_types.PartitionID(partitionBStr)
-			partitionConnectionId := *service_network_types.NewPartitionConnectionID(partitionAId, partitionBId)
-			if _, found := partitionConnections[partitionConnectionId]; found {
-				return nil, stacktrace.NewError(
-					"Partition connection '%v' <-> '%v' was defined twice (possibly in reverse order)",
-					partitionAId,
-					partitionBId)
-			}
-
-			//TODO: We will be removing Repartition method completely from sdks (golang and typescript) so not needed in PartitionInfo
-			partitionConnection := partition_topology.NewPartitionConnection(partition_topology.NewPacketLoss(connectionInfo.PacketLossPercentage), partition_topology.ConnectionWithNoPacketDelay)
-			partitionConnections[partitionConnectionId] = partitionConnection
-		}
-	}
-
-	defaultConnectionInfo := args.DefaultConnection
-	//TODO: We will be removing Repartition method completely from sdks (golang and typescript) so not needed in PartitionInfo
-	defaultConnection := partition_topology.NewPartitionConnection(partition_topology.NewPacketLoss(defaultConnectionInfo.PacketLossPercentage), partition_topology.ConnectionWithNoPacketDelay)
-
-	if err := apicService.serviceNetwork.Repartition(
-		ctx,
-		partitionServices,
-		partitionConnections,
-		defaultConnection); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred repartitioning the test network")
-	}
-	return &emptypb.Empty{}, nil
-}
-
-func (service ApiContainerService) PauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.PauseServiceArgs) (*emptypb.Empty, error) {
-	serviceIdentifier := args.ServiceIdentifier
-	err := service.serviceNetwork.PauseService(ctx, serviceIdentifier)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to pause service '%v'", serviceIdentifier)
-	}
-	return &emptypb.Empty{}, nil
-}
-
-func (service ApiContainerService) UnpauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs) (*emptypb.Empty, error) {
-	serviceIdentifier := args.ServiceIdentifier
-	err := service.serviceNetwork.UnpauseService(ctx, serviceIdentifier)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceIdentifier)
-	}
-	return &emptypb.Empty{}, nil
-}
-
 func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	serviceIdentifier := args.ServiceIdentifier
 	command := args.CommandArgs
-	exitCode, logOutput, err := apicService.serviceNetwork.ExecCommand(ctx, serviceIdentifier, command)
+	execResult, err := apicService.serviceNetwork.RunExec(ctx, serviceIdentifier, command)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -314,7 +248,7 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 			command,
 			serviceIdentifier)
 	}
-	numLogOutputBytes := len(logOutput)
+	numLogOutputBytes := len(execResult.GetOutput())
 	if numLogOutputBytes > maxLogOutputSizeBytes {
 		return nil, stacktrace.NewError(
 			"Log output from docker exec command '%+v' was %v bytes, but maximum size allowed by Kurtosis is %v",
@@ -324,8 +258,8 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 		)
 	}
 	resp := &kurtosis_core_rpc_api_bindings.ExecCommandResponse{
-		ExitCode:  exitCode,
-		LogOutput: logOutput,
+		ExitCode:  execResult.GetExitCode(),
+		LogOutput: execResult.GetOutput(),
 	}
 	return resp, nil
 }
@@ -759,7 +693,6 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	return serviceInfoResponse, nil
 }
 
-//"/services/jvm/icon/src/node-setup/contract-deploy.star"
 func (apicService ApiContainerService) runStarlarkPackageSetup(
 	packageId string,
 	clonePackage bool,

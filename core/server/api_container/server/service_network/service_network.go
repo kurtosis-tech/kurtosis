@@ -3,6 +3,7 @@ package service_network
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
@@ -11,13 +12,6 @@ import (
 )
 
 type ServiceNetwork interface {
-	Repartition(
-		ctx context.Context,
-		newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool,
-		newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
-		newDefaultConnection partition_topology.PartitionConnection,
-	) error
-
 	SetConnection(
 		ctx context.Context,
 		partition1 service_network_types.PartitionID,
@@ -88,11 +82,16 @@ type ServiceNetwork interface {
 		error,
 	)
 
-	PauseService(ctx context.Context, serviceIdentifier string) error
+	RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error)
 
-	UnpauseService(ctx context.Context, serviceIdentifier string) error
-
-	ExecCommand(ctx context.Context, serviceIdentifier string, command []string) (int32, string, error)
+	RunExecs(
+		ctx context.Context,
+		userServiceCommands map[string][]string,
+	) (
+		map[service.ServiceUUID]*exec_result.ExecResult,
+		map[service.ServiceUUID]error,
+		error,
+	)
 
 	HttpRequestService(ctx context.Context, serviceIdentifier string, portId string, method string, contentType string, endpoint string, body string) (*http.Response, error)
 

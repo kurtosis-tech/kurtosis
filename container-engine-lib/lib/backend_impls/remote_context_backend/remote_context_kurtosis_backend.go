@@ -140,20 +140,12 @@ func (backend *RemoteContextKurtosisBackend) GetUserServiceLogs(ctx context.Cont
 	return backend.remoteKurtosisBackend.GetUserServiceLogs(ctx, enclaveUuid, filters, shouldFollowLogs)
 }
 
-func (backend *RemoteContextKurtosisBackend) PauseService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID) (resultErr error) {
-	return backend.remoteKurtosisBackend.PauseService(ctx, enclaveUuid, serviceUUID)
-}
-
-func (backend *RemoteContextKurtosisBackend) UnpauseService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID) (resultErr error) {
-	return backend.remoteKurtosisBackend.UnpauseService(ctx, enclaveUuid, serviceUUID)
-}
-
 func (backend *RemoteContextKurtosisBackend) RunUserServiceExecCommands(ctx context.Context, enclaveUuid enclave.EnclaveUUID, userServiceCommands map[service.ServiceUUID][]string) (succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) {
 	return backend.remoteKurtosisBackend.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands)
 }
 
-func (backend *RemoteContextKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, commandToRunInsteadOfBash string) (resultConn net.Conn, resultErr error) {
-	return backend.remoteKurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, "")
+func (backend *RemoteContextKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultConn net.Conn, resultErr error) {
+	return backend.remoteKurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid)
 }
 
 func (backend *RemoteContextKurtosisBackend) CopyFilesFromUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, srcPathOnService string, output io.Writer) error {
