@@ -432,6 +432,35 @@ func (manager *KubernetesManager) CreateNamespace(
 	return namespaceResult, nil
 }
 
+func (manager *KubernetesManager) UpdateNamespace(
+	ctx context.Context,
+	namespaceName string,
+	// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
+	// would result in removing the object name)
+	updateConfigurator func(configuration *applyconfigurationsv1.NamespaceApplyConfiguration),
+) (*apiv1.Namespace, error) {
+	updatesToApply := applyconfigurationsv1.Namespace(namespaceName)
+	updateConfigurator(updatesToApply)
+
+	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
+
+	applyOpts := metav1.ApplyOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		DryRun:       nil,
+		Force:        false,
+		FieldManager: fieldManager,
+	}
+	result, err := namespaceClient.Apply(ctx, updatesToApply, applyOpts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to update namespace '%v' ", namespaceName)
+	}
+	return result, nil
+}
+
 func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace *apiv1.Namespace) error {
 	name := namespace.Name
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()

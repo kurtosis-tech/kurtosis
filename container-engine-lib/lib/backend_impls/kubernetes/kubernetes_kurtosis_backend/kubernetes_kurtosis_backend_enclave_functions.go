@@ -157,6 +157,48 @@ func (backend *KubernetesKurtosisBackend) GetEnclaves(
 	return matchingEnclaves, nil
 }
 
+func (backend *KubernetesKurtosisBackend) RenameEnclave(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	newName string,
+) error {
+
+	// we need to call the K8s client in order to get the current annotations
+	enclave, kubernetesResources, err := backend.getSingleEnclaveAndKubernetesResources(ctx, enclaveUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclave object and Kubernetes resources for enclave ID '%v'", enclaveUuid)
+	}
+	namespace := kubernetesResources.namespace
+	if namespace == nil {
+		return stacktrace.NewError("Cannot rename enclave '%v' because no Kubernetes namespace exists for it", enclaveUuid)
+	}
+
+	currentAnnotations := kubernetesResources.namespace.Annotations
+	if _, found := currentAnnotations[kubernetes_annotation_key_consts.EnclaveNameAnnotationKey.GetString()]; !found {
+		logrus.Debugf(
+			"Expected to find annotation with key '%s' for namespace with UUID '%s' while "+
+				"renaming it, but it was not found. It should not happens, it could be a "+
+				"bug in Kurtosis",
+			kubernetes_annotation_key_consts.EnclaveNameAnnotationKey.GetString(),
+			enclaveUuid,
+		)
+	}
+
+	// we need the copy the current annotations in order to preserve the values of the other keys
+	updatedAnnotations := currentAnnotations
+	updatedAnnotations[kubernetes_annotation_key_consts.EnclaveNameAnnotationKey.GetString()] = newName
+
+	namespaceApplyConfigurator := func(namespaceApplyConfig *applyconfigurationsv1.NamespaceApplyConfiguration) {
+		namespaceApplyConfig.WithAnnotations(updatedAnnotations)
+	}
+
+	if _, err := backend.kubernetesManager.UpdateNamespace(ctx, enclave.GetName(), namespaceApplyConfigurator); err != nil {
+		return stacktrace.Propagate(err, "An error occurred renaming enclave with UUID '%v', renaming from '%s' to '%s'", enclaveUuid, enclave.GetName(), newName)
+	}
+
+	return nil
+}
+
 func (backend *KubernetesKurtosisBackend) StopEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
