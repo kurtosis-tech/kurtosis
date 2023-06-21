@@ -115,17 +115,6 @@ function deserialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse(bu
   return api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_PauseServiceArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.PauseServiceArgs)) {
-    throw new Error('Expected argument of type api_container_api.PauseServiceArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_PauseServiceArgs(buffer_arg) {
-  return api_container_service_pb.PauseServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_RemoveServiceArgs(arg) {
   if (!(arg instanceof api_container_service_pb.RemoveServiceArgs)) {
     throw new Error('Expected argument of type api_container_api.RemoveServiceArgs');
@@ -168,17 +157,6 @@ function serialize_api_container_api_RenderTemplatesToFilesArtifactResponse(arg)
 
 function deserialize_api_container_api_RenderTemplatesToFilesArtifactResponse(buffer_arg) {
   return api_container_service_pb.RenderTemplatesToFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_RepartitionArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.RepartitionArgs)) {
-    throw new Error('Expected argument of type api_container_api.RepartitionArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_RepartitionArgs(buffer_arg) {
-  return api_container_service_pb.RepartitionArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_RunStarlarkPackageArgs(arg) {
@@ -267,17 +245,6 @@ function serialize_api_container_api_StreamedDataChunk(arg) {
 
 function deserialize_api_container_api_StreamedDataChunk(buffer_arg) {
   return api_container_service_pb.StreamedDataChunk.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_UnpauseServiceArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.UnpauseServiceArgs)) {
-    throw new Error('Expected argument of type api_container_api.UnpauseServiceArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_UnpauseServiceArgs(buffer_arg) {
-  return api_container_service_pb.UnpauseServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_UploadFilesArtifactArgs(arg) {
@@ -421,18 +388,6 @@ removeService: {
     responseSerialize: serialize_api_container_api_RemoveServiceResponse,
     responseDeserialize: deserialize_api_container_api_RemoveServiceResponse,
   },
-  // Instructs the API container to repartition the enclave
-repartition: {
-    path: '/api_container_api.ApiContainerService/Repartition',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.RepartitionArgs,
-    responseType: google_protobuf_empty_pb.Empty,
-    requestSerialize: serialize_api_container_api_RepartitionArgs,
-    requestDeserialize: deserialize_api_container_api_RepartitionArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
-  },
   // Executes the given command inside a running container
 execCommand: {
     path: '/api_container_api.ApiContainerService/ExecCommand',
@@ -444,30 +399,6 @@ execCommand: {
     requestDeserialize: deserialize_api_container_api_ExecCommandArgs,
     responseSerialize: serialize_api_container_api_ExecCommandResponse,
     responseDeserialize: deserialize_api_container_api_ExecCommandResponse,
-  },
-  // Pauses all processes running in the service container
-pauseService: {
-    path: '/api_container_api.ApiContainerService/PauseService',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.PauseServiceArgs,
-    responseType: google_protobuf_empty_pb.Empty,
-    requestSerialize: serialize_api_container_api_PauseServiceArgs,
-    requestDeserialize: deserialize_api_container_api_PauseServiceArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
-  },
-  // Unpauses all paused processes running in the service container
-unpauseService: {
-    path: '/api_container_api.ApiContainerService/UnpauseService',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.UnpauseServiceArgs,
-    responseType: google_protobuf_empty_pb.Empty,
-    requestSerialize: serialize_api_container_api_UnpauseServiceArgs,
-    requestDeserialize: deserialize_api_container_api_UnpauseServiceArgs,
-    responseSerialize: serialize_google_protobuf_Empty,
-    responseDeserialize: deserialize_google_protobuf_Empty,
   },
   // Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
 waitForHttpGetEndpointAvailability: {

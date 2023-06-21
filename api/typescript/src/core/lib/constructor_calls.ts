@@ -7,19 +7,13 @@ import * as jspb from "google-protobuf";
 import {
     ExecCommandArgs,
     GetServicesArgs,
-    PartitionServices,
-    PartitionConnections,
-    PartitionConnectionInfo,
     RemoveServiceArgs,
-    RepartitionArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
     Port,
     StoreWebFilesArtifactArgs,
     StoreFilesArtifactFromServiceArgs,
     UploadFilesArtifactArgs,
-    PauseServiceArgs,
-    UnpauseServiceArgs,
     ServiceInfo,
     ServiceConfig,
     RemoveServiceResponse,
@@ -142,56 +136,6 @@ export function newRemoveServiceResponse(setServiceUuid: string): RemoveServiceR
     return result
 }
 
-
-// ==============================================================================================
-//                                          Repartition
-// ==============================================================================================
-export function newRepartitionArgs(
-        partitionServices: Map<string, PartitionServices>, 
-        partitionConns: Map<string, PartitionConnections>,
-        defaultConnection: PartitionConnectionInfo): RepartitionArgs {
-    const result: RepartitionArgs = new RepartitionArgs();
-    const partitionServicesMap: jspb.Map<string, PartitionServices> = result.getPartitionServicesMap();
-    for (const [partitionServiceId, partitionId] of partitionServices.entries()) {
-        partitionServicesMap.set(partitionServiceId, partitionId);
-    };
-    const partitionConnsMap: jspb.Map<string, PartitionConnections> = result.getPartitionConnectionsMap();
-    for (const [partitionConnId, partitionConn] of partitionConns.entries()) {
-        partitionConnsMap.set(partitionConnId, partitionConn);
-    };
-    result.setDefaultConnection(defaultConnection);
-
-    return result;
-}
-
-export function newPartitionServices(serviceNameSet: Set<string>): PartitionServices{
-    const result: PartitionServices = new PartitionServices();
-    const partitionServicesMap: jspb.Map<string, boolean> = result.getServiceNameSetMap();
-    for (const serviceNameStr of serviceNameSet) {
-        partitionServicesMap.set(serviceNameStr, true);
-    }
-
-    return result;
-}
-
-
-export function newPartitionConnections(allConnectionInfo: Map<string, PartitionConnectionInfo>): PartitionConnections {
-    const result: PartitionConnections = new PartitionConnections();
-    const partitionsMap: jspb.Map<string, PartitionConnectionInfo> = result.getConnectionInfoMap();
-    for (const [partitionId, connectionInfo] of allConnectionInfo.entries()) {
-        partitionsMap.set(partitionId, connectionInfo);
-    }
-
-    return result;
-}
-
-export function newPartitionConnectionInfo(packetLossPercentage: number): PartitionConnectionInfo {
-    const partitionConnectionInfo: PartitionConnectionInfo = new PartitionConnectionInfo();
-    partitionConnectionInfo.setPacketLossPercentage(packetLossPercentage);
-    return partitionConnectionInfo;
-}
-
-
 // ==============================================================================================
 //                                          Exec Command
 // ==============================================================================================
@@ -202,24 +146,6 @@ export function newExecCommandArgs(setServiceIdentifier: ServiceName, command: s
 
     return result;
 }
-
-// ==============================================================================================
-//                                          Pause/Unpause Service
-// ==============================================================================================
-export function newPauseServiceArgs(serviceIdentifier: string): PauseServiceArgs {
-    const result: PauseServiceArgs = new PauseServiceArgs();
-    result.setServiceIdentifier(serviceIdentifier);
-
-    return result;
-}
-
-export function newUnpauseServiceArgs(serviceIdentifier: string): UnpauseServiceArgs {
-    const result: UnpauseServiceArgs = new UnpauseServiceArgs();
-    result.setServiceIdentifier(serviceIdentifier);
-
-    return result;
-}
-
 
 // ==============================================================================================
 //                           Wait For Http Get Endpoint Availability

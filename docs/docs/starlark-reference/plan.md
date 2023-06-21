@@ -389,33 +389,24 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
         # OPTIONAL (Default: badouralix/curl-jq)
         image = "badouralix/curl-jq",
 
-        # Sets the working dir in which:
-        # the command will be run 
-        # and files will be mounted at
-        # OPTIONAL (Default: /task)
-        workdir = "/task",
-
         # A mapping of path_on_task_where_contents_will_be_mounted -> files_artifact_id_to_mount
-        # The file path can be relative to workdir or absolute paths
         # For more information about file artifacts, see below.
         # CAUTION: duplicate paths to files or directories to be mounted is not supported, and it will fail
         # OPTIONAL (Default: {})
         files = {
             "/path/to/file/1": files_artifact_1,
-            "path/to/file/2": files_artifact_2, # the path will interpreted as /workdir/path/to/file/2
+            "/path/to/file/2": files_artifact_2,
         },
 
         # list of paths to directories or files that will be copied to a file artifact
-        # these can be relative to workdir or absolute paths
         # CAUTION: all the paths in this list must be unique 
         # OPTIONAL (Default:[])
         store = [
             # copies a file into a file artifact
-            # this will be interpreted as /workdir/src/kurtosis.txt
-            "src/kurtosis.txt, 
+            "/src/kurtosis.txt", 
             
             # copies the entire directory into a file artifact
-            "/workdir/src,
+            "/src",
         ],
     )
 
@@ -429,12 +420,12 @@ The `files` dictionary argument accepts a key value pair, where `key` is the pat
 The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
    * `result.output` is a future reference to the output of the command
    * `result.code` is a future reference to the exit code
-   *  `result.file_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
+   *  `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
 
 ```python
 
     result = plan.run_sh(
-        run = "echo kurtosis > test.txt",
+        run = "mkdir -p task && cd task && echo kurtosis > test.txt",
         store = [
             "/task",
             "/task/test.txt",
@@ -442,7 +433,7 @@ The instruction returns a `struct` with [future references][future-references-re
         ...
     )
 
-    plan.print(result.file_artifacts) # prints ["blue_moon", "green_planet"]
+    plan.print(result.files_artifacts) # prints ["blue_moon", "green_planet"]
     
     # blue_moon is name of the file artifact that contains task directory
     # green_planet is the name of the file artifact that conatins test.txt file
@@ -450,15 +441,15 @@ The instruction returns a `struct` with [future references][future-references-re
     service_one = plan.add_service(
         ..., 
         config=ServiceConfig(
-            name="servce_one", 
-            files={"/src": results.file_artifacts[0]}, # copies the directory task into servce_one 
+            name="service_one", 
+            files={"/src": results.file_artifacts[0]}, # copies the directory task into service_one 
         )
     ) # the path to the file will look like: /src/task/test.txt
 
     service_two = plan.add_service(
         ..., 
         config=ServiceConfig(
-            name="servce_one", 
+            name="service_two", 
             files={"/src": results.file_artifacts[1]}, # copies the file test.txt into service_two
         ),
     ) # the path to the file will look like: /src/test.txt

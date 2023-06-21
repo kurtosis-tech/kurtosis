@@ -557,49 +557,6 @@ func (_c *MockServiceNetwork_IsNetworkPartitioningEnabled_Call) RunAndReturn(run
 	return _c
 }
 
-// PauseService provides a mock function with given fields: ctx, serviceIdentifier
-func (_m *MockServiceNetwork) PauseService(ctx context.Context, serviceIdentifier string) error {
-	ret := _m.Called(ctx, serviceIdentifier)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, serviceIdentifier)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockServiceNetwork_PauseService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'PauseService'
-type MockServiceNetwork_PauseService_Call struct {
-	*mock.Call
-}
-
-// PauseService is a helper method to define mock.On call
-//   - ctx context.Context
-//   - serviceIdentifier string
-func (_e *MockServiceNetwork_Expecter) PauseService(ctx interface{}, serviceIdentifier interface{}) *MockServiceNetwork_PauseService_Call {
-	return &MockServiceNetwork_PauseService_Call{Call: _e.mock.On("PauseService", ctx, serviceIdentifier)}
-}
-
-func (_c *MockServiceNetwork_PauseService_Call) Run(run func(ctx context.Context, serviceIdentifier string)) *MockServiceNetwork_PauseService_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockServiceNetwork_PauseService_Call) Return(_a0 error) *MockServiceNetwork_PauseService_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockServiceNetwork_PauseService_Call) RunAndReturn(run func(context.Context, string) error) *MockServiceNetwork_PauseService_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // RemoveService provides a mock function with given fields: ctx, serviceIdentifier
 func (_m *MockServiceNetwork) RemoveService(ctx context.Context, serviceIdentifier string) (service.ServiceUUID, error) {
 	ret := _m.Called(ctx, serviceIdentifier)
@@ -702,51 +659,6 @@ func (_c *MockServiceNetwork_RenderTemplates_Call) Return(_a0 enclave_data_direc
 }
 
 func (_c *MockServiceNetwork_RenderTemplates_Call) RunAndReturn(run func(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, string) (enclave_data_directory.FilesArtifactUUID, error)) *MockServiceNetwork_RenderTemplates_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// Repartition provides a mock function with given fields: ctx, newPartitionServices, newPartitionConnections, newDefaultConnection
-func (_m *MockServiceNetwork) Repartition(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection) error {
-	ret := _m.Called(ctx, newPartitionServices, newPartitionConnections, newDefaultConnection)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, map[service_network_types.PartitionID]map[service.ServiceName]bool, map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, partition_topology.PartitionConnection) error); ok {
-		r0 = rf(ctx, newPartitionServices, newPartitionConnections, newDefaultConnection)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockServiceNetwork_Repartition_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Repartition'
-type MockServiceNetwork_Repartition_Call struct {
-	*mock.Call
-}
-
-// Repartition is a helper method to define mock.On call
-//   - ctx context.Context
-//   - newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool
-//   - newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection
-//   - newDefaultConnection partition_topology.PartitionConnection
-func (_e *MockServiceNetwork_Expecter) Repartition(ctx interface{}, newPartitionServices interface{}, newPartitionConnections interface{}, newDefaultConnection interface{}) *MockServiceNetwork_Repartition_Call {
-	return &MockServiceNetwork_Repartition_Call{Call: _e.mock.On("Repartition", ctx, newPartitionServices, newPartitionConnections, newDefaultConnection)}
-}
-
-func (_c *MockServiceNetwork_Repartition_Call) Run(run func(ctx context.Context, newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool, newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, newDefaultConnection partition_topology.PartitionConnection)) *MockServiceNetwork_Repartition_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(map[service_network_types.PartitionID]map[service.ServiceName]bool), args[2].(map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection), args[3].(partition_topology.PartitionConnection))
-	})
-	return _c
-}
-
-func (_c *MockServiceNetwork_Repartition_Call) Return(_a0 error) *MockServiceNetwork_Repartition_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockServiceNetwork_Repartition_Call) RunAndReturn(run func(context.Context, map[service_network_types.PartitionID]map[service.ServiceName]bool, map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection, partition_topology.PartitionConnection) error) *MockServiceNetwork_Repartition_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1169,49 +1081,6 @@ func (_c *MockServiceNetwork_StopServices_Call) Return(_a0 map[service.ServiceUU
 }
 
 func (_c *MockServiceNetwork_StopServices_Call) RunAndReturn(run func(context.Context, []string) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)) *MockServiceNetwork_StopServices_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// UnpauseService provides a mock function with given fields: ctx, serviceIdentifier
-func (_m *MockServiceNetwork) UnpauseService(ctx context.Context, serviceIdentifier string) error {
-	ret := _m.Called(ctx, serviceIdentifier)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
-		r0 = rf(ctx, serviceIdentifier)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockServiceNetwork_UnpauseService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnpauseService'
-type MockServiceNetwork_UnpauseService_Call struct {
-	*mock.Call
-}
-
-// UnpauseService is a helper method to define mock.On call
-//   - ctx context.Context
-//   - serviceIdentifier string
-func (_e *MockServiceNetwork_Expecter) UnpauseService(ctx interface{}, serviceIdentifier interface{}) *MockServiceNetwork_UnpauseService_Call {
-	return &MockServiceNetwork_UnpauseService_Call{Call: _e.mock.On("UnpauseService", ctx, serviceIdentifier)}
-}
-
-func (_c *MockServiceNetwork_UnpauseService_Call) Run(run func(ctx context.Context, serviceIdentifier string)) *MockServiceNetwork_UnpauseService_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
-	})
-	return _c
-}
-
-func (_c *MockServiceNetwork_UnpauseService_Call) Return(_a0 error) *MockServiceNetwork_UnpauseService_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockServiceNetwork_UnpauseService_Call) RunAndReturn(run func(context.Context, string) error) *MockServiceNetwork_UnpauseService_Call {
 	_c.Call.Return(run)
 	return _c
 }

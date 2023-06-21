@@ -252,22 +252,6 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	return user_service_functions.GetUserServiceLogs(ctx, enclaveUuid, filters, shouldFollowLogs, backend.dockerManager)
 }
 
-func (backend *DockerKurtosisBackend) PauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceUuid service.ServiceUUID,
-) error {
-	return user_service_functions.PauseService(ctx, enclaveUuid, serviceUuid, backend.dockerManager)
-}
-
-func (backend *DockerKurtosisBackend) UnpauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceUuid service.ServiceUUID,
-) error {
-	return user_service_functions.UnpauseService(ctx, enclaveUuid, serviceUuid, backend.dockerManager)
-}
-
 // TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
 // NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
