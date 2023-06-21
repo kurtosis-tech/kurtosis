@@ -20,7 +20,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"net"
 	"strings"
 )
 
@@ -296,22 +295,6 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) PauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceUUID,
-) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because pausing is not supported by Kubernetes", serviceId, enclaveUuid)
-}
-
-func (backend *KubernetesKurtosisBackend) UnpauseService(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceId service.ServiceUUID,
-) error {
-	return stacktrace.NewError("Cannot pause service '%v' in enclave '%v' because unpausing is not supported by Kubernetes", serviceId, enclaveUuid)
-}
-
 // TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
@@ -332,22 +315,13 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUUID service.ServiceUUID) (resultConn net.Conn, resultErr error) {
-	// See https://github.com/kubernetes/client-go/issues/912
-	/*
-		in := streams.NewIn(os.Stdin)
-		if err := in.SetRawTerminal(); err != nil{
-					 // handle err
-		}
-		err = exec.Stream(remotecommand.StreamOptions{
-			Stdin:             in,
-			Stdout:           stdout,
-			Stderr:            stderr,
-		}
-	*/
-
-	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Getting a connection with a user service isn't yet implemented on Kubernetes")
+func (backend *KubernetesKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {
+	objectAndResources, err := shared_helpers.GetSingleUserServiceObjectsAndResources(ctx, enclaveUuid, serviceUuid, backend.cliModeArgs, backend.apiContainerModeArgs, backend.engineServerModeArgs, backend.kubernetesManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
+	}
+	pod := objectAndResources.KubernetesResources.Pod
+	return backend.kubernetesManager.GetExecStream(ctx, pod)
 }
 
 func (backend *KubernetesKurtosisBackend) CopyFilesFromUserService(

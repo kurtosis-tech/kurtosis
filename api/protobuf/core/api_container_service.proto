@@ -29,17 +29,8 @@ service ApiContainerService {
   // Instructs the API container to remove the given service
   rpc RemoveService(RemoveServiceArgs) returns (RemoveServiceResponse) {};
 
-  // Instructs the API container to repartition the enclave
-  rpc Repartition(RepartitionArgs) returns (google.protobuf.Empty) {};
-
   // Executes the given command inside a running container
   rpc ExecCommand(ExecCommandArgs) returns (ExecCommandResponse) {};
-
-  // Pauses all processes running in the service container
-  rpc PauseService(PauseServiceArgs) returns (google.protobuf.Empty) {};
-
-  // Unpauses all paused processes running in the service container
-  rpc UnpauseService(UnpauseServiceArgs) returns (google.protobuf.Empty) {};
 
   // Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
   rpc WaitForHttpGetEndpointAvailability(WaitForHttpGetEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
@@ -363,35 +354,6 @@ message RemoveServiceResponse {
 }
 
 // ==============================================================================================
-//                                          Repartition
-// ==============================================================================================
-message RepartitionArgs {
-  // Definition of partitionId -> services that should be inside the partition after repartitioning
-  map<string, PartitionServices> partition_services = 1;
-
-  // Definition of partitionIdA -> partitionIdB -> information defining the connection between A <-> B
-  map<string, PartitionConnections> partition_connections = 2;
-
-  // Information about the default inter-partition connection to set up if one is not defined in the
-  //  partition connections map
-  PartitionConnectionInfo default_connection = 3;
-}
-
-message PartitionServices {
-  // "Set" of service names in partition
-  map<string, bool> service_name_set = 1;
-}
-
-message PartitionConnections {
-  map<string, PartitionConnectionInfo> connection_info = 1;
-}
-
-message PartitionConnectionInfo {
-  // Percentage value of packet loss in a partition connection
-  float packet_loss_percentage = 1;
-}
-
-// ==============================================================================================
 //                                          Exec Command
 // ==============================================================================================
 message ExecCommandArgs {
@@ -399,19 +361,6 @@ message ExecCommandArgs {
   string service_identifier = 1;
 
   repeated string command_args = 2;
-}
-
-// ==============================================================================================
-//                                          Pause/Unpause Service
-// ==============================================================================================
-message PauseServiceArgs {
-  // The service identifier of the container that should be paused
-  string service_identifier = 1;
-}
-
-message UnpauseServiceArgs {
-  // The service identifier of the container that should be unpaused
-  string service_identifier = 1;
 }
 
 message ExecCommandResponse {

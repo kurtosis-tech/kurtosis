@@ -11,12 +11,9 @@ export { PortSpec, TransportProtocol } from "./core/lib/services/port_spec"
 // Enclaves
 export { EnclaveContext } from "./core/lib/enclaves/enclave_context";
 export type { EnclaveUUID, PartitionID } from "./core/lib/enclaves/enclave_context";
-export { UnblockedPartitionConnection, BlockedPartitionConnection, SoftPartitionConnection } from "./core/lib/enclaves/partition_connection"
 
 // Constructor Calls
-export { newExecCommandArgs, newAddServicesArgs, newGetServicesArgs, newRemoveServiceArgs, newPartitionServices, newRepartitionArgs, newPartitionConnections, newPartitionConnectionInfo, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";
-
-export { PartitionConnections } from "./core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
+export { newExecCommandArgs, newAddServicesArgs, newGetServicesArgs, newRemoveServiceArgs, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";
 
 // TODO Remove this - shouldn't be necessary to be exported due to the newKurtosisContextFromLocalEngine() method
 export { KurtosisContext, DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM } from "./engine/lib/kurtosis_context/kurtosis_context";
