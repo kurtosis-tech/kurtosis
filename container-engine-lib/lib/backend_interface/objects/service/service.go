@@ -15,7 +15,7 @@ const (
 	// * end with an alphanumeric character
 	// The adoption of RFC-1123 is to maintain compatability with current Kubernetes service and pod naming standards:
 	// https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
-	ServiceNameRegex            = "[a-z0-9]([-a-z0-9]*[a-z0-9])?"
+	ServiceNameRegex            = "[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?"
 	WordWrappedServiceNameRegex = "^" + ServiceNameRegex + "$"
 	serviceNameMaxLength        = 63
 )
@@ -76,10 +76,5 @@ func (service *Service) GetMaybePublicPorts() map[string]*port_spec.PortSpec {
 }
 
 func IsServiceNameValid(serviceName ServiceName) bool {
-	return compiledWordWrappedServiceNameRegex.MatchString(string(serviceName)) &&
-		isServiceNameCorrectLength(serviceName)
-}
-
-func isServiceNameCorrectLength(name ServiceName) bool {
-	return len(string(name)) <= serviceNameMaxLength && len(string(name)) > 0
+	return compiledWordWrappedServiceNameRegex.MatchString(string(serviceName))
 }
