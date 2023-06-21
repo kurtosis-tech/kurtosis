@@ -316,10 +316,6 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 }
 
 func (backend *KubernetesKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {
-	//namespaceName, err := shared_helpers.GetEnclaveNamespaceName(ctx, enclaveUuid, backend.cliModeArgs, backend.apiContainerModeArgs, backend.engineServerModeArgs, backend.kubernetesManager)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "An error occurred getting namespace name for enclave '%v'", enclaveUuid)
-	//}
 	objectAndResources, err := shared_helpers.GetSingleUserServiceObjectsAndResources(ctx, enclaveUuid, serviceUuid, backend.cliModeArgs, backend.apiContainerModeArgs, backend.engineServerModeArgs, backend.kubernetesManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service object & Kubernetes resources for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
