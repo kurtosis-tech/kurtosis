@@ -296,10 +296,10 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //	  Create an mechanism for other services to retrieve files from the task container
 //	  Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
-	}
+	var err error
+	defer func() {
+		err = removeService(ctx, builtin)
+	}()
 
 	// create work directory and cd into that directory
 	commandToRun, err := getCommandToRun(builtin)
@@ -335,6 +335,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 			return "", stacktrace.Propagate(err, "error occurred while copying files from  a task")
 		}
 	}
+
 	return instructionResult, err
 }
 
@@ -435,6 +436,15 @@ func validatePathIsUniqueWhileCreatingFileArtifact(storeFiles []string) *startos
 			}
 			duplicates[filePath] = 1
 		}
+	}
+	return nil
+}
+
+// remove this task once its completed irrespective of whether it was successful or failure
+func removeService(ctx context.Context, builtin *RunShCapabilities) error {
+	_, err := builtin.serviceNetwork.RemoveService(ctx, builtin.name)
+	if err != nil {
+		return stacktrace.NewError("error occurred while removing task with name %v", builtin.name)
 	}
 	return nil
 }
