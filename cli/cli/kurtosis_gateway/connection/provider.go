@@ -184,7 +184,7 @@ func (provider *GatewayConnectionProvider) getMaybeUserServicePodPortforwardEndp
 		return nil, stacktrace.Propagate(err, "Expected to be able to get running user service pods with labels '%+v' in namespace '%v', instead a non nil error was returned", runningUserServicePodNames, userServiceNamespaceName)
 	}
 	if len(runningUserServicePodNames) == 0 {
-		// A service with no pod running is a stopped service
+		// A stopped service has no pod running and no port forward endpoint
 		return nil, nil
 	} else if len(runningUserServicePodNames) != 1 {
 		return nil, stacktrace.NewError("Expected to find exactly 1 running user service pod with guid '%v' in enclave '%v', instead found '%v'", serviceUuid, enclaveId, len(runningUserServicePodNames))
