@@ -451,7 +451,7 @@ func (manager *KubernetesManager) UpdateNamespace(
 			APIVersion: "",
 		},
 		DryRun:       nil,
-		Force:        false,
+		Force:        true, //We need to use force to avoid conflict errors
 		FieldManager: fieldManager,
 	}
 	result, err := namespaceClient.Apply(ctx, updatesToApply, applyOpts)
