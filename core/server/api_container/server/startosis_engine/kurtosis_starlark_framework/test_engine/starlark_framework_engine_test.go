@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
@@ -73,13 +73,13 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
 	testId := builtin.GetId()
-	var instructionQueue []kurtosis_instruction.KurtosisInstruction
+	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	thread := newStarlarkThread("framework-testing-engine")
 
 	predeclared := getBasePredeclaredDict(t)
 	// Add the KurtosisPlanInstruction that is being tested
 	instructionFromBuiltin := builtin.GetInstruction()
-	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, &instructionQueue)
+	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, instructionsPlan)
 	predeclared[instructionWrapper.GetName()] = starlark.NewBuiltin(instructionWrapper.GetName(), instructionWrapper.CreateBuiltin())
 
 	starlarkCode := builtin.GetStarlarkCode()
@@ -87,8 +87,10 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	require.Nil(t, err, "Error interpreting Starlark code for instruction '%s'", testId)
 	interpretationResult := extractResultValue(t, globals)
 
-	require.Len(t, instructionQueue, 1)
-	instructionToExecute := instructionQueue[0]
+	require.Equal(t, 1, instructionsPlan.Size())
+	instructionsSequence, err := instructionsPlan.GeneratePlan()
+	require.Nil(t, err)
+	instructionToExecute := instructionsSequence[0].GetInstruction()
 
 	// execute the instruction and run custom builtin assertions
 	executionResult, err := instructionToExecute.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
