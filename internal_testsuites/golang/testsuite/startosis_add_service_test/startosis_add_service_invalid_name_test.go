@@ -34,5 +34,5 @@ func (suite *StartosisAddServiceTestSuite) TestAddServiceWithInvalidServiceNameF
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected some validation errors")
-	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, fmt.Sprintf("Service name '%s' is invalid as it contains disallowed characters. Service names can only contain characters 'a-z', 'A-Z', '0-9', '-' & '_'", invalidServiceName))
+	require.Contains(t, runResult.ValidationErrors[0].ErrorMessage, fmt.Sprintf("Service name '%s' is invalid as it contains disallowed characters. Service names must adhere to the RFC 1123 standard, specifically implementing this regex and be 1-63 characters long: ^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$. This means the service name must only contain lowercase alphanumeric characters or '-', and must start and end with a lowercase alphanumeric character.", invalidServiceName))
 }

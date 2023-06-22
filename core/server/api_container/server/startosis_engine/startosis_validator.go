@@ -61,7 +61,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 			serviceNamePortIdMapping)
 
 		isValidationFailure = isValidationFailure ||
-			validator.validateAnUpdateEnvironment(instructions, environment, starlarkRunResponseLineStream)
+			validator.validateAndUpdateEnvironment(instructions, environment, starlarkRunResponseLineStream)
 		logrus.Debug("Finished validating environment. Validating and downloading container images.")
 
 		isValidationFailure = isValidationFailure ||
@@ -77,7 +77,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 	return starlarkRunResponseLineStream
 }
 
-func (validator *StartosisValidator) validateAnUpdateEnvironment(instructions []kurtosis_instruction.KurtosisInstruction, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
+func (validator *StartosisValidator) validateAndUpdateEnvironment(instructions []kurtosis_instruction.KurtosisInstruction, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
 	isValidationFailure := false
 	for _, instruction := range instructions {
 		err := instruction.ValidateAndUpdateEnvironment(environment)
