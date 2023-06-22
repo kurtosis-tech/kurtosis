@@ -374,10 +374,9 @@ func executeWithWait(ctx context.Context, builtin *RunShCapabilities, commandToR
 	errChan := make(chan error, 1)
 
 	timoutStr := builtin.wait
-	parsedTimeout, parseErr := time.ParseDuration(timoutStr)
-	if parseErr != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(parseErr, "an error occurred when parsing timeout '%v'", timoutStr)
-	}
+
+	// we validate timeout string during the validation stage so it cannot be invalid at this stage
+	parsedTimeout, _ := time.ParseDuration(timoutStr)
 
 	timeDuration := time.After(parsedTimeout)
 	contextWithDeadline, cancelContext := context.WithTimeout(ctx, parsedTimeout)
