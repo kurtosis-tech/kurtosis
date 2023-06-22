@@ -8,7 +8,7 @@ toc_max_heading_level: 2
 Introduction
 ------------
 
-Welcome to the [Kurtosis][homepage] quickstart! This guide will take ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you will run in this guide is free, public, and does not contain any sensitive data. 
+Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you run in this guide is free, public, and does not contain any sensitive data. 
 
 For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, our [introduction page][homepage] will be a great starting point, alongside our [motivations behind starting Kurtosis][why-we-built-kurtosis-explanation].
 
@@ -66,7 +66,7 @@ autocmd FileType *.star setlocal filetype=python
 
 :::
 
-Finally, [run][kurtosis-run-reference] the script (we'll explain enclaves in the "Review" section too):
+Finally, [run][kurtosis-run-reference] the script (we'll explain enclaves in the "Review" section):
 
 ```bash
 kurtosis run --enclave quickstart main.star
@@ -106,7 +106,7 @@ You'll use these "Review" sections to explain what happened in the section.
 
 In this section, you created a `main.star` file that simply told Kurtosis to print `Hello, world`. The `.star` extension corresponds to [Starlark][starlark-reference], a Python dialect also used by Google and Meta for configuring build systems.
 
-When you ran `main.star`, you got `Created enclave: quickstart`. An [enclave][enclaves-reference] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. If you'd like, you can tear down your enclave and any of their artifacts by running: `kurtosis clean -a` (more on the `kurtosis clean` command [here][kurtosis-clean-reference]).
+When you ran `main.star`, you got `Created enclave: quickstart`. An [enclave][enclaves-reference] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. If you'd like, you can tear down your enclave and any of its artifacts by running: `kurtosis clean -a` (more on the `kurtosis clean` command [here][kurtosis-clean-reference]).
 
 Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other. Use enclaves liberally!
 
@@ -177,7 +177,7 @@ So what actually happened? Three things actually:
 
 Note that Kurtosis did not execute anything until _after_ Interpretation and Validation completed. You can think of Interpretation and Validation like Kurtosis' "compilation" step for your distributed application: you can catch many errors before any containers run, which shortens the dev loop and reduces the resource burden on your machine.
 
-We call this approach [multi-phase runs][multi-phase-runs-reference]. While multi-phase runs has powerful benefits over traditional scripting, it also means _you cannot reference Execution values like IP address in Starlark_ because they simply don't exist at Interpretation time. We'll explore how Kurtosis gracefully handles values generated during the Execution phase at the Interpretation phase later on in the quickstart.
+We call this approach [multi-phase runs][multi-phase-runs-reference]. While this approach has powerful benefits over traditional scripting, it also means _you cannot reference Execution values like IP address in Starlark_ because they simply don't exist at Interpretation time. We'll explore how Kurtosis gracefully handles values generated during the Execution phase at the Interpretation phase later on in the quickstart.
 
 **This section introduced Kurtosis' ability to validate that definitions work as intended, _before_ they are run - helping developers catch errors sooner & save resources when configuring multi-container test environments.**
 
@@ -200,9 +200,9 @@ Alternatively, you could use Docker Compose to volume-mount the data TAR into th
 #### With Kurtosis
 By contrast, Kurtosis Starlark scripts can use data as a first-class primitive and sequence tasks such as `pg_restore` into the plan. 
 
-Let's see it in action, and we'll explain what's happening afterwards.
+Let's see it in action, and we'll explain what's happening after.
 
-First, in your working directory (`kurtosis-quickstart`), next to your `main.star` file, create a file called `kurtosis.yml` with the following contents:
+First, create a file called kurtosis.yml in your working directory (kurtosis-quickstart), next to your main.star file, with the following contents:
 
 ```bash
 name: "github.com/john-snow/kurtosis-quickstart"
@@ -341,7 +341,7 @@ psql -U app_user -d app_db -c '\dt'
 (15 rows)
 ```
 
-Feel free to explore the Postgres container. When you're done run either `exit` or press Ctrl-D.
+Feel free to explore the Postgres container. When you're done, run either `exit` or press Ctrl-D.
 
 ### Review: Add some data
 So what just happened?
