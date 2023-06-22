@@ -200,7 +200,7 @@ Alternatively, you could use Docker Compose to volume-mount the data TAR into th
 #### With Kurtosis
 By contrast, Kurtosis Starlark scripts can use data as a first-class primitive and sequence tasks such as `pg_restore` into the plan. 
 
-Let's see it in action, and we'll explain what's happening after.
+Let's see it in action, and we'll explain what's happening afterwards.
 
 First, create a file called `kurtosis.yml` next to your `main.star file` (in your working directory, `kurtosis-quickstart`) with the following contents:
 
