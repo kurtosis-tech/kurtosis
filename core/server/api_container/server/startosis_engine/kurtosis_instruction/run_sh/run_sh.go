@@ -28,11 +28,11 @@ import (
 const (
 	RunShBuiltinName = "run_sh"
 
-	ImageNameArgName = "image"
-	RunArgName       = "run"
-	StoreFilesName   = "store"
-	WaitName         = "wait"
-	FilesName        = "files"
+	ImageNameArgName  = "image"
+	RunArgName        = "run"
+	StoreFilesArgName = "store"
+	WaitArgName       = "wait"
+	FilesArgName      = "files"
 
 	DefaultImageName = "badouralix/curl-jq"
 
@@ -69,23 +69,23 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 					},
 				},
 				{
-					Name:              FilesName,
+					Name:              FilesArgName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 				},
 				{
-					Name:              StoreFilesName,
+					Name:              StoreFilesArgName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 				},
 				{
-					Name:              WaitName,
+					Name:              WaitArgName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Value],
 					// the value can be a string duration, or it can be a Starlark none value (because we are preparing
 					// the signature to receive a custom type in the future) when users want to disable it
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.DurationOrNone(value, WaitName)
+						return builtin_argument.DurationOrNone(value, WaitArgName)
 					},
 				},
 			},
@@ -107,11 +107,11 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 		},
 
 		DefaultDisplayArguments: map[string]bool{
-			RunArgName:       true,
-			ImageNameArgName: true,
-			FilesName:        true,
-			StoreFilesName:   true,
-			WaitName:         true,
+			RunArgName:        true,
+			ImageNameArgName:  true,
+			FilesArgName:      true,
+			StoreFilesArgName: true,
+			WaitArgName:       true,
 		},
 	}
 }
@@ -145,13 +145,13 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		builtin.image = imageStarlark.GoString()
 	}
 
-	if arguments.IsSet(FilesName) {
-		filesStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, FilesName)
+	if arguments.IsSet(FilesArgName) {
+		filesStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, FilesArgName)
 		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", FilesName)
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", FilesArgName)
 		}
 		if filesStarlark.Len() > 0 {
-			filesArtifactMountDirPaths, interpretationErr := kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesName)
+			filesArtifactMountDirPaths, interpretationErr := kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesArgName)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
@@ -159,14 +159,14 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		}
 	}
 
-	if arguments.IsSet(StoreFilesName) {
-		storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, StoreFilesName)
+	if arguments.IsSet(StoreFilesArgName) {
+		storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, StoreFilesArgName)
 		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", StoreFilesName)
+			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", StoreFilesArgName)
 		}
 		if storeFilesList.Len() > 0 {
 
-			storeFilesArray, interpretationErr := kurtosis_types.SafeCastToStringSlice(storeFilesList, StoreFilesName)
+			storeFilesArray, interpretationErr := kurtosis_types.SafeCastToStringSlice(storeFilesList, StoreFilesArgName)
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
@@ -187,9 +187,9 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		}
 	}
 
-	if arguments.IsSet(WaitName) {
+	if arguments.IsSet(WaitArgName) {
 		var waitTimeout string
-		waitValue, err := builtin_argument.ExtractArgumentValue[starlark.Value](arguments, WaitName)
+		waitValue, err := builtin_argument.ExtractArgumentValue[starlark.Value](arguments, WaitArgName)
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting wait information")
 		}
@@ -408,7 +408,7 @@ func validatePathIsUniqueWhileCreatingFileArtifact(storeFiles []string) *startos
 		for _, filePath := range storeFiles {
 			if duplicates[filePath] != 0 {
 				return startosis_errors.NewValidationError(
-					"error occurred while validating field: %v. The file paths in the array must be unique. Found multiple instances of %v", StoreFilesName, filePath)
+					"error occurred while validating field: %v. The file paths in the array must be unique. Found multiple instances of %v", StoreFilesArgName, filePath)
 			}
 			duplicates[filePath] = 1
 		}
