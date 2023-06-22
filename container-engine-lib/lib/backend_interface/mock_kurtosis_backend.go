@@ -31,6 +31,14 @@ type MockKurtosisBackend struct {
 	mock.Mock
 }
 
+type MockKurtosisBackend_Expecter struct {
+	mock *mock.Mock
+}
+
+func (_m *MockKurtosisBackend) EXPECT() *MockKurtosisBackend_Expecter {
+	return &MockKurtosisBackend_Expecter{mock: &_m.Mock}
+}
+
 // CopyFilesFromUserService provides a mock function with given fields: ctx, enclaveUuid, serviceUuid, srcPathOnService, output
 func (_m *MockKurtosisBackend) CopyFilesFromUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, srcPathOnService string, output io.Writer) error {
 	ret := _m.Called(ctx, enclaveUuid, serviceUuid, srcPathOnService, output)
@@ -43,6 +51,38 @@ func (_m *MockKurtosisBackend) CopyFilesFromUserService(ctx context.Context, enc
 	}
 
 	return r0
+}
+
+// MockKurtosisBackend_CopyFilesFromUserService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CopyFilesFromUserService'
+type MockKurtosisBackend_CopyFilesFromUserService_Call struct {
+	*mock.Call
+}
+
+// CopyFilesFromUserService is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - serviceUuid service.ServiceUUID
+//   - srcPathOnService string
+//   - output io.Writer
+func (_e *MockKurtosisBackend_Expecter) CopyFilesFromUserService(ctx interface{}, enclaveUuid interface{}, serviceUuid interface{}, srcPathOnService interface{}, output interface{}) *MockKurtosisBackend_CopyFilesFromUserService_Call {
+	return &MockKurtosisBackend_CopyFilesFromUserService_Call{Call: _e.mock.On("CopyFilesFromUserService", ctx, enclaveUuid, serviceUuid, srcPathOnService, output)}
+}
+
+func (_c *MockKurtosisBackend_CopyFilesFromUserService_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, srcPathOnService string, output io.Writer)) *MockKurtosisBackend_CopyFilesFromUserService_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(service.ServiceUUID), args[3].(string), args[4].(io.Writer))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CopyFilesFromUserService_Call) Return(_a0 error) *MockKurtosisBackend_CopyFilesFromUserService_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CopyFilesFromUserService_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, string, io.Writer) error) *MockKurtosisBackend_CopyFilesFromUserService_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // CreateAPIContainer provides a mock function with given fields: ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars
@@ -71,6 +111,40 @@ func (_m *MockKurtosisBackend) CreateAPIContainer(ctx context.Context, image str
 	return r0, r1
 }
 
+// MockKurtosisBackend_CreateAPIContainer_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateAPIContainer'
+type MockKurtosisBackend_CreateAPIContainer_Call struct {
+	*mock.Call
+}
+
+// CreateAPIContainer is a helper method to define mock.On call
+//   - ctx context.Context
+//   - image string
+//   - enclaveUuid enclave.EnclaveUUID
+//   - grpcPortNum uint16
+//   - enclaveDataVolumeDirpath string
+//   - ownIpAddressEnvVar string
+//   - customEnvVars map[string]string
+func (_e *MockKurtosisBackend_Expecter) CreateAPIContainer(ctx interface{}, image interface{}, enclaveUuid interface{}, grpcPortNum interface{}, enclaveDataVolumeDirpath interface{}, ownIpAddressEnvVar interface{}, customEnvVars interface{}) *MockKurtosisBackend_CreateAPIContainer_Call {
+	return &MockKurtosisBackend_CreateAPIContainer_Call{Call: _e.mock.On("CreateAPIContainer", ctx, image, enclaveUuid, grpcPortNum, enclaveDataVolumeDirpath, ownIpAddressEnvVar, customEnvVars)}
+}
+
+func (_c *MockKurtosisBackend_CreateAPIContainer_Call) Run(run func(ctx context.Context, image string, enclaveUuid enclave.EnclaveUUID, grpcPortNum uint16, enclaveDataVolumeDirpath string, ownIpAddressEnvVar string, customEnvVars map[string]string)) *MockKurtosisBackend_CreateAPIContainer_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(enclave.EnclaveUUID), args[3].(uint16), args[4].(string), args[5].(string), args[6].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateAPIContainer_Call) Return(_a0 *api_container.APIContainer, _a1 error) *MockKurtosisBackend_CreateAPIContainer_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateAPIContainer_Call) RunAndReturn(run func(context.Context, string, enclave.EnclaveUUID, uint16, string, string, map[string]string) (*api_container.APIContainer, error)) *MockKurtosisBackend_CreateAPIContainer_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateEnclave provides a mock function with given fields: ctx, enclaveUuid, enclaveName, isPartitioningEnabled
 func (_m *MockKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error) {
 	ret := _m.Called(ctx, enclaveUuid, enclaveName, isPartitioningEnabled)
@@ -95,6 +169,37 @@ func (_m *MockKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid en
 	}
 
 	return r0, r1
+}
+
+// MockKurtosisBackend_CreateEnclave_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateEnclave'
+type MockKurtosisBackend_CreateEnclave_Call struct {
+	*mock.Call
+}
+
+// CreateEnclave is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - enclaveName string
+//   - isPartitioningEnabled bool
+func (_e *MockKurtosisBackend_Expecter) CreateEnclave(ctx interface{}, enclaveUuid interface{}, enclaveName interface{}, isPartitioningEnabled interface{}) *MockKurtosisBackend_CreateEnclave_Call {
+	return &MockKurtosisBackend_CreateEnclave_Call{Call: _e.mock.On("CreateEnclave", ctx, enclaveUuid, enclaveName, isPartitioningEnabled)}
+}
+
+func (_c *MockKurtosisBackend_CreateEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool)) *MockKurtosisBackend_CreateEnclave_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(string), args[3].(bool))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateEnclave_Call) Return(_a0 *enclave.Enclave, _a1 error) *MockKurtosisBackend_CreateEnclave_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, string, bool) (*enclave.Enclave, error)) *MockKurtosisBackend_CreateEnclave_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // CreateEngine provides a mock function with given fields: ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars
@@ -123,6 +228,38 @@ func (_m *MockKurtosisBackend) CreateEngine(ctx context.Context, imageOrgAndRepo
 	return r0, r1
 }
 
+// MockKurtosisBackend_CreateEngine_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateEngine'
+type MockKurtosisBackend_CreateEngine_Call struct {
+	*mock.Call
+}
+
+// CreateEngine is a helper method to define mock.On call
+//   - ctx context.Context
+//   - imageOrgAndRepo string
+//   - imageVersionTag string
+//   - grpcPortNum uint16
+//   - envVars map[string]string
+func (_e *MockKurtosisBackend_Expecter) CreateEngine(ctx interface{}, imageOrgAndRepo interface{}, imageVersionTag interface{}, grpcPortNum interface{}, envVars interface{}) *MockKurtosisBackend_CreateEngine_Call {
+	return &MockKurtosisBackend_CreateEngine_Call{Call: _e.mock.On("CreateEngine", ctx, imageOrgAndRepo, imageVersionTag, grpcPortNum, envVars)}
+}
+
+func (_c *MockKurtosisBackend_CreateEngine_Call) Run(run func(ctx context.Context, imageOrgAndRepo string, imageVersionTag string, grpcPortNum uint16, envVars map[string]string)) *MockKurtosisBackend_CreateEngine_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string), args[2].(string), args[3].(uint16), args[4].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateEngine_Call) Return(_a0 *engine.Engine, _a1 error) *MockKurtosisBackend_CreateEngine_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateEngine_Call) RunAndReturn(run func(context.Context, string, string, uint16, map[string]string) (*engine.Engine, error)) *MockKurtosisBackend_CreateEngine_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateLogsCollectorForEnclave provides a mock function with given fields: ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber
 func (_m *MockKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
 	ret := _m.Called(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber)
@@ -147,6 +284,37 @@ func (_m *MockKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context
 	}
 
 	return r0, r1
+}
+
+// MockKurtosisBackend_CreateLogsCollectorForEnclave_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLogsCollectorForEnclave'
+type MockKurtosisBackend_CreateLogsCollectorForEnclave_Call struct {
+	*mock.Call
+}
+
+// CreateLogsCollectorForEnclave is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - logsCollectorHttpPortNumber uint16
+//   - logsCollectorTcpPortNumber uint16
+func (_e *MockKurtosisBackend_Expecter) CreateLogsCollectorForEnclave(ctx interface{}, enclaveUuid interface{}, logsCollectorHttpPortNumber interface{}, logsCollectorTcpPortNumber interface{}) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
+	return &MockKurtosisBackend_CreateLogsCollectorForEnclave_Call{Call: _e.mock.On("CreateLogsCollectorForEnclave", ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber)}
+}
+
+func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16)) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(uint16), args[3].(uint16))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) Return(_a0 *logs_collector.LogsCollector, _a1 error) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, uint16, uint16) (*logs_collector.LogsCollector, error)) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // CreateLogsDatabase provides a mock function with given fields: ctx, logsDatabaseHttpPortNumber
@@ -175,6 +343,35 @@ func (_m *MockKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatab
 	return r0, r1
 }
 
+// MockKurtosisBackend_CreateLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLogsDatabase'
+type MockKurtosisBackend_CreateLogsDatabase_Call struct {
+	*mock.Call
+}
+
+// CreateLogsDatabase is a helper method to define mock.On call
+//   - ctx context.Context
+//   - logsDatabaseHttpPortNumber uint16
+func (_e *MockKurtosisBackend_Expecter) CreateLogsDatabase(ctx interface{}, logsDatabaseHttpPortNumber interface{}) *MockKurtosisBackend_CreateLogsDatabase_Call {
+	return &MockKurtosisBackend_CreateLogsDatabase_Call{Call: _e.mock.On("CreateLogsDatabase", ctx, logsDatabaseHttpPortNumber)}
+}
+
+func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) Run(run func(ctx context.Context, logsDatabaseHttpPortNumber uint16)) *MockKurtosisBackend_CreateLogsDatabase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(uint16))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) Return(_a0 *logs_database.LogsDatabase, _a1 error) *MockKurtosisBackend_CreateLogsDatabase_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) RunAndReturn(run func(context.Context, uint16) (*logs_database.LogsDatabase, error)) *MockKurtosisBackend_CreateLogsDatabase_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateNetworkingSidecar provides a mock function with given fields: ctx, enclaveUuid, serviceUuid
 func (_m *MockKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (*networking_sidecar.NetworkingSidecar, error) {
 	ret := _m.Called(ctx, enclaveUuid, serviceUuid)
@@ -199,6 +396,36 @@ func (_m *MockKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, encl
 	}
 
 	return r0, r1
+}
+
+// MockKurtosisBackend_CreateNetworkingSidecar_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateNetworkingSidecar'
+type MockKurtosisBackend_CreateNetworkingSidecar_Call struct {
+	*mock.Call
+}
+
+// CreateNetworkingSidecar is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - serviceUuid service.ServiceUUID
+func (_e *MockKurtosisBackend_Expecter) CreateNetworkingSidecar(ctx interface{}, enclaveUuid interface{}, serviceUuid interface{}) *MockKurtosisBackend_CreateNetworkingSidecar_Call {
+	return &MockKurtosisBackend_CreateNetworkingSidecar_Call{Call: _e.mock.On("CreateNetworkingSidecar", ctx, enclaveUuid, serviceUuid)}
+}
+
+func (_c *MockKurtosisBackend_CreateNetworkingSidecar_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID)) *MockKurtosisBackend_CreateNetworkingSidecar_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(service.ServiceUUID))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateNetworkingSidecar_Call) Return(_a0 *networking_sidecar.NetworkingSidecar, _a1 error) *MockKurtosisBackend_CreateNetworkingSidecar_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateNetworkingSidecar_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, service.ServiceUUID) (*networking_sidecar.NetworkingSidecar, error)) *MockKurtosisBackend_CreateNetworkingSidecar_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // DestroyAPIContainers provides a mock function with given fields: ctx, filters
@@ -236,6 +463,35 @@ func (_m *MockKurtosisBackend) DestroyAPIContainers(ctx context.Context, filters
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_DestroyAPIContainers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyAPIContainers'
+type MockKurtosisBackend_DestroyAPIContainers_Call struct {
+	*mock.Call
+}
+
+// DestroyAPIContainers is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *api_container.APIContainerFilters
+func (_e *MockKurtosisBackend_Expecter) DestroyAPIContainers(ctx interface{}, filters interface{}) *MockKurtosisBackend_DestroyAPIContainers_Call {
+	return &MockKurtosisBackend_DestroyAPIContainers_Call{Call: _e.mock.On("DestroyAPIContainers", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_DestroyAPIContainers_Call) Run(run func(ctx context.Context, filters *api_container.APIContainerFilters)) *MockKurtosisBackend_DestroyAPIContainers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*api_container.APIContainerFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyAPIContainers_Call) Return(successfulApiContainerIds map[enclave.EnclaveUUID]bool, erroredApiContainerIds map[enclave.EnclaveUUID]error, resultErr error) *MockKurtosisBackend_DestroyAPIContainers_Call {
+	_c.Call.Return(successfulApiContainerIds, erroredApiContainerIds, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyAPIContainers_Call) RunAndReturn(run func(context.Context, *api_container.APIContainerFilters) (map[enclave.EnclaveUUID]bool, map[enclave.EnclaveUUID]error, error)) *MockKurtosisBackend_DestroyAPIContainers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DestroyDeprecatedCentralizedLogsResources provides a mock function with given fields: ctx
 func (_m *MockKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
 	ret := _m.Called(ctx)
@@ -248,6 +504,34 @@ func (_m *MockKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx con
 	}
 
 	return r0
+}
+
+// MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyDeprecatedCentralizedLogsResources'
+type MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call struct {
+	*mock.Call
+}
+
+// DestroyDeprecatedCentralizedLogsResources is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) DestroyDeprecatedCentralizedLogsResources(ctx interface{}) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
+	return &MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call{Call: _e.mock.On("DestroyDeprecatedCentralizedLogsResources", ctx)}
+}
+
+func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call) Return(_a0 error) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call) RunAndReturn(run func(context.Context) error) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // DestroyEnclaves provides a mock function with given fields: ctx, filters
@@ -285,6 +569,35 @@ func (_m *MockKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enc
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_DestroyEnclaves_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyEnclaves'
+type MockKurtosisBackend_DestroyEnclaves_Call struct {
+	*mock.Call
+}
+
+// DestroyEnclaves is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *enclave.EnclaveFilters
+func (_e *MockKurtosisBackend_Expecter) DestroyEnclaves(ctx interface{}, filters interface{}) *MockKurtosisBackend_DestroyEnclaves_Call {
+	return &MockKurtosisBackend_DestroyEnclaves_Call{Call: _e.mock.On("DestroyEnclaves", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_DestroyEnclaves_Call) Run(run func(ctx context.Context, filters *enclave.EnclaveFilters)) *MockKurtosisBackend_DestroyEnclaves_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*enclave.EnclaveFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyEnclaves_Call) Return(successfulEnclaveIds map[enclave.EnclaveUUID]bool, erroredEnclaveIds map[enclave.EnclaveUUID]error, resultErr error) *MockKurtosisBackend_DestroyEnclaves_Call {
+	_c.Call.Return(successfulEnclaveIds, erroredEnclaveIds, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyEnclaves_Call) RunAndReturn(run func(context.Context, *enclave.EnclaveFilters) (map[enclave.EnclaveUUID]bool, map[enclave.EnclaveUUID]error, error)) *MockKurtosisBackend_DestroyEnclaves_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DestroyEngines provides a mock function with given fields: ctx, filters
 func (_m *MockKurtosisBackend) DestroyEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]bool, map[engine.EngineGUID]error, error) {
 	ret := _m.Called(ctx, filters)
@@ -320,6 +633,35 @@ func (_m *MockKurtosisBackend) DestroyEngines(ctx context.Context, filters *engi
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_DestroyEngines_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyEngines'
+type MockKurtosisBackend_DestroyEngines_Call struct {
+	*mock.Call
+}
+
+// DestroyEngines is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *engine.EngineFilters
+func (_e *MockKurtosisBackend_Expecter) DestroyEngines(ctx interface{}, filters interface{}) *MockKurtosisBackend_DestroyEngines_Call {
+	return &MockKurtosisBackend_DestroyEngines_Call{Call: _e.mock.On("DestroyEngines", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_DestroyEngines_Call) Run(run func(ctx context.Context, filters *engine.EngineFilters)) *MockKurtosisBackend_DestroyEngines_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*engine.EngineFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyEngines_Call) Return(successfulEngineGuids map[engine.EngineGUID]bool, erroredEngineGuids map[engine.EngineGUID]error, resultErr error) *MockKurtosisBackend_DestroyEngines_Call {
+	_c.Call.Return(successfulEngineGuids, erroredEngineGuids, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyEngines_Call) RunAndReturn(run func(context.Context, *engine.EngineFilters) (map[engine.EngineGUID]bool, map[engine.EngineGUID]error, error)) *MockKurtosisBackend_DestroyEngines_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DestroyLogsCollectorForEnclave provides a mock function with given fields: ctx, enclaveUuid
 func (_m *MockKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 	ret := _m.Called(ctx, enclaveUuid)
@@ -334,6 +676,35 @@ func (_m *MockKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Contex
 	return r0
 }
 
+// MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyLogsCollectorForEnclave'
+type MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call struct {
+	*mock.Call
+}
+
+// DestroyLogsCollectorForEnclave is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+func (_e *MockKurtosisBackend_Expecter) DestroyLogsCollectorForEnclave(ctx interface{}, enclaveUuid interface{}) *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call {
+	return &MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call{Call: _e.mock.On("DestroyLogsCollectorForEnclave", ctx, enclaveUuid)}
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID)) *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) Return(_a0 error) *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID) error) *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DestroyLogsDatabase provides a mock function with given fields: ctx
 func (_m *MockKurtosisBackend) DestroyLogsDatabase(ctx context.Context) error {
 	ret := _m.Called(ctx)
@@ -346,6 +717,34 @@ func (_m *MockKurtosisBackend) DestroyLogsDatabase(ctx context.Context) error {
 	}
 
 	return r0
+}
+
+// MockKurtosisBackend_DestroyLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyLogsDatabase'
+type MockKurtosisBackend_DestroyLogsDatabase_Call struct {
+	*mock.Call
+}
+
+// DestroyLogsDatabase is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) DestroyLogsDatabase(ctx interface{}) *MockKurtosisBackend_DestroyLogsDatabase_Call {
+	return &MockKurtosisBackend_DestroyLogsDatabase_Call{Call: _e.mock.On("DestroyLogsDatabase", ctx)}
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyLogsDatabase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) Return(_a0 error) *MockKurtosisBackend_DestroyLogsDatabase_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) RunAndReturn(run func(context.Context) error) *MockKurtosisBackend_DestroyLogsDatabase_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // DestroyNetworkingSidecars provides a mock function with given fields: ctx, filters
@@ -383,6 +782,35 @@ func (_m *MockKurtosisBackend) DestroyNetworkingSidecars(ctx context.Context, fi
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_DestroyNetworkingSidecars_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyNetworkingSidecars'
+type MockKurtosisBackend_DestroyNetworkingSidecars_Call struct {
+	*mock.Call
+}
+
+// DestroyNetworkingSidecars is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *networking_sidecar.NetworkingSidecarFilters
+func (_e *MockKurtosisBackend_Expecter) DestroyNetworkingSidecars(ctx interface{}, filters interface{}) *MockKurtosisBackend_DestroyNetworkingSidecars_Call {
+	return &MockKurtosisBackend_DestroyNetworkingSidecars_Call{Call: _e.mock.On("DestroyNetworkingSidecars", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_DestroyNetworkingSidecars_Call) Run(run func(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters)) *MockKurtosisBackend_DestroyNetworkingSidecars_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*networking_sidecar.NetworkingSidecarFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyNetworkingSidecars_Call) Return(successfulUserServiceUuids map[service.ServiceUUID]bool, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_DestroyNetworkingSidecars_Call {
+	_c.Call.Return(successfulUserServiceUuids, erroredUserServiceUuids, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyNetworkingSidecars_Call) RunAndReturn(run func(context.Context, *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_DestroyNetworkingSidecars_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DestroyUserServices provides a mock function with given fields: ctx, enclaveUuid, filters
 func (_m *MockKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	ret := _m.Called(ctx, enclaveUuid, filters)
@@ -418,6 +846,36 @@ func (_m *MockKurtosisBackend) DestroyUserServices(ctx context.Context, enclaveU
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_DestroyUserServices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyUserServices'
+type MockKurtosisBackend_DestroyUserServices_Call struct {
+	*mock.Call
+}
+
+// DestroyUserServices is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - filters *service.ServiceFilters
+func (_e *MockKurtosisBackend_Expecter) DestroyUserServices(ctx interface{}, enclaveUuid interface{}, filters interface{}) *MockKurtosisBackend_DestroyUserServices_Call {
+	return &MockKurtosisBackend_DestroyUserServices_Call{Call: _e.mock.On("DestroyUserServices", ctx, enclaveUuid, filters)}
+}
+
+func (_c *MockKurtosisBackend_DestroyUserServices_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters)) *MockKurtosisBackend_DestroyUserServices_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(*service.ServiceFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyUserServices_Call) Return(successfulUserServiceUuids map[service.ServiceUUID]bool, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_DestroyUserServices_Call {
+	_c.Call.Return(successfulUserServiceUuids, erroredUserServiceUuids, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyUserServices_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, *service.ServiceFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_DestroyUserServices_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DumpEnclave provides a mock function with given fields: ctx, enclaveUuid, outputDirpath
 func (_m *MockKurtosisBackend) DumpEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, outputDirpath string) error {
 	ret := _m.Called(ctx, enclaveUuid, outputDirpath)
@@ -430,6 +888,36 @@ func (_m *MockKurtosisBackend) DumpEnclave(ctx context.Context, enclaveUuid encl
 	}
 
 	return r0
+}
+
+// MockKurtosisBackend_DumpEnclave_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DumpEnclave'
+type MockKurtosisBackend_DumpEnclave_Call struct {
+	*mock.Call
+}
+
+// DumpEnclave is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - outputDirpath string
+func (_e *MockKurtosisBackend_Expecter) DumpEnclave(ctx interface{}, enclaveUuid interface{}, outputDirpath interface{}) *MockKurtosisBackend_DumpEnclave_Call {
+	return &MockKurtosisBackend_DumpEnclave_Call{Call: _e.mock.On("DumpEnclave", ctx, enclaveUuid, outputDirpath)}
+}
+
+func (_c *MockKurtosisBackend_DumpEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, outputDirpath string)) *MockKurtosisBackend_DumpEnclave_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DumpEnclave_Call) Return(_a0 error) *MockKurtosisBackend_DumpEnclave_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DumpEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, string) error) *MockKurtosisBackend_DumpEnclave_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // DumpKurtosis provides a mock function with given fields: ctx, outputDirpath
@@ -446,6 +934,35 @@ func (_m *MockKurtosisBackend) DumpKurtosis(ctx context.Context, outputDirpath s
 	return r0
 }
 
+// MockKurtosisBackend_DumpKurtosis_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DumpKurtosis'
+type MockKurtosisBackend_DumpKurtosis_Call struct {
+	*mock.Call
+}
+
+// DumpKurtosis is a helper method to define mock.On call
+//   - ctx context.Context
+//   - outputDirpath string
+func (_e *MockKurtosisBackend_Expecter) DumpKurtosis(ctx interface{}, outputDirpath interface{}) *MockKurtosisBackend_DumpKurtosis_Call {
+	return &MockKurtosisBackend_DumpKurtosis_Call{Call: _e.mock.On("DumpKurtosis", ctx, outputDirpath)}
+}
+
+func (_c *MockKurtosisBackend_DumpKurtosis_Call) Run(run func(ctx context.Context, outputDirpath string)) *MockKurtosisBackend_DumpKurtosis_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DumpKurtosis_Call) Return(_a0 error) *MockKurtosisBackend_DumpKurtosis_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DumpKurtosis_Call) RunAndReturn(run func(context.Context, string) error) *MockKurtosisBackend_DumpKurtosis_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // FetchImage provides a mock function with given fields: ctx, image
 func (_m *MockKurtosisBackend) FetchImage(ctx context.Context, image string) error {
 	ret := _m.Called(ctx, image)
@@ -458,6 +975,35 @@ func (_m *MockKurtosisBackend) FetchImage(ctx context.Context, image string) err
 	}
 
 	return r0
+}
+
+// MockKurtosisBackend_FetchImage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'FetchImage'
+type MockKurtosisBackend_FetchImage_Call struct {
+	*mock.Call
+}
+
+// FetchImage is a helper method to define mock.On call
+//   - ctx context.Context
+//   - image string
+func (_e *MockKurtosisBackend_Expecter) FetchImage(ctx interface{}, image interface{}) *MockKurtosisBackend_FetchImage_Call {
+	return &MockKurtosisBackend_FetchImage_Call{Call: _e.mock.On("FetchImage", ctx, image)}
+}
+
+func (_c *MockKurtosisBackend_FetchImage_Call) Run(run func(ctx context.Context, image string)) *MockKurtosisBackend_FetchImage_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_FetchImage_Call) Return(_a0 error) *MockKurtosisBackend_FetchImage_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_FetchImage_Call) RunAndReturn(run func(context.Context, string) error) *MockKurtosisBackend_FetchImage_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // GetAPIContainers provides a mock function with given fields: ctx, filters
@@ -486,6 +1032,35 @@ func (_m *MockKurtosisBackend) GetAPIContainers(ctx context.Context, filters *ap
 	return r0, r1
 }
 
+// MockKurtosisBackend_GetAPIContainers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAPIContainers'
+type MockKurtosisBackend_GetAPIContainers_Call struct {
+	*mock.Call
+}
+
+// GetAPIContainers is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *api_container.APIContainerFilters
+func (_e *MockKurtosisBackend_Expecter) GetAPIContainers(ctx interface{}, filters interface{}) *MockKurtosisBackend_GetAPIContainers_Call {
+	return &MockKurtosisBackend_GetAPIContainers_Call{Call: _e.mock.On("GetAPIContainers", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_GetAPIContainers_Call) Run(run func(ctx context.Context, filters *api_container.APIContainerFilters)) *MockKurtosisBackend_GetAPIContainers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*api_container.APIContainerFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetAPIContainers_Call) Return(_a0 map[enclave.EnclaveUUID]*api_container.APIContainer, _a1 error) *MockKurtosisBackend_GetAPIContainers_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetAPIContainers_Call) RunAndReturn(run func(context.Context, *api_container.APIContainerFilters) (map[enclave.EnclaveUUID]*api_container.APIContainer, error)) *MockKurtosisBackend_GetAPIContainers_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetEnclaves provides a mock function with given fields: ctx, filters
 func (_m *MockKurtosisBackend) GetEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (map[enclave.EnclaveUUID]*enclave.Enclave, error) {
 	ret := _m.Called(ctx, filters)
@@ -512,6 +1087,35 @@ func (_m *MockKurtosisBackend) GetEnclaves(ctx context.Context, filters *enclave
 	return r0, r1
 }
 
+// MockKurtosisBackend_GetEnclaves_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEnclaves'
+type MockKurtosisBackend_GetEnclaves_Call struct {
+	*mock.Call
+}
+
+// GetEnclaves is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *enclave.EnclaveFilters
+func (_e *MockKurtosisBackend_Expecter) GetEnclaves(ctx interface{}, filters interface{}) *MockKurtosisBackend_GetEnclaves_Call {
+	return &MockKurtosisBackend_GetEnclaves_Call{Call: _e.mock.On("GetEnclaves", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_GetEnclaves_Call) Run(run func(ctx context.Context, filters *enclave.EnclaveFilters)) *MockKurtosisBackend_GetEnclaves_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*enclave.EnclaveFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetEnclaves_Call) Return(_a0 map[enclave.EnclaveUUID]*enclave.Enclave, _a1 error) *MockKurtosisBackend_GetEnclaves_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetEnclaves_Call) RunAndReturn(run func(context.Context, *enclave.EnclaveFilters) (map[enclave.EnclaveUUID]*enclave.Enclave, error)) *MockKurtosisBackend_GetEnclaves_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetEngineLogs provides a mock function with given fields: ctx, outputDirpath
 func (_m *MockKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
 	ret := _m.Called(ctx, outputDirpath)
@@ -524,6 +1128,35 @@ func (_m *MockKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath 
 	}
 
 	return r0
+}
+
+// MockKurtosisBackend_GetEngineLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEngineLogs'
+type MockKurtosisBackend_GetEngineLogs_Call struct {
+	*mock.Call
+}
+
+// GetEngineLogs is a helper method to define mock.On call
+//   - ctx context.Context
+//   - outputDirpath string
+func (_e *MockKurtosisBackend_Expecter) GetEngineLogs(ctx interface{}, outputDirpath interface{}) *MockKurtosisBackend_GetEngineLogs_Call {
+	return &MockKurtosisBackend_GetEngineLogs_Call{Call: _e.mock.On("GetEngineLogs", ctx, outputDirpath)}
+}
+
+func (_c *MockKurtosisBackend_GetEngineLogs_Call) Run(run func(ctx context.Context, outputDirpath string)) *MockKurtosisBackend_GetEngineLogs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetEngineLogs_Call) Return(_a0 error) *MockKurtosisBackend_GetEngineLogs_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetEngineLogs_Call) RunAndReturn(run func(context.Context, string) error) *MockKurtosisBackend_GetEngineLogs_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // GetEngines provides a mock function with given fields: ctx, filters
@@ -552,6 +1185,35 @@ func (_m *MockKurtosisBackend) GetEngines(ctx context.Context, filters *engine.E
 	return r0, r1
 }
 
+// MockKurtosisBackend_GetEngines_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEngines'
+type MockKurtosisBackend_GetEngines_Call struct {
+	*mock.Call
+}
+
+// GetEngines is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *engine.EngineFilters
+func (_e *MockKurtosisBackend_Expecter) GetEngines(ctx interface{}, filters interface{}) *MockKurtosisBackend_GetEngines_Call {
+	return &MockKurtosisBackend_GetEngines_Call{Call: _e.mock.On("GetEngines", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_GetEngines_Call) Run(run func(ctx context.Context, filters *engine.EngineFilters)) *MockKurtosisBackend_GetEngines_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*engine.EngineFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetEngines_Call) Return(_a0 map[engine.EngineGUID]*engine.Engine, _a1 error) *MockKurtosisBackend_GetEngines_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetEngines_Call) RunAndReturn(run func(context.Context, *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error)) *MockKurtosisBackend_GetEngines_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLogsCollectorForEnclave provides a mock function with given fields: ctx, enclaveUuid
 func (_m *MockKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error) {
 	ret := _m.Called(ctx, enclaveUuid)
@@ -576,6 +1238,35 @@ func (_m *MockKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, e
 	}
 
 	return r0, r1
+}
+
+// MockKurtosisBackend_GetLogsCollectorForEnclave_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLogsCollectorForEnclave'
+type MockKurtosisBackend_GetLogsCollectorForEnclave_Call struct {
+	*mock.Call
+}
+
+// GetLogsCollectorForEnclave is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+func (_e *MockKurtosisBackend_Expecter) GetLogsCollectorForEnclave(ctx interface{}, enclaveUuid interface{}) *MockKurtosisBackend_GetLogsCollectorForEnclave_Call {
+	return &MockKurtosisBackend_GetLogsCollectorForEnclave_Call{Call: _e.mock.On("GetLogsCollectorForEnclave", ctx, enclaveUuid)}
+}
+
+func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID)) *MockKurtosisBackend_GetLogsCollectorForEnclave_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) Return(_a0 *logs_collector.LogsCollector, _a1 error) *MockKurtosisBackend_GetLogsCollectorForEnclave_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)) *MockKurtosisBackend_GetLogsCollectorForEnclave_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // GetLogsDatabase provides a mock function with given fields: ctx
@@ -604,6 +1295,34 @@ func (_m *MockKurtosisBackend) GetLogsDatabase(ctx context.Context) (*logs_datab
 	return r0, r1
 }
 
+// MockKurtosisBackend_GetLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLogsDatabase'
+type MockKurtosisBackend_GetLogsDatabase_Call struct {
+	*mock.Call
+}
+
+// GetLogsDatabase is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) GetLogsDatabase(ctx interface{}) *MockKurtosisBackend_GetLogsDatabase_Call {
+	return &MockKurtosisBackend_GetLogsDatabase_Call{Call: _e.mock.On("GetLogsDatabase", ctx)}
+}
+
+func (_c *MockKurtosisBackend_GetLogsDatabase_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_GetLogsDatabase_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetLogsDatabase_Call) Return(_a0 *logs_database.LogsDatabase, _a1 error) *MockKurtosisBackend_GetLogsDatabase_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetLogsDatabase_Call) RunAndReturn(run func(context.Context) (*logs_database.LogsDatabase, error)) *MockKurtosisBackend_GetLogsDatabase_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetNetworkingSidecars provides a mock function with given fields: ctx, filters
 func (_m *MockKurtosisBackend) GetNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar, error) {
 	ret := _m.Called(ctx, filters)
@@ -630,6 +1349,35 @@ func (_m *MockKurtosisBackend) GetNetworkingSidecars(ctx context.Context, filter
 	return r0, r1
 }
 
+// MockKurtosisBackend_GetNetworkingSidecars_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNetworkingSidecars'
+type MockKurtosisBackend_GetNetworkingSidecars_Call struct {
+	*mock.Call
+}
+
+// GetNetworkingSidecars is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *networking_sidecar.NetworkingSidecarFilters
+func (_e *MockKurtosisBackend_Expecter) GetNetworkingSidecars(ctx interface{}, filters interface{}) *MockKurtosisBackend_GetNetworkingSidecars_Call {
+	return &MockKurtosisBackend_GetNetworkingSidecars_Call{Call: _e.mock.On("GetNetworkingSidecars", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_GetNetworkingSidecars_Call) Run(run func(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters)) *MockKurtosisBackend_GetNetworkingSidecars_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*networking_sidecar.NetworkingSidecarFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetNetworkingSidecars_Call) Return(_a0 map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar, _a1 error) *MockKurtosisBackend_GetNetworkingSidecars_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetNetworkingSidecars_Call) RunAndReturn(run func(context.Context, *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar, error)) *MockKurtosisBackend_GetNetworkingSidecars_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetShellOnUserService provides a mock function with given fields: ctx, enclaveUuid, serviceUuid
 func (_m *MockKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) error {
 	ret := _m.Called(ctx, enclaveUuid, serviceUuid)
@@ -642,6 +1390,36 @@ func (_m *MockKurtosisBackend) GetShellOnUserService(ctx context.Context, enclav
 	}
 
 	return r0
+}
+
+// MockKurtosisBackend_GetShellOnUserService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetShellOnUserService'
+type MockKurtosisBackend_GetShellOnUserService_Call struct {
+	*mock.Call
+}
+
+// GetShellOnUserService is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - serviceUuid service.ServiceUUID
+func (_e *MockKurtosisBackend_Expecter) GetShellOnUserService(ctx interface{}, enclaveUuid interface{}, serviceUuid interface{}) *MockKurtosisBackend_GetShellOnUserService_Call {
+	return &MockKurtosisBackend_GetShellOnUserService_Call{Call: _e.mock.On("GetShellOnUserService", ctx, enclaveUuid, serviceUuid)}
+}
+
+func (_c *MockKurtosisBackend_GetShellOnUserService_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID)) *MockKurtosisBackend_GetShellOnUserService_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(service.ServiceUUID))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetShellOnUserService_Call) Return(resultErr error) *MockKurtosisBackend_GetShellOnUserService_Call {
+	_c.Call.Return(resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetShellOnUserService_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, service.ServiceUUID) error) *MockKurtosisBackend_GetShellOnUserService_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // GetUserServiceLogs provides a mock function with given fields: ctx, enclaveUuid, filters, shouldFollowLogs
@@ -679,6 +1457,37 @@ func (_m *MockKurtosisBackend) GetUserServiceLogs(ctx context.Context, enclaveUu
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_GetUserServiceLogs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserServiceLogs'
+type MockKurtosisBackend_GetUserServiceLogs_Call struct {
+	*mock.Call
+}
+
+// GetUserServiceLogs is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - filters *service.ServiceFilters
+//   - shouldFollowLogs bool
+func (_e *MockKurtosisBackend_Expecter) GetUserServiceLogs(ctx interface{}, enclaveUuid interface{}, filters interface{}, shouldFollowLogs interface{}) *MockKurtosisBackend_GetUserServiceLogs_Call {
+	return &MockKurtosisBackend_GetUserServiceLogs_Call{Call: _e.mock.On("GetUserServiceLogs", ctx, enclaveUuid, filters, shouldFollowLogs)}
+}
+
+func (_c *MockKurtosisBackend_GetUserServiceLogs_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters, shouldFollowLogs bool)) *MockKurtosisBackend_GetUserServiceLogs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(*service.ServiceFilters), args[3].(bool))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetUserServiceLogs_Call) Return(successfulUserServiceLogs map[service.ServiceUUID]io.ReadCloser, erroredUserServiceUuids map[service.ServiceUUID]error, resultError error) *MockKurtosisBackend_GetUserServiceLogs_Call {
+	_c.Call.Return(successfulUserServiceLogs, erroredUserServiceUuids, resultError)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetUserServiceLogs_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, *service.ServiceFilters, bool) (map[service.ServiceUUID]io.ReadCloser, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_GetUserServiceLogs_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetUserServices provides a mock function with given fields: ctx, enclaveUuid, filters
 func (_m *MockKurtosisBackend) GetUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (map[service.ServiceUUID]*service.Service, error) {
 	ret := _m.Called(ctx, enclaveUuid, filters)
@@ -703,6 +1512,36 @@ func (_m *MockKurtosisBackend) GetUserServices(ctx context.Context, enclaveUuid 
 	}
 
 	return r0, r1
+}
+
+// MockKurtosisBackend_GetUserServices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserServices'
+type MockKurtosisBackend_GetUserServices_Call struct {
+	*mock.Call
+}
+
+// GetUserServices is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - filters *service.ServiceFilters
+func (_e *MockKurtosisBackend_Expecter) GetUserServices(ctx interface{}, enclaveUuid interface{}, filters interface{}) *MockKurtosisBackend_GetUserServices_Call {
+	return &MockKurtosisBackend_GetUserServices_Call{Call: _e.mock.On("GetUserServices", ctx, enclaveUuid, filters)}
+}
+
+func (_c *MockKurtosisBackend_GetUserServices_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters)) *MockKurtosisBackend_GetUserServices_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(*service.ServiceFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetUserServices_Call) Return(_a0 map[service.ServiceUUID]*service.Service, _a1 error) *MockKurtosisBackend_GetUserServices_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetUserServices_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, *service.ServiceFilters) (map[service.ServiceUUID]*service.Service, error)) *MockKurtosisBackend_GetUserServices_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // RegisterUserServices provides a mock function with given fields: ctx, enclaveUuid, services
@@ -740,6 +1579,36 @@ func (_m *MockKurtosisBackend) RegisterUserServices(ctx context.Context, enclave
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_RegisterUserServices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RegisterUserServices'
+type MockKurtosisBackend_RegisterUserServices_Call struct {
+	*mock.Call
+}
+
+// RegisterUserServices is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - services map[service.ServiceName]bool
+func (_e *MockKurtosisBackend_Expecter) RegisterUserServices(ctx interface{}, enclaveUuid interface{}, services interface{}) *MockKurtosisBackend_RegisterUserServices_Call {
+	return &MockKurtosisBackend_RegisterUserServices_Call{Call: _e.mock.On("RegisterUserServices", ctx, enclaveUuid, services)}
+}
+
+func (_c *MockKurtosisBackend_RegisterUserServices_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceName]bool)) *MockKurtosisBackend_RegisterUserServices_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(map[service.ServiceName]bool))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_RegisterUserServices_Call) Return(_a0 map[service.ServiceName]*service.ServiceRegistration, _a1 map[service.ServiceName]error, _a2 error) *MockKurtosisBackend_RegisterUserServices_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_RegisterUserServices_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, map[service.ServiceName]bool) (map[service.ServiceName]*service.ServiceRegistration, map[service.ServiceName]error, error)) *MockKurtosisBackend_RegisterUserServices_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RenameEnclave provides a mock function with given fields: ctx, enclaveUuid, newName
 func (_m *MockKurtosisBackend) RenameEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, newName string) error {
 	ret := _m.Called(ctx, enclaveUuid, newName)
@@ -752,6 +1621,36 @@ func (_m *MockKurtosisBackend) RenameEnclave(ctx context.Context, enclaveUuid en
 	}
 
 	return r0
+}
+
+// MockKurtosisBackend_RenameEnclave_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RenameEnclave'
+type MockKurtosisBackend_RenameEnclave_Call struct {
+	*mock.Call
+}
+
+// RenameEnclave is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - newName string
+func (_e *MockKurtosisBackend_Expecter) RenameEnclave(ctx interface{}, enclaveUuid interface{}, newName interface{}) *MockKurtosisBackend_RenameEnclave_Call {
+	return &MockKurtosisBackend_RenameEnclave_Call{Call: _e.mock.On("RenameEnclave", ctx, enclaveUuid, newName)}
+}
+
+func (_c *MockKurtosisBackend_RenameEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, newName string)) *MockKurtosisBackend_RenameEnclave_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_RenameEnclave_Call) Return(_a0 error) *MockKurtosisBackend_RenameEnclave_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_RenameEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, string) error) *MockKurtosisBackend_RenameEnclave_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // RunNetworkingSidecarExecCommands provides a mock function with given fields: ctx, enclaveUuid, networkingSidecarsCommands
@@ -789,6 +1688,36 @@ func (_m *MockKurtosisBackend) RunNetworkingSidecarExecCommands(ctx context.Cont
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RunNetworkingSidecarExecCommands'
+type MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call struct {
+	*mock.Call
+}
+
+// RunNetworkingSidecarExecCommands is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - networkingSidecarsCommands map[service.ServiceUUID][]string
+func (_e *MockKurtosisBackend_Expecter) RunNetworkingSidecarExecCommands(ctx interface{}, enclaveUuid interface{}, networkingSidecarsCommands interface{}) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
+	return &MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call{Call: _e.mock.On("RunNetworkingSidecarExecCommands", ctx, enclaveUuid, networkingSidecarsCommands)}
+}
+
+func (_c *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, networkingSidecarsCommands map[service.ServiceUUID][]string)) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(map[service.ServiceUUID][]string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call) Return(successfulNetworkingSidecarExecResults map[service.ServiceUUID]*exec_result.ExecResult, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
+	_c.Call.Return(successfulNetworkingSidecarExecResults, erroredUserServiceUuids, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // RunUserServiceExecCommands provides a mock function with given fields: ctx, enclaveUuid, userServiceCommands
 func (_m *MockKurtosisBackend) RunUserServiceExecCommands(ctx context.Context, enclaveUuid enclave.EnclaveUUID, userServiceCommands map[service.ServiceUUID][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
 	ret := _m.Called(ctx, enclaveUuid, userServiceCommands)
@@ -822,6 +1751,36 @@ func (_m *MockKurtosisBackend) RunUserServiceExecCommands(ctx context.Context, e
 	}
 
 	return r0, r1, r2
+}
+
+// MockKurtosisBackend_RunUserServiceExecCommands_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RunUserServiceExecCommands'
+type MockKurtosisBackend_RunUserServiceExecCommands_Call struct {
+	*mock.Call
+}
+
+// RunUserServiceExecCommands is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - userServiceCommands map[service.ServiceUUID][]string
+func (_e *MockKurtosisBackend_Expecter) RunUserServiceExecCommands(ctx interface{}, enclaveUuid interface{}, userServiceCommands interface{}) *MockKurtosisBackend_RunUserServiceExecCommands_Call {
+	return &MockKurtosisBackend_RunUserServiceExecCommands_Call{Call: _e.mock.On("RunUserServiceExecCommands", ctx, enclaveUuid, userServiceCommands)}
+}
+
+func (_c *MockKurtosisBackend_RunUserServiceExecCommands_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, userServiceCommands map[service.ServiceUUID][]string)) *MockKurtosisBackend_RunUserServiceExecCommands_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(map[service.ServiceUUID][]string))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_RunUserServiceExecCommands_Call) Return(succesfulUserServiceExecResults map[service.ServiceUUID]*exec_result.ExecResult, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_RunUserServiceExecCommands_Call {
+	_c.Call.Return(succesfulUserServiceExecResults, erroredUserServiceUuids, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_RunUserServiceExecCommands_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_RunUserServiceExecCommands_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // StartRegisteredUserServices provides a mock function with given fields: ctx, enclaveUuid, services
@@ -859,6 +1818,36 @@ func (_m *MockKurtosisBackend) StartRegisteredUserServices(ctx context.Context, 
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_StartRegisteredUserServices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StartRegisteredUserServices'
+type MockKurtosisBackend_StartRegisteredUserServices_Call struct {
+	*mock.Call
+}
+
+// StartRegisteredUserServices is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - services map[service.ServiceUUID]*service.ServiceConfig
+func (_e *MockKurtosisBackend_Expecter) StartRegisteredUserServices(ctx interface{}, enclaveUuid interface{}, services interface{}) *MockKurtosisBackend_StartRegisteredUserServices_Call {
+	return &MockKurtosisBackend_StartRegisteredUserServices_Call{Call: _e.mock.On("StartRegisteredUserServices", ctx, enclaveUuid, services)}
+}
+
+func (_c *MockKurtosisBackend_StartRegisteredUserServices_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]*service.ServiceConfig)) *MockKurtosisBackend_StartRegisteredUserServices_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(map[service.ServiceUUID]*service.ServiceConfig))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StartRegisteredUserServices_Call) Return(_a0 map[service.ServiceUUID]*service.Service, _a1 map[service.ServiceUUID]error, _a2 error) *MockKurtosisBackend_StartRegisteredUserServices_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StartRegisteredUserServices_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID]*service.ServiceConfig) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_StartRegisteredUserServices_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // StopAPIContainers provides a mock function with given fields: ctx, filters
 func (_m *MockKurtosisBackend) StopAPIContainers(ctx context.Context, filters *api_container.APIContainerFilters) (map[enclave.EnclaveUUID]bool, map[enclave.EnclaveUUID]error, error) {
 	ret := _m.Called(ctx, filters)
@@ -892,6 +1881,35 @@ func (_m *MockKurtosisBackend) StopAPIContainers(ctx context.Context, filters *a
 	}
 
 	return r0, r1, r2
+}
+
+// MockKurtosisBackend_StopAPIContainers_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StopAPIContainers'
+type MockKurtosisBackend_StopAPIContainers_Call struct {
+	*mock.Call
+}
+
+// StopAPIContainers is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *api_container.APIContainerFilters
+func (_e *MockKurtosisBackend_Expecter) StopAPIContainers(ctx interface{}, filters interface{}) *MockKurtosisBackend_StopAPIContainers_Call {
+	return &MockKurtosisBackend_StopAPIContainers_Call{Call: _e.mock.On("StopAPIContainers", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_StopAPIContainers_Call) Run(run func(ctx context.Context, filters *api_container.APIContainerFilters)) *MockKurtosisBackend_StopAPIContainers_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*api_container.APIContainerFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopAPIContainers_Call) Return(successfulApiContainerIds map[enclave.EnclaveUUID]bool, erroredApiContainerIds map[enclave.EnclaveUUID]error, resultErr error) *MockKurtosisBackend_StopAPIContainers_Call {
+	_c.Call.Return(successfulApiContainerIds, erroredApiContainerIds, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopAPIContainers_Call) RunAndReturn(run func(context.Context, *api_container.APIContainerFilters) (map[enclave.EnclaveUUID]bool, map[enclave.EnclaveUUID]error, error)) *MockKurtosisBackend_StopAPIContainers_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // StopEnclaves provides a mock function with given fields: ctx, filters
@@ -929,6 +1947,35 @@ func (_m *MockKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclav
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_StopEnclaves_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StopEnclaves'
+type MockKurtosisBackend_StopEnclaves_Call struct {
+	*mock.Call
+}
+
+// StopEnclaves is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *enclave.EnclaveFilters
+func (_e *MockKurtosisBackend_Expecter) StopEnclaves(ctx interface{}, filters interface{}) *MockKurtosisBackend_StopEnclaves_Call {
+	return &MockKurtosisBackend_StopEnclaves_Call{Call: _e.mock.On("StopEnclaves", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_StopEnclaves_Call) Run(run func(ctx context.Context, filters *enclave.EnclaveFilters)) *MockKurtosisBackend_StopEnclaves_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*enclave.EnclaveFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopEnclaves_Call) Return(successfulEnclaveIds map[enclave.EnclaveUUID]bool, erroredEnclaveIds map[enclave.EnclaveUUID]error, resultErr error) *MockKurtosisBackend_StopEnclaves_Call {
+	_c.Call.Return(successfulEnclaveIds, erroredEnclaveIds, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopEnclaves_Call) RunAndReturn(run func(context.Context, *enclave.EnclaveFilters) (map[enclave.EnclaveUUID]bool, map[enclave.EnclaveUUID]error, error)) *MockKurtosisBackend_StopEnclaves_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // StopEngines provides a mock function with given fields: ctx, filters
 func (_m *MockKurtosisBackend) StopEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]bool, map[engine.EngineGUID]error, error) {
 	ret := _m.Called(ctx, filters)
@@ -962,6 +2009,35 @@ func (_m *MockKurtosisBackend) StopEngines(ctx context.Context, filters *engine.
 	}
 
 	return r0, r1, r2
+}
+
+// MockKurtosisBackend_StopEngines_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StopEngines'
+type MockKurtosisBackend_StopEngines_Call struct {
+	*mock.Call
+}
+
+// StopEngines is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *engine.EngineFilters
+func (_e *MockKurtosisBackend_Expecter) StopEngines(ctx interface{}, filters interface{}) *MockKurtosisBackend_StopEngines_Call {
+	return &MockKurtosisBackend_StopEngines_Call{Call: _e.mock.On("StopEngines", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_StopEngines_Call) Run(run func(ctx context.Context, filters *engine.EngineFilters)) *MockKurtosisBackend_StopEngines_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*engine.EngineFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopEngines_Call) Return(successfulEngineGuids map[engine.EngineGUID]bool, erroredEngineGuids map[engine.EngineGUID]error, resultErr error) *MockKurtosisBackend_StopEngines_Call {
+	_c.Call.Return(successfulEngineGuids, erroredEngineGuids, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopEngines_Call) RunAndReturn(run func(context.Context, *engine.EngineFilters) (map[engine.EngineGUID]bool, map[engine.EngineGUID]error, error)) *MockKurtosisBackend_StopEngines_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 // StopNetworkingSidecars provides a mock function with given fields: ctx, filters
@@ -999,6 +2075,35 @@ func (_m *MockKurtosisBackend) StopNetworkingSidecars(ctx context.Context, filte
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_StopNetworkingSidecars_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StopNetworkingSidecars'
+type MockKurtosisBackend_StopNetworkingSidecars_Call struct {
+	*mock.Call
+}
+
+// StopNetworkingSidecars is a helper method to define mock.On call
+//   - ctx context.Context
+//   - filters *networking_sidecar.NetworkingSidecarFilters
+func (_e *MockKurtosisBackend_Expecter) StopNetworkingSidecars(ctx interface{}, filters interface{}) *MockKurtosisBackend_StopNetworkingSidecars_Call {
+	return &MockKurtosisBackend_StopNetworkingSidecars_Call{Call: _e.mock.On("StopNetworkingSidecars", ctx, filters)}
+}
+
+func (_c *MockKurtosisBackend_StopNetworkingSidecars_Call) Run(run func(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters)) *MockKurtosisBackend_StopNetworkingSidecars_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(*networking_sidecar.NetworkingSidecarFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopNetworkingSidecars_Call) Return(successfulUserServiceUuids map[service.ServiceUUID]bool, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_StopNetworkingSidecars_Call {
+	_c.Call.Return(successfulUserServiceUuids, erroredUserServiceUuids, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopNetworkingSidecars_Call) RunAndReturn(run func(context.Context, *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_StopNetworkingSidecars_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // StopUserServices provides a mock function with given fields: ctx, enclaveUuid, filters
 func (_m *MockKurtosisBackend) StopUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	ret := _m.Called(ctx, enclaveUuid, filters)
@@ -1034,6 +2139,36 @@ func (_m *MockKurtosisBackend) StopUserServices(ctx context.Context, enclaveUuid
 	return r0, r1, r2
 }
 
+// MockKurtosisBackend_StopUserServices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StopUserServices'
+type MockKurtosisBackend_StopUserServices_Call struct {
+	*mock.Call
+}
+
+// StopUserServices is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - filters *service.ServiceFilters
+func (_e *MockKurtosisBackend_Expecter) StopUserServices(ctx interface{}, enclaveUuid interface{}, filters interface{}) *MockKurtosisBackend_StopUserServices_Call {
+	return &MockKurtosisBackend_StopUserServices_Call{Call: _e.mock.On("StopUserServices", ctx, enclaveUuid, filters)}
+}
+
+func (_c *MockKurtosisBackend_StopUserServices_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters)) *MockKurtosisBackend_StopUserServices_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(*service.ServiceFilters))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopUserServices_Call) Return(successfulUserServiceUuids map[service.ServiceUUID]bool, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_StopUserServices_Call {
+	_c.Call.Return(successfulUserServiceUuids, erroredUserServiceUuids, resultErr)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_StopUserServices_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, *service.ServiceFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_StopUserServices_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UnregisterUserServices provides a mock function with given fields: ctx, enclaveUuid, services
 func (_m *MockKurtosisBackend) UnregisterUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	ret := _m.Called(ctx, enclaveUuid, services)
@@ -1067,6 +2202,36 @@ func (_m *MockKurtosisBackend) UnregisterUserServices(ctx context.Context, encla
 	}
 
 	return r0, r1, r2
+}
+
+// MockKurtosisBackend_UnregisterUserServices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UnregisterUserServices'
+type MockKurtosisBackend_UnregisterUserServices_Call struct {
+	*mock.Call
+}
+
+// UnregisterUserServices is a helper method to define mock.On call
+//   - ctx context.Context
+//   - enclaveUuid enclave.EnclaveUUID
+//   - services map[service.ServiceUUID]bool
+func (_e *MockKurtosisBackend_Expecter) UnregisterUserServices(ctx interface{}, enclaveUuid interface{}, services interface{}) *MockKurtosisBackend_UnregisterUserServices_Call {
+	return &MockKurtosisBackend_UnregisterUserServices_Call{Call: _e.mock.On("UnregisterUserServices", ctx, enclaveUuid, services)}
+}
+
+func (_c *MockKurtosisBackend_UnregisterUserServices_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]bool)) *MockKurtosisBackend_UnregisterUserServices_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(map[service.ServiceUUID]bool))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_UnregisterUserServices_Call) Return(_a0 map[service.ServiceUUID]bool, _a1 map[service.ServiceUUID]error, _a2 error) *MockKurtosisBackend_UnregisterUserServices_Call {
+	_c.Call.Return(_a0, _a1, _a2)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_UnregisterUserServices_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_UnregisterUserServices_Call {
+	_c.Call.Return(run)
+	return _c
 }
 
 type mockConstructorTestingTNewMockKurtosisBackend interface {
