@@ -202,7 +202,7 @@ By contrast, Kurtosis Starlark scripts can use data as a first-class primitive a
 
 Let's see it in action, and we'll explain what's happening after.
 
-First, create a file called kurtosis.yml in your working directory (kurtosis-quickstart), next to your main.star file, with the following contents:
+First, create a file called `kurtosis.yml` next to your `main.star file` (in your working directory, `kurtosis-quickstart`) with the following contents:
 
 ```bash
 name: "github.com/john-snow/kurtosis-quickstart"
