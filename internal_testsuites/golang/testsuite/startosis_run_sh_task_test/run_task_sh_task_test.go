@@ -30,6 +30,12 @@ def run(plan):
   result = plan.run_sh(run="cat /tmp/kurtosis.txt")
   plan.assert(value=result.code, assertion="==", target_value="0")
 `
+
+	runshStarlarkWithTimeout = `
+def run(plan):
+  result = plan.run_sh(run="sleep 45s", wait="30s")
+  plan.assert(value=result.code, assertion="==", target_value="0")
+`
 )
 
 func TestStarlark_RunshTaskSimple(t *testing.T) {
@@ -50,6 +56,14 @@ func TestStarlark_RunshTaskFileArtifactFailure(t *testing.T) {
 	ctx := context.Background()
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkFileArtifactFailure)
 	expectedErrorMessage := "error occurred and shell command: \"cat /tmp/kurtosis.txt\" exited with code 1 with output \"cat: can't open '/tmp/kurtosis.txt': No such file or directory\\n"
+	require.NotNil(t, runResult.ExecutionError)
+	require.Contains(t, runResult.ExecutionError.GetErrorMessage(), expectedErrorMessage)
+}
+
+func TestStarlark_RunshTimesoutSuccess(t *testing.T) {
+	ctx := context.Background()
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkWithTimeout)
+	expectedErrorMessage := "The exec request timed out after 30 seconds"
 	require.NotNil(t, runResult.ExecutionError)
 	require.Contains(t, runResult.ExecutionError.GetErrorMessage(), expectedErrorMessage)
 }

@@ -208,6 +208,12 @@
           "type": "list<string>",
           "content": "store?",
           "detail": "List of paths to directories or files that will be copied to a file artifact"
+        },
+        {
+          "name": "wait",
+          "type": "string",
+          "content": "wait?",
+          "detail": "The time to allow for the command to complete. If the command takes longer than this, the instruction will fail. In order to disable it, set wait=None. The default value is - 180s"
         }
       ]
     },

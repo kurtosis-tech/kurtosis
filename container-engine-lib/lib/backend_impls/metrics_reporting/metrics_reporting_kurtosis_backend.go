@@ -120,6 +120,19 @@ func (backend *MetricsReportingKurtosisBackend) GetEnclaves(
 	return results, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) RenameEnclave(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	newName string,
+) error {
+
+	if err := backend.underlying.RenameEnclave(ctx, enclaveUuid, newName); err != nil {
+		return stacktrace.Propagate(err, "An error occurred renaming enclave with UUID '%v' to '%s'", enclaveUuid, newName)
+	}
+
+	return nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) StopEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
