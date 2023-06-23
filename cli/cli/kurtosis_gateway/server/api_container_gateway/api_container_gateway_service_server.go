@@ -124,7 +124,7 @@ func (service *ApiContainerGatewayServiceServer) AddServices(ctx context.Context
 
 	// Write over the PublicIp and Public Ports fields so the service can be accessed through local port forwarding
 	for serviceNameStr, serviceInfo := range remoteApiContainerResponse.GetSuccessfulServiceNameToServiceInfo() {
-		if err := service.writeMaybeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
+		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformationIfServiceRunning(serviceInfo); err != nil {
 			err = stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", serviceNameStr)
 			failedServicesPool[serviceNameStr] = err.Error()
 		}
@@ -292,10 +292,10 @@ func (service *ApiContainerGatewayServiceServer) UploadStarlarkPackage(server ku
 //
 // ====================================================================================================
 
-// writeMaybeOverServiceInfoFieldsWithLocalConnectionInformation overwites the `MaybePublicPorts` and `MaybePublicIpAdrr` fields to connect to local ports forwarding requests to private ports in Kubernetes
+// writeOverServiceInfoFieldsWithLocalConnectionInformationIfServiceRunning overwites the `MaybePublicPorts` and `MaybePublicIpAdrr` fields to connect to local ports forwarding requests to private ports in Kubernetes
 // Only TCP Private Ports are forwarded
 // Does nothing if the service is stopped (no pod running)
-func (service *ApiContainerGatewayServiceServer) writeMaybeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo) error {
+func (service *ApiContainerGatewayServiceServer) writeOverServiceInfoFieldsWithLocalConnectionInformationIfServiceRunning(serviceInfo *kurtosis_core_rpc_api_bindings.ServiceInfo) error {
 	// If the service has no private ports, then don't overwrite any of the service info fields
 	if len(serviceInfo.PrivatePorts) == 0 {
 		return nil
@@ -307,7 +307,7 @@ func (service *ApiContainerGatewayServiceServer) writeMaybeOverServiceInfoFields
 	cleanUpConnection := true
 	runningLocalConnection, isFound := service.userServiceGuidToLocalConnectionMap[serviceUuid]
 	if !isFound {
-		runningLocalConnection, localConnErr = service.startMaybeRunningConnectionForKurtosisService(serviceUuid, serviceInfo.PrivatePorts)
+		runningLocalConnection, localConnErr = service.startRunningConnectionForKurtosisServiceIfRunning(serviceUuid, serviceInfo.PrivatePorts)
 		if localConnErr != nil {
 			return stacktrace.Propagate(localConnErr, "Expected to be able to start a local connection to Kurtosis service '%v', instead a non-nil error was returned", serviceUuid)
 		} else if runningLocalConnection == nil {
@@ -326,9 +326,9 @@ func (service *ApiContainerGatewayServiceServer) writeMaybeOverServiceInfoFields
 	return nil
 }
 
-// startMaybeRunningConnectionForKurtosisService starts a port forwarding process from kernel assigned local ports to the remote service ports specified
+// startRunningConnectionForKurtosisServiceIfRunning starts a port forwarding process from kernel assigned local ports to the remote service ports specified
 // If privatePortsFromApi is empty, an error is thrown
-func (service *ApiContainerGatewayServiceServer) startMaybeRunningConnectionForKurtosisService(serviceUuid string, privatePortsFromApi map[string]*kurtosis_core_rpc_api_bindings.Port) (*runningLocalServiceConnection, error) {
+func (service *ApiContainerGatewayServiceServer) startRunningConnectionForKurtosisServiceIfRunning(serviceUuid string, privatePortsFromApi map[string]*kurtosis_core_rpc_api_bindings.Port) (*runningLocalServiceConnection, error) {
 	if len(privatePortsFromApi) == 0 {
 		return nil, stacktrace.NewError("Expected Kurtosis service to have private ports specified for port forwarding, instead no ports were provided")
 	}
@@ -355,7 +355,7 @@ func (service *ApiContainerGatewayServiceServer) startMaybeRunningConnectionForK
 	}
 
 	// Start listening
-	serviceConnection, err := service.connectionProvider.ForMaybeUserService(service.enclaveId, serviceUuid, remotePrivatePortSpecs)
+	serviceConnection, err := service.connectionProvider.ForUserServiceIfRunning(service.enclaveId, serviceUuid, remotePrivatePortSpecs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to start a local connection service with guid '%v' in enclave '%v', instead a non-nil error was returned", serviceUuid, service.enclaveId)
 	} else if serviceConnection == nil {
@@ -420,7 +420,7 @@ func (service *ApiContainerGatewayServiceServer) updateServicesLocalConnection(s
 
 	serviceUuids := map[string]bool{}
 	for serviceId, serviceInfo := range serviceInfos {
-		if err := service.writeMaybeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
+		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformationIfServiceRunning(serviceInfo); err != nil {
 			return stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", serviceId)
 		}
 		serviceUuids[serviceInfo.GetServiceUuid()] = true
