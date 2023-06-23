@@ -12,6 +12,7 @@ API_DIRNAME="api"
 PROTOBUF_DIRNAME="protobuf"
 GOLANG_DIRNAME="golang"
 TYPESCRIPT_DIRNAME="typescript"
+RUST_DIRNAME="rust"
 
 OUTPUT_DIRNAMES=(
     "engine"
@@ -38,4 +39,13 @@ for output_dirname in "${OUTPUT_DIRNAMES[@]}"; do
         exit 1
     fi
     echo "Successfully generated ${output_dirname} TypeScript bindings in directory '${typescript_output_dirpath}'"
+
+    # TypeScript
+    export KURTOSIS_GENERATE_BINDINGS=1
+    rust_input_dirpath="${api_dirpath}/${RUST_DIRNAME}"
+    if ! cargo build --manifest-path "${rust_input_dirpath}/Cargo.toml"; then
+        echo "Error: An error occurred generating Rust bindings in directory '${rust_input_dirpath}'" >&2
+        exit 1
+    fi
+    echo "Successfully generated Rust bindings in directory '${rust_input_dirpath}'"
 done
