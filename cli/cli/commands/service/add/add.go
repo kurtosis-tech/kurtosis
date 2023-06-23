@@ -429,11 +429,6 @@ func getServiceConfigStarlark(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
-
-	resultBuilder := services.NewServiceConfigBuilder(image)
-	if len(cmdArgs) > 0 {
-		resultBuilder.WithCmdArgs(cmdArgs)
-	}
 	entryPointArgs := []string{}
 	if entrypoint != "" {
 		entryPointArgs = []string{entrypoint}

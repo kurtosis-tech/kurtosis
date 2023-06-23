@@ -33,7 +33,7 @@ type ServiceNetwork interface {
 	AddService(
 		ctx context.Context,
 		serviceName service.ServiceName,
-		serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
+		serviceConfig *service.ServiceConfig,
 	) (
 		*service.Service,
 		error,
@@ -41,7 +41,7 @@ type ServiceNetwork interface {
 
 	AddServices(
 		ctx context.Context,
-		serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+		serviceConfigs map[service.ServiceName]*service.ServiceConfig,
 		batchSize int,
 	) (
 		map[service.ServiceName]*service.Service,
@@ -112,4 +112,6 @@ type ServiceNetwork interface {
 	IsNetworkPartitioningEnabled() bool
 
 	GetUniqueNameForFileArtifact() (string, error)
+
+	GetApiContainerInfo() *ApiContainerInfo
 }

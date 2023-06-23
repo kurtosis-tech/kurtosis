@@ -3,8 +3,8 @@ package run_sh
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -96,10 +97,9 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 				serviceNetwork:      serviceNetwork,
 				runtimeValueStore:   runtimeValueStore,
 				name:                "",
-				image:               DefaultImageName, // populated at interpretation time
-				run:                 "",               // populated at interpretation time
-				files:               nil,
-				resultUuid:          "", // populated at interpretation time
+				serviceConfig:       nil, // populated at interpretation time
+				run:                 "",  // populated at interpretation time
+				resultUuid:          "",  // populated at interpretation time
 				fileArtifactNames:   nil,
 				pathToFileArtifacts: nil,
 				wait:                DefaultWaitTimeoutDurationStr,
@@ -120,11 +120,11 @@ type RunShCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	serviceNetwork    service_network.ServiceNetwork
 
-	resultUuid          string
-	name                string
-	run                 string
-	image               string
-	files               map[string]string
+	resultUuid string
+	name       string
+	run        string
+
+	serviceConfig       *service.ServiceConfig
 	fileArtifactNames   []string
 	pathToFileArtifacts []string
 	wait                string
@@ -137,14 +137,18 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 	}
 	builtin.run = runCommand.GoString()
 
+	var image string
 	if arguments.IsSet(ImageNameArgName) {
 		imageStarlark, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ImageNameArgName)
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ImageNameArgName)
 		}
-		builtin.image = imageStarlark.GoString()
+		image = imageStarlark.GoString()
+	} else {
+		image = DefaultImageName
 	}
 
+	var filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 	if arguments.IsSet(FilesArgName) {
 		filesStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, FilesArgName)
 		if err != nil {
@@ -155,9 +159,37 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
-			builtin.files = filesArtifactMountDirPaths
+			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
+			if interpretationErr != nil {
+				return nil, interpretationErr
+			}
 		}
 	}
+
+	// build a service config from image and files artifacts expansion.
+	builtin.serviceConfig = service.NewServiceConfig(
+		image,
+		nil,
+		nil,
+		// This make sure that the container does not stop as soon as it starts
+		// This only is needed for kubernetes at the moment
+		// TODO: Instead of creating a service and running exec commands
+		//  we could probably run the command as an entrypoint and retrieve the results as soon as the
+		//  command is completed
+		runTailCommandToPreventContainerToStopOnCreating,
+		nil,
+		nil,
+		filesArtifactExpansion,
+		0,
+		0,
+		service_config.DefaultPrivateIPAddrPlaceholder,
+		0,
+		0,
+		// TODO: hardcoding subnetwork to default is what we do now but is incorrect as the run_sh might not be able to
+		//  reach some services outside of the default subnetwork. It should be re-worked if users want to use that in
+		//  conjunction with subnetworks
+		service_config.DefaultSubnetwork,
+	)
 
 	if arguments.IsSet(StoreFilesArgName) {
 		storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, StoreFilesArgName)
@@ -246,43 +278,35 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 		}
 	}
 
-	if builtin.files != nil {
-		for _, artifactName := range builtin.files {
+	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, artifactName := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
 				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunShBuiltinName, artifactName)
 			}
 		}
 	}
 
-	validatorEnvironment.AppendRequiredContainerImage(builtin.image)
+	validatorEnvironment.AppendRequiredContainerImage(builtin.serviceConfig.GetContainerImageName())
 	return nil
 }
 
 // Execute This is just v0 for run_sh task - we can later improve on it.
-//	TODO: stop the container as soon as task completed.
-//   Create an mechanism for other services to retrieve files from the task container
-//   Make task as its own entity instead of currently shown under services
+//
+//		TODO: stop the container as soon as task completed.
+//	  Create an mechanism for other services to retrieve files from the task container
+//	  Make task as its own entity instead of currently shown under services
 func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
+	}
+
 	// create work directory and cd into that directory
 	commandToRun, err := getCommandToRun(builtin)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
 	}
 	fullCommandToRun := []string{shellCommand, "-c", commandToRun}
-	serviceConfigBuilder := services.NewServiceConfigBuilder(builtin.image)
-	serviceConfigBuilder.WithFilesArtifactMountDirpaths(builtin.files)
-	// This make sure that the container does not stop as soon as it starts
-	// This only is needed for kubernetes at the moment
-	// TODO: Instead of creating a service and running exec commands
-	//  we could probably run the command as an entrypoint and retrieve the results as soon as the
-	//  command is completed
-	serviceConfigBuilder.WithEntryPointArgs(runTailCommandToPreventContainerToStopOnCreating)
-	serviceConfig := serviceConfigBuilder.Build()
-	_, err = builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), serviceConfig)
-
-	if err != nil {
-		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while creating a run_sh task with image: %v", builtin.image))
-	}
 
 	// run the command passed in by user in the container
 	createDefaultDirectoryResult, err := executeWithWait(ctx, builtin, fullCommandToRun)
