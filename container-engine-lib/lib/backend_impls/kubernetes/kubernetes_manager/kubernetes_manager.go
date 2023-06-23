@@ -61,6 +61,7 @@ const (
 	shouldAddTimestampsWhenPrintingPodInfo       = true
 
 	listOptionsTimeoutSeconds int64 = 10
+	contextDeadlineExceeded         = "context deadline exceeded"
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -1243,6 +1244,92 @@ func (manager *KubernetesManager) GetContainerLogs(
 		)
 	}
 	return result, nil
+}
+
+// RunExecCommandWithContext This runs the exec to kubernetes with context, therefore
+// when context timeouts it stops the process.
+// TODO: merge RunExecCommand and this to one method
+//  Doing this for now to unblock myself for wait worflows for k8s
+//  In next PR, will include add context to WaitForPortAvailabilityUsingNetstat and
+//  CopyFilesFromUserService method. I am doing this to reduce the blast radius.
+func (manager *KubernetesManager) RunExecCommandWithContext(
+	ctx context.Context,
+	namespaceName string,
+	podName string,
+	containerName string,
+	command []string,
+	stdOutOutput io.Writer,
+	stdErrOutput io.Writer,
+) (
+	resultExitCode int32,
+	resultErr error,
+) {
+	execOptions := &apiv1.PodExecOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		Stdin:     shouldAllocateStdinOnPodExec,
+		Stdout:    shouldAllocatedStdoutOnPodExec,
+		Stderr:    shouldAllocatedStderrOnPodExec,
+		TTY:       shouldAllocateTtyOnPodExec,
+		Container: containerName,
+		Command:   command,
+	}
+
+	//Create a RESTful command request.
+	request := manager.kubernetesClientSet.CoreV1().RESTClient().
+		Post().
+		Namespace(namespaceName).
+		Resource("pods").
+		Name(podName).
+		SubResource("exec").
+		VersionedParams(execOptions, scheme.ParameterCodec)
+	if request == nil {
+		return -1, stacktrace.NewError(
+			"Failed to build a working RESTful request for the command '%s'.",
+			execOptions.Command,
+		)
+	}
+
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
+	if err != nil {
+		return -1, stacktrace.Propagate(
+			err,
+			"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.",
+			execOptions.Command,
+			request.URL().String(),
+		)
+	}
+
+	if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+		Stdin:             nil,
+		Stdout:            stdOutOutput,
+		Stderr:            stdErrOutput,
+		Tty:               false,
+		TerminalSizeQueue: nil,
+	}); err != nil {
+		// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
+		statusError := err.Error()
+
+		// this means that context deadline has exceeded
+		if strings.Contains(statusError, contextDeadlineExceeded) {
+			return 1, stacktrace.Propagate(err, "There was an error occurred while executing commands on the container")
+		}
+
+		exitCode, err := getExitCodeFromStatusMessage(statusError)
+		if err != nil {
+			return exitCode, stacktrace.Propagate(
+				err,
+				"There was an error trying to parse the message '%s' to an exit code.",
+				statusError,
+			)
+		}
+
+		return exitCode, nil
+	}
+
+	return successExecCommandExitCode, nil
 }
 
 func (manager *KubernetesManager) RunExecCommand(
