@@ -157,6 +157,36 @@ func (backend *KubernetesKurtosisBackend) GetEnclaves(
 	return matchingEnclaves, nil
 }
 
+func (backend *KubernetesKurtosisBackend) RenameEnclave(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	newName string,
+) error {
+
+	enclave, kubernetesResources, err := backend.getSingleEnclaveAndKubernetesResources(ctx, enclaveUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclave object and Kubernetes resources for enclave ID '%v'", enclaveUuid)
+	}
+	namespace := kubernetesResources.namespace
+	if namespace == nil {
+		return stacktrace.NewError("Cannot rename enclave '%v' because no Kubernetes namespace exists for it", enclaveUuid)
+	}
+
+	updatedAnnotations := map[string]string{
+		kubernetes_annotation_key_consts.EnclaveNameAnnotationKey.GetString(): newName,
+	}
+
+	namespaceApplyConfigurator := func(namespaceApplyConfig *applyconfigurationsv1.NamespaceApplyConfiguration) {
+		namespaceApplyConfig.WithAnnotations(updatedAnnotations)
+	}
+
+	if _, err := backend.kubernetesManager.UpdateNamespace(ctx, namespace.GetName(), namespaceApplyConfigurator); err != nil {
+		return stacktrace.Propagate(err, "An error occurred renaming enclave with UUID '%v', renaming from '%s' to '%s'", enclaveUuid, enclave.GetName(), newName)
+	}
+
+	return nil
+}
+
 func (backend *KubernetesKurtosisBackend) StopEnclaves(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,

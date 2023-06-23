@@ -67,8 +67,15 @@ type KurtosisBackend interface {
 	// Dumps all of Kurtosis (engines + all enclaves)
 	DumpKurtosis(ctx context.Context, outputDirpath string) error
 
-	// Creates an enclave with the given enclave ID
+	// Creates an enclave with the given enclave UUID
 	CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error)
+
+	// Rename an enclave with a new name by UUID
+	RenameEnclave(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		newName string,
+	) error
 
 	// Gets enclaves matching the given filters
 	GetEnclaves(
