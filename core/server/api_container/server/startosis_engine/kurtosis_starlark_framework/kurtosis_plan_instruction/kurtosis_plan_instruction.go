@@ -1,8 +1,9 @@
 package kurtosis_plan_instruction
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 )
 
@@ -20,13 +21,13 @@ type KurtosisPlanInstructionWrapper struct {
 	*KurtosisPlanInstruction
 
 	// TODO: This can be changed to KurtosisPlanInstructionInternal when we get rid of KurtosisInstruction
-	instructionQueue *[]kurtosis_instruction.KurtosisInstruction
+	instructionsPlan *instructions_plan.InstructionsPlan
 }
 
-func NewKurtosisPlanInstructionWrapper(instruction *KurtosisPlanInstruction, instructionQueue *[]kurtosis_instruction.KurtosisInstruction) *KurtosisPlanInstructionWrapper {
+func NewKurtosisPlanInstructionWrapper(instruction *KurtosisPlanInstruction, instructionsPlan *instructions_plan.InstructionsPlan) *KurtosisPlanInstructionWrapper {
 	return &KurtosisPlanInstructionWrapper{
 		KurtosisPlanInstruction: instruction,
-		instructionQueue:        instructionQueue,
+		instructionsPlan:        instructionsPlan,
 	}
 }
 
@@ -44,8 +45,12 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 		}
 
 		// before returning, automatically add instruction to queue
-		*builtin.instructionQueue = append(*builtin.instructionQueue, instructionWrapper)
-
+		if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err,
+				"Unable to add Kurtosis instruction '%s' at position '%s' to the current plan being assembled. This is a Kurtosis internal bug",
+				instructionWrapper.String(),
+				instructionWrapper.GetPositionInOriginalScript().String())
+		}
 		return returnedFutureValue, nil
 	}
 }
