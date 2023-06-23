@@ -114,6 +114,9 @@ parameters:
   server-go-version:
     type: string
     default: "1.19"
+  rust-version:
+    type: string
+    default: 1.68.2
   api-node-version:
     type: string
     default: 16.13.0
@@ -814,7 +817,7 @@ jobs:
 
   publish_kurtosis_sdk_rust:
     docker:
-      - image: "cimg/rust:<< pipeline.parameters.api-node-version>>"
+      - image: "cimg/rust:<< pipeline.parameters.rust-version>>"
     steps:
       - slack/notify:
           channel: engineering
