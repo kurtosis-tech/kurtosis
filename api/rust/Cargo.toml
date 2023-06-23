@@ -1,6 +1,8 @@
 [package]
 name = "kurtosis-sdk"
 version = "0.0.0"
+license-file = "https://github.com/kurtosis-tech/kurtosis/blob/main/LICENSE.md"
+description = "Rust SDK for Kurtosis"
 edition = "2021"
 readme = "README.md"
 homepage = "https://kurtosis.com"
