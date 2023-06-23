@@ -539,13 +539,6 @@ plan.start_service(
 )
 ```
 
-:::caution
-
-`start_service` is only available with the Docker backend.
-
-:::
-
-
 stop_service
 ------------
 
@@ -558,12 +551,6 @@ plan.stop_service(
     name = "my_service",
 )
 ```
-
-:::caution
-
-`stop_service` is only available with the Docker backend.
-
-:::
 
 store_service_files
 -------------------
