@@ -20,8 +20,7 @@ DEFAULT_TESTSUITE_CLUSTER_BACKEND="${TESTSUITE_CLUSTER_BACKEND_DOCKER}"
 # network_partition_starlark,network_partition_test,network_soft_partition_test - Networking partitioning is not implemented in kubernetes
 # service_pause_test - Service pausing not implemented in Kubernetes
 # stream_log_test,search_log_test - The centralized logs feature is not implemented in Kubernetes yet
-# startosis_start_service_test,startosis_stop_service_test - The start and stop service feature does not work in Kubernetes due to a required update in the gateway
-KUBERNETES_TEST_IGNORE_PATTERNS="/build/testsuite/(network_partition_starlark|network_partition_test|network_soft_partition_test|service_pause_test|stream_log_test|search_logs_test|startosis_start_service_test|startosis_stop_service_test)"
+KUBERNETES_TEST_IGNORE_PATTERNS="/build/testsuite/(network_partition_starlark|network_partition_test|network_soft_partition_test|service_pause_test|stream_log_test|search_logs_test)"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation
