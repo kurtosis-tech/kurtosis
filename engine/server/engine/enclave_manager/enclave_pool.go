@@ -29,15 +29,15 @@ const (
 )
 
 type EnclavePool struct {
-	idleEnclavesChan    chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo
-	enclaveManager      *EnclaveManager
-	apiContainerVersion string
+	idleEnclavesChan chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo
+	enclaveCreator   *EnclaveCreator
+	engineVersion    string
 }
 
 func CreateEnclavePool(
-	enclaveManager *EnclaveManager,
-	apiContainerVersion string,
+	enclaveCreator *EnclaveCreator,
 	poolSize uint8,
+	engineVersion string,
 ) *EnclavePool {
 
 	// The amount of idle enclaves is equal to the chan capacity + one enclave
@@ -47,9 +47,9 @@ func CreateEnclavePool(
 	idleEnclavesChan := make(chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo, chanCapacity)
 
 	enclavePool := &EnclavePool{
-		idleEnclavesChan:    idleEnclavesChan,
-		enclaveManager:      enclaveManager,
-		apiContainerVersion: apiContainerVersion,
+		idleEnclavesChan: idleEnclavesChan,
+		enclaveCreator:   enclaveCreator,
+		engineVersion:    engineVersion,
 	}
 
 	go enclavePool.run()
@@ -65,6 +65,10 @@ func (pool *EnclavePool) GetEnclave(newEnclaveName string) (*kurtosis_engine_rpc
 	// TODO what we do with the Metrics ID value
 	// TODO we should also check if the user is requesting for partitioning enable
 	// TODO we should check the enclave status before returning it
+
+	// TODO el problema mas importante que encuentro ahora es que no hay comunicación entre el
+	// TODO EngineServer y el APIContainerServer como para actualizar el APIContainer logLevel value
+	// TODO desde el Engine
 
 	enclaveInfo, ok := <-pool.idleEnclavesChan
 	if !ok {
@@ -123,9 +127,11 @@ func (pool *EnclavePool) createNewEnclave() (*kurtosis_engine_rpc_api_bindings.E
 		)
 	}
 
-	newEnclaveInfo, err := pool.enclaveManager.CreateEnclave(
+	apiContainerVersion := pool.engineVersion
+
+	newEnclaveInfo, err := pool.enclaveCreator.CreateEnclave(
 		ctx,
-		pool.apiContainerVersion,
+		apiContainerVersion,
 		defaultApiContainerLogLevel,
 		enclaveName,
 		defaultIsPartitioningEnabled,

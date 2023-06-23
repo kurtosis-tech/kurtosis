@@ -111,25 +111,16 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType)
+	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
-
-	// TODO remove this hardcoded value, it should be passed through the args
-	apiContainerVersion := "0.78.4"
-
-	// TODO remove this hardcoded value, it should be passed through the args
-	poolSize := uint8(3)
-
-	enclavePool := enclave_manager.CreateEnclavePool(enclaveManager, apiContainerVersion, poolSize, asdf)
 
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 
 	engineServerService := server.NewEngineServerService(
 		serverArgs.ImageVersionTag,
 		enclaveManager,
-		enclavePool,
 		serverArgs.MetricsUserID,
 		serverArgs.DidUserAcceptSendingMetrics,
 		logsDatabaseClient,
@@ -153,7 +144,11 @@ func runMain() error {
 	return nil
 }
 
-func getEnclaveManager(kurtosisBackend backend_interface.KurtosisBackend, kurtosisBackendType args.KurtosisBackendType) (*enclave_manager.EnclaveManager, error) {
+func getEnclaveManager(
+	kurtosisBackend backend_interface.KurtosisBackend,
+	kurtosisBackendType args.KurtosisBackendType,
+	engineVersion string,
+) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
@@ -164,7 +159,15 @@ func getEnclaveManager(kurtosisBackend backend_interface.KurtosisBackend, kurtos
 		return nil, stacktrace.NewError("Backend type '%v' was not recognized by engine server.", kurtosisBackendType.String())
 	}
 
-	enclaveManager := enclave_manager.NewEnclaveManager(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
+	// TODO remove this hardcoded value, it should be passed through the args
+	poolSize := uint8(3)
+
+	enclaveManager := enclave_manager.CreateEnclaveManager(
+		kurtosisBackend,
+		apiContainerKurtosisBackendConfigSupplier,
+		engineVersion,
+		poolSize,
+	)
 
 	return enclaveManager, nil
 }

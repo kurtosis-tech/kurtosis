@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -57,17 +56,29 @@ type EnclaveManager struct {
 	// we go with the GRPC type as it is just used by the engine server service
 	// this is an append only list
 	allExistingAndHistoricalIdentifiers []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers
+
+	enclaveCreator *EnclaveCreator
+	enclavePool    *EnclavePool
 }
 
-func NewEnclaveManager(
+func CreateEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
+	engineVersion string,
+	poolSize uint8,
 ) *EnclaveManager {
+	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
+
+	// TODO if poolSize is 0 or the backend is Docker enclavePool is nil
+	enclavePool := CreateEnclavePool(enclaveCreator, poolSize, engineVersion)
+
 	return &EnclaveManager{
 		mutex:           &sync.Mutex{},
 		kurtosisBackend: kurtosisBackend,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
 		allExistingAndHistoricalIdentifiers:       []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{},
+		enclaveCreator:                            enclaveCreator,
+		enclavePool:                               enclavePool,
 	}
 }
 
@@ -88,123 +99,47 @@ func (manager *EnclaveManager) CreateEnclave(
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
 
-	uuid, err := uuid_generator.GenerateUUIDString()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating UUID for enclave with supplied name '%v'", enclaveName)
-	}
-	enclaveUuid := enclave.EnclaveUUID(uuid)
-
-	allCurrentEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getAllEnclavesFilter())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with name '%v'", enclaveName)
-	}
-
-	if enclaveName == autogenerateEnclaveNameKeyword {
-		enclaveName = GetRandomEnclaveNameWithRetries(name_generator.GenerateNatureThemeNameForEnclave, allCurrentEnclaves, getRandomEnclaveIdRetries)
-	}
-
-	if isEnclaveNameInUse(enclaveName, allCurrentEnclaves) {
-		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveName)
-	}
-
-	if err := validateEnclaveName(enclaveName); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred validating enclave name '%v'", enclaveName)
-	}
-
-	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
-	// Create Enclave with kurtosisBackend
-	newEnclave, err := manager.kurtosisBackend.CreateEnclave(setupCtx, enclaveUuid, enclaveName, isPartitioningEnabled)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with name `%v` and uuid '%v'", enclaveName, enclaveUuid)
-	}
-	shouldDestroyEnclave := true
-	defer func() {
-		if shouldDestroyEnclave {
-			_, destroyEnclaveErrs, err := manager.kurtosisBackend.DestroyEnclaves(teardownCtx, getEnclaveByEnclaveIdFilter(enclaveUuid))
-			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the enclave '%v'!!!!!!"
-			if err != nil {
-				logrus.Errorf("Expected to be able to call the backend and destroy enclave '%v', but an error occurred:\n%v", enclaveUuid, err)
-				logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
-				return
-			}
-			for enclaveUuid, err := range destroyEnclaveErrs {
-				logrus.Errorf("Expected to be able to cleanup the enclave '%v', but an error was thrown:\n%v", enclaveUuid, err)
-				logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
-			}
-		}
-	}()
-
-	apiContainer, err := manager.launchApiContainer(setupCtx,
-		apiContainerImageVersionTag,
-		apiContainerLogLevel,
-		enclaveUuid,
-		apiContainerListenGrpcPortNumInsideNetwork,
-		isPartitioningEnabled,
-		metricsUserID,
-		didUserAcceptSendingMetrics,
+	var (
+		enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo
+		err         error
 	)
 
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred launching the API container")
-	}
-	shouldStopApiContainer := true
-	defer func() {
-		if shouldStopApiContainer {
-			_, destroyApiContainerErrs, err := manager.kurtosisBackend.DestroyAPIContainers(teardownCtx, getApiContainerByEnclaveIdFilter(enclaveUuid))
-			manualActionRequiredStrFmt := "ACTION REQUIRED: You'll need to manually destroy the API Container for enclave '%v'!!!!!!"
-			if err != nil {
-				logrus.Errorf("Expected to be able to call the backend and destroy the API container for enclave '%v', but an error was thrown:\n%v", enclaveUuid, err)
-				logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
-				return
-			}
-			for enclaveUuid, err := range destroyApiContainerErrs {
-				logrus.Errorf("Expected to be able to cleanup the API Container in enclave '%v', but an error was thrown:\n%v", enclaveUuid, err)
-				logrus.Errorf(manualActionRequiredStrFmt, enclaveUuid)
-			}
-		}
-	}()
-
-	var apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
-	if apiContainer.GetPublicIPAddress() != nil &&
-		apiContainer.GetPublicGRPCPort() != nil {
-
-		apiContainerHostMachineInfo = &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo{
-			IpOnHostMachine:       apiContainer.GetPublicIPAddress().String(),
-			GrpcPortOnHostMachine: uint32(apiContainer.GetPublicGRPCPort().GetNumber()),
+	if manager.enclavePool != nil {
+		enclaveInfo, err = manager.enclavePool.GetEnclave(enclaveName)
+		if err != nil {
+			logrus.Debugf("An error occurred when trying to get an enclave from the enclave pool")
 		}
 	}
 
-	creationTimestamp := getEnclaveCreationTimestamp(newEnclave)
-	newEnclaveUuid := newEnclave.GetUUID()
-	newEnclaveUuidStr := string(newEnclaveUuid)
-	shortenedUuid := uuid_generator.ShortenedUUIDString(newEnclaveUuidStr)
-
-	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
-		EnclaveUuid:        newEnclaveUuidStr,
-		Name:               newEnclave.GetName(),
-		ShortenedUuid:      shortenedUuid,
-		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
-		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
-		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
-			ContainerId:           "",
-			IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
-			GrpcPortInsideEnclave: uint32(apiContainerListenGrpcPortNumInsideNetwork),
-		},
-		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
-		CreationTime:                creationTimestamp,
+	if enclaveInfo == nil {
+		enclaveInfo, err = manager.enclaveCreator.CreateEnclave(
+			setupCtx,
+			apiContainerImageVersionTag,
+			apiContainerLogLevel,
+			enclaveName,
+			isPartitioningEnabled,
+			metricsUserID,
+			didUserAcceptSendingMetrics,
+		)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred creating new enclave with name '%s' using api container image version '%s' and api container log level '%v'",
+				enclaveName,
+				apiContainerImageVersionTag,
+				apiContainerLogLevel,
+			)
+		}
 	}
 
 	enclaveIdentifier := &kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{
-		EnclaveUuid:   newEnclaveUuidStr,
-		Name:          enclaveName,
-		ShortenedUuid: shortenedUuid,
+		EnclaveUuid:   enclaveInfo.EnclaveUuid,
+		Name:          enclaveInfo.Name,
+		ShortenedUuid: enclaveInfo.ShortenedUuid,
 	}
 	manager.allExistingAndHistoricalIdentifiers = append(manager.allExistingAndHistoricalIdentifiers, enclaveIdentifier)
 
-	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
-	shouldDestroyEnclave = false
-	shouldStopApiContainer = false
-	return result, nil
+	return enclaveInfo, nil
 }
 
 // It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
@@ -526,55 +461,6 @@ func getApiContainerByEnclaveIdFilter(enclaveId enclave.EnclaveUUID) *api_contai
 		},
 		Statuses: nil,
 	}
-}
-
-func (manager *EnclaveManager) launchApiContainer(
-	ctx context.Context,
-	apiContainerImageVersionTag string,
-	logLevel logrus.Level,
-	enclaveUuid enclave.EnclaveUUID,
-	grpcListenPort uint16,
-	isPartitioningEnabled bool,
-	metricsUserID string,
-	didUserAcceptSendingMetrics bool,
-) (
-	resultApiContainer *api_container.APIContainer,
-	resultErr error,
-) {
-	apiContainerLauncher := api_container_launcher.NewApiContainerLauncher(
-		manager.kurtosisBackend,
-	)
-	if apiContainerImageVersionTag != "" {
-		apiContainer, err := apiContainerLauncher.LaunchWithCustomVersion(
-			ctx,
-			apiContainerImageVersionTag,
-			logLevel,
-			enclaveUuid,
-			grpcListenPort,
-			isPartitioningEnabled,
-			metricsUserID,
-			didUserAcceptSendingMetrics,
-			manager.apiContainerKurtosisBackendConfigSupplier,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveUuid, apiContainerImageVersionTag)
-		}
-		return apiContainer, nil
-	}
-	apiContainer, err := apiContainerLauncher.LaunchWithDefaultVersion(
-		ctx,
-		logLevel,
-		enclaveUuid,
-		grpcListenPort,
-		isPartitioningEnabled,
-		metricsUserID,
-		didUserAcceptSendingMetrics,
-		manager.apiContainerKurtosisBackendConfigSupplier,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveUuid)
-	}
-	return apiContainer, nil
 }
 
 func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enclave *enclave.Enclave) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
