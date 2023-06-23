@@ -13,7 +13,7 @@ type ScheduledInstructionUuid string
 // In any case, the ScheduledInstructionUuid stores the result object from the interpretation of the instruction,
 // as well as a flag to track whether this instruction was already executed or not.
 type ScheduledInstruction struct {
-	uuid ScheduledInstructionUuidg
+	uuid ScheduledInstructionUuid
 
 	kurtosisInstruction kurtosis_instruction.KurtosisInstruction
 
