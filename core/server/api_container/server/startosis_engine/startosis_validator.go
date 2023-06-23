@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -36,7 +36,7 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, instructions []kurtosis_instruction.KurtosisInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (validator *StartosisValidator) Validate(ctx context.Context, instructionsSequence []*instructions_plan.ScheduledInstruction) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		defer close(starlarkRunResponseLineStream)
@@ -61,7 +61,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 			serviceNamePortIdMapping)
 
 		isValidationFailure = isValidationFailure ||
-			validator.validateAnUpdateEnvironment(instructions, environment, starlarkRunResponseLineStream)
+			validator.validateAndUpdateEnvironment(instructionsSequence, environment, starlarkRunResponseLineStream)
 		logrus.Debug("Finished validating environment. Validating and downloading container images.")
 
 		isValidationFailure = isValidationFailure ||
@@ -77,12 +77,20 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructions 
 	return starlarkRunResponseLineStream
 }
 
-func (validator *StartosisValidator) validateAnUpdateEnvironment(instructions []kurtosis_instruction.KurtosisInstruction, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
+func (validator *StartosisValidator) validateAndUpdateEnvironment(instructionsSequence []*instructions_plan.ScheduledInstruction, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
 	isValidationFailure := false
-	for _, instruction := range instructions {
+	for _, scheduledInstruction := range instructionsSequence {
+		if scheduledInstruction.IsExecuted() {
+			// no need to validate the instruction as it won't be executed in this round
+			continue
+		}
+		instruction := scheduledInstruction.GetInstruction()
 		err := instruction.ValidateAndUpdateEnvironment(environment)
 		if err != nil {
-			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Error while validating instruction %v. The instruction can be found at %v", instruction.String(), instruction.GetPositionInOriginalScript().String())
+			wrappedValidationError := startosis_errors.WrapWithValidationError(err,
+				"Error while validating instruction %v. The instruction can be found at %v",
+				instruction.String(),
+				instruction.GetPositionInOriginalScript().String())
 			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 			isValidationFailure = true
 		}

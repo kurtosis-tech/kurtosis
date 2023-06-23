@@ -10,17 +10,14 @@ import {
     ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse,
     GetServicesArgs,
     GetServicesResponse, ListFilesArtifactNamesAndUuidsResponse,
-    PauseServiceArgs,
     RemoveServiceArgs,
     RemoveServiceResponse,
-    RepartitionArgs,
     RunStarlarkPackageArgs,
     RunStarlarkScriptArgs,
     AddServicesArgs,
     AddServicesResponse,
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
-    UnpauseServiceArgs,
     UploadFilesArtifactArgs,
     UploadFilesArtifactResponse,
     WaitForHttpGetEndpointAvailabilityArgs,
@@ -36,13 +33,10 @@ export interface GenericApiContainerClient {
     runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>>
     addServices(addServicesArgs: AddServicesArgs): Promise<Result<AddServicesResponse, Error>>
     removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
-    repartitionNetwork(repartitionArgs: RepartitionArgs): Promise<Result<null, Error>>
     waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>>
     waitForHttpPostEndpointAvailability(availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs): Promise<Result<null, Error>>
     getServices(getServicesArgs: GetServicesArgs): Promise<Result<GetServicesResponse, Error>>
     execCommand(execCommandArgs: ExecCommandArgs): Promise<Result<ExecCommandResponse, Error>>
-    pauseService(pauseServiceArgs: PauseServiceArgs): Promise<Result<null, Error>>
-    unpauseService(unpauseServiceArgs: UnpauseServiceArgs): Promise<Result<null, Error>>
     uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>>
     storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>>
     downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<DownloadFilesArtifactResponse, Error>>

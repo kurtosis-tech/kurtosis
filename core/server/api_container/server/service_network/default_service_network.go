@@ -162,32 +162,6 @@ func NewDefaultServiceNetwork(
 	}, nil
 }
 
-/*
-Completely repartitions the network, throwing away the old topology
-*/
-func (network *DefaultServiceNetwork) Repartition(
-	ctx context.Context,
-	newPartitionServices map[service_network_types.PartitionID]map[service.ServiceName]bool,
-	newPartitionConnections map[service_network_types.PartitionConnectionID]partition_topology.PartitionConnection,
-	newDefaultConnection partition_topology.PartitionConnection,
-) error {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	if !network.isPartitioningEnabled {
-		return stacktrace.NewError("Cannot repartition; partitioning is not enabled")
-	}
-
-	if err := network.topology.Repartition(newPartitionServices, newPartitionConnections, newDefaultConnection); err != nil {
-		return stacktrace.Propagate(err, "An error occurred repartitioning the network topology")
-	}
-
-	if err := network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
-		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
-	}
-	return nil
-}
-
 func (network *DefaultServiceNetwork) SetConnection(
 	ctx context.Context,
 	partition1 service_network_types.PartitionID,
@@ -808,38 +782,6 @@ func (network *DefaultServiceNetwork) StopServices(
 	}
 
 	return successfulUuids, erroredUuids, nil
-}
-
-// TODO we could switch this to be a bulk command; the backend would support it
-func (network *DefaultServiceNetwork) PauseService(ctx context.Context, serviceIdentifier string) error {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
-	}
-
-	if err := network.kurtosisBackend.PauseService(ctx, network.enclaveUuid, serviceRegistration.GetUUID()); err != nil {
-		return stacktrace.Propagate(err, "Failed to pause service '%v'", serviceIdentifier)
-	}
-	return nil
-}
-
-// TODO we could switch this to be a bulk command; the backend would support it
-func (network *DefaultServiceNetwork) UnpauseService(ctx context.Context, serviceIdentifier string) error {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-
-	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
-	}
-
-	if err := network.kurtosisBackend.UnpauseService(ctx, network.enclaveUuid, serviceRegistration.GetUUID()); err != nil {
-		return stacktrace.Propagate(err, "Failed to unpause service '%v'", serviceIdentifier)
-	}
-	return nil
 }
 
 func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error) {

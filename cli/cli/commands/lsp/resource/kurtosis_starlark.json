@@ -180,6 +180,44 @@
       ]
     },
     {
+      "name": "run_sh",
+      "detail": "It executes a one-time execution task. It runs the bash command specified by the mandatory field `run` on an image specified by the optional `image` field",
+      "documentation": "",
+      "returnType": "struct(output:string, code:number, files_artifacts:list)",
+      "params": [
+        {
+          "name": "run",
+          "type": "string",
+          "content": "run",
+          "detail": "The bash command to run, as a string. It will be executed via 'sh -c $COMMAND'"
+        },
+        {
+          "name": "image",
+          "type": "string",
+          "content": "image?",
+          "detail": "Image the bash command will be run on"
+        },
+        {
+          "name": "files",
+          "type": "dict<string, string>",
+          "content": "files?",
+          "detail": "A mapping of path_on_container_where_contents_will_be_mounted -> files_artifact_id_to_mount"
+        },
+        {
+          "name": "store",
+          "type": "list<string>",
+          "content": "store?",
+          "detail": "List of paths to directories or files that will be copied to a file artifact"
+        },
+        {
+          "name": "wait",
+          "type": "string",
+          "content": "wait?",
+          "detail": "The time to allow for the command to complete. If the command takes longer than this, the instruction will fail. In order to disable it, set wait=None. The default value is - 180s"
+        }
+      ]
+    },
+    {
       "name": "set_connection",
       "detail": "The set_connection can be used to either update or replace the default connection settings",
       "documentation": "",

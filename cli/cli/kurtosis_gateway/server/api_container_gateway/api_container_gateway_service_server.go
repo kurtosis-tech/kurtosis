@@ -145,10 +145,12 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 	if err != nil {
 		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
-	for serviceId, serviceInfo := range remoteApiContainerResponse.ServiceInfo {
-		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
-			return nil, stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", serviceId)
-		}
+
+	// Clean up the removed services when we have the full list of running services
+	cleanupRemovedServices := len(args.ServiceIdentifiers) == 0
+
+	if err := service.updateServicesLocalConnection(remoteApiContainerResponse.ServiceInfo, cleanupRemovedServices); err != nil {
+		return nil, stacktrace.Propagate(err, "Error updating the services local connection")
 	}
 
 	return remoteApiContainerResponse, nil
@@ -179,14 +181,7 @@ func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Conte
 
 	return remoteApiContainerResponse, nil
 }
-func (service *ApiContainerGatewayServiceServer) Repartition(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RepartitionArgs) (*emptypb.Empty, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.Repartition(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
 
-	return remoteApiContainerResponse, nil
-}
 func (service *ApiContainerGatewayServiceServer) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	remoteApiContainerResponse, err := service.remoteApiContainerClient.ExecCommand(ctx, args)
 	if err != nil {
@@ -268,23 +263,6 @@ func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifactV2(args *k
 		return stacktrace.Propagate(err, "Error forwarding stream from DownloadFilesArtifactV2 on gateway")
 	}
 	return nil
-}
-
-func (service *ApiContainerGatewayServiceServer) PauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.PauseServiceArgs) (*emptypb.Empty, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.PauseService(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-func (service *ApiContainerGatewayServiceServer) UnpauseService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.UnpauseServiceArgs) (*emptypb.Empty, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.UnpauseService(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
 }
 
 func (service *ApiContainerGatewayServiceServer) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
@@ -430,6 +408,28 @@ func (service *ApiContainerGatewayServiceServer) idempotentKillRunningConnection
 	runningLocalConnection.kurtosisConnection.Stop()
 	// delete the entry for the serve
 	delete(service.userServiceGuidToLocalConnectionMap, serviceUuid)
+}
+
+func (service *ApiContainerGatewayServiceServer) updateServicesLocalConnection(serviceInfos map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, cleanupRemovedServices bool) error {
+
+	serviceUuids := map[string]bool{}
+	for serviceId, serviceInfo := range serviceInfos {
+		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformation(serviceInfo); err != nil {
+			return stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", serviceId)
+		}
+		serviceUuids[serviceInfo.GetServiceUuid()] = true
+	}
+
+	if cleanupRemovedServices {
+		// Clean up connection for removed services
+		for serviceUuid := range service.userServiceGuidToLocalConnectionMap {
+			if _, found := serviceUuids[serviceUuid]; !found {
+				service.idempotentKillRunningConnectionForServiceGuid(serviceUuid)
+			}
+		}
+	}
+
+	return nil
 }
 
 func forwardKurtosisExecutionStream[T any](streamToReadFrom grpc.ClientStream, streamToWriteTo grpc.ServerStream) error {

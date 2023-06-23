@@ -18,7 +18,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io/ioutil"
+	"io"
 	"math/rand"
 	"net/http"
 	"os"
@@ -571,7 +571,7 @@ func getApiServiceServiceConfigStarlark(apiConfigArtifactName string, partitionI
 }
 
 func createApiConfigFile(datastoreIP string) (string, error) {
-	tempDirpath, err := ioutil.TempDir("", "")
+	tempDirpath, err := os.MkdirTemp("", "")
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating a temporary directory to house the datastore config file")
 	}
@@ -586,7 +586,7 @@ func createApiConfigFile(datastoreIP string) (string, error) {
 		return "", stacktrace.Propagate(err, "An error occurred serializing the config to JSON")
 	}
 
-	if err := ioutil.WriteFile(tempFilepath, configBytes, os.ModePerm); err != nil {
+	if err := os.WriteFile(tempFilepath, configBytes, os.ModePerm); err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred writing the serialized config JSON to file")
 	}
 
@@ -605,7 +605,7 @@ func getFileContents(ipAddress string, portNum uint16, realtiveFilepath string) 
 		}
 	}()
 
-	bodyBytes, err := ioutil.ReadAll(body)
+	bodyBytes, err := io.ReadAll(body)
 	if err != nil {
 		return "", stacktrace.Propagate(err,
 			"An error occurred reading the response body when getting the contents of file '%v'", realtiveFilepath)

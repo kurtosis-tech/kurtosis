@@ -12,13 +12,13 @@ What is Kurtosis?
 
 Why should I use Kurtosis?
 ==========================
-Kurtosis is valuable to blockchain infrastructure developers because, when compared to alterantives, our _environment definitions_ are:
+Kurtosis is valuable to blockchain infrastructure developers because, when compared to alternatives, our _environment definitions_ are:
 * 🧱 **Modular** - parts of the system can be combined or be taken apart at the container level
 * ✏️ **Easy to write** - we know `.yaml` doesn't cut it, so we use a Python dialect called Starlark, written and used by Google ([Bazel](https://bazel.build/)) and Meta ([Buck](https://buck2.build/))
 * 🪜 **Sequential** - catering to the specific node-bootstrapping needs of blockchains
 * 📈 **Scale-able** - operate at any scale you need, limited only by the underlying hardware
-* 🔌 **Integratable** - plug & play integration with your existing infrastructure & made to be built on-top-of
-* ♻️ **Reproducable** - Completely deterministic and indempotent: given the same inputs, the system will start up the exact same way, every time
+* 🔌 **Integratable** - plug & play integration with your existing infrastructure & made to be built on top of
+* ♻️ **Reproducable** - Completely deterministic and idempotent: given the same inputs, the system will start up the exact same way, every time
 * 🆓 **Open source** - Kurtosis is transparent and will be free, forever
 
 Still curious?
