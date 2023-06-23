@@ -19,6 +19,9 @@ type EngineServerService struct {
 
 	enclaveManager *enclave_manager.EnclaveManager
 
+	//TODO should check if we are going to leave it here or we move it inside the EnclaveManager
+	enclavePool *enclave_manager.EnclavePool
+
 	//The protected user ID for metrics analytics purpose
 	metricsUserID string
 
@@ -32,6 +35,7 @@ type EngineServerService struct {
 func NewEngineServerService(
 	imageVersionTag string,
 	enclaveManager *enclave_manager.EnclaveManager,
+	enclavePool *enclave_manager.EnclavePool,
 	metricsUserId string,
 	didUserAcceptSendingMetrics bool,
 	logsDatabaseClient centralized_logs.LogsDatabaseClient,
@@ -39,6 +43,7 @@ func NewEngineServerService(
 	service := &EngineServerService{
 		imageVersionTag:             imageVersionTag,
 		enclaveManager:              enclaveManager,
+		enclavePool:                 enclavePool,
 		metricsUserID:               metricsUserId,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		logsDatabaseClient:          logsDatabaseClient,
@@ -54,12 +59,23 @@ func (service *EngineServerService) GetEngineInfo(ctx context.Context, empty *em
 }
 
 func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
+
 	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
 	}
 
-	enclaveInfo, err := service.enclaveManager.CreateEnclave(
+	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{}
+
+	// TODO move all this logic inside the enclave manager
+	enclaveInfoFromPool, err := service.enclavePool.GetEnclave(args.EnclaveName)
+	if err == nil {
+		response.EnclaveInfo = enclaveInfoFromPool
+		return response, nil
+	}
+	logrus.Debugf("An error occurred when trying to get an enclave from the enclave pool")
+
+	newEnclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		args.ApiContainerVersionTag,
 		apiContainerLogLevel,
@@ -71,10 +87,7 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.EnclaveName)
 	}
-
-	response := &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
-		EnclaveInfo: enclaveInfo,
-	}
+	response.EnclaveInfo = newEnclaveInfo
 
 	return response, nil
 }

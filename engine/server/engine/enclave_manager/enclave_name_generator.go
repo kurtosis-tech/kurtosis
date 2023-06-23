@@ -3,11 +3,16 @@ package enclave_manager
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveNameKeyword = ""
+
+	// Signifies that this enclave will be created and will be available for further use
+	idleEnclaveNamePrefix = "idle-enclave-"
 )
 
 func GetRandomEnclaveNameWithRetries(generateNatureThemeName func() string, allCurrentEnclaves map[enclave.EnclaveUUID]*enclave.Enclave, retries uint16) string {
@@ -32,4 +37,15 @@ func GetRandomEnclaveNameWithRetries(generateNatureThemeName func() string, allC
 		randomEnclaveNameWithNumber = fmt.Sprintf("%v-%v", randomEnclaveName, i)
 	}
 	return randomEnclaveNameWithNumber
+}
+
+func GetRandomIdleEnclaveName() (string, error) {
+	uuid, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while creating UUID for idle enclave name")
+	}
+
+	enclaveName := idleEnclaveNamePrefix + uuid
+
+	return enclaveName, nil
 }

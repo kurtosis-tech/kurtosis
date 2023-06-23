@@ -116,9 +116,24 @@ func runMain() error {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
+	// TODO remove this hardcoded value, it should be passed through the args
+	apiContainerVersion := "0.78.4"
+
+	// TODO remove this hardcoded value, it should be passed through the args
+	poolSize := uint8(3)
+
+	enclavePool := enclave_manager.CreateEnclavePool(enclaveManager, apiContainerVersion, poolSize, asdf)
+
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 
-	engineServerService := server.NewEngineServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
+	engineServerService := server.NewEngineServerService(
+		serverArgs.ImageVersionTag,
+		enclaveManager,
+		enclavePool,
+		serverArgs.MetricsUserID,
+		serverArgs.DidUserAcceptSendingMetrics,
+		logsDatabaseClient,
+	)
 
 	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
