@@ -7,8 +7,13 @@ import (
 
 type ScheduledInstructionUuid string
 
+// ScheduledInstruction is a wrapper around a KurtosisInstruction to specify that the instruction is part of an
+// InstructionPlan. The instruction plan can either be the current enclave plan (which has been executed) or a newly
+// generated plan from the latest interpretation.
+// In any case, the ScheduledInstructionUuid stores the result object from the interpretation of the instruction,
+// as well as a flag to track whether this instruction was already executed or not.
 type ScheduledInstruction struct {
-	uuid ScheduledInstructionUuid
+	uuid ScheduledInstructionUuidg
 
 	kurtosisInstruction kurtosis_instruction.KurtosisInstruction
 
