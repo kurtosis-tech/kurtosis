@@ -10,7 +10,7 @@ import (
 // nolint: exhaustruct
 var PortCmd = &cobra.Command{
 	Use:   command_str_consts.PortCmdStr,
-	Short: "Manage services",
+	Short: "Manage ports",
 	RunE:  nil,
 }
 

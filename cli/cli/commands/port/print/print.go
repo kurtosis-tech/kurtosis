@@ -38,8 +38,8 @@ const (
 
 var PortPrintCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.PortPrintCmdStr,
-	ShortDescription:          "Get service logs",
-	LongDescription:           "Show logs for a service inside an enclave",
+	ShortDescription:          "Get information about port",
+	LongDescription:           "Get information for port using port id",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags:                     []*flags.FlagConfig{},
