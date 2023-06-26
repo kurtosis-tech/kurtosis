@@ -7,15 +7,13 @@ import { Result } from "neverthrow";
 import {
     DownloadFilesArtifactArgs, DownloadFilesArtifactResponse,
     ExecCommandArgs,
-    ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse,
+    ExecCommandResponse,
+    GetExistingAndHistoricalServiceIdentifiersResponse,
     GetServicesArgs,
-    GetServicesResponse, ListFilesArtifactNamesAndUuidsResponse,
-    RemoveServiceArgs,
-    RemoveServiceResponse,
+    GetServicesResponse,
+    ListFilesArtifactNamesAndUuidsResponse,
     RunStarlarkPackageArgs,
     RunStarlarkScriptArgs,
-    AddServicesArgs,
-    AddServicesResponse,
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
     UploadFilesArtifactArgs,
@@ -31,8 +29,6 @@ export interface GenericApiContainerClient {
     getEnclaveName(): string
     runStarlarkScript(serializedStarlarkScript: RunStarlarkScriptArgs): Promise<Result<Readable, Error>>
     runStarlarkPackage(starlarkPackageArgs: RunStarlarkPackageArgs): Promise<Result<Readable, Error>>
-    addServices(addServicesArgs: AddServicesArgs): Promise<Result<AddServicesResponse, Error>>
-    removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>>
     waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>>
     waitForHttpPostEndpointAvailability(availabilityArgs: WaitForHttpPostEndpointAvailabilityArgs): Promise<Result<null, Error>>
     getServices(getServicesArgs: GetServicesArgs): Promise<Result<GetServicesResponse, Error>>

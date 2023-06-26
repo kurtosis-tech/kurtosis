@@ -3,7 +3,6 @@ package add_service
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -46,7 +45,7 @@ func NewAddService(serviceNetwork service_network.ServiceNetwork, runtimeValueSt
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
-						if _, _, err := validateAndConvertConfigAndReadyCondition(value); err != nil {
+						if _, _, err := validateAndConvertConfigAndReadyCondition(serviceNetwork, value); err != nil {
 							return err
 						}
 						return nil
@@ -80,7 +79,7 @@ type AddServiceCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
 	serviceName    service.ServiceName
-	serviceConfig  *kurtosis_core_rpc_api_bindings.ServiceConfig
+	serviceConfig  *service.ServiceConfig
 	readyCondition *service_config.ReadyCondition
 
 	resultUuid string
@@ -96,7 +95,7 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(serviceConfig)
+	apiServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(builtin.serviceNetwork, serviceConfig)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -150,13 +149,14 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 }
 
 func validateAndConvertConfigAndReadyCondition(
+	serviceNetwork service_network.ServiceNetwork,
 	rawConfig starlark.Value,
-) (*kurtosis_core_rpc_api_bindings.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
+) (*service.ServiceConfig, *service_config.ReadyCondition, *startosis_errors.InterpretationError) {
 	config, ok := rawConfig.(*service_config.ServiceConfig)
 	if !ok {
 		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument is not a ServiceConfig (was '%s').", ConfigsArgName, reflect.TypeOf(rawConfig))
 	}
-	apiServiceConfig, interpretationErr := config.ToKurtosisType()
+	apiServiceConfig, interpretationErr := config.ToKurtosisType(serviceNetwork)
 	if interpretationErr != nil {
 		return nil, nil, interpretationErr
 	}

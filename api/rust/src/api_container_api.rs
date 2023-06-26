@@ -89,52 +89,6 @@ pub struct ServiceInfo {
     #[prost(string, tag = "7")]
     pub shortened_uuid: ::prost::alloc::string::String,
 }
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct ServiceConfig {
-    #[prost(string, tag = "1")]
-    pub container_image_name: ::prost::alloc::string::String,
-    /// Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
-    #[prost(map = "string, message", tag = "2")]
-    pub private_ports: ::std::collections::HashMap<::prost::alloc::string::String, Port>,
-    /// TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-    #[prost(map = "string, message", tag = "3")]
-    pub public_ports: ::std::collections::HashMap<::prost::alloc::string::String, Port>,
-    /// Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
-    #[prost(string, repeated, tag = "4")]
-    pub entrypoint_args: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    /// Corresponds to a Dockerfile's CMD directive; leave blank to do no overriding
-    #[prost(string, repeated, tag = "5")]
-    pub cmd_args: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-    /// Containers environment variables that should be set in the service's container
-    #[prost(map = "string, string", tag = "6")]
-    pub env_vars: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        ::prost::alloc::string::String,
-    >,
-    /// Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
-    #[prost(map = "string, string", tag = "7")]
-    pub files_artifact_mountpoints: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        ::prost::alloc::string::String,
-    >,
-    /// Corresponds to `millicpus`, 1000 millicpu = 1 CPU in both Docker and Kubernetes
-    #[prost(uint64, tag = "8")]
-    pub cpu_allocation_millicpus: u64,
-    /// Corresponds to available memory in megabytes in both Docker and Kubernetes
-    #[prost(uint64, tag = "9")]
-    pub memory_allocation_megabytes: u64,
-    /// The private IP address placeholder string used in entrypoint_args, cmd_args & env_vars that will be replaced with the private IP address inside the container
-    #[prost(string, tag = "10")]
-    pub private_ip_addr_placeholder: ::prost::alloc::string::String,
-    /// The subnetwork the service should be part of. If unset, the service will be placed in the 'default' subnetwork
-    #[prost(string, optional, tag = "11")]
-    pub subnetwork: ::core::option::Option<::prost::alloc::string::String>,
-    #[prost(uint64, tag = "12")]
-    pub min_cpu_milli_cores: u64,
-    #[prost(uint64, tag = "13")]
-    pub min_memory_megabytes: u64,
-}
 /// Subset of ServiceConfig attributes containing only the fields that are "live-updatable"
 /// This will eventually get removed in favour of ServiceConfig when all attributes become "live-updatable"
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -349,34 +303,6 @@ pub struct StarlarkRunFinishedEvent {
     pub serialized_output: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ==============================================================================================
-///                                         Start Service
-/// ==============================================================================================
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct AddServicesArgs {
-    #[prost(map = "string, message", tag = "1")]
-    pub service_names_to_configs: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        ServiceConfig,
-    >,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct AddServicesResponse {
-    /// A map of Service Names to info describing that newly started service
-    #[prost(map = "string, message", tag = "1")]
-    pub successful_service_name_to_service_info: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        ServiceInfo,
-    >,
-    /// A map of Service Names that failed to start with the error causing the failure
-    #[prost(map = "string, string", tag = "2")]
-    pub failed_service_name_to_error: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        ::prost::alloc::string::String,
-    >,
-}
-/// ==============================================================================================
 ///                                           Get Services
 /// ==============================================================================================
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -421,71 +347,6 @@ pub struct GetExistingAndHistoricalServiceIdentifiersResponse {
     pub all_identifiers: ::prost::alloc::vec::Vec<ServiceIdentifiers>,
 }
 /// ==============================================================================================
-///                                         Remove Service
-/// ==============================================================================================
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct RemoveServiceArgs {
-    #[prost(string, tag = "1")]
-    pub service_identifier: ::prost::alloc::string::String,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct RemoveServiceResponse {
-    /// The UUID of the service that was removed
-    #[prost(string, tag = "1")]
-    pub service_uuid: ::prost::alloc::string::String,
-}
-/// ==============================================================================================
-///                                           Repartition
-/// ==============================================================================================
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct RepartitionArgs {
-    /// Definition of partitionId -> services that should be inside the partition after repartitioning
-    #[prost(map = "string, message", tag = "1")]
-    pub partition_services: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        PartitionServices,
-    >,
-    /// Definition of partitionIdA -> partitionIdB -> information defining the connection between A <-> B
-    #[prost(map = "string, message", tag = "2")]
-    pub partition_connections: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        PartitionConnections,
-    >,
-    /// Information about the default inter-partition connection to set up if one is not defined in the
-    ///   partition connections map
-    #[prost(message, optional, tag = "3")]
-    pub default_connection: ::core::option::Option<PartitionConnectionInfo>,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PartitionServices {
-    /// "Set" of service names in partition
-    #[prost(map = "string, bool", tag = "1")]
-    pub service_name_set: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        bool,
-    >,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PartitionConnections {
-    #[prost(map = "string, message", tag = "1")]
-    pub connection_info: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        PartitionConnectionInfo,
-    >,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PartitionConnectionInfo {
-    /// Percentage value of packet loss in a partition connection
-    #[prost(float, tag = "1")]
-    pub packet_loss_percentage: f32,
-}
-/// ==============================================================================================
 ///                                           Exec Command
 /// ==============================================================================================
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -496,23 +357,6 @@ pub struct ExecCommandArgs {
     pub service_identifier: ::prost::alloc::string::String,
     #[prost(string, repeated, tag = "2")]
     pub command_args: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
-}
-/// ==============================================================================================
-///                                           Pause/Unpause Service
-/// ==============================================================================================
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct PauseServiceArgs {
-    /// The service identifier of the container that should be paused
-    #[prost(string, tag = "1")]
-    pub service_identifier: ::prost::alloc::string::String,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UnpauseServiceArgs {
-    /// The service identifier of the container that should be unpaused
-    #[prost(string, tag = "1")]
-    pub service_identifier: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -911,37 +755,6 @@ pub mod api_container_service_client {
                 );
             self.inner.server_streaming(req, path, codec).await
         }
-        /// Start services by creating containers for them
-        pub async fn add_services(
-            &mut self,
-            request: impl tonic::IntoRequest<super::AddServicesArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::AddServicesResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/api_container_api.ApiContainerService/AddServices",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "api_container_api.ApiContainerService",
-                        "AddServices",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
         /// Returns the IDs of the current services in the enclave
         pub async fn get_services(
             &mut self,
@@ -1004,65 +817,6 @@ pub mod api_container_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
-        /// Instructs the API container to remove the given service
-        pub async fn remove_service(
-            &mut self,
-            request: impl tonic::IntoRequest<super::RemoveServiceArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::RemoveServiceResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/api_container_api.ApiContainerService/RemoveService",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "api_container_api.ApiContainerService",
-                        "RemoveService",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        /// Instructs the API container to repartition the enclave
-        pub async fn repartition(
-            &mut self,
-            request: impl tonic::IntoRequest<super::RepartitionArgs>,
-        ) -> std::result::Result<tonic::Response<()>, tonic::Status> {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/api_container_api.ApiContainerService/Repartition",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "api_container_api.ApiContainerService",
-                        "Repartition",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
         /// Executes the given command inside a running container
         pub async fn exec_command(
             &mut self,
@@ -1090,62 +844,6 @@ pub mod api_container_service_client {
                     GrpcMethod::new(
                         "api_container_api.ApiContainerService",
                         "ExecCommand",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        /// Pauses all processes running in the service container
-        pub async fn pause_service(
-            &mut self,
-            request: impl tonic::IntoRequest<super::PauseServiceArgs>,
-        ) -> std::result::Result<tonic::Response<()>, tonic::Status> {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/api_container_api.ApiContainerService/PauseService",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "api_container_api.ApiContainerService",
-                        "PauseService",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        /// Unpauses all paused processes running in the service container
-        pub async fn unpause_service(
-            &mut self,
-            request: impl tonic::IntoRequest<super::UnpauseServiceArgs>,
-        ) -> std::result::Result<tonic::Response<()>, tonic::Status> {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/api_container_api.ApiContainerService/UnpauseService",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "api_container_api.ApiContainerService",
-                        "UnpauseService",
                     ),
                 );
             self.inner.unary(req, path, codec).await
@@ -1503,14 +1201,6 @@ pub mod api_container_service_server {
             tonic::Response<Self::RunStarlarkPackageStream>,
             tonic::Status,
         >;
-        /// Start services by creating containers for them
-        async fn add_services(
-            &self,
-            request: tonic::Request<super::AddServicesArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::AddServicesResponse>,
-            tonic::Status,
-        >;
         /// Returns the IDs of the current services in the enclave
         async fn get_services(
             &self,
@@ -1527,19 +1217,6 @@ pub mod api_container_service_server {
             tonic::Response<super::GetExistingAndHistoricalServiceIdentifiersResponse>,
             tonic::Status,
         >;
-        /// Instructs the API container to remove the given service
-        async fn remove_service(
-            &self,
-            request: tonic::Request<super::RemoveServiceArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::RemoveServiceResponse>,
-            tonic::Status,
-        >;
-        /// Instructs the API container to repartition the enclave
-        async fn repartition(
-            &self,
-            request: tonic::Request<super::RepartitionArgs>,
-        ) -> std::result::Result<tonic::Response<()>, tonic::Status>;
         /// Executes the given command inside a running container
         async fn exec_command(
             &self,
@@ -1548,16 +1225,6 @@ pub mod api_container_service_server {
             tonic::Response<super::ExecCommandResponse>,
             tonic::Status,
         >;
-        /// Pauses all processes running in the service container
-        async fn pause_service(
-            &self,
-            request: tonic::Request<super::PauseServiceArgs>,
-        ) -> std::result::Result<tonic::Response<()>, tonic::Status>;
-        /// Unpauses all paused processes running in the service container
-        async fn unpause_service(
-            &self,
-            request: tonic::Request<super::UnpauseServiceArgs>,
-        ) -> std::result::Result<tonic::Response<()>, tonic::Status>;
         /// Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
         async fn wait_for_http_get_endpoint_availability(
             &self,
@@ -1864,52 +1531,6 @@ pub mod api_container_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/api_container_api.ApiContainerService/AddServices" => {
-                    #[allow(non_camel_case_types)]
-                    struct AddServicesSvc<T: ApiContainerService>(pub Arc<T>);
-                    impl<
-                        T: ApiContainerService,
-                    > tonic::server::UnaryService<super::AddServicesArgs>
-                    for AddServicesSvc<T> {
-                        type Response = super::AddServicesResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::AddServicesArgs>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                (*inner).add_services(request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = AddServicesSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
                 "/api_container_api.ApiContainerService/GetServices" => {
                     #[allow(non_camel_case_types)]
                     struct GetServicesSvc<T: ApiContainerService>(pub Arc<T>);
@@ -2005,96 +1626,6 @@ pub mod api_container_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/api_container_api.ApiContainerService/RemoveService" => {
-                    #[allow(non_camel_case_types)]
-                    struct RemoveServiceSvc<T: ApiContainerService>(pub Arc<T>);
-                    impl<
-                        T: ApiContainerService,
-                    > tonic::server::UnaryService<super::RemoveServiceArgs>
-                    for RemoveServiceSvc<T> {
-                        type Response = super::RemoveServiceResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::RemoveServiceArgs>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                (*inner).remove_service(request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = RemoveServiceSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/api_container_api.ApiContainerService/Repartition" => {
-                    #[allow(non_camel_case_types)]
-                    struct RepartitionSvc<T: ApiContainerService>(pub Arc<T>);
-                    impl<
-                        T: ApiContainerService,
-                    > tonic::server::UnaryService<super::RepartitionArgs>
-                    for RepartitionSvc<T> {
-                        type Response = ();
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::RepartitionArgs>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move { (*inner).repartition(request).await };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = RepartitionSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
                 "/api_container_api.ApiContainerService/ExecCommand" => {
                     #[allow(non_camel_case_types)]
                     struct ExecCommandSvc<T: ApiContainerService>(pub Arc<T>);
@@ -2126,98 +1657,6 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = ExecCommandSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/api_container_api.ApiContainerService/PauseService" => {
-                    #[allow(non_camel_case_types)]
-                    struct PauseServiceSvc<T: ApiContainerService>(pub Arc<T>);
-                    impl<
-                        T: ApiContainerService,
-                    > tonic::server::UnaryService<super::PauseServiceArgs>
-                    for PauseServiceSvc<T> {
-                        type Response = ();
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::PauseServiceArgs>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                (*inner).pause_service(request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = PauseServiceSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/api_container_api.ApiContainerService/UnpauseService" => {
-                    #[allow(non_camel_case_types)]
-                    struct UnpauseServiceSvc<T: ApiContainerService>(pub Arc<T>);
-                    impl<
-                        T: ApiContainerService,
-                    > tonic::server::UnaryService<super::UnpauseServiceArgs>
-                    for UnpauseServiceSvc<T> {
-                        type Response = ();
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::UnpauseServiceArgs>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                (*inner).unpause_service(request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = UnpauseServiceSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

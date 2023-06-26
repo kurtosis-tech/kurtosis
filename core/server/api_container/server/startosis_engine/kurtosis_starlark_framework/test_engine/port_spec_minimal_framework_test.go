@@ -2,12 +2,12 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
+	port_spec_starlark "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 type portSpecMinimalTestCase struct {
@@ -21,20 +21,23 @@ func newPortSpecMinimalTestCase(t *testing.T) *portSpecMinimalTestCase {
 }
 
 func (t *portSpecMinimalTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", port_spec.PortSpecTypeName, "full")
+	return fmt.Sprintf("%s_%s", port_spec_starlark.PortSpecTypeName, "full")
 }
 
 func (t *portSpecMinimalTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%d)", port_spec.PortSpecTypeName, port_spec.PortNumberAttr, TestPrivatePortNumber)
+	return fmt.Sprintf("%s(%s=%d)", port_spec_starlark.PortSpecTypeName, port_spec_starlark.PortNumberAttr, TestPrivatePortNumber)
 }
 
 func (t *portSpecMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
-	portSpecStarlark, ok := typeValue.(*port_spec.PortSpec)
+	portSpecStarlark, ok := typeValue.(*port_spec_starlark.PortSpec)
 	require.True(t, ok)
 	portSpec, err := portSpecStarlark.ToKurtosisType()
 	require.Nil(t, err)
 
-	expectedPortSpec := binding_constructors.NewPort(TestPrivatePortNumber, kurtosis_core_rpc_api_bindings.Port_TCP, "", TestWaitDefaultValue)
+	waitDuration, errParsingDuration := time.ParseDuration(TestWaitDefaultValue)
+	require.NoError(t, errParsingDuration)
+	expectedPortSpec, errPortCreation := port_spec.NewPortSpec(TestPrivatePortNumber, port_spec.TransportProtocol_TCP, "", port_spec.NewWait(waitDuration))
+	require.NoError(t, errPortCreation)
 	require.Equal(t, expectedPortSpec, portSpec)
 
 }

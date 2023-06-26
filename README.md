@@ -165,6 +165,14 @@ mkdir ~/.nvm
 nvm install 16.14.0
 npm install -g yarn
 ```
+
+#### Rust
+
+On MacOS:
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
 #### Go and Typescript protobuf compiler binaries
 
 On MacOS:

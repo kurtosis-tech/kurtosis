@@ -2,9 +2,6 @@ import {ok, err, Result} from "neverthrow";
 import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
-    AddServicesArgs,
-    AddServicesResponse,
-    RemoveServiceArgs,
     WaitForHttpGetEndpointAvailabilityArgs,
     WaitForHttpPostEndpointAvailabilityArgs,
     GetServicesResponse,
@@ -25,7 +22,6 @@ import {
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveUUID } from "./enclave_context";
-import {RemoveServiceResponse} from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {Readable} from "stream";
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
@@ -68,51 +64,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
             return err(runStarlarkPackageResult.error)
         }
         return ok(runStarlarkPackageResult.value)
-    }
-
-    public async addServices(addServicesArgs: AddServicesArgs): Promise<Result<AddServicesResponse, Error>>{
-        const promiseAddServices: Promise<Result<AddServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.addServices(addServicesArgs, (error: ServiceError | null, response?: AddServicesResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultAddServices: Result<AddServicesResponse, Error> = await promiseAddServices;
-        if (resultAddServices.isErr()) {
-            return err(resultAddServices.error);
-        }
-
-        const addServicesResponse: AddServicesResponse = resultAddServices.value;
-        return ok(addServicesResponse)
-    }
-
-    public async removeService(args: RemoveServiceArgs): Promise<Result<RemoveServiceResponse, Error>> {
-        const removeServicePromise: Promise<Result<RemoveServiceResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.removeService(args, (error: ServiceError | null, removeServiceResponse: RemoveServiceResponse | undefined) => {
-                if (error === null) {
-                    if (!removeServiceResponse) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")))
-                    } else {
-                        resolve(ok(removeServiceResponse!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-        const resultRemoveService: Result<RemoveServiceResponse, Error> = await removeServicePromise;
-        if (resultRemoveService.isErr()) {
-            return err(resultRemoveService.error);
-        }
-        
-        return ok(resultRemoveService.value);
     }
 
     public async waitForHttpGetEndpointAvailability(availabilityArgs: WaitForHttpGetEndpointAvailabilityArgs): Promise<Result<null, Error>> {
