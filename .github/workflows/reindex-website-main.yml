@@ -15,3 +15,15 @@ jobs:
           username: ${{ secrets.ALGOLIA_CRAWLER_USER_ID }}
           password: ${{ secrets.ALGOLIA_CRAWLER_API_KEY }}
           customHeaders: '{"Content-Type": "application/json"}'
+  check-index:
+    runs-on: ubuntu-latest
+    name: Checks that the latest index is still working
+    step:
+      - users: fjogeleit/http-request-action@v1
+        with:
+          url: "https://NTSX40VZB8-dsn.algolia.net/1/indexes/kurtosis/query"
+          method: 'POST'
+          customHeaders: '{"X-Algolia-API-Key": "4269c726c2fea4e6cddfeb9a21cd3d4e", "X-Algolia-Application-Id": "NTSX40VZB8"}'
+          data: '{ "params": "query=add_service&hitsPerPage=2&getRankingInfo=1" }'
+    needs: reindex-website-main
+
