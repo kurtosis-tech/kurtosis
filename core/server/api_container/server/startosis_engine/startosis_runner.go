@@ -73,7 +73,16 @@ func (runner *StartosisRunner) Run(
 			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		starlarkRunResponseLines <- progressInfo
 
-		serializedScriptOutput, instructionsPlan, interpretationError := runner.startosisInterpreter.Interpret(ctx, packageId, mainFunctionName, serializedStartosis, serializedParams)
+		// TODO: once we have feature flags, add a switch here to call InterpretAndOptimizePlan if the feature flag is
+		//  turned on
+		serializedScriptOutput, instructionsPlan, interpretationError := runner.startosisInterpreter.InterpretAndOptimizePlan(
+			ctx,
+			packageId,
+			mainFunctionName,
+			serializedStartosis,
+			serializedParams,
+			runner.startosisExecutor.GetCurrentEnclavePLan(),
+		)
 		if interpretationError != nil {
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
