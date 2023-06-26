@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.80.1](https://github.com/kurtosis-tech/kurtosis/compare/0.80.0...0.80.1) (2023-06-26)
+
+
+### Features
+
+* Add Rust protobuf bindings ([#765](https://github.com/kurtosis-tech/kurtosis/issues/765)) ([0e47003](https://github.com/kurtosis-tech/kurtosis/commit/0e47003c9f001e31b7a18bc6ea0ddb1d330f0acb))
+* added wait to run_sh task. ([#750](https://github.com/kurtosis-tech/kurtosis/issues/750)) ([8c2b697](https://github.com/kurtosis-tech/kurtosis/commit/8c2b697548f06c1f7e8a1474e9ee2cb2922d5dea))
+* Implemented rename enclave method in container engine lib ([#755](https://github.com/kurtosis-tech/kurtosis/issues/755)) ([f1570f7](https://github.com/kurtosis-tech/kurtosis/commit/f1570f7e050109c41676e0b9b3aa6b7f251d24ee))
+* Persist enclave plan in the Starlark executor memory ([#757](https://github.com/kurtosis-tech/kurtosis/issues/757)) ([2c3d74e](https://github.com/kurtosis-tech/kurtosis/commit/2c3d74e9c88e6b3a980048b6831b23499b4a0a12))
+* Start and Stop service Starlark instructions for K8S ([#756](https://github.com/kurtosis-tech/kurtosis/issues/756)) ([fb3e922](https://github.com/kurtosis-tech/kurtosis/commit/fb3e92215fa8062d3a08d1e71ab8572129785688))
+
+
+### Bug Fixes
+
+* Fix TestStarlarkRemotePackage E2E test to reflect new quickstart ([#773](https://github.com/kurtosis-tech/kurtosis/issues/773)) ([e4dd53f](https://github.com/kurtosis-tech/kurtosis/commit/e4dd53f47ebb6b2efff00b50f035f030169396e5))
+
 ## [0.80.0](https://github.com/kurtosis-tech/kurtosis/compare/0.79.0...0.80.0) (2023-06-21)
 
 
