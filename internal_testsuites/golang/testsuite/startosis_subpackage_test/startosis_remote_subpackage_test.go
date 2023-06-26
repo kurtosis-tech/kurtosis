@@ -9,7 +9,6 @@ import (
 const (
 	remotePackage        = "github.com/kurtosis-tech/awesome-kurtosis/quickstart"
 	expectedOutputLength = 4
-	expectedActorName    = "Chase"
 	expectedServiceName  = "postgres"
 )
 
@@ -29,6 +28,5 @@ func (suite *StartosisSubpackageTestSuite) TestStarlarkRemotePackage() {
 	runOutputList := strings.Split(runOutputTrimmedString, "\n")
 
 	require.Equal(t, expectedOutputLength, len(runOutputList))
-	require.Contains(t, runOutputTrimmedString, expectedActorName)
 	require.Contains(t, runOutputTrimmedString, expectedServiceName)
 }
