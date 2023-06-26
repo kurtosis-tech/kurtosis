@@ -29,12 +29,6 @@ type APIContainerArgs struct {
 
 	IsPartitioningEnabled bool `json:"isPartitioningEnabled"`
 
-	//The anonymized user ID for metrics analytics purpose
-	MetricsUserID string `json:"metricsUserID"`
-
-	//User consent to send metrics
-	DidUserAcceptSendingMetrics bool `json:"didUserAcceptSendingMetrics"`
-
 	// The directory on the API container where the enclave data directory will have been mounted
 	EnclaveDataVolumeDirpath string `json:"enclaveDataVolume"`
 
@@ -84,23 +78,19 @@ func NewAPIContainerArgs(
 	grpcListenPortNum uint16,
 	enclaveUuid string,
 	isPartitioningEnabled bool,
-	metricsUserID string,
-	didUserAcceptSendingMetrics bool,
 	enclaveDataVolumeDirpath string,
 	kurtosisBackendType KurtosisBackendType,
 	kurtosisBackendConfig interface{},
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
-		Version:                     version,
-		LogLevel:                    logLevel,
-		GrpcListenPortNum:           grpcListenPortNum,
-		EnclaveUUID:                 enclaveUuid,
-		IsPartitioningEnabled:       isPartitioningEnabled,
-		MetricsUserID:               metricsUserID,
-		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
-		EnclaveDataVolumeDirpath:    enclaveDataVolumeDirpath,
-		KurtosisBackendType:         kurtosisBackendType,
-		KurtosisBackendConfig:       kurtosisBackendConfig,
+		Version:                  version,
+		LogLevel:                 logLevel,
+		GrpcListenPortNum:        grpcListenPortNum,
+		EnclaveUUID:              enclaveUuid,
+		IsPartitioningEnabled:    isPartitioningEnabled,
+		EnclaveDataVolumeDirpath: enclaveDataVolumeDirpath,
+		KurtosisBackendType:      kurtosisBackendType,
+		KurtosisBackendConfig:    kurtosisBackendConfig,
 	}
 
 	if err := result.validate(); err != nil {
