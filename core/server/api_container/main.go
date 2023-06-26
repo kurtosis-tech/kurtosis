@@ -214,11 +214,15 @@ func createServiceNetwork(
 		kurtosisBackend,
 		enclaveUuid)
 
-	serviceNetwork, err := service_network.NewDefaultServiceNetwork(
-		enclaveUuid,
+	apiContainerInfo := service_network.NewApiContainerInfo(
 		ownIpAddress,
 		args.GrpcListenPortNum,
 		args.Version,
+	)
+
+	serviceNetwork, err := service_network.NewDefaultServiceNetwork(
+		enclaveUuid,
+		apiContainerInfo,
 		isPartitioningEnabled,
 		kurtosisBackend,
 		enclaveDataDir,

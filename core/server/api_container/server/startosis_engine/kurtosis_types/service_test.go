@@ -1,7 +1,7 @@
 package kurtosis_types
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	port_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -12,12 +12,15 @@ const (
 	hostnameTestValue        = starlark.String("datastore-1")
 	ipAddressTestValue       = starlark.String("{{kurtosis:service_name.ip_address}}")
 	testInvalidAttr          = "invalid-test-attr"
-	httpApplicationProtocol  = "http"
-	emptyApplicationProtocol = ""
 	serviceNameTestValue     = starlark.String("test-service")
 	emptyPortSpecWaitTimeout = ""
 	portSpecWaitTimeout      = "2s"
 	grpcPortId               = "grpc"
+)
+
+var (
+	httpApplicationProtocol          = "http"
+	emptyApplicationProtocol *string = nil
 )
 
 func TestService_StringRepresentation(t *testing.T) {
@@ -102,7 +105,7 @@ func TestService_TestAttrNames(t *testing.T) {
 
 func createTestServiceType() (*Service, error) {
 	ports := starlark.NewDict(1)
-	portSpec, err := port_spec.CreatePortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol, emptyPortSpecWaitTimeout)
+	portSpec, err := port_spec.CreatePortSpec(123, port_spec2.TransportProtocol_TCP, emptyApplicationProtocol, emptyPortSpecWaitTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +118,7 @@ func createTestServiceType() (*Service, error) {
 
 func createTestServiceTypeWithApplicationProtocol() (*Service, error) {
 	ports := starlark.NewDict(1)
-	portSpec, err := port_spec.CreatePortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, httpApplicationProtocol, emptyPortSpecWaitTimeout)
+	portSpec, err := port_spec.CreatePortSpec(123, port_spec2.TransportProtocol_TCP, &httpApplicationProtocol, emptyPortSpecWaitTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +131,7 @@ func createTestServiceTypeWithApplicationProtocol() (*Service, error) {
 
 func createTestServiceTypeWithWait() (*Service, error) {
 	ports := starlark.NewDict(1)
-	portSpec, err := port_spec.CreatePortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, emptyApplicationProtocol, portSpecWaitTimeout)
+	portSpec, err := port_spec.CreatePortSpec(123, port_spec2.TransportProtocol_TCP, emptyApplicationProtocol, portSpecWaitTimeout)
 	if err != nil {
 		return nil, err
 	}
@@ -141,7 +144,7 @@ func createTestServiceTypeWithWait() (*Service, error) {
 
 func createTestServiceTypeWithApplicationProtocolAndWait() (*Service, error) {
 	ports := starlark.NewDict(1)
-	portSpec, err := port_spec.CreatePortSpec(123, kurtosis_core_rpc_api_bindings.Port_TCP, httpApplicationProtocol, portSpecWaitTimeout)
+	portSpec, err := port_spec.CreatePortSpec(123, port_spec2.TransportProtocol_TCP, &httpApplicationProtocol, portSpecWaitTimeout)
 	if err != nil {
 		return nil, err
 	}
