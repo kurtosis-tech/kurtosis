@@ -136,7 +136,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			// be executed, but they need to be part of the plan to keep the state of the enclave accurate
 			logrus.Debugf("Copying %d instructions from current enclave plan to new plan. Those instructions won't be executed but need to be kept in the enclave plan", matchingInstructionIdx)
 			for i := 0; i < matchingInstructionIdx; i++ {
-				optimizedPlan.AddScheduledInstruction(currentEnclavePlanSequence[i]).ImportedFromCurrentEnclavePlan(true)
+				optimizedPlan.AddScheduledInstruction(currentEnclavePlanSequence[i]).ImportedFromCurrentEnclavePlan(true).Executed(true)
 			}
 			// -> Then recopy all instructions past this match from the enclave state to the mask
 			// Those instructions are the instructions that will mask the instructions for the newly submitted plan
@@ -153,7 +153,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 		} else {
 			// We cannot find any more instructions inside the enclave state matching the first instruction of the plan
 			for _, currentPlanInstruction := range currentEnclavePlanSequence {
-				optimizedPlan.AddScheduledInstruction(currentPlanInstruction).ImportedFromCurrentEnclavePlan(true)
+				optimizedPlan.AddScheduledInstruction(currentPlanInstruction).ImportedFromCurrentEnclavePlan(true).Executed(true)
 			}
 			for _, newPlanInstruction := range naiveInstructionsPlanSequence {
 				optimizedPlan.AddScheduledInstruction(newPlanInstruction)
@@ -209,7 +209,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			}
 			// recopy all remaining instructions into the optimized plan
 			for _, remainingInstructionFromCurrentEnclaveState := range currentEnclavePlanSequence[matchingInstructionIdx+optimizedPlan.Size():] {
-				optimizedPlan.AddScheduledInstruction(remainingInstructionFromCurrentEnclaveState).ImportedFromCurrentEnclavePlan(true)
+				optimizedPlan.AddScheduledInstruction(remainingInstructionFromCurrentEnclaveState).ImportedFromCurrentEnclavePlan(true).Executed(true)
 			}
 		}
 		// finally we can return the optimized plan as well as the serialized script output returned by the last

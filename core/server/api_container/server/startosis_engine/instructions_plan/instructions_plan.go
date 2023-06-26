@@ -45,6 +45,7 @@ func (plan *InstructionsPlan) AddScheduledInstruction(scheduledInstruction *Sche
 	newScheduledInstructionUuid := scheduledInstruction.uuid
 	newScheduledInstruction := NewScheduledInstruction(newScheduledInstructionUuid, scheduledInstruction.kurtosisInstruction, scheduledInstruction.returnedValue)
 	newScheduledInstruction.Executed(scheduledInstruction.IsExecuted())
+	newScheduledInstruction.ImportedFromCurrentEnclavePlan(scheduledInstruction.IsImportedFromCurrentEnclavePlan())
 
 	plan.scheduledInstructionsIndex[newScheduledInstructionUuid] = newScheduledInstruction
 	plan.instructionsSequence = append(plan.instructionsSequence, newScheduledInstructionUuid)

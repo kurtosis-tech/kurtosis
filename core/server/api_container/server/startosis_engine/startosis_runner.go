@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/sirupsen/logrus"
 	"sync"
@@ -75,13 +76,13 @@ func (runner *StartosisRunner) Run(
 
 		// TODO: once we have feature flags, add a switch here to call InterpretAndOptimizePlan if the feature flag is
 		//  turned on
-		serializedScriptOutput, instructionsPlan, interpretationError := runner.startosisInterpreter.InterpretAndOptimizePlan(
+		serializedScriptOutput, instructionsPlan, interpretationError := runner.startosisInterpreter.Interpret(
 			ctx,
 			packageId,
 			mainFunctionName,
 			serializedStartosis,
 			serializedParams,
-			runner.startosisExecutor.GetCurrentEnclavePLan(),
+			resolver.NewInstructionsPlanMask(0),
 		)
 		if interpretationError != nil {
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)

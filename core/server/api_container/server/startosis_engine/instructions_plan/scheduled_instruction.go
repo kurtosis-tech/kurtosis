@@ -26,10 +26,11 @@ type ScheduledInstruction struct {
 
 func NewScheduledInstruction(uuid ScheduledInstructionUuid, kurtosisInstruction kurtosis_instruction.KurtosisInstruction, returnedValue starlark.Value) *ScheduledInstruction {
 	return &ScheduledInstruction{
-		uuid:                uuid,
-		kurtosisInstruction: kurtosisInstruction,
-		returnedValue:       returnedValue,
-		executed:            false,
+		uuid:                           uuid,
+		kurtosisInstruction:            kurtosisInstruction,
+		returnedValue:                  returnedValue,
+		executed:                       false,
+		importedFromCurrentEnclavePlan: false,
 	}
 }
 
