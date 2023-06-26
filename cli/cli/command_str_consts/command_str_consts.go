@@ -63,6 +63,8 @@ const (
 	PathCmdStr              = "path"
 	VersionCmdStr           = "version"
 	GatewayCmdStr           = "gateway"
+	PortCmdStr              = "port"
+	PortPrintCmdStr         = "print"
 )
 
 // TODO: added constant error message here, can we move to another file later.

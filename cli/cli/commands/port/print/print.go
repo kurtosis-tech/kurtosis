@@ -1,9 +1,10 @@
-package port
+package print
 
 import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/service_identifier_arg"
@@ -31,10 +32,12 @@ const (
 	portIdentifierArgKey        = "port_id"
 	isPortIdentifierArgOptional = false
 	isPortIdentifierArgGreedy   = false
+
+	ipAddress = "127.0.0.1"
 )
 
-var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:                command_str_consts.ServiceLogsCmdStr,
+var PortPrintCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.PortPrintCmdStr,
 	ShortDescription:          "Get service logs",
 	LongDescription:           "Show logs for a service inside an enclave",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
@@ -54,12 +57,12 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			isServiceIdentifierArgGreedy,
 		),
 		{
-			Key:          portIdentifierArgKey,
-			IsOptional:   isPortIdentifierArgOptional,
-			DefaultValue: "",
-			IsGreedy:     isPortIdentifierArgGreedy,
+			Key:        portIdentifierArgKey,
+			IsOptional: isPortIdentifierArgOptional,
+			IsGreedy:   isPortIdentifierArgGreedy,
 		},
 	},
+	RunFunc: run,
 }
 
 func run(
@@ -85,6 +88,42 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the port identifier using arg key '%v'", portIdentifier)
 	}
 
-	out.PrintOutLn(fmt.Sprintf("Enclave %v , Service %v, Port %v \n", enclaveIdentifier, serviceIdentifier, portIdentifier))
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
+	}
+
+	enclaveCtx, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting enclave context for enclave with identifier '%v' exists", enclaveIdentifier)
+	}
+
+	serviceCtx, err := enclaveCtx.GetServiceContext(serviceIdentifier)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting service context for service with identifier '%v'", serviceIdentifier)
+	}
+
+	publicPorts := serviceCtx.GetPublicPorts()
+
+	if publicPorts[portIdentifier] == nil {
+		return stacktrace.NewError(
+			fmt.Sprintf("Port Identifier: %v is not found for service: %v in enclave %v", portIdentifier, serviceIdentifier, enclaveIdentifier),
+		)
+	}
+
+	publicPort := publicPorts[portIdentifier]
+
+	fullUrl := fmt.Sprintf("%v:%v", ipAddress, publicPort.GetNumber())
+	maybeApplicationProtocol := publicPort.GetMaybeApplicationProtocol()
+
+	if maybeApplicationProtocol != "" {
+		fullUrl = fmt.Sprintf("%v://%v", maybeApplicationProtocol, fullUrl)
+	}
+
+	outputString := fmt.Sprintf("Here is the port information for port: %v for %v in %v",
+		portIdentifier, serviceIdentifier, enclaveIdentifier)
+
+	out.PrintOutLn(outputString)
+	out.PrintOutLn(fmt.Sprintf("The url is:  %v", fullUrl))
 	return nil
 }
