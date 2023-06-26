@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -63,14 +64,18 @@ type EnclaveManager struct {
 
 func CreateEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
+	kurtosisBackendType args.KurtosisBackendType,
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
 	engineVersion string,
 	poolSize uint8,
 ) *EnclaveManager {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
-	// TODO if poolSize is 0 or the backend is Docker enclavePool is nil
-	enclavePool := CreateEnclavePool(enclaveCreator, poolSize, engineVersion)
+	var enclavePool *EnclavePool
+
+	if isEnclavePoolAllowedForThisConfig(poolSize, kurtosisBackendType) {
+		enclavePool = CreateEnclavePool(enclaveCreator, poolSize, engineVersion)
+	}
 
 	return &EnclaveManager{
 		mutex:           &sync.Mutex{},
@@ -87,10 +92,10 @@ func CreateEnclaveManager(
 //	is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-	// If blank, will use the default
+// If blank, will use the default
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-	//If blank, will use a random one
+//If blank, will use a random one
 	enclaveName string,
 	isPartitioningEnabled bool,
 	metricsUserID string,

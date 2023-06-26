@@ -3,6 +3,7 @@ package enclave_manager
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -79,6 +80,20 @@ func (pool *EnclavePool) GetEnclave(newEnclaveName string) (*kurtosis_engine_rpc
 	logrus.Debugf("Returning enclave Info '%+v' for requested enclave name '%s'", enclaveInfo, newEnclaveName)
 
 	return enclaveInfo, nil
+}
+
+// The enclave pool feature is only available for Kubernetes so far and it will be activated
+// only if users require this when setting the pool-size value
+func isEnclavePoolAllowedForThisConfig(
+	poolSize uint8,
+	kurtosisBackendType args.KurtosisBackendType,
+) bool {
+
+	if poolSize > 0 && kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
+		return true
+	}
+
+	return false
 }
 
 // ====================================================================================================
