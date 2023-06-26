@@ -49,23 +49,14 @@ func RunUserServiceExecCommands(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching the requested UUIDs: %+v", requestedGuids)
 	}
 
-	successfulExecs, failedExecs, err := runExecOperationsInParallel(namespaceName, userServiceCommands, matchingObjectsAndResources, kubernetesManager)
+	successfulExecs, failedExecs, err := runExecOperationsInParallel(namespaceName, userServiceCommands, matchingObjectsAndResources, kubernetesManager, ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An unexpected error occurred running the exec commands in parallel")
 	}
 	return successfulExecs, failedExecs, nil
 }
 
-func runExecOperationsInParallel(
-	namespaceName string,
-	commandArgs map[service.ServiceUUID][]string,
-	userServiceKubernetesResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources,
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (
-	map[service.ServiceUUID]*exec_result.ExecResult,
-	map[service.ServiceUUID]error,
-	error,
-) {
+func runExecOperationsInParallel(namespaceName string, commandArgs map[service.ServiceUUID][]string, userServiceKubernetesResources map[service.ServiceUUID]*shared_helpers.UserServiceObjectsAndKubernetesResources, kubernetesManager *kubernetes_manager.KubernetesManager, ctx context.Context) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
 	successfulExecs := map[service.ServiceUUID]*exec_result.ExecResult{}
 	failedExecs := map[service.ServiceUUID]error{}
 
@@ -103,7 +94,7 @@ func runExecOperationsInParallel(
 		userServiceKubernetesPod := userServiceKubernetesResource.KubernetesResources.Pod
 
 		execOperationId := operation_parallelizer.OperationID(serviceUuid)
-		execOperation := createExecOperation(namespaceName, serviceUuid, userServiceKubernetesPod, commandArg, kubernetesManager)
+		execOperation := createExecOperation(namespaceName, serviceUuid, userServiceKubernetesPod, commandArg, kubernetesManager, ctx)
 		execOperations[execOperationId] = execOperation
 	}
 
@@ -125,17 +116,12 @@ func runExecOperationsInParallel(
 	return successfulExecs, failedExecs, nil
 }
 
-func createExecOperation(
-	namespaceName string,
-	serviceUuid service.ServiceUUID,
-	servicePod *v1.Pod,
-	commandArg []string,
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-) operation_parallelizer.Operation {
+func createExecOperation(namespaceName string, serviceUuid service.ServiceUUID, servicePod *v1.Pod, commandArg []string, kubernetesManager *kubernetes_manager.KubernetesManager, ctx context.Context) operation_parallelizer.Operation {
 	return func() (interface{}, error) {
 		outputBuffer := &bytes.Buffer{}
 		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
-		exitCode, err := kubernetesManager.RunExecCommand(
+		exitCode, err := kubernetesManager.RunExecCommandWithContext(
+			ctx,
 			namespaceName,
 			servicePod.Name,
 			userServiceContainerName,

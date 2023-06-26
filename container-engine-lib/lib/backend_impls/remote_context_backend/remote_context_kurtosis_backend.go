@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"golang.org/x/sync/errgroup"
 	"io"
-	"net"
 )
 
 // RemoteContextKurtosisBackend is a dual context holding a reference to a local backend running on Docker (k8s is
@@ -92,6 +91,10 @@ func (backend *RemoteContextKurtosisBackend) GetEnclaves(ctx context.Context, fi
 	return backend.remoteKurtosisBackend.GetEnclaves(ctx, filters)
 }
 
+func (backend *RemoteContextKurtosisBackend) RenameEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, newName string) error {
+	return backend.remoteKurtosisBackend.RenameEnclave(ctx, enclaveUuid, newName)
+}
+
 func (backend *RemoteContextKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveUUID]bool, erroredEnclaveIds map[enclave.EnclaveUUID]error, resultErr error) {
 	return backend.remoteKurtosisBackend.StopEnclaves(ctx, filters)
 }
@@ -144,8 +147,8 @@ func (backend *RemoteContextKurtosisBackend) RunUserServiceExecCommands(ctx cont
 	return backend.remoteKurtosisBackend.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands)
 }
 
-func (backend *RemoteContextKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultConn net.Conn, resultErr error) {
-	return backend.remoteKurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid)
+func (backend *RemoteContextKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {
+	return backend.remoteKurtosisBackend.GetShellOnUserService(ctx, enclaveUuid, serviceUuid)
 }
 
 func (backend *RemoteContextKurtosisBackend) CopyFilesFromUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, srcPathOnService string, output io.Writer) error {

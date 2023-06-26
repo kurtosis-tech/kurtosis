@@ -66,7 +66,7 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		}
 	}
 	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
-		return startosis_errors.NewValidationError("Service name '%v' is invalid as it contains disallowed characters. Service names can only contain characters 'a-z', 'A-Z', '0-9', '-' & '_'", serviceName)
+		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
 	}
 
 	if validatorEnvironment.DoesServiceNameExist(serviceName) {
@@ -83,6 +83,16 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		validatorEnvironment.AddPrivatePortIDForService(portId, serviceName)
 	}
 	return nil
+}
+
+func invalidServiceNameErrorText(
+	serviceName service.ServiceName,
+) string {
+	return fmt.Sprintf(
+		"Service name '%v' is invalid as it contains disallowed characters. Service names must adhere to the RFC 1123 standard, specifically implementing this regex and be 1-63 characters long: %s. This means the service name must only contain lowercase alphanumeric characters or '-', and must start and end with a lowercase alphanumeric character.",
+		serviceName,
+		service.WordWrappedServiceNameRegex,
+	)
 }
 
 func replaceMagicStrings(

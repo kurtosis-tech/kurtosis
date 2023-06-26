@@ -16,8 +16,8 @@ const (
 	starlarkSubnetworkTestName = "starlark-subnetwork"
 	isPartitioningEnabled      = true
 
-	serviceName1 = "service_1"
-	serviceName2 = "service_2"
+	serviceName1 = "service-1"
+	serviceName2 = "service-2"
 	subnetwork1  = "subnetwork_1"
 	subnetwork2  = "subnetwork_2"
 	subnetwork3  = "subnetwork_3"

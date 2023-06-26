@@ -24,7 +24,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
-	"net"
 	"sync"
 )
 
@@ -266,8 +265,8 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
 }
 
-func (backend *DockerKurtosisBackend) GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (net.Conn, error) {
-	return user_service_functions.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid, backend.dockerManager)
+func (backend *DockerKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) error {
+	return user_service_functions.GetShellOnUserService(ctx, enclaveUuid, serviceUuid, backend.dockerManager)
 }
 
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.

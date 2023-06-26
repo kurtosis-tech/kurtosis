@@ -21,7 +21,8 @@ The `add_service` instruction adds a service to the Kurtosis enclave within whic
 service = plan.add_service(
     # The service name of the service being created.
     # The service name is a reference to the service, which can be used in the future to refer to the service.
-    # Service names of active services are unique per enclave.
+    # Service names of active services are unique per enclave and needs to be formatted according to RFC 1123. 
+    # Specifically, 1-63 lowercase alphanumeric characters with dashes and cannot start or end with dashes.
     # MANDATORY
     name = "example-datastore-server-1",
 
@@ -408,6 +409,17 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
             # copies the entire directory into a file artifact
             "/src",
         ],
+
+        # The time to allow for the command to complete. If the command takes longer than this,
+        # Kurtosis will kill the command and mark it as failed.
+        # You may specify a custom wait timeout duration or disable the feature entirely.
+        # You may specify a custom wait timeout duration with a string:
+        #  wait = "2m"
+        # Or, you can disable this feature by setting the value to None:
+        #  wait = None
+        # The feature is enabled by default with a default timeout of 180s
+        # OPTIONAL (Default: "180s")
+        wait="180s"
     )
 
     plan.print(result.code)  # returns the future reference to the code
@@ -527,13 +539,6 @@ plan.start_service(
 )
 ```
 
-:::caution
-
-`start_service` is only available with the Docker backend.
-
-:::
-
-
 stop_service
 ------------
 
@@ -546,12 +551,6 @@ plan.stop_service(
     name = "my_service",
 )
 ```
-
-:::caution
-
-`stop_service` is only available with the Docker backend.
-
-:::
 
 store_service_files
 -------------------

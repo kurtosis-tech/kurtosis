@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
-	"net"
 )
 
 // TODO This mega-backend should really have its individual functionalities split up into
@@ -68,8 +67,15 @@ type KurtosisBackend interface {
 	// Dumps all of Kurtosis (engines + all enclaves)
 	DumpKurtosis(ctx context.Context, outputDirpath string) error
 
-	// Creates an enclave with the given enclave ID
+	// Creates an enclave with the given enclave UUID
 	CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error)
+
+	// Rename an enclave with a new name by UUID
+	RenameEnclave(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		newName string,
+	) error
 
 	// Gets enclaves matching the given filters
 	GetEnclaves(
@@ -249,7 +255,7 @@ type KurtosisBackend interface {
 	)
 
 	// Get a connection with user service to execute commands in
-	GetConnectionWithUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultConn net.Conn, resultErr error)
+	GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error)
 
 	// Copy files, packaged as a TAR, from the given user service and writes the bytes to the given output writer
 	CopyFilesFromUserService(

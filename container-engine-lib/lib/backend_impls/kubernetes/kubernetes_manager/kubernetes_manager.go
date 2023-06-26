@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh/terminal"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -24,6 +25,7 @@ import (
 	"k8s.io/client-go/tools/remotecommand"
 	"net/http"
 	"net/url"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -59,7 +61,19 @@ const (
 	shouldAddTimestampsWhenPrintingPodInfo       = true
 
 	listOptionsTimeoutSeconds int64 = 10
+	contextDeadlineExceeded         = "context deadline exceeded"
 )
+
+// We'll try to use the nicer-to-use shells first before we drop down to the lower shells
+var commandToRunWhenCreatingUserServiceShell = []string{
+	"sh",
+	"-c",
+	`if command -v 'bash' > /dev/null; then
+		echo "Found bash on container; creating bash shell..."; bash; 
+       else 
+		echo "No bash found on container; dropping down to sh shell..."; sh; 
+	fi`,
+}
 
 var (
 	globalDeletePolicy  = metav1.DeletePropagationForeground
@@ -417,6 +431,35 @@ func (manager *KubernetesManager) CreateNamespace(
 	}
 
 	return namespaceResult, nil
+}
+
+func (manager *KubernetesManager) UpdateNamespace(
+	ctx context.Context,
+	namespaceName string,
+	// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
+	// would result in removing the object name)
+	updateConfigurator func(configuration *applyconfigurationsv1.NamespaceApplyConfiguration),
+) (*apiv1.Namespace, error) {
+	updatesToApply := applyconfigurationsv1.Namespace(namespaceName)
+	updateConfigurator(updatesToApply)
+
+	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
+
+	applyOpts := metav1.ApplyOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		DryRun:       nil,
+		Force:        true, //We need to use force to avoid conflict errors
+		FieldManager: fieldManager,
+	}
+	result, err := namespaceClient.Apply(ctx, updatesToApply, applyOpts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to update namespace '%v' ", namespaceName)
+	}
+	return result, nil
 }
 
 func (manager *KubernetesManager) RemoveNamespace(ctx context.Context, namespace *apiv1.Namespace) error {
@@ -1203,6 +1246,92 @@ func (manager *KubernetesManager) GetContainerLogs(
 	return result, nil
 }
 
+// RunExecCommandWithContext This runs the exec to kubernetes with context, therefore
+// when context timeouts it stops the process.
+// TODO: merge RunExecCommand and this to one method
+//  Doing this for now to unblock myself for wait worflows for k8s
+//  In next PR, will include add context to WaitForPortAvailabilityUsingNetstat and
+//  CopyFilesFromUserService method. I am doing this to reduce the blast radius.
+func (manager *KubernetesManager) RunExecCommandWithContext(
+	ctx context.Context,
+	namespaceName string,
+	podName string,
+	containerName string,
+	command []string,
+	stdOutOutput io.Writer,
+	stdErrOutput io.Writer,
+) (
+	resultExitCode int32,
+	resultErr error,
+) {
+	execOptions := &apiv1.PodExecOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		Stdin:     shouldAllocateStdinOnPodExec,
+		Stdout:    shouldAllocatedStdoutOnPodExec,
+		Stderr:    shouldAllocatedStderrOnPodExec,
+		TTY:       shouldAllocateTtyOnPodExec,
+		Container: containerName,
+		Command:   command,
+	}
+
+	//Create a RESTful command request.
+	request := manager.kubernetesClientSet.CoreV1().RESTClient().
+		Post().
+		Namespace(namespaceName).
+		Resource("pods").
+		Name(podName).
+		SubResource("exec").
+		VersionedParams(execOptions, scheme.ParameterCodec)
+	if request == nil {
+		return -1, stacktrace.NewError(
+			"Failed to build a working RESTful request for the command '%s'.",
+			execOptions.Command,
+		)
+	}
+
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
+	if err != nil {
+		return -1, stacktrace.Propagate(
+			err,
+			"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.",
+			execOptions.Command,
+			request.URL().String(),
+		)
+	}
+
+	if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+		Stdin:             nil,
+		Stdout:            stdOutOutput,
+		Stderr:            stdErrOutput,
+		Tty:               false,
+		TerminalSizeQueue: nil,
+	}); err != nil {
+		// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
+		statusError := err.Error()
+
+		// this means that context deadline has exceeded
+		if strings.Contains(statusError, contextDeadlineExceeded) {
+			return 1, stacktrace.Propagate(err, "There was an error occurred while executing commands on the container")
+		}
+
+		exitCode, err := getExitCodeFromStatusMessage(statusError)
+		if err != nil {
+			return exitCode, stacktrace.Propagate(
+				err,
+				"There was an error trying to parse the message '%s' to an exit code.",
+				statusError,
+			)
+		}
+
+		return exitCode, nil
+	}
+
+	return successExecCommandExitCode, nil
+}
+
 func (manager *KubernetesManager) RunExecCommand(
 	namespaceName string,
 	podName string,
@@ -1318,6 +1447,51 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 
 func (manager *KubernetesManager) GetPodPortforwardEndpointUrl(namespace string, podName string) *url.URL {
 	return manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Namespace(namespace).Name(podName).SubResource("portforward").URL()
+}
+
+func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.Pod) error {
+	containerName := pod.Spec.Containers[0].Name
+	request := manager.kubernetesClientSet.CoreV1().RESTClient().Post().Resource("pods").Name(pod.Name).Namespace(pod.Namespace).SubResource("exec")
+	// lifted from https://github.com/kubernetes/client-go/issues/912 - the terminal magic is still magical
+	request.VersionedParams(&apiv1.PodExecOptions{
+		Container: containerName,
+		Command:   commandToRunWhenCreatingUserServiceShell,
+		Stdin:     true,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       true,
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+	}, scheme.ParameterCodec)
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, "POST", request.URL())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating a new SPDY executor")
+	}
+	stdinFd := int(os.Stdin.Fd())
+	var oldState *terminal.State
+	if terminal.IsTerminal(stdinFd) {
+		oldState, err = terminal.MakeRaw(stdinFd)
+		if err != nil {
+			// print error
+			return stacktrace.Propagate(err, "An error occurred making STDIN stream raw")
+		}
+		defer func() {
+			if err = terminal.Restore(stdinFd, oldState); err != nil {
+				logrus.Warn("An error occurred while restoring the terminal to its normal state. Your terminal might look funny; we recommend closing and starting a new terminal.")
+			}
+		}()
+	}
+	return exec.StreamWithContext(
+		ctx,
+		remotecommand.StreamOptions{
+			TerminalSizeQueue: nil,
+			Stdin:             os.Stdin,
+			Stdout:            os.Stdout,
+			Stderr:            os.Stderr,
+			Tty:               true,
+		})
 }
 
 // TODO Delete this after 2022-08-01 if we're not using Jobs

@@ -6,7 +6,6 @@
 package shell
 
 import (
-	"bufio"
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -21,17 +20,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
-	"golang.org/x/crypto/ssh/terminal"
-	"io"
-	"os"
 )
 
 const (
 	enclaveIdentifierArgKey = "enclave"
 	isEnclaveIdArgOptional  = false
 	isEnclaveIdArgGreedy    = false
-
-	commandToRunInsteadOfBashEmpty = ""
 
 	serviceIdentifierArgKey  = "service"
 	isServiceGuidArgOptional = false
@@ -100,37 +94,9 @@ func run(
 	}
 	serviceUuid := service.ServiceUUID(serviceCtx.GetServiceUUID())
 
-	conn, err := kurtosisBackend.GetConnectionWithUserService(ctx, enclaveUuid, serviceUuid)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting connection with user service with UUID '%v' in enclave '%v'", serviceUuid, enclaveIdentifier)
+	if err = kurtosisBackend.GetShellOnUserService(ctx, enclaveUuid, serviceUuid); err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting shell on user service with UUID '%v' in enclave '%v'", serviceUuid, enclaveIdentifier)
 	}
-	defer conn.Close()
-
-	newReader := bufio.NewReader(conn)
-
-	// From this point on down, I don't know why it works.... but it does
-	// I just followed the solution here: https://stackoverflow.com/questions/58732588/accept-user-input-os-stdin-to-container-using-golang-docker-sdk-interactive-co
-	// This channel is being used to know the user exited the ContainerExec
-	finishChan := make(chan bool)
-	go func() {
-		io.Copy(os.Stdout, newReader)
-		finishChan <- true
-	}()
-	go io.Copy(os.Stderr, newReader)
-	go io.Copy(conn, os.Stdin)
-
-	stdinFd := int(os.Stdin.Fd())
-	var oldState *terminal.State
-	if terminal.IsTerminal(stdinFd) {
-		oldState, err = terminal.MakeRaw(stdinFd)
-		if err != nil {
-			// print error
-			return stacktrace.Propagate(err, "An error occurred making STDIN stream raw")
-		}
-		defer terminal.Restore(stdinFd, oldState)
-	}
-
-	<-finishChan
 
 	return nil
 }
