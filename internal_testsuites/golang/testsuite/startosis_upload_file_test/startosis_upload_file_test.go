@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"os"
@@ -26,6 +27,10 @@ const (
 
 	useDefaultMainFile     = ""
 	useDefaultFunctionName = ""
+)
+
+var (
+	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
 )
 
 func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
@@ -63,7 +68,7 @@ func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
 	// Note: the result extracted from the recipe inside Starlark contains a newline char at the end.
 	// We need to add it here manually to have matching hashes
 	params := fmt.Sprintf(`{"file_hash": "%s\n"}`, randomFileHexHash)
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, params, defaultDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, params, defaultDryRun, defaultParallelism, noExperimentalFeature)
 	require.NoError(t, err, "Unexpected error executing Starlark package")
 
 	// the package itself runs the assertion here. If the file hash computed withing the enclave with md5sum differs
