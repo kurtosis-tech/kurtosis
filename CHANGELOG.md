@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.2](https://github.com/kurtosis-tech/kurtosis/compare/0.80.1...0.80.2) (2023-06-26)
+
+
+### Features
+
+* Add cargo build as part of Kurtosis build ([#774](https://github.com/kurtosis-tech/kurtosis/issues/774)) ([c68fe0a](https://github.com/kurtosis-tech/kurtosis/commit/c68fe0a44c331e72e58762a420fdbc6ec947c9f7))
+
 ## [0.80.1](https://github.com/kurtosis-tech/kurtosis/compare/0.80.0...0.80.1) (2023-06-26)
 
 
