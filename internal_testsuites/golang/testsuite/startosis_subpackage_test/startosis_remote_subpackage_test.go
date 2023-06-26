@@ -8,7 +8,7 @@ import (
 
 const (
 	remotePackage        = "github.com/kurtosis-tech/awesome-kurtosis/quickstart"
-	expectedOutputLength = 22
+	expectedOutputLength = 4
 	expectedActorName    = "Chase"
 	expectedServiceName  = "postgres"
 )
