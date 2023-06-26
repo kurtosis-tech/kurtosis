@@ -14,6 +14,7 @@ root_dirpath="$(dirname "${script_dirpath}")"
 declare -A REL_FILEPATH_UPDATE_PATTERNS
 REL_FILEPATH_UPDATE_PATTERNS["golang/kurtosis_version/kurtosis_version.go"]="(KurtosisVersion = \")[0-9]+.[0-9]+.[0-9]+(\")"
 REL_FILEPATH_UPDATE_PATTERNS["typescript/src/kurtosis_version/kurtosis_version.ts"]="(KURTOSIS_VERSION: string = \")[0-9]+.[0-9]+.[0-9]+(\")"
+REL_FILEPATH_UPDATE_PATTERNS["rust/Cargo.toml"]="^(version = \")[0-9]+.[0-9]+.[0-9]+(\")"
 
 # ==================================================================================================
 #                                       Arg Parsing & Validation

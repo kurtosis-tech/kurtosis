@@ -3,7 +3,7 @@ package enclave_manager
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -150,8 +150,6 @@ func (pool *EnclavePool) createNewEnclave() (*kurtosis_engine_rpc_api_bindings.E
 		defaultApiContainerLogLevel,
 		enclaveName,
 		defaultIsPartitioningEnabled,
-		defaultMetricsUserID,
-		defaultDidUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		//TODO complete the message adding more values

@@ -1,8 +1,8 @@
 package test_engine
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -26,18 +26,18 @@ var (
 	TestContainerImageName = "kurtosistech/example-datastore-server"
 
 	TestPrivatePortId              = "grpc"
-	TestPrivatePortNumber          = uint32(1323)
+	TestPrivatePortNumber          = uint16(1323)
 	TestPrivatePortProtocolStr     = "TCP"
-	TestPrivatePortProtocol        = kurtosis_core_rpc_api_bindings.Port_TCP
+	TestPrivatePortProtocol        = port_spec.TransportProtocol_TCP
 	TestPrivateApplicationProtocol = "https"
 	TestWaitConfiguration          = "2s"
 	TestWaitDefaultValue           = "2m"
 	TestWaitNotValidEmptyString    = ""
 
 	TestPublicPortId              = "endpoints"
-	TestPublicPortNumber          = uint32(80)
+	TestPublicPortNumber          = uint16(80)
 	TestPublicPortProtocolStr     = "TCP"
-	TestPublicPortProtocol        = kurtosis_core_rpc_api_bindings.Port_TCP
+	TestPublicPortProtocol        = port_spec.TransportProtocol_TCP
 	TestPublicApplicationProtocol = "https"
 
 	TestFilesArtifactPath1 = "path/to/file/1"

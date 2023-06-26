@@ -2,7 +2,6 @@ package add_service
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -26,16 +25,26 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig := services.NewServiceConfigBuilder(
+	serviceConfig := service.NewServiceConfig(
 		testContainerImageName,
-	).WithEntryPointArgs(
+		nil,
+		nil,
 		[]string{"-- " + runtimeValue},
-	).Build()
+		nil,
+		nil,
+		nil,
+		0,
+		0,
+		"",
+		0,
+		0,
+		"",
+	)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.Equal(t, serviceName, replacedServiceName)
-	require.Equal(t, "-- 8765", replacedServiceConfig.EntrypointArgs[0])
+	require.Equal(t, "-- 8765", replacedServiceConfig.GetEntrypointArgs()[0])
 }
 
 func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
@@ -49,16 +58,26 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig := services.NewServiceConfigBuilder(
+	serviceConfig := service.NewServiceConfig(
 		testContainerImageName,
-	).WithCmdArgs(
+		nil,
+		nil,
+		nil,
 		[]string{"bash", "-c", "sleep " + runtimeValue},
-	).Build()
+		nil,
+		nil,
+		0,
+		0,
+		"",
+		0,
+		0,
+		"",
+	)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
 	require.Equal(t, serviceName, replacedServiceName)
-	require.Equal(t, "sleep 999999", replacedServiceConfig.CmdArgs[2])
+	require.Equal(t, "sleep 999999", replacedServiceConfig.GetCmdArgs()[2])
 }
 
 func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
@@ -72,11 +91,23 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig := services.NewServiceConfigBuilder(
+	serviceConfig := service.NewServiceConfig(
 		testContainerImageName,
-	).WithEnvVars(map[string]string{
-		"PORT": runtimeValue,
-	}).Build()
+		nil,
+		nil,
+		nil,
+		nil,
+		map[string]string{
+			"PORT": runtimeValue,
+		},
+		nil,
+		0,
+		0,
+		"",
+		0,
+		0,
+		"",
+	)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
@@ -84,7 +115,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 	expectedEnvVars := map[string]string{
 		"PORT": "8765",
 	}
-	require.Equal(t, expectedEnvVars, replacedServiceConfig.EnvVars)
+	require.Equal(t, expectedEnvVars, replacedServiceConfig.GetEnvVars())
 }
 
 func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) {
@@ -98,9 +129,21 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 	stringRuntimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, valueName)
 
 	serviceName := service.ServiceName(stringRuntimeValue)
-	serviceConfig := services.NewServiceConfigBuilder(
+	serviceConfig := service.NewServiceConfig(
 		testContainerImageName,
-	).Build()
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		0,
+		0,
+		"",
+		0,
+		0,
+		"",
+	)
 
 	replacedServiceName, _, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)

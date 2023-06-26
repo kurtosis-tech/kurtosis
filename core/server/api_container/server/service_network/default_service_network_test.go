@@ -17,7 +17,6 @@ import (
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -41,11 +40,10 @@ import (
 const (
 	numServices = 10
 
-	enclaveName             = enclave.EnclaveUUID("test-enclave")
-	partitioningEnabled     = true
-	fakeApiContainerVersion = "0.0.0"
-	apiContainerPort        = uint16(1234)
-	testContainerImageName  = "kurtosistech/test-container"
+	enclaveName            = enclave.EnclaveUUID("test-enclave")
+	partitioningEnabled    = true
+	testContainerImageName = "kurtosistech/test-container"
+	defaultSubnetwork      = "default"
 
 	localhostIPAddrStr       = "127.0.0.1"
 	tcpNetworkName           = "tcp4"
@@ -59,7 +57,11 @@ const (
 )
 
 var (
-	ip                   = testIpFromInt(0)
+	apiContainerInfo = NewApiContainerInfo(
+		testIpFromInt(0),
+		uint16(1234),
+		"0.0.0",
+	)
 	unusedEnclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
 	connectionWithSomeConstantDelay     = partition_topology.NewUniformPacketDelayDistribution(500)
@@ -80,7 +82,7 @@ func TestAddService_Successful(t *testing.T) {
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
-	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
+	serviceConfig := testServiceConfig(testContainerImageName, string(servicePartitionId))
 
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -92,9 +94,7 @@ func TestAddService_Successful(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -196,7 +196,7 @@ func TestAddService_FailedToStart(t *testing.T) {
 	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
 	serviceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, serviceIp, string(serviceName))
-	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
+	serviceConfig := testServiceConfig(testContainerImageName, string(servicePartitionId))
 
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -208,9 +208,7 @@ func TestAddService_FailedToStart(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -311,7 +309,7 @@ func TestAddService_SidecarFailedToStart(t *testing.T) {
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
-	serviceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(servicePartitionId)).Build()
+	serviceConfig := testServiceConfig(testContainerImageName, string(servicePartitionId))
 
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -323,9 +321,7 @@ func TestAddService_SidecarFailedToStart(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -436,7 +432,7 @@ func TestAddServices_Success(t *testing.T) {
 	successfulServiceIp := testIpFromInt(successfulServiceIndex)
 	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceName, successfulServiceUuid, enclaveName, successfulServiceIp, string(successfulServiceName))
 	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
-	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(successfulServicePartitionId)).Build()
+	successfulServiceConfig := testServiceConfig(testContainerImageName, string(successfulServicePartitionId))
 
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -448,9 +444,7 @@ func TestAddServices_Success(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -515,7 +509,7 @@ func TestAddServices_Success(t *testing.T) {
 
 	success, failure, err := network.AddServices(
 		ctx,
-		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
+		map[service.ServiceName]*service.ServiceConfig{
 			successfulServiceName: successfulServiceConfig,
 		},
 		2,
@@ -556,7 +550,7 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	successfulServiceIp := testIpFromInt(successfulServiceIndex)
 	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceName, successfulServiceUuid, enclaveName, successfulServiceIp, string(successfulServiceName))
 	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
-	successfulServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(successfulServicePartitionId)).Build()
+	successfulServiceConfig := testServiceConfig(testContainerImageName, string(successfulServicePartitionId))
 
 	// One service will fail to be started
 	failedServiceIndex := 2
@@ -565,7 +559,7 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	failedServiceUuid := testServiceUuidFromInt(failedServiceIndex)
 	failedServiceIp := testIpFromInt(failedServiceIndex)
 	failedServiceRegistration := service.NewServiceRegistration(failedServiceName, failedServiceUuid, enclaveName, failedServiceIp, string(failedServiceName))
-	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(failedServicePartitionId)).Build()
+	failedServiceConfig := testServiceConfig(testContainerImageName, string(failedServicePartitionId))
 
 	// One service will be successfully started but its sidecar will fail to start
 	sidecarFailedServiceIndex := 3
@@ -575,7 +569,7 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	sidecarFailedServiceIp := testIpFromInt(sidecarFailedServiceIndex)
 	sidecarFailedServiceRegistration := service.NewServiceRegistration(sidecarFailedServiceName, sidecarFailedServiceUuid, enclaveName, sidecarFailedServiceIp, string(sidecarFailedServiceName))
 	sidecarFailedService := service.NewService(sidecarFailedServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, sidecarFailedServiceIp, map[string]*port_spec.PortSpec{})
-	sidecarFailedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(sidecarFailedServicePartitionId)).Build()
+	sidecarFailedServiceConfig := testServiceConfig(testContainerImageName, string(sidecarFailedServicePartitionId))
 
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -587,9 +581,7 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -799,7 +791,7 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 
 	success, failure, err := network.AddServices(
 		ctx,
-		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
+		map[service.ServiceName]*service.ServiceConfig{
 			successfulServiceName:    successfulServiceConfig,
 			failedServiceName:        failedServiceConfig,
 			sidecarFailedServiceName: sidecarFailedServiceConfig,
@@ -833,7 +825,7 @@ func TestAddServices_FailedToRegisterService(t *testing.T) {
 	failedServiceIndex := 1
 	failedServicePartitionId := testPartitionIdFromInt(failedServiceIndex)
 	failedServiceName := testServiceNameFromInt(failedServiceIndex)
-	failedServiceConfig := services.NewServiceConfigBuilder(testContainerImageName).WithSubnetwork(string(failedServicePartitionId)).Build()
+	failedServiceConfig := testServiceConfig(testContainerImageName, string(failedServicePartitionId))
 
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -845,9 +837,7 @@ func TestAddServices_FailedToRegisterService(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -872,7 +862,7 @@ func TestAddServices_FailedToRegisterService(t *testing.T) {
 
 	success, failure, err := network.AddServices(
 		ctx,
-		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
+		map[service.ServiceName]*service.ServiceConfig{
 			failedServiceName: failedServiceConfig,
 		},
 		1,
@@ -903,9 +893,7 @@ func TestStopService_Successful(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -960,9 +948,7 @@ func TestStopService_StopUserServicesFailed(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1018,9 +1004,7 @@ func TestStopService_ServiceAlreadyStopped(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1060,7 +1044,7 @@ func TestStartService_Successful(t *testing.T) {
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceRegistration.SetStatus(service.ServiceStatus_Stopped)
-	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0)
+	serviceConfig := testServiceConfig(testContainerImageName, defaultSubnetwork)
 	serviceRegistration.SetConfig(serviceConfig)
 	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
 
@@ -1074,9 +1058,7 @@ func TestStartService_Successful(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1116,7 +1098,7 @@ func TestStartService_StartRegisteredUserServicesFailed(t *testing.T) {
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceRegistration.SetStatus(service.ServiceStatus_Stopped)
-	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0)
+	serviceConfig := testServiceConfig(testContainerImageName, defaultSubnetwork)
 	serviceRegistration.SetConfig(serviceConfig)
 
 	file, err := os.CreateTemp("/tmp", "*.db")
@@ -1129,9 +1111,7 @@ func TestStartService_StartRegisteredUserServicesFailed(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1172,7 +1152,7 @@ func TestStartService_ServiceAlreadyStarted(t *testing.T) {
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
 	serviceRegistration.SetStatus(service.ServiceStatus_Started)
-	serviceConfig := service.NewServiceConfig(testContainerImageName, nil, nil, nil, nil, nil, nil, 0, 0, "", 0, 0)
+	serviceConfig := testServiceConfig(testContainerImageName, defaultSubnetwork)
 	serviceRegistration.SetConfig(serviceConfig)
 
 	file, err := os.CreateTemp("/tmp", "*.db")
@@ -1185,9 +1165,7 @@ func TestStartService_ServiceAlreadyStarted(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1227,9 +1205,7 @@ func TestUpdateService(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1338,9 +1314,7 @@ func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1414,9 +1388,7 @@ func TestSetDefaultConnection(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1449,9 +1421,7 @@ func TestSetDefaultConnection_FailureRollbackDefaultConnection(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1486,9 +1456,7 @@ func TestSetConnection(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1550,9 +1518,7 @@ func TestSetConnection_FailureRollsBackChanges(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1612,9 +1578,7 @@ func TestUnsetConnection(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1676,9 +1640,7 @@ func TestUnsetConnection_FailureRollsBackChanges(t *testing.T) {
 
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
-		ip,
-		apiContainerPort,
-		fakeApiContainerVersion,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1981,6 +1943,24 @@ func openFreeTCPAndUDPLocalHostPortAddressesForTesting() (*netip.AddrPort, *neti
 	shouldCloseTCPListener = false
 	shouldCloseUDPListener = false
 	return &tcpAddressPort, &udpAddressPort, closeBothListenersFunc, nil
+}
+
+func testServiceConfig(imageName string, subnetwork string) *service.ServiceConfig {
+	return service.NewServiceConfig(
+		testContainerImageName,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		nil,
+		0,
+		0,
+		"",
+		0,
+		0,
+		subnetwork,
+	)
 }
 
 func testIpFromInt(i int) net.IP {

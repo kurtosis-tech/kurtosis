@@ -37,8 +37,6 @@ func (creator *EnclaveCreator) CreateEnclave(
 	//If blank, will use a random one
 	enclaveName string,
 	isPartitioningEnabled bool,
-	metricsUserID string,
-	didUserAcceptSendingMetrics bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
 	uuid, err := uuid_generator.GenerateUUIDString()
@@ -93,8 +91,6 @@ func (creator *EnclaveCreator) CreateEnclave(
 		enclaveUuid,
 		apiContainerListenGrpcPortNumInsideNetwork,
 		isPartitioningEnabled,
-		metricsUserID,
-		didUserAcceptSendingMetrics,
 	)
 
 	if err != nil {
@@ -160,8 +156,6 @@ func (creator *EnclaveCreator) launchApiContainer(
 	enclaveUuid enclave.EnclaveUUID,
 	grpcListenPort uint16,
 	isPartitioningEnabled bool,
-	metricsUserID string,
-	didUserAcceptSendingMetrics bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -177,8 +171,6 @@ func (creator *EnclaveCreator) launchApiContainer(
 			enclaveUuid,
 			grpcListenPort,
 			isPartitioningEnabled,
-			metricsUserID,
-			didUserAcceptSendingMetrics,
 			creator.apiContainerKurtosisBackendConfigSupplier,
 		)
 		if err != nil {
@@ -192,8 +184,6 @@ func (creator *EnclaveCreator) launchApiContainer(
 		enclaveUuid,
 		grpcListenPort,
 		isPartitioningEnabled,
-		metricsUserID,
-		didUserAcceptSendingMetrics,
 		creator.apiContainerKurtosisBackendConfigSupplier,
 	)
 	if err != nil {
