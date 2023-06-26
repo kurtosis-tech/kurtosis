@@ -74,7 +74,7 @@ func CreateEnclaveManager(
 	var enclavePool *EnclavePool
 
 	if isEnclavePoolAllowedForThisConfig(poolSize, kurtosisBackendType) {
-		enclavePool = CreateEnclavePool(enclaveCreator, poolSize, engineVersion)
+		enclavePool = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion)
 	}
 
 	return &EnclaveManager{
@@ -93,6 +93,7 @@ func CreateEnclaveManager(
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
 	// If blank, will use the default
+	engineVersion string,
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
 	//If blank, will use a random one
@@ -108,7 +109,14 @@ func (manager *EnclaveManager) CreateEnclave(
 	)
 
 	if manager.enclavePool != nil {
-		enclaveInfo, err = manager.enclavePool.GetEnclave(enclaveName)
+		enclaveInfo, err = manager.enclavePool.GetEnclave(
+			setupCtx,
+			enclaveName,
+			engineVersion,
+			apiContainerImageVersionTag,
+			apiContainerLogLevel,
+			isPartitioningEnabled,
+		)
 		if err != nil {
 			logrus.Debugf("An error occurred when trying to get an enclave from the enclave pool")
 		}

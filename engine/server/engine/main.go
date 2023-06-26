@@ -164,6 +164,7 @@ func getEnclaveManager(
 
 	enclaveManager := enclave_manager.CreateEnclaveManager(
 		kurtosisBackend,
+		kurtosisBackendType,
 		apiContainerKurtosisBackendConfigSupplier,
 		engineVersion,
 		poolSize,
