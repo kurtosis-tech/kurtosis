@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"net"
 	"net/http"
 
@@ -149,7 +150,7 @@ func (m *MockServiceNetworkCustom) GetServiceRegistration(serviceName service.Se
 	return serviceRegistration, found
 }
 
-func (m *MockServiceNetworkCustom) RenderTemplates(_ map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, _ string) (enclave_data_directory.FilesArtifactUUID, error) {
+func (m *MockServiceNetworkCustom) RenderTemplates(_ map[string]*render_templates.TemplateData, _ string) (enclave_data_directory.FilesArtifactUUID, error) {
 	panic(unimplementedMsg)
 }
 

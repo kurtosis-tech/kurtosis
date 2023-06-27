@@ -92,7 +92,7 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
 
-	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, serializedStarlarkScript, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
 	return nil
 }
 
@@ -155,7 +155,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		}
 		return nil
 	}
-	apicService.runStarlark(parallelism, dryRun, packageId, mainFuncName, scriptWithRunFunction, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, packageId, mainFuncName, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 	return nil
 }
 
@@ -401,16 +401,6 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 	}
 
 	response := &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse{Uuid: string(filesArtifactId)}
-	return response, nil
-}
-
-func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
-	templatesAndDataByDestinationRelFilepath := args.TemplatesAndDataByDestinationRelFilepath
-	filesArtifactUuid, err := apicService.serviceNetwork.RenderTemplates(templatesAndDataByDestinationRelFilepath, args.Name)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while rendering templates to files artifact")
-	}
-	response := binding_constructors.NewRenderTemplatesToFilesArtifactResponse(string(filesArtifactUuid))
 	return response, nil
 }
 
@@ -664,9 +654,10 @@ func (apicService ApiContainerService) runStarlark(
 	mainFunctionName string,
 	serializedStarlark string,
 	serializedParams string,
+	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, serializedStarlark, serializedParams)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, serializedStarlark, serializedParams, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():

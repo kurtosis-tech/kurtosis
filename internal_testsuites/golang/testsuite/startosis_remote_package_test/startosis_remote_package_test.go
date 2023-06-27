@@ -3,6 +3,7 @@ package startosis_remote_package_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -22,6 +23,10 @@ const (
 	useDefaultFunctionName = ""
 )
 
+var (
+	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
+)
+
 func TestStartosisRemotePackage(t *testing.T) {
 	ctx := context.Background()
 
@@ -33,7 +38,7 @@ func TestStartosisRemotePackage(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Starlark Package: '%v'", remotePackage)
 
-	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, executeParams, defaultDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, executeParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
 	require.NoError(t, err, "Unexpected error executing starlark package")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")

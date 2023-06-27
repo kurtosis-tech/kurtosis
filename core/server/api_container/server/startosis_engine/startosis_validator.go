@@ -80,7 +80,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 func (validator *StartosisValidator) validateAndUpdateEnvironment(instructionsSequence []*instructions_plan.ScheduledInstruction, environment *startosis_validator.ValidatorEnvironment, starlarkRunResponseLineStream chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
 	isValidationFailure := false
 	for _, scheduledInstruction := range instructionsSequence {
-		if scheduledInstruction.IsExecuted() {
+		if scheduledInstruction.IsImportedFromCurrentEnclavePlan() || scheduledInstruction.IsExecuted() {
 			// no need to validate the instruction as it won't be executed in this round
 			continue
 		}
