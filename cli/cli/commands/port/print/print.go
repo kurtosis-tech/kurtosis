@@ -105,13 +105,12 @@ func run(
 
 	publicPorts := serviceCtx.GetPublicPorts()
 
-	if publicPorts[portIdentifier] == nil {
+	publicPort, found := publicPorts[portIdentifier]
+	if !found {
 		return stacktrace.NewError(
 			fmt.Sprintf("Port Identifier: %v is not found for service: %v in enclave %v", portIdentifier, serviceIdentifier, enclaveIdentifier),
 		)
 	}
-
-	publicPort := publicPorts[portIdentifier]
 
 	fullUrl := fmt.Sprintf("%v:%v", ipAddress, publicPort.GetNumber())
 	maybeApplicationProtocol := publicPort.GetMaybeApplicationProtocol()
