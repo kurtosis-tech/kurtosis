@@ -390,7 +390,13 @@ The result of an instruction that was successfully executed
 The error that was thrown running the Starlark code
 
 ### [StarlarkRunProgress][starlarkrunprogress] `progressInfo`
-Regularly during the run of the code, Kurtosis' Starlark engine will send progress information through the stream to account for progress that was made running the code.
+Regularly during the run of the code, Kurtosis Starlark engine will send progress information through the stream to account for progress that was made running the code.
+
+### [StarlarkRunFinishedEvent][starlarkrunfinishedevent] `runFinishedEvent`
+This object will be sent _once_ at the end of the execution to signify it has ended.
+
+### [StarlarkWarning][starlarkwarning] `warning`
+A warning, non-fatal, message
 
 StarlarkInstruction
 -------------------
@@ -431,6 +437,20 @@ StarlarkRunProgress
 * `currentStepNumber`: The number of the step that is currently being executed
 
 * `currentStepInfo`: A string field with some information on the current step being executed.
+
+StarlarkRunFinishedEvent
+------------------------
+
+`StarlarkRunFinishedEvent` is the object returned when the execution of the Starlark code is finished. Is composed of two fields:
+
+* `isRunSuccessful`: whether the run successfully finished or not
+
+* `serializedOutput`: when the run is successful and the Starlark code has returned an object, the returned object is automatically serialized to JSON by Kurtosis and returned via this field.
+
+StarlarkWarning
+---------------
+
+`StarlarkWarning` is a warning message returned by Kurtosis Starlark engine. Warnings are by definition non-fatal, they typically point out an antipattern in the code or a deprecated feature still being used
 
 StarlarkRunResult
 -----------------
@@ -526,6 +546,8 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 [starlarkinstructionresult]: #starlarkinstructionresult
 [starlarkerror]: #starlarkerror
 [starlarkrunprogress]: #starlarkrunprogress
+[starlarkrunfinishedevent]: #starlarkrunfinishedevent
+[starlarkwarning]: #starlarkwarning
 [starlarkrunresult]: #starlarkrunresult
 
 [servicecontext]: #servicecontext
