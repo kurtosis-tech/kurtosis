@@ -70,6 +70,10 @@ const (
 	// we're mapping ports by default such that remote run and local run gives the exact same state: ports are reachable from local laptop
 	defaultMapPortsFlagKey = "true"
 
+	experimentalFeaturesFlagKey   = "experimental"
+	defaultExperimentalFeatures   = ""
+	experimentalFeaturesSplitChar = ","
+
 	githubDomainPrefix          = "github.com/"
 	isNewEnclaveFlagWhenCreated = true
 	interruptChanBufferSize     = 5
@@ -172,6 +176,14 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_String,
 			Default: mainFunctionNameDefaultValue,
 		},
+		{
+			Key: experimentalFeaturesFlagKey,
+			Usage: fmt.Sprintf("Set of experimental features to enable for this Kurtosis package run. Enabling "+
+				"multiple experiental features can be done by separating them with a comma, i.e. '--%s FEATURE_1,FEATURE_2'. "+
+				"Please reach out to Kurtosis team if you wish to try any of those.", experimentalFeaturesFlagKey),
+			Type:    flags.FlagType_String,
+			Default: defaultExperimentalFeatures,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -262,6 +274,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFunctionNameFlagKey)
 	}
 
+	experientalFlags, err := parseExperimentalFlag(flags)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFunctionNameFlagKey)
+	}
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -291,7 +308,7 @@ func run(
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 	isStandAloneScript := false
 	if isRemotePackage {
-		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism)
+		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism, experientalFlags)
 	} else {
 		fileOrDir, err := os.Stat(starlarkScriptOrPackagePath)
 		if err != nil {
@@ -303,14 +320,14 @@ func run(
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism)
+			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism, experientalFlags)
 		} else {
 			// if the path is a file with `kurtosis.yml` at the end it's a module dir
 			// we remove the `kurtosis.yml` to get just the Dir containing the module
 			if isKurtosisYMLFileInPackageDir(fileOrDir, kurtosisYMLFilePath) {
 				starlarkScriptOrPackagePath = path.Dir(starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism)
+			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism, experientalFlags)
 		}
 	}
 	if errRunningKurtosis != nil {
@@ -402,12 +419,12 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, mainFunctionName string, serializedParams string, dryRun bool, parallelism int32) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, mainFunctionName string, serializedParams string, dryRun bool, parallelism int32, experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	fileContentBytes, err := os.ReadFile(scriptPath)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", scriptPath)
 	}
-	return enclaveCtx.RunStarlarkScript(ctx, mainFunctionName, string(fileContentBytes), serializedParams, dryRun, parallelism)
+	return enclaveCtx.RunStarlarkScript(ctx, mainFunctionName, string(fileContentBytes), serializedParams, dryRun, parallelism, experimentalFeatures)
 }
 
 func executePackage(
@@ -419,6 +436,7 @@ func executePackage(
 	serializedParams string,
 	dryRun bool,
 	parallelism int32,
+	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	// we get the absolute path so that the logs make more sense
 	absolutePackagePath, err := filepath.Abs(packagePath)
@@ -427,7 +445,7 @@ func executePackage(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while getting the absolute path for '%v'", packagePath)
 	}
-	return enclaveCtx.RunStarlarkPackage(ctx, packagePath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism)
+	return enclaveCtx.RunStarlarkPackage(ctx, packagePath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures)
 }
 
 func executeRemotePackage(
@@ -439,8 +457,9 @@ func executeRemotePackage(
 	serializedParams string,
 	dryRun bool,
 	parallelism int32,
+	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
-	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism)
+	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures)
 }
 
 func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity, dryRun bool) error {
@@ -538,6 +557,31 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 		return 0, stacktrace.Propagate(err, "Invalid verbosity value: '%s'. Possible values are %s", verbosityStr, strings.Join(command_args_run.VerbosityStrings(), ", "))
 	}
 	return verbosity, nil
+}
+
+// parseExperimentalFlag parses the sert of experimental features enabled for this run
+func parseExperimentalFlag(flags *flags.ParsedFlags) ([]kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag, error) {
+	experimentalFeaturesStr, err := flags.GetString(experimentalFeaturesFlagKey)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the experimental features flag using flag key '%s'", experimentalFeaturesFlagKey)
+	}
+
+	var parsedExperimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
+	experimentalFeatures := strings.Split(experimentalFeaturesStr, experimentalFeaturesSplitChar)
+	for _, experimentalFeatureStr := range experimentalFeatures {
+		trimmedExperimentalFeatureStr := strings.TrimSpace(experimentalFeatureStr)
+		if trimmedExperimentalFeatureStr == "" {
+			continue
+		}
+		experimentalFeatureInt, found := kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_value[trimmedExperimentalFeatureStr]
+		if !found {
+			return nil, stacktrace.NewError(
+				"Unable to parse '%s' as a valid Kurtosis feature flag.",
+				trimmedExperimentalFeatureStr)
+		}
+		parsedExperimentalFeatures = append(parsedExperimentalFeatures, kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag(experimentalFeatureInt))
+	}
+	return parsedExperimentalFeatures, nil
 }
 
 // isStandaloneScript returns true if the fileInfo points to a non `kurtosis.yml` regular file

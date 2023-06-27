@@ -126,6 +126,11 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   getMainFunctionName(): string;
   setMainFunctionName(value: string): RunStarlarkScriptArgs;
 
+  getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
+  setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): RunStarlarkScriptArgs;
+  clearExperimentalFeaturesList(): RunStarlarkScriptArgs;
+  addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -141,6 +146,7 @@ export namespace RunStarlarkScriptArgs {
     dryRun?: boolean,
     parallelism?: number,
     mainFunctionName: string,
+    experimentalFeaturesList: Array<KurtosisFeatureFlag>,
   }
 
   export enum DryRunCase { 
@@ -190,6 +196,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   getMainFunctionName(): string;
   setMainFunctionName(value: string): RunStarlarkPackageArgs;
 
+  getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
+  setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): RunStarlarkPackageArgs;
+  clearExperimentalFeaturesList(): RunStarlarkPackageArgs;
+  addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -211,6 +222,7 @@ export namespace RunStarlarkPackageArgs {
     clonePackage?: boolean,
     relativePathToMainFile: string,
     mainFunctionName: string,
+    experimentalFeaturesList: Array<KurtosisFeatureFlag>,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -1115,3 +1127,6 @@ export namespace ListFilesArtifactNamesAndUuidsResponse {
   }
 }
 
+export enum KurtosisFeatureFlag { 
+  USE_INSTRUCTIONS_CACHING = 0,
+}
