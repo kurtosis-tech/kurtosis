@@ -35,6 +35,10 @@ type EnclavePool struct {
 	engineVersion    string
 }
 
+// CreateEnclavePool will do the following:
+// 1- Wil create a new enclave pool object or return an error
+// 2- Will remove idle enclaves from previous engine runs
+// 3- Will start a sub-routine in charge of filling the pool
 func CreateEnclavePool(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveCreator *EnclaveCreator,
@@ -54,11 +58,12 @@ func CreateEnclavePool(
 		engineVersion:    engineVersion,
 	}
 
+	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
+	//TODO the reuse logic is not enable yet because we ned to store the APIC version on the APIContainer object in container-engine-lib
+	//TODO in order to using it for comparing it with the expected version
+
 	// iterate on all the existing enclaves in order to find idle enclaves already created
 	// and reuse or destroy them if these were created from old Kurtosis version
-	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
-	//TODO the reuse logic is not enable yet because we ned to store the APIC version on the APIContainer object from container-engine-lib
-	//TODO in order to using it for comparing it with the expected version
 	if err := enclavePool.destroyPreviousIdleEnclaves(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying previous idle enclave before creating the enclave pool")
 	}
@@ -145,21 +150,12 @@ func (pool *EnclavePool) destroyPreviousIdleEnclaves() error {
 		return stacktrace.Propagate(err, "An error occurred getting enclaves using filters '%+v'", filters)
 	}
 
-	// check if there are idle enclaves on the list
 	idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{}
-	idleEnclavesToReuse := map[enclave.EnclaveUUID]bool{}
 
 	for enclaveUUID, enclaveObj := range enclaves {
 		enclaveName := enclaveObj.GetName()
-		// is it an idle enclave?
+		// is it an idle enclave from a previous run?
 		if strings.HasPrefix(enclaveName, idleEnclaveNamePrefix) {
-			// can be reused ?
-			if hasRequiredAPICVersion(enclaveObj) && len(idleEnclavesToReuse) < pool.getPoolSize() {
-				idleEnclavesToReuse[enclaveUUID] = true
-				continue
-			}
-
-			// if it can't, should be deleted
 			idleEnclavesToRemove[enclaveUUID] = true
 		}
 	}
@@ -185,11 +181,6 @@ func (pool *EnclavePool) destroyPreviousIdleEnclaves() error {
 		joinedRemovalErrors := strings.Join(removalErrorStrings, errorSeparator)
 		return stacktrace.NewError("Following errors occurred while removing idle enclaves :\n%v", joinedRemovalErrors)
 	}
-
-	//TODO reuse this enclaves
-	// TODO Check for channel capacity before adding it into the channel
-	// pool.idleEnclavesChan <- newEnclaveInfo
-	//logrus.Debugf("Enclave '%+v' was added intho the pool channel", newEnclaveInfo)
 
 	return nil
 }
@@ -284,18 +275,6 @@ func (pool *EnclavePool) getRunningEnclave(ctx context.Context, enclaveUUID encl
 	}
 
 	return enclaveObj, nil
-}
-
-func (pool *EnclavePool) getPoolSize() int {
-	poolSize := cap(pool.idleEnclavesChan) + oneEnclave
-	return poolSize
-}
-
-func hasRequiredAPICVersion(enclave *enclave.Enclave) bool {
-
-	//TODO this is not implemented yet because we have to do some pre work for storing
-	//TODO the APIC version on the k8s and Docker labels in order to get it from the Kurtosis backend here
-	return false
 }
 
 // The enclave pool feature is only available for Kubernetes so far, and it will be activated

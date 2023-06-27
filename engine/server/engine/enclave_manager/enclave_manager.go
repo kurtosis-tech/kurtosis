@@ -117,6 +117,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		err         error
 	)
 
+	// TODO we could improve performance here by storing the names in memory for further requests
 	allCurrentEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getAllEnclavesFilter())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with name '%v'", enclaveName)
@@ -144,7 +145,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			isPartitioningEnabled,
 		)
 		if err != nil {
-			logrus.Debugf("An error occurred when trying to get an enclave from the enclave pool")
+			logrus.Errorf("An error occurred when trying to get an enclave from the enclave pool. Err:\n%v", err)
 		}
 	}
 
