@@ -3,8 +3,6 @@ package add_service
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
@@ -34,14 +32,17 @@ func fillAddServiceReturnValueWithRuntimeValues(service *service.Service, result
 	})
 }
 
-func makeAddServiceInterpretationReturnValue(serviceName starlark.String, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig, resultUuid string) (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
+func makeAddServiceInterpretationReturnValue(serviceName starlark.String, serviceConfig *service.ServiceConfig, resultUuid string) (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
 	ports := serviceConfig.GetPrivatePorts()
 	portSpecsDict := starlark.NewDict(len(ports))
 	for portId, port := range ports {
 		number := port.GetNumber()
 		transportProtocol := port.GetTransportProtocol()
 		maybeApplicationProtocol := port.GetMaybeApplicationProtocol()
-		maybeWaitTimeout := port.GetMaybeWaitTimeout()
+		var maybeWaitTimeout string
+		if port.GetWait() != nil {
+			maybeWaitTimeout = port.GetWait().GetTimeout().String()
+		}
 
 		portSpec, interpretationErr := port_spec.CreatePortSpec(number, transportProtocol, maybeApplicationProtocol, maybeWaitTimeout)
 		if interpretationErr != nil {
@@ -59,10 +60,11 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 	return returnValue, nil
 }
 
-func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEnvironment, serviceName service.ServiceName, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) *startosis_errors.ValidationError {
-	if partition_topology.ParsePartitionId(serviceConfig.Subnetwork) != partition_topology.DefaultPartitionId {
+func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEnvironment, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
+	subnetwork := serviceConfig.GetSubnetwork()
+	if partition_topology.ParsePartitionId(&subnetwork) != partition_topology.DefaultPartitionId {
 		if !validatorEnvironment.IsNetworkPartitioningEnabled() {
-			return startosis_errors.NewValidationError("Service was about to be started inside subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark code with subnetwork enabled.", *serviceConfig.Subnetwork)
+			return startosis_errors.NewValidationError("Service was about to be started inside subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark code with subnetwork enabled.", serviceConfig.GetSubnetwork())
 		}
 	}
 	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
@@ -72,14 +74,16 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	if validatorEnvironment.DoesServiceNameExist(serviceName) {
 		return startosis_errors.NewValidationError("There was an error validating '%s' as service '%s' already exists", AddServiceBuiltinName, serviceName)
 	}
-	for _, artifactName := range serviceConfig.FilesArtifactMountpoints {
-		if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
-			return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
+	if serviceConfig.GetFilesArtifactsExpansion() != nil {
+		for _, artifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
+			if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
+				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
+			}
 		}
 	}
 	validatorEnvironment.AddServiceName(serviceName)
-	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.ContainerImageName)
-	for portId := range serviceConfig.PrivatePorts {
+	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
+	for portId := range serviceConfig.GetPrivatePorts() {
 		validatorEnvironment.AddPrivatePortIDForService(portId, serviceName)
 	}
 	return nil
@@ -98,10 +102,10 @@ func invalidServiceNameErrorText(
 func replaceMagicStrings(
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	serviceName service.ServiceName,
-	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceConfig *service.ServiceConfig,
 ) (
 	service.ServiceName,
-	*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	*service.ServiceConfig,
 	error,
 ) {
 	// replacing magic string in service name
@@ -110,36 +114,34 @@ func replaceMagicStrings(
 		return "", nil, stacktrace.Propagate(err, "Error occurred while replacing runtime values in service name for '%s'", serviceName)
 	}
 
-	// replacing all magic strings in service config
-	serviceConfigBuilder := services.NewServiceConfigBuilderFromServiceConfig(serviceConfig)
-
-	if serviceConfig.EntrypointArgs != nil {
-		newEntryPointArgs := make([]string, len(serviceConfig.EntrypointArgs))
-		for index, entryPointArg := range serviceConfig.EntrypointArgs {
+	var entrypoints []string
+	if serviceConfig.GetEntrypointArgs() != nil {
+		entrypoints = make([]string, len(serviceConfig.GetEntrypointArgs()))
+		for index, entryPointArg := range serviceConfig.GetEntrypointArgs() {
 			entryPointArgWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(entryPointArg, runtimeValueStore)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing runtime value in entry point args for '%v'", entryPointArg)
 			}
-			newEntryPointArgs[index] = entryPointArgWithRuntimeValueReplaced
+			entrypoints[index] = entryPointArgWithRuntimeValueReplaced
 		}
-		serviceConfigBuilder.WithEntryPointArgs(newEntryPointArgs)
 	}
 
-	if serviceConfig.CmdArgs != nil {
-		newCmdArgs := make([]string, len(serviceConfig.CmdArgs))
-		for index, cmdArg := range serviceConfig.CmdArgs {
+	var cmdArgs []string
+	if serviceConfig.GetCmdArgs() != nil {
+		cmdArgs = make([]string, len(serviceConfig.GetCmdArgs()))
+		for index, cmdArg := range serviceConfig.GetCmdArgs() {
 			cmdArgWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(cmdArg, runtimeValueStore)
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%v'", cmdArg)
 			}
-			newCmdArgs[index] = cmdArgWithRuntimeValueReplaced
+			cmdArgs[index] = cmdArgWithRuntimeValueReplaced
 		}
-		serviceConfigBuilder.WithCmdArgs(newCmdArgs)
 	}
 
-	if serviceConfig.EnvVars != nil {
-		newEnvVars := make(map[string]string, len(serviceConfig.EnvVars))
-		for envVarName, envVarValue := range serviceConfig.EnvVars {
+	var envVars map[string]string
+	if serviceConfig.GetEnvVars() != nil {
+		envVars = make(map[string]string, len(serviceConfig.GetEnvVars()))
+		for envVarName, envVarValue := range serviceConfig.GetEnvVars() {
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing IP address in env vars for '%v'", envVarValue)
 			}
@@ -147,12 +149,26 @@ func replaceMagicStrings(
 			if err != nil {
 				return "", nil, stacktrace.Propagate(err, "Error occurred while replacing runtime value in command args for '%s': '%s'", envVarName, envVarValue)
 			}
-			newEnvVars[envVarName] = envVarValueWithRuntimeValueReplaced
+			envVars[envVarName] = envVarValueWithRuntimeValueReplaced
 		}
-		serviceConfigBuilder.WithEnvVars(newEnvVars)
 	}
 
-	return service.ServiceName(serviceNameStr), serviceConfigBuilder.Build(), nil
+	renderedServiceConfig := service.NewServiceConfig(
+		serviceConfig.GetContainerImageName(),
+		serviceConfig.GetPrivatePorts(),
+		serviceConfig.GetPublicPorts(),
+		entrypoints,
+		cmdArgs,
+		envVars,
+		serviceConfig.GetFilesArtifactsExpansion(),
+		serviceConfig.GetCPUAllocationMillicpus(),
+		serviceConfig.GetMemoryAllocationMegabytes(),
+		serviceConfig.GetPrivateIPAddrPlaceholder(),
+		serviceConfig.GetMinCPUAllocationMillicpus(),
+		serviceConfig.GetMinMemoryAllocationMegabytes(),
+		serviceConfig.GetSubnetwork(),
+	)
+	return service.ServiceName(serviceNameStr), renderedServiceConfig, nil
 }
 
 func runServiceReadinessCheck(

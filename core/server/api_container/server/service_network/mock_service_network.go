@@ -35,15 +35,15 @@ func (_m *MockServiceNetwork) EXPECT() *MockServiceNetwork_Expecter {
 }
 
 // AddService provides a mock function with given fields: ctx, serviceName, serviceConfig
-func (_m *MockServiceNetwork) AddService(ctx context.Context, serviceName service.ServiceName, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig) (*service.Service, error) {
+func (_m *MockServiceNetwork) AddService(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) (*service.Service, error) {
 	ret := _m.Called(ctx, serviceName, serviceConfig)
 
 	var r0 *service.Service
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig) (*service.Service, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *service.ServiceConfig) (*service.Service, error)); ok {
 		return rf(ctx, serviceName, serviceConfig)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig) *service.Service); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *service.ServiceConfig) *service.Service); ok {
 		r0 = rf(ctx, serviceName, serviceConfig)
 	} else {
 		if ret.Get(0) != nil {
@@ -51,7 +51,7 @@ func (_m *MockServiceNetwork) AddService(ctx context.Context, serviceName servic
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, service.ServiceName, *service.ServiceConfig) error); ok {
 		r1 = rf(ctx, serviceName, serviceConfig)
 	} else {
 		r1 = ret.Error(1)
@@ -68,14 +68,14 @@ type MockServiceNetwork_AddService_Call struct {
 // AddService is a helper method to define mock.On call
 //   - ctx context.Context
 //   - serviceName service.ServiceName
-//   - serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig
+//   - serviceConfig *service.ServiceConfig
 func (_e *MockServiceNetwork_Expecter) AddService(ctx interface{}, serviceName interface{}, serviceConfig interface{}) *MockServiceNetwork_AddService_Call {
 	return &MockServiceNetwork_AddService_Call{Call: _e.mock.On("AddService", ctx, serviceName, serviceConfig)}
 }
 
-func (_c *MockServiceNetwork_AddService_Call) Run(run func(ctx context.Context, serviceName service.ServiceName, serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig)) *MockServiceNetwork_AddService_Call {
+func (_c *MockServiceNetwork_AddService_Call) Run(run func(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig)) *MockServiceNetwork_AddService_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(service.ServiceName), args[2].(*kurtosis_core_rpc_api_bindings.ServiceConfig))
+		run(args[0].(context.Context), args[1].(service.ServiceName), args[2].(*service.ServiceConfig))
 	})
 	return _c
 }
@@ -85,22 +85,22 @@ func (_c *MockServiceNetwork_AddService_Call) Return(_a0 *service.Service, _a1 e
 	return _c
 }
 
-func (_c *MockServiceNetwork_AddService_Call) RunAndReturn(run func(context.Context, service.ServiceName, *kurtosis_core_rpc_api_bindings.ServiceConfig) (*service.Service, error)) *MockServiceNetwork_AddService_Call {
+func (_c *MockServiceNetwork_AddService_Call) RunAndReturn(run func(context.Context, service.ServiceName, *service.ServiceConfig) (*service.Service, error)) *MockServiceNetwork_AddService_Call {
 	_c.Call.Return(run)
 	return _c
 }
 
 // AddServices provides a mock function with given fields: ctx, serviceConfigs, batchSize
-func (_m *MockServiceNetwork) AddServices(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, batchSize int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
+func (_m *MockServiceNetwork) AddServices(ctx context.Context, serviceConfigs map[service.ServiceName]*service.ServiceConfig, batchSize int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
 	ret := _m.Called(ctx, serviceConfigs, batchSize)
 
 	var r0 map[service.ServiceName]*service.Service
 	var r1 map[service.ServiceName]error
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*service.ServiceConfig, int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error)); ok {
 		return rf(ctx, serviceConfigs, batchSize)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) map[service.ServiceName]*service.Service); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]*service.ServiceConfig, int) map[service.ServiceName]*service.Service); ok {
 		r0 = rf(ctx, serviceConfigs, batchSize)
 	} else {
 		if ret.Get(0) != nil {
@@ -108,7 +108,7 @@ func (_m *MockServiceNetwork) AddServices(ctx context.Context, serviceConfigs ma
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) map[service.ServiceName]error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, map[service.ServiceName]*service.ServiceConfig, int) map[service.ServiceName]error); ok {
 		r1 = rf(ctx, serviceConfigs, batchSize)
 	} else {
 		if ret.Get(1) != nil {
@@ -116,7 +116,7 @@ func (_m *MockServiceNetwork) AddServices(ctx context.Context, serviceConfigs ma
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, map[service.ServiceName]*service.ServiceConfig, int) error); ok {
 		r2 = rf(ctx, serviceConfigs, batchSize)
 	} else {
 		r2 = ret.Error(2)
@@ -132,15 +132,15 @@ type MockServiceNetwork_AddServices_Call struct {
 
 // AddServices is a helper method to define mock.On call
 //   - ctx context.Context
-//   - serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig
+//   - serviceConfigs map[service.ServiceName]*service.ServiceConfig
 //   - batchSize int
 func (_e *MockServiceNetwork_Expecter) AddServices(ctx interface{}, serviceConfigs interface{}, batchSize interface{}) *MockServiceNetwork_AddServices_Call {
 	return &MockServiceNetwork_AddServices_Call{Call: _e.mock.On("AddServices", ctx, serviceConfigs, batchSize)}
 }
 
-func (_c *MockServiceNetwork_AddServices_Call) Run(run func(ctx context.Context, serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, batchSize int)) *MockServiceNetwork_AddServices_Call {
+func (_c *MockServiceNetwork_AddServices_Call) Run(run func(ctx context.Context, serviceConfigs map[service.ServiceName]*service.ServiceConfig, batchSize int)) *MockServiceNetwork_AddServices_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig), args[2].(int))
+		run(args[0].(context.Context), args[1].(map[service.ServiceName]*service.ServiceConfig), args[2].(int))
 	})
 	return _c
 }
@@ -150,7 +150,7 @@ func (_c *MockServiceNetwork_AddServices_Call) Return(_a0 map[service.ServiceNam
 	return _c
 }
 
-func (_c *MockServiceNetwork_AddServices_Call) RunAndReturn(run func(context.Context, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error)) *MockServiceNetwork_AddServices_Call {
+func (_c *MockServiceNetwork_AddServices_Call) RunAndReturn(run func(context.Context, map[service.ServiceName]*service.ServiceConfig, int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error)) *MockServiceNetwork_AddServices_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -206,6 +206,49 @@ func (_c *MockServiceNetwork_CopyFilesFromService_Call) Return(_a0 enclave_data_
 }
 
 func (_c *MockServiceNetwork_CopyFilesFromService_Call) RunAndReturn(run func(context.Context, string, string, string) (enclave_data_directory.FilesArtifactUUID, error)) *MockServiceNetwork_CopyFilesFromService_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetApiContainerInfo provides a mock function with given fields:
+func (_m *MockServiceNetwork) GetApiContainerInfo() *ApiContainerInfo {
+	ret := _m.Called()
+
+	var r0 *ApiContainerInfo
+	if rf, ok := ret.Get(0).(func() *ApiContainerInfo); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*ApiContainerInfo)
+		}
+	}
+
+	return r0
+}
+
+// MockServiceNetwork_GetApiContainerInfo_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetApiContainerInfo'
+type MockServiceNetwork_GetApiContainerInfo_Call struct {
+	*mock.Call
+}
+
+// GetApiContainerInfo is a helper method to define mock.On call
+func (_e *MockServiceNetwork_Expecter) GetApiContainerInfo() *MockServiceNetwork_GetApiContainerInfo_Call {
+	return &MockServiceNetwork_GetApiContainerInfo_Call{Call: _e.mock.On("GetApiContainerInfo")}
+}
+
+func (_c *MockServiceNetwork_GetApiContainerInfo_Call) Run(run func()) *MockServiceNetwork_GetApiContainerInfo_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockServiceNetwork_GetApiContainerInfo_Call) Return(_a0 *ApiContainerInfo) *MockServiceNetwork_GetApiContainerInfo_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockServiceNetwork_GetApiContainerInfo_Call) RunAndReturn(run func() *ApiContainerInfo) *MockServiceNetwork_GetApiContainerInfo_Call {
 	_c.Call.Return(run)
 	return _c
 }
