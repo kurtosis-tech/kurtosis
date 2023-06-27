@@ -445,7 +445,7 @@ StarlarkRunFinishedEvent
 
 * `isRunSuccessful`: whether the run successfully finished or not
 
-* `serializedOutput`: when the run is successful and the Starlark code returned an object, this object is automatically serialized to JSON by Kurtosis and returned via this field
+* `serializedOutput`: when the run is successful and the Starlark code has returned an object, the returned object is automatically serialized to JSON by Kurtosis and returned via this field.
 
 StarlarkWarning
 ---------------
