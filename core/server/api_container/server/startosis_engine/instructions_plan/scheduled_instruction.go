@@ -20,14 +20,17 @@ type ScheduledInstruction struct {
 	returnedValue starlark.Value
 
 	executed bool
+
+	importedFromCurrentEnclavePlan bool
 }
 
 func NewScheduledInstruction(uuid ScheduledInstructionUuid, kurtosisInstruction kurtosis_instruction.KurtosisInstruction, returnedValue starlark.Value) *ScheduledInstruction {
 	return &ScheduledInstruction{
-		uuid:                uuid,
-		kurtosisInstruction: kurtosisInstruction,
-		returnedValue:       returnedValue,
-		executed:            false,
+		uuid:                           uuid,
+		kurtosisInstruction:            kurtosisInstruction,
+		returnedValue:                  returnedValue,
+		executed:                       false,
+		importedFromCurrentEnclavePlan: false,
 	}
 }
 
@@ -46,4 +49,13 @@ func (instruction *ScheduledInstruction) Executed(isExecuted bool) *ScheduledIns
 
 func (instruction *ScheduledInstruction) IsExecuted() bool {
 	return instruction.executed
+}
+
+func (instruction *ScheduledInstruction) ImportedFromCurrentEnclavePlan(importedFromCurrentEnclavePlan bool) *ScheduledInstruction {
+	instruction.importedFromCurrentEnclavePlan = importedFromCurrentEnclavePlan
+	return instruction
+}
+
+func (instruction *ScheduledInstruction) IsImportedFromCurrentEnclavePlan() bool {
+	return instruction.importedFromCurrentEnclavePlan
 }
