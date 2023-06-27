@@ -59,9 +59,16 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		// TODO: for now the plan is append only, as each Starlark run happens on top of whatever exists in the enclave
 		logrus.Debugf("Current enclave plan contains %d instuctions. About to process a new plan with %d instructions (dry-run: %v)",
 			executor.enclavePlan.Size(), len(instructionsSequence), dryRun)
+
+		executor.enclavePlan = instructions_plan.NewInstructionsPlan()
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
+
+			if scheduledInstruction.IsImportedFromCurrentEnclavePlan() {
+				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true).ImportedFromCurrentEnclavePlan(true)
+				continue
+			}
 			progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 				progressMsg, instructionNumber, totalNumberOfInstructions)
 			starlarkRunResponseLineStream <- progress
@@ -104,6 +111,10 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		}
 	}()
 	return starlarkRunResponseLineStream
+}
+
+func (executor *StartosisExecutor) GetCurrentEnclavePLan() *instructions_plan.InstructionsPlan {
+	return executor.enclavePlan
 }
 
 func sendErrorAndFail(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, err error, msg string, msgArgs ...interface{}) {

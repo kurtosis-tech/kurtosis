@@ -38,33 +38,39 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	instruction0 := createMockInstruction(t, "instruction0", executeSuccessfully)
-	scheduledInstruction0 := instructions_plan.NewScheduledInstruction("instruction0", instruction0, starlark.None).Executed(true)
+	scheduledInstruction0 := instructions_plan.NewScheduledInstruction("instruction0", instruction0, starlark.None).Executed(true).ImportedFromCurrentEnclavePlan(true)
 	instructionsPlan.AddScheduledInstruction(scheduledInstruction0)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
+	scheduledInstruction1 := instructions_plan.NewScheduledInstruction("instruction1", instruction1, starlark.None).Executed(true)
+	instructionsPlan.AddScheduledInstruction(scheduledInstruction1)
+
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
-	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
+	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully)
 	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
+	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
 
 	require.Equal(t, executor.enclavePlan.Size(), 0) // check that the enclave plan is empty prior to execution
 
 	_, serializedInstruction, err := executeSynchronously(t, executor, executeForReal, instructionsPlan)
-	instruction0.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
-	instruction0.AssertNumberOfCalls(t, "Execute", 0) // not executed as it was already executed
+	instruction0.AssertNumberOfCalls(t, "GetCanonicalInstruction", 0) // skipped directly
+	instruction0.AssertNumberOfCalls(t, "Execute", 0)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
-	instruction1.AssertNumberOfCalls(t, "Execute", 1)
+	instruction1.AssertNumberOfCalls(t, "Execute", 0) // not executed as it was already executed
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction2.AssertNumberOfCalls(t, "Execute", 1)
+	instruction3.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
+	instruction3.AssertNumberOfCalls(t, "Execute", 1)
 
 	require.Nil(t, err)
 
 	expectedSerializedInstructions := []*kurtosis_core_rpc_api_bindings.StarlarkInstruction{
-		binding_constructors.NewStarlarkInstruction(dummyPosition.ToAPIType(), "instruction0", "instruction0()", noInstructionArgsForTesting),
 		binding_constructors.NewStarlarkInstruction(dummyPosition.ToAPIType(), "instruction1", "instruction1()", noInstructionArgsForTesting),
 		binding_constructors.NewStarlarkInstruction(dummyPosition.ToAPIType(), "instruction2", "instruction2()", noInstructionArgsForTesting),
+		binding_constructors.NewStarlarkInstruction(dummyPosition.ToAPIType(), "instruction3", "instruction3()", noInstructionArgsForTesting),
 	}
 	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
-	require.Equal(t, executor.enclavePlan.Size(), 3) // check that the enclave plan now contains the 3 instructions
+	require.Equal(t, executor.enclavePlan.Size(), 4) // check that the enclave plan now contains the 4 instructions
 }
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
