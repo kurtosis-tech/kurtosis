@@ -306,7 +306,7 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 
 	if engineVersion == apiContainerVersion &&
 		apiContainerLogLevel == defaultApiContainerLogLevel &&
-		isPartitioningEnabled == defaultIsPartitioningEnabled {
+		!isPartitioningEnabled {
 		return true
 	}
 
