@@ -19,13 +19,6 @@ export class ApiContainerServiceClient {
     metadata?: grpcWeb.Metadata
   ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
-  addServices(
-    request: api_container_service_pb.AddServicesArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.AddServicesResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.AddServicesResponse>;
-
   getServices(
     request: api_container_service_pb.GetServicesArgs,
     metadata: grpcWeb.Metadata | undefined,
@@ -39,13 +32,6 @@ export class ApiContainerServiceClient {
     callback: (err: grpcWeb.RpcError,
                response: api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>;
-
-  removeService(
-    request: api_container_service_pb.RemoveServiceArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.RemoveServiceResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.RemoveServiceResponse>;
 
   execCommand(
     request: api_container_service_pb.ExecCommandArgs,
@@ -132,11 +118,6 @@ export class ApiContainerServicePromiseClient {
     metadata?: grpcWeb.Metadata
   ): grpcWeb.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
 
-  addServices(
-    request: api_container_service_pb.AddServicesArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.AddServicesResponse>;
-
   getServices(
     request: api_container_service_pb.GetServicesArgs,
     metadata?: grpcWeb.Metadata
@@ -146,11 +127,6 @@ export class ApiContainerServicePromiseClient {
     request: google_protobuf_empty_pb.Empty,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>;
-
-  removeService(
-    request: api_container_service_pb.RemoveServiceArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.RemoveServiceResponse>;
 
   execCommand(
     request: api_container_service_pb.ExecCommandArgs,

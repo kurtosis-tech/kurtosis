@@ -2,13 +2,13 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -41,16 +41,45 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 
 	serviceNetwork.EXPECT().AddServices(
 		mock.Anything,
-		mock.MatchedBy(func(configs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig) bool {
+		mock.MatchedBy(func(configs map[service.ServiceName]*service.ServiceConfig) bool {
 			require.Len(t, configs, 2)
 			require.Contains(t, configs, TestServiceName)
 			require.Contains(t, configs, TestServiceName2)
 
-			expectedServiceConfig1 := services.NewServiceConfigBuilder(TestContainerImageName).WithSubnetwork(string(TestSubnetwork)).Build()
-			actualServiceConfig1 := services.NewServiceConfigBuilderFromServiceConfig(configs[TestServiceName]).Build()
+			expectedServiceConfig1 := service.NewServiceConfig(
+				TestContainerImageName,
+				map[string]*port_spec.PortSpec{},
+				map[string]*port_spec.PortSpec{},
+				nil,
+				nil,
+				map[string]string{},
+				nil,
+				0,
+				0,
+				service_config.DefaultPrivateIPAddrPlaceholder,
+				0,
+				0,
+				string(TestSubnetwork),
+			)
+			actualServiceConfig1 := configs[TestServiceName]
 			assert.Equal(t, expectedServiceConfig1, actualServiceConfig1)
-			actualServiceConfig2 := services.NewServiceConfigBuilderFromServiceConfig(configs[TestServiceName2]).Build()
-			expectedServiceConfig2 := services.NewServiceConfigBuilder(TestContainerImageName).WithMaxCpuMilliCores(TestCpuAllocation).WithMaxMemoryMegabytes(TestMemoryAllocation).Build()
+
+			expectedServiceConfig2 := service.NewServiceConfig(
+				TestContainerImageName,
+				map[string]*port_spec.PortSpec{},
+				map[string]*port_spec.PortSpec{},
+				nil,
+				nil,
+				map[string]string{},
+				nil,
+				TestCpuAllocation,
+				TestMemoryAllocation,
+				service_config.DefaultPrivateIPAddrPlaceholder,
+				0,
+				0,
+				service_config.DefaultSubnetwork,
+			)
+			actualServiceConfig2 := configs[TestServiceName2]
 			assert.Equal(t, expectedServiceConfig2, actualServiceConfig2)
 			return true
 		}),

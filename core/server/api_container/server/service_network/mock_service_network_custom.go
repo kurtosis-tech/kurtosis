@@ -62,7 +62,7 @@ func (m *MockServiceNetworkCustom) SetDefaultConnection(ctx context.Context, con
 func (m *MockServiceNetworkCustom) AddService(
 	ctx context.Context,
 	serviceName service.ServiceName,
-	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceConfig *service.ServiceConfig,
 ) (
 	*service.Service,
 	error,
@@ -73,7 +73,7 @@ func (m *MockServiceNetworkCustom) AddService(
 
 func (m *MockServiceNetworkCustom) AddServices(
 	ctx context.Context,
-	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceConfigs map[service.ServiceName]*service.ServiceConfig,
 	batchSize int,
 ) (
 	map[service.ServiceName]*service.Service,
@@ -167,6 +167,10 @@ func (m *MockServiceNetworkCustom) GetExistingAndHistoricalServiceIdentifiers() 
 
 func (m *MockServiceNetworkCustom) GetUniqueNameForFileArtifact() (string, error) {
 	return mockFileArtifactName, nil
+}
+
+func (m *MockServiceNetworkCustom) GetApiContainerInfo() *ApiContainerInfo {
+	panic(unimplementedMsg)
 }
 
 func generateMockServiceRegistration(serviceName service.ServiceName, ipAddress net.IP) *service.ServiceRegistration {

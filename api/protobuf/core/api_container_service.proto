@@ -17,17 +17,11 @@ service ApiContainerService {
   // Executes a Starlark script on the user's behalf
   rpc RunStarlarkPackage(RunStarlarkPackageArgs) returns (stream StarlarkRunResponseLine) {};
 
-  // Start services by creating containers for them
-  rpc AddServices(AddServicesArgs) returns (AddServicesResponse) {};
-
   // Returns the IDs of the current services in the enclave
   rpc GetServices(GetServicesArgs) returns (GetServicesResponse) {};
 
   // Returns information about all existing & historical services
   rpc GetExistingAndHistoricalServiceIdentifiers(google.protobuf.Empty) returns (GetExistingAndHistoricalServiceIdentifiersResponse) {}
-
-  // Instructs the API container to remove the given service
-  rpc RemoveService(RemoveServiceArgs) returns (RemoveServiceResponse) {};
 
   // Executes the given command inside a running container
   rpc ExecCommand(ExecCommandArgs) returns (ExecCommandResponse) {};
@@ -110,44 +104,6 @@ message ServiceInfo {
 
   // Shortened uuid of the service
   string shortened_uuid = 7;
-}
-
-message ServiceConfig {
-  string container_image_name = 1;
-
-  // Definition of the ports *inside* the enclave that the container should have exposed, specified as user_friendly_port_id -> port_definition
-  map<string, Port> private_ports = 2;
-
-  //TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-  map<string, Port> public_ports = 3;
-
-  // Corresponds to a Dockerfile's ENTRYPOINT directive; leave blank to do no overriding
-  repeated string entrypoint_args = 4;
-
-  // Corresponds to a Dockerfile's CMD directive; leave blank to do no overriding
-  repeated string cmd_args = 5;
-
-  // Containers environment variables that should be set in the service's container
-  map<string, string> env_vars = 6;
-
-  // Mapping of files_artifact_uuid -> filepath_on_container_to_mount_artifact_contents
-  map<string, string> files_artifact_mountpoints = 7;
-
-  // Corresponds to `millicpus`, 1000 millicpu = 1 CPU in both Docker and Kubernetes
-  uint64 cpu_allocation_millicpus = 8;
-
-  // Corresponds to available memory in megabytes in both Docker and Kubernetes
-  uint64 memory_allocation_megabytes = 9;
-
-  // The private IP address placeholder string used in entrypoint_args, cmd_args & env_vars that will be replaced with the private IP address inside the container
-  string private_ip_addr_placeholder = 10;
-
-  // The subnetwork the service should be part of. If unset, the service will be placed in the 'default' subnetwork
-  optional string subnetwork = 11;
-
-  uint64 min_cpu_milli_cores = 12;
-
-  uint64 min_memory_megabytes = 13;
 }
 
 // Subset of ServiceConfig attributes containing only the fields that are "live-updatable"
@@ -293,21 +249,6 @@ message StarlarkRunFinishedEvent {
 }
 
 // ==============================================================================================
-//                                        Start Service
-// ==============================================================================================
-message AddServicesArgs {
-  map<string, ServiceConfig> service_names_to_configs = 1;
-}
-
-message AddServicesResponse {
-  // A map of Service Names to info describing that newly started service
-  map<string, ServiceInfo> successful_service_name_to_service_info = 1;
-
-  // A map of Service Names that failed to start with the error causing the failure
-  map<string, string> failed_service_name_to_error = 2;
-}
-
-// ==============================================================================================
 //                                          Get Services
 // ==============================================================================================
 message GetServicesArgs {
@@ -339,18 +280,6 @@ message ServiceIdentifiers {
 
 message GetExistingAndHistoricalServiceIdentifiersResponse {
   repeated ServiceIdentifiers allIdentifiers = 1;
-}
-
-// ==============================================================================================
-//                                        Remove Service
-// ==============================================================================================
-message RemoveServiceArgs {
-  string service_identifier = 1;
-}
-
-message RemoveServiceResponse {
-  // The UUID of the service that was removed
-  string service_uuid = 1;
 }
 
 // ==============================================================================================

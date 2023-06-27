@@ -27,37 +27,6 @@ func NewPort(
 	}
 }
 
-func NewServiceConfig(
-	containerImageName string,
-	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	entrypointArgs []string, cmdArgs []string,
-	envVars map[string]string,
-	filesArtifactMountDirpaths map[string]string,
-	cpuAllocationMillicpus uint64,
-	memoryAllocationMegabytes uint64,
-	privateIPAddrPlaceholder string,
-	subnetwork string,
-	minCpuMilliCores uint64,
-	minMemoryMegaBytes uint64,
-) *kurtosis_core_rpc_api_bindings.ServiceConfig {
-	return &kurtosis_core_rpc_api_bindings.ServiceConfig{
-		ContainerImageName:        containerImageName,
-		PrivatePorts:              privatePorts,
-		PublicPorts:               publicPorts,
-		EntrypointArgs:            entrypointArgs,
-		CmdArgs:                   cmdArgs,
-		EnvVars:                   envVars,
-		FilesArtifactMountpoints:  filesArtifactMountDirpaths,
-		CpuAllocationMillicpus:    cpuAllocationMillicpus,
-		MemoryAllocationMegabytes: memoryAllocationMegabytes,
-		PrivateIpAddrPlaceholder:  privateIPAddrPlaceholder,
-		Subnetwork:                &subnetwork,
-		MinCpuMilliCores:          minCpuMilliCores,
-		MinMemoryMegabytes:        minMemoryMegaBytes,
-	}
-}
-
 func NewUpdateServiceConfig(subnetwork string) *kurtosis_core_rpc_api_bindings.UpdateServiceConfig {
 	return &kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
 		Subnetwork: &subnetwork,
@@ -301,21 +270,6 @@ func NewStarlarkExecutionError(errorMessage string) *kurtosis_core_rpc_api_bindi
 
 // ==============================================================================================
 //
-//	Add Services
-//
-// ==============================================================================================
-
-func NewAddServicesResponse(
-	successfulServicesInfo map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo,
-	failedServicesErrors map[string]string) *kurtosis_core_rpc_api_bindings.AddServicesResponse {
-	return &kurtosis_core_rpc_api_bindings.AddServicesResponse{
-		SuccessfulServiceNameToServiceInfo: successfulServicesInfo,
-		FailedServiceNameToError:           failedServicesErrors,
-	}
-}
-
-// ==============================================================================================
-//
 //	Get Service Info
 //
 // ==============================================================================================
@@ -351,18 +305,6 @@ func NewServiceInfo(
 		PrivatePorts:      privatePorts,
 		MaybePublicIpAddr: maybePublicIpAddr,
 		MaybePublicPorts:  maybePublicPorts,
-	}
-}
-
-// ==============================================================================================
-//
-//	Remove Service
-//
-// ==============================================================================================
-
-func NewRemoveServiceResponse(serviceUuid string) *kurtosis_core_rpc_api_bindings.RemoveServiceResponse {
-	return &kurtosis_core_rpc_api_bindings.RemoveServiceResponse{
-		ServiceUuid: serviceUuid,
 	}
 }
 
