@@ -78,7 +78,7 @@ func run(
 
 	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service ID value using key '%v'", serviceIdentifierArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the service identifier value using key '%v'", serviceIdentifierArgKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -105,18 +105,19 @@ func run(
 }
 
 func startServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, fmt.Sprintf(`{"service_name": "%s"}`, serviceName), doNotDryRun, defaultParallelism)
+	serviceNameString := fmt.Sprintf(`{"service_name": "%s"}`, serviceName)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, serviceNameString, doNotDryRun, defaultParallelism)
 	if err != nil {
-		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for rendering template")
+		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for starting service")
 	}
 	if runResult.ExecutionError != nil {
-		return stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
+		return stacktrace.NewError("An error occurred during Starlark script execution for starting service: %s", runResult.ExecutionError.GetErrorMessage())
 	}
 	if runResult.InterpretationError != nil {
-		return stacktrace.NewError("An error occurred during Starlark script interpretation for rendering template: %s", runResult.InterpretationError.GetErrorMessage())
+		return stacktrace.NewError("An error occurred during Starlark script interpretation for starting service: %s", runResult.InterpretationError.GetErrorMessage())
 	}
 	if len(runResult.ValidationErrors) > 0 {
-		return stacktrace.NewError("An error occurred during Starlark script validation for rendering template: %v", runResult.ValidationErrors)
+		return stacktrace.NewError("An error occurred during Starlark script validation for starting service: %v", runResult.ValidationErrors)
 	}
 	return nil
 }
