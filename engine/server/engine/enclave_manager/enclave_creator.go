@@ -128,7 +128,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	newEnclaveUuidStr := string(newEnclaveUuid)
 	shortenedUuid := uuid_generator.ShortenedUUIDString(newEnclaveUuidStr)
 
-	result := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
+	newEnclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:        newEnclaveUuidStr,
 		Name:               newEnclave.GetName(),
 		ShortenedUuid:      shortenedUuid,
@@ -146,7 +146,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller
 	shouldDestroyEnclave = false
 	shouldStopApiContainer = false
-	return result, nil
+	return newEnclaveInfo, nil
 }
 
 func (creator *EnclaveCreator) launchApiContainer(

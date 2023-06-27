@@ -162,13 +162,16 @@ func getEnclaveManager(
 	// TODO remove this hardcoded value, it should be passed through the args
 	poolSize := uint8(3)
 
-	enclaveManager := enclave_manager.CreateEnclaveManager(
+	enclaveManager, err := enclave_manager.CreateEnclaveManager(
 		kurtosisBackend,
 		kurtosisBackendType,
 		apiContainerKurtosisBackendConfigSupplier,
 		engineVersion,
 		poolSize,
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave manager for backend type '%+v' using pool-size '%v' and engine version '%v'", kurtosisBackendType, poolSize, engineVersion)
+	}
 
 	return enclaveManager, nil
 }

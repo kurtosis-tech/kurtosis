@@ -31,7 +31,7 @@ const (
 type EnclavePool struct {
 	kurtosisBackend  backend_interface.KurtosisBackend
 	enclaveCreator   *EnclaveCreator
-	idleEnclavesChan chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo
+	idleEnclavesChan chan enclave.EnclaveUUID
 	engineVersion    string
 }
 
@@ -40,12 +40,12 @@ func CreateEnclavePool(
 	enclaveCreator *EnclaveCreator,
 	poolSize uint8,
 	engineVersion string,
-) *EnclavePool {
+) (*EnclavePool, error) {
 
 	// The amount of idle enclaves is equal to the chan capacity + one enclave (this one will be waiting in the queue until the channel is unblocked)
 	chanCapacity := poolSize - oneEnclave
 
-	idleEnclavesChan := make(chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo, chanCapacity)
+	idleEnclavesChan := make(chan enclave.EnclaveUUID, chanCapacity)
 
 	enclavePool := &EnclavePool{
 		kurtosisBackend:  kurtosisBackend,
@@ -54,11 +54,18 @@ func CreateEnclavePool(
 		engineVersion:    engineVersion,
 	}
 
-	//TODO first iterate on all the existing enclaves in order to find idle enclaves already created
+	// iterate on all the existing enclaves in order to find idle enclaves already created
+	// and reuse or destroy them if these were created from old Kurtosis version
+	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
+	//TODO the reuse logic is not enable yet because we ned to store the APIC version on the APIContainer object from container-engine-lib
+	//TODO in order to using it for comparing it with the expected version
+	if err := enclavePool.destroyPreviousIdleEnclaves(); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred destroying previous idle enclave before creating the enclave pool")
+	}
 
 	go enclavePool.run()
 
-	return enclavePool
+	return enclavePool, nil
 }
 
 func (pool *EnclavePool) GetEnclave(
@@ -70,26 +77,45 @@ func (pool *EnclavePool) GetEnclave(
 	isPartitioningEnabled bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
+	logrus.Debugf(
+		"Requesting enclave from pool using params: engine version '%s', api container version '%s', api container log level '%s' and is partitioning enabled '%v'...",
+		engineVersion,
+		apiContainerVersion,
+		apiContainerLogLevel,
+		isPartitioningEnabled,
+	)
+
 	// TODO change the logLevel value ?? it's pending to check if it's possible
-	// The enclaves in the pool are already configured with defaults params and is there no way to update
+	// The enclaves in the pool are already configured with defaults params and there is no way to update
 	// this config, so we have to check if the requested enclave params are equal to the enclaves stored
-	// in the pool before returning one from here, if it not return nil
+	// in the pool before returning one
 	if !areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 		engineVersion,
 		apiContainerVersion,
 		apiContainerLogLevel,
 		isPartitioningEnabled,
 	) {
+		logrus.Debugf("The requested enclave params are different from the enclave in the pool params")
 		return nil, nil
 	}
 
-	enclaveInfo, ok := <-pool.idleEnclavesChan
+	enclaveUUID, ok := <-pool.idleEnclavesChan
 	if !ok {
 		return nil, stacktrace.NewError("A new enclave can't be returned from the pool because the internal channel is closed, it shouldn't happen; this is a bug in Kurtosis")
 	}
 
-	if err := pool.checkRunningAndRenameEnclave(ctx, enclave.EnclaveUUID(enclaveInfo.EnclaveUuid), newEnclaveName); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while checking if the enclave with UUID '%v' is running and then renaming it to '%s'", enclaveInfo.EnclaveUuid, newEnclaveName)
+	enclaveObj, err := pool.getRunningEnclave(ctx, enclaveUUID)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting a running enclave with UUID '%v'", enclaveUUID)
+	}
+
+	if err := pool.kurtosisBackend.RenameEnclave(ctx, enclaveUUID, newEnclaveName); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred renaming enclave with UUID '%v' to '%s'", enclaveUUID, newEnclaveName)
+	}
+
+	enclaveInfo, err := getEnclaveInfoForEnclave(ctx, pool.kurtosisBackend, enclaveObj)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclave info for enclave '%v'", enclaveObj)
 	}
 
 	logrus.Debugf("Returning enclave Info '%+v' for requested enclave name '%s'", enclaveInfo, newEnclaveName)
@@ -102,8 +128,9 @@ func (pool *EnclavePool) GetEnclave(
 //	Private helper methods
 //
 // ====================================================================================================
-//TODO it's only removing the previous idle enclave, it's pending to implement the reusable feature
-func (pool *EnclavePool) destroyPreviousIdleEnclaves(ctx context.Context) error {
+func (pool *EnclavePool) destroyPreviousIdleEnclaves() error {
+	ctx := context.Background()
+
 	filters := &enclave.EnclaveFilters{
 		UUIDs: map[enclave.EnclaveUUID]bool{},
 		Statuses: map[enclave.EnclaveStatus]bool{
@@ -120,16 +147,12 @@ func (pool *EnclavePool) destroyPreviousIdleEnclaves(ctx context.Context) error 
 	idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{}
 	idleEnclavesToReuse := map[enclave.EnclaveUUID]bool{}
 
-	for enclaveUUID, enclave := range enclaves {
-		enclaveName := enclave.GetName()
-		// is a idle enclave?
+	for enclaveUUID, enclaveObj := range enclaves {
+		enclaveName := enclaveObj.GetName()
+		// is it an idle enclave?
 		if strings.HasPrefix(enclaveName, idleEnclaveNamePrefix) {
 			// can be reused ?
-			//TODO the reuse logic is not enable yet because we ned:
-			//TODO 1- store the APIC version on the k8s and Docker labels in order to get it from the Kurtosis backend here
-			//TODO 2- find a way to get the APIC private IP address because it will need it for filling the EnclaveInfo object
-			//TODO 3- edit the CreationTime on the EnclaveInfo object before returning it from the pool
-			if hasRequiredAPICVersion(enclave) && len(idleEnclavesToReuse) < pool.getPoolSize() {
+			if hasRequiredAPICVersion(enclaveObj) && len(idleEnclavesToReuse) < pool.getPoolSize() {
 				idleEnclavesToReuse[enclaveUUID] = true
 				continue
 			}
@@ -148,14 +171,16 @@ func (pool *EnclavePool) destroyPreviousIdleEnclaves(ctx context.Context) error 
 		return stacktrace.Propagate(err, "An error occurred destroying enclaves using filters '%v'", destroyEnclaveFilters)
 	}
 	if len(destroyEnclaveErrs) > 0 {
-		logrus.Errorf("Errors occurred removing the following enclaves")
+		logrus.Errorf("Errors occurred removing the following enclaves...")
 		var removalErrorStrings []string
 		for enclaveUUID, destroyEnclaveErr := range destroyEnclaveErrs {
-			logrus.Errorf("Error '%v'", destroyEnclaveErr.Error())
+			logrus.Errorf("Enclave wit UUID '%v' error:\n %v", enclaveUUID, destroyEnclaveErr.Error())
 			resultErrStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> ERROR on Enclave %v <<<<<<<<<<<<<<<<<\n%v", enclaveUUID, destroyEnclaveErr.Error())
 			removalErrorStrings = append(removalErrorStrings, resultErrStr)
 		}
-		joinedRemovalErrors := strings.Join(removalErrorStrings, errorDelimiter)
+		logrus.Errorf("...you should have to manually remove all these errored enclaves.")
+		errorSeparator := "\n"
+		joinedRemovalErrors := strings.Join(removalErrorStrings, errorSeparator)
 		return stacktrace.NewError("Following errors occurred while removing idle enclaves :\n%v", joinedRemovalErrors)
 	}
 
@@ -164,10 +189,10 @@ func (pool *EnclavePool) destroyPreviousIdleEnclaves(ctx context.Context) error 
 	// pool.idleEnclavesChan <- newEnclaveInfo
 	//logrus.Debugf("Enclave '%+v' was added intho the pool channel", newEnclaveInfo)
 
+	return nil
 }
 
-// Run will be executed in a sub-routine and will be in charge of:
-// 1-
+// run method is in charge of filling the enclave pool channel with new idle enclaves
 func (pool *EnclavePool) run() {
 
 	defer close(pool.idleEnclavesChan)
@@ -175,24 +200,22 @@ func (pool *EnclavePool) run() {
 	fails := 0
 
 	for {
-
 		newEnclaveInfo, err := pool.createNewEnclave()
 		if err != nil {
 			// Retry strategy if something fails
 			logrus.Errorf("An error occurred creating a new idle enclave. Error\n%v", err)
 			fails++
 			if fails >= maxRetryAfterFails {
-				//TODO log something
+				logrus.Debugf("The enclave pool sub-routine has been canceled after reaching the max retries value '%v'", maxRetryAfterFails)
 				break
 			}
+			logrus.Debugf("Next retry will be executed on '%v' seconds", timeBetweenRetries.Seconds())
 			time.Sleep(timeBetweenRetries)
-			//TODO put some debug log
 		}
+		enclaveUUID := enclave.EnclaveUUID(newEnclaveInfo.EnclaveUuid)
 
-		//TODO I'm nor really sure if we should store the Enclave Info here because the creation data
-		//TODO will be old when we return the info or We can update the creation data before returnint it
-		pool.idleEnclavesChan <- newEnclaveInfo
-		logrus.Debugf("Enclave '%+v' was added intho the pool channel", newEnclaveInfo)
+		pool.idleEnclavesChan <- enclaveUUID
+		logrus.Debugf("Enclave with UUID '%v' was added intho the pool channel", enclaveUUID)
 	}
 }
 
@@ -217,11 +240,12 @@ func (pool *EnclavePool) createNewEnclave() (*kurtosis_engine_rpc_api_bindings.E
 		defaultIsPartitioningEnabled,
 	)
 	if err != nil {
-		//TODO complete the message adding more values
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating idle enclave with name '%s'",
+			"An error occurred creating idle enclave with name '%s', api container version '%v' and container log level '%s'",
 			enclaveName,
+			apiContainerVersion,
+			defaultApiContainerLogLevel,
 		)
 	}
 
@@ -229,16 +253,7 @@ func (pool *EnclavePool) createNewEnclave() (*kurtosis_engine_rpc_api_bindings.E
 	return newEnclaveInfo, nil
 }
 
-// checkRunningAndRenameEnclave check if the enclave with UUID is still running.
-// We do this because we store metadata in the Enclave Pool, and we have to
-// be sure that the enclave referenced on this medata is still running, and
-// we renamed it after that
-func (pool *EnclavePool) checkRunningAndRenameEnclave(
-	ctx context.Context,
-	enclaveUUID enclave.EnclaveUUID,
-	newEnclaveName string,
-) error {
-
+func (pool *EnclavePool) getRunningEnclave(ctx context.Context, enclaveUUID enclave.EnclaveUUID) (*enclave.Enclave, error) {
 	filters := &enclave.EnclaveFilters{
 		UUIDs: map[enclave.EnclaveUUID]bool{
 			enclaveUUID: true,
@@ -250,22 +265,23 @@ func (pool *EnclavePool) checkRunningAndRenameEnclave(
 
 	enclaves, err := pool.kurtosisBackend.GetEnclaves(ctx, filters)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclaves using filters '%+v'", filters)
+		return nil, stacktrace.Propagate(err, "An error occurred getting enclaves using filters '%+v'", filters)
 	}
 	enclavesLen := len(enclaves)
 
 	if enclavesLen == 0 {
-		return stacktrace.NewError("There is not any running enclave with UUID '%v', it could have been stopped or destroyed", enclaveUUID)
+		return nil, stacktrace.NewError("There is not any running enclave with UUID '%v', it could have been stopped or destroyed", enclaveUUID)
 	}
 	if enclavesLen > 1 {
-		return stacktrace.NewError("Expected to find only one running enclave with UUID '%v', but '%v' were found, this is a bug in Kurtosis", enclaveUUID, enclavesLen)
+		return nil, stacktrace.NewError("Expected to find only one running enclave with UUID '%v', but '%v' were found, this is a bug in Kurtosis", enclaveUUID, enclavesLen)
 	}
 
-	if err := pool.kurtosisBackend.RenameEnclave(ctx, enclaveUUID, newEnclaveName); err != nil {
-		return stacktrace.Propagate(err, "An error occurred renaming enclave with UUID '%v' to '%s'", enclaveUUID, newEnclaveName)
+	enclaveObj, found := enclaves[enclaveUUID]
+	if !found {
+		return nil, stacktrace.NewError("Expected to find an enclave with UUID '%v' in enclave map '%+v', but none was found; this is a bug in Kurtosis", enclaveUUID, enclaves)
 	}
 
-	return nil
+	return enclaveObj, nil
 }
 
 func (pool *EnclavePool) getPoolSize() int {
@@ -300,6 +316,12 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	apiContainerLogLevel logrus.Level,
 	isPartitioningEnabled bool,
 ) bool {
+
+	// if the api container version is empty string means that will be executed with the default version
+	// which is the same that the current engine version
+	if apiContainerVersion == "" {
+		apiContainerVersion = engineVersion
+	}
 
 	if engineVersion == apiContainerVersion &&
 		apiContainerLogLevel == defaultApiContainerLogLevel &&

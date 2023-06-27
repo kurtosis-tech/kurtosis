@@ -68,16 +68,22 @@ func CreateEnclaveManager(
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
 	engineVersion string,
 	poolSize uint8,
-) *EnclaveManager {
+) (*EnclaveManager, error) {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
-	var enclavePool *EnclavePool
+	var (
+		err         error
+		enclavePool *EnclavePool
+	)
 
 	if isEnclavePoolAllowedForThisConfig(poolSize, kurtosisBackendType) {
-		enclavePool = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion)
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
+		}
 	}
 
-	return &EnclaveManager{
+	enclaveManager := &EnclaveManager{
 		mutex:           &sync.Mutex{},
 		kurtosisBackend: kurtosisBackend,
 		apiContainerKurtosisBackendConfigSupplier: apiContainerKurtosisBackendConfigSupplier,
@@ -85,6 +91,8 @@ func CreateEnclaveManager(
 		enclaveCreator:                            enclaveCreator,
 		enclavePool:                               enclavePool,
 	}
+
+	return enclaveManager, nil
 }
 
 // It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
@@ -311,8 +319,9 @@ func (manager *EnclaveManager) GetExistingAndHistoricalEnclaveIdentifiers() ([]*
 // 									   Private helper methods
 // ====================================================================================================
 
-func (manager *EnclaveManager) getEnclaveApiContainerInformation(
+func getEnclaveApiContainerInformation(
 	ctx context.Context,
+	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveId enclave.EnclaveUUID,
 ) (
 	kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus,
@@ -321,7 +330,7 @@ func (manager *EnclaveManager) getEnclaveApiContainerInformation(
 	error,
 ) {
 	apiContainerByEnclaveIdFilter := getApiContainerByEnclaveIdFilter(enclaveId)
-	enclaveApiContainers, err := manager.kurtosisBackend.GetAPIContainers(ctx, apiContainerByEnclaveIdFilter)
+	enclaveApiContainers, err := kurtosisBackend.GetAPIContainers(ctx, apiContainerByEnclaveIdFilter)
 	if err != nil {
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the containers for enclave '%v'", enclaveId)
 	}
@@ -437,7 +446,7 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 
 	result := map[enclave.EnclaveUUID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 	for enclaveId, enclaveObj := range enclaves {
-		enclaveInfo, err := manager.getEnclaveInfoForEnclave(ctx, enclaveObj)
+		enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, enclaveObj)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting information about enclave '%v'", enclaveId)
 		}
@@ -472,10 +481,10 @@ func getApiContainerByEnclaveIdFilter(enclaveId enclave.EnclaveUUID) *api_contai
 	}
 }
 
-func (manager *EnclaveManager) getEnclaveInfoForEnclave(ctx context.Context, enclave *enclave.Enclave) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
+func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, enclave *enclave.Enclave) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	enclaveUuid := enclave.GetUUID()
 	enclaveUuidStr := string(enclaveUuid)
-	apiContainerStatus, apiContainerInfo, apiContainerHostMachineInfo, err := manager.getEnclaveApiContainerInformation(ctx, enclaveUuid)
+	apiContainerStatus, apiContainerInfo, apiContainerHostMachineInfo, err := getEnclaveApiContainerInformation(ctx, kurtosisBackend, enclaveUuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get information on the API container of enclave '%v', instead an error occurred.", enclaveUuid)
 	}
