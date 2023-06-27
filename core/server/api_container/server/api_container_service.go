@@ -404,16 +404,6 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 	return response, nil
 }
 
-func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
-	templatesAndDataByDestinationRelFilepath := args.TemplatesAndDataByDestinationRelFilepath
-	filesArtifactUuid, err := apicService.serviceNetwork.RenderTemplates(templatesAndDataByDestinationRelFilepath, args.Name)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while rendering templates to files artifact")
-	}
-	response := binding_constructors.NewRenderTemplatesToFilesArtifactResponse(string(filesArtifactUuid))
-	return response, nil
-}
-
 func (apicService ApiContainerService) ListFilesArtifactNamesAndUuids(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error) {
 	filesArtifactsNamesAndUuids := apicService.filesArtifactStore.GetFileNamesAndUuids()
 	var filesArtifactNamesAndUuids []*kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid
