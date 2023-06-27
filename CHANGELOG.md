@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.80.3](https://github.com/kurtosis-tech/kurtosis/compare/0.80.2...0.80.3) (2023-06-27)
+
+
+### Features
+
+* Add minimal support for feature flags in APIC ([#775](https://github.com/kurtosis-tech/kurtosis/issues/775)) ([0858f56](https://github.com/kurtosis-tech/kurtosis/commit/0858f5685365e7d0ab032f362d5ce402c7e5e888))
+* added port print functionality in cli for users to quickly check how to access port. ([#778](https://github.com/kurtosis-tech/kurtosis/issues/778)) ([477510b](https://github.com/kurtosis-tech/kurtosis/commit/477510b801a90fce9fcc5bdc403bccc81d505201))
+* Implement idempotent run v0 ([#769](https://github.com/kurtosis-tech/kurtosis/issues/769)) ([23b121f](https://github.com/kurtosis-tech/kurtosis/commit/23b121f6ec4e956aa3d1125eeb47bffdb8c136aa))
+* Stop and start service support in the CLI ([#767](https://github.com/kurtosis-tech/kurtosis/issues/767)) ([cd4ca05](https://github.com/kurtosis-tech/kurtosis/commit/cd4ca05d17c07892b494b44f23f4c61b1b15d948)), closes [#705](https://github.com/kurtosis-tech/kurtosis/issues/705)
+
 ## [0.80.2](https://github.com/kurtosis-tech/kurtosis/compare/0.80.1...0.80.2) (2023-06-26)
 
 
