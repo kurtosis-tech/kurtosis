@@ -324,18 +324,6 @@ If a directory is specified, the contents of the directory will be uploaded to t
 * `FilesArtifactUUID`: A UUID identifying the new files artifact, which can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md).
 * `FilesArtifactName`: The name of the file-artifact, it is auto-generated if `artitfactName` is an empty string.
 
-### `storeWebFiles(String urlToDownload, String artifactName)`
-Downloads a files-containing `.tgz` from the given URL as a [files artifact](./concepts-reference/files-artifacts.md). The resulting files artifact can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md) when adding a service.
-
-**Args**
-
-* `urlToDownload`: The URL on the web where the files-containing `.tgz` should be downloaded from.
-* `artifactName`: The name to refer the artifact with.
-
-**Returns**
-
-* `UUID`: A UUID identifying the new files artifact, which can be used in [`ServiceConfig.files`](./starlark-reference/service-config.md).
-
 ### `getExistingAndHistoricalServiceIdentifiers() -> ServiceIdentifiers serviceIdentifiers`
 
 Get all (active & deleted) historical [identifiers][identifier] for services for the enclave represented by the [EnclaveContext][enclavecontext].

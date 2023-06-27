@@ -170,28 +170,6 @@ function deserialize_api_container_api_StoreFilesArtifactFromServiceResponse(buf
   return api_container_service_pb.StoreFilesArtifactFromServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_StoreWebFilesArtifactArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.StoreWebFilesArtifactArgs)) {
-    throw new Error('Expected argument of type api_container_api.StoreWebFilesArtifactArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_StoreWebFilesArtifactArgs(buffer_arg) {
-  return api_container_service_pb.StoreWebFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_StoreWebFilesArtifactResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.StoreWebFilesArtifactResponse)) {
-    throw new Error('Expected argument of type api_container_api.StoreWebFilesArtifactResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_StoreWebFilesArtifactResponse(buffer_arg) {
-  return api_container_service_pb.StoreWebFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_StreamedDataChunk(arg) {
   if (!(arg instanceof api_container_service_pb.StreamedDataChunk)) {
     throw new Error('Expected argument of type api_container_api.StreamedDataChunk');
@@ -407,18 +385,6 @@ downloadFilesArtifactV2: {
     requestDeserialize: deserialize_api_container_api_DownloadFilesArtifactArgs,
     responseSerialize: serialize_api_container_api_StreamedDataChunk,
     responseDeserialize: deserialize_api_container_api_StreamedDataChunk,
-  },
-  // Tells the API container to download a files artifact from the web to the Kurtosis File System
-storeWebFilesArtifact: {
-    path: '/api_container_api.ApiContainerService/StoreWebFilesArtifact',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.StoreWebFilesArtifactArgs,
-    responseType: api_container_service_pb.StoreWebFilesArtifactResponse,
-    requestSerialize: serialize_api_container_api_StoreWebFilesArtifactArgs,
-    requestDeserialize: deserialize_api_container_api_StoreWebFilesArtifactArgs,
-    responseSerialize: serialize_api_container_api_StoreWebFilesArtifactResponse,
-    responseDeserialize: deserialize_api_container_api_StoreWebFilesArtifactResponse,
   },
   // Tells the API container to copy a files artifact from a service to the Kurtosis File System
 storeFilesArtifactFromService: {

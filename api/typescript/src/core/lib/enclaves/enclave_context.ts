@@ -298,17 +298,6 @@ export class EnclaveContext {
         return ok(uploadResult.value.getUuid())
     }
 
-    // Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
-    public async storeWebFiles(url: string, name: string): Promise<Result<FilesArtifactUUID, Error>> {
-        const args = newStoreWebFilesArtifactArgs(url, name);
-        const storeWebFilesArtifactResponseResult = await this.backend.storeWebFilesArtifact(args)
-        if (storeWebFilesArtifactResponseResult.isErr()) {
-            return err(storeWebFilesArtifactResponseResult.error)
-        }
-        const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
-        return ok(storeWebFilesArtifactResponse.getUuid())
-    }
-
     // Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
     public async downloadFilesArtifact(identifier: string): Promise<Result<Uint8Array, Error>> {
         const args = newDownloadFilesArtifactArgs(identifier);

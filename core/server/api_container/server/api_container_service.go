@@ -6,7 +6,6 @@
 package server
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"fmt"
@@ -368,26 +367,6 @@ func (apicService ApiContainerService) DownloadFilesArtifactV2(args *kurtosis_co
 		return stacktrace.Propagate(err, "An error occurred receiving the file payload")
 	}
 	return nil
-}
-
-func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
-	url := args.Url
-	artifactName := args.Name
-
-	resp, err := http.Get(args.Url)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred making the request to URL '%v' to get the files artifact bytes", url)
-	}
-	defer resp.Body.Close()
-	body := bufio.NewReader(resp.Body)
-
-	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(body, artifactName)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred storing the file from URL '%v' in the files artifact store", url)
-	}
-
-	response := &kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse{Uuid: string(filesArtifactUuId)}
-	return response, nil
 }
 
 func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs) (*kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse, error) {

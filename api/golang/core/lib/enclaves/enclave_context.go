@@ -309,16 +309,6 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 	return services.FilesArtifactUUID(response.GetUuid()), services.FileArtifactName(response.GetName()), nil
 }
 
-// Docs available at https://docs.kurtosis.com/sdk#storewebfilesstring-urltodownload-string-artifactname
-func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreWeb string, artifactName string) (services.FilesArtifactUUID, error) {
-	args := binding_constructors.NewStoreWebFilesArtifactArgs(urlToStoreWeb, artifactName)
-	response, err := enclaveCtx.client.StoreWebFilesArtifact(ctx, args)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred downloading files artifact from URL '%v'", urlToStoreWeb)
-	}
-	return services.FilesArtifactUUID(response.Uuid), nil
-}
-
 // Docs available at https://docs.kurtosis.com/sdk#downloadfilesartifact-fileidentifier-string
 func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, artifactIdentifier string) ([]byte, error) {
 	args := binding_constructors.DownloadFilesArtifactArgs(artifactIdentifier)

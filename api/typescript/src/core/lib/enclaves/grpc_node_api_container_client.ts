@@ -9,8 +9,6 @@ import {
     ExecCommandResponse,
     UploadFilesArtifactArgs,
     UploadFilesArtifactResponse,
-    StoreWebFilesArtifactArgs,
-    StoreWebFilesArtifactResponse,
     GetServicesArgs,
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
@@ -170,30 +168,6 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         const uploadFilesArtifactResponse = uploadFilesArtifactResponseResult.value
         return ok(uploadFilesArtifactResponse)
-    }
-
-    public async storeWebFilesArtifact(storeWebFilesArtifactArgs: StoreWebFilesArtifactArgs): Promise<Result<StoreWebFilesArtifactResponse, Error>> {
-        const storeWebFilesArtifactPromise: Promise<Result<StoreWebFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.storeWebFilesArtifact(storeWebFilesArtifactArgs, (error: ServiceError | null, response?: StoreWebFilesArtifactResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
-                }
-            })
-        });
-
-        const storeWebFilesArtifactResponseResult: Result<StoreWebFilesArtifactResponse, Error> = await storeWebFilesArtifactPromise;
-        if(storeWebFilesArtifactResponseResult.isErr()){
-            return err(storeWebFilesArtifactResponseResult.error)
-        }
-
-        const storeWebFilesArtifactResponse = storeWebFilesArtifactResponseResult.value;
-        return ok(storeWebFilesArtifactResponse)
     }
 
     public async downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<DownloadFilesArtifactResponse, Error>> {

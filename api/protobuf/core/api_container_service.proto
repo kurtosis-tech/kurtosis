@@ -48,9 +48,6 @@ service ApiContainerService {
   // Downloads a files artifact from the Kurtosis File System
   rpc DownloadFilesArtifactV2(DownloadFilesArtifactArgs) returns (stream StreamedDataChunk) {};
 
-  // Tells the API container to download a files artifact from the web to the Kurtosis File System
-  rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};
-
   // Tells the API container to copy a files artifact from a service to the Kurtosis File System
   rpc StoreFilesArtifactFromService(StoreFilesArtifactFromServiceArgs) returns (StoreFilesArtifactFromServiceResponse) {}
 
@@ -393,24 +390,6 @@ message DownloadFilesArtifactResponse {
   // Contents of the requested files artifact
   bytes data = 1;
 }
-
-
-// ==============================================================================================
-//                                        Store Web Files Artifact
-// ==============================================================================================
-message StoreWebFilesArtifactArgs {
-  // URL to download the artifact from
-  string url = 1;
-
-  // The name of the files artifact
-  string name = 2;
-}
-
-message StoreWebFilesArtifactResponse {
-  // UUID of the files artifact, for use when referencing it in the future
-  string uuid = 1;
-}
-
 
 // ==============================================================================================
 //                               Store Files Artifact From Service
