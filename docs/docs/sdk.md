@@ -233,7 +233,7 @@ Gets the UUID of the enclave that this [EnclaveContext][enclavecontext] object r
 ### `getEnclaveName() -> String`
 Gets the name of the enclave that this [EnclaveContext][enclavecontext] object represents.
 
-### `runStarlarkScript(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkScript(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun, List<String> experimentalFeatureFlags) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a provided Starlark script inside the enclave.
 
@@ -242,12 +242,13 @@ Run a provided Starlark script inside the enclave.
 * `mainFunctionName`: The main function name, an empty string can be passed to use the default value 'run'
 * `serializedStarlarkScript`: The Starlark script provided as a string
 * `dryRun`: When set to true, the Kurtosis instructions are not executed.
+* `experimentalFeatureFlags`: List of experimental features to turn on for this run. Leave empty to leave any experimental feature disabled.
 
 **Returns**
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkPackage(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkPackage(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, List<String> experimentalFeatureFlags) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a provided Starlark script inside the enclave.
 
@@ -258,6 +259,7 @@ Run a provided Starlark script inside the enclave.
 * `mainFunctionName`: The main function name, an empty string can be passed to use the default value 'run'.
 * `serializedParams`: The parameters to pass to the package for the run. It should be a serialized JSON string.
 * `dryRun`: When set to true, the Kurtosis instructions are not executed.
+* `experimentalFeatureFlags`: List of experimental features to turn on for this run. Leave empty to leave any experimental feature disabled.
 
 **Returns**
 
@@ -515,9 +517,9 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 [servicelog]: #servicelog
 
 [enclavecontext]: #enclavecontext
-[enclavecontext_runstarlarkscript]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
-[enclavecontext_runstarlarkpackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
-[enclavecontext_runstarlarkremotepackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
+[enclavecontext_runstarlarkscript]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags---streamstarlarkrunresponseline-responselines-error-error
+[enclavecontext_runstarlarkpackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags---streamstarlarkrunresponseline-responselines-error-error
+[enclavecontext_runstarlarkremotepackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags---streamstarlarkrunresponseline-responselines-error-error
 
 [starlarkrunresponseline]: #starlarkrunresponseline
 [starlarkinstruction]: #starlarkinstruction

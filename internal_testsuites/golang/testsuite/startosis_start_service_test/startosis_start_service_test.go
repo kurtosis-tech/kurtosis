@@ -14,7 +14,7 @@ const (
 	testName              = "startosis_start_service_test"
 	isPartitioningEnabled = false
 
-	serviceName = "example-datastore-server-1"
+	serviceName = "example-datastore-start-test"
 	portId      = "grpc"
 
 	starlarkScript = `
@@ -78,9 +78,9 @@ func TestStartosis(t *testing.T) {
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
-	expectedScriptOutput := `Adding service example-datastore-server-1.
-Service 'example-datastore-server-1' added with service UUID '[a-z-0-9]+'
-Service example-datastore-server-1 deployed successfully.
+	expectedScriptOutput := `Adding service ` + serviceName + `.
+Service '` + serviceName + `' added with service UUID '[a-z-0-9]+'
+Service ` + serviceName + ` deployed successfully.
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 	logrus.Infof("Successfully ran Starlark script to add datastore service")
@@ -111,7 +111,7 @@ Service example-datastore-server-1 deployed successfully.
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 
-	expectedScriptOutput = `Service 'example-datastore-server-1' stopped
+	expectedScriptOutput = `Service '` + serviceName + `' stopped
 `
 	require.Regexp(t, expectedScriptOutput, string(runResult.RunOutput))
 

@@ -20,9 +20,9 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_ValidPackageNoInput
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
 
-	expectedScriptOutput := `Hello world!
+	expectedScriptOutput := `package with no input
 {
-	"message": "Hello world!"
+	"message": "package with no input"
 }
 `
 	require.Equal(t, expectedScriptOutput, string(runResult.RunOutput))
@@ -40,9 +40,9 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_ValidPackageNoInput
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
 
-	expectedScriptOutput := `Hello world!
+	expectedScriptOutput := `package with no input
 {
-	"message": "Hello world!"
+	"message": "package with no input"
 }
 `
 	require.Equal(t, expectedScriptOutput, string(runResult.RunOutput))
