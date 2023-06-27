@@ -32,6 +32,7 @@ goog.exportSymbol('proto.api_container_api.FilesArtifactNameAndUuid', null, glob
 goog.exportSymbol('proto.api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse', null, global);
 goog.exportSymbol('proto.api_container_api.GetServicesArgs', null, global);
 goog.exportSymbol('proto.api_container_api.GetServicesResponse', null, global);
+goog.exportSymbol('proto.api_container_api.KurtosisFeatureFlag', null, global);
 goog.exportSymbol('proto.api_container_api.ListFilesArtifactNamesAndUuidsResponse', null, global);
 goog.exportSymbol('proto.api_container_api.Port', null, global);
 goog.exportSymbol('proto.api_container_api.Port.TransportProtocol', null, global);
@@ -141,7 +142,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.api_container_api.RunStarlarkScriptArgs = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, null);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.RunStarlarkScriptArgs.repeatedFields_, null);
 };
 goog.inherits(proto.api_container_api.RunStarlarkScriptArgs, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -162,7 +163,7 @@ if (goog.DEBUG && !COMPILED) {
  * @constructor
  */
 proto.api_container_api.RunStarlarkPackageArgs = function(opt_data) {
-  jspb.Message.initialize(this, opt_data, 0, -1, null, proto.api_container_api.RunStarlarkPackageArgs.oneofGroups_);
+  jspb.Message.initialize(this, opt_data, 0, -1, proto.api_container_api.RunStarlarkPackageArgs.repeatedFields_, proto.api_container_api.RunStarlarkPackageArgs.oneofGroups_);
 };
 goog.inherits(proto.api_container_api.RunStarlarkPackageArgs, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
@@ -1601,6 +1602,13 @@ proto.api_container_api.UpdateServiceConfig.prototype.hasSubnetwork = function()
 
 
 
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.api_container_api.RunStarlarkScriptArgs.repeatedFields_ = [6];
+
 
 
 if (jspb.Message.GENERATE_TO_OBJECT) {
@@ -1636,7 +1644,8 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
     serializedParams: jspb.Message.getFieldWithDefault(msg, 2, ""),
     dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
     parallelism: jspb.Message.getFieldWithDefault(msg, 4, 0),
-    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 5, "")
+    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 5, ""),
+    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -1692,6 +1701,12 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
     case 5:
       var value = /** @type {string} */ (reader.readString());
       msg.setMainFunctionName(value);
+      break;
+    case 6:
+      var values = /** @type {!Array<!proto.api_container_api.KurtosisFeatureFlag>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
+      for (var i = 0; i < values.length; i++) {
+        msg.addExperimentalFeatures(values[i]);
+      }
       break;
     default:
       reader.skipField();
@@ -1754,6 +1769,13 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
   if (f.length > 0) {
     writer.writeString(
       5,
+      f
+    );
+  }
+  f = message.getExperimentalFeaturesList();
+  if (f.length > 0) {
+    writer.writePackedEnum(
+      6,
       f
     );
   }
@@ -1886,6 +1908,50 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.setMainFunctionName = fu
 };
 
 
+/**
+ * repeated KurtosisFeatureFlag experimental_features = 6;
+ * @return {!Array<!proto.api_container_api.KurtosisFeatureFlag>}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getExperimentalFeaturesList = function() {
+  return /** @type {!Array<!proto.api_container_api.KurtosisFeatureFlag>} */ (jspb.Message.getRepeatedField(this, 6));
+};
+
+
+/**
+ * @param {!Array<!proto.api_container_api.KurtosisFeatureFlag>} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setExperimentalFeaturesList = function(value) {
+  return jspb.Message.setField(this, 6, value || []);
+};
+
+
+/**
+ * @param {!proto.api_container_api.KurtosisFeatureFlag} value
+ * @param {number=} opt_index
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.addExperimentalFeatures = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 6, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearExperimentalFeaturesList = function() {
+  return this.setExperimentalFeaturesList([]);
+};
+
+
+
+/**
+ * List of repeated fields within this message type.
+ * @private {!Array<number>}
+ * @const
+ */
+proto.api_container_api.RunStarlarkPackageArgs.repeatedFields_ = [11];
 
 /**
  * Oneof group definitions for this message. Each group defines the field
@@ -1952,7 +2018,8 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     parallelism: jspb.Message.getFieldWithDefault(msg, 7, 0),
     clonePackage: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
     relativePathToMainFile: jspb.Message.getFieldWithDefault(msg, 9, ""),
-    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 10, "")
+    mainFunctionName: jspb.Message.getFieldWithDefault(msg, 10, ""),
+    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f
   };
 
   if (includeInstance) {
@@ -2024,6 +2091,12 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
     case 10:
       var value = /** @type {string} */ (reader.readString());
       msg.setMainFunctionName(value);
+      break;
+    case 11:
+      var values = /** @type {!Array<!proto.api_container_api.KurtosisFeatureFlag>} */ (reader.isDelimited() ? reader.readPackedEnum() : [reader.readEnum()]);
+      for (var i = 0; i < values.length; i++) {
+        msg.addExperimentalFeatures(values[i]);
+      }
       break;
     default:
       reader.skipField();
@@ -2114,6 +2187,13 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f.length > 0) {
     writer.writeString(
       10,
+      f
+    );
+  }
+  f = message.getExperimentalFeaturesList();
+  if (f.length > 0) {
+    writer.writePackedEnum(
+      11,
       f
     );
   }
@@ -2393,6 +2473,43 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.getMainFunctionName = f
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.setMainFunctionName = function(value) {
   return jspb.Message.setProto3StringField(this, 10, value);
+};
+
+
+/**
+ * repeated KurtosisFeatureFlag experimental_features = 11;
+ * @return {!Array<!proto.api_container_api.KurtosisFeatureFlag>}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getExperimentalFeaturesList = function() {
+  return /** @type {!Array<!proto.api_container_api.KurtosisFeatureFlag>} */ (jspb.Message.getRepeatedField(this, 11));
+};
+
+
+/**
+ * @param {!Array<!proto.api_container_api.KurtosisFeatureFlag>} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setExperimentalFeaturesList = function(value) {
+  return jspb.Message.setField(this, 11, value || []);
+};
+
+
+/**
+ * @param {!proto.api_container_api.KurtosisFeatureFlag} value
+ * @param {number=} opt_index
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.addExperimentalFeatures = function(value, opt_index) {
+  return jspb.Message.addToRepeatedField(this, 11, value, opt_index);
+};
+
+
+/**
+ * Clears the list making it empty but non-null.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearExperimentalFeaturesList = function() {
+  return this.setExperimentalFeaturesList([]);
 };
 
 
@@ -8812,5 +8929,12 @@ proto.api_container_api.ListFilesArtifactNamesAndUuidsResponse.prototype.clearFi
   return this.setFileNamesAndUuidsList([]);
 };
 
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.KurtosisFeatureFlag = {
+  USE_INSTRUCTIONS_CACHING: 0
+};
 
 goog.object.extend(exports, proto.api_container_api);

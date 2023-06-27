@@ -27,7 +27,7 @@ import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ServiceInfo,
     RunStarlarkScriptArgs,
-    RunStarlarkPackageArgs, FilesArtifactNameAndUuid,
+    RunStarlarkPackageArgs, FilesArtifactNameAndUuid, KurtosisFeatureFlag,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
@@ -110,12 +110,14 @@ export class EnclaveContext {
         serializedStartosisScript: string,
         serializedParams: string,
         dryRun: boolean,
+        experimentalFeatures: Array<KurtosisFeatureFlag>,
     ): Promise<Result<Readable, Error>> {
         const args = new RunStarlarkScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
         args.setMainFunctionName(mainFunctionName)
+        args.setExperimentalFeaturesList(experimentalFeatures)
         const scriptRunResult : Result<Readable, Error> = await this.backend.runStarlarkScript(args)
         if (scriptRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark script \n${scriptRunResult.error}`))
@@ -129,8 +131,9 @@ export class EnclaveContext {
         serializedStartosisScript: string,
         serializedParams: string,
         dryRun: boolean,
+        experimentalFeatures: Array<KurtosisFeatureFlag>,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkScript(mainFunctionName, serializedStartosisScript, serializedParams, dryRun)
+        const runAsyncResponse = await this.runStarlarkScript(mainFunctionName, serializedStartosisScript, serializedParams, dryRun, experimentalFeatures)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
