@@ -37,8 +37,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	enclaveId enclave.EnclaveUUID,
 	grpcListenPort uint16,
 	isPartitioningEnabled bool,
-	metricsUserID string,
-	didUserAcceptSendingMetrics bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
@@ -51,8 +49,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		enclaveId,
 		grpcListenPort,
 		isPartitioningEnabled,
-		metricsUserID,
-		didUserAcceptSendingMetrics,
 		backendConfigSupplier,
 	)
 	if err != nil {
@@ -68,8 +64,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
 	isPartitioningEnabled bool,
-	metricsUserID string,
-	didUserAcceptSendingMetrics bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
@@ -82,8 +76,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		grpcPortNum,
 		string(enclaveUuid),
 		isPartitioningEnabled,
-		metricsUserID,
-		didUserAcceptSendingMetrics,
 		enclaveDataVolumeDirpath,
 		kurtosisBackendType,
 		kurtosisBackendConfig,

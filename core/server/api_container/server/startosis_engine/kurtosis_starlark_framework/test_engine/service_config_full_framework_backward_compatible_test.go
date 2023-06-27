@@ -2,22 +2,30 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/stretchr/testify/require"
+	"net"
 	"testing"
+	"time"
 )
 
 type serviceConfigFullTestCaseBackwardCompatible struct {
 	*testing.T
+	serviceNetwork *service_network.MockServiceNetwork
 }
 
 func newServiceConfigFullTestCaseBackwardCompatible(t *testing.T) *serviceConfigFullTestCaseBackwardCompatible {
+	serviceNetwork := service_network.NewMockServiceNetwork(t)
+	serviceNetwork.EXPECT().GetApiContainerInfo().Times(1).Return(
+		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), 0, "0.0.0"),
+	)
+
 	return &serviceConfigFullTestCaseBackwardCompatible{
-		T: t,
+		T:              t,
+		serviceNetwork: serviceNetwork,
 	}
 }
 
@@ -49,36 +57,48 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) Assert(typeValue builtin_a
 	serviceConfigStarlark, ok := typeValue.(*service_config.ServiceConfig)
 	require.True(t, ok)
 
-	serviceConfig, err := serviceConfigStarlark.ToKurtosisType()
+	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(t.serviceNetwork)
 	require.Nil(t, err)
 
-	expectedServiceConfigBuilder := services.NewServiceConfigBuilder(
-		TestContainerImageName,
-	).WithPrivatePorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-		TestPrivatePortId: binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol, TestWaitConfiguration),
-	}).WithPublicPorts(map[string]*kurtosis_core_rpc_api_bindings.Port{
-		TestPublicPortId: binding_constructors.NewPort(TestPublicPortNumber, TestPublicPortProtocol, TestPrivateApplicationProtocol, TestWaitConfiguration),
-	}).WithFilesArtifactMountDirpaths(map[string]string{
+	require.Equal(t, TestContainerImageName, serviceConfig.GetContainerImageName())
+
+	waitDuration, errParseDuration := time.ParseDuration(TestWaitConfiguration)
+	require.NoError(t, errParseDuration)
+
+	privatePortSpec, errPrivatePortSpec := port_spec.NewPortSpec(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol, port_spec.NewWait(waitDuration))
+	require.NoError(t, errPrivatePortSpec)
+	expectedPrivatePorts := map[string]*port_spec.PortSpec{
+		TestPrivatePortId: privatePortSpec,
+	}
+	require.Equal(t, expectedPrivatePorts, serviceConfig.GetPrivatePorts())
+
+	portSpec, errPublicPortSpec := port_spec.NewPortSpec(TestPublicPortNumber, TestPublicPortProtocol, TestPrivateApplicationProtocol, port_spec.NewWait(waitDuration))
+	require.NoError(t, errPublicPortSpec)
+	expectedPublicPorts := map[string]*port_spec.PortSpec{
+		TestPublicPortId: portSpec,
+	}
+	require.Equal(t, expectedPublicPorts, serviceConfig.GetPublicPorts())
+
+	expectedFilesArtifactMap := map[string]string{
 		TestFilesArtifactPath1: TestFilesArtifactName1,
 		TestFilesArtifactPath2: TestFilesArtifactName2,
-	}).WithEntryPointArgs(
-		TestEntryPointSlice,
-	).WithCmdArgs(
-		TestCmdSlice,
-	).WithEnvVars(map[string]string{
+	}
+	require.NotNil(t, serviceConfig.GetFilesArtifactsExpansion())
+	require.Equal(t, expectedFilesArtifactMap, serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
+
+	require.Equal(t, TestEntryPointSlice, serviceConfig.GetEntrypointArgs())
+	require.Equal(t, TestCmdSlice, serviceConfig.GetCmdArgs())
+
+	expectedEnvVars := map[string]string{
 		TestEnvVarName1: TestEnvVarValue1,
 		TestEnvVarName2: TestEnvVarValue2,
-	}).WithPrivateIPAddressPlaceholder(
-		TestPrivateIPAddressPlaceholder,
-	).WithSubnetwork(
-		string(TestSubnetwork),
-	).WithMaxCpuMilliCores(
-		TestCpuAllocation,
-	).WithMaxMemoryMegabytes(
-		TestMemoryAllocation,
-	)
+	}
+	require.Equal(t, expectedEnvVars, serviceConfig.GetEnvVars())
 
-	expectedServiceConfig := expectedServiceConfigBuilder.Build()
-
-	require.Equal(t, expectedServiceConfig, serviceConfig)
+	require.Equal(t, TestPrivateIPAddressPlaceholder, serviceConfig.GetPrivateIPAddrPlaceholder())
+	require.Equal(t, string(TestSubnetwork), serviceConfig.GetSubnetwork())
+	require.Equal(t, TestMemoryAllocation, serviceConfig.GetMemoryAllocationMegabytes())
+	require.Equal(t, TestCpuAllocation, serviceConfig.GetCPUAllocationMillicpus())
+	require.Equal(t, uint64(0), serviceConfig.GetMinMemoryAllocationMegabytes())
+	require.Equal(t, uint64(0), serviceConfig.GetMinCPUAllocationMillicpus())
 }

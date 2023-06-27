@@ -31,6 +31,8 @@ type ServiceConfig struct {
 	minCpuAllocationMilliCpus uint64
 
 	minMemoryAllocationMegabytes uint64
+
+	subnetwork string
 }
 
 func NewServiceConfig(
@@ -46,8 +48,8 @@ func NewServiceConfig(
 	privateIPAddrPlaceholder string,
 	minCpuMilliCores uint64,
 	minMemoryMegaBytes uint64,
+	subnetwork string,
 ) *ServiceConfig {
-
 	return &ServiceConfig{
 		containerImageName:        containerImageName,
 		privatePorts:              privatePorts,
@@ -62,6 +64,7 @@ func NewServiceConfig(
 		// The minimum resources specification is only available for kubernetes
 		minCpuAllocationMilliCpus:    minCpuMilliCores,
 		minMemoryAllocationMegabytes: minMemoryMegaBytes,
+		subnetwork:                   subnetwork,
 	}
 }
 
@@ -113,4 +116,8 @@ func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
 // only available for Kubernetes
 func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.minMemoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) GetSubnetwork() string {
+	return serviceConfig.subnetwork
 }

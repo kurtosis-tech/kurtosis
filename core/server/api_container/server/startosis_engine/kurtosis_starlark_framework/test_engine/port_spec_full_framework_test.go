@@ -2,11 +2,12 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	port_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 )
 
 type portSpecFullTestCase struct {
@@ -43,7 +44,10 @@ func (t *portSpecFullTestCase) Assert(typeValue builtin_argument.KurtosisValueTy
 	portSpec, err := portSpecStarlark.ToKurtosisType()
 	require.Nil(t, err)
 
-	expectedPortSpec := binding_constructors.NewPort(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol, TestWaitConfiguration)
+	waitDuration, errParsingDuration := time.ParseDuration(TestWaitConfiguration)
+	require.NoError(t, errParsingDuration)
+	expectedPortSpec, errPortCreation := port_spec2.NewPortSpec(TestPrivatePortNumber, TestPrivatePortProtocol, TestPrivateApplicationProtocol, port_spec2.NewWait(waitDuration))
+	require.NoError(t, errPortCreation)
 	require.Equal(t, expectedPortSpec, portSpec)
 
 }

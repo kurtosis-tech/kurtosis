@@ -81,83 +81,6 @@ export namespace ServiceInfo {
   }
 }
 
-export class ServiceConfig extends jspb.Message {
-  getContainerImageName(): string;
-  setContainerImageName(value: string): ServiceConfig;
-
-  getPrivatePortsMap(): jspb.Map<string, Port>;
-  clearPrivatePortsMap(): ServiceConfig;
-
-  getPublicPortsMap(): jspb.Map<string, Port>;
-  clearPublicPortsMap(): ServiceConfig;
-
-  getEntrypointArgsList(): Array<string>;
-  setEntrypointArgsList(value: Array<string>): ServiceConfig;
-  clearEntrypointArgsList(): ServiceConfig;
-  addEntrypointArgs(value: string, index?: number): ServiceConfig;
-
-  getCmdArgsList(): Array<string>;
-  setCmdArgsList(value: Array<string>): ServiceConfig;
-  clearCmdArgsList(): ServiceConfig;
-  addCmdArgs(value: string, index?: number): ServiceConfig;
-
-  getEnvVarsMap(): jspb.Map<string, string>;
-  clearEnvVarsMap(): ServiceConfig;
-
-  getFilesArtifactMountpointsMap(): jspb.Map<string, string>;
-  clearFilesArtifactMountpointsMap(): ServiceConfig;
-
-  getCpuAllocationMillicpus(): number;
-  setCpuAllocationMillicpus(value: number): ServiceConfig;
-
-  getMemoryAllocationMegabytes(): number;
-  setMemoryAllocationMegabytes(value: number): ServiceConfig;
-
-  getPrivateIpAddrPlaceholder(): string;
-  setPrivateIpAddrPlaceholder(value: string): ServiceConfig;
-
-  getSubnetwork(): string;
-  setSubnetwork(value: string): ServiceConfig;
-  hasSubnetwork(): boolean;
-  clearSubnetwork(): ServiceConfig;
-
-  getMinCpuMilliCores(): number;
-  setMinCpuMilliCores(value: number): ServiceConfig;
-
-  getMinMemoryMegabytes(): number;
-  setMinMemoryMegabytes(value: number): ServiceConfig;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): ServiceConfig.AsObject;
-  static toObject(includeInstance: boolean, msg: ServiceConfig): ServiceConfig.AsObject;
-  static serializeBinaryToWriter(message: ServiceConfig, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): ServiceConfig;
-  static deserializeBinaryFromReader(message: ServiceConfig, reader: jspb.BinaryReader): ServiceConfig;
-}
-
-export namespace ServiceConfig {
-  export type AsObject = {
-    containerImageName: string,
-    privatePortsMap: Array<[string, Port.AsObject]>,
-    publicPortsMap: Array<[string, Port.AsObject]>,
-    entrypointArgsList: Array<string>,
-    cmdArgsList: Array<string>,
-    envVarsMap: Array<[string, string]>,
-    filesArtifactMountpointsMap: Array<[string, string]>,
-    cpuAllocationMillicpus: number,
-    memoryAllocationMegabytes: number,
-    privateIpAddrPlaceholder: string,
-    subnetwork?: string,
-    minCpuMilliCores: number,
-    minMemoryMegabytes: number,
-  }
-
-  export enum SubnetworkCase { 
-    _SUBNETWORK_NOT_SET = 0,
-    SUBNETWORK = 11,
-  }
-}
-
 export class UpdateServiceConfig extends jspb.Message {
   getSubnetwork(): string;
   setSubnetwork(value: string): UpdateServiceConfig;
@@ -203,6 +126,11 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   getMainFunctionName(): string;
   setMainFunctionName(value: string): RunStarlarkScriptArgs;
 
+  getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
+  setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): RunStarlarkScriptArgs;
+  clearExperimentalFeaturesList(): RunStarlarkScriptArgs;
+  addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -218,6 +146,7 @@ export namespace RunStarlarkScriptArgs {
     dryRun?: boolean,
     parallelism?: number,
     mainFunctionName: string,
+    experimentalFeaturesList: Array<KurtosisFeatureFlag>,
   }
 
   export enum DryRunCase { 
@@ -267,6 +196,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   getMainFunctionName(): string;
   setMainFunctionName(value: string): RunStarlarkPackageArgs;
 
+  getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
+  setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): RunStarlarkPackageArgs;
+  clearExperimentalFeaturesList(): RunStarlarkPackageArgs;
+  addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -288,6 +222,7 @@ export namespace RunStarlarkPackageArgs {
     clonePackage?: boolean,
     relativePathToMainFile: string,
     mainFunctionName: string,
+    experimentalFeaturesList: Array<KurtosisFeatureFlag>,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -655,46 +590,6 @@ export namespace StarlarkRunFinishedEvent {
   }
 }
 
-export class AddServicesArgs extends jspb.Message {
-  getServiceNamesToConfigsMap(): jspb.Map<string, ServiceConfig>;
-  clearServiceNamesToConfigsMap(): AddServicesArgs;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): AddServicesArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: AddServicesArgs): AddServicesArgs.AsObject;
-  static serializeBinaryToWriter(message: AddServicesArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): AddServicesArgs;
-  static deserializeBinaryFromReader(message: AddServicesArgs, reader: jspb.BinaryReader): AddServicesArgs;
-}
-
-export namespace AddServicesArgs {
-  export type AsObject = {
-    serviceNamesToConfigsMap: Array<[string, ServiceConfig.AsObject]>,
-  }
-}
-
-export class AddServicesResponse extends jspb.Message {
-  getSuccessfulServiceNameToServiceInfoMap(): jspb.Map<string, ServiceInfo>;
-  clearSuccessfulServiceNameToServiceInfoMap(): AddServicesResponse;
-
-  getFailedServiceNameToErrorMap(): jspb.Map<string, string>;
-  clearFailedServiceNameToErrorMap(): AddServicesResponse;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): AddServicesResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: AddServicesResponse): AddServicesResponse.AsObject;
-  static serializeBinaryToWriter(message: AddServicesResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): AddServicesResponse;
-  static deserializeBinaryFromReader(message: AddServicesResponse, reader: jspb.BinaryReader): AddServicesResponse;
-}
-
-export namespace AddServicesResponse {
-  export type AsObject = {
-    successfulServiceNameToServiceInfoMap: Array<[string, ServiceInfo.AsObject]>,
-    failedServiceNameToErrorMap: Array<[string, string]>,
-  }
-}
-
 export class GetServicesArgs extends jspb.Message {
   getServiceIdentifiersMap(): jspb.Map<string, boolean>;
   clearServiceIdentifiersMap(): GetServicesArgs;
@@ -774,42 +669,6 @@ export class GetExistingAndHistoricalServiceIdentifiersResponse extends jspb.Mes
 export namespace GetExistingAndHistoricalServiceIdentifiersResponse {
   export type AsObject = {
     allidentifiersList: Array<ServiceIdentifiers.AsObject>,
-  }
-}
-
-export class RemoveServiceArgs extends jspb.Message {
-  getServiceIdentifier(): string;
-  setServiceIdentifier(value: string): RemoveServiceArgs;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): RemoveServiceArgs.AsObject;
-  static toObject(includeInstance: boolean, msg: RemoveServiceArgs): RemoveServiceArgs.AsObject;
-  static serializeBinaryToWriter(message: RemoveServiceArgs, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): RemoveServiceArgs;
-  static deserializeBinaryFromReader(message: RemoveServiceArgs, reader: jspb.BinaryReader): RemoveServiceArgs;
-}
-
-export namespace RemoveServiceArgs {
-  export type AsObject = {
-    serviceIdentifier: string,
-  }
-}
-
-export class RemoveServiceResponse extends jspb.Message {
-  getServiceUuid(): string;
-  setServiceUuid(value: string): RemoveServiceResponse;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): RemoveServiceResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: RemoveServiceResponse): RemoveServiceResponse.AsObject;
-  static serializeBinaryToWriter(message: RemoveServiceResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): RemoveServiceResponse;
-  static deserializeBinaryFromReader(message: RemoveServiceResponse, reader: jspb.BinaryReader): RemoveServiceResponse;
-}
-
-export namespace RemoveServiceResponse {
-  export type AsObject = {
-    serviceUuid: string,
   }
 }
 
@@ -1268,3 +1127,6 @@ export namespace ListFilesArtifactNamesAndUuidsResponse {
   }
 }
 
+export enum KurtosisFeatureFlag { 
+  USE_INSTRUCTIONS_CACHING = 0,
+}
