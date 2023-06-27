@@ -22,7 +22,6 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   downloadFilesArtifactV2: grpc.MethodDefinition<api_container_service_pb.DownloadFilesArtifactArgs, api_container_service_pb.StreamedDataChunk>;
   storeWebFilesArtifact: grpc.MethodDefinition<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
   storeFilesArtifactFromService: grpc.MethodDefinition<api_container_service_pb.StoreFilesArtifactFromServiceArgs, api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
-  renderTemplatesToFilesArtifact: grpc.MethodDefinition<api_container_service_pb.RenderTemplatesToFilesArtifactArgs, api_container_service_pb.RenderTemplatesToFilesArtifactResponse>;
   listFilesArtifactNamesAndUuids: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
 }
 
@@ -43,7 +42,6 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   downloadFilesArtifactV2: grpc.handleServerStreamingCall<api_container_service_pb.DownloadFilesArtifactArgs, api_container_service_pb.StreamedDataChunk>;
   storeWebFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
   storeFilesArtifactFromService: grpc.handleUnaryCall<api_container_service_pb.StoreFilesArtifactFromServiceArgs, api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
-  renderTemplatesToFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.RenderTemplatesToFilesArtifactArgs, api_container_service_pb.RenderTemplatesToFilesArtifactResponse>;
   listFilesArtifactNamesAndUuids: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
 }
 
@@ -88,9 +86,6 @@ export class ApiContainerServiceClient extends grpc.Client {
   storeFilesArtifactFromService(argument: api_container_service_pb.StoreFilesArtifactFromServiceArgs, callback: grpc.requestCallback<api_container_service_pb.StoreFilesArtifactFromServiceResponse>): grpc.ClientUnaryCall;
   storeFilesArtifactFromService(argument: api_container_service_pb.StoreFilesArtifactFromServiceArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StoreFilesArtifactFromServiceResponse>): grpc.ClientUnaryCall;
   storeFilesArtifactFromService(argument: api_container_service_pb.StoreFilesArtifactFromServiceArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StoreFilesArtifactFromServiceResponse>): grpc.ClientUnaryCall;
-  renderTemplatesToFilesArtifact(argument: api_container_service_pb.RenderTemplatesToFilesArtifactArgs, callback: grpc.requestCallback<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>): grpc.ClientUnaryCall;
-  renderTemplatesToFilesArtifact(argument: api_container_service_pb.RenderTemplatesToFilesArtifactArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>): grpc.ClientUnaryCall;
-  renderTemplatesToFilesArtifact(argument: api_container_service_pb.RenderTemplatesToFilesArtifactArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>): grpc.ClientUnaryCall;
   listFilesArtifactNamesAndUuids(argument: google_protobuf_empty_pb.Empty, callback: grpc.requestCallback<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>): grpc.ClientUnaryCall;
   listFilesArtifactNamesAndUuids(argument: google_protobuf_empty_pb.Empty, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>): grpc.ClientUnaryCall;
   listFilesArtifactNamesAndUuids(argument: google_protobuf_empty_pb.Empty, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>): grpc.ClientUnaryCall;

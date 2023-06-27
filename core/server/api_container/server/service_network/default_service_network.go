@@ -9,9 +9,9 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"io"
 	"net"
 	"net/http"
@@ -19,7 +19,6 @@ import (
 	"path"
 	"strings"
 	"sync"
-	"text/template"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -43,8 +42,7 @@ const (
 	minMemoryLimit              uint64 = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes uint64 = 0
 
-	folderPermissionForRenderedTemplates = 0755
-	tempDirForRenderedTemplatesPrefix    = "temp-dir-for-rendered-templates-"
+	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates-"
 
 	enforceMaxFileSizeLimit = false
 
@@ -937,7 +935,7 @@ func (network *DefaultServiceNetwork) GetServiceRegistration(serviceName service
 	return registration, true
 }
 
-func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	filesArtifactUuid, err := network.renderTemplatesUnlocked(templatesAndDataByDestinationRelFilepath, artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in rendering templates to disk")
@@ -1569,7 +1567,7 @@ func (network *DefaultServiceNetwork) createSidecarAndAddToMap(ctx context.Conte
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while creating a temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
@@ -1577,26 +1575,9 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 	defer os.RemoveAll(tempDirForRenderedTemplates)
 
 	for destinationRelFilepath, templateAndData := range templatesAndDataByDestinationRelFilepath {
-		templateAsAString := templateAndData.Template
-		templateDataAsJson := templateAndData.DataAsJson
-
-		templateDataJsonAsBytes := []byte(templateDataAsJson)
-		templateDataJsonReader := bytes.NewReader(templateDataJsonAsBytes)
-
-		// We don't use standard json.Unmarshal as that converts large integers to floats
-		// Using this custom decoder we get the json.Number representation which is closer to other json implementations
-		// This talks about the issue further https://github.com/square/go-jose/issues/351#issuecomment-847193900
-		decoder := json.NewDecoder(templateDataJsonReader)
-		decoder.UseNumber()
-
-		var templateData interface{}
-		if err = decoder.Decode(&templateData); err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred while decoding the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
-		}
-
-		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
-		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
-			return "", stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationRelFilepath)
+		destinationAbsoluteFilePath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
+		if err := templateAndData.RenderToFile(destinationAbsoluteFilePath); err != nil {
+			return "", stacktrace.Propagate(err, "There was an error in rendering template for file '%s'", destinationRelFilepath)
 		}
 	}
 
@@ -1744,30 +1725,6 @@ func (network *DefaultServiceNetwork) getServiceLogs(
 	serviceLogs := fmt.Sprintf("%s\n%s\n%s", header, copyBuf.String(), footer)
 
 	return serviceLogs, nil
-}
-
-func renderTemplateToFile(templateAsAString string, templateData interface{}, destinationFilepath string) error {
-	parsedTemplate, err := template.New(path.Base(destinationFilepath)).Parse(templateAsAString)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred in parsing the template string '%v'", destinationFilepath)
-	}
-
-	// Creat all parent directories to account for nesting
-	destinationFileDir := path.Dir(destinationFilepath)
-	if err = os.MkdirAll(destinationFileDir, folderPermissionForRenderedTemplates); err != nil {
-		return stacktrace.Propagate(err, "There was an error in creating the parent directory '%v' to write the file '%v' into.", destinationFileDir, destinationFilepath)
-	}
-
-	renderedTemplateFile, err := os.Create(destinationFilepath)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", destinationFilepath)
-	}
-	defer renderedTemplateFile.Close()
-
-	if err = parsedTemplate.Execute(renderedTemplateFile, templateData); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
-	}
-	return nil
 }
 
 func waitUntilAllTCPAndUDPPortsAreOpen(

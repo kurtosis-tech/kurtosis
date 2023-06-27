@@ -204,15 +204,6 @@ func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifactV2(args *k
 	return nil
 }
 
-func (service *ApiContainerGatewayServiceServer) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.RenderTemplatesToFilesArtifact(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
-}
-
 func (service *ApiContainerGatewayServiceServer) UploadStarlarkPackage(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadStarlarkPackageServer) error {
 	client, err := service.remoteApiContainerClient.UploadStarlarkPackage(server.Context())
 	if err != nil {
