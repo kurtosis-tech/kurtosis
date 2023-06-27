@@ -8,7 +8,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
-	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -44,23 +43,6 @@ func (creator *EnclaveCreator) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred while creating UUID for enclave with supplied name '%v'", enclaveName)
 	}
 	enclaveUuid := enclave.EnclaveUUID(uuid)
-
-	allCurrentEnclaves, err := creator.kurtosisBackend.GetEnclaves(setupCtx, getAllEnclavesFilter())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with name '%v'", enclaveName)
-	}
-
-	if enclaveName == autogenerateEnclaveNameKeyword {
-		enclaveName = GetRandomEnclaveNameWithRetries(name_generator.GenerateNatureThemeNameForEnclave, allCurrentEnclaves, getRandomEnclaveIdRetries)
-	}
-
-	if isEnclaveNameInUse(enclaveName, allCurrentEnclaves) {
-		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveName)
-	}
-
-	if err := validateEnclaveName(enclaveName); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred validating enclave name '%v'", enclaveName)
-	}
 
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 	// Create Enclave with kurtosisBackend

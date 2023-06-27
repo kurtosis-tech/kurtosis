@@ -106,6 +106,7 @@ func (pool *EnclavePool) GetEnclave(
 
 	enclaveObj, err := pool.getRunningEnclave(ctx, enclaveUUID)
 	if err != nil {
+		logrus.Debugf("The idle enclave with UUID '%v' is not longer running or have been destroyed", enclaveUUID)
 		return nil, stacktrace.Propagate(err, "An error occurred getting a running enclave with UUID '%v'", enclaveUUID)
 	}
 
@@ -117,6 +118,7 @@ func (pool *EnclavePool) GetEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave info for enclave '%v'", enclaveObj)
 	}
+	enclaveInfo.Name = newEnclaveName
 
 	logrus.Debugf("Returning enclave Info '%+v' for requested enclave name '%s'", enclaveInfo, newEnclaveName)
 

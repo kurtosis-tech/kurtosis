@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -115,6 +116,23 @@ func (manager *EnclaveManager) CreateEnclave(
 		enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo
 		err         error
 	)
+
+	allCurrentEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getAllEnclavesFilter())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with name '%v'", enclaveName)
+	}
+
+	if enclaveName == autogenerateEnclaveNameKeyword {
+		enclaveName = GetRandomEnclaveNameWithRetries(name_generator.GenerateNatureThemeNameForEnclave, allCurrentEnclaves, getRandomEnclaveIdRetries)
+	}
+
+	if isEnclaveNameInUse(enclaveName, allCurrentEnclaves) {
+		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveName)
+	}
+
+	if err := validateEnclaveName(enclaveName); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating enclave name '%v'", enclaveName)
+	}
 
 	if manager.enclavePool != nil {
 		enclaveInfo, err = manager.enclavePool.GetEnclave(
