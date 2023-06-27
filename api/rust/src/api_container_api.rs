@@ -536,40 +536,6 @@ pub struct StoreFilesArtifactFromServiceResponse {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct RenderTemplatesToFilesArtifactArgs {
-    /// A map of template and its data by the path of the file relative to the root of the files artifact it will be rendered into.
-    #[prost(map = "string, message", tag = "1")]
-    pub templates_and_data_by_destination_rel_filepath: ::std::collections::HashMap<
-        ::prost::alloc::string::String,
-        render_templates_to_files_artifact_args::TemplateAndData,
-    >,
-    /// Name of the files artifact
-    #[prost(string, tag = "2")]
-    pub name: ::prost::alloc::string::String,
-}
-/// Nested message and enum types in `RenderTemplatesToFilesArtifactArgs`.
-pub mod render_templates_to_files_artifact_args {
-    /// An object representing the template and the data that needs to be inserted
-    #[allow(clippy::derive_partial_eq_without_eq)]
-    #[derive(Clone, PartialEq, ::prost::Message)]
-    pub struct TemplateAndData {
-        /// A string representation of the template file
-        #[prost(string, tag = "1")]
-        pub template: ::prost::alloc::string::String,
-        /// A json string representation of the data to be written to template
-        #[prost(string, tag = "2")]
-        pub data_as_json: ::prost::alloc::string::String,
-    }
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct RenderTemplatesToFilesArtifactResponse {
-    /// UUID of the files artifact, for use when referencing it in the future
-    #[prost(string, tag = "1")]
-    pub uuid: ::prost::alloc::string::String,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FilesArtifactNameAndUuid {
     /// A string representing the name of the file
     #[prost(string, tag = "1")]
@@ -1125,37 +1091,6 @@ pub mod api_container_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
-        /// Renders the templates and their data to a files artifact in the Kurtosis File System
-        pub async fn render_templates_to_files_artifact(
-            &mut self,
-            request: impl tonic::IntoRequest<super::RenderTemplatesToFilesArtifactArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::RenderTemplatesToFilesArtifactResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/api_container_api.ApiContainerService/RenderTemplatesToFilesArtifact",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "api_container_api.ApiContainerService",
-                        "RenderTemplatesToFilesArtifact",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
         pub async fn list_files_artifact_names_and_uuids(
             &mut self,
             request: impl tonic::IntoRequest<()>,
@@ -1318,14 +1253,6 @@ pub mod api_container_service_server {
             request: tonic::Request<super::StoreFilesArtifactFromServiceArgs>,
         ) -> std::result::Result<
             tonic::Response<super::StoreFilesArtifactFromServiceResponse>,
-            tonic::Status,
-        >;
-        /// Renders the templates and their data to a files artifact in the Kurtosis File System
-        async fn render_templates_to_files_artifact(
-            &self,
-            request: tonic::Request<super::RenderTemplatesToFilesArtifactArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::RenderTemplatesToFilesArtifactResponse>,
             tonic::Status,
         >;
         async fn list_files_artifact_names_and_uuids(
@@ -2079,57 +2006,6 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = StoreFilesArtifactFromServiceSvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/api_container_api.ApiContainerService/RenderTemplatesToFilesArtifact" => {
-                    #[allow(non_camel_case_types)]
-                    struct RenderTemplatesToFilesArtifactSvc<T: ApiContainerService>(
-                        pub Arc<T>,
-                    );
-                    impl<
-                        T: ApiContainerService,
-                    > tonic::server::UnaryService<
-                        super::RenderTemplatesToFilesArtifactArgs,
-                    > for RenderTemplatesToFilesArtifactSvc<T> {
-                        type Response = super::RenderTemplatesToFilesArtifactResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<
-                                super::RenderTemplatesToFilesArtifactArgs,
-                            >,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                (*inner).render_templates_to_files_artifact(request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = RenderTemplatesToFilesArtifactSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

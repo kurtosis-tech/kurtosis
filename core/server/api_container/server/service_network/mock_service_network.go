@@ -16,6 +16,8 @@ import (
 
 	partition_topology "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 
+	render_templates "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+
 	service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 
 	service_network_types "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
@@ -654,21 +656,21 @@ func (_c *MockServiceNetwork_RemoveService_Call) RunAndReturn(run func(context.C
 }
 
 // RenderTemplates provides a mock function with given fields: templatesAndDataByDestinationRelFilepath, artifactName
-func (_m *MockServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+func (_m *MockServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	ret := _m.Called(templatesAndDataByDestinationRelFilepath, artifactName)
 
 	var r0 enclave_data_directory.FilesArtifactUUID
 	var r1 error
-	if rf, ok := ret.Get(0).(func(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, string) (enclave_data_directory.FilesArtifactUUID, error)); ok {
+	if rf, ok := ret.Get(0).(func(map[string]*render_templates.TemplateData, string) (enclave_data_directory.FilesArtifactUUID, error)); ok {
 		return rf(templatesAndDataByDestinationRelFilepath, artifactName)
 	}
-	if rf, ok := ret.Get(0).(func(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, string) enclave_data_directory.FilesArtifactUUID); ok {
+	if rf, ok := ret.Get(0).(func(map[string]*render_templates.TemplateData, string) enclave_data_directory.FilesArtifactUUID); ok {
 		r0 = rf(templatesAndDataByDestinationRelFilepath, artifactName)
 	} else {
 		r0 = ret.Get(0).(enclave_data_directory.FilesArtifactUUID)
 	}
 
-	if rf, ok := ret.Get(1).(func(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, string) error); ok {
+	if rf, ok := ret.Get(1).(func(map[string]*render_templates.TemplateData, string) error); ok {
 		r1 = rf(templatesAndDataByDestinationRelFilepath, artifactName)
 	} else {
 		r1 = ret.Error(1)
@@ -683,15 +685,15 @@ type MockServiceNetwork_RenderTemplates_Call struct {
 }
 
 // RenderTemplates is a helper method to define mock.On call
-//   - templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
+//   - templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData
 //   - artifactName string
 func (_e *MockServiceNetwork_Expecter) RenderTemplates(templatesAndDataByDestinationRelFilepath interface{}, artifactName interface{}) *MockServiceNetwork_RenderTemplates_Call {
 	return &MockServiceNetwork_RenderTemplates_Call{Call: _e.mock.On("RenderTemplates", templatesAndDataByDestinationRelFilepath, artifactName)}
 }
 
-func (_c *MockServiceNetwork_RenderTemplates_Call) Run(run func(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string)) *MockServiceNetwork_RenderTemplates_Call {
+func (_c *MockServiceNetwork_RenderTemplates_Call) Run(run func(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string)) *MockServiceNetwork_RenderTemplates_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData), args[1].(string))
+		run(args[0].(map[string]*render_templates.TemplateData), args[1].(string))
 	})
 	return _c
 }
@@ -701,7 +703,7 @@ func (_c *MockServiceNetwork_RenderTemplates_Call) Return(_a0 enclave_data_direc
 	return _c
 }
 
-func (_c *MockServiceNetwork_RenderTemplates_Call) RunAndReturn(run func(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, string) (enclave_data_directory.FilesArtifactUUID, error)) *MockServiceNetwork_RenderTemplates_Call {
+func (_c *MockServiceNetwork_RenderTemplates_Call) RunAndReturn(run func(map[string]*render_templates.TemplateData, string) (enclave_data_directory.FilesArtifactUUID, error)) *MockServiceNetwork_RenderTemplates_Call {
 	_c.Call.Return(run)
 	return _c
 }
