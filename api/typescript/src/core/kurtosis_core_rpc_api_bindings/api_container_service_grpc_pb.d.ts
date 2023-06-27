@@ -11,10 +11,8 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   runStarlarkScript: grpc.MethodDefinition<api_container_service_pb.RunStarlarkScriptArgs, api_container_service_pb.StarlarkRunResponseLine>;
   uploadStarlarkPackage: grpc.MethodDefinition<api_container_service_pb.StreamedDataChunk, google_protobuf_empty_pb.Empty>;
   runStarlarkPackage: grpc.MethodDefinition<api_container_service_pb.RunStarlarkPackageArgs, api_container_service_pb.StarlarkRunResponseLine>;
-  addServices: grpc.MethodDefinition<api_container_service_pb.AddServicesArgs, api_container_service_pb.AddServicesResponse>;
   getServices: grpc.MethodDefinition<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
   getExistingAndHistoricalServiceIdentifiers: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>;
-  removeService: grpc.MethodDefinition<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
   execCommand: grpc.MethodDefinition<api_container_service_pb.ExecCommandArgs, api_container_service_pb.ExecCommandResponse>;
   waitForHttpGetEndpointAvailability: grpc.MethodDefinition<api_container_service_pb.WaitForHttpGetEndpointAvailabilityArgs, google_protobuf_empty_pb.Empty>;
   waitForHttpPostEndpointAvailability: grpc.MethodDefinition<api_container_service_pb.WaitForHttpPostEndpointAvailabilityArgs, google_protobuf_empty_pb.Empty>;
@@ -24,7 +22,6 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   downloadFilesArtifactV2: grpc.MethodDefinition<api_container_service_pb.DownloadFilesArtifactArgs, api_container_service_pb.StreamedDataChunk>;
   storeWebFilesArtifact: grpc.MethodDefinition<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
   storeFilesArtifactFromService: grpc.MethodDefinition<api_container_service_pb.StoreFilesArtifactFromServiceArgs, api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
-  renderTemplatesToFilesArtifact: grpc.MethodDefinition<api_container_service_pb.RenderTemplatesToFilesArtifactArgs, api_container_service_pb.RenderTemplatesToFilesArtifactResponse>;
   listFilesArtifactNamesAndUuids: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
 }
 
@@ -34,10 +31,8 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   runStarlarkScript: grpc.handleServerStreamingCall<api_container_service_pb.RunStarlarkScriptArgs, api_container_service_pb.StarlarkRunResponseLine>;
   uploadStarlarkPackage: grpc.handleClientStreamingCall<api_container_service_pb.StreamedDataChunk, google_protobuf_empty_pb.Empty>;
   runStarlarkPackage: grpc.handleServerStreamingCall<api_container_service_pb.RunStarlarkPackageArgs, api_container_service_pb.StarlarkRunResponseLine>;
-  addServices: grpc.handleUnaryCall<api_container_service_pb.AddServicesArgs, api_container_service_pb.AddServicesResponse>;
   getServices: grpc.handleUnaryCall<api_container_service_pb.GetServicesArgs, api_container_service_pb.GetServicesResponse>;
   getExistingAndHistoricalServiceIdentifiers: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>;
-  removeService: grpc.handleUnaryCall<api_container_service_pb.RemoveServiceArgs, api_container_service_pb.RemoveServiceResponse>;
   execCommand: grpc.handleUnaryCall<api_container_service_pb.ExecCommandArgs, api_container_service_pb.ExecCommandResponse>;
   waitForHttpGetEndpointAvailability: grpc.handleUnaryCall<api_container_service_pb.WaitForHttpGetEndpointAvailabilityArgs, google_protobuf_empty_pb.Empty>;
   waitForHttpPostEndpointAvailability: grpc.handleUnaryCall<api_container_service_pb.WaitForHttpPostEndpointAvailabilityArgs, google_protobuf_empty_pb.Empty>;
@@ -47,7 +42,6 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   downloadFilesArtifactV2: grpc.handleServerStreamingCall<api_container_service_pb.DownloadFilesArtifactArgs, api_container_service_pb.StreamedDataChunk>;
   storeWebFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
   storeFilesArtifactFromService: grpc.handleUnaryCall<api_container_service_pb.StoreFilesArtifactFromServiceArgs, api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
-  renderTemplatesToFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.RenderTemplatesToFilesArtifactArgs, api_container_service_pb.RenderTemplatesToFilesArtifactResponse>;
   listFilesArtifactNamesAndUuids: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
 }
 
@@ -60,18 +54,12 @@ export class ApiContainerServiceClient extends grpc.Client {
   uploadStarlarkPackage(metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<google_protobuf_empty_pb.Empty>): grpc.ClientWritableStream<api_container_service_pb.StreamedDataChunk>;
   runStarlarkPackage(argument: api_container_service_pb.RunStarlarkPackageArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
   runStarlarkPackage(argument: api_container_service_pb.RunStarlarkPackageArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<api_container_service_pb.StarlarkRunResponseLine>;
-  addServices(argument: api_container_service_pb.AddServicesArgs, callback: grpc.requestCallback<api_container_service_pb.AddServicesResponse>): grpc.ClientUnaryCall;
-  addServices(argument: api_container_service_pb.AddServicesArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.AddServicesResponse>): grpc.ClientUnaryCall;
-  addServices(argument: api_container_service_pb.AddServicesArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.AddServicesResponse>): grpc.ClientUnaryCall;
   getServices(argument: api_container_service_pb.GetServicesArgs, callback: grpc.requestCallback<api_container_service_pb.GetServicesResponse>): grpc.ClientUnaryCall;
   getServices(argument: api_container_service_pb.GetServicesArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetServicesResponse>): grpc.ClientUnaryCall;
   getServices(argument: api_container_service_pb.GetServicesArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetServicesResponse>): grpc.ClientUnaryCall;
   getExistingAndHistoricalServiceIdentifiers(argument: google_protobuf_empty_pb.Empty, callback: grpc.requestCallback<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>): grpc.ClientUnaryCall;
   getExistingAndHistoricalServiceIdentifiers(argument: google_protobuf_empty_pb.Empty, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>): grpc.ClientUnaryCall;
   getExistingAndHistoricalServiceIdentifiers(argument: google_protobuf_empty_pb.Empty, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.GetExistingAndHistoricalServiceIdentifiersResponse>): grpc.ClientUnaryCall;
-  removeService(argument: api_container_service_pb.RemoveServiceArgs, callback: grpc.requestCallback<api_container_service_pb.RemoveServiceResponse>): grpc.ClientUnaryCall;
-  removeService(argument: api_container_service_pb.RemoveServiceArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RemoveServiceResponse>): grpc.ClientUnaryCall;
-  removeService(argument: api_container_service_pb.RemoveServiceArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RemoveServiceResponse>): grpc.ClientUnaryCall;
   execCommand(argument: api_container_service_pb.ExecCommandArgs, callback: grpc.requestCallback<api_container_service_pb.ExecCommandResponse>): grpc.ClientUnaryCall;
   execCommand(argument: api_container_service_pb.ExecCommandArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecCommandResponse>): grpc.ClientUnaryCall;
   execCommand(argument: api_container_service_pb.ExecCommandArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ExecCommandResponse>): grpc.ClientUnaryCall;
@@ -98,9 +86,6 @@ export class ApiContainerServiceClient extends grpc.Client {
   storeFilesArtifactFromService(argument: api_container_service_pb.StoreFilesArtifactFromServiceArgs, callback: grpc.requestCallback<api_container_service_pb.StoreFilesArtifactFromServiceResponse>): grpc.ClientUnaryCall;
   storeFilesArtifactFromService(argument: api_container_service_pb.StoreFilesArtifactFromServiceArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StoreFilesArtifactFromServiceResponse>): grpc.ClientUnaryCall;
   storeFilesArtifactFromService(argument: api_container_service_pb.StoreFilesArtifactFromServiceArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.StoreFilesArtifactFromServiceResponse>): grpc.ClientUnaryCall;
-  renderTemplatesToFilesArtifact(argument: api_container_service_pb.RenderTemplatesToFilesArtifactArgs, callback: grpc.requestCallback<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>): grpc.ClientUnaryCall;
-  renderTemplatesToFilesArtifact(argument: api_container_service_pb.RenderTemplatesToFilesArtifactArgs, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>): grpc.ClientUnaryCall;
-  renderTemplatesToFilesArtifact(argument: api_container_service_pb.RenderTemplatesToFilesArtifactArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.RenderTemplatesToFilesArtifactResponse>): grpc.ClientUnaryCall;
   listFilesArtifactNamesAndUuids(argument: google_protobuf_empty_pb.Empty, callback: grpc.requestCallback<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>): grpc.ClientUnaryCall;
   listFilesArtifactNamesAndUuids(argument: google_protobuf_empty_pb.Empty, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>): grpc.ClientUnaryCall;
   listFilesArtifactNamesAndUuids(argument: google_protobuf_empty_pb.Empty, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>): grpc.ClientUnaryCall;

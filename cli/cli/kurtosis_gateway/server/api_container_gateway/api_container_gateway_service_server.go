@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
@@ -93,52 +92,6 @@ func (service *ApiContainerGatewayServiceServer) RunStarlarkPackage(args *kurtos
 	return nil
 }
 
-func (service *ApiContainerGatewayServiceServer) AddServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.AddServicesArgs) (*kurtosis_core_rpc_api_bindings.AddServicesResponse, error) {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
-	failedServicesPool := map[string]string{}
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.AddServices(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-	shouldRemoveServices := map[string]bool{}
-	for serviceName := range remoteApiContainerResponse.GetSuccessfulServiceNameToServiceInfo() {
-		shouldRemoveServices[serviceName] = true
-	}
-	defer func() {
-		for serviceName := range shouldRemoveServices {
-			removeServiceArgs := &kurtosis_core_rpc_api_bindings.RemoveServiceArgs{ServiceIdentifier: serviceName}
-			if _, err := service.remoteApiContainerClient.RemoveService(ctx, removeServiceArgs); err != nil {
-				err = stacktrace.Propagate(err,
-					"Connecting to the service running in the remote cluster failed, expected to be able to cleanup the created service, but an error occurred calling the backend to remove the service we created. "+
-						"ACTION REQUIRED: You'll need to manually remove the service with name '%v'", serviceName)
-				failedServicesPool[serviceName] = err.Error()
-			}
-		}
-	}()
-	successfulServices := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
-	// Add failed services to failed services pool
-	for serviceNameStr, errStr := range remoteApiContainerResponse.GetFailedServiceNameToError() {
-		failedServicesPool[serviceNameStr] = errStr
-	}
-
-	// Write over the PublicIp and Public Ports fields so the service can be accessed through local port forwarding
-	for serviceNameStr, serviceInfo := range remoteApiContainerResponse.GetSuccessfulServiceNameToServiceInfo() {
-		if err := service.writeOverServiceInfoFieldsWithLocalConnectionInformationIfServiceRunning(serviceInfo); err != nil {
-			err = stacktrace.Propagate(err, "Expected to be able to write over service info fields for service '%v', instead a non-nil error was returned", serviceNameStr)
-			failedServicesPool[serviceNameStr] = err.Error()
-		}
-		successfulServices[serviceNameStr] = serviceInfo
-	}
-
-	// Do not remove successful services
-	for serviceNameStr := range successfulServices {
-		delete(shouldRemoveServices, serviceNameStr)
-	}
-	startServicesResp := binding_constructors.NewAddServicesResponse(successfulServices, failedServicesPool)
-	return startServicesResp, nil
-}
-
 func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 	service.mutex.Lock()
 	defer service.mutex.Unlock()
@@ -164,21 +117,6 @@ func (service *ApiContainerGatewayServiceServer) GetExistingAndHistoricalService
 	if err != nil {
 		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
-
-	return remoteApiContainerResponse, nil
-}
-
-func (service *ApiContainerGatewayServiceServer) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
-	service.mutex.Lock()
-	defer service.mutex.Unlock()
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.RemoveService(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	removedServiceUuid := remoteApiContainerResponse.GetServiceUuid()
-	// Kill the connection if we can
-	service.idempotentKillRunningConnectionForServiceGuid(removedServiceUuid)
 
 	return remoteApiContainerResponse, nil
 }
@@ -264,15 +202,6 @@ func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifactV2(args *k
 		return stacktrace.Propagate(err, "Error forwarding stream from DownloadFilesArtifactV2 on gateway")
 	}
 	return nil
-}
-
-func (service *ApiContainerGatewayServiceServer) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
-	remoteApiContainerResponse, err := service.remoteApiContainerClient.RenderTemplatesToFilesArtifact(ctx, args)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
-	}
-
-	return remoteApiContainerResponse, nil
 }
 
 func (service *ApiContainerGatewayServiceServer) UploadStarlarkPackage(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadStarlarkPackageServer) error {

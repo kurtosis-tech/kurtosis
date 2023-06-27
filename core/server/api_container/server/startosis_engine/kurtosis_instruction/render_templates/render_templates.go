@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -76,7 +74,7 @@ type RenderTemplatesCapabilities struct {
 	serviceNetwork service_network.ServiceNetwork
 
 	artifactName                      string
-	templatesAndDataByDestRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData
+	templatesAndDataByDestRelFilepath map[string]*render_templates.TemplateData
 
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
@@ -117,14 +115,10 @@ func (builtin *RenderTemplatesCapabilities) Validate(_ *builtin_argument.Argumen
 }
 
 func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	for relFilePath := range builtin.templatesAndDataByDestRelFilepath {
-		templateStr := builtin.templatesAndDataByDestRelFilepath[relFilePath].Template
-		dataAsJson := builtin.templatesAndDataByDestRelFilepath[relFilePath].DataAsJson
-		dataAsJsonWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(dataAsJson, builtin.runtimeValueStore)
-		if err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred while replacing IP address with place holder in the render_template instruction for target '%v'", relFilePath)
+	for _, templateData := range builtin.templatesAndDataByDestRelFilepath {
+		if err := templateData.ReplaceRuntimeValues(builtin.runtimeValueStore); err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred replacing runtime values for render_template instruction")
 		}
-		builtin.templatesAndDataByDestRelFilepath[relFilePath] = binding_constructors.NewTemplateAndData(templateStr, dataAsJsonWithRuntimeValueReplaced)
 	}
 
 	artifactUUID, err := builtin.serviceNetwork.RenderTemplates(builtin.templatesAndDataByDestRelFilepath, builtin.artifactName)
@@ -135,8 +129,8 @@ func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builti
 	return instructionResult, nil
 }
 
-func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, *startosis_errors.InterpretationError) {
-	templateAndDataByDestRelFilepath := make(map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData)
+func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*render_templates.TemplateData, *startosis_errors.InterpretationError) {
+	templateAndDataByDestRelFilepath := make(map[string]*render_templates.TemplateData)
 	for _, relPathInFilesArtifactKey := range templatesAndData.Keys() {
 		relPathInFilesArtifactStr, castErr := kurtosis_types.SafeCastToString(relPathInFilesArtifactKey, fmt.Sprintf("%v.key:%v", templatesAndDataArgName, relPathInFilesArtifactKey))
 		if castErr != nil {
@@ -183,7 +177,10 @@ func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*kurtosi
 			return nil, startosis_errors.NewInterpretationError("Template data for file '%v', '%v' isn't valid JSON", relPathInFilesArtifactStr, templateDataJSONStrValue)
 		}
 		// end Massive Hack
-		templateAndData := binding_constructors.NewTemplateAndData(templateStr, string(templateDataJson))
+		templateAndData, err := render_templates.CreateTemplateData(templateStr, string(templateDataJson))
+		if err != nil {
+			return nil, startosis_errors.NewInterpretationError("An error occurred creating the template. Make sure the it is a valid template string.")
+		}
 		templateAndDataByDestRelFilepath[relPathInFilesArtifactStr] = templateAndData
 	}
 	return templateAndDataByDestRelFilepath, nil

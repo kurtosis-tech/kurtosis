@@ -2,9 +2,8 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	render_templates2 "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -29,8 +28,10 @@ func newRenderSingleTemplateTestCase(t *testing.T) *renderSingleTemplateTestCase
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	// We expect double quotes for the serialized JSON, for some reasons... See arg_parser.encodeStarlarkObjectAsJSON
 	dataWithDoubleQuote := fmt.Sprintf("%q", renderTemplate_SingleTemplate_data)
-	templateAndData := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
-		renderTemplate_SingleTemplate_filePath: binding_constructors.NewTemplateAndData(renderTemplate_SingleTemplate_template, dataWithDoubleQuote),
+	templateData, err := render_templates2.CreateTemplateData(renderTemplate_SingleTemplate_template, dataWithDoubleQuote)
+	require.Nil(t, err)
+	templateAndData := map[string]*render_templates2.TemplateData{
+		renderTemplate_SingleTemplate_filePath: templateData,
 	}
 
 	serviceNetwork.EXPECT().RenderTemplates(templateAndData, TestArtifactName).Times(1).Return(TestArtifactUuid, nil)

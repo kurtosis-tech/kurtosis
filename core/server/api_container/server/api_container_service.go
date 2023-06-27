@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
@@ -51,8 +50,6 @@ const (
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
 	doOverwriteExistingModule = true
-
-	defaultParallelism = 4
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -95,7 +92,7 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
 
-	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, serializedStarlarkScript, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
 	return nil
 }
 
@@ -158,83 +155,8 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		}
 		return nil
 	}
-	apicService.runStarlark(parallelism, dryRun, packageId, mainFuncName, scriptWithRunFunction, serializedParams, stream)
+	apicService.runStarlark(parallelism, dryRun, packageId, mainFuncName, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 	return nil
-}
-
-func (apicService ApiContainerService) AddServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.AddServicesArgs) (*kurtosis_core_rpc_api_bindings.AddServicesResponse, error) {
-	failedServicesPool := map[kurtosis_backend_service.ServiceName]error{}
-	serviceNamesToAPIConfigs := map[kurtosis_backend_service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
-
-	for serviceNameStr, apiServiceConfig := range args.ServiceNamesToConfigs {
-		logrus.Debugf("Received request to start service with the following args: %+v", apiServiceConfig)
-		serviceNamesToAPIConfigs[kurtosis_backend_service.ServiceName(serviceNameStr)] = apiServiceConfig
-	}
-
-	successfulServices, failedServices, err := apicService.serviceNetwork.AddServices(ctx, serviceNamesToAPIConfigs, defaultParallelism)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "None of the services '%v' mentioned in the request were able to start due to an unexpected error", serviceNamesToAPIConfigs)
-	}
-	// TODO We SHOULD defer an undo to undo the service-starting resource that we did here, but we don't have a way to just undo
-	// that and leave the registration intact (since we only have RemoveService as of 2022-08-11, but that also deletes the registration,
-	// which would mean deleting a resource we don't own here)
-
-	for serviceName, serviceErr := range failedServices {
-		failedServicesPool[serviceName] = serviceErr
-		logrus.Debugf("Failed to start service '%v'", serviceName)
-	}
-
-	serviceNamesToServiceInfo := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
-	for serviceName, startedService := range successfulServices {
-		serviceRegistration := startedService.GetRegistration()
-		serviceUuidStr := string(serviceRegistration.GetUUID())
-		privateServiceIpStr := serviceRegistration.GetPrivateIP().String()
-		privateServicePortSpecs := startedService.GetPrivatePorts()
-		privateApiPorts, err := transformPortSpecMapToApiPortsMap(privateServicePortSpecs)
-		if err != nil {
-			failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred transforming the service '%v' private port specs to API ports", serviceName)
-			continue
-		}
-		publicServicePortSpecs := startedService.GetMaybePublicPorts()
-		publicApiPorts, err := transformPortSpecMapToApiPortsMap(publicServicePortSpecs)
-		if err != nil {
-			failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred transforming the service '%v' public port specs to API ports.", serviceName)
-			continue
-		}
-		maybePublicIpAddr := startedService.GetMaybePublicIP()
-		publicIpAddrStr := missingPublicIpAddrStr
-		if maybePublicIpAddr != nil {
-			publicIpAddrStr = maybePublicIpAddr.String()
-		}
-
-		serviceNamesToServiceInfo[string(serviceName)] = binding_constructors.NewServiceInfo(serviceUuidStr, string(serviceName), uuid_generator.ShortenedUUIDString(serviceUuidStr), privateServiceIpStr, privateApiPorts, publicIpAddrStr, publicApiPorts)
-		serviceStartLoglineSuffix := ""
-		if len(publicServicePortSpecs) > 0 {
-			serviceStartLoglineSuffix = fmt.Sprintf(
-				" with the following public ports: %+v",
-				publicServicePortSpecs,
-			)
-		}
-		logrus.Infof("Started service '%v'%v", serviceName, serviceStartLoglineSuffix)
-	}
-
-	failedServiceNamesToErrorStr := map[string]string{}
-	for id, serviceErr := range failedServicesPool {
-		failedServiceNamesToErrorStr[string(id)] = serviceErr.Error()
-	}
-
-	return binding_constructors.NewAddServicesResponse(serviceNamesToServiceInfo, failedServiceNamesToErrorStr), nil
-}
-
-func (apicService ApiContainerService) RemoveService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RemoveServiceArgs) (*kurtosis_core_rpc_api_bindings.RemoveServiceResponse, error) {
-	serviceIdentifier := args.ServiceIdentifier
-
-	serviceUuid, err := apicService.serviceNetwork.RemoveService(ctx, serviceIdentifier)
-	if err != nil {
-		// TODO IP: Leaks internal information about the API container
-		return nil, stacktrace.Propagate(err, "An error occurred removing service with identifier '%v'", serviceIdentifier)
-	}
-	return binding_constructors.NewRemoveServiceResponse(string(serviceUuid)), nil
 }
 
 func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
@@ -479,16 +401,6 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 	}
 
 	response := &kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse{Uuid: string(filesArtifactId)}
-	return response, nil
-}
-
-func (apicService ApiContainerService) RenderTemplatesToFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse, error) {
-	templatesAndDataByDestinationRelFilepath := args.TemplatesAndDataByDestinationRelFilepath
-	filesArtifactUuid, err := apicService.serviceNetwork.RenderTemplates(templatesAndDataByDestinationRelFilepath, args.Name)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while rendering templates to files artifact")
-	}
-	response := binding_constructors.NewRenderTemplatesToFilesArtifactResponse(string(filesArtifactUuid))
 	return response, nil
 }
 
@@ -742,9 +654,10 @@ func (apicService ApiContainerService) runStarlark(
 	mainFunctionName string,
 	serializedStarlark string,
 	serializedParams string,
+	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, serializedStarlark, serializedParams)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, serializedStarlark, serializedParams, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():

@@ -5,28 +5,6 @@ var grpc = require('@grpc/grpc-js');
 var api_container_service_pb = require('./api_container_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 
-function serialize_api_container_api_AddServicesArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.AddServicesArgs)) {
-    throw new Error('Expected argument of type api_container_api.AddServicesArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_AddServicesArgs(buffer_arg) {
-  return api_container_service_pb.AddServicesArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_AddServicesResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.AddServicesResponse)) {
-    throw new Error('Expected argument of type api_container_api.AddServicesResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_AddServicesResponse(buffer_arg) {
-  return api_container_service_pb.AddServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_DownloadFilesArtifactArgs(arg) {
   if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactArgs)) {
     throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactArgs');
@@ -113,50 +91,6 @@ function serialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse(arg)
 
 function deserialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse(buffer_arg) {
   return api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_RemoveServiceArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.RemoveServiceArgs)) {
-    throw new Error('Expected argument of type api_container_api.RemoveServiceArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_RemoveServiceArgs(buffer_arg) {
-  return api_container_service_pb.RemoveServiceArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_RemoveServiceResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.RemoveServiceResponse)) {
-    throw new Error('Expected argument of type api_container_api.RemoveServiceResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_RemoveServiceResponse(buffer_arg) {
-  return api_container_service_pb.RemoveServiceResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_RenderTemplatesToFilesArtifactArgs(arg) {
-  if (!(arg instanceof api_container_service_pb.RenderTemplatesToFilesArtifactArgs)) {
-    throw new Error('Expected argument of type api_container_api.RenderTemplatesToFilesArtifactArgs');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_RenderTemplatesToFilesArtifactArgs(buffer_arg) {
-  return api_container_service_pb.RenderTemplatesToFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
-function serialize_api_container_api_RenderTemplatesToFilesArtifactResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.RenderTemplatesToFilesArtifactResponse)) {
-    throw new Error('Expected argument of type api_container_api.RenderTemplatesToFilesArtifactResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_RenderTemplatesToFilesArtifactResponse(buffer_arg) {
-  return api_container_service_pb.RenderTemplatesToFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
 function serialize_api_container_api_RunStarlarkPackageArgs(arg) {
@@ -340,18 +274,6 @@ runStarlarkPackage: {
     responseSerialize: serialize_api_container_api_StarlarkRunResponseLine,
     responseDeserialize: deserialize_api_container_api_StarlarkRunResponseLine,
   },
-  // Start services by creating containers for them
-addServices: {
-    path: '/api_container_api.ApiContainerService/AddServices',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.AddServicesArgs,
-    responseType: api_container_service_pb.AddServicesResponse,
-    requestSerialize: serialize_api_container_api_AddServicesArgs,
-    requestDeserialize: deserialize_api_container_api_AddServicesArgs,
-    responseSerialize: serialize_api_container_api_AddServicesResponse,
-    responseDeserialize: deserialize_api_container_api_AddServicesResponse,
-  },
   // Returns the IDs of the current services in the enclave
 getServices: {
     path: '/api_container_api.ApiContainerService/GetServices',
@@ -375,18 +297,6 @@ getExistingAndHistoricalServiceIdentifiers: {
     requestDeserialize: deserialize_google_protobuf_Empty,
     responseSerialize: serialize_api_container_api_GetExistingAndHistoricalServiceIdentifiersResponse,
     responseDeserialize: deserialize_api_container_api_GetExistingAndHistoricalServiceIdentifiersResponse,
-  },
-  // Instructs the API container to remove the given service
-removeService: {
-    path: '/api_container_api.ApiContainerService/RemoveService',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.RemoveServiceArgs,
-    responseType: api_container_service_pb.RemoveServiceResponse,
-    requestSerialize: serialize_api_container_api_RemoveServiceArgs,
-    requestDeserialize: deserialize_api_container_api_RemoveServiceArgs,
-    responseSerialize: serialize_api_container_api_RemoveServiceResponse,
-    responseDeserialize: deserialize_api_container_api_RemoveServiceResponse,
   },
   // Executes the given command inside a running container
 execCommand: {
@@ -499,18 +409,6 @@ storeFilesArtifactFromService: {
     requestDeserialize: deserialize_api_container_api_StoreFilesArtifactFromServiceArgs,
     responseSerialize: serialize_api_container_api_StoreFilesArtifactFromServiceResponse,
     responseDeserialize: deserialize_api_container_api_StoreFilesArtifactFromServiceResponse,
-  },
-  // Renders the templates and their data to a files artifact in the Kurtosis File System
-renderTemplatesToFilesArtifact: {
-    path: '/api_container_api.ApiContainerService/RenderTemplatesToFilesArtifact',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.RenderTemplatesToFilesArtifactArgs,
-    responseType: api_container_service_pb.RenderTemplatesToFilesArtifactResponse,
-    requestSerialize: serialize_api_container_api_RenderTemplatesToFilesArtifactArgs,
-    requestDeserialize: deserialize_api_container_api_RenderTemplatesToFilesArtifactArgs,
-    responseSerialize: serialize_api_container_api_RenderTemplatesToFilesArtifactResponse,
-    responseDeserialize: deserialize_api_container_api_RenderTemplatesToFilesArtifactResponse,
   },
   listFilesArtifactNamesAndUuids: {
     path: '/api_container_api.ApiContainerService/ListFilesArtifactNamesAndUuids',

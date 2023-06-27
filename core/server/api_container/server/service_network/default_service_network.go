@@ -9,30 +9,26 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"io"
-	"math"
 	"net"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"sync"
-	"text/template"
 	"time"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
@@ -43,16 +39,10 @@ import (
 )
 
 const (
-	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
-
-	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
-	filesArtifactsExpanderImage string = "kurtosistech/files-artifacts-expander"
-
 	minMemoryLimit              uint64 = 6 // Docker doesn't allow memory limits less than 6 megabytes
 	defaultMemoryAllocMegabytes uint64 = 0
 
-	folderPermissionForRenderedTemplates = 0755
-	tempDirForRenderedTemplatesPrefix    = "temp-dir-for-rendered-templates-"
+	tempDirForRenderedTemplatesPrefix = "temp-dir-for-rendered-templates-"
 
 	enforceMaxFileSizeLimit = false
 
@@ -74,13 +64,6 @@ const (
 )
 
 var (
-	// Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
-	apiContainerPortProtoToPortSpecPortProto = map[kurtosis_core_rpc_api_bindings.Port_TransportProtocol]port_spec.TransportProtocol{
-		kurtosis_core_rpc_api_bindings.Port_TCP:  port_spec.TransportProtocol_TCP,
-		kurtosis_core_rpc_api_bindings.Port_SCTP: port_spec.TransportProtocol_SCTP,
-		kurtosis_core_rpc_api_bindings.Port_UDP:  port_spec.TransportProtocol_UDP,
-	}
-
 	emptyServiceNamesSetToUpdateAllConnections = map[service.ServiceName]bool{}
 )
 
@@ -94,9 +77,7 @@ type storeFilesArtifactResult struct {
 type DefaultServiceNetwork struct {
 	enclaveUuid enclave.EnclaveUUID
 
-	apiContainerIpAddress   net.IP
-	apiContainerGrpcPortNum uint16
-	apiContainerVersion     string
+	apiContainerInfo *ApiContainerInfo
 
 	mutex *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
@@ -127,9 +108,7 @@ type DefaultServiceNetwork struct {
 
 func NewDefaultServiceNetwork(
 	enclaveUuid enclave.EnclaveUUID,
-	apiContainerIpAddr net.IP,
-	apiContainerGrpcPortNum uint16,
-	apiContainerVersion string,
+	apiContainerInfo *ApiContainerInfo,
 	isPartitioningEnabled bool,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
@@ -146,9 +125,7 @@ func NewDefaultServiceNetwork(
 	}
 	return &DefaultServiceNetwork{
 		enclaveUuid:                         enclaveUuid,
-		apiContainerIpAddress:               apiContainerIpAddr,
-		apiContainerGrpcPortNum:             apiContainerGrpcPortNum,
-		apiContainerVersion:                 apiContainerVersion,
+		apiContainerInfo:                    apiContainerInfo,
 		mutex:                               &sync.Mutex{},
 		isPartitioningEnabled:               isPartitioningEnabled,
 		kurtosisBackend:                     kurtosisBackend,
@@ -324,12 +301,12 @@ func (network *DefaultServiceNetwork) SetDefaultConnection(
 func (network *DefaultServiceNetwork) AddService(
 	ctx context.Context,
 	serviceName service.ServiceName,
-	serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceConfig *service.ServiceConfig,
 ) (
 	*service.Service,
 	error,
 ) {
-	serviceConfigMap := map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{
+	serviceConfigMap := map[service.ServiceName]*service.ServiceConfig{
 		serviceName: serviceConfig,
 	}
 
@@ -358,7 +335,7 @@ func (network *DefaultServiceNetwork) AddService(
 //   - error - when a broad and unexpected error happened.
 func (network *DefaultServiceNetwork) AddServices(
 	ctx context.Context,
-	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceConfigs map[service.ServiceName]*service.ServiceConfig,
 	batchSize int,
 ) (
 	map[service.ServiceName]*service.Service,
@@ -379,9 +356,15 @@ func (network *DefaultServiceNetwork) AddServices(
 
 	// We register all the services one by one
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
-	servicesToStart := map[service.ServiceUUID]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
+	servicesToStart := map[service.ServiceUUID]*service.ServiceConfig{}
 	for serviceName, serviceConfig := range serviceConfigs {
-		servicePartitionId := partition_topology.ParsePartitionId(serviceConfig.Subnetwork)
+		var servicePartitionId service_network_types.PartitionID
+		if serviceConfig.GetSubnetwork() == "" {
+			servicePartitionId = partition_topology.ParsePartitionId(nil)
+		} else {
+			subnetwork := serviceConfig.GetSubnetwork()
+			servicePartitionId = partition_topology.ParsePartitionId(&subnetwork)
+		}
 		serviceRegistration, err := network.registerService(ctx, serviceName, servicePartitionId)
 		if err != nil {
 			failedServices[serviceName] = stacktrace.Propagate(err, "Failed registering service with name: '%s'", serviceName)
@@ -952,7 +935,7 @@ func (network *DefaultServiceNetwork) GetServiceRegistration(serviceName service
 	return registration, true
 }
 
-func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	filesArtifactUuid, err := network.renderTemplatesUnlocked(templatesAndDataByDestinationRelFilepath, artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in rendering templates to disk")
@@ -983,6 +966,10 @@ func (network *DefaultServiceNetwork) GetUniqueNameForFileArtifact() (string, er
 		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
 	}
 	return filesArtifactStore.GenerateUniqueNameForFileArtifact(), nil
+}
+
+func (network *DefaultServiceNetwork) GetApiContainerInfo() *ApiContainerInfo {
+	return network.apiContainerInfo
 }
 
 // ====================================================================================================
@@ -1222,106 +1209,21 @@ func (network *DefaultServiceNetwork) unregisterService(ctx context.Context, ser
 }
 
 // startRegisteredService handles the logistic of starting a service in the relevant Kurtosis backend:
-// Convert API ServiceConfig's to service.ServiceConfig's by:
-// - converting API Ports to PortSpec's
-// - converting files artifacts mountpoints to FilesArtifactsExpansion's'
-// - passing down other data (eg. container image name, args, etc.)
 // If network partitioning is enabled, it also takes care of starting the sidecar corresponding to this service
 func (network *DefaultServiceNetwork) startRegisteredService(
 	ctx context.Context,
 	serviceUuid service.ServiceUUID,
-	serviceConfigApi *kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceConfig *service.ServiceConfig,
 ) (
 	*service.Service,
 	error,
 ) {
 	serviceStartedSuccessfully := false
-	var serviceConfig *service.ServiceConfig
 
 	// Docker and K8s requires the minimum memory limit to be 6 megabytes to we make sure the allocation is at least that amount
 	// But first, we check that it's not the default value, meaning the user potentially didn't even set it
-	if serviceConfigApi.MemoryAllocationMegabytes != defaultMemoryAllocMegabytes && serviceConfigApi.MemoryAllocationMegabytes < minMemoryLimit {
-		return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes for service with UUID '%v'.", serviceConfigApi.MemoryAllocationMegabytes, minMemoryLimit, serviceUuid)
-	}
-
-	// Convert ports
-	privateServicePortSpecs, requestedPublicServicePortSpecs, err := convertAPIPortsToPortSpecs(serviceConfigApi.PrivatePorts, serviceConfigApi.PublicPorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to convert public and private API ports to port specs for service with UUID '%v'", serviceUuid)
-	}
-
-	// Creates files artifacts expansions
-	var filesArtifactsExpansion *files_artifacts_expansion.FilesArtifactsExpansion
-	if len(serviceConfigApi.FilesArtifactMountpoints) == 0 {
-		// Create service config with empty filesArtifactsExpansion if no files artifacts mountpoints for this service
-		serviceConfig = service.NewServiceConfig(
-			serviceConfigApi.ContainerImageName,
-			privateServicePortSpecs,
-			requestedPublicServicePortSpecs,
-			serviceConfigApi.EntrypointArgs,
-			serviceConfigApi.CmdArgs,
-			serviceConfigApi.EnvVars,
-			filesArtifactsExpansion,
-			serviceConfigApi.CpuAllocationMillicpus,
-			serviceConfigApi.MemoryAllocationMegabytes,
-			serviceConfigApi.PrivateIpAddrPlaceholder,
-			serviceConfigApi.MinCpuMilliCores,
-			serviceConfigApi.MinMemoryMegabytes,
-		)
-	} else {
-		filesArtifactsExpansions := []args.FilesArtifactExpansion{}
-		expanderDirpathToUserServiceDirpathMap := map[string]string{}
-		for mountpointOnUserService, filesArtifactIdentifier := range serviceConfigApi.FilesArtifactMountpoints {
-			dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactIdentifier)
-			expansion := args.FilesArtifactExpansion{
-				FilesIdentifier:   filesArtifactIdentifier,
-				DirPathToExpandTo: dirpathToExpandTo,
-			}
-			filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
-
-			expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
-		}
-
-		filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
-			network.apiContainerIpAddress.String(),
-			network.apiContainerGrpcPortNum,
-			filesArtifactsExpansions,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating files artifacts expander args for service with UUID '%s'", serviceUuid)
-		}
-
-		expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
-		}
-
-		expanderImageAndTag := fmt.Sprintf(
-			"%v:%v",
-			filesArtifactsExpanderImage,
-			network.apiContainerVersion,
-		)
-
-		filesArtifactsExpansion = &files_artifacts_expansion.FilesArtifactsExpansion{
-			ExpanderImage:                     expanderImageAndTag,
-			ExpanderEnvVars:                   expanderEnvVars,
-			ExpanderDirpathsToServiceDirpaths: expanderDirpathToUserServiceDirpathMap,
-		}
-
-		serviceConfig = service.NewServiceConfig(
-			serviceConfigApi.ContainerImageName,
-			privateServicePortSpecs,
-			requestedPublicServicePortSpecs,
-			serviceConfigApi.EntrypointArgs,
-			serviceConfigApi.CmdArgs,
-			serviceConfigApi.EnvVars,
-			filesArtifactsExpansion,
-			serviceConfigApi.CpuAllocationMillicpus,
-			serviceConfigApi.MemoryAllocationMegabytes,
-			serviceConfigApi.PrivateIpAddrPlaceholder,
-			serviceConfigApi.MinCpuMilliCores,
-			serviceConfigApi.MinMemoryMegabytes,
-		)
+	if serviceConfig.GetMemoryAllocationMegabytes() != defaultMemoryAllocMegabytes && serviceConfig.GetMemoryAllocationMegabytes() < minMemoryLimit {
+		return nil, stacktrace.NewError("Memory allocation, `%d`, is too low. Kurtosis requires the memory limit to be at least `%d` megabytes for service with UUID '%v'.", serviceConfig.GetMemoryAllocationMegabytes(), minMemoryLimit, serviceUuid)
 	}
 
 	// TODO(gb): make the backend also handle starting service sequentially to simplify the logic there as well
@@ -1451,7 +1353,7 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 // behind a mutex as those are not concurrent maps) and finishes by release a permit from the WaitGroup
 func (network *DefaultServiceNetwork) startRegisteredServices(
 	ctx context.Context,
-	serviceConfigs map[service.ServiceUUID]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	serviceConfigs map[service.ServiceUUID]*service.ServiceConfig,
 	batchSize int,
 ) (map[service.ServiceUUID]*service.Service, map[service.ServiceUUID]error) {
 	wg := sync.WaitGroup{}
@@ -1665,7 +1567,7 @@ func (network *DefaultServiceNetwork) createSidecarAndAddToMap(ctx context.Conte
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while creating a temp dir for rendered templates '%v'", tempDirForRenderedTemplates)
@@ -1673,26 +1575,9 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 	defer os.RemoveAll(tempDirForRenderedTemplates)
 
 	for destinationRelFilepath, templateAndData := range templatesAndDataByDestinationRelFilepath {
-		templateAsAString := templateAndData.Template
-		templateDataAsJson := templateAndData.DataAsJson
-
-		templateDataJsonAsBytes := []byte(templateDataAsJson)
-		templateDataJsonReader := bytes.NewReader(templateDataJsonAsBytes)
-
-		// We don't use standard json.Unmarshal as that converts large integers to floats
-		// Using this custom decoder we get the json.Number representation which is closer to other json implementations
-		// This talks about the issue further https://github.com/square/go-jose/issues/351#issuecomment-847193900
-		decoder := json.NewDecoder(templateDataJsonReader)
-		decoder.UseNumber()
-
-		var templateData interface{}
-		if err = decoder.Decode(&templateData); err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred while decoding the template data json '%v' for file '%v'", templateDataAsJson, destinationRelFilepath)
-		}
-
-		destinationFilepath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
-		if err = renderTemplateToFile(templateAsAString, templateData, destinationFilepath); err != nil {
-			return "", stacktrace.Propagate(err, "There was an error in rendering template for file '%v'", destinationRelFilepath)
+		destinationAbsoluteFilePath := path.Join(tempDirForRenderedTemplates, destinationRelFilepath)
+		if err := templateAndData.RenderToFile(destinationAbsoluteFilePath); err != nil {
+			return "", stacktrace.Propagate(err, "There was an error in rendering template for file '%s'", destinationRelFilepath)
 		}
 	}
 
@@ -1840,125 +1725,6 @@ func (network *DefaultServiceNetwork) getServiceLogs(
 	serviceLogs := fmt.Sprintf("%s\n%s\n%s", header, copyBuf.String(), footer)
 
 	return serviceLogs, nil
-}
-
-func convertAPIPortsToPortSpecs(
-	privateAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-	publicAPIPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
-) (
-	resultPrivatePortSpecs map[string]*port_spec.PortSpec,
-	resultPublicPortSpecs map[string]*port_spec.PortSpec,
-	resultErr error,
-) {
-	privatePortSpecs := map[string]*port_spec.PortSpec{}
-	for portID, privateAPIPort := range privateAPIPorts {
-		privatePortSpec, err := transformApiPortToPortSpec(privateAPIPort)
-		if err != nil {
-			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for private port '%v' into a port spec port", portID)
-		}
-		privatePortSpecs[portID] = privatePortSpec
-	}
-
-	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
-	if len(publicAPIPorts) > 0 {
-		err := checkPrivateAndPublicPortsAreOneToOne(privateAPIPorts, publicAPIPorts)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Provided public and private ports are not one to one.")
-		}
-	}
-
-	publicPortSpecs := map[string]*port_spec.PortSpec{}
-	for portID, publicAPIPort := range publicAPIPorts {
-		publicPortSpec, err := transformApiPortToPortSpec(publicAPIPort)
-		if err != nil {
-			return nil, nil, stacktrace.NewError("An error occurred transforming the API port for public port '%v' into a port spec port", portID)
-		}
-		publicPortSpecs[portID] = publicPortSpec
-	}
-	//TODO Finished the huge hack to temporarily enable static ports for NEAR
-	return privatePortSpecs, publicPortSpecs, nil
-}
-
-func transformApiPortToPortSpec(port *kurtosis_core_rpc_api_bindings.Port) (*port_spec.PortSpec, error) {
-	portNumUint32 := port.GetNumber()
-	apiProto := port.GetTransportProtocol()
-	if portNumUint32 > math.MaxUint16 {
-		return nil, stacktrace.NewError(
-			"API port num '%v' is bigger than max allowed port spec port num '%v'",
-			portNumUint32,
-			math.MaxUint16,
-		)
-	}
-	portNumUint16 := uint16(portNumUint32)
-	portSpecProto, found := apiContainerPortProtoToPortSpecPortProto[apiProto]
-	if !found {
-		return nil, stacktrace.NewError("Couldn't find a port spec proto for API port proto '%v'; this should never happen, and is a bug in Kurtosis!", apiProto.String())
-	}
-
-	var (
-		wait *port_spec.Wait
-		err  error
-	)
-
-	// a nil wait means the port wait feature will be disabled
-	if port.GetMaybeWaitTimeout() != port_spec.DisableWaitTimeoutDurationStr {
-		wait, err = port_spec.CreateWait(port.GetMaybeWaitTimeout())
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating wait using port wait time out '%v'", port.GetMaybeWaitTimeout())
-		}
-	}
-
-	result, err := port_spec.NewPortSpec(portNumUint16, portSpecProto, port.GetMaybeApplicationProtocol(), wait)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred creating port spec object with port num '%v' and protocol '%v'",
-			portNumUint16,
-			portSpecProto,
-		)
-	}
-	return result, nil
-}
-
-// Ensure that provided [privatePorts] and [publicPorts] are one to one by checking:
-// - There is a matching publicPort for every portID in privatePorts
-// - There are the same amount of private and public ports
-// If error is nil, the public and private ports are one to one.
-func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port, publicPorts map[string]*kurtosis_core_rpc_api_bindings.Port) error {
-	if len(privatePorts) != len(publicPorts) {
-		return stacktrace.NewError("The received private ports length and the public ports length are not equal. Received '%v' private ports and '%v' public ports", len(privatePorts), len(publicPorts))
-	}
-
-	for portID, privatePortSpec := range privatePorts {
-		if _, found := publicPorts[portID]; !found {
-			return stacktrace.NewError("Expected to receive public port with ID '%v' bound to private port number '%v', but it was not found", portID, privatePortSpec.GetNumber())
-		}
-	}
-	return nil
-}
-
-func renderTemplateToFile(templateAsAString string, templateData interface{}, destinationFilepath string) error {
-	parsedTemplate, err := template.New(path.Base(destinationFilepath)).Parse(templateAsAString)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred in parsing the template string '%v'", destinationFilepath)
-	}
-
-	// Creat all parent directories to account for nesting
-	destinationFileDir := path.Dir(destinationFilepath)
-	if err = os.MkdirAll(destinationFileDir, folderPermissionForRenderedTemplates); err != nil {
-		return stacktrace.Propagate(err, "There was an error in creating the parent directory '%v' to write the file '%v' into.", destinationFileDir, destinationFilepath)
-	}
-
-	renderedTemplateFile, err := os.Create(destinationFilepath)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating temporary file to render template into for file '%v'.", destinationFilepath)
-	}
-	defer renderedTemplateFile.Close()
-
-	if err = parsedTemplate.Execute(renderedTemplateFile, templateData); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while writing the rendered template to destination '%v'", destinationFilepath)
-	}
-	return nil
 }
 
 func waitUntilAllTCPAndUDPPortsAreOpen(

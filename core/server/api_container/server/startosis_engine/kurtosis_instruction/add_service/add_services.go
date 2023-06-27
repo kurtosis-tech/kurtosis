@@ -3,7 +3,6 @@ package add_service
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -41,7 +40,7 @@ func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueS
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
-						if _, _, err := validateAndConvertConfigsAndReadyConditions(value); err != nil {
+						if _, _, err := validateAndConvertConfigsAndReadyConditions(serviceNetwork, value); err != nil {
 							return err
 						}
 						return nil
@@ -74,7 +73,7 @@ type AddServicesCapabilities struct {
 	serviceNetwork    service_network.ServiceNetwork
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 
-	serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig
+	serviceConfigs map[service.ServiceName]*service.ServiceConfig
 
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
@@ -86,7 +85,7 @@ func (builtin *AddServicesCapabilities) Interpret(arguments *builtin_argument.Ar
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ConfigsArgName)
 	}
-	serviceConfigs, readyConditions, interpretationErr := validateAndConvertConfigsAndReadyConditions(ServiceConfigsDict)
+	serviceConfigs, readyConditions, interpretationErr := validateAndConvertConfigsAndReadyConditions(builtin.serviceNetwork, ServiceConfigsDict)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -111,7 +110,7 @@ func (builtin *AddServicesCapabilities) Validate(_ *builtin_argument.ArgumentVal
 }
 
 func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	renderedServiceConfigs := make(map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, len(builtin.serviceConfigs))
+	renderedServiceConfigs := make(map[service.ServiceName]*service.ServiceConfig, len(builtin.serviceConfigs))
 	parallelism, ok := ctx.Value(ParallelismParam).(int)
 	if !ok {
 		return "", stacktrace.NewError("An error occurred when getting parallelism level from execution context")
@@ -251,9 +250,10 @@ func (builtin *AddServicesCapabilities) runServiceReadinessCheck(
 }
 
 func validateAndConvertConfigsAndReadyConditions(
+	serviceNetwork service_network.ServiceNetwork,
 	configs starlark.Value,
 ) (
-	map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+	map[service.ServiceName]*service.ServiceConfig,
 	map[service.ServiceName]*service_config.ReadyCondition,
 	*startosis_errors.InterpretationError,
 ) {
@@ -264,7 +264,7 @@ func validateAndConvertConfigsAndReadyConditions(
 	if configsDict.Len() == 0 {
 		return nil, nil, startosis_errors.NewInterpretationError("The '%s' argument should be a non empty dictionary", ConfigsArgName)
 	}
-	convertedServiceConfigs := map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig{}
+	convertedServiceConfigs := map[service.ServiceName]*service.ServiceConfig{}
 	readyConditionsByServiceName := map[service.ServiceName]*service_config.ReadyCondition{}
 	for _, serviceName := range configsDict.Keys() {
 		serviceNameStr, isServiceNameAString := serviceName.(starlark.String)
@@ -280,7 +280,7 @@ func validateAndConvertConfigsAndReadyConditions(
 		if !isDictValueAServiceConfig {
 			return nil, nil, startosis_errors.NewInterpretationError("One value of the '%s' dictionary is not a ServiceConfig (was '%s'). Values of this argument should correspond to the config of the service to be added", ConfigsArgName, reflect.TypeOf(dictValue))
 		}
-		apiServiceConfig, interpretationErr := serviceConfig.ToKurtosisType()
+		apiServiceConfig, interpretationErr := serviceConfig.ToKurtosisType(serviceNetwork)
 		if interpretationErr != nil {
 			return nil, nil, interpretationErr
 		}
@@ -296,7 +296,7 @@ func validateAndConvertConfigsAndReadyConditions(
 	return convertedServiceConfigs, readyConditionsByServiceName, nil
 }
 
-func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[service.ServiceName]string, *starlark.Dict, *startosis_errors.InterpretationError) {
+func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.ServiceName]*service.ServiceConfig, runtimeValueStore *runtime_value_store.RuntimeValueStore) (map[service.ServiceName]string, *starlark.Dict, *startosis_errors.InterpretationError) {
 	servicesObjectDict := starlark.NewDict(len(serviceConfigs))
 	resultUuids := map[service.ServiceName]string{}
 	var err error

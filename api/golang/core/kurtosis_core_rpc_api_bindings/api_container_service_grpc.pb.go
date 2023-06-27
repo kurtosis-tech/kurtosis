@@ -23,10 +23,8 @@ const (
 	ApiContainerService_RunStarlarkScript_FullMethodName                          = "/api_container_api.ApiContainerService/RunStarlarkScript"
 	ApiContainerService_UploadStarlarkPackage_FullMethodName                      = "/api_container_api.ApiContainerService/UploadStarlarkPackage"
 	ApiContainerService_RunStarlarkPackage_FullMethodName                         = "/api_container_api.ApiContainerService/RunStarlarkPackage"
-	ApiContainerService_AddServices_FullMethodName                                = "/api_container_api.ApiContainerService/AddServices"
 	ApiContainerService_GetServices_FullMethodName                                = "/api_container_api.ApiContainerService/GetServices"
 	ApiContainerService_GetExistingAndHistoricalServiceIdentifiers_FullMethodName = "/api_container_api.ApiContainerService/GetExistingAndHistoricalServiceIdentifiers"
-	ApiContainerService_RemoveService_FullMethodName                              = "/api_container_api.ApiContainerService/RemoveService"
 	ApiContainerService_ExecCommand_FullMethodName                                = "/api_container_api.ApiContainerService/ExecCommand"
 	ApiContainerService_WaitForHttpGetEndpointAvailability_FullMethodName         = "/api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability"
 	ApiContainerService_WaitForHttpPostEndpointAvailability_FullMethodName        = "/api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability"
@@ -36,7 +34,6 @@ const (
 	ApiContainerService_DownloadFilesArtifactV2_FullMethodName                    = "/api_container_api.ApiContainerService/DownloadFilesArtifactV2"
 	ApiContainerService_StoreWebFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/StoreWebFilesArtifact"
 	ApiContainerService_StoreFilesArtifactFromService_FullMethodName              = "/api_container_api.ApiContainerService/StoreFilesArtifactFromService"
-	ApiContainerService_RenderTemplatesToFilesArtifact_FullMethodName             = "/api_container_api.ApiContainerService/RenderTemplatesToFilesArtifact"
 	ApiContainerService_ListFilesArtifactNamesAndUuids_FullMethodName             = "/api_container_api.ApiContainerService/ListFilesArtifactNamesAndUuids"
 )
 
@@ -50,14 +47,10 @@ type ApiContainerServiceClient interface {
 	UploadStarlarkPackage(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadStarlarkPackageClient, error)
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageArgs, opts ...grpc.CallOption) (ApiContainerService_RunStarlarkPackageClient, error)
-	// Start services by creating containers for them
-	AddServices(ctx context.Context, in *AddServicesArgs, opts ...grpc.CallOption) (*AddServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error)
 	// Returns information about all existing & historical services
 	GetExistingAndHistoricalServiceIdentifiers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetExistingAndHistoricalServiceIdentifiersResponse, error)
-	// Instructs the API container to remove the given service
-	RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*RemoveServiceResponse, error)
 	// Executes the given command inside a running container
 	ExecCommand(ctx context.Context, in *ExecCommandArgs, opts ...grpc.CallOption) (*ExecCommandResponse, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
@@ -80,8 +73,6 @@ type ApiContainerServiceClient interface {
 	StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
 	StoreFilesArtifactFromService(ctx context.Context, in *StoreFilesArtifactFromServiceArgs, opts ...grpc.CallOption) (*StoreFilesArtifactFromServiceResponse, error)
-	// Renders the templates and their data to a files artifact in the Kurtosis File System
-	RenderTemplatesToFilesArtifact(ctx context.Context, in *RenderTemplatesToFilesArtifactArgs, opts ...grpc.CallOption) (*RenderTemplatesToFilesArtifactResponse, error)
 	ListFilesArtifactNamesAndUuids(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListFilesArtifactNamesAndUuidsResponse, error)
 }
 
@@ -191,15 +182,6 @@ func (x *apiContainerServiceRunStarlarkPackageClient) Recv() (*StarlarkRunRespon
 	return m, nil
 }
 
-func (c *apiContainerServiceClient) AddServices(ctx context.Context, in *AddServicesArgs, opts ...grpc.CallOption) (*AddServicesResponse, error) {
-	out := new(AddServicesResponse)
-	err := c.cc.Invoke(ctx, ApiContainerService_AddServices_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *apiContainerServiceClient) GetServices(ctx context.Context, in *GetServicesArgs, opts ...grpc.CallOption) (*GetServicesResponse, error) {
 	out := new(GetServicesResponse)
 	err := c.cc.Invoke(ctx, ApiContainerService_GetServices_FullMethodName, in, out, opts...)
@@ -212,15 +194,6 @@ func (c *apiContainerServiceClient) GetServices(ctx context.Context, in *GetServ
 func (c *apiContainerServiceClient) GetExistingAndHistoricalServiceIdentifiers(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*GetExistingAndHistoricalServiceIdentifiersResponse, error) {
 	out := new(GetExistingAndHistoricalServiceIdentifiersResponse)
 	err := c.cc.Invoke(ctx, ApiContainerService_GetExistingAndHistoricalServiceIdentifiers_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *apiContainerServiceClient) RemoveService(ctx context.Context, in *RemoveServiceArgs, opts ...grpc.CallOption) (*RemoveServiceResponse, error) {
-	out := new(RemoveServiceResponse)
-	err := c.cc.Invoke(ctx, ApiContainerService_RemoveService_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -356,15 +329,6 @@ func (c *apiContainerServiceClient) StoreFilesArtifactFromService(ctx context.Co
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) RenderTemplatesToFilesArtifact(ctx context.Context, in *RenderTemplatesToFilesArtifactArgs, opts ...grpc.CallOption) (*RenderTemplatesToFilesArtifactResponse, error) {
-	out := new(RenderTemplatesToFilesArtifactResponse)
-	err := c.cc.Invoke(ctx, ApiContainerService_RenderTemplatesToFilesArtifact_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *apiContainerServiceClient) ListFilesArtifactNamesAndUuids(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListFilesArtifactNamesAndUuidsResponse, error) {
 	out := new(ListFilesArtifactNamesAndUuidsResponse)
 	err := c.cc.Invoke(ctx, ApiContainerService_ListFilesArtifactNamesAndUuids_FullMethodName, in, out, opts...)
@@ -384,14 +348,10 @@ type ApiContainerServiceServer interface {
 	UploadStarlarkPackage(ApiContainerService_UploadStarlarkPackageServer) error
 	// Executes a Starlark script on the user's behalf
 	RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error
-	// Start services by creating containers for them
-	AddServices(context.Context, *AddServicesArgs) (*AddServicesResponse, error)
 	// Returns the IDs of the current services in the enclave
 	GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error)
 	// Returns information about all existing & historical services
 	GetExistingAndHistoricalServiceIdentifiers(context.Context, *emptypb.Empty) (*GetExistingAndHistoricalServiceIdentifiersResponse, error)
-	// Instructs the API container to remove the given service
-	RemoveService(context.Context, *RemoveServiceArgs) (*RemoveServiceResponse, error)
 	// Executes the given command inside a running container
 	ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error)
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Get request
@@ -414,8 +374,6 @@ type ApiContainerServiceServer interface {
 	StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
 	StoreFilesArtifactFromService(context.Context, *StoreFilesArtifactFromServiceArgs) (*StoreFilesArtifactFromServiceResponse, error)
-	// Renders the templates and their data to a files artifact in the Kurtosis File System
-	RenderTemplatesToFilesArtifact(context.Context, *RenderTemplatesToFilesArtifactArgs) (*RenderTemplatesToFilesArtifactResponse, error)
 	ListFilesArtifactNamesAndUuids(context.Context, *emptypb.Empty) (*ListFilesArtifactNamesAndUuidsResponse, error)
 }
 
@@ -432,17 +390,11 @@ func (UnimplementedApiContainerServiceServer) UploadStarlarkPackage(ApiContainer
 func (UnimplementedApiContainerServiceServer) RunStarlarkPackage(*RunStarlarkPackageArgs, ApiContainerService_RunStarlarkPackageServer) error {
 	return status.Errorf(codes.Unimplemented, "method RunStarlarkPackage not implemented")
 }
-func (UnimplementedApiContainerServiceServer) AddServices(context.Context, *AddServicesArgs) (*AddServicesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method AddServices not implemented")
-}
 func (UnimplementedApiContainerServiceServer) GetServices(context.Context, *GetServicesArgs) (*GetServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
 }
 func (UnimplementedApiContainerServiceServer) GetExistingAndHistoricalServiceIdentifiers(context.Context, *emptypb.Empty) (*GetExistingAndHistoricalServiceIdentifiersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetExistingAndHistoricalServiceIdentifiers not implemented")
-}
-func (UnimplementedApiContainerServiceServer) RemoveService(context.Context, *RemoveServiceArgs) (*RemoveServiceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RemoveService not implemented")
 }
 func (UnimplementedApiContainerServiceServer) ExecCommand(context.Context, *ExecCommandArgs) (*ExecCommandResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ExecCommand not implemented")
@@ -470,9 +422,6 @@ func (UnimplementedApiContainerServiceServer) StoreWebFilesArtifact(context.Cont
 }
 func (UnimplementedApiContainerServiceServer) StoreFilesArtifactFromService(context.Context, *StoreFilesArtifactFromServiceArgs) (*StoreFilesArtifactFromServiceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreFilesArtifactFromService not implemented")
-}
-func (UnimplementedApiContainerServiceServer) RenderTemplatesToFilesArtifact(context.Context, *RenderTemplatesToFilesArtifactArgs) (*RenderTemplatesToFilesArtifactResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method RenderTemplatesToFilesArtifact not implemented")
 }
 func (UnimplementedApiContainerServiceServer) ListFilesArtifactNamesAndUuids(context.Context, *emptypb.Empty) (*ListFilesArtifactNamesAndUuidsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFilesArtifactNamesAndUuids not implemented")
@@ -557,24 +506,6 @@ func (x *apiContainerServiceRunStarlarkPackageServer) Send(m *StarlarkRunRespons
 	return x.ServerStream.SendMsg(m)
 }
 
-func _ApiContainerService_AddServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(AddServicesArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).AddServices(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ApiContainerService_AddServices_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).AddServices(ctx, req.(*AddServicesArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApiContainerService_GetServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetServicesArgs)
 	if err := dec(in); err != nil {
@@ -607,24 +538,6 @@ func _ApiContainerService_GetExistingAndHistoricalServiceIdentifiers_Handler(srv
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(ApiContainerServiceServer).GetExistingAndHistoricalServiceIdentifiers(ctx, req.(*emptypb.Empty))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ApiContainerService_RemoveService_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RemoveServiceArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).RemoveService(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ApiContainerService_RemoveService_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).RemoveService(ctx, req.(*RemoveServiceArgs))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -802,24 +715,6 @@ func _ApiContainerService_StoreFilesArtifactFromService_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_RenderTemplatesToFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RenderTemplatesToFilesArtifactArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).RenderTemplatesToFilesArtifact(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ApiContainerService_RenderTemplatesToFilesArtifact_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).RenderTemplatesToFilesArtifact(ctx, req.(*RenderTemplatesToFilesArtifactArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApiContainerService_ListFilesArtifactNamesAndUuids_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
@@ -846,20 +741,12 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*ApiContainerServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "AddServices",
-			Handler:    _ApiContainerService_AddServices_Handler,
-		},
-		{
 			MethodName: "GetServices",
 			Handler:    _ApiContainerService_GetServices_Handler,
 		},
 		{
 			MethodName: "GetExistingAndHistoricalServiceIdentifiers",
 			Handler:    _ApiContainerService_GetExistingAndHistoricalServiceIdentifiers_Handler,
-		},
-		{
-			MethodName: "RemoveService",
-			Handler:    _ApiContainerService_RemoveService_Handler,
 		},
 		{
 			MethodName: "ExecCommand",
@@ -888,10 +775,6 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "StoreFilesArtifactFromService",
 			Handler:    _ApiContainerService_StoreFilesArtifactFromService_Handler,
-		},
-		{
-			MethodName: "RenderTemplatesToFilesArtifact",
-			Handler:    _ApiContainerService_RenderTemplatesToFilesArtifact_Handler,
 		},
 		{
 			MethodName: "ListFilesArtifactNamesAndUuids",

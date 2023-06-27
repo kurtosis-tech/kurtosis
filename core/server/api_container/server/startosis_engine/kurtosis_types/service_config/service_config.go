@@ -1,17 +1,22 @@
 package service_config
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
+	starlark_port_spec "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"go.starlark.net/starlark"
 	"math"
+	"path"
 )
 
 const (
@@ -33,6 +38,13 @@ const (
 	MinMemoryMegaBytesAttr          = "min_memory"
 	MaxCpuMilliCoresAttr            = "max_cpu"
 	MaxMemoryMegaBytesAttr          = "max_memory"
+
+	DefaultSubnetwork               = "default"
+	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
+
+	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
+	// TODO This should be populated from the build flow that builds the files-artifacts-expander Docker image
+	filesArtifactsExpanderImage string = "kurtosistech/files-artifacts-expander"
 )
 
 func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -189,7 +201,55 @@ func (config *ServiceConfig) Copy() (builtin_argument.KurtosisValueType, error) 
 	}, nil
 }
 
-func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.ServiceConfig, *startosis_errors.InterpretationError) {
+func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*files_artifacts_expansion.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
+	filesArtifactsExpansions := []args.FilesArtifactExpansion{}
+	serviceDirpathsToArtifactIdentifiers := map[string]string{}
+	expanderDirpathToUserServiceDirpathMap := map[string]string{}
+	for mountpointOnUserService, filesArtifactIdentifier := range filesArtifactsMountDirpathsMap {
+		dirpathToExpandTo := path.Join(filesArtifactExpansionDirsParentDirpath, filesArtifactIdentifier)
+		expansion := args.FilesArtifactExpansion{
+			FilesIdentifier:   filesArtifactIdentifier,
+			DirPathToExpandTo: dirpathToExpandTo,
+		}
+		filesArtifactsExpansions = append(filesArtifactsExpansions, expansion)
+		serviceDirpathsToArtifactIdentifiers[mountpointOnUserService] = filesArtifactIdentifier
+		expanderDirpathToUserServiceDirpathMap[dirpathToExpandTo] = mountpointOnUserService
+	}
+
+	// TODO: Sad that we need the service network here to get the APIC info. This is wrong, we should fix this by
+	//  passing the APIC info DOWN to the backend and have the backend create the expander itself.
+	//  Here writing those info into each service config is dumb
+	apiContainerInfo := serviceNetwork.GetApiContainerInfo()
+	filesArtifactsExpanderArgs, err := args.NewFilesArtifactsExpanderArgs(
+		apiContainerInfo.GetIpAddress().String(),
+		apiContainerInfo.GetGrpcPortNum(),
+		filesArtifactsExpansions,
+	)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred creating files artifacts expander args")
+	}
+
+	expanderEnvVars, err := args.GetEnvFromArgs(filesArtifactsExpanderArgs)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("An error occurred getting files artifacts expander environment variables using args: %+v", filesArtifactsExpanderArgs)
+	}
+
+	expanderImageAndTag := fmt.Sprintf(
+		"%v:%v",
+		filesArtifactsExpanderImage,
+		apiContainerInfo.GetVersion(),
+	)
+
+	return &files_artifacts_expansion.FilesArtifactsExpansion{
+		ExpanderImage:                        expanderImageAndTag,
+		ExpanderEnvVars:                      expanderEnvVars,
+		ServiceDirpathsToArtifactIdentifiers: serviceDirpathsToArtifactIdentifiers,
+		ExpanderDirpathsToServiceDirpaths:    expanderDirpathToUserServiceDirpathMap,
+	}, nil
+}
+
+func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.ServiceNetwork) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
+	var ok bool
 	image, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, ImageAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -198,31 +258,29 @@ func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.S
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
 			SubnetworkAttr, ServiceConfigTypeName)
 	}
+	imageName := image.GoString()
 
-	builder := services.NewServiceConfigBuilder(image.GoString())
-
-	portsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, PortsAttr)
+	privatePorts := map[string]*port_spec.PortSpec{}
+	privatePortsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, PortsAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	if found && portsStarlark.Len() > 0 {
-		ports := make(map[string]*kurtosis_core_rpc_api_bindings.Port, portsStarlark.Len())
-		for _, portItem := range portsStarlark.Items() {
-			portKey, portValue, interpretationError := convertPortMapEntry(PortsAttr, portItem[0], portItem[1], portsStarlark)
+	if found && privatePortsStarlark.Len() > 0 {
+		for _, portItem := range privatePortsStarlark.Items() {
+			portKey, portValue, interpretationError := convertPortMapEntry(PortsAttr, portItem[0], portItem[1], privatePortsStarlark)
 			if interpretationError != nil {
 				return nil, interpretationError
 			}
-			ports[portKey] = portValue
+			privatePorts[portKey] = portValue
 		}
-		builder.WithPrivatePorts(ports)
 	}
 
+	publicPorts := map[string]*port_spec.PortSpec{}
 	publicPortsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, PublicPortsAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found && publicPortsStarlark.Len() > 0 {
-		publicPorts := make(map[string]*kurtosis_core_rpc_api_bindings.Port, publicPortsStarlark.Len())
 		for _, portItem := range publicPortsStarlark.Items() {
 			portKey, portValue, interpretationError := convertPortMapEntry(PublicPortsAttr, portItem[0], portItem[1], publicPortsStarlark)
 			if interpretationError != nil {
@@ -230,83 +288,93 @@ func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.S
 			}
 			publicPorts[portKey] = portValue
 		}
-		builder.WithPublicPorts(publicPorts)
 	}
 
+	var filesArtifactExpansions *files_artifacts_expansion.FilesArtifactsExpansion
 	filesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, FilesAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
-	if found && filesStarlark.Len() > 0 {
-		filesArtifactMountDirpaths, interpretationErr := kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesAttr)
+	if found {
+		var filesArtifactsMountDirpathsMap map[string]string
+		filesArtifactsMountDirpathsMap, interpretationErr = kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesAttr)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
-		builder.WithFilesArtifactMountDirpaths(filesArtifactMountDirpaths)
+		filesArtifactExpansions, interpretationErr = ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap, serviceNetwork)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
 	}
 
+	var entryPointArgs []string
 	entrypointStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, EntrypointAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found && entrypointStarlark.Len() > 0 {
-		entryPointArgs, interpretationErr := kurtosis_types.SafeCastToStringSlice(entrypointStarlark, EntrypointAttr)
+		entryPointArgs, interpretationErr = kurtosis_types.SafeCastToStringSlice(entrypointStarlark, EntrypointAttr)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
-		builder.WithEntryPointArgs(entryPointArgs)
 	}
 
+	var cmdArgs []string
 	cmdStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](config.KurtosisValueTypeDefault, CmdAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found && cmdStarlark.Len() > 0 {
-		cmdArgs, interpretationErr := kurtosis_types.SafeCastToStringSlice(cmdStarlark, CmdAttr)
+		cmdArgs, interpretationErr = kurtosis_types.SafeCastToStringSlice(cmdStarlark, CmdAttr)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
-		builder.WithCmdArgs(cmdArgs)
 	}
 
+	envVars := map[string]string{}
 	envVarsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, EnvVarsAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found && envVarsStarlark.Len() > 0 {
-		envVars, interpretationErr := kurtosis_types.SafeCastToMapStringString(envVarsStarlark, EnvVarsAttr)
+		envVars, interpretationErr = kurtosis_types.SafeCastToMapStringString(envVarsStarlark, EnvVarsAttr)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
-		builder.WithEnvVars(envVars)
 	}
 
+	var privateIpAddressPlaceholder string
 	privateIpAddressPlaceholderStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, PrivateIpAddressPlaceholderAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found && privateIpAddressPlaceholderStarlark.GoString() != "" {
-		builder.WithPrivateIPAddressPlaceholder(privateIpAddressPlaceholderStarlark.GoString())
+		privateIpAddressPlaceholder = privateIpAddressPlaceholderStarlark.GoString()
+	} else {
+		privateIpAddressPlaceholder = DefaultPrivateIPAddrPlaceholder
 	}
 
+	var subnetwork string
 	subnetworkStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, SubnetworkAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found && subnetworkStarlark.GoString() != "" {
-		builder.WithSubnetwork(subnetworkStarlark.GoString())
+		subnetwork = subnetworkStarlark.GoString()
+	} else {
+		subnetwork = DefaultSubnetwork
 	}
 
+	var maxCpu uint64
 	maxCpuStarlark, foundMaxCpu, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MaxCpuMilliCoresAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if foundMaxCpu {
-		maxCpu, ok := maxCpuStarlark.Uint64()
+		maxCpu, ok = maxCpuStarlark.Uint64()
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MaxCpuMilliCoresAttr, maxCpuStarlark)
 		}
-		builder.WithMaxCpuMilliCores(maxCpu)
 	}
 
 	if !foundMaxCpu {
@@ -315,24 +383,23 @@ func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.S
 			return nil, interpretationErr
 		}
 		if found {
-			cpuAllocation, ok := cpuAllocationStarlark.Uint64()
+			maxCpu, ok = cpuAllocationStarlark.Uint64()
 			if !ok {
 				return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", CpuAllocationAttr, cpuAllocationStarlark)
 			}
-			builder.WithMaxCpuMilliCores(cpuAllocation)
 		}
 	}
 
+	var maxMemory uint64
 	maxMemoryStarlark, foundMaxMemory, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MaxMemoryMegaBytesAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if foundMaxMemory {
-		maxMemory, ok := maxMemoryStarlark.Uint64()
+		maxMemory, ok = maxMemoryStarlark.Uint64()
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MaxMemoryMegaBytesAttr, maxMemoryStarlark)
 		}
-		builder.WithMaxMemoryMegabytes(maxMemory)
 	}
 
 	if !foundMaxMemory {
@@ -341,39 +408,54 @@ func (config *ServiceConfig) ToKurtosisType() (*kurtosis_core_rpc_api_bindings.S
 			return nil, interpretationErr
 		}
 		if found {
-			memoryAllocation, ok := memoryAllocationStarlark.Uint64()
+			maxMemory, ok = memoryAllocationStarlark.Uint64()
 			if !ok {
 				return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MemoryAllocationAttr, memoryAllocationStarlark)
 			}
-			builder.WithMaxMemoryMegabytes(memoryAllocation)
 		}
 	}
 
+	var minCpu uint64
 	minCpuStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MinCpuMilliCoresAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found {
-		minCpu, ok := minCpuStarlark.Uint64()
+		minCpu, ok = minCpuStarlark.Uint64()
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MinCpuMilliCoresAttr, minCpuStarlark)
 		}
-		builder.WithMinCpuMilliCores(minCpu)
 	}
 
+	var minMemory uint64
 	minMemoryStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MinMemoryMegaBytesAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found {
-		minMemory, ok := minMemoryStarlark.Uint64()
+		minMemory, ok = minMemoryStarlark.Uint64()
 		if !ok {
 			return nil, startosis_errors.NewInterpretationError("An error occurred parsing field '%v' with value '%v' to uint64", MinMemoryMegaBytesAttr, minMemoryStarlark)
 		}
-		builder.WithMinMemoryMegabytes(minMemory)
+	} else {
+		minMemory = 0
 	}
 
-	return builder.Build(), nil
+	return service.NewServiceConfig(
+		imageName,
+		privatePorts,
+		publicPorts,
+		entryPointArgs,
+		cmdArgs,
+		envVars,
+		filesArtifactExpansions,
+		maxCpu,
+		maxMemory,
+		privateIpAddressPlaceholder,
+		minCpu,
+		minMemory,
+		subnetwork,
+	), nil
 }
 
 func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_errors.InterpretationError) {
@@ -388,18 +470,18 @@ func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_er
 	return readyConditions, nil
 }
 
-func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value starlark.Value, dictForLogging *starlark.Dict) (string, *kurtosis_core_rpc_api_bindings.Port, *startosis_errors.InterpretationError) {
+func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value starlark.Value, dictForLogging *starlark.Dict) (string, *port_spec.PortSpec, *startosis_errors.InterpretationError) {
 	keyStr, ok := key.(starlark.String)
 	if !ok {
 		return "", nil, startosis_errors.NewInterpretationError("Unable to convert key of '%s' dictionary '%v' to string", attrNameForLogging, dictForLogging)
 	}
-	valuePortSpec, ok := value.(*port_spec.PortSpec)
+	valuePortSpec, ok := value.(*starlark_port_spec.PortSpec)
 	if !ok {
 		return "", nil, startosis_errors.NewInterpretationError("Unable to convert value of '%s' dictionary '%v' to a port object", attrNameForLogging, dictForLogging)
 	}
-	apiPortSpec, interpretationErr := valuePortSpec.ToKurtosisType()
+	servicePortSpec, interpretationErr := valuePortSpec.ToKurtosisType()
 	if interpretationErr != nil {
 		return "", nil, interpretationErr
 	}
-	return keyStr.GoString(), apiPortSpec, nil
+	return keyStr.GoString(), servicePortSpec, nil
 }

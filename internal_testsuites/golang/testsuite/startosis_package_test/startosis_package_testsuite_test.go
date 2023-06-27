@@ -3,6 +3,7 @@ package startosis_package_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
@@ -20,6 +21,10 @@ const (
 	defaultParallelism     = 4
 	useDefaultMainFile     = ""
 	useDefaultFunctionName = ""
+)
+
+var (
+	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
 )
 
 type StartosisPackageTestSuite struct {
@@ -67,5 +72,6 @@ func (suite *StartosisPackageTestSuite) RunPackageWithParams(ctx context.Context
 		params,
 		defaultDryRun,
 		defaultParallelism,
+		noExperimentalFeature,
 	)
 }

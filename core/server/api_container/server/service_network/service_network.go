@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"net/http"
@@ -33,7 +34,7 @@ type ServiceNetwork interface {
 	AddService(
 		ctx context.Context,
 		serviceName service.ServiceName,
-		serviceConfig *kurtosis_core_rpc_api_bindings.ServiceConfig,
+		serviceConfig *service.ServiceConfig,
 	) (
 		*service.Service,
 		error,
@@ -41,7 +42,7 @@ type ServiceNetwork interface {
 
 	AddServices(
 		ctx context.Context,
-		serviceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.ServiceConfig,
+		serviceConfigs map[service.ServiceName]*service.ServiceConfig,
 		batchSize int,
 	) (
 		map[service.ServiceName]*service.Service,
@@ -105,11 +106,13 @@ type ServiceNetwork interface {
 
 	GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool)
 
-	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
+	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
 	UploadFilesArtifact(data []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
 	IsNetworkPartitioningEnabled() bool
 
 	GetUniqueNameForFileArtifact() (string, error)
+
+	GetApiContainerInfo() *ApiContainerInfo
 }

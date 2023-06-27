@@ -13,7 +13,7 @@ export { EnclaveContext } from "./core/lib/enclaves/enclave_context";
 export type { EnclaveUUID, PartitionID } from "./core/lib/enclaves/enclave_context";
 
 // Constructor Calls
-export { newExecCommandArgs, newAddServicesArgs, newGetServicesArgs, newRemoveServiceArgs, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";
+export { newExecCommandArgs, newGetServicesArgs, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";
 
 // TODO Remove this - shouldn't be necessary to be exported due to the newKurtosisContextFromLocalEngine() method
 export { KurtosisContext, DEFAULT_GRPC_ENGINE_SERVER_PORT_NUM } from "./engine/lib/kurtosis_context/kurtosis_context";

@@ -1,8 +1,7 @@
 package render_templates
 
 import (
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -24,8 +23,9 @@ func TestParseTemplatesAndData_SimpleCaseStruct(t *testing.T) {
 	err := input.SetKey(starlark.String("/foo/bar"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataStrDict))
 	require.Nil(t, err)
 
-	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, `{"Boolean":true,"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`)
-	expectedOutput := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
+	expectedTemplateAndData, err := render_templates.CreateTemplateData(template, `{"Boolean":true,"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`)
+	require.Nil(t, err)
+	expectedOutput := map[string]*render_templates.TemplateData{
 		"/foo/bar": expectedTemplateAndData,
 	}
 
@@ -52,8 +52,9 @@ func TestParseTemplatesAndData_SimpleCaseDict(t *testing.T) {
 	err = input.SetKey(starlark.String("/foo/bar"), starlarkstruct.FromStringDict(starlarkstruct.Default, templateDataStrDict))
 	require.Nil(t, err)
 
-	expectedTemplateAndData := binding_constructors.NewTemplateAndData(template, `{"Boolean":true,"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`)
-	expectedOutput := map[string]*kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
+	expectedTemplateAndData, err := render_templates.CreateTemplateData(template, `{"Boolean":true,"LargeFloat":1231231243.43,"Name":"John","UnixTs":1257894000}`)
+	require.Nil(t, err)
+	expectedOutput := map[string]*render_templates.TemplateData{
 		"/foo/bar": expectedTemplateAndData,
 	}
 
