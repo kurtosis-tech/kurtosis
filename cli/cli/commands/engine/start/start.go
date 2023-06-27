@@ -17,6 +17,7 @@ import (
 const (
 	engineVersionArg = "version"
 	logLevelArg      = "log-level"
+	poolSizeFlag     = "pool-size"
 
 	defaultEngineVersion          = ""
 	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
@@ -25,6 +26,7 @@ const (
 
 var engineVersion string
 var logLevelStr string
+var poolSize uint8
 
 // StartCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
@@ -54,6 +56,15 @@ func init() {
 			),
 		),
 	)
+	StartCmd.Flags().Uint8Var(
+		&poolSize,
+		poolSizeFlag,
+		defaults.DefaultEngineEnclavePoolSize,
+		fmt.Sprintf(
+			"The enclave pool size, the default value is '%v' which means it will be disabled.",
+			defaults.DefaultEngineEnclavePoolSize,
+		),
+	)
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -73,10 +84,10 @@ func run(cmd *cobra.Command, args []string) error {
 	var startEngineErr error
 	if engineVersion == defaultEngineVersion {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize)
 	} else {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, poolSize)
 	}
 	if startEngineErr != nil {
 		return stacktrace.Propagate(startEngineErr, "An error occurred starting the Kurtosis engine")

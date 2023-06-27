@@ -64,6 +64,8 @@ type engineExistenceGuarantor struct {
 
 	//TODO This is a temporary hack we should remove it when centralized logs be implemented in the KubernetesBackend
 	kurtosisClusterType resolved_config.KurtosisClusterType
+
+	poolSize uint8
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -76,6 +78,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 	kurtosisClusterType resolved_config.KurtosisClusterType,
+	poolSize uint8,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -88,6 +91,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
 		kurtosisClusterType,
+		poolSize,
 	)
 }
 
@@ -102,6 +106,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 	kurtosisClusterType resolved_config.KurtosisClusterType,
+	poolSize uint8,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -116,6 +121,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		postVisitingHostMachineIpAndPort:          nil, // Will be filled in upon successful visitation
 		shouldSendMetrics:                         shouldSendMetrics,
 		kurtosisClusterType:                       kurtosisClusterType,
+		poolSize:                                  poolSize,
 	}
 }
 
@@ -143,6 +149,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
 			guarantor.kurtosisRemoteBackendConfigSupplier,
+			guarantor.poolSize,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -154,6 +161,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
 			guarantor.kurtosisRemoteBackendConfigSupplier,
+			guarantor.poolSize,
 		)
 	}
 	if engineLaunchErr != nil {

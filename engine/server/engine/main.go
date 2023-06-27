@@ -111,7 +111,7 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag)
+	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -148,6 +148,7 @@ func getEnclaveManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	kurtosisBackendType args.KurtosisBackendType,
 	engineVersion string,
+	poolSize uint8,
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
@@ -158,9 +159,6 @@ func getEnclaveManager(
 	default:
 		return nil, stacktrace.NewError("Backend type '%v' was not recognized by engine server.", kurtosisBackendType.String())
 	}
-
-	// TODO remove this hardcoded value, it should be passed through the args
-	poolSize := uint8(3)
 
 	enclaveManager, err := enclave_manager.CreateEnclaveManager(
 		kurtosisBackend,

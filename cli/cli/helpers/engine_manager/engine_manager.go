@@ -138,7 +138,7 @@ func (manager *EngineManager) GetEngineStatus(
 }
 
 // StartEngineIdempotentlyWithDefaultVersion Starts an engine if one doesn't exist already, and returns a client to it
-func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level, poolSize uint8) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -155,6 +155,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		logLevel,
 		engineVersion,
 		clusterType,
+		poolSize,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -166,7 +167,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 }
 
 // StartEngineIdempotentlyWithCustomVersion Starts an engine if one doesn't exist already, and returns a client to it
-func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level, poolSize uint8) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -184,6 +185,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		logLevel,
 		engineVersion,
 		clusterType,
+		poolSize,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -235,7 +237,7 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 // If no optionalVersionToUse is passed, then the new engine will take the default version, unless
 // restartEngineOnSameVersionIfAnyRunning is set to true in which case it will take the version of the currently
 // running engine
-func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, logLevel logrus.Level, optionalVersionToUse string, restartEngineOnSameVersionIfAnyRunning bool) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, logLevel logrus.Level, optionalVersionToUse string, restartEngineOnSameVersionIfAnyRunning bool, poolSize uint8) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	var versionOfNewEngine string
 	// We try to do our best to restart an engine on the same version the current on is on
 	_, _, currentEngineVersion, err := manager.GetEngineStatus(ctx)
@@ -260,9 +262,9 @@ func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, log
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	if versionOfNewEngine != defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel)
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize)
 	} else {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize)
 	}
 	if restartEngineErr != nil {
 		return nil, nil, stacktrace.Propagate(restartEngineErr, "An error occurred starting a new engine")

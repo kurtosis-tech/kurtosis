@@ -41,6 +41,10 @@ type EngineServerArgs struct {
 	// the local backend and the remote backend using this configuration and the above KurtosisLocalBackendConfig
 	// Is nil when Kurtosis is used in a local-only context
 	KurtosisRemoteBackendConfig *remote_context_backend.KurtosisRemoteBackendConfig `json:"kurtosisRemoteBackendConfig,omitempty"`
+
+	// PoolSize represents the enclave pool size, for instance if this value is 3, these amount of idle enclaves
+	// will be created when the engine start in order to be used when users request for a new enclave.
+	PoolSize uint8 `json:"poolSize"`
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
@@ -85,6 +89,7 @@ func NewEngineServerArgs(
 	kurtosisBackendType KurtosisBackendType,
 	kurtosisLocalBackendConfig interface{},
 	kurtosisRemoteBackendConfig *remote_context_backend.KurtosisRemoteBackendConfig,
+	poolSize uint8,
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
@@ -95,6 +100,7 @@ func NewEngineServerArgs(
 		KurtosisBackendType:         kurtosisBackendType,
 		KurtosisLocalBackendConfig:  kurtosisLocalBackendConfig,
 		KurtosisRemoteBackendConfig: kurtosisRemoteBackendConfig,
+		PoolSize:                    poolSize,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

@@ -16,6 +16,7 @@ import (
 const (
 	engineVersionArg = "version"
 	logLevelArg      = "log-level"
+	poolSizeFlag     = "pool-size"
 
 	defaultEngineVersion                   = ""
 	restartEngineOnSameVersionIfAnyRunning = false
@@ -23,6 +24,7 @@ const (
 
 var engineVersion string
 var logLevelStr string
+var poolSize uint8
 
 // RestartCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
@@ -52,6 +54,15 @@ func init() {
 			),
 		),
 	)
+	RestartCmd.Flags().Uint8Var(
+		&poolSize,
+		poolSizeFlag,
+		defaults.DefaultEngineEnclavePoolSize,
+		fmt.Sprintf(
+			"The enclave pool size, the default value is '%v' which means it will be disabled.",
+			defaults.DefaultEngineEnclavePoolSize,
+		),
+	)
 }
 
 func run(cmd *cobra.Command, args []string) error {
@@ -71,7 +82,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, poolSize)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}
