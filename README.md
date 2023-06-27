@@ -273,7 +273,7 @@ kurtosis enclave add
 Featured Community Packages
 --------------------
 
-- [DIVE](https://github.com/HugoByte/DIVE): A Kurtosis package for the ICON ecosystem including an ICON node and an Ethereum node. Developed and maintained by [Hugobyte](hugobyte.com)
+- [DIVE](https://github.com/HugoByte/DIVE): A Kurtosis package for the ICON ecosystem including an ICON node and an Ethereum node. Developed and maintained by [Hugobyte](https://hugobyte.com)
 
 
 Community and support
