@@ -299,7 +299,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	var err error
 	defer func() {
 		err = removeService(ctx, builtin)
-		logrus.Errorf("error occurred while removing the service with name: %v", builtin.name)
+		logrus.Errorf("error occurred while removing the service with name: %v with error: %v", builtin.name, err)
 	}()
 
 	// create work directory and cd into that directory
