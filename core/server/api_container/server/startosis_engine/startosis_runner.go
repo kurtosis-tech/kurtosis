@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/sirupsen/logrus"
+	"strings"
 	"sync"
 )
 
@@ -47,6 +48,7 @@ func (runner *StartosisRunner) Run(
 	mainFunctionName string,
 	serializedStartosis string,
 	serializedParams string,
+	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	runner.mutex.Lock()
 	starlark_warning.Clear()
@@ -67,6 +69,18 @@ func (runner *StartosisRunner) Run(
 
 			close(starlarkRunResponseLines)
 		}()
+
+		var experimentalFeaturesStr []string
+		for _, experimentalFeature := range experimentalFeatures {
+			experimentalFeaturesStr = append(experimentalFeaturesStr, experimentalFeature.String())
+		}
+		logrus.Infof("Executing Starlark package '%s' with the following parameters: dry-run: '%v', parallelism: '%d', experimental features: '%s', main function name: '%s', params: '%s'",
+			packageId,
+			dryRun,
+			parallelism,
+			strings.Join(experimentalFeaturesStr, ", "),
+			mainFunctionName,
+			serializedParams)
 
 		// Interpretation starts > send progress info (this line will be invisible as interpretation is super quick)
 		progressInfo := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(

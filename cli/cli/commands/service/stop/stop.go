@@ -1,4 +1,4 @@
-package rm
+package stop
 
 import (
 	"context"
@@ -33,7 +33,7 @@ const (
 
 	starlarkScript = `
 def run(plan, args):
-	plan.remove_service(name=args["service_name"])
+	plan.stop_service(name=args["service_name"])
 `
 	doNotDryRun        = false
 	defaultParallelism = 4
@@ -45,10 +45,10 @@ var (
 	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 )
 
-var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
-	CommandStr:                command_str_consts.ServiceRmCmdStr,
-	ShortDescription:          "Removes a service from an enclave",
-	LongDescription:           "Removes the service with the given identifier from the given enclave",
+var ServiceStopCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.ServiceStopCmdStr,
+	ShortDescription:          "Stops a service",
+	LongDescription:           "Stops temporarily a service with the given service identifier in the given enclave",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
 	Args: []*args.ArgConfig{
@@ -83,7 +83,7 @@ func run(
 
 	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the service ID value using key '%v'", serviceIdentifierArgKey)
+		return stacktrace.Propagate(err, "An error occurred getting the service identifier value using key '%v'", serviceIdentifierArgKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -103,25 +103,26 @@ func run(
 
 	serviceName := serviceContext.GetServiceName()
 
-	if err := removeServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
-		return stacktrace.Propagate(err, "An error occurred removing service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)
+	if err := stopServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
+		return stacktrace.Propagate(err, "An error occurred stopping service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)
 	}
 	return nil
 }
 
-func removeServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, fmt.Sprintf(`{"service_name": "%s"}`, serviceName), doNotDryRun, defaultParallelism, noExperimentalFeature)
+func stopServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
+	serviceNameString := fmt.Sprintf(`{"service_name": "%s"}`, serviceName)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, serviceNameString, doNotDryRun, defaultParallelism, noExperimentalFeature)
 	if err != nil {
-		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for rendering template")
+		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for stopping service")
 	}
 	if runResult.ExecutionError != nil {
-		return stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
+		return stacktrace.NewError("An error occurred during Starlark script execution for stopping service: %s", runResult.ExecutionError.GetErrorMessage())
 	}
 	if runResult.InterpretationError != nil {
-		return stacktrace.NewError("An error occurred during Starlark script interpretation for rendering template: %s", runResult.InterpretationError.GetErrorMessage())
+		return stacktrace.NewError("An error occurred during Starlark script interpretation for stopping service: %s", runResult.InterpretationError.GetErrorMessage())
 	}
 	if len(runResult.ValidationErrors) > 0 {
-		return stacktrace.NewError("An error occurred during Starlark script validation for rendering template: %v", runResult.ValidationErrors)
+		return stacktrace.NewError("An error occurred during Starlark script validation for stopping service: %v", runResult.ValidationErrors)
 	}
 	return nil
 }

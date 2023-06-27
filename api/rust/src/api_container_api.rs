@@ -118,6 +118,8 @@ pub struct RunStarlarkScriptArgs {
     /// The name of the main function, the default value is "run"
     #[prost(string, tag = "5")]
     pub main_function_name: ::prost::alloc::string::String,
+    #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "6")]
+    pub experimental_features: ::prost::alloc::vec::Vec<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -146,6 +148,8 @@ pub struct RunStarlarkPackageArgs {
     /// The name of the main function, the default value is "run"
     #[prost(string, tag = "10")]
     pub main_function_name: ::prost::alloc::string::String,
+    #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "11")]
+    pub experimental_features: ::prost::alloc::vec::Vec<i32>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -545,6 +549,29 @@ pub struct FilesArtifactNameAndUuid {
 pub struct ListFilesArtifactNamesAndUuidsResponse {
     #[prost(message, repeated, tag = "1")]
     pub file_names_and_uuids: ::prost::alloc::vec::Vec<FilesArtifactNameAndUuid>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum KurtosisFeatureFlag {
+    UseInstructionsCaching = 0,
+}
+impl KurtosisFeatureFlag {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            KurtosisFeatureFlag::UseInstructionsCaching => "USE_INSTRUCTIONS_CACHING",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "USE_INSTRUCTIONS_CACHING" => Some(Self::UseInstructionsCaching),
+            _ => None,
+        }
+    }
 }
 /// Generated client implementations.
 pub mod api_container_service_client {

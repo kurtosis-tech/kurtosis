@@ -127,6 +127,8 @@ message RunStarlarkScriptArgs {
 
   // The name of the main function, the default value is "run"
   string main_function_name = 5;
+
+  repeated KurtosisFeatureFlag experimental_features = 6;
 }
 
 message RunStarlarkPackageArgs {
@@ -161,6 +163,12 @@ message RunStarlarkPackageArgs {
 
   // The name of the main function, the default value is "run"
   string main_function_name = 10;
+
+  repeated KurtosisFeatureFlag experimental_features = 11;
+}
+
+enum KurtosisFeatureFlag {
+  USE_INSTRUCTIONS_CACHING = 0;
 }
 
 // ==============================================================================================

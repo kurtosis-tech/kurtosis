@@ -112,6 +112,7 @@ var (
 		portIdSpecDelimiter,
 		serviceAddSpec,
 	)
+	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 )
 
 var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -302,7 +303,7 @@ func run(
 
 	// TODO Allow adding services to an already-repartitioned enclave
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, fmt.Sprintf(`def run(plan):
-	plan.add_service(name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism)
+	plan.add_service(name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism, noExperimentalFeature)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}

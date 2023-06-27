@@ -44,15 +44,17 @@ func NewRunStarlarkScriptArgs(
 	serializedParams string,
 	dryRun bool,
 	parallelism int32,
+	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
-		SerializedScript: serializedString,
-		SerializedParams: serializedParams,
-		DryRun:           &dryRun,
-		Parallelism:      parallelismCopy,
-		MainFunctionName: mainFunctionName,
+		SerializedScript:     serializedString,
+		SerializedParams:     serializedParams,
+		DryRun:               &dryRun,
+		Parallelism:          parallelismCopy,
+		MainFunctionName:     mainFunctionName,
+		ExperimentalFeatures: experimentalFeatures,
 	}
 }
 
@@ -63,6 +65,7 @@ func NewRunStarlarkPackageArgs(
 	serializedParams string,
 	dryRun bool,
 	parallelism int32,
+	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -76,6 +79,7 @@ func NewRunStarlarkPackageArgs(
 		Parallelism:            parallelismCopy,
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFunctionName,
+		ExperimentalFeatures:   experimentalFeatures,
 	}
 }
 
@@ -86,6 +90,7 @@ func NewRunStarlarkRemotePackageArgs(
 	serializedParams string,
 	dryRun bool,
 	parallelism int32,
+	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -99,6 +104,7 @@ func NewRunStarlarkRemotePackageArgs(
 		Parallelism:            parallelismCopy,
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFunctionName,
+		ExperimentalFeatures:   experimentalFeatures,
 	}
 }
 
