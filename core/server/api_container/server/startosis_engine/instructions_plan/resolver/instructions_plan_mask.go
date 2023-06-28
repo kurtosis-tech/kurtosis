@@ -24,10 +24,11 @@ func (mask *InstructionsPlanMask) HasNext() bool {
 	return mask.readIdx < len(mask.scheduledInstructions)
 }
 
-func (mask *InstructionsPlanMask) Next() *instructions_plan.ScheduledInstruction {
-	scheduledInstruction := mask.scheduledInstructions[mask.readIdx]
+func (mask *InstructionsPlanMask) Next() (int, *instructions_plan.ScheduledInstruction) {
+	instructionIdx := mask.readIdx
+	scheduledInstruction := mask.scheduledInstructions[instructionIdx]
 	mask.readIdx += 1
-	return scheduledInstruction
+	return instructionIdx, scheduledInstruction
 }
 
 func (mask *InstructionsPlanMask) Size() int {

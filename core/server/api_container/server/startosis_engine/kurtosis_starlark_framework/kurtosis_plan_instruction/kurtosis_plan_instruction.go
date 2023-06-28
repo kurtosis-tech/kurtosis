@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
 
@@ -48,12 +49,19 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 			return nil, interpretationErr
 		}
 
-		var instructionPullFromMaskMaybe *instructions_plan.ScheduledInstruction
+		var instructionPulledFromMaskIdx int
+		var instructionPulledFromMaskMaybe *instructions_plan.ScheduledInstruction
 		if builtin.instructionPlanMask.HasNext() {
-			instructionPullFromMaskMaybe = builtin.instructionPlanMask.Next()
-			if instructionPullFromMaskMaybe != nil && instructionPullFromMaskMaybe.GetInstruction().String() != instructionWrapper.String() {
+			instructionPulledFromMaskIdx, instructionPulledFromMaskMaybe = builtin.instructionPlanMask.Next()
+			if instructionPulledFromMaskMaybe != nil && instructionPulledFromMaskMaybe.GetInstruction().String() != instructionWrapper.String() {
 				// if the instructions differs, then the mask is invalid
 				builtin.instructionPlanMask.MarkAsInvalid()
+				logrus.Debugf("The instruction number %d in the plan mask did not match the newly interpreter "+
+					"instruction and therefore the plan mask was marked as invalid:\nInstruction from mask - '%s'"+
+					"\nInstruction from interpretation: '%s'",
+					instructionPulledFromMaskIdx,
+					instructionPulledFromMaskMaybe.GetInstruction().String(),
+					instructionWrapper.String())
 				// TODO: we could interrupt the interpretation here, because with an invalid mask the list of
 				//  instruction generated will be invalid anyway. Though we currently don't have a nive way to
 				//  interrupt an interpretation in progress (other than by throwing an error, which would be
@@ -63,10 +71,10 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 			}
 		}
 
-		if instructionPullFromMaskMaybe != nil {
+		if instructionPulledFromMaskMaybe != nil {
 			// If there's a mask for this instruction, add the mask the plan and returned the mask's returned value
-			builtin.instructionsPlan.AddScheduledInstruction(instructionPullFromMaskMaybe).Executed(true).ImportedFromCurrentEnclavePlan(false)
-			return instructionPullFromMaskMaybe.GetReturnedValue(), nil
+			builtin.instructionsPlan.AddScheduledInstruction(instructionPulledFromMaskMaybe).Executed(true).ImportedFromCurrentEnclavePlan(false)
+			return instructionPulledFromMaskMaybe.GetReturnedValue(), nil
 		} else {
 			// otherwise add the instruction as a new one to the plan and return its own returned value
 			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
