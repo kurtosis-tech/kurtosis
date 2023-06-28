@@ -481,7 +481,7 @@ func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core
 		select {
 		case responseLine, isChanOpen := <-responseLineChan:
 			if !isChanOpen {
-				if !isRunSuccessful {
+				if !isRunSuccessful && !dryRun {
 					// This error thrown by the APIC is not informative right now as it just tells the user to look at errors
 					// in the above log. For this reason we're ignoring it and returning nil. This is exceptional to not clutter
 					// the CLI output. We should still use stacktrace.Propagate for other errors.
