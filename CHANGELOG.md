@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.4](https://github.com/kurtosis-tech/kurtosis/compare/0.80.3...0.80.4) (2023-06-28)
+
+
+### Features
+
+* make the docker network attachable ([#788](https://github.com/kurtosis-tech/kurtosis/issues/788)) ([aeb0b9f](https://github.com/kurtosis-tech/kurtosis/commit/aeb0b9f06749ac42b132f292bc4e24d2b177d472))
+
 ## [0.80.3](https://github.com/kurtosis-tech/kurtosis/compare/0.80.2...0.80.3) (2023-06-27)
 
 
