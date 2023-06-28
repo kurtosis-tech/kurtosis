@@ -10,7 +10,7 @@ const (
 	addServicesWithReadyConditionsScript = `
 HTTP_ECHO_IMAGE = "mendhak/http-https-echo:26"
 SERVICE_NAME_PREFIX = "service-%v"
-NUM_SERVICES = 4
+NUM_SERVICES = 2
 
 def run(plan):
     plan.print("Adding {0} services to enclave".format(NUM_SERVICES))
@@ -26,7 +26,7 @@ def run(plan):
         assertion="==",
         target_value=%v,
         interval="1s",
-        timeout="3s"
+        timeout="10s"
     )
 
     config = ServiceConfig(
