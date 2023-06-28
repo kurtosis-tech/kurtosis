@@ -77,11 +77,9 @@ func CreateEnclaveManager(
 		enclavePool *EnclavePool
 	)
 
-	if isEnclavePoolAllowedForThisConfig(poolSize, kurtosisBackendType) {
-		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
-		}
+	enclavePool, err = CreateEnclavePool(kurtosisBackend, kurtosisBackendType, enclaveCreator, poolSize, engineVersion)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
 	}
 
 	enclaveManager := &EnclaveManager{

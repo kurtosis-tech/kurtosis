@@ -14,4 +14,6 @@ This command will do nothing if the Kurtosis engine is already running.
 You may optionally pass in the following flags with this command:
 * `--log-level`: The level that the started engine should log at. Options include: `panic`, `fatal`, `error`, `warning`, `info`, `debug`, or `trace`. The engine logs at the `info` level by default.
 * `--version`: The version (Docker tag) of the Kurtosis engine that should be started. If not set, the engine will start up with the default version.
-* `--pool-size`: The size of the Kurtosis engine enclave pool. The enclave pool is a component of the Kurtosis engine that allows us to create and maintain 'n' number of idle enclaves for future use. This functionality allows to improve the performance for each new creation enclave request.
+* `--enclave-pool-size`: The size of the Kurtosis engine enclave pool. The enclave pool is a component of the Kurtosis engine that allows us to create and maintain 'n' number of idle enclaves for future use. This functionality allows to improve the performance for each new creation enclave request.
+
+CAUTION: The `--enclave-pool-size` flag is only available for Kubernetes.

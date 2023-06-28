@@ -36,17 +36,34 @@ type EnclavePool struct {
 }
 
 // CreateEnclavePool will do the following:
-// 1- Wil create a new enclave pool object or return an error
+// 1- Wil create a new enclave pool object, if pool size > 1, return nil if pool size = 0, or return an error
 // 2- Will remove idle enclaves from previous engine runs
 // 3- Will start a sub-routine in charge of filling the pool
 func CreateEnclavePool(
 	kurtosisBackend backend_interface.KurtosisBackend,
+	kurtosisBackendType args.KurtosisBackendType,
 	enclaveCreator *EnclaveCreator,
 	poolSize uint8,
 	engineVersion string,
 ) (*EnclavePool, error) {
 
+	// validations
+	// poolSize = 0 means that the Enclave Pool won't be activated, it returns nil with no error
+	if poolSize == 0 {
+		return nil, nil
+	}
+
+	// The enclave pool feature is only available for Kubernetes so far
+	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
+		return nil, stacktrace.NewError("The enclave pool feature is not enable for the '%v' Kurtosis backend type so far. "+
+			"You should use '%v' for using it",
+			kurtosisBackendType.String(),
+			args.KurtosisBackendType_Kubernetes.String(),
+		)
+	}
+
 	// The amount of idle enclaves is equal to the chan capacity + one enclave (this one will be waiting in the queue until the channel is unblocked)
+	// chanCapacity = 0  means that it will be an unbuffered, so the communication between the channels will succeed when both (sender and receiver) are ready
 	chanCapacity := poolSize - oneEnclave
 
 	idleEnclavesChan := make(chan enclave.EnclaveUUID, chanCapacity)
@@ -275,20 +292,6 @@ func (pool *EnclavePool) getRunningEnclave(ctx context.Context, enclaveUUID encl
 	}
 
 	return enclaveObj, nil
-}
-
-// The enclave pool feature is only available for Kubernetes so far, and it will be activated
-// only if users require this when setting the pool-size value
-func isEnclavePoolAllowedForThisConfig(
-	poolSize uint8,
-	kurtosisBackendType args.KurtosisBackendType,
-) bool {
-
-	if poolSize > 0 && kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
-		return true
-	}
-
-	return false
 }
 
 func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(

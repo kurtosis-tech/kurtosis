@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine/common"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
@@ -15,9 +16,9 @@ import (
 )
 
 const (
-	engineVersionArg = "version"
-	logLevelArg      = "log-level"
-	poolSizeFlag     = "pool-size"
+	engineVersionArg    = "version"
+	logLevelArg         = "log-level"
+	enclavePoolSizeFlag = "enclave-pool-size"
 
 	defaultEngineVersion          = ""
 	kurtosisTechEngineImagePrefix = "kurtosistech/engine"
@@ -26,7 +27,7 @@ const (
 
 var engineVersion string
 var logLevelStr string
-var poolSize uint8
+var enclavePoolSize uint8
 
 // StartCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
@@ -57,11 +58,11 @@ func init() {
 		),
 	)
 	StartCmd.Flags().Uint8Var(
-		&poolSize,
-		poolSizeFlag,
+		&enclavePoolSize,
+		enclavePoolSizeFlag,
 		defaults.DefaultEngineEnclavePoolSize,
 		fmt.Sprintf(
-			"The enclave pool size, the default value is '%v' which means it will be disabled.",
+			"The enclave pool size, the default value is '%v' which means it will be disabled. CAUTION: This is only available for Kubernetes, and this command will fail if you want to use it for Docker.",
 			defaults.DefaultEngineEnclavePoolSize,
 		),
 	)
@@ -69,6 +70,10 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+
+	if err := common.ValidateEnclavePoolSizeFlag(enclavePoolSize); err != nil {
+		return stacktrace.Propagate(err, "An error occurred validating the '%v' flag", enclavePoolSizeFlag)
+	}
 
 	logLevel, err := logrus.ParseLevel(logLevelStr)
 	if err != nil {
@@ -84,10 +89,10 @@ func run(cmd *cobra.Command, args []string) error {
 	var startEngineErr error
 	if engineVersion == defaultEngineVersion {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, kurtosis_version.KurtosisVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, enclavePoolSize)
 	} else {
 		logrus.Infof("Starting Kurtosis engine from image '%v%v%v'...", kurtosisTechEngineImagePrefix, imageVersionDelimiter, engineVersion)
-		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, poolSize)
+		_, engineClientCloseFunc, startEngineErr = engineManager.StartEngineIdempotentlyWithCustomVersion(ctx, engineVersion, logLevel, enclavePoolSize)
 	}
 	if startEngineErr != nil {
 		return stacktrace.Propagate(startEngineErr, "An error occurred starting the Kurtosis engine")

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/engine/common"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
@@ -14,9 +15,9 @@ import (
 )
 
 const (
-	engineVersionArg = "version"
-	logLevelArg      = "log-level"
-	poolSizeFlag     = "pool-size"
+	engineVersionArg    = "version"
+	logLevelArg         = "log-level"
+	enclavePoolSizeFlag = "enclave-pool-size"
 
 	defaultEngineVersion                   = ""
 	restartEngineOnSameVersionIfAnyRunning = false
@@ -24,7 +25,7 @@ const (
 
 var engineVersion string
 var logLevelStr string
-var poolSize uint8
+var enclavePoolSize uint8
 
 // RestartCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
@@ -55,11 +56,11 @@ func init() {
 		),
 	)
 	RestartCmd.Flags().Uint8Var(
-		&poolSize,
-		poolSizeFlag,
+		&enclavePoolSize,
+		enclavePoolSizeFlag,
 		defaults.DefaultEngineEnclavePoolSize,
 		fmt.Sprintf(
-			"The enclave pool size, the default value is '%v' which means it will be disabled.",
+			"The enclave pool size, the default value is '%v' which means it will be disabled. CAUTION: This is only available for Kubernetes, and this command will fail if you want to use it for Docker.",
 			defaults.DefaultEngineEnclavePoolSize,
 		),
 	)
@@ -67,6 +68,10 @@ func init() {
 
 func run(cmd *cobra.Command, args []string) error {
 	ctx := context.Background()
+
+	if err := common.ValidateEnclavePoolSizeFlag(enclavePoolSize); err != nil {
+		return stacktrace.Propagate(err, "An error occurred validating the '%v' flag", enclavePoolSizeFlag)
+	}
 
 	logrus.Infof("Restarting Kurtosis engine...")
 
@@ -82,7 +87,7 @@ func run(cmd *cobra.Command, args []string) error {
 
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
-	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, poolSize)
+	_, engineClientCloseFunc, restartEngineErr = engineManager.RestartEngineIdempotently(ctx, logLevel, engineVersion, restartEngineOnSameVersionIfAnyRunning, enclavePoolSize)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "An error occurred restarting the Kurtosis engine")
 	}
