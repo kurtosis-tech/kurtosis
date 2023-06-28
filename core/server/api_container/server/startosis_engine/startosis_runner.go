@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -87,7 +89,31 @@ func (runner *StartosisRunner) Run(
 			startingInterpretationMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 		starlarkRunResponseLines <- progressInfo
 
-		serializedScriptOutput, instructionsPlan, interpretationError := runner.startosisInterpreter.Interpret(ctx, packageId, mainFunctionName, serializedStartosis, serializedParams)
+		// TODO: once we have feature flags, add a switch here to call InterpretAndOptimizePlan if the feature flag is
+		//  turned on
+		var serializedScriptOutput string
+		var instructionsPlan *instructions_plan.InstructionsPlan
+		var interpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
+		if doesFeatureFlagsContain(experimentalFeatures, kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_USE_INSTRUCTIONS_CACHING) {
+			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
+				ctx,
+				packageId,
+				mainFunctionName,
+				serializedStartosis,
+				serializedParams,
+				runner.startosisExecutor.enclavePlan,
+			)
+		} else {
+			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.Interpret(
+				ctx,
+				packageId,
+				mainFunctionName,
+				serializedStartosis,
+				serializedParams,
+				resolver.NewInstructionsPlanMask(0),
+			)
+		}
+
 		if interpretationError != nil {
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError)
 			starlarkRunResponseLines <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
@@ -141,4 +167,13 @@ func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *ku
 	}
 	logrus.Debugf("Kurtosis instructions stream was closed. Exiting execution loop. Run finishedL '%v'", isStarlarkRunFinished)
 	return isStarlarkRunFinished
+}
+
+func doesFeatureFlagsContain(featureFlags []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag, requestedFeatureFlag kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) bool {
+	for _, featureFlag := range featureFlags {
+		if featureFlag == requestedFeatureFlag {
+			return true
+		}
+	}
+	return false
 }

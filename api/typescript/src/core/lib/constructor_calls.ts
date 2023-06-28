@@ -14,11 +14,9 @@ import {
     UploadFilesArtifactArgs,
     ServiceInfo,
     GetServicesResponse,
-    RenderTemplatesToFilesArtifactArgs,
     DownloadFilesArtifactArgs,
 } from '../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import { ServiceName } from './services/service';
-import TemplateAndData = RenderTemplatesToFilesArtifactArgs.TemplateAndData;
 
 // ==============================================================================================
 //                           Shared Objects (Used By Multiple Endpoints)
@@ -143,19 +141,4 @@ export function newUploadFilesArtifactArgs(data: Uint8Array, name: string) : Upl
     result.setData(data)
     result.setName(name)
     return result
-}
-
-// ==============================================================================================
-//                                      Render Templates
-// ==============================================================================================
-export function newTemplateAndData(template: string, templateData: string) : TemplateAndData {
-    const templateAndData : TemplateAndData = new TemplateAndData()
-    templateAndData.setDataAsJson(templateData)
-    templateAndData.setTemplate(template)
-    return templateAndData
-}
-
-export function newRenderTemplatesToFilesArtifactArgs() : RenderTemplatesToFilesArtifactArgs {
-    const renderTemplatesToFilesArtifactArgs : RenderTemplatesToFilesArtifactArgs = new RenderTemplatesToFilesArtifactArgs()
-    return renderTemplatesToFilesArtifactArgs
 }

@@ -365,22 +365,3 @@ func DownloadFilesArtifactArgs(fileIdentifier string) *kurtosis_core_rpc_api_bin
 		Identifier: fileIdentifier,
 	}
 }
-
-// ==============================================================================================
-//
-//	Render Templates To Files Artifact
-//
-// ==============================================================================================
-
-func NewTemplateAndData(template string, dataAsJson string) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData {
-	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactArgs_TemplateAndData{
-		Template:   template,
-		DataAsJson: dataAsJson,
-	}
-}
-
-func NewRenderTemplatesToFilesArtifactResponse(filesArtifactUuid string) *kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse {
-	return &kurtosis_core_rpc_api_bindings.RenderTemplatesToFilesArtifactResponse{
-		Uuid: filesArtifactUuid,
-	}
-}
