@@ -105,7 +105,10 @@ func (creator *EnclaveCreator) CreateEnclave(
 		}
 	}
 
-	creationTimestamp := getEnclaveCreationTimestamp(newEnclave)
+	creationTimestamp, err := getEnclaveCreationTimestamp(newEnclave)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the creation timestamp for enclave with UUID '%v'", newEnclave.GetUUID())
+	}
 	newEnclaveUuid := newEnclave.GetUUID()
 	newEnclaveUuidStr := string(newEnclaveUuid)
 	shortenedUuid := uuid_generator.ShortenedUUIDString(newEnclaveUuidStr)
