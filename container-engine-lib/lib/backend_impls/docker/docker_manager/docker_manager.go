@@ -113,7 +113,6 @@ const (
 
 	emptyNetworkAlias = ""
 
-	// setting this to true to enable "satrian" on Discord to do his workflow
 	isDockerNetworkAttachable = true
 )
 
