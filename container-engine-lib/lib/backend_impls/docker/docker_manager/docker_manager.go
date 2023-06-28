@@ -112,6 +112,8 @@ const (
 	successfulExitCode = 0
 
 	emptyNetworkAlias = ""
+
+	isDockerNetworkAttachable = true
 )
 
 /*
@@ -181,7 +183,7 @@ func (manager *DockerManager) CreateNetwork(context context.Context, name string
 			Config:  ipamConfig,
 		},
 		Internal:   false,
-		Attachable: false,
+		Attachable: isDockerNetworkAttachable,
 		Ingress:    false,
 		ConfigOnly: false,
 		ConfigFrom: nil,
