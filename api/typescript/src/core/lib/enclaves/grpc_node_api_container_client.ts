@@ -1,4 +1,4 @@
-import {ok, err, Result} from "neverthrow";
+import {ok, err, Result, Err} from "neverthrow";
 import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
@@ -15,14 +15,14 @@ import {
     RunStarlarkScriptArgs,
     RunStarlarkPackageArgs,
     StarlarkRunResponseLine,
-    DownloadFilesArtifactResponse,
     DownloadFilesArtifactArgs,
-    GetExistingAndHistoricalServiceIdentifiersResponse, ListFilesArtifactNamesAndUuidsResponse,
+    GetExistingAndHistoricalServiceIdentifiersResponse, ListFilesArtifactNamesAndUuidsResponse, StreamedDataChunk,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
 import { EnclaveUUID } from "./enclave_context";
 import {Readable} from "stream";
+import * as crypto from "crypto";
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
@@ -196,22 +196,43 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(storeWebFilesArtifactResponse)
     }
 
-    public async downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<DownloadFilesArtifactResponse, Error>> {
-        const downloadFilesArtifactPromise: Promise<Result<DownloadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.downloadFilesArtifact(downloadFilesArtifactArgs, (error: ServiceError | null, response?: DownloadFilesArtifactResponse) => {
-                if (error === null) {
-                    if (!response) {
-                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
-                    } else {
-                        resolve(ok(response!));
-                    }
-                } else {
-                    resolve(err(error));
+    public async downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<Uint8Array, Error>> {
+        const downloadFilesArtifactPromise: Promise<Result<Uint8Array, Error>> = new Promise((resolve, _unusedReject) => {
+            const filePayload: Array<number> = []
+            const requestedArtifactName: string = downloadFilesArtifactArgs.getIdentifier()
+            let previousChunkHash: string = ""
+
+            const clientStream = this.client.downloadFilesArtifactV2(downloadFilesArtifactArgs)
+            clientStream.on('data', (dataChunk: StreamedDataChunk) => {
+                const artifactNameFromChunk = dataChunk.getMetadata()?.getName()
+                if (artifactNameFromChunk == undefined || artifactNameFromChunk != requestedArtifactName) {
+                    resolve(err(new Error(`There was an error downloading the file from Kurtosis enclave. The server sent an artifact not matching the requested one (requested: ${requestedArtifactName}, got ${artifactNameFromChunk}).`)))
                 }
+                if (dataChunk.getPreviousChunkHash() != previousChunkHash) {
+                    resolve(err(new Error(`There was an error downloading the file from Kurtosis enclave. File hash does not match (${dataChunk.getPreviousChunkHash()} not equal to ${previousChunkHash}).`)))
+                }
+                dataChunk.getData_asU8().forEach((byte: number) => {
+                    filePayload.push(byte)
+                })
+                previousChunkHash = this.computeHexHash(dataChunk.getData_asU8())
+            })
+
+            clientStream.on('error', (streamErr: { message: any }) => {
+                if (!clientStream.destroyed) {
+                    clientStream.destroy()
+                }
+                resolve(err(new Error(`And error was returned while downloading file from Kurtosis.\n Error: "${streamErr.message}"`)))
+            })
+
+            clientStream.on('end', () => {
+                if (!clientStream.destroyed) {
+                    clientStream.destroy()
+                }
+                resolve(ok(new Uint8Array(filePayload)))
             })
         });
 
-        const downloadFilesArtifactResponseResult: Result<DownloadFilesArtifactResponse, Error> = await downloadFilesArtifactPromise;
+        const downloadFilesArtifactResponseResult: Result<Uint8Array, Error> = await downloadFilesArtifactPromise;
         if(downloadFilesArtifactResponseResult.isErr()){
             return err(downloadFilesArtifactResponseResult.error)
         }
@@ -266,5 +287,11 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         }
 
         return ok(getAllFilesArtifactNamesAndUuidsResult.value);
+    }
+
+    private computeHexHash(data: Uint8Array): string {
+        const hasher = crypto.createHash("sha1")
+        hasher.update(data)
+        return hasher.digest("hex")
     }
 }

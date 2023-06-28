@@ -332,7 +332,7 @@ func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, art
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred initiating the download of files artifact '%v'", artifactIdentifier)
 	}
-	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse](client)
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
 	fileContent, err := clientStream.ReceiveData(
 		artifactIdentifier,
 		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {

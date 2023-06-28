@@ -61,13 +61,6 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.UploadFilesArtifactResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.UploadFilesArtifactResponse>;
 
-  downloadFilesArtifact(
-    request: api_container_service_pb.DownloadFilesArtifactArgs,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: api_container_service_pb.DownloadFilesArtifactResponse) => void
-  ): grpcWeb.ClientReadableStream<api_container_service_pb.DownloadFilesArtifactResponse>;
-
   downloadFilesArtifactV2(
     request: api_container_service_pb.DownloadFilesArtifactArgs,
     metadata?: grpcWeb.Metadata
@@ -140,11 +133,6 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.UploadFilesArtifactArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.UploadFilesArtifactResponse>;
-
-  downloadFilesArtifact(
-    request: api_container_service_pb.DownloadFilesArtifactArgs,
-    metadata?: grpcWeb.Metadata
-  ): Promise<api_container_service_pb.DownloadFilesArtifactResponse>;
 
   downloadFilesArtifactV2(
     request: api_container_service_pb.DownloadFilesArtifactArgs,

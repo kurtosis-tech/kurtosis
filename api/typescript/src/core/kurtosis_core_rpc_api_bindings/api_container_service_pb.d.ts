@@ -918,26 +918,6 @@ export namespace DownloadFilesArtifactArgs {
   }
 }
 
-export class DownloadFilesArtifactResponse extends jspb.Message {
-  getData(): Uint8Array | string;
-  getData_asU8(): Uint8Array;
-  getData_asB64(): string;
-  setData(value: Uint8Array | string): DownloadFilesArtifactResponse;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): DownloadFilesArtifactResponse.AsObject;
-  static toObject(includeInstance: boolean, msg: DownloadFilesArtifactResponse): DownloadFilesArtifactResponse.AsObject;
-  static serializeBinaryToWriter(message: DownloadFilesArtifactResponse, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): DownloadFilesArtifactResponse;
-  static deserializeBinaryFromReader(message: DownloadFilesArtifactResponse, reader: jspb.BinaryReader): DownloadFilesArtifactResponse;
-}
-
-export namespace DownloadFilesArtifactResponse {
-  export type AsObject = {
-    data: Uint8Array | string,
-  }
-}
-
 export class StoreWebFilesArtifactArgs extends jspb.Message {
   getUrl(): string;
   setUrl(value: string): StoreWebFilesArtifactArgs;

@@ -323,37 +323,26 @@ func (apicService ApiContainerService) UploadFilesArtifactV2(server kurtosis_cor
 	return nil
 }
 
-func (apicService ApiContainerService) DownloadFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse, error) {
+func (apicService ApiContainerService) DownloadFilesArtifactV2(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactV2Server) error {
 	artifactIdentifier := args.Identifier
 	if strings.TrimSpace(artifactIdentifier) == "" {
-		return nil, stacktrace.NewError("Cannot download file with empty files artifact identifier")
+		return stacktrace.NewError("Cannot download file with empty files artifact identifier")
 	}
 
 	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
+		return stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
 	}
 
 	fileBytes, err := os.ReadFile(filesArtifact.GetAbsoluteFilepath())
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred reading files artifact file bytes")
-	}
-
-	resp := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse{Data: fileBytes}
-	return resp, nil
-}
-
-func (apicService ApiContainerService) DownloadFilesArtifactV2(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactV2Server) error {
-	// context is not used in DownloadFilesArtifact, it's fine to pass context.Background() here
-	fileBytes, err := apicService.DownloadFilesArtifact(context.Background(), args)
-	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred reading files artifact file bytes")
 	}
 
-	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](server)
+	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](server)
 	err = serverStream.SendData(
 		args.Identifier,
-		fileBytes.GetData(),
+		fileBytes,
 		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
 			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
 				Data:              contentChunk,
