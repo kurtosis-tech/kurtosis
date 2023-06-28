@@ -112,6 +112,9 @@ const (
 	successfulExitCode = 0
 
 	emptyNetworkAlias = ""
+
+	// setting this to true to enable "satrian" on Discord to do his workflow
+	isDockerNetworkAttachable = true
 )
 
 /*
@@ -181,7 +184,7 @@ func (manager *DockerManager) CreateNetwork(context context.Context, name string
 			Config:  ipamConfig,
 		},
 		Internal:   false,
-		Attachable: false,
+		Attachable: isDockerNetworkAttachable,
 		Ingress:    false,
 		ConfigOnly: false,
 		ConfigFrom: nil,
