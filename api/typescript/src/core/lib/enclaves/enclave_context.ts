@@ -4,7 +4,6 @@
  */
 
 import {ok, err, Result} from "neverthrow";
-import log from "loglevel";
 import * as jspb from "google-protobuf";
 import type {
     Port,
@@ -16,9 +15,8 @@ import {
     newDownloadFilesArtifactArgs,
     newGetServicesArgs,
     newStoreWebFilesArtifactArgs,
-    newUploadFilesArtifactArgs,
 } from "../constructor_calls";
-import type { ContainerConfig, FilesArtifactUUID } from "../services/container_config";
+import type { FilesArtifactUUID } from "../services/container_config";
 import type { ServiceName, ServiceUUID } from "../services/service";
 import { ServiceContext } from "../services/service_context";
 import { TransportProtocol, PortSpec, IsValidTransportProtocol, MAX_PORT_NUM } from "../services/port_spec";
@@ -37,10 +35,6 @@ import {ServiceIdentifiers} from "../services/service_identifiers";
 
 export type EnclaveUUID = string;
 export type PartitionID = string;
-
-// This will always resolve to the default partition ID (regardless of whether such a partition exists in the enclave,
-//  or it was repartitioned away)
-const DEFAULT_PARTITION_ID: PartitionID = "";
 
 export const KURTOSIS_YAML_FILENAME = "kurtosis.yml";
 
@@ -292,8 +286,7 @@ export class EnclaveContext {
             return err(archiverResponse.error)
         }
 
-        const args = newUploadFilesArtifactArgs(archiverResponse.value, name)
-        const uploadResult = await this.backend.uploadFiles(args)
+        const uploadResult = await this.backend.uploadFiles(name, archiverResponse.value)
         if (uploadResult.isErr()){
             return err(uploadResult.error)
         }

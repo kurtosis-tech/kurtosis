@@ -271,21 +271,6 @@ func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifier
 	return &kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse{AllIdentifiers: allIdentifiers}, nil
 }
 
-func (apicService ApiContainerService) UploadFilesArtifact(_ context.Context, args *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
-	maybeArtifactName := args.GetName()
-	if maybeArtifactName == "" {
-		maybeArtifactName = apicService.filesArtifactStore.GenerateUniqueNameForFileArtifact()
-	}
-
-	filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(args.Data, maybeArtifactName)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while trying to upload the file")
-	}
-
-	response := &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{Uuid: string(filesArtifactUuid), Name: maybeArtifactName}
-	return response, nil
-}
-
 func (apicService ApiContainerService) UploadFilesArtifactV2(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactV2Server) error {
 	var maybeArtifactName string
 	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](server)
@@ -310,10 +295,7 @@ func (apicService ApiContainerService) UploadFilesArtifactV2(server kurtosis_cor
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred while trying to upload the file")
 			}
-			return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{
-				Uuid: string(filesArtifactUuid),
-				Name: maybeArtifactName,
-			}, nil
+			return binding_constructors.NewUploadFilesArtifactResponse(string(filesArtifactUuid), maybeArtifactName), nil
 		},
 	)
 

@@ -459,16 +459,6 @@ pub struct DataChunkMetadata {
 /// ==============================================================================================
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UploadFilesArtifactArgs {
-    /// Bytes of the files artifact to store
-    #[prost(bytes = "vec", tag = "1")]
-    pub data: ::prost::alloc::vec::Vec<u8>,
-    /// Name of the files artifact
-    #[prost(string, tag = "2")]
-    pub name: ::prost::alloc::string::String,
-}
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct UploadFilesArtifactResponse {
     /// UUID of the files artifact, for use when referencing it in the future
     #[prost(string, tag = "1")]
@@ -895,40 +885,6 @@ pub mod api_container_service_client {
             self.inner.unary(req, path, codec).await
         }
         /// Uploads a files artifact to the Kurtosis File System
-        /// Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
-        pub async fn upload_files_artifact(
-            &mut self,
-            request: impl tonic::IntoRequest<super::UploadFilesArtifactArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::UploadFilesArtifactResponse>,
-            tonic::Status,
-        > {
-            self.inner
-                .ready()
-                .await
-                .map_err(|e| {
-                    tonic::Status::new(
-                        tonic::Code::Unknown,
-                        format!("Service was not ready: {}", e.into()),
-                    )
-                })?;
-            let codec = tonic::codec::ProstCodec::default();
-            let path = http::uri::PathAndQuery::from_static(
-                "/api_container_api.ApiContainerService/UploadFilesArtifact",
-            );
-            let mut req = request.into_request();
-            req.extensions_mut()
-                .insert(
-                    GrpcMethod::new(
-                        "api_container_api.ApiContainerService",
-                        "UploadFilesArtifact",
-                    ),
-                );
-            self.inner.unary(req, path, codec).await
-        }
-        /// Uploads a files artifact to the Kurtosis File System
-        /// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
-        /// library is only implemented in Go
         pub async fn upload_files_artifact_v2(
             &mut self,
             request: impl tonic::IntoStreamingRequest<Message = super::StreamedDataChunk>,
@@ -1159,17 +1115,6 @@ pub mod api_container_service_server {
             request: tonic::Request<super::WaitForHttpPostEndpointAvailabilityArgs>,
         ) -> std::result::Result<tonic::Response<()>, tonic::Status>;
         /// Uploads a files artifact to the Kurtosis File System
-        /// Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
-        async fn upload_files_artifact(
-            &self,
-            request: tonic::Request<super::UploadFilesArtifactArgs>,
-        ) -> std::result::Result<
-            tonic::Response<super::UploadFilesArtifactResponse>,
-            tonic::Status,
-        >;
-        /// Uploads a files artifact to the Kurtosis File System
-        /// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
-        /// library is only implemented in Go
         async fn upload_files_artifact_v2(
             &self,
             request: tonic::Request<tonic::Streaming<super::StreamedDataChunk>>,
@@ -1671,52 +1616,6 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = WaitForHttpPostEndpointAvailabilitySvc(inner);
-                        let codec = tonic::codec::ProstCodec::default();
-                        let mut grpc = tonic::server::Grpc::new(codec)
-                            .apply_compression_config(
-                                accept_compression_encodings,
-                                send_compression_encodings,
-                            )
-                            .apply_max_message_size_config(
-                                max_decoding_message_size,
-                                max_encoding_message_size,
-                            );
-                        let res = grpc.unary(method, req).await;
-                        Ok(res)
-                    };
-                    Box::pin(fut)
-                }
-                "/api_container_api.ApiContainerService/UploadFilesArtifact" => {
-                    #[allow(non_camel_case_types)]
-                    struct UploadFilesArtifactSvc<T: ApiContainerService>(pub Arc<T>);
-                    impl<
-                        T: ApiContainerService,
-                    > tonic::server::UnaryService<super::UploadFilesArtifactArgs>
-                    for UploadFilesArtifactSvc<T> {
-                        type Response = super::UploadFilesArtifactResponse;
-                        type Future = BoxFuture<
-                            tonic::Response<Self::Response>,
-                            tonic::Status,
-                        >;
-                        fn call(
-                            &mut self,
-                            request: tonic::Request<super::UploadFilesArtifactArgs>,
-                        ) -> Self::Future {
-                            let inner = Arc::clone(&self.0);
-                            let fut = async move {
-                                (*inner).upload_files_artifact(request).await
-                            };
-                            Box::pin(fut)
-                        }
-                    }
-                    let accept_compression_encodings = self.accept_compression_encodings;
-                    let send_compression_encodings = self.send_compression_encodings;
-                    let max_decoding_message_size = self.max_decoding_message_size;
-                    let max_encoding_message_size = self.max_encoding_message_size;
-                    let inner = self.inner.clone();
-                    let fut = async move {
-                        let inner = inner.0;
-                        let method = UploadFilesArtifactSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

@@ -28,7 +28,6 @@ const (
 	ApiContainerService_ExecCommand_FullMethodName                                = "/api_container_api.ApiContainerService/ExecCommand"
 	ApiContainerService_WaitForHttpGetEndpointAvailability_FullMethodName         = "/api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability"
 	ApiContainerService_WaitForHttpPostEndpointAvailability_FullMethodName        = "/api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability"
-	ApiContainerService_UploadFilesArtifact_FullMethodName                        = "/api_container_api.ApiContainerService/UploadFilesArtifact"
 	ApiContainerService_UploadFilesArtifactV2_FullMethodName                      = "/api_container_api.ApiContainerService/UploadFilesArtifactV2"
 	ApiContainerService_DownloadFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/DownloadFilesArtifact"
 	ApiContainerService_StoreWebFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/StoreWebFilesArtifact"
@@ -57,11 +56,6 @@ type ApiContainerServiceClient interface {
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(ctx context.Context, in *WaitForHttpPostEndpointAvailabilityArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Uploads a files artifact to the Kurtosis File System
-	// Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
-	UploadFilesArtifact(ctx context.Context, in *UploadFilesArtifactArgs, opts ...grpc.CallOption) (*UploadFilesArtifactResponse, error)
-	// Uploads a files artifact to the Kurtosis File System
-	// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
-	// library is only implemented in Go
 	UploadFilesArtifactV2(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactV2Client, error)
 	// Downloads a files artifact from the Kurtosis File System
 	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactClient, error)
@@ -223,15 +217,6 @@ func (c *apiContainerServiceClient) WaitForHttpPostEndpointAvailability(ctx cont
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) UploadFilesArtifact(ctx context.Context, in *UploadFilesArtifactArgs, opts ...grpc.CallOption) (*UploadFilesArtifactResponse, error) {
-	out := new(UploadFilesArtifactResponse)
-	err := c.cc.Invoke(ctx, ApiContainerService_UploadFilesArtifact_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 func (c *apiContainerServiceClient) UploadFilesArtifactV2(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactV2Client, error) {
 	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[3], ApiContainerService_UploadFilesArtifactV2_FullMethodName, opts...)
 	if err != nil {
@@ -346,11 +331,6 @@ type ApiContainerServiceServer interface {
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(context.Context, *WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error)
 	// Uploads a files artifact to the Kurtosis File System
-	// Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
-	UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error)
-	// Uploads a files artifact to the Kurtosis File System
-	// Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
-	// library is only implemented in Go
 	UploadFilesArtifactV2(ApiContainerService_UploadFilesArtifactV2Server) error
 	// Downloads a files artifact from the Kurtosis File System
 	DownloadFilesArtifact(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactServer) error
@@ -388,9 +368,6 @@ func (UnimplementedApiContainerServiceServer) WaitForHttpGetEndpointAvailability
 }
 func (UnimplementedApiContainerServiceServer) WaitForHttpPostEndpointAvailability(context.Context, *WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WaitForHttpPostEndpointAvailability not implemented")
-}
-func (UnimplementedApiContainerServiceServer) UploadFilesArtifact(context.Context, *UploadFilesArtifactArgs) (*UploadFilesArtifactResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UploadFilesArtifact not implemented")
 }
 func (UnimplementedApiContainerServiceServer) UploadFilesArtifactV2(ApiContainerService_UploadFilesArtifactV2Server) error {
 	return status.Errorf(codes.Unimplemented, "method UploadFilesArtifactV2 not implemented")
@@ -577,24 +554,6 @@ func _ApiContainerService_WaitForHttpPostEndpointAvailability_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_UploadFilesArtifact_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UploadFilesArtifactArgs)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ApiContainerServiceServer).UploadFilesArtifact(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ApiContainerService_UploadFilesArtifact_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ApiContainerServiceServer).UploadFilesArtifact(ctx, req.(*UploadFilesArtifactArgs))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _ApiContainerService_UploadFilesArtifactV2_Handler(srv interface{}, stream grpc.ServerStream) error {
 	return srv.(ApiContainerServiceServer).UploadFilesArtifactV2(&apiContainerServiceUploadFilesArtifactV2Server{stream})
 }
@@ -722,10 +681,6 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "WaitForHttpPostEndpointAvailability",
 			Handler:    _ApiContainerService_WaitForHttpPostEndpointAvailability_Handler,
-		},
-		{
-			MethodName: "UploadFilesArtifact",
-			Handler:    _ApiContainerService_UploadFilesArtifact_Handler,
 		},
 		{
 			MethodName: "StoreWebFilesArtifact",

@@ -340,8 +340,11 @@ func NewExecCommandResponse(exitCode int32, logOutput string) *kurtosis_core_rpc
 //
 // ==============================================================================================
 
-func NewUploadFilesArtifactArgs(data []byte, name string) *kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs {
-	return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactArgs{Data: data, Name: name}
+func NewUploadFilesArtifactResponse(artifactUuid string, artifactName string) *kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse {
+	return &kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse{
+		Uuid: artifactUuid,
+		Name: artifactName,
+	}
 }
 
 // ==============================================================================================
