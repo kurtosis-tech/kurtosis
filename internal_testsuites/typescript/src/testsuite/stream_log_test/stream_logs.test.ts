@@ -126,7 +126,7 @@ async function TestStreamLogs() {
             const expectedNonExistenceServiceUuids = serviceLogsRequestInfoAndExpectedResults.expectedNotFoundServiceUuids;
             const filter = serviceLogsRequestInfoAndExpectedResults.logLineFilter;
 
-            let expectedLogLinesByService: Map<ServiceUUID, ServiceLog[]> = new Map<ServiceUUID, ServiceLog[]>;
+            let expectedLogLinesByService: Map<ServiceUUID, ServiceLog[]> = new Map<ServiceUUID, ServiceLog[]>();
             for (const userServiceUuid of requestedServiceUuids) {
                 expectedLogLinesByService.set(userServiceUuid, expectedLogLines);
             }

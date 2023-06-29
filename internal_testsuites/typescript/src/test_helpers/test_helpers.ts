@@ -28,6 +28,7 @@ import {GetArgs, GetResponse, UpsertArgs} from "example-datastore-server-api-lib
 import {StarlarkRunResult} from "kurtosis-sdk/build/core/lib/enclaves/starlark_run_blocking";
 import {Readable} from "stream";
 import {receiveExpectedLogLinesFromServiceLogsReadable, ReceivedStreamContent} from "./received_stream_content";
+import {KurtosisFeatureFlag} from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 
 const CONFIG_FILENAME = "config.json"
 const CONFIG_MOUNTPATH_ON_API_CONTAINER = "/config"
@@ -44,27 +45,28 @@ const DATASTORE_WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000;
 const API_WAIT_FOR_STARTUP_MAX_POLLS = 10;
 const API_WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000;
 
-const DEFAULT_PARTITION_ID = "";
+const DEFAULT_PARTITION_ID = "default";
 
-const DATASTORE_PORT_SPEC = new PortSpec(
-    datastoreApi.LISTEN_PORT,
-    TransportProtocol.TCP,
-)
-const API_PORT_SPEC = new PortSpec(
-    serverApi.LISTEN_PORT,
-    TransportProtocol.TCP,
-)
+const DEFAULT_RUN_FUNCTION_NAME = "run"
+const STARLARK_SCRIPT_NO_PARAM = "{}"
+const STARLARK_NO_DRY_RUN = false
+const NO_EXPERIMENTAL_FEATURE: Array<KurtosisFeatureFlag> = []
+
+const DATASTORE_PORT_NUMBER = datastoreApi.LISTEN_PORT
+const DATASTORE_PORT_PROTOCOL = "TCP"
+
+const API_PORT_NUMBER = serverApi.LISTEN_PORT
+const API_PORT_PROTOCOL = "TCP"
 
 const FILE_SERVER_SERVICE_IMAGE = "flashspys/nginx-static"
 const FILE_SERVER_PORT_ID = "http"
 const FILE_SERVER_PRIVATE_PORT_NUM = 80
+const FILE_SERVER_PRIVATE_PORT_PROTOCOL = "TCP"
 
 const WAIT_FOR_FILE_SERVER_TIMEOUT_MILLISECONDS = 45000
 const WAIT_FOR_FILE_SERVER_INTERVAL_MILLISECONDS = 100
 
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT = "/static"
-
-const FILE_SERVER_PORT_SPEC = new PortSpec(FILE_SERVER_PRIVATE_PORT_NUM, TransportProtocol.TCP)
 
 // for validating data store is healthy
 /*
@@ -120,14 +122,12 @@ export async function addDatastoreService(serviceName: ServiceName, enclaveConte
         clientCloseFunction: () => void;
     }, Error>> {
 
-    const containerConfig = getDatastoreContainerConfig();
-
-    const addServiceResult = await enclaveContext.addService(serviceName, containerConfig);
+    const containerConfig = getDatastoreStarlarkServiceConfig();
+    const addServiceResult = await addServiceViaStarlark(enclaveContext, serviceName, containerConfig)
     if (addServiceResult.isErr()) {
-        log.error("An error occurred adding the datastore service");
-        return err(addServiceResult.error);
+        return err(addServiceResult.error)
     }
-    const serviceContext = addServiceResult.value;
+    const serviceContext = addServiceResult.value
 
     const publicPort: PortSpec | undefined = serviceContext.getPublicPorts().get(DATASTORE_PORT_ID);
     if (publicPort === undefined) {
@@ -200,12 +200,12 @@ export async function addAPIServiceToPartition(
         return err(uploadConfigResult.error)
     }
 
-    const containerConfig = getApiServiceContainerConfig(artifactName)
-
-    const addServiceToPartitionResult = await enclaveContext.addServiceToPartition(serviceName, partitionId, containerConfig)
-    if (addServiceToPartitionResult.isErr()) return err(addServiceToPartitionResult.error)
-
-    const serviceContext = addServiceToPartitionResult.value;
+    const containerConfig = getApiServiceStarlarkServiceConfig(artifactName, partitionId)
+    const addServiceResult = await addServiceViaStarlark(enclaveContext, serviceName, containerConfig)
+    if (addServiceResult.isErr()) {
+        return err(addServiceResult.error)
+    }
+    const serviceContext = addServiceResult.value
 
     const publicPort: PortSpec | undefined = serviceContext.getPublicPorts().get(API_PORT_ID);
     if (publicPort === undefined) {
@@ -265,20 +265,18 @@ export async function waitForHealthy(
 }
 
 export async function waitForGetAvailabilityStarlarkScript(enclaveContext: EnclaveContext, serviceName: string, portId: string, endpoint: string, interval: number, timeout: number) : Promise<Result<StarlarkRunResult, Error>> {
-    return enclaveContext.runStarlarkScriptBlocking(WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, `{ "service_name": "${serviceName}", "port_id": "${portId}", "endpoint": "/${endpoint}", "interval": "${interval}ms", "timeout": "${timeout}ms"}`, false)
+    const params = `{ "service_name": "${serviceName}", "port_id": "${portId}", "endpoint": "/${endpoint}", "interval": "${interval}ms", "timeout": "${timeout}ms"}`
+    return enclaveContext.runStarlarkScriptBlocking(DEFAULT_RUN_FUNCTION_NAME, WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, params, false, NO_EXPERIMENTAL_FEATURE)
 }
 
 export async function startFileServer(fileServerServiceName: ServiceName, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext): Promise<Result<StartFileServerResponse, Error>> {
-    const filesArtifactsMountPoints = new Map<string, FilesArtifactUUID>()
-    filesArtifactsMountPoints.set(USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT, filesArtifactUuid)
-
-    const fileServerContainerConfig = getFileServerContainerConfig(filesArtifactsMountPoints)
-    const addServiceResult = await enclaveCtx.addService(fileServerServiceName, fileServerContainerConfig)
+    const fileServerContainerConfig = getFileServerStarlarkServiceConfig(filesArtifactUuid)
+    const addServiceResult = await addServiceViaStarlark(enclaveCtx, fileServerServiceName, fileServerContainerConfig)
     if (addServiceResult.isErr()) {
-        throw addServiceResult.error
+        return err(addServiceResult.error)
     }
-
     const serviceContext = addServiceResult.value
+
     const publicPort = serviceContext.getPublicPorts().get(FILE_SERVER_PORT_ID)
     if (publicPort === undefined) {
         throw new Error(`Expected to find public port for ID "${FILE_SERVER_PORT_ID}", but none was found`)
@@ -325,41 +323,61 @@ export async function checkFileContents(ipAddress: string, portNum: number, file
     return ok(null)
 }
 
+export async function addServiceViaStarlark(enclaveContext: EnclaveContext, serviceName: string, starlarkServiceConfig: string): Promise<Result<ServiceContext, Error>> {
+    const addServiceScript = `def run(plan):
+	plan.add_service(
+		name="${serviceName}", 
+		config=${starlarkServiceConfig},
+	)
+`
+
+    const starlarkScriptRunResultPromise = enclaveContext.runStarlarkScriptBlocking(
+        DEFAULT_RUN_FUNCTION_NAME,
+        addServiceScript,
+        STARLARK_SCRIPT_NO_PARAM,
+        STARLARK_NO_DRY_RUN,
+        NO_EXPERIMENTAL_FEATURE,
+    )
+    const starlarkScriptRunResult = await starlarkScriptRunResultPromise
+
+    if (starlarkScriptRunResult.isErr()) {
+        return err(starlarkScriptRunResult.error);
+    }
+    const starlarkScriptRunResultValue = starlarkScriptRunResult.value
+    if (starlarkScriptRunResultValue.interpretationError != undefined) {
+        return err(new Error(starlarkScriptRunResultValue.interpretationError.getErrorMessage()));
+    } else if (starlarkScriptRunResultValue.validationErrors.length > 0) {
+        return err(new Error(`Starlark script did not pass validation. Errors were:\n${starlarkScriptRunResultValue.validationErrors.join("\n")}`));
+    } else if (starlarkScriptRunResultValue.executionError != undefined) {
+        return err(new Error(starlarkScriptRunResultValue.executionError.getErrorMessage()));
+    }
+
+    const serviceContextResultPromise = enclaveContext.getServiceContext(serviceName)
+    const serviceContextResult = await serviceContextResultPromise
+    if (serviceContextResult.isErr()) {
+        return err(serviceContextResult.error);
+    }
+    const serviceContext = serviceContextResult.value
+    return ok(serviceContext)
+}
+
 // ====================================================================================================
 //                                      Private Helper Methods
 // ====================================================================================================
 
-function getDatastoreContainerConfig(): ContainerConfig {
-
-    const usedPorts = new Map<string, PortSpec>();
-    usedPorts.set(DATASTORE_PORT_ID, DATASTORE_PORT_SPEC);
-
-    const containerConfig = new ContainerConfigBuilder(DATASTORE_IMAGE).withUsedPorts(usedPorts).build();
-
-    return containerConfig;
+function getDatastoreStarlarkServiceConfig(): string {
+    const portSpec = `{"${DATASTORE_PORT_ID}": PortSpec(number=${DATASTORE_PORT_NUMBER}, transport_protocol="${DATASTORE_PORT_PROTOCOL}")}`
+    return `ServiceConfig(image="${DATASTORE_IMAGE}", ports=${portSpec})`
 }
 
-function getApiServiceContainerConfig(
+function getApiServiceStarlarkServiceConfig(
     artifactName: string,
-): ContainerConfig {
-    const usedPorts = new Map<string, PortSpec>();
-    usedPorts.set(API_PORT_ID, API_PORT_SPEC);
-    const startCmd: string[] = [
-        "./example-api-server.bin",
-        "--config",
-        path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME),
-    ]
-
-    const filesArtifactMountpoints = new Map<string, FilesArtifactUUID>()
-    filesArtifactMountpoints.set(CONFIG_MOUNTPATH_ON_API_CONTAINER, artifactName)
-
-    const containerConfig = new ContainerConfigBuilder(API_SERVICE_IMAGE)
-        .withUsedPorts(usedPorts)
-        .withFiles(filesArtifactMountpoints)
-        .withCmdOverride(startCmd)
-        .build()
-
-    return containerConfig
+    subnetwork: string,
+): string {
+    const portSpec = `{"${API_PORT_ID}": PortSpec(number=${API_PORT_NUMBER}, transport_protocol="${API_PORT_PROTOCOL}")}`
+    const files = `{"${CONFIG_MOUNTPATH_ON_API_CONTAINER}": "${artifactName}"}`
+    const cmdOverride = `["./example-api-server.bin", "--config", "${path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME)}"]`
+    return `ServiceConfig(image="${API_SERVICE_IMAGE}", ports=${portSpec}, files=${files}, cmd=${cmdOverride}, subnetwork="${subnetwork}")`
 }
 
 async function createApiConfigFile(datastoreIP: string): Promise<Result<string, Error>> {
@@ -400,16 +418,10 @@ async function createApiConfigFile(datastoreIP: string): Promise<Result<string, 
 
 }
 
-function getFileServerContainerConfig(filesArtifactMountPoints: Map<string, FilesArtifactUUID>): ContainerConfig {
-    const usedPorts = new Map<string, PortSpec>()
-    usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
-
-    const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
-        .withUsedPorts(usedPorts)
-        .withFiles(filesArtifactMountPoints)
-        .build()
-
-    return containerConfig
+function getFileServerStarlarkServiceConfig(filesArtifactUuid: FilesArtifactUUID): string {
+    const portSpec = `{"${FILE_SERVER_PORT_ID}": PortSpec(number=${FILE_SERVER_PRIVATE_PORT_NUM}, transport_protocol="${FILE_SERVER_PRIVATE_PORT_PROTOCOL}")}`
+    const files = `{"${USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT}": "${filesArtifactUuid}"}`
+    return `ServiceConfig(image="${FILE_SERVER_SERVICE_IMAGE}", ports=${portSpec}, files=${files})`
 }
 
 async function getFileContents(ipAddress: string, portNum: number, relativeFilepath: string): Promise<Result<any, Error>> {
@@ -536,13 +548,12 @@ export async function addServicesWithLogLines(
     const servicesAdded: Map<ServiceName, ServiceContext> = new Map<ServiceName, ServiceContext>();
 
     for (let [serviceName, logLines] of logLinesByServiceID) {
-        const containerConf: ContainerConfig = getServiceWithLogLinesConfig(logLines);
-        const addServiceResult = await enclaveContext.addService(serviceName, containerConf);
+        const containerConf: string = getServiceWithLogLinesConfig(logLines);
+        const addServiceResult = await addServiceViaStarlark(enclaveContext, serviceName, containerConf);
 
         if (addServiceResult.isErr()) {
             return err(new Error(`An error occurred adding service '${serviceName}'`));
         }
-
         const serviceContext: ServiceContext = addServiceResult.value;
 
         servicesAdded.set(serviceName, serviceContext)
@@ -561,7 +572,7 @@ export async function getLogsResponseAndEvaluateResponse(
     logLineFilter: LogLineFilter | undefined,
 ): Promise<Result<null, Error>> {
 
-    let receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>> = new Map<ServiceUUID, Array<ServiceLog>>;
+    let receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>> = new Map<ServiceUUID, Array<ServiceLog>>();
     let receivedNotFoundServiceUuids: Set<ServiceUUID> = new Set<ServiceUUID>();
 
     const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveUuid, serviceUuids, shouldFollowLogs, logLineFilter);
@@ -605,27 +616,21 @@ export async function getLogsResponseAndEvaluateResponse(
     return ok(null)
 }
 
-function getServiceWithLogLinesConfig(logLines: ServiceLog[]): ContainerConfig {
-
-    const entrypointArgs = ["/bin/sh", "-c"];
+function getServiceWithLogLinesConfig(logLines: ServiceLog[]): string {
+    const entrypointOverride = `["/bin/sh", "-c"]`
 
     const logLinesWithQuotes: Array<string> = new Array<string>();
 
     for (let logLine of logLines) {
-        const logLineWithQuotes: string = `"${logLine.getContent()}"`;
+        const logLineWithQuotes: string = `\\"${logLine.getContent()}\\"`;
         logLinesWithQuotes.push(logLineWithQuotes);
     }
 
     const logLineSeparator: string = " ";
     const logLinesStr: string = logLinesWithQuotes.join(logLineSeparator);
-    const echoLogLinesLoopCmdStr: string = `for i in ${logLinesStr}; do echo "$i"; done;`
+    const echoLogLinesLoopCmdStr: string = `for logLine in ${logLinesStr}; do echo \\"$logLine\\"; done;`
 
-    const cmdArgs = [echoLogLinesLoopCmdStr]
+    const cmdOverride = `["${echoLogLinesLoopCmdStr}"]`
 
-    const containerConfig = new ContainerConfigBuilder(DOCKER_GETTING_STARTED_IMAGE)
-        .withEntrypointOverride(entrypointArgs)
-        .withCmdOverride(cmdArgs)
-        .build()
-
-    return containerConfig
+    return `ServiceConfig(image="${DOCKER_GETTING_STARTED_IMAGE}", entrypoint=${entrypointOverride}, cmd=${cmdOverride})`
 }

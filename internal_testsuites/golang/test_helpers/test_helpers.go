@@ -676,7 +676,7 @@ func getServiceWithLogLinesServiceConfigStarlark(logLines []string) string {
 
 	logLineSeparator := " "
 	logLinesStr := strings.Join(logLinesWithQuotes, logLineSeparator)
-	echoLogLinesLoopCmdStr := fmt.Sprintf("for i in %s; do echo \"$i\"; done;", logLinesStr)
+	echoLogLinesLoopCmdStr := fmt.Sprintf("for logLine in %s; do echo \"$logLine\"; done;", logLinesStr)
 
 	cmdArgs := []string{echoLogLinesLoopCmdStr}
 
