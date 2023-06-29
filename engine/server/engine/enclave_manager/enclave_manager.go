@@ -473,6 +473,13 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 
 }
 
+func (manager *EnclaveManager) Close() error {
+	if err := manager.enclavePool.Close(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred closing the enclave pool")
+	}
+	return nil
+}
+
 func getEnclaveByEnclaveIdFilter(enclaveUuid enclave.EnclaveUUID) *enclave.EnclaveFilters {
 	return &enclave.EnclaveFilters{
 		UUIDs: map[enclave.EnclaveUUID]bool{

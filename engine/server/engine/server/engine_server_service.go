@@ -216,6 +216,13 @@ func (service *EngineServerService) GetServiceLogs(
 
 }
 
+func (service *EngineServerService) Close() error {
+	if err := service.enclaveManager.Close(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred closing the enclave manager")
+	}
+	return nil
+}
+
 // ====================================================================================================
 //
 //	Private Helper Functions

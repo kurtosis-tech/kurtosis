@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	oneEnclave = 1
-
 	// This is the same default value used in the `kurtosis enclave add` CLI command
 	defaultApiContainerLogLevel = logrus.DebugLevel
 
@@ -23,16 +21,18 @@ const (
 	// is enabled only for K8s and the network partitioning feature is not implemented yet
 	defaultIsPartitioningEnabled = false
 
-	maxRetryAfterFails = 60
+	timeBetweenCheckingPoolSize = time.Millisecond * 100
 
-	timeBetweenRetries = time.Second * 1
+	oneIdleEnclave = 1
 )
 
 type EnclavePool struct {
 	kurtosisBackend  backend_interface.KurtosisBackend
 	enclaveCreator   *EnclaveCreator
 	idleEnclavesChan chan enclave.EnclaveUUID
+	closeChan        chan bool
 	engineVersion    string
+	cancelCtxFunc    context.CancelFunc
 }
 
 // CreateEnclavePool will do the following:
@@ -62,17 +62,21 @@ func CreateEnclavePool(
 		)
 	}
 
-	// The amount of idle enclaves is equal to the chan capacity + one enclave (this one will be waiting in the queue until the channel is unblocked)
-	// chanCapacity = 0  means that it will be an unbuffered, so the communication between the channels will succeed when both (sender and receiver) are ready
-	chanCapacity := poolSize - oneEnclave
+	// this is the repository of idle enclave UUIDs
+	idleEnclavesChan := make(chan enclave.EnclaveUUID, poolSize)
 
-	idleEnclavesChan := make(chan enclave.EnclaveUUID, chanCapacity)
+	// this channel if for signaling the close event to the sub-routine
+	closeChan := make(chan bool)
+
+	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
 
 	enclavePool := &EnclavePool{
 		kurtosisBackend:  kurtosisBackend,
 		enclaveCreator:   enclaveCreator,
 		idleEnclavesChan: idleEnclavesChan,
+		closeChan:        closeChan,
 		engineVersion:    engineVersion,
+		cancelCtxFunc:    cancelCtxFunc,
 	}
 
 	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
@@ -81,15 +85,18 @@ func CreateEnclavePool(
 
 	// iterate on all the existing enclaves in order to find idle enclaves already created
 	// and reuse or destroy them if these were created from old Kurtosis version
-	if err := enclavePool.destroyPreviousIdleEnclaves(); err != nil {
+	if err := enclavePool.destroyIdleEnclaves(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying previous idle enclave before creating the enclave pool")
 	}
 
-	go enclavePool.run()
+	go enclavePool.run(ctxWithCancel)
 
 	return enclavePool, nil
 }
 
+// GetEnclave returns the first idle enclave from the pool, and the enclave is renamed with the
+// name set by the caller before returning it. It returns nil if there is no enclave on the pool
+// or if the requested enclave params are different from the enclave in the pool params
 func (pool *EnclavePool) GetEnclave(
 	ctx context.Context,
 	newEnclaveName string,
@@ -121,6 +128,11 @@ func (pool *EnclavePool) GetEnclave(
 		return nil, nil
 	}
 
+	// If there is no idle enclave in the pool returns nil
+	// for not to block the caller
+	if len(pool.idleEnclavesChan) < oneIdleEnclave {
+		return nil, nil
+	}
 	enclaveUUID, ok := <-pool.idleEnclavesChan
 	if !ok {
 		return nil, stacktrace.NewError("A new enclave can't be returned from the pool because the internal channel is closed, it shouldn't happen; this is a bug in Kurtosis")
@@ -147,12 +159,30 @@ func (pool *EnclavePool) GetEnclave(
 	return enclaveInfo, nil
 }
 
+// Close stop the EnclavePool sub-routine in charge of filling the pool
+// and removes all the idle enclaves already created
+func (pool *EnclavePool) Close() error {
+
+	// will terminate running processes in the sub-routine
+	pool.cancelCtxFunc()
+
+	// closing this channel will quit the sub-routine
+	close(pool.closeChan)
+
+	// destroy all the idle enclaves
+	if err := pool.destroyIdleEnclaves(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying idle enclave")
+	}
+
+	return nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods
 //
 // ====================================================================================================
-func (pool *EnclavePool) destroyPreviousIdleEnclaves() error {
+func (pool *EnclavePool) destroyIdleEnclaves() error {
 	ctx := context.Background()
 
 	filters := &enclave.EnclaveFilters{
@@ -203,34 +233,54 @@ func (pool *EnclavePool) destroyPreviousIdleEnclaves() error {
 }
 
 // run method is in charge of filling the enclave pool channel with new idle enclaves
-func (pool *EnclavePool) run() {
+func (pool *EnclavePool) run(ctx context.Context) {
 
-	defer close(pool.idleEnclavesChan)
+	defer func() {
+		close(pool.idleEnclavesChan)
+	}()
 
-	fails := 0
+	ticker := time.NewTicker(timeBetweenCheckingPoolSize)
+	defer ticker.Stop()
 
 	for {
-		newEnclaveInfo, err := pool.createNewEnclave()
-		if err != nil {
-			// Retry strategy if something fails
-			logrus.Errorf("An error occurred creating a new idle enclave. Error\n%v", err)
-			fails++
-			if fails >= maxRetryAfterFails {
-				logrus.Debugf("The enclave pool sub-routine has been canceled after reaching the max retries value '%v'", maxRetryAfterFails)
+		select {
+		case <-pool.closeChan:
+			return
+		case <-ticker.C:
+			if err := pool.fill(ctx); err != nil {
+				if err == context.Canceled {
+					logrus.Debug("The sub-routine context has been canceled")
+				} else {
+					logrus.Errorf("An error occurred filling the enclave pool. Error\n%v", err)
+				}
 				break
 			}
-			logrus.Debugf("Next retry will be executed on '%v' seconds", timeBetweenRetries.Seconds())
-			time.Sleep(timeBetweenRetries)
 		}
-		enclaveUUID := enclave.EnclaveUUID(newEnclaveInfo.EnclaveUuid)
+	}
+}
 
+func (pool *EnclavePool) fill(ctx context.Context) error {
+
+	for {
+		if len(pool.idleEnclavesChan) == cap(pool.idleEnclavesChan) {
+			return nil
+		}
+
+		newEnclaveInfo, err := pool.createNewIdleEnclave(ctx)
+		if err != nil {
+			if err == context.Canceled {
+				return nil
+			}
+			return stacktrace.Propagate(err, "An error occurred creating a new idle enclave.")
+		}
+
+		enclaveUUID := enclave.EnclaveUUID(newEnclaveInfo.EnclaveUuid)
 		pool.idleEnclavesChan <- enclaveUUID
 		logrus.Debugf("Enclave with UUID '%v' was added intho the pool channel", enclaveUUID)
 	}
 }
 
-func (pool *EnclavePool) createNewEnclave() (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
-	ctx := context.Background()
+func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
 	enclaveName, err := GetRandomIdleEnclaveName()
 	if err != nil {
