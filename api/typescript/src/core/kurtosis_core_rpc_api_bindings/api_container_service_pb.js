@@ -4730,7 +4730,7 @@ proto.api_container_api.StarlarkRunFinishedEvent.prototype.toObject = function(o
  */
 proto.api_container_api.StarlarkRunFinishedEvent.toObject = function(includeInstance, msg) {
   var f, obj = {
-    isrunsuccessful: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
+    isRunSuccessful: jspb.Message.getBooleanFieldWithDefault(msg, 1, false),
     serializedOutput: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
@@ -4770,7 +4770,7 @@ proto.api_container_api.StarlarkRunFinishedEvent.deserializeBinaryFromReader = f
     switch (field) {
     case 1:
       var value = /** @type {boolean} */ (reader.readBool());
-      msg.setIsrunsuccessful(value);
+      msg.setIsRunSuccessful(value);
       break;
     case 2:
       var value = /** @type {string} */ (reader.readString());
@@ -4805,7 +4805,7 @@ proto.api_container_api.StarlarkRunFinishedEvent.prototype.serializeBinary = fun
  */
 proto.api_container_api.StarlarkRunFinishedEvent.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getIsrunsuccessful();
+  f = message.getIsRunSuccessful();
   if (f) {
     writer.writeBool(
       1,
@@ -4823,10 +4823,10 @@ proto.api_container_api.StarlarkRunFinishedEvent.serializeBinaryToWriter = funct
 
 
 /**
- * optional bool isRunSuccessful = 1;
+ * optional bool is_run_successful = 1;
  * @return {boolean}
  */
-proto.api_container_api.StarlarkRunFinishedEvent.prototype.getIsrunsuccessful = function() {
+proto.api_container_api.StarlarkRunFinishedEvent.prototype.getIsRunSuccessful = function() {
   return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 1, false));
 };
 
@@ -4835,7 +4835,7 @@ proto.api_container_api.StarlarkRunFinishedEvent.prototype.getIsrunsuccessful = 
  * @param {boolean} value
  * @return {!proto.api_container_api.StarlarkRunFinishedEvent} returns this
  */
-proto.api_container_api.StarlarkRunFinishedEvent.prototype.setIsrunsuccessful = function(value) {
+proto.api_container_api.StarlarkRunFinishedEvent.prototype.setIsRunSuccessful = function(value) {
   return jspb.Message.setProto3BooleanField(this, 1, value);
 };
 
