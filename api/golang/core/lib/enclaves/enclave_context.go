@@ -328,11 +328,11 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, artifactIdentifier string) ([]byte, error) {
 	args := binding_constructors.DownloadFilesArtifactArgs(artifactIdentifier)
 
-	client, err := enclaveCtx.client.DownloadFilesArtifactV2(ctx, args)
+	client, err := enclaveCtx.client.DownloadFilesArtifact(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred initiating the download of files artifact '%v'", artifactIdentifier)
 	}
-	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.DownloadFilesArtifactResponse](client)
+	clientStream := grpc_file_streaming.NewClientStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](client)
 	fileContent, err := clientStream.ReceiveData(
 		artifactIdentifier,
 		func(dataChunk *kurtosis_core_rpc_api_bindings.StreamedDataChunk) ([]byte, string, error) {

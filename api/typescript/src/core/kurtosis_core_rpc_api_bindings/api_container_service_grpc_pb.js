@@ -16,17 +16,6 @@ function deserialize_api_container_api_DownloadFilesArtifactArgs(buffer_arg) {
   return api_container_service_pb.DownloadFilesArtifactArgs.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_api_container_api_DownloadFilesArtifactResponse(arg) {
-  if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactResponse)) {
-    throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_api_container_api_DownloadFilesArtifactResponse(buffer_arg) {
-  return api_container_service_pb.DownloadFilesArtifactResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_api_container_api_ExecCommandArgs(arg) {
   if (!(arg instanceof api_container_service_pb.ExecCommandArgs)) {
     throw new Error('Expected argument of type api_container_api.ExecCommandArgs');
@@ -362,21 +351,8 @@ uploadFilesArtifactV2: {
     responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
   },
   // Downloads a files artifact from the Kurtosis File System
-// Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
 downloadFilesArtifact: {
     path: '/api_container_api.ApiContainerService/DownloadFilesArtifact',
-    requestStream: false,
-    responseStream: false,
-    requestType: api_container_service_pb.DownloadFilesArtifactArgs,
-    responseType: api_container_service_pb.DownloadFilesArtifactResponse,
-    requestSerialize: serialize_api_container_api_DownloadFilesArtifactArgs,
-    requestDeserialize: deserialize_api_container_api_DownloadFilesArtifactArgs,
-    responseSerialize: serialize_api_container_api_DownloadFilesArtifactResponse,
-    responseDeserialize: deserialize_api_container_api_DownloadFilesArtifactResponse,
-  },
-  // Downloads a files artifact from the Kurtosis File System
-downloadFilesArtifactV2: {
-    path: '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
     requestStream: false,
     responseStream: true,
     requestType: api_container_service_pb.DownloadFilesArtifactArgs,
