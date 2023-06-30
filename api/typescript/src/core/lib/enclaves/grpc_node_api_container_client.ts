@@ -24,6 +24,9 @@ import { EnclaveUUID } from "./enclave_context";
 import {Readable} from "stream";
 import * as crypto from "crypto";
 
+const HASH_ALGORITHM = "sha1"
+const HASH_ENCODING = "hex"
+
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
     private readonly client: ApiContainerServiceClientNode;
@@ -290,8 +293,8 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
     }
 
     private computeHexHash(data: Uint8Array): string {
-        const hasher = crypto.createHash("sha1")
+        const hasher = crypto.createHash(HASH_ALGORITHM)
         hasher.update(data)
-        return hasher.digest("hex")
+        return hasher.digest(HASH_ENCODING)
     }
 }
