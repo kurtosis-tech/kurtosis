@@ -26,13 +26,12 @@ const (
 )
 
 type EnclavePool struct {
-	kurtosisBackend  backend_interface.KurtosisBackend
-	enclaveCreator   *EnclaveCreator
-	idleEnclavesChan chan enclave.EnclaveUUID
-	fillChan         chan bool
-	closeChan        chan bool
-	engineVersion    string
-	cancelCtxFunc    context.CancelFunc
+	kurtosisBackend         backend_interface.KurtosisBackend
+	enclaveCreator          *EnclaveCreator
+	idleEnclavesChan        chan enclave.EnclaveUUID
+	fillChan                chan bool
+	engineVersion           string
+	cancelSubRoutineCtxFunc context.CancelFunc
 }
 
 // CreateEnclavePool will do the following:
@@ -71,19 +70,15 @@ func CreateEnclavePool(
 	// the caller
 	fillChan := make(chan bool, poolSize)
 
-	// this channel if for signaling the close event to the sub-routine
-	closeChan := make(chan bool)
-
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
 
 	enclavePool := &EnclavePool{
-		kurtosisBackend:  kurtosisBackend,
-		enclaveCreator:   enclaveCreator,
-		idleEnclavesChan: idleEnclavesChan,
-		fillChan:         fillChan,
-		closeChan:        closeChan,
-		engineVersion:    engineVersion,
-		cancelCtxFunc:    cancelCtxFunc,
+		kurtosisBackend:         kurtosisBackend,
+		enclaveCreator:          enclaveCreator,
+		idleEnclavesChan:        idleEnclavesChan,
+		fillChan:                fillChan,
+		engineVersion:           engineVersion,
+		cancelSubRoutineCtxFunc: cancelCtxFunc,
 	}
 
 	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
@@ -168,15 +163,12 @@ func (pool *EnclavePool) GetEnclave(
 	return enclaveInfo, nil
 }
 
-// Close stop the EnclavePool sub-routine in charge of filling the pool
+// Close stop the EnclavePool sub-routine, in charge of filling the pool,
 // and removes all the idle enclaves already created
 func (pool *EnclavePool) Close() error {
 
 	// will terminate running processes in the sub-routine
-	pool.cancelCtxFunc()
-
-	// closing this channel will quit the sub-routine
-	close(pool.closeChan)
+	pool.cancelSubRoutineCtxFunc()
 
 	// destroy all the idle enclaves
 	if err := pool.destroyIdleEnclaves(); err != nil {
@@ -256,7 +248,7 @@ func (pool *EnclavePool) run(ctx context.Context) {
 	}
 
 	for {
-		// wait until receive the re-fill signal or the close signal
+		// wait until receive the re-fill signal or the ctx has done signal
 		select {
 		case <-pool.fillChan:
 			if err := pool.fill(ctx); err != nil {
@@ -267,7 +259,8 @@ func (pool *EnclavePool) run(ctx context.Context) {
 				}
 				break
 			}
-		case <-pool.closeChan:
+		case <-ctx.Done():
+			logrus.Debug("The sub-routine context has done")
 			return
 		}
 	}
