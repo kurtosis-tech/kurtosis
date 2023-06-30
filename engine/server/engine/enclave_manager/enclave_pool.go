@@ -37,7 +37,7 @@ type EnclavePool struct {
 // CreateEnclavePool will do the following:
 // 1- Wil create a new enclave pool object, if pool size > 1, return nil if pool size = 0, or return an error
 // 2- Will remove idle enclaves from previous engine runs
-// 3- Will start a sub-routine in charge of filling the pool
+// 3- Will start a subroutine in charge of filling the pool
 func CreateEnclavePool(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	kurtosisBackendType args.KurtosisBackendType,
@@ -64,10 +64,9 @@ func CreateEnclavePool(
 	// this channel is the repository of idle enclave UUIDs
 	idleEnclavesChan := make(chan enclave.EnclaveUUID, poolSize)
 
-	// this channel is for communicate to the sub-routine that one
-	// idle enclave has been picked from the pool, so it can trigger the
-	// fill mechanism again, it has the capacity = poolSize for not blocking
-	// the caller
+	// This channel is used as a signal to tell to the sub-routine that one idle enclave
+	// has been allocated from the pool
+	// It has the capacity = poolSize for not blocking the caller (for concurrent requests)
 	fillChan := make(chan bool, poolSize)
 
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
@@ -92,6 +91,8 @@ func CreateEnclavePool(
 	}
 
 	go enclavePool.run(ctxWithCancel)
+
+	enclavePool.init(poolSize)
 
 	return enclavePool, nil
 }
@@ -139,8 +140,24 @@ func (pool *EnclavePool) GetEnclave(
 	if !ok {
 		return nil, stacktrace.NewError("A new enclave can't be returned from the pool because the internal channel is closed, it shouldn't happen; this is a bug in Kurtosis")
 	}
-
+	// let the subroutine knows that one idle enclave has been taken from the pool,
+	// and it has to fill the pool again
 	pool.fillChan <- fill
+
+	shouldDestroyEnclaveBecauseSomethingFails := true
+	defer func() {
+		if shouldDestroyEnclaveBecauseSomethingFails {
+			idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{
+				enclaveUUID: true,
+			}
+			if err := pool.destroyEnclaves(ctx, idleEnclavesToRemove); err != nil {
+				logrus.Errorf(
+					"Something fail while getting an enclave from the pool, we tried to destroy the "+
+						"enclave that was taken from it, for avoiding a resource leak, but this also fails, "+
+						"so you will have to manually destroy the enclave with UUUID '%v'. Error:\n%v", enclaveUUID, err)
+			}
+		}
+	}()
 
 	enclaveObj, err := pool.getRunningEnclave(ctx, enclaveUUID)
 	if err != nil {
@@ -160,14 +177,18 @@ func (pool *EnclavePool) GetEnclave(
 
 	logrus.Debugf("Returning enclave Info '%+v' for requested enclave name '%s'", enclaveInfo, newEnclaveName)
 
+	shouldDestroyEnclaveBecauseSomethingFails = false
 	return enclaveInfo, nil
 }
 
-// Close stop the EnclavePool sub-routine, in charge of filling the pool,
+// Close stop the EnclavePool subroutine, in charge of filling the pool,
 // and removes all the idle enclaves already created
 func (pool *EnclavePool) Close() error {
 
-	// will terminate running processes in the sub-routine
+	defer close(pool.idleEnclavesChan)
+	defer close(pool.fillChan)
+
+	// will terminate running processes in the subroutine
 	pool.cancelSubRoutineCtxFunc()
 
 	// destroy all the idle enclaves
@@ -183,6 +204,12 @@ func (pool *EnclavePool) Close() error {
 //	Private helper methods
 //
 // ====================================================================================================
+func (pool *EnclavePool) init(poolSize uint8) {
+	for i := uint8(0); i < poolSize; i++ {
+		pool.fillChan <- fill
+	}
+}
+
 func (pool *EnclavePool) destroyIdleEnclaves() error {
 	ctx := context.Background()
 
@@ -208,10 +235,19 @@ func (pool *EnclavePool) destroyIdleEnclaves() error {
 		}
 	}
 
+	if err := pool.destroyEnclaves(ctx, idleEnclavesToRemove); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying enclaves with UUIDs '%v'", idleEnclavesToRemove)
+	}
+
+	return nil
+}
+
+func (pool *EnclavePool) destroyEnclaves(ctx context.Context, enclavesToRemove map[enclave.EnclaveUUID]bool) error {
 	destroyEnclaveFilters := &enclave.EnclaveFilters{
-		UUIDs:    idleEnclavesToRemove,
+		UUIDs:    enclavesToRemove,
 		Statuses: map[enclave.EnclaveStatus]bool{},
 	}
+
 	_, destroyEnclaveErrs, err := pool.kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying enclaves using filters '%v'", destroyEnclaveFilters)
@@ -229,63 +265,49 @@ func (pool *EnclavePool) destroyIdleEnclaves() error {
 		joinedRemovalErrors := strings.Join(removalErrorStrings, errorSeparator)
 		return stacktrace.NewError("Following errors occurred while removing idle enclaves :\n%v", joinedRemovalErrors)
 	}
-
 	return nil
 }
 
-// run method is in charge of filling the enclave pool channel with new idle enclaves
+// run is executed in a subroutine and wait for any of these two signals:
+// 1- for creating and add a new idle enclave in the pool
+// 2- for closing the subroutine
 func (pool *EnclavePool) run(ctx context.Context) {
-
-	defer func() {
-		close(pool.idleEnclavesChan)
-		logrus.Debug("Enclave pool sub-routine stopped")
-	}()
-
-	// init the pool
-	if err := pool.fill(ctx); err != nil {
-		logrus.Errorf("An error occurred filling the enclave pool. Error\n%v", err)
-		return
-	}
 
 	for {
 		// wait until receive the re-fill signal or the ctx has done signal
 		select {
 		case <-pool.fillChan:
-			if err := pool.fill(ctx); err != nil {
+			if err := pool.createAndAddOneIdleEnclaveIfNeeded(ctx); err != nil {
 				if err == context.Canceled {
-					logrus.Debug("The sub-routine context has been canceled")
+					logrus.Debug("The subroutine context has been canceled")
 				} else {
 					logrus.Errorf("An error occurred filling the enclave pool. Error\n%v", err)
 				}
 				break
 			}
 		case <-ctx.Done():
-			logrus.Debug("The sub-routine context has done")
+			logrus.Debug("The subroutine context has done")
+			logrus.Debug("Enclave pool sub-routine stopped")
 			return
 		}
 	}
 }
 
-func (pool *EnclavePool) fill(ctx context.Context) error {
+func (pool *EnclavePool) createAndAddOneIdleEnclaveIfNeeded(ctx context.Context) error {
 
-	for {
-		if len(pool.idleEnclavesChan) == cap(pool.idleEnclavesChan) {
-			logrus.Debug("The enclave pool is filled")
+	newEnclaveInfo, err := pool.createNewIdleEnclave(ctx)
+	if err != nil {
+		if err == context.Canceled {
 			return nil
 		}
-
-		newEnclaveInfo, err := pool.createNewIdleEnclave(ctx)
-		if err != nil {
-			if err == context.Canceled {
-				return nil
-			}
-			return stacktrace.Propagate(err, "An error occurred creating a new idle enclave.")
-		}
-
-		enclaveUUID := enclave.EnclaveUUID(newEnclaveInfo.EnclaveUuid)
-		pool.idleEnclavesChan <- enclaveUUID
-		logrus.Debugf("Enclave with UUID '%v' was added intho the pool channel", enclaveUUID)
+		return stacktrace.Propagate(err, "An error occurred creating a new idle enclave.")
 	}
+
+	enclaveUUID := enclave.EnclaveUUID(newEnclaveInfo.EnclaveUuid)
+	pool.idleEnclavesChan <- enclaveUUID
+	logrus.Debugf("Enclave with UUID '%v' was added intho the pool channel", enclaveUUID)
+
+	return nil
 }
 
 func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
