@@ -129,7 +129,6 @@ func runMain() error {
 		if err := engineServerService.Close(); err != nil {
 			logrus.Errorf("We tried to close the engine server service but something fails. Err:\n%v", err)
 		}
-		return
 	}()
 
 	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {

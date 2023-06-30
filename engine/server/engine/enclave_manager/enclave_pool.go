@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
-	"time"
 )
 
 const (
@@ -21,15 +20,16 @@ const (
 	// is enabled only for K8s and the network partitioning feature is not implemented yet
 	defaultIsPartitioningEnabled = false
 
-	timeBetweenCheckingPoolSize = time.Millisecond * 100
-
 	oneIdleEnclave = 1
+
+	fill = true
 )
 
 type EnclavePool struct {
 	kurtosisBackend  backend_interface.KurtosisBackend
 	enclaveCreator   *EnclaveCreator
 	idleEnclavesChan chan enclave.EnclaveUUID
+	fillChan         chan bool
 	closeChan        chan bool
 	engineVersion    string
 	cancelCtxFunc    context.CancelFunc
@@ -62,8 +62,14 @@ func CreateEnclavePool(
 		)
 	}
 
-	// this is the repository of idle enclave UUIDs
+	// this channel is the repository of idle enclave UUIDs
 	idleEnclavesChan := make(chan enclave.EnclaveUUID, poolSize)
+
+	// this channel is for communicate to the sub-routine that one
+	// idle enclave has been picked from the pool, so it can trigger the
+	// fill mechanism again, it has the capacity = poolSize for not blocking
+	// the caller
+	fillChan := make(chan bool, poolSize)
 
 	// this channel if for signaling the close event to the sub-routine
 	closeChan := make(chan bool)
@@ -74,6 +80,7 @@ func CreateEnclavePool(
 		kurtosisBackend:  kurtosisBackend,
 		enclaveCreator:   enclaveCreator,
 		idleEnclavesChan: idleEnclavesChan,
+		fillChan:         fillChan,
 		closeChan:        closeChan,
 		engineVersion:    engineVersion,
 		cancelCtxFunc:    cancelCtxFunc,
@@ -137,6 +144,8 @@ func (pool *EnclavePool) GetEnclave(
 	if !ok {
 		return nil, stacktrace.NewError("A new enclave can't be returned from the pool because the internal channel is closed, it shouldn't happen; this is a bug in Kurtosis")
 	}
+
+	pool.fillChan <- fill
 
 	enclaveObj, err := pool.getRunningEnclave(ctx, enclaveUUID)
 	if err != nil {
@@ -239,14 +248,16 @@ func (pool *EnclavePool) run(ctx context.Context) {
 		close(pool.idleEnclavesChan)
 	}()
 
-	ticker := time.NewTicker(timeBetweenCheckingPoolSize)
-	defer ticker.Stop()
+	// init the pool
+	if err := pool.fill(ctx); err != nil {
+		logrus.Errorf("An error occurred filling the enclave pool. Error\n%v", err)
+		return
+	}
 
 	for {
+		// wait until receive the re-fill signal or the close signal
 		select {
-		case <-pool.closeChan:
-			return
-		case <-ticker.C:
+		case <-pool.fillChan:
 			if err := pool.fill(ctx); err != nil {
 				if err == context.Canceled {
 					logrus.Debug("The sub-routine context has been canceled")
@@ -255,6 +266,8 @@ func (pool *EnclavePool) run(ctx context.Context) {
 				}
 				break
 			}
+		case <-pool.closeChan:
+			return
 		}
 	}
 }
