@@ -20,8 +20,8 @@ export function receiveExpectedLogLinesFromServiceLogsReadable(
 ): Promise<ReceivedStreamContent> {
     const receivedStreamContentPromise: Promise<ReceivedStreamContent> = new Promise<ReceivedStreamContent>((resolve, _unusedReject) => {
 
-        let receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>> = new Map<ServiceUUID, Array<ServiceLog>>;
-        let receivedNotFoundServiceUuids: Set<ServiceUUID> = new Set<ServiceUUID>;
+        let receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>> = new Map<ServiceUUID, Array<ServiceLog>>();
+        let receivedNotFoundServiceUuids: Set<ServiceUUID> = new Set<ServiceUUID>();
 
         let allExpectedLogLinesWhereReceived = false;
 
@@ -30,7 +30,7 @@ export function receiveExpectedLogLinesFromServiceLogsReadable(
             receivedNotFoundServiceUuids = serviceLogsStreamContent.getNotFoundServiceUuids();
 
             for (let [serviceUuid, serviceLogLines] of serviceLogsByUuid) {
-                let receivedLogLines: ServiceLog[] = new Array<ServiceLog>;
+                let receivedLogLines: ServiceLog[] = new Array<ServiceLog>();
                 if(receivedLogLinesByService.has(serviceUuid)){
                     const userServiceLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceUuid)
                     if (userServiceLogLines !== undefined) {
@@ -54,7 +54,7 @@ export function receiveExpectedLogLinesFromServiceLogsReadable(
                 let receivedLogLines: ServiceLog[] | undefined = receivedLogLinesByService.get(serviceUuid);
 
                 if (receivedLogLines === undefined) {
-                    receivedLogLines = new Array<ServiceLog>;
+                    receivedLogLines = new Array<ServiceLog>();
                 }
 
                 if (expectedLogLines.length !== receivedLogLines.length) {

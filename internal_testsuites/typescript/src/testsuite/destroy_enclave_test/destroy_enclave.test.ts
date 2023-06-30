@@ -3,6 +3,7 @@ import log from "loglevel";
 import { Result, ok, err } from "neverthrow";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
+import {addServiceViaStarlark} from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "destroy-enclave"
 const IS_PARTITIONING_ENABLED = false
@@ -11,8 +12,7 @@ const FILE_SERVER_SERVICE_IMAGE = "flashspys/nginx-static"
 const FILE_SERVER_SERVICE_NAME: ServiceName = "file-server"
 const FILE_SERVER_PORT_ID = "http"
 const FILE_SERVER_PRIVATE_PORT_NUM = 80
-
-const FILE_SERVER_PORT_SPEC = new PortSpec( FILE_SERVER_PRIVATE_PORT_NUM, TransportProtocol.TCP )
+const FILE_SERVER_PRIVATE_PORT_PROTOCOL = "TCP"
 
 jest.setTimeout(180000)
 
@@ -31,7 +31,7 @@ test("Test destroy enclave", async () => {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         const fileServerContainerConfig = getFileServerContainerConfig()
 
-        const addServiceResult = await enclaveContext.addService(FILE_SERVER_SERVICE_NAME, fileServerContainerConfig)
+        const addServiceResult = await addServiceViaStarlark(enclaveContext, FILE_SERVER_SERVICE_NAME, fileServerContainerConfig)
         if(addServiceResult.isErr()){ throw addServiceResult.error }
 
         const serviceContext = addServiceResult.value
@@ -66,14 +66,8 @@ test("Test destroy enclave", async () => {
 //                                       Private helper functions
 // ====================================================================================================
 
-function getFileServerContainerConfig(): ContainerConfig {
-    const usedPorts = new Map<string, PortSpec>()
-    usedPorts.set(FILE_SERVER_PORT_ID, FILE_SERVER_PORT_SPEC)
-
-    const containerConfig = new ContainerConfigBuilder(FILE_SERVER_SERVICE_IMAGE)
-        .withUsedPorts(usedPorts)
-        .build()
-
-    return containerConfig
+function getFileServerContainerConfig(): string {
+    const portSpec = `{"${FILE_SERVER_PORT_ID}": PortSpec(number=${FILE_SERVER_PRIVATE_PORT_NUM}, transport_protocol="${FILE_SERVER_PRIVATE_PORT_PROTOCOL}")}`
+    return `ServiceConfig(image="${FILE_SERVER_SERVICE_IMAGE}", ports=${portSpec})`
 }
 
