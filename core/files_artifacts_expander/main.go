@@ -131,7 +131,7 @@ func expandFilesArtifact(ctx context.Context, apiContainerClient kurtosis_core_r
 	downloadRequestArgs := &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
 		Identifier: artifactIdentifier,
 	}
-	client, err := apiContainerClient.DownloadFilesArtifactV2(ctx, downloadRequestArgs)
+	client, err := apiContainerClient.DownloadFilesArtifact(ctx, downloadRequestArgs)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred initiating the download of files artifact '%v'", artifactIdentifier)
 	}

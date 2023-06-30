@@ -351,8 +351,8 @@ uploadFilesArtifactV2: {
     responseDeserialize: deserialize_api_container_api_UploadFilesArtifactResponse,
   },
   // Downloads a files artifact from the Kurtosis File System
-downloadFilesArtifactV2: {
-    path: '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
+downloadFilesArtifact: {
+    path: '/api_container_api.ApiContainerService/DownloadFilesArtifact',
     requestStream: false,
     responseStream: true,
     requestType: api_container_service_pb.DownloadFilesArtifactArgs,

@@ -184,8 +184,8 @@ func (service *ApiContainerGatewayServiceServer) StoreFilesArtifactFromService(c
 	return remoteApiContainerResponse, nil
 }
 
-func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifactV2(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactV2Server) error {
-	client, err := service.remoteApiContainerClient.DownloadFilesArtifactV2(server.Context(), args)
+func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifact(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactServer) error {
+	client, err := service.remoteApiContainerClient.DownloadFilesArtifact(server.Context(), args)
 	if err != nil {
 		return stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}

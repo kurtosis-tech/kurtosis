@@ -328,7 +328,7 @@ func (enclaveCtx *EnclaveContext) StoreWebFiles(ctx context.Context, urlToStoreW
 func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, artifactIdentifier string) ([]byte, error) {
 	args := binding_constructors.DownloadFilesArtifactArgs(artifactIdentifier)
 
-	client, err := enclaveCtx.client.DownloadFilesArtifactV2(ctx, args)
+	client, err := enclaveCtx.client.DownloadFilesArtifact(ctx, args)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred initiating the download of files artifact '%v'", artifactIdentifier)
 	}

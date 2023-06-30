@@ -323,7 +323,7 @@ func (apicService ApiContainerService) UploadFilesArtifactV2(server kurtosis_cor
 	return nil
 }
 
-func (apicService ApiContainerService) DownloadFilesArtifactV2(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactV2Server) error {
+func (apicService ApiContainerService) DownloadFilesArtifact(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactServer) error {
 	artifactIdentifier := args.Identifier
 	if strings.TrimSpace(artifactIdentifier) == "" {
 		return stacktrace.NewError("Cannot download file with empty files artifact identifier")

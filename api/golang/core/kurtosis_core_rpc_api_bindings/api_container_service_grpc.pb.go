@@ -30,7 +30,7 @@ const (
 	ApiContainerService_WaitForHttpPostEndpointAvailability_FullMethodName        = "/api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability"
 	ApiContainerService_UploadFilesArtifact_FullMethodName                        = "/api_container_api.ApiContainerService/UploadFilesArtifact"
 	ApiContainerService_UploadFilesArtifactV2_FullMethodName                      = "/api_container_api.ApiContainerService/UploadFilesArtifactV2"
-	ApiContainerService_DownloadFilesArtifactV2_FullMethodName                    = "/api_container_api.ApiContainerService/DownloadFilesArtifactV2"
+	ApiContainerService_DownloadFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/DownloadFilesArtifact"
 	ApiContainerService_StoreWebFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/StoreWebFilesArtifact"
 	ApiContainerService_StoreFilesArtifactFromService_FullMethodName              = "/api_container_api.ApiContainerService/StoreFilesArtifactFromService"
 	ApiContainerService_ListFilesArtifactNamesAndUuids_FullMethodName             = "/api_container_api.ApiContainerService/ListFilesArtifactNamesAndUuids"
@@ -64,7 +64,7 @@ type ApiContainerServiceClient interface {
 	// library is only implemented in Go
 	UploadFilesArtifactV2(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactV2Client, error)
 	// Downloads a files artifact from the Kurtosis File System
-	DownloadFilesArtifactV2(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactV2Client, error)
+	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactClient, error)
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
 	StoreWebFilesArtifact(ctx context.Context, in *StoreWebFilesArtifactArgs, opts ...grpc.CallOption) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
@@ -266,12 +266,12 @@ func (x *apiContainerServiceUploadFilesArtifactV2Client) CloseAndRecv() (*Upload
 	return m, nil
 }
 
-func (c *apiContainerServiceClient) DownloadFilesArtifactV2(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactV2Client, error) {
-	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[4], ApiContainerService_DownloadFilesArtifactV2_FullMethodName, opts...)
+func (c *apiContainerServiceClient) DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[4], ApiContainerService_DownloadFilesArtifact_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &apiContainerServiceDownloadFilesArtifactV2Client{stream}
+	x := &apiContainerServiceDownloadFilesArtifactClient{stream}
 	if err := x.ClientStream.SendMsg(in); err != nil {
 		return nil, err
 	}
@@ -281,16 +281,16 @@ func (c *apiContainerServiceClient) DownloadFilesArtifactV2(ctx context.Context,
 	return x, nil
 }
 
-type ApiContainerService_DownloadFilesArtifactV2Client interface {
+type ApiContainerService_DownloadFilesArtifactClient interface {
 	Recv() (*StreamedDataChunk, error)
 	grpc.ClientStream
 }
 
-type apiContainerServiceDownloadFilesArtifactV2Client struct {
+type apiContainerServiceDownloadFilesArtifactClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceDownloadFilesArtifactV2Client) Recv() (*StreamedDataChunk, error) {
+func (x *apiContainerServiceDownloadFilesArtifactClient) Recv() (*StreamedDataChunk, error) {
 	m := new(StreamedDataChunk)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -353,7 +353,7 @@ type ApiContainerServiceServer interface {
 	// library is only implemented in Go
 	UploadFilesArtifactV2(ApiContainerService_UploadFilesArtifactV2Server) error
 	// Downloads a files artifact from the Kurtosis File System
-	DownloadFilesArtifactV2(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactV2Server) error
+	DownloadFilesArtifact(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactServer) error
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
 	StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error)
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
@@ -395,8 +395,8 @@ func (UnimplementedApiContainerServiceServer) UploadFilesArtifact(context.Contex
 func (UnimplementedApiContainerServiceServer) UploadFilesArtifactV2(ApiContainerService_UploadFilesArtifactV2Server) error {
 	return status.Errorf(codes.Unimplemented, "method UploadFilesArtifactV2 not implemented")
 }
-func (UnimplementedApiContainerServiceServer) DownloadFilesArtifactV2(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactV2Server) error {
-	return status.Errorf(codes.Unimplemented, "method DownloadFilesArtifactV2 not implemented")
+func (UnimplementedApiContainerServiceServer) DownloadFilesArtifact(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactServer) error {
+	return status.Errorf(codes.Unimplemented, "method DownloadFilesArtifact not implemented")
 }
 func (UnimplementedApiContainerServiceServer) StoreWebFilesArtifact(context.Context, *StoreWebFilesArtifactArgs) (*StoreWebFilesArtifactResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method StoreWebFilesArtifact not implemented")
@@ -621,24 +621,24 @@ func (x *apiContainerServiceUploadFilesArtifactV2Server) Recv() (*StreamedDataCh
 	return m, nil
 }
 
-func _ApiContainerService_DownloadFilesArtifactV2_Handler(srv interface{}, stream grpc.ServerStream) error {
+func _ApiContainerService_DownloadFilesArtifact_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(DownloadFilesArtifactArgs)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
-	return srv.(ApiContainerServiceServer).DownloadFilesArtifactV2(m, &apiContainerServiceDownloadFilesArtifactV2Server{stream})
+	return srv.(ApiContainerServiceServer).DownloadFilesArtifact(m, &apiContainerServiceDownloadFilesArtifactServer{stream})
 }
 
-type ApiContainerService_DownloadFilesArtifactV2Server interface {
+type ApiContainerService_DownloadFilesArtifactServer interface {
 	Send(*StreamedDataChunk) error
 	grpc.ServerStream
 }
 
-type apiContainerServiceDownloadFilesArtifactV2Server struct {
+type apiContainerServiceDownloadFilesArtifactServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceDownloadFilesArtifactV2Server) Send(m *StreamedDataChunk) error {
+func (x *apiContainerServiceDownloadFilesArtifactServer) Send(m *StreamedDataChunk) error {
 	return x.ServerStream.SendMsg(m)
 }
 
@@ -762,8 +762,8 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			ClientStreams: true,
 		},
 		{
-			StreamName:    "DownloadFilesArtifactV2",
-			Handler:       _ApiContainerService_DownloadFilesArtifactV2_Handler,
+			StreamName:    "DownloadFilesArtifact",
+			Handler:       _ApiContainerService_DownloadFilesArtifact_Handler,
 			ServerStreams: true,
 		},
 	},

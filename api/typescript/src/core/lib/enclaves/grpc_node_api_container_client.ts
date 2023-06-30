@@ -202,7 +202,7 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
             const requestedArtifactName: string = downloadFilesArtifactArgs.getIdentifier()
             let previousChunkHash: string = ""
 
-            const clientStream = this.client.downloadFilesArtifactV2(downloadFilesArtifactArgs)
+            const clientStream = this.client.downloadFilesArtifact(downloadFilesArtifactArgs)
             clientStream.on('data', (dataChunk: StreamedDataChunk) => {
                 const artifactNameFromChunk = dataChunk.getMetadata()?.getName()
                 if (artifactNameFromChunk == undefined || artifactNameFromChunk != requestedArtifactName) {

@@ -960,7 +960,7 @@ pub mod api_container_service_client {
             self.inner.client_streaming(req, path, codec).await
         }
         /// Downloads a files artifact from the Kurtosis File System
-        pub async fn download_files_artifact_v2(
+        pub async fn download_files_artifact(
             &mut self,
             request: impl tonic::IntoRequest<super::DownloadFilesArtifactArgs>,
         ) -> std::result::Result<
@@ -978,14 +978,14 @@ pub mod api_container_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/api_container_api.ApiContainerService/DownloadFilesArtifactV2",
+                "/api_container_api.ApiContainerService/DownloadFilesArtifact",
             );
             let mut req = request.into_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "api_container_api.ApiContainerService",
-                        "DownloadFilesArtifactV2",
+                        "DownloadFilesArtifact",
                     ),
                 );
             self.inner.server_streaming(req, path, codec).await
@@ -1177,18 +1177,18 @@ pub mod api_container_service_server {
             tonic::Response<super::UploadFilesArtifactResponse>,
             tonic::Status,
         >;
-        /// Server streaming response type for the DownloadFilesArtifactV2 method.
-        type DownloadFilesArtifactV2Stream: futures_core::Stream<
+        /// Server streaming response type for the DownloadFilesArtifact method.
+        type DownloadFilesArtifactStream: futures_core::Stream<
                 Item = std::result::Result<super::StreamedDataChunk, tonic::Status>,
             >
             + Send
             + 'static;
         /// Downloads a files artifact from the Kurtosis File System
-        async fn download_files_artifact_v2(
+        async fn download_files_artifact(
             &self,
             request: tonic::Request<super::DownloadFilesArtifactArgs>,
         ) -> std::result::Result<
-            tonic::Response<Self::DownloadFilesArtifactV2Stream>,
+            tonic::Response<Self::DownloadFilesArtifactStream>,
             tonic::Status,
         >;
         /// Tells the API container to download a files artifact from the web to the Kurtosis File System
@@ -1780,18 +1780,16 @@ pub mod api_container_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/api_container_api.ApiContainerService/DownloadFilesArtifactV2" => {
+                "/api_container_api.ApiContainerService/DownloadFilesArtifact" => {
                     #[allow(non_camel_case_types)]
-                    struct DownloadFilesArtifactV2Svc<T: ApiContainerService>(
-                        pub Arc<T>,
-                    );
+                    struct DownloadFilesArtifactSvc<T: ApiContainerService>(pub Arc<T>);
                     impl<
                         T: ApiContainerService,
                     > tonic::server::ServerStreamingService<
                         super::DownloadFilesArtifactArgs,
-                    > for DownloadFilesArtifactV2Svc<T> {
+                    > for DownloadFilesArtifactSvc<T> {
                         type Response = super::StreamedDataChunk;
-                        type ResponseStream = T::DownloadFilesArtifactV2Stream;
+                        type ResponseStream = T::DownloadFilesArtifactStream;
                         type Future = BoxFuture<
                             tonic::Response<Self::ResponseStream>,
                             tonic::Status,
@@ -1802,7 +1800,7 @@ pub mod api_container_service_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                (*inner).download_files_artifact_v2(request).await
+                                (*inner).download_files_artifact(request).await
                             };
                             Box::pin(fut)
                         }
@@ -1814,7 +1812,7 @@ pub mod api_container_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = DownloadFilesArtifactV2Svc(inner);
+                        let method = DownloadFilesArtifactSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

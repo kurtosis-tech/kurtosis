@@ -560,8 +560,8 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.uploadFilesAr
  *   !proto.api_container_api.DownloadFilesArtifactArgs,
  *   !proto.api_container_api.StreamedDataChunk>}
  */
-const methodDescriptor_ApiContainerService_DownloadFilesArtifactV2 = new grpc.web.MethodDescriptor(
-  '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
+const methodDescriptor_ApiContainerService_DownloadFilesArtifact = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/DownloadFilesArtifact',
   grpc.web.MethodType.SERVER_STREAMING,
   proto.api_container_api.DownloadFilesArtifactArgs,
   proto.api_container_api.StreamedDataChunk,
@@ -583,13 +583,13 @@ const methodDescriptor_ApiContainerService_DownloadFilesArtifactV2 = new grpc.we
  * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StreamedDataChunk>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServiceClient.prototype.downloadFilesArtifactV2 =
+proto.api_container_api.ApiContainerServiceClient.prototype.downloadFilesArtifact =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
+      '/api_container_api.ApiContainerService/DownloadFilesArtifact',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_DownloadFilesArtifactV2);
+      methodDescriptor_ApiContainerService_DownloadFilesArtifact);
 };
 
 
@@ -600,13 +600,13 @@ proto.api_container_api.ApiContainerServiceClient.prototype.downloadFilesArtifac
  * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.StreamedDataChunk>}
  *     The XHR Node Readable Stream
  */
-proto.api_container_api.ApiContainerServicePromiseClient.prototype.downloadFilesArtifactV2 =
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.downloadFilesArtifact =
     function(request, metadata) {
   return this.client_.serverStreaming(this.hostname_ +
-      '/api_container_api.ApiContainerService/DownloadFilesArtifactV2',
+      '/api_container_api.ApiContainerService/DownloadFilesArtifact',
       request,
       metadata || {},
-      methodDescriptor_ApiContainerService_DownloadFilesArtifactV2);
+      methodDescriptor_ApiContainerService_DownloadFilesArtifact);
 };
 
 

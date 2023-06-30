@@ -42,7 +42,7 @@ service ApiContainerService {
   rpc UploadFilesArtifactV2(stream StreamedDataChunk) returns (UploadFilesArtifactResponse) {};
 
   // Downloads a files artifact from the Kurtosis File System
-  rpc DownloadFilesArtifactV2(DownloadFilesArtifactArgs) returns (stream StreamedDataChunk) {};
+  rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (stream StreamedDataChunk) {};
 
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
   rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};
