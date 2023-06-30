@@ -8239,7 +8239,7 @@ proto.api_container_api.ListFilesArtifactNamesAndUuidsResponse.prototype.clearFi
  * @enum {number}
  */
 proto.api_container_api.KurtosisFeatureFlag = {
-  USE_INSTRUCTIONS_CACHING: 0
+  NO_INSTRUCTIONS_CACHING: 0
 };
 
 goog.object.extend(exports, proto.api_container_api);

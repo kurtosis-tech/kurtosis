@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	skippedInstructionOutput = "SKIPPED"
+	skippedInstructionOutput = "SKIPPED - This instruction has already been run in this enclave"
 )
 
 type StartosisExecutor struct {

@@ -546,7 +546,7 @@ pub struct ListFilesArtifactNamesAndUuidsResponse {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum KurtosisFeatureFlag {
-    UseInstructionsCaching = 0,
+    NoInstructionsCaching = 0,
 }
 impl KurtosisFeatureFlag {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -555,13 +555,13 @@ impl KurtosisFeatureFlag {
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            KurtosisFeatureFlag::UseInstructionsCaching => "USE_INSTRUCTIONS_CACHING",
+            KurtosisFeatureFlag::NoInstructionsCaching => "NO_INSTRUCTIONS_CACHING",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
-            "USE_INSTRUCTIONS_CACHING" => Some(Self::UseInstructionsCaching),
+            "NO_INSTRUCTIONS_CACHING" => Some(Self::NoInstructionsCaching),
             _ => None,
         }
     }

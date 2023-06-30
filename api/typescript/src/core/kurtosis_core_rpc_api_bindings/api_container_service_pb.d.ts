@@ -1045,5 +1045,5 @@ export namespace ListFilesArtifactNamesAndUuidsResponse {
 }
 
 export enum KurtosisFeatureFlag { 
-  USE_INSTRUCTIONS_CACHING = 0,
+  NO_INSTRUCTIONS_CACHING = 0,
 }
