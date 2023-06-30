@@ -885,7 +885,7 @@ pub mod api_container_service_client {
             self.inner.unary(req, path, codec).await
         }
         /// Uploads a files artifact to the Kurtosis File System
-        pub async fn upload_files_artifact_v2(
+        pub async fn upload_files_artifact(
             &mut self,
             request: impl tonic::IntoStreamingRequest<Message = super::StreamedDataChunk>,
         ) -> std::result::Result<
@@ -903,14 +903,14 @@ pub mod api_container_service_client {
                 })?;
             let codec = tonic::codec::ProstCodec::default();
             let path = http::uri::PathAndQuery::from_static(
-                "/api_container_api.ApiContainerService/UploadFilesArtifactV2",
+                "/api_container_api.ApiContainerService/UploadFilesArtifact",
             );
             let mut req = request.into_streaming_request();
             req.extensions_mut()
                 .insert(
                     GrpcMethod::new(
                         "api_container_api.ApiContainerService",
-                        "UploadFilesArtifactV2",
+                        "UploadFilesArtifact",
                     ),
                 );
             self.inner.client_streaming(req, path, codec).await
@@ -1115,7 +1115,7 @@ pub mod api_container_service_server {
             request: tonic::Request<super::WaitForHttpPostEndpointAvailabilityArgs>,
         ) -> std::result::Result<tonic::Response<()>, tonic::Status>;
         /// Uploads a files artifact to the Kurtosis File System
-        async fn upload_files_artifact_v2(
+        async fn upload_files_artifact(
             &self,
             request: tonic::Request<tonic::Streaming<super::StreamedDataChunk>>,
         ) -> std::result::Result<
@@ -1631,13 +1631,13 @@ pub mod api_container_service_server {
                     };
                     Box::pin(fut)
                 }
-                "/api_container_api.ApiContainerService/UploadFilesArtifactV2" => {
+                "/api_container_api.ApiContainerService/UploadFilesArtifact" => {
                     #[allow(non_camel_case_types)]
-                    struct UploadFilesArtifactV2Svc<T: ApiContainerService>(pub Arc<T>);
+                    struct UploadFilesArtifactSvc<T: ApiContainerService>(pub Arc<T>);
                     impl<
                         T: ApiContainerService,
                     > tonic::server::ClientStreamingService<super::StreamedDataChunk>
-                    for UploadFilesArtifactV2Svc<T> {
+                    for UploadFilesArtifactSvc<T> {
                         type Response = super::UploadFilesArtifactResponse;
                         type Future = BoxFuture<
                             tonic::Response<Self::Response>,
@@ -1651,7 +1651,7 @@ pub mod api_container_service_server {
                         ) -> Self::Future {
                             let inner = Arc::clone(&self.0);
                             let fut = async move {
-                                (*inner).upload_files_artifact_v2(request).await
+                                (*inner).upload_files_artifact(request).await
                             };
                             Box::pin(fut)
                         }
@@ -1663,7 +1663,7 @@ pub mod api_container_service_server {
                     let inner = self.inner.clone();
                     let fut = async move {
                         let inner = inner.0;
-                        let method = UploadFilesArtifactV2Svc(inner);
+                        let method = UploadFilesArtifactSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

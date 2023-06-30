@@ -157,7 +157,7 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
     public async uploadFiles(name: string, payload: Uint8Array): Promise<Result<UploadFilesArtifactResponse, Error>> {
         const uploadFilesArtifactPromise: Promise<Result<UploadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            const clientStream = this.client.uploadFilesArtifactV2((error: ServiceError | null, response?: UploadFilesArtifactResponse) => {
+            const clientStream = this.client.uploadFilesArtifact((error: ServiceError | null, response?: UploadFilesArtifactResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));

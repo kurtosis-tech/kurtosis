@@ -33,7 +33,7 @@ service ApiContainerService {
   rpc WaitForHttpPostEndpointAvailability(WaitForHttpPostEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
 
   // Uploads a files artifact to the Kurtosis File System
-  rpc UploadFilesArtifactV2(stream StreamedDataChunk) returns (UploadFilesArtifactResponse) {};
+  rpc UploadFilesArtifact(stream StreamedDataChunk) returns (UploadFilesArtifactResponse) {};
 
   // Downloads a files artifact from the Kurtosis File System
   rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (stream StreamedDataChunk) {};

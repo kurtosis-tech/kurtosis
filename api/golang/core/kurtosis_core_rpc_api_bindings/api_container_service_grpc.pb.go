@@ -28,7 +28,7 @@ const (
 	ApiContainerService_ExecCommand_FullMethodName                                = "/api_container_api.ApiContainerService/ExecCommand"
 	ApiContainerService_WaitForHttpGetEndpointAvailability_FullMethodName         = "/api_container_api.ApiContainerService/WaitForHttpGetEndpointAvailability"
 	ApiContainerService_WaitForHttpPostEndpointAvailability_FullMethodName        = "/api_container_api.ApiContainerService/WaitForHttpPostEndpointAvailability"
-	ApiContainerService_UploadFilesArtifactV2_FullMethodName                      = "/api_container_api.ApiContainerService/UploadFilesArtifactV2"
+	ApiContainerService_UploadFilesArtifact_FullMethodName                        = "/api_container_api.ApiContainerService/UploadFilesArtifact"
 	ApiContainerService_DownloadFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/DownloadFilesArtifact"
 	ApiContainerService_StoreWebFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/StoreWebFilesArtifact"
 	ApiContainerService_StoreFilesArtifactFromService_FullMethodName              = "/api_container_api.ApiContainerService/StoreFilesArtifactFromService"
@@ -56,7 +56,7 @@ type ApiContainerServiceClient interface {
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(ctx context.Context, in *WaitForHttpPostEndpointAvailabilityArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	// Uploads a files artifact to the Kurtosis File System
-	UploadFilesArtifactV2(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactV2Client, error)
+	UploadFilesArtifact(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactClient, error)
 	// Downloads a files artifact from the Kurtosis File System
 	DownloadFilesArtifact(ctx context.Context, in *DownloadFilesArtifactArgs, opts ...grpc.CallOption) (ApiContainerService_DownloadFilesArtifactClient, error)
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
@@ -217,30 +217,30 @@ func (c *apiContainerServiceClient) WaitForHttpPostEndpointAvailability(ctx cont
 	return out, nil
 }
 
-func (c *apiContainerServiceClient) UploadFilesArtifactV2(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactV2Client, error) {
-	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[3], ApiContainerService_UploadFilesArtifactV2_FullMethodName, opts...)
+func (c *apiContainerServiceClient) UploadFilesArtifact(ctx context.Context, opts ...grpc.CallOption) (ApiContainerService_UploadFilesArtifactClient, error) {
+	stream, err := c.cc.NewStream(ctx, &ApiContainerService_ServiceDesc.Streams[3], ApiContainerService_UploadFilesArtifact_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &apiContainerServiceUploadFilesArtifactV2Client{stream}
+	x := &apiContainerServiceUploadFilesArtifactClient{stream}
 	return x, nil
 }
 
-type ApiContainerService_UploadFilesArtifactV2Client interface {
+type ApiContainerService_UploadFilesArtifactClient interface {
 	Send(*StreamedDataChunk) error
 	CloseAndRecv() (*UploadFilesArtifactResponse, error)
 	grpc.ClientStream
 }
 
-type apiContainerServiceUploadFilesArtifactV2Client struct {
+type apiContainerServiceUploadFilesArtifactClient struct {
 	grpc.ClientStream
 }
 
-func (x *apiContainerServiceUploadFilesArtifactV2Client) Send(m *StreamedDataChunk) error {
+func (x *apiContainerServiceUploadFilesArtifactClient) Send(m *StreamedDataChunk) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *apiContainerServiceUploadFilesArtifactV2Client) CloseAndRecv() (*UploadFilesArtifactResponse, error) {
+func (x *apiContainerServiceUploadFilesArtifactClient) CloseAndRecv() (*UploadFilesArtifactResponse, error) {
 	if err := x.ClientStream.CloseSend(); err != nil {
 		return nil, err
 	}
@@ -331,7 +331,7 @@ type ApiContainerServiceServer interface {
 	// Block until the given HTTP endpoint returns available, calling it through a HTTP Post request
 	WaitForHttpPostEndpointAvailability(context.Context, *WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error)
 	// Uploads a files artifact to the Kurtosis File System
-	UploadFilesArtifactV2(ApiContainerService_UploadFilesArtifactV2Server) error
+	UploadFilesArtifact(ApiContainerService_UploadFilesArtifactServer) error
 	// Downloads a files artifact from the Kurtosis File System
 	DownloadFilesArtifact(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactServer) error
 	// Tells the API container to download a files artifact from the web to the Kurtosis File System
@@ -369,8 +369,8 @@ func (UnimplementedApiContainerServiceServer) WaitForHttpGetEndpointAvailability
 func (UnimplementedApiContainerServiceServer) WaitForHttpPostEndpointAvailability(context.Context, *WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WaitForHttpPostEndpointAvailability not implemented")
 }
-func (UnimplementedApiContainerServiceServer) UploadFilesArtifactV2(ApiContainerService_UploadFilesArtifactV2Server) error {
-	return status.Errorf(codes.Unimplemented, "method UploadFilesArtifactV2 not implemented")
+func (UnimplementedApiContainerServiceServer) UploadFilesArtifact(ApiContainerService_UploadFilesArtifactServer) error {
+	return status.Errorf(codes.Unimplemented, "method UploadFilesArtifact not implemented")
 }
 func (UnimplementedApiContainerServiceServer) DownloadFilesArtifact(*DownloadFilesArtifactArgs, ApiContainerService_DownloadFilesArtifactServer) error {
 	return status.Errorf(codes.Unimplemented, "method DownloadFilesArtifact not implemented")
@@ -554,25 +554,25 @@ func _ApiContainerService_WaitForHttpPostEndpointAvailability_Handler(srv interf
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ApiContainerService_UploadFilesArtifactV2_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(ApiContainerServiceServer).UploadFilesArtifactV2(&apiContainerServiceUploadFilesArtifactV2Server{stream})
+func _ApiContainerService_UploadFilesArtifact_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(ApiContainerServiceServer).UploadFilesArtifact(&apiContainerServiceUploadFilesArtifactServer{stream})
 }
 
-type ApiContainerService_UploadFilesArtifactV2Server interface {
+type ApiContainerService_UploadFilesArtifactServer interface {
 	SendAndClose(*UploadFilesArtifactResponse) error
 	Recv() (*StreamedDataChunk, error)
 	grpc.ServerStream
 }
 
-type apiContainerServiceUploadFilesArtifactV2Server struct {
+type apiContainerServiceUploadFilesArtifactServer struct {
 	grpc.ServerStream
 }
 
-func (x *apiContainerServiceUploadFilesArtifactV2Server) SendAndClose(m *UploadFilesArtifactResponse) error {
+func (x *apiContainerServiceUploadFilesArtifactServer) SendAndClose(m *UploadFilesArtifactResponse) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *apiContainerServiceUploadFilesArtifactV2Server) Recv() (*StreamedDataChunk, error) {
+func (x *apiContainerServiceUploadFilesArtifactServer) Recv() (*StreamedDataChunk, error) {
 	m := new(StreamedDataChunk)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
@@ -712,8 +712,8 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 		{
-			StreamName:    "UploadFilesArtifactV2",
-			Handler:       _ApiContainerService_UploadFilesArtifactV2_Handler,
+			StreamName:    "UploadFilesArtifact",
+			Handler:       _ApiContainerService_UploadFilesArtifact_Handler,
 			ClientStreams: true,
 		},
 		{

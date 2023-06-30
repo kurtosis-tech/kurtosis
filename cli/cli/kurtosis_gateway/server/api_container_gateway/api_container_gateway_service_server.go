@@ -147,8 +147,8 @@ func (service *ApiContainerGatewayServiceServer) WaitForHttpPostEndpointAvailabi
 	return remoteApiContainerResponse, nil
 }
 
-func (service *ApiContainerGatewayServiceServer) UploadFilesArtifactV2(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactV2Server) error {
-	client, err := service.remoteApiContainerClient.UploadFilesArtifactV2(server.Context())
+func (service *ApiContainerGatewayServiceServer) UploadFilesArtifact(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactServer) error {
+	client, err := service.remoteApiContainerClient.UploadFilesArtifact(server.Context())
 	if err != nil {
 		return stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}

@@ -271,7 +271,7 @@ func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifier
 	return &kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse{AllIdentifiers: allIdentifiers}, nil
 }
 
-func (apicService ApiContainerService) UploadFilesArtifactV2(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactV2Server) error {
+func (apicService ApiContainerService) UploadFilesArtifact(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactServer) error {
 	var maybeArtifactName string
 	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](server)
 

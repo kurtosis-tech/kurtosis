@@ -313,8 +313,8 @@ waitForHttpPostEndpointAvailability: {
     responseDeserialize: deserialize_google_protobuf_Empty,
   },
   // Uploads a files artifact to the Kurtosis File System
-uploadFilesArtifactV2: {
-    path: '/api_container_api.ApiContainerService/UploadFilesArtifactV2',
+uploadFilesArtifact: {
+    path: '/api_container_api.ApiContainerService/UploadFilesArtifact',
     requestStream: true,
     responseStream: false,
     requestType: api_container_service_pb.StreamedDataChunk,
