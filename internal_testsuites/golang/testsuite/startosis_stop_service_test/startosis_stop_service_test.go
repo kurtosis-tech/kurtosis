@@ -42,6 +42,14 @@ def run(plan):
 DATASTORE_SERVICE_NAME = "` + serviceName + `"
 def run(plan):
 	plan.stop_service(DATASTORE_SERVICE_NAME)
+	plan.print("Service stopped")
+`
+
+	stopScript2 = `
+DATASTORE_SERVICE_NAME = "` + serviceName + `"
+def run(plan):
+	plan.stop_service(DATASTORE_SERVICE_NAME)
+	plan.print("Service stopped once again")
 `
 )
 
@@ -110,7 +118,7 @@ Service ` + serviceName + ` deployed successfully.
 	logrus.Infof("Validated that the service is stopped")
 
 	// we run the stop script one more time and validate that an error is returned since the service is already stopped.
-	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, stopScript)
+	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, stopScript2)
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.NotEmpty(t, runResult.ExecutionError, "Expected execution error coming from already stopped service")
