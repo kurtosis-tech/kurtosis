@@ -54,7 +54,7 @@ func CreateEnclavePool(
 	}
 
 	// The enclave pool feature is only available for Kubernetes so far
-	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
+	if kurtosisBackendType != args.KurtosisBackendType_Kubernetes {
 		return nil, stacktrace.NewError("The enclave pool feature is not enable for the '%v' Kurtosis backend type so far. "+
 			"You should use '%v' for using it",
 			kurtosisBackendType.String(),
@@ -276,6 +276,7 @@ func (pool *EnclavePool) fill(ctx context.Context) error {
 
 	for {
 		if len(pool.idleEnclavesChan) == cap(pool.idleEnclavesChan) {
+			logrus.Debug("The enclave pool is filled")
 			return nil
 		}
 
