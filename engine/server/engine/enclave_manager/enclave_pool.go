@@ -35,8 +35,9 @@ type EnclavePool struct {
 }
 
 // CreateEnclavePool will do the following:
-// 1- Wil create a new enclave pool object, if pool size > 1, return nil if pool size = 0, or return an error
-// 2- Will remove idle enclaves from previous engine runs
+// 1- Will remove idle enclaves from previous engine runs even if the pool is not activated (this is for removing
+// any resource leak after an engine restar without this feature enabled or after an engine crash)
+// 2- Wil create a new enclave pool object, if pool size > 1, return nil if pool size = 0, or return an error
 // 3- Will start a subroutine in charge of filling the pool
 func CreateEnclavePool(
 	kurtosisBackend backend_interface.KurtosisBackend,
@@ -45,6 +46,16 @@ func CreateEnclavePool(
 	poolSize uint8,
 	engineVersion string,
 ) (*EnclavePool, error) {
+
+	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
+	//TODO the reuse logic is not enable yet because we ned to store the APIC version on the APIContainer object in container-engine-lib
+	//TODO in order to using it for comparing it with the expected version
+
+	// iterate on all the existing enclaves in order to find idle enclaves already created
+	// and reuse or destroy them if these were created from old Kurtosis version
+	if err := destroyIdleEnclaves(kurtosisBackend); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred destroying previous idle enclave before creating the enclave pool")
+	}
 
 	// validations
 	// poolSize = 0 means that the Enclave Pool won't be activated, it returns nil with no error
@@ -78,16 +89,6 @@ func CreateEnclavePool(
 		fillChan:                fillChan,
 		engineVersion:           engineVersion,
 		cancelSubRoutineCtxFunc: cancelCtxFunc,
-	}
-
-	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
-	//TODO the reuse logic is not enable yet because we ned to store the APIC version on the APIContainer object in container-engine-lib
-	//TODO in order to using it for comparing it with the expected version
-
-	// iterate on all the existing enclaves in order to find idle enclaves already created
-	// and reuse or destroy them if these were created from old Kurtosis version
-	if err := enclavePool.destroyIdleEnclaves(); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred destroying previous idle enclave before creating the enclave pool")
 	}
 
 	go enclavePool.run(ctxWithCancel)
@@ -150,7 +151,7 @@ func (pool *EnclavePool) GetEnclave(
 			idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{
 				enclaveUUID: true,
 			}
-			if err := pool.destroyEnclaves(ctx, idleEnclavesToRemove); err != nil {
+			if err := destroyEnclaves(ctx, pool.kurtosisBackend, idleEnclavesToRemove); err != nil {
 				logrus.Errorf(
 					"Something fail while getting an enclave from the pool, we tried to destroy the "+
 						"enclave that was taken from it, for avoiding a resource leak, but this also fails, "+
@@ -192,7 +193,7 @@ func (pool *EnclavePool) Close() error {
 	pool.cancelSubRoutineCtxFunc()
 
 	// destroy all the idle enclaves
-	if err := pool.destroyIdleEnclaves(); err != nil {
+	if err := destroyIdleEnclaves(pool.kurtosisBackend); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying idle enclave")
 	}
 
@@ -208,64 +209,6 @@ func (pool *EnclavePool) init(poolSize uint8) {
 	for i := uint8(0); i < poolSize; i++ {
 		pool.fillChan <- fill
 	}
-}
-
-func (pool *EnclavePool) destroyIdleEnclaves() error {
-	ctx := context.Background()
-
-	filters := &enclave.EnclaveFilters{
-		UUIDs: map[enclave.EnclaveUUID]bool{},
-		Statuses: map[enclave.EnclaveStatus]bool{
-			enclave.EnclaveStatus_Running: true,
-		},
-	}
-
-	enclaves, err := pool.kurtosisBackend.GetEnclaves(ctx, filters)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting enclaves using filters '%+v'", filters)
-	}
-
-	idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{}
-
-	for enclaveUUID, enclaveObj := range enclaves {
-		enclaveName := enclaveObj.GetName()
-		// is it an idle enclave from a previous run?
-		if strings.HasPrefix(enclaveName, idleEnclaveNamePrefix) {
-			idleEnclavesToRemove[enclaveUUID] = true
-		}
-	}
-
-	if err := pool.destroyEnclaves(ctx, idleEnclavesToRemove); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying enclaves with UUIDs '%v'", idleEnclavesToRemove)
-	}
-
-	return nil
-}
-
-func (pool *EnclavePool) destroyEnclaves(ctx context.Context, enclavesToRemove map[enclave.EnclaveUUID]bool) error {
-	destroyEnclaveFilters := &enclave.EnclaveFilters{
-		UUIDs:    enclavesToRemove,
-		Statuses: map[enclave.EnclaveStatus]bool{},
-	}
-
-	_, destroyEnclaveErrs, err := pool.kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying enclaves using filters '%v'", destroyEnclaveFilters)
-	}
-	if len(destroyEnclaveErrs) > 0 {
-		logrus.Errorf("Errors occurred removing the following enclaves...")
-		var removalErrorStrings []string
-		for enclaveUUID, destroyEnclaveErr := range destroyEnclaveErrs {
-			logrus.Errorf("Enclave wit UUID '%v' error:\n %v", enclaveUUID, destroyEnclaveErr.Error())
-			resultErrStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> ERROR on Enclave %v <<<<<<<<<<<<<<<<<\n%v", enclaveUUID, destroyEnclaveErr.Error())
-			removalErrorStrings = append(removalErrorStrings, resultErrStr)
-		}
-		logrus.Errorf("...you should have to manually remove all these errored enclaves.")
-		errorSeparator := "\n"
-		joinedRemovalErrors := strings.Join(removalErrorStrings, errorSeparator)
-		return stacktrace.NewError("Following errors occurred while removing idle enclaves :\n%v", joinedRemovalErrors)
-	}
-	return nil
 }
 
 // run is executed in a subroutine and wait for any of these two signals:
@@ -394,4 +337,66 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	}
 
 	return false
+}
+
+func destroyIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend) error {
+	ctx := context.Background()
+
+	filters := &enclave.EnclaveFilters{
+		UUIDs: map[enclave.EnclaveUUID]bool{},
+		Statuses: map[enclave.EnclaveStatus]bool{
+			enclave.EnclaveStatus_Running: true,
+		},
+	}
+
+	enclaves, err := kurtosisBackend.GetEnclaves(ctx, filters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting enclaves using filters '%+v'", filters)
+	}
+
+	idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{}
+
+	for enclaveUUID, enclaveObj := range enclaves {
+		enclaveName := enclaveObj.GetName()
+		// is it an idle enclave from a previous run?
+		if strings.HasPrefix(enclaveName, idleEnclaveNamePrefix) {
+			idleEnclavesToRemove[enclaveUUID] = true
+		}
+	}
+
+	if err := destroyEnclaves(ctx, kurtosisBackend, idleEnclavesToRemove); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying enclaves with UUIDs '%v'", idleEnclavesToRemove)
+	}
+
+	return nil
+}
+
+func destroyEnclaves(
+	ctx context.Context,
+	kurtosisBackend backend_interface.KurtosisBackend,
+	enclavesToRemove map[enclave.EnclaveUUID]bool,
+) error {
+	destroyEnclaveFilters := &enclave.EnclaveFilters{
+		UUIDs:    enclavesToRemove,
+		Statuses: map[enclave.EnclaveStatus]bool{},
+	}
+
+	_, destroyEnclaveErrs, err := kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying enclaves using filters '%v'", destroyEnclaveFilters)
+	}
+	if len(destroyEnclaveErrs) > 0 {
+		logrus.Errorf("Errors occurred removing the following enclaves...")
+		var removalErrorStrings []string
+		for enclaveUUID, destroyEnclaveErr := range destroyEnclaveErrs {
+			logrus.Errorf("Enclave wit UUID '%v' error:\n %v", enclaveUUID, destroyEnclaveErr.Error())
+			resultErrStr := fmt.Sprintf(">>>>>>>>>>>>>>>>> ERROR on Enclave %v <<<<<<<<<<<<<<<<<\n%v", enclaveUUID, destroyEnclaveErr.Error())
+			removalErrorStrings = append(removalErrorStrings, resultErrStr)
+		}
+		logrus.Errorf("...you should have to manually remove all these errored enclaves.")
+		errorSeparator := "\n"
+		joinedRemovalErrors := strings.Join(removalErrorStrings, errorSeparator)
+		return stacktrace.NewError("Following errors occurred while removing idle enclaves :\n%v", joinedRemovalErrors)
+	}
+	return nil
 }
