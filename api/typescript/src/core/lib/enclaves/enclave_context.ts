@@ -16,7 +16,7 @@ import {
     newGetServicesArgs,
     newStoreWebFilesArtifactArgs,
 } from "../constructor_calls";
-import type { FilesArtifactUUID } from "../services/container_config";
+import type { FilesArtifactUUID } from "./files_artifact";
 import type { ServiceName, ServiceUUID } from "../services/service";
 import { ServiceContext } from "../services/service_context";
 import { TransportProtocol, PortSpec, IsValidTransportProtocol, MAX_PORT_NUM } from "../services/port_spec";

@@ -1,9 +1,8 @@
-import { ContainerConfig, ContainerConfigBuilder, FilesArtifactUUID, PortSpec, TransportProtocol, ServiceName } from "kurtosis-sdk"
+import { ServiceName } from "kurtosis-sdk"
 import log from "loglevel";
-import { Result, ok, err } from "neverthrow";
 
 import { createEnclave } from "../../test_helpers/enclave_setup";
-import {addServiceViaStarlark} from "../../test_helpers/test_helpers";
+import { addServiceViaStarlark } from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "destroy-enclave"
 const IS_PARTITIONING_ENABLED = false

@@ -2,8 +2,6 @@
 export { KURTOSIS_VERSION } from "./kurtosis_version/kurtosis_version";
 
 // Services
-export type { FilesArtifactUUID, ContainerConfig } from "./core/lib/services/container_config";
-export { ContainerConfigBuilder } from "./core/lib/services/container_config";
 export type { ServiceName, ServiceUUID } from "./core/lib/services/service";
 export { ServiceContext } from "./core/lib/services/service_context";
 export { PortSpec, TransportProtocol } from "./core/lib/services/port_spec"
@@ -11,6 +9,7 @@ export { PortSpec, TransportProtocol } from "./core/lib/services/port_spec"
 // Enclaves
 export { EnclaveContext } from "./core/lib/enclaves/enclave_context";
 export type { EnclaveUUID, PartitionID } from "./core/lib/enclaves/enclave_context";
+export type { FilesArtifactUUID } from "./core/lib/enclaves/files_artifact";
 
 // Constructor Calls
 export { newExecCommandArgs, newGetServicesArgs, newWaitForHttpGetEndpointAvailabilityArgs, newWaitForHttpPostEndpointAvailabilityArgs } from "./core/lib/constructor_calls";
