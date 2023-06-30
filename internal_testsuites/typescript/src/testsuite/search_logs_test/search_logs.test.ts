@@ -32,7 +32,7 @@ const LOG_LINE_2 = new ServiceLog("Starting feature 'network partitioning'");
 const LOG_LINE_3 = new ServiceLog("Starting feature 'network soft partitioning'");
 const LOG_LINE_4 = new ServiceLog("The data have being loaded");
 
-const EXPECTED_NON_EXISTENCE_SERVICE_UUIDS = new Set<ServiceUUID>;
+const EXPECTED_NON_EXISTENCE_SERVICE_UUIDS = new Set<ServiceUUID>();
 
 const SERVICE_1_LOG_LINES = [LOG_LINE_1, LOG_LINE_2, LOG_LINE_3, LOG_LINE_4];
 

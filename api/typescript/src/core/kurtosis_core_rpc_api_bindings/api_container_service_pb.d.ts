@@ -562,8 +562,8 @@ export namespace StarlarkRunProgress {
 }
 
 export class StarlarkRunFinishedEvent extends jspb.Message {
-  getIsrunsuccessful(): boolean;
-  setIsrunsuccessful(value: boolean): StarlarkRunFinishedEvent;
+  getIsRunSuccessful(): boolean;
+  setIsRunSuccessful(value: boolean): StarlarkRunFinishedEvent;
 
   getSerializedOutput(): string;
   setSerializedOutput(value: string): StarlarkRunFinishedEvent;
@@ -580,7 +580,7 @@ export class StarlarkRunFinishedEvent extends jspb.Message {
 
 export namespace StarlarkRunFinishedEvent {
   export type AsObject = {
-    isrunsuccessful: boolean,
+    isRunSuccessful: boolean,
     serializedOutput?: string,
   }
 

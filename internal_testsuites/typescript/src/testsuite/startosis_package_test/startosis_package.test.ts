@@ -7,6 +7,9 @@ import {
 import * as path from "path";
 import log from "loglevel";
 
+const DEFAULT_STARLARK_RUN_FUNC_NAME = "run"
+const DEFAULT_REL_PATH_TO_MAIN_FILE = ""
+
 const VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME = "valid-package-with-input"
 const VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH = "../../../../starlark/valid-kurtosis-package-with-input"
 
@@ -29,7 +32,13 @@ test("Test valid Starlark package with input", async () => {
         log.info(`Loading package at path '${packageRootPath}'`)
 
         const params = `{"greetings": "bonjour!"}`
-        const runResult = await enclaveContext.runStarlarkPackageBlocking(packageRootPath, params, DEFAULT_DRY_RUN)
+        const runResult = await enclaveContext.runStarlarkPackageBlocking(
+            packageRootPath,
+            DEFAULT_REL_PATH_TO_MAIN_FILE,
+            DEFAULT_STARLARK_RUN_FUNC_NAME,
+            params,
+            DEFAULT_DRY_RUN
+        )
 
         if (runResult.isErr()) {
             log.error(`An error occurred execute Starlark package '${packageRootPath}'`);
@@ -65,7 +74,13 @@ test("Test valid Starlark package with input - missing key in params", async () 
         log.info(`Loading package at path '${packageRootPath}'`)
 
         const params = `{"hello": "world"}` // expecting key 'greetings' here
-        const runResult = await enclaveContext.runStarlarkPackageBlocking(packageRootPath, params, DEFAULT_DRY_RUN)
+        const runResult = await enclaveContext.runStarlarkPackageBlocking(
+            packageRootPath,
+            DEFAULT_REL_PATH_TO_MAIN_FILE,
+            DEFAULT_STARLARK_RUN_FUNC_NAME,
+            params,
+            DEFAULT_DRY_RUN
+        )
 
         if (runResult.isErr()) {
             log.error(`An error occurred execute Starlark package '${packageRootPath}'`);

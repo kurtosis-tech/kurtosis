@@ -174,6 +174,8 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 		}
 		if !potentialMask.IsValid() {
 			// mask has been marks as invalid by the interpreter, we need to find another one
+			logrus.Infof("Plan mask was marked as invalid after the tentative-interpretation returned. Will " +
+				"ignore this mask and try to find another one")
 			firstPossibleIndexForMatchingInstruction += 1
 			continue
 		}
