@@ -42,11 +42,7 @@ service ApiContainerService {
   rpc UploadFilesArtifactV2(stream StreamedDataChunk) returns (UploadFilesArtifactResponse) {};
 
   // Downloads a files artifact from the Kurtosis File System
-  // Deprecated: Use DownloadFilesArtifactV2 to stream the data and not be limited by GRPC 4MB limit
-  rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (DownloadFilesArtifactResponse) {};
-
-  // Downloads a files artifact from the Kurtosis File System
-  rpc DownloadFilesArtifactV2(DownloadFilesArtifactArgs) returns (stream StreamedDataChunk) {};
+  rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (stream StreamedDataChunk) {};
 
   // Tells the API container to download a files artifact from the web to the Kurtosis File System
   rpc StoreWebFilesArtifact(StoreWebFilesArtifactArgs) returns (StoreWebFilesArtifactResponse) {};
@@ -392,11 +388,6 @@ message UploadFilesArtifactResponse {
 message DownloadFilesArtifactArgs {
   // Files identifier to get bytes for
   string identifier = 1;
-}
-
-message DownloadFilesArtifactResponse {
-  // Contents of the requested files artifact
-  bytes data = 1;
 }
 
 

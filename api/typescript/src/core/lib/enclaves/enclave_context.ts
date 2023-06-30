@@ -320,7 +320,7 @@ export class EnclaveContext {
             return err(downloadFilesArtifactResponseResult.error)
         }
         const downloadFilesArtifactResponse = downloadFilesArtifactResponseResult.value;
-        return ok(downloadFilesArtifactResponse.getData_asU8())
+        return ok(downloadFilesArtifactResponse)
     }
 
     // Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
