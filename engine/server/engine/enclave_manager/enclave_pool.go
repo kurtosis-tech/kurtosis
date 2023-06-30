@@ -246,6 +246,7 @@ func (pool *EnclavePool) run(ctx context.Context) {
 
 	defer func() {
 		close(pool.idleEnclavesChan)
+		logrus.Debug("Enclave pool sub-routine stopped")
 	}()
 
 	// init the pool
