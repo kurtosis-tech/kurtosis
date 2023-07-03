@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -53,6 +54,8 @@ def run(plan, args):
 			),
 		}
 	)
+	plan.print(args["uuid"]) # we add this print of a random UUID to make sure the single render_templates above won't get cached
+
 `
 
 	starlarkTemplateWithoutArtifactName = `
@@ -65,6 +68,7 @@ def run(plan, args):
 			),
 		}
 	)
+	plan.print(args["uuid"]) # we add this print of a random UUID to make sure the single render_templates above won't get cached
 `
 
 	doNotDryRun   = false
@@ -223,7 +227,8 @@ func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.Enc
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error has occurred when parsing input params to render template Starlark command")
 	}
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName), doNotDryRun, noParallelism, noExperimentalFeature)
+	params := fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s", "uuid": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName, uuid.New().String())
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, params, doNotDryRun, noParallelism, noExperimentalFeature)
 	if runResult.ExecutionError != nil {
 		return "", stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
 	}

@@ -94,16 +94,7 @@ func (runner *StartosisRunner) Run(
 		var serializedScriptOutput string
 		var instructionsPlan *instructions_plan.InstructionsPlan
 		var interpretationError *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError
-		if doesFeatureFlagsContain(experimentalFeatures, kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_USE_INSTRUCTIONS_CACHING) {
-			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
-				ctx,
-				packageId,
-				mainFunctionName,
-				serializedStartosis,
-				serializedParams,
-				runner.startosisExecutor.enclavePlan,
-			)
-		} else {
+		if doesFeatureFlagsContain(experimentalFeatures, kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING) {
 			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.Interpret(
 				ctx,
 				packageId,
@@ -111,6 +102,15 @@ func (runner *StartosisRunner) Run(
 				serializedStartosis,
 				serializedParams,
 				resolver.NewInstructionsPlanMask(0),
+			)
+		} else {
+			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
+				ctx,
+				packageId,
+				mainFunctionName,
+				serializedStartosis,
+				serializedParams,
+				runner.startosisExecutor.enclavePlan,
 			)
 		}
 

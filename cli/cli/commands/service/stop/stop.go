@@ -3,6 +3,7 @@ package stop
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -34,6 +35,7 @@ const (
 	starlarkScript = `
 def run(plan, args):
 	plan.stop_service(name=args["service_name"])
+	plan.print(args["uuid"]) # we add this print of a random UUID to make sure the single stop_service above won't get cached
 `
 	doNotDryRun        = false
 	defaultParallelism = 4
@@ -110,8 +112,8 @@ func run(
 }
 
 func stopServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
-	serviceNameString := fmt.Sprintf(`{"service_name": "%s"}`, serviceName)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, serviceNameString, doNotDryRun, defaultParallelism, noExperimentalFeature)
+	params := fmt.Sprintf(`{"service_name": "%s", "uuid": "%s"}`, serviceName, uuid.New().String())
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, params, doNotDryRun, defaultParallelism, noExperimentalFeature)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for stopping service")
 	}
