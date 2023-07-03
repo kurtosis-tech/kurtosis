@@ -256,9 +256,14 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		return nil, stacktrace.Propagate(err, "Tried retrieving existing enclaves but failed")
 	}
 
-	successfullyRemovedEnclaveUuidStrs, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
+	enclaveUUIDsToClean := map[enclave.EnclaveUUID]bool{}
+	for enclaveUUID := range enclavesForUuidNameMapping {
+		enclaveUUIDsToClean[enclaveUUID] = true
+	}
+
+	successfullyRemovedEnclaveUuidStrs, removalErrors, err := manager.cleanEnclaves(ctx, enclaveUUIDsToClean, shouldCleanAll)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with shouldCleanAll set to '%v'", shouldCleanAll)
+		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with UUIDs '%+v' and shouldCleanAll set to '%v'", enclaveUUIDsToClean, shouldCleanAll)
 	}
 
 	if len(removalErrors) > 0 {
@@ -422,7 +427,11 @@ func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, encl
 	return nil
 }
 
-func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll bool) ([]string, []error, error) {
+func (manager *EnclaveManager) cleanEnclaves(
+	ctx context.Context,
+	enclaveUUIDs map[enclave.EnclaveUUID]bool,
+	shouldCleanAll bool,
+) ([]string, []error, error) {
 	enclaveStatusFilters := map[enclave.EnclaveStatus]bool{
 		enclave.EnclaveStatus_Stopped: true,
 		enclave.EnclaveStatus_Empty:   true,
@@ -432,7 +441,7 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 	}
 
 	destroyEnclaveFilters := &enclave.EnclaveFilters{
-		UUIDs:    nil,
+		UUIDs:    enclaveUUIDs,
 		Statuses: enclaveStatusFilters,
 	}
 	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
