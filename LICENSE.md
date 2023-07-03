@@ -12,7 +12,7 @@ you may not use the Licensed Work for an Environment Orchestration Service.
                       allows third parties (other than your employees and
                       contractors) to create distributed system environments.
 
-Change Date:          2027-06-30
+Change Date:          2027-07-03
 
 Change License:       AGPLv3 (GNU Affero General Public License Version 3)
 
