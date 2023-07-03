@@ -11,7 +11,6 @@ import * as jspb from "google-protobuf";
 import {ServiceUUID} from "../../core/lib/services/service";
 import * as kurtosisCtx from "./kurtosis_context/log_line_filter";
 import * as kurtosisLogLineOperator from "./kurtosis_context/log_line_operator";
-import {err, ok, Result} from "neverthrow";
 
 // ====================================================================================================
 //                                    Kurtosis Context

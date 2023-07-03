@@ -290,7 +290,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 			pathToUpload)
 	}
 
-	client, err := enclaveCtx.client.UploadFilesArtifactV2(context.Background())
+	client, err := enclaveCtx.client.UploadFilesArtifact(context.Background())
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error was encountered initiating the data upload to the API Container.")
 	}
