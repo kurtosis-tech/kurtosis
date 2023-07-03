@@ -1,6 +1,4 @@
 import {
-    ContainerConfig,
-    ContainerConfigBuilder,
     EnclaveContext,
     EnclaveUUID,
     FilesArtifactUUID,
@@ -12,7 +10,6 @@ import {
     ServiceUUID,
     ServiceName,
     ServiceLog,
-    TransportProtocol
 } from "kurtosis-sdk";
 import * as datastoreApi from "example-datastore-server-api-lib";
 import * as serverApi from "example-api-server-api-lib";
