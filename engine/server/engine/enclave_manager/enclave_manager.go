@@ -96,14 +96,14 @@ func CreateEnclaveManager(
 
 // It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
 //
-//	is only used by the EngineServerService so we might as well return the object that EngineServerService wants
+// is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-// If blank, will use the default
+	// If blank, will use the default
 	engineVersion string,
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-//If blank, will use a random one
+	//If blank, will use a random one
 	enclaveName string,
 	isPartitioningEnabled bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
