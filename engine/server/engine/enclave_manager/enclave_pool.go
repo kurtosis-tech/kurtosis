@@ -151,7 +151,7 @@ func (pool *EnclavePool) GetEnclave(
 			idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{
 				enclaveUUID: true,
 			}
-			if err := destroyEnclaves(ctx, pool.kurtosisBackend, idleEnclavesToRemove); err != nil {
+			if err := destroyEnclavesByUUID(ctx, pool.kurtosisBackend, idleEnclavesToRemove); err != nil {
 				logrus.Errorf(
 					"Something fail while getting an enclave from the pool, we tried to destroy the "+
 						"enclave that was taken from it, for avoiding a resource leak, but this also fails, "+
@@ -364,23 +364,29 @@ func destroyIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend) erro
 		}
 	}
 
-	if err := destroyEnclaves(ctx, kurtosisBackend, idleEnclavesToRemove); err != nil {
+	if err := destroyEnclavesByUUID(ctx, kurtosisBackend, idleEnclavesToRemove); err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying enclaves with UUIDs '%v'", idleEnclavesToRemove)
 	}
 
 	return nil
 }
 
-func destroyEnclaves(
+func destroyEnclavesByUUID(
 	ctx context.Context,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclavesToRemove map[enclave.EnclaveUUID]bool,
 ) error {
+
+	if len(enclavesToRemove) < 1 {
+		return nil
+	}
+
 	destroyEnclaveFilters := &enclave.EnclaveFilters{
 		UUIDs:    enclavesToRemove,
 		Statuses: map[enclave.EnclaveStatus]bool{},
 	}
 
+	logrus.Debugf("Destroying enclaves '%+v'", enclavesToRemove)
 	_, destroyEnclaveErrs, err := kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred destroying enclaves using filters '%v'", destroyEnclaveFilters)
