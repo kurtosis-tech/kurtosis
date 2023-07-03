@@ -3,6 +3,7 @@ package add
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -302,8 +303,11 @@ func run(
 	}
 
 	// TODO Allow adding services to an already-repartitioned enclave
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, fmt.Sprintf(`def run(plan):
-	plan.add_service(name = "%s", config = %s)`, serviceName, serviceConfigStarlark), "", false, defaultParallelism, noExperimentalFeature)
+	starlarkScript := fmt.Sprintf(`def run(plan):
+	plan.add_service(name = "%s", config = %s)
+	plan.print("%s") # we add this print of a random UUID to make sure the single add_service above won't get cached
+`, serviceName, serviceConfigStarlark, uuid.New().String())
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "", false, defaultParallelism, noExperimentalFeature)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}

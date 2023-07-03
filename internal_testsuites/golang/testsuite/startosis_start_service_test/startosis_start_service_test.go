@@ -44,12 +44,21 @@ DATASTORE_SERVICE_NAME = "` + serviceName + `"
 def run(plan):
 	plan.stop_service(DATASTORE_SERVICE_NAME)
 	plan.start_service(DATASTORE_SERVICE_NAME)
+	plan.print("Service restarted")
 `
 	// We start the service we created through the script above with a different script
 	startScript = `
 DATASTORE_SERVICE_NAME = "` + serviceName + `"
 def run(plan):
 	plan.start_service(DATASTORE_SERVICE_NAME)
+	plan.print("Service started")
+`
+
+	startScript2 = `
+DATASTORE_SERVICE_NAME = "` + serviceName + `"
+def run(plan):
+	plan.start_service(DATASTORE_SERVICE_NAME)
+	plan.print("Service started once again")
 `
 )
 
@@ -124,7 +133,7 @@ Service ` + serviceName + ` deployed successfully.
 	logrus.Infof("Validated that the service is restarted")
 
 	// we run the start script and validate that an error is returned since the service is already started.
-	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, startScript)
+	runResult, _ = test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, startScript2)
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
 	require.NotEmpty(t, runResult.ExecutionError, "Expected execution error coming from already started service")
