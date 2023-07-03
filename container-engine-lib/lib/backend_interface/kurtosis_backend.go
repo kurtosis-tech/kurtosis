@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
+	"time"
 )
 
 // TODO This mega-backend should really have its individual functionalities split up into
@@ -70,11 +71,13 @@ type KurtosisBackend interface {
 	// Creates an enclave with the given enclave UUID
 	CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error)
 
-	// Rename an enclave with a new name by UUID
-	RenameEnclave(
+	// Update an enclave by UUID, it's only possible to udpate the name and creation time so far
+	// The newCreationTime param is optional, it won't be updated if the value is nil
+	UpdateEnclave(
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
 		newName string,
+		creationTime *time.Time,
 	) error
 
 	// Gets enclaves matching the given filters
