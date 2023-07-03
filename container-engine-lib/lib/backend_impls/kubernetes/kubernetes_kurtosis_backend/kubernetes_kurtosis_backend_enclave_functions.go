@@ -157,13 +157,14 @@ func (backend *KubernetesKurtosisBackend) GetEnclaves(
 	return matchingEnclaves, nil
 }
 
-func (backend *KubernetesKurtosisBackend) RenameEnclave(
+func (backend *KubernetesKurtosisBackend) UpdateEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	newName string,
+	newCreationTime *time.Time,
 ) error {
 
-	enclave, kubernetesResources, err := backend.getSingleEnclaveAndKubernetesResources(ctx, enclaveUuid)
+	_, kubernetesResources, err := backend.getSingleEnclaveAndKubernetesResources(ctx, enclaveUuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting enclave object and Kubernetes resources for enclave ID '%v'", enclaveUuid)
 	}
@@ -176,12 +177,17 @@ func (backend *KubernetesKurtosisBackend) RenameEnclave(
 		kubernetes_annotation_key_consts.EnclaveNameAnnotationKey.GetString(): newName,
 	}
 
+	if newCreationTime != nil {
+		newCreationTimeStr := newCreationTime.Format(time.RFC3339)
+		updatedAnnotations[kubernetes_annotation_key_consts.EnclaveCreationTimeAnnotationKey.GetString()] = newCreationTimeStr
+	}
+
 	namespaceApplyConfigurator := func(namespaceApplyConfig *applyconfigurationsv1.NamespaceApplyConfiguration) {
 		namespaceApplyConfig.WithAnnotations(updatedAnnotations)
 	}
 
 	if _, err := backend.kubernetesManager.UpdateNamespace(ctx, namespace.GetName(), namespaceApplyConfigurator); err != nil {
-		return stacktrace.Propagate(err, "An error occurred renaming enclave with UUID '%v', renaming from '%s' to '%s'", enclaveUuid, enclave.GetName(), newName)
+		return stacktrace.Propagate(err, "An error occurred updating enclave with UUID '%v', it was trying to apply these new annotations '%+v'", enclaveUuid, updatedAnnotations)
 	}
 
 	return nil
