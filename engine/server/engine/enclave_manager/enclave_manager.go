@@ -99,11 +99,11 @@ func CreateEnclaveManager(
 //	is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-	// If blank, will use the default
+// If blank, will use the default
 	engineVersion string,
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-	//If blank, will use a random one
+//If blank, will use a random one
 	enclaveName string,
 	isPartitioningEnabled bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
@@ -463,6 +463,11 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 
 	result := map[enclave.EnclaveUUID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 	for enclaveId, enclaveObj := range enclaves {
+		// filter idle enclaves because these were not created by users
+		if isIdleEnclave(enclaveObj) {
+			continue
+		}
+
 		enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, enclaveObj)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting information about enclave '%v'", enclaveId)

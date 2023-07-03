@@ -315,6 +315,17 @@ func (pool *EnclavePool) getRunningEnclave(ctx context.Context, enclaveUUID encl
 	return enclaveObj, nil
 }
 
+// isIdleEnclave returns whether it's or not an idle enclave
+// Any enclave from the enclave pool is an idle enclave
+func isIdleEnclave(enclave *enclave.Enclave) bool {
+	enclaveName := enclave.GetName()
+	if strings.HasPrefix(enclaveName, idleEnclaveNamePrefix) {
+		return true
+	}
+
+	return false
+}
+
 func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	engineVersion string,
 	apiContainerVersion string,
@@ -355,9 +366,7 @@ func destroyIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend) erro
 	idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{}
 
 	for enclaveUUID, enclaveObj := range enclaves {
-		enclaveName := enclaveObj.GetName()
-		// is it an idle enclave from a previous run?
-		if strings.HasPrefix(enclaveName, idleEnclaveNamePrefix) {
+		if isIdleEnclave(enclaveObj) {
 			idleEnclavesToRemove[enclaveUUID] = true
 		}
 	}
