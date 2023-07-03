@@ -2,21 +2,23 @@ import {ok, err, Result, Err} from "neverthrow";
 import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
-    WaitForHttpGetEndpointAvailabilityArgs,
-    WaitForHttpPostEndpointAvailabilityArgs,
-    GetServicesResponse,
+    DataChunkMetadata,
+    DownloadFilesArtifactArgs,
     ExecCommandArgs,
     ExecCommandResponse,
-    UploadFilesArtifactArgs,
-    UploadFilesArtifactResponse,
+    GetExistingAndHistoricalServiceIdentifiersResponse,
+    GetServicesArgs,
+    GetServicesResponse,
+    ListFilesArtifactNamesAndUuidsResponse,
+    RunStarlarkPackageArgs,
+    RunStarlarkScriptArgs,
+    StarlarkRunResponseLine,
     StoreWebFilesArtifactArgs,
     StoreWebFilesArtifactResponse,
-    GetServicesArgs,
-    RunStarlarkScriptArgs,
-    RunStarlarkPackageArgs,
-    StarlarkRunResponseLine,
-    DownloadFilesArtifactArgs,
-    GetExistingAndHistoricalServiceIdentifiersResponse, ListFilesArtifactNamesAndUuidsResponse, StreamedDataChunk,
+    StreamedDataChunk,
+    UploadFilesArtifactResponse,
+    WaitForHttpGetEndpointAvailabilityArgs,
+    WaitForHttpPostEndpointAvailabilityArgs,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import type { ApiContainerServiceClient as ApiContainerServiceClientNode } from "../../kurtosis_core_rpc_api_bindings/api_container_service_grpc_pb";
 import { GenericApiContainerClient } from "./generic_api_container_client";
@@ -26,6 +28,7 @@ import * as crypto from "crypto";
 
 const HASH_ALGORITHM = "sha1"
 const HASH_ENCODING = "hex"
+const DATA_STREAM_CHUNK_SIZE = 3 * 1024 * 1024 // 3MB
 
 export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
@@ -152,9 +155,9 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         return ok(execCommandResponse)
     }
 
-    public async uploadFiles(uploadFilesArtifactArgs: UploadFilesArtifactArgs): Promise<Result<UploadFilesArtifactResponse, Error>> {
+    public async uploadFiles(name: string, payload: Uint8Array): Promise<Result<UploadFilesArtifactResponse, Error>> {
         const uploadFilesArtifactPromise: Promise<Result<UploadFilesArtifactResponse, Error>> = new Promise((resolve, _unusedReject) => {
-            this.client.uploadFilesArtifact(uploadFilesArtifactArgs, (error: ServiceError | null, response?: UploadFilesArtifactResponse) => {
+            const clientStream = this.client.uploadFilesArtifact((error: ServiceError | null, response?: UploadFilesArtifactResponse) => {
                 if (error === null) {
                     if (!response) {
                         resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
@@ -165,7 +168,28 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
                     resolve(err(error));
                 }
             })
+
+            const constantChunkMetadata = new DataChunkMetadata()
+                .setName(name)
+
+            let previousChunkHash = ""
+            for (let idx = 0; idx < payload.length; idx += DATA_STREAM_CHUNK_SIZE) {
+                const currentChunk = payload.subarray(idx, Math.min(idx + DATA_STREAM_CHUNK_SIZE, payload.length))
+
+                const dataChunk = new StreamedDataChunk()
+                    .setData(currentChunk)
+                    .setPreviousChunkHash(previousChunkHash)
+                    .setMetadata(constantChunkMetadata)
+                clientStream.write(dataChunk, (streamErr: Error | null | undefined) => {
+                    if (streamErr != undefined) {
+                        resolve(err(new Error(`An error occurred sending data through the stream:\n${streamErr.message}`)))
+                    }
+                })
+                previousChunkHash = this.computeHexHash(currentChunk)
+            }
+            clientStream.end() // close the stream, no more data will be sent
         });
+
         const uploadFilesArtifactResponseResult: Result<UploadFilesArtifactResponse, Error> = await uploadFilesArtifactPromise;
         if(uploadFilesArtifactResponseResult.isErr()){
             return err(uploadFilesArtifactResponseResult.error)

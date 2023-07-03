@@ -11,7 +11,6 @@ import {
     WaitForHttpPostEndpointAvailabilityArgs,
     Port,
     StoreWebFilesArtifactArgs,
-    UploadFilesArtifactArgs,
     ServiceInfo,
     GetServicesResponse,
     DownloadFilesArtifactArgs,
@@ -131,14 +130,4 @@ export function newDownloadFilesArtifactArgs(identifier: string): DownloadFilesA
     const result: DownloadFilesArtifactArgs = new DownloadFilesArtifactArgs();
     result.setIdentifier(identifier);
     return result;
-}
-
-// ==============================================================================================
-//                                      Upload Files
-// ==============================================================================================
-export function newUploadFilesArtifactArgs(data: Uint8Array, name: string) : UploadFilesArtifactArgs {
-    const result: UploadFilesArtifactArgs = new UploadFilesArtifactArgs()
-    result.setData(data)
-    result.setName(name)
-    return result
 }
