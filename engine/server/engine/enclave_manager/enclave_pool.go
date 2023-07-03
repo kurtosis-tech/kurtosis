@@ -20,8 +20,6 @@ const (
 	// is enabled only for K8s and the network partitioning feature is not implemented yet
 	defaultIsPartitioningEnabled = false
 
-	oneIdleEnclave = 1
-
 	fill = true
 )
 
@@ -134,7 +132,7 @@ func (pool *EnclavePool) GetEnclave(
 
 	// If there is no idle enclave in the pool returns nil
 	// for not to block the caller
-	if len(pool.idleEnclavesChan) < oneIdleEnclave {
+	if len(pool.idleEnclavesChan) == 0 {
 		return nil, nil
 	}
 	enclaveUUID, ok := <-pool.idleEnclavesChan
