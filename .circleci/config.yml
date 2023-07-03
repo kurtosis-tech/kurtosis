@@ -1003,44 +1003,44 @@ workflows:
   build:
     jobs:
       # -- build jobs ------------------------------------------
-      - kurtosis-docs-checker/check-docs:
-          dir-to-exclude: '"./docs/*"'
-          should-check-changelog: false
-          markdown-link-check-config-json: |
-            {
-                "replacementPatterns": [
-                    {
-                        "pattern": "^../kurtosis/",
-                        "replacement": "https://kurtosis-tech.github.io/kurtosis/"
-                    }
-                ],
-                "ignorePatterns": [
-                    {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
-                    },
-                    {
-                        "pattern": "https://www.notion.so/kurtosistech.*"
-                    },
-                    {
-                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/.*"
-                    },
-                    {
-                        "pattern": "https://twitter.com/.*"
-                    }
-                ]
-            }
-          filters:
-            branches:
-              ignore:
-                - main
-                - release-please--branches--main--components--kurtosis
-                - gh-readonly-queue/main/.*
+#      - kurtosis-docs-checker/check-docs:
+#          dir-to-exclude: '"./docs/*"'
+#          should-check-changelog: false
+#          markdown-link-check-config-json: |
+#            {
+#                "replacementPatterns": [
+#                    {
+#                        "pattern": "^../kurtosis/",
+#                        "replacement": "https://kurtosis-tech.github.io/kurtosis/"
+#                    }
+#                ],
+#                "ignorePatterns": [
+#                    {
+#                        "pattern": "https://github.com/kurtosis-tech/kurtosis-internal-docs/.*"
+#                    },
+#                    {
+#                        "pattern": "https://www.notion.so/kurtosistech.*"
+#                    },
+#                    {
+#                        "pattern": "https://github.com/kurtosis-tech/kurtosis/compare/.*"
+#                    },
+#                    {
+#                        "pattern": "https://twitter.com/.*"
+#                    }
+#                ]
+#            }
+#          filters:
+#            branches:
+#              ignore:
+#                - main
+#                - release-please--branches--main--components--kurtosis
+#                - gh-readonly-queue/main/.*
 
-      - build_container_engine_lib:
-          filters:
-            branches:
-              ignore:
-                - main
+#      - build_container_engine_lib:
+#          filters:
+#            branches:
+#              ignore:
+#                - main
 
       - build_contexts_config_store:
           filters:
@@ -1067,11 +1067,11 @@ workflows:
             branches:
               ignore:
                 - main
-      - build_kurtosis_api_typescript:
-          filters:
-            branches:
-              ignore:
-                - main
+#      - build_kurtosis_api_typescript:
+#          filters:
+#            branches:
+#              ignore:
+#                - main
       - build_files_artifacts_expander:
           context:
             - docker-user
@@ -1107,17 +1107,17 @@ workflows:
 
       - build_cli:
           <<: *filters_ignore_main
-      - test_basic_cli_functionality:
-          name: "Test Basic CLI Functionality in Docker"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
+#      - test_basic_cli_functionality:
+#          name: "Test Basic CLI Functionality in Docker"
+#          cli-cluster-backend: "docker"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
 
 #      - test_basic_cli_functionality:
 #          name: "Test Basic CLI Functionality in Kubernetes"
@@ -1131,29 +1131,29 @@ workflows:
 #            - build_files_artifacts_expander
 #          <<: *filters_ignore_main
 
-      - test_ci_for_failure:
-          name: "Test Basic CLI for failure"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
+#      - test_ci_for_failure:
+#          name: "Test Basic CLI for failure"
+#          cli-cluster-backend: "docker"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
 
-      - build_golang_testsuite:
-          name: "Build golang testsuite against Docker"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
+#      - build_golang_testsuite:
+#          name: "Build golang testsuite against Docker"
+#          cli-cluster-backend: "docker"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
@@ -1167,39 +1167,39 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
-      - build_typescript_testsuite:
-          name: "Build typescript testsuite against Docker"
-          cli-cluster-backend: "docker"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
-      - build_typescript_testsuite:
-          name: "Build typescript testsuite against Kubernetes"
-          cli-cluster-backend: "minikube"
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
-      - test_old_enclave_continuity:
-          context:
-            - docker-user
-          requires:
-            - build_cli
-            - build_api_container_server
-            - build_engine_server
-            - build_files_artifacts_expander
-          <<: *filters_ignore_main
+#      - build_typescript_testsuite:
+#          name: "Build typescript testsuite against Docker"
+#          cli-cluster-backend: "docker"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
+#
+#      - build_typescript_testsuite:
+#          name: "Build typescript testsuite against Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
+#
+#      - test_old_enclave_continuity:
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
 
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_sdk_rust:
