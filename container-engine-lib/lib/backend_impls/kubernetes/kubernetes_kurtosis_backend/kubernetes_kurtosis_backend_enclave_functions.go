@@ -187,7 +187,7 @@ func (backend *KubernetesKurtosisBackend) UpdateEnclave(
 	}
 
 	if _, err := backend.kubernetesManager.UpdateNamespace(ctx, namespace.GetName(), namespaceApplyConfigurator); err != nil {
-		return stacktrace.Propagate(err, "An error occurred updating enclave with UUID '%v', it was trying to apply these new annotations '%+v'", updatedAnnotations)
+		return stacktrace.Propagate(err, "An error occurred updating enclave with UUID '%v', it was trying to apply these new annotations '%+v'", enclaveUuid, updatedAnnotations)
 	}
 
 	return nil
