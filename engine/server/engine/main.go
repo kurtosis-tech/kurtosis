@@ -125,6 +125,11 @@ func runMain() error {
 		serverArgs.DidUserAcceptSendingMetrics,
 		logsDatabaseClient,
 	)
+	defer func() {
+		if err := engineServerService.Close(); err != nil {
+			logrus.Errorf("We tried to close the engine server service but something fails. Err:\n%v", err)
+		}
+	}()
 
 	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
