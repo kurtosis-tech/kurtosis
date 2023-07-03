@@ -40,6 +40,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
     - run: "${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace"
+    - run: "${KURTOSIS_BINPATH} engine start --enclave-pool-size 5"
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
