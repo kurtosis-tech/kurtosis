@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
+	"time"
 )
 
 const (
@@ -164,8 +165,10 @@ func (pool *EnclavePool) GetEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting a running enclave with UUID '%v'", enclaveUUID)
 	}
 
-	if err := pool.kurtosisBackend.RenameEnclave(ctx, enclaveUUID, newEnclaveName); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred renaming enclave with UUID '%v' to '%s'", enclaveUUID, newEnclaveName)
+	newCreationTime := time.Now()
+
+	if err := pool.kurtosisBackend.UpdateEnclave(ctx, enclaveUUID, newEnclaveName, &newCreationTime); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred updating enclave with UUID '%v', trying to update name to '%s' and creation time to '%v'", enclaveUUID, newEnclaveName, newCreationTime)
 	}
 
 	enclaveInfo, err := getEnclaveInfoForEnclave(ctx, pool.kurtosisBackend, enclaveObj)
