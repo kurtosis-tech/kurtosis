@@ -322,11 +322,7 @@ func (pool *EnclavePool) getRunningEnclave(ctx context.Context, enclaveUUID encl
 // Any enclave from the enclave pool is an idle enclave
 func isIdleEnclave(enclave *enclave.Enclave) bool {
 	enclaveName := enclave.GetName()
-	if strings.HasPrefix(enclaveName, idleEnclaveNamePrefix) {
-		return true
-	}
-
-	return false
+	return strings.HasPrefix(enclaveName, idleEnclaveNamePrefix)
 }
 
 func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
