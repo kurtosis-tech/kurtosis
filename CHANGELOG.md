@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.80.5](https://github.com/kurtosis-tech/kurtosis/compare/0.80.4...0.80.5) (2023-06-30)
+
+
+### Bug Fixes
+
+* Fix TS proto bindings ([#797](https://github.com/kurtosis-tech/kurtosis/issues/797)) ([7958dba](https://github.com/kurtosis-tech/kurtosis/commit/7958dba5cec3dfb09eb69f24785d33dbd94051d6))
+* make dry run return the right return value ([#795](https://github.com/kurtosis-tech/kurtosis/issues/795)) ([be5f6e7](https://github.com/kurtosis-tech/kurtosis/commit/be5f6e75229a3887dc84c7a139aebe84b09fc77d))
+* More informative logging for instructions caching ([#785](https://github.com/kurtosis-tech/kurtosis/issues/785)) ([376ac8c](https://github.com/kurtosis-tech/kurtosis/commit/376ac8ceb7085a744c5cf84756b5d2c72a2577f7))
+
 ## [0.80.4](https://github.com/kurtosis-tech/kurtosis/compare/0.80.3...0.80.4) (2023-06-28)
 
 
