@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.80.5](https://github.com/kurtosis-tech/kurtosis/compare/0.80.4...0.80.5) (2023-06-30)
+
+
+### Bug Fixes
+
+* Fix TS proto bindings ([#797](https://github.com/kurtosis-tech/kurtosis/issues/797)) ([7958dba](https://github.com/kurtosis-tech/kurtosis/commit/7958dba5cec3dfb09eb69f24785d33dbd94051d6))
+* make dry run return the right return value ([#795](https://github.com/kurtosis-tech/kurtosis/issues/795)) ([be5f6e7](https://github.com/kurtosis-tech/kurtosis/commit/be5f6e75229a3887dc84c7a139aebe84b09fc77d))
+* More informative logging for instructions caching ([#785](https://github.com/kurtosis-tech/kurtosis/issues/785)) ([376ac8c](https://github.com/kurtosis-tech/kurtosis/commit/376ac8ceb7085a744c5cf84756b5d2c72a2577f7))
+
+## [0.80.4](https://github.com/kurtosis-tech/kurtosis/compare/0.80.3...0.80.4) (2023-06-28)
+
+
+### Features
+
+* make the docker network attachable ([#788](https://github.com/kurtosis-tech/kurtosis/issues/788)) ([aeb0b9f](https://github.com/kurtosis-tech/kurtosis/commit/aeb0b9f06749ac42b132f292bc4e24d2b177d472))
+
+## [0.80.3](https://github.com/kurtosis-tech/kurtosis/compare/0.80.2...0.80.3) (2023-06-27)
+
+
+### Features
+
+* Add minimal support for feature flags in APIC ([#775](https://github.com/kurtosis-tech/kurtosis/issues/775)) ([0858f56](https://github.com/kurtosis-tech/kurtosis/commit/0858f5685365e7d0ab032f362d5ce402c7e5e888))
+* added port print functionality in cli for users to quickly check how to access port. ([#778](https://github.com/kurtosis-tech/kurtosis/issues/778)) ([477510b](https://github.com/kurtosis-tech/kurtosis/commit/477510b801a90fce9fcc5bdc403bccc81d505201))
+* Implement idempotent run v0 ([#769](https://github.com/kurtosis-tech/kurtosis/issues/769)) ([23b121f](https://github.com/kurtosis-tech/kurtosis/commit/23b121f6ec4e956aa3d1125eeb47bffdb8c136aa))
+* Stop and start service support in the CLI ([#767](https://github.com/kurtosis-tech/kurtosis/issues/767)) ([cd4ca05](https://github.com/kurtosis-tech/kurtosis/commit/cd4ca05d17c07892b494b44f23f4c61b1b15d948)), closes [#705](https://github.com/kurtosis-tech/kurtosis/issues/705)
+
+## [0.80.2](https://github.com/kurtosis-tech/kurtosis/compare/0.80.1...0.80.2) (2023-06-26)
+
+
+### Features
+
+* Add cargo build as part of Kurtosis build ([#774](https://github.com/kurtosis-tech/kurtosis/issues/774)) ([c68fe0a](https://github.com/kurtosis-tech/kurtosis/commit/c68fe0a44c331e72e58762a420fdbc6ec947c9f7))
+
+## [0.80.1](https://github.com/kurtosis-tech/kurtosis/compare/0.80.0...0.80.1) (2023-06-26)
+
+
+### Features
+
+* Add Rust protobuf bindings ([#765](https://github.com/kurtosis-tech/kurtosis/issues/765)) ([0e47003](https://github.com/kurtosis-tech/kurtosis/commit/0e47003c9f001e31b7a18bc6ea0ddb1d330f0acb))
+* added wait to run_sh task. ([#750](https://github.com/kurtosis-tech/kurtosis/issues/750)) ([8c2b697](https://github.com/kurtosis-tech/kurtosis/commit/8c2b697548f06c1f7e8a1474e9ee2cb2922d5dea))
+* Implemented rename enclave method in container engine lib ([#755](https://github.com/kurtosis-tech/kurtosis/issues/755)) ([f1570f7](https://github.com/kurtosis-tech/kurtosis/commit/f1570f7e050109c41676e0b9b3aa6b7f251d24ee))
+* Persist enclave plan in the Starlark executor memory ([#757](https://github.com/kurtosis-tech/kurtosis/issues/757)) ([2c3d74e](https://github.com/kurtosis-tech/kurtosis/commit/2c3d74e9c88e6b3a980048b6831b23499b4a0a12))
+* Start and Stop service Starlark instructions for K8S ([#756](https://github.com/kurtosis-tech/kurtosis/issues/756)) ([fb3e922](https://github.com/kurtosis-tech/kurtosis/commit/fb3e92215fa8062d3a08d1e71ab8572129785688))
+
+
+### Bug Fixes
+
+* Fix TestStarlarkRemotePackage E2E test to reflect new quickstart ([#773](https://github.com/kurtosis-tech/kurtosis/issues/773)) ([e4dd53f](https://github.com/kurtosis-tech/kurtosis/commit/e4dd53f47ebb6b2efff00b50f035f030169396e5))
+
 ## [0.80.0](https://github.com/kurtosis-tech/kurtosis/compare/0.79.0...0.80.0) (2023-06-21)
 
 
