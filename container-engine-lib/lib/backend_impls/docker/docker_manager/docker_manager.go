@@ -1697,8 +1697,11 @@ func pullImage(ctx context.Context, dockerClient *client.Client, imageName strin
 			if err == io.EOF {
 				break
 			}
-			return stacktrace.Propagate(err, "ImagePull failed with the following error '%v'", jsonMessage.Error.Message), strings.HasPrefix(jsonMessage.Error.Message, architectureErrorString)
 		}
+		if jsonMessage.Error == nil {
+			continue
+		}
+		return stacktrace.NewError("ImagePull failed with the following error '%v'", jsonMessage.Error.Message), strings.HasPrefix(jsonMessage.Error.Message, architectureErrorString)
 	}
 	return nil, false
 }
