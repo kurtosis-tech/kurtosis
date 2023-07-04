@@ -444,7 +444,8 @@ func (manager *EnclaveManager) cleanEnclaves(
 	}
 
 	destroyEnclaveFilters := &enclave.EnclaveFilters{
-		UUIDs:    enclaveUUIDs,
+		//UUIDs:    enclaveUUIDs,
+		UUIDs:    nil,
 		Statuses: enclaveStatusFilters,
 	}
 	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
