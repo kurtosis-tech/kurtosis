@@ -7,6 +7,7 @@ package docker_manager
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -14,6 +15,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -22,10 +24,8 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"math"
 	"net"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -116,8 +116,9 @@ const (
 
 	isDockerNetworkAttachable = true
 
-	linuxAmd64 = "linux/amd64"
-	arm64      = "arm64"
+	linuxAmd64              = "linux/amd64"
+	defaultPlatform         = ""
+	architectureErrorString = "no matching manifest for linux/arm64/v8"
 )
 
 /*
@@ -1004,27 +1005,17 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 
 func (manager *DockerManager) PullImage(context context.Context, imageName string) (err error) {
 	logrus.Infof("Pulling image '%s'...", imageName)
-	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
-		All:           false,
-		RegistryAuth:  "",
-		PrivilegeFunc: nil,
-		Platform:      "",
-	})
-	if err != nil {
-		// if we are on ARM we try pulling the amd64 image as backup
-		if runtime.GOARCH == arm64 {
-			if err = manager.pullLinuxAmd64Image(context, imageName); err != nil {
-				return stacktrace.Propagate(err, "Had failed to pull image '%v' so tried pulling '%v' version of the image but that failed as well", imageName, linuxAmd64)
-			}
-		}
-		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
+	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClient, imageName, defaultPlatform)
+	if err == nil {
+		return nil
 	}
-	defer out.Close()
-	buf := new(strings.Builder)
-	_, err = io.Copy(buf, out)
-	logrus.Infof("It didn't error for '%v' and had output '%s'", imageName, out)
+	if err != nil && !retryWithLinuxAmd64 {
+		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
+	}
+	// we retry with linux/amd64
+	err, _ = pullImage(context, manager.dockerClient, imageName, linuxAmd64)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred discarding the output")
+		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
 	}
 	return nil
 }
@@ -1400,26 +1391,6 @@ func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDeamo
 	return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
 }
 
-// pullLinuxAmd64Image This function is a fallback incase we aren't able to pull an amd64 image for M1/M2s
-func (manager *DockerManager) pullLinuxAmd64Image(context context.Context, imageName string) (err error) {
-	logrus.Infof("Pulling backup linux amd64 image '%s'...", imageName)
-	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
-		All:           false,
-		RegistryAuth:  "",
-		PrivilegeFunc: nil,
-		Platform:      linuxAmd64,
-	})
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
-	}
-	defer out.Close()
-	_, err = io.Copy(ioutil.Discard, out)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred discarding the output")
-	}
-	return nil
-}
-
 // Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
 // If no bindings for the interface are found, len(output) < len(input)
 func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.PortMap) map[nat.Port]*nat.PortBinding {
@@ -1706,4 +1677,28 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 	}
 
 	return config
+}
+
+func pullImage(ctx context.Context, dockerClient *client.Client, imageName string, platform string) (error, bool) {
+	out, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{
+		All:           false,
+		RegistryAuth:  "",
+		PrivilegeFunc: nil,
+		Platform:      platform,
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "Tried pulling image '%v' with platform '%v' but failed", imageName, platform), false
+	}
+	defer out.Close()
+	responseDecoder := json.NewDecoder(out)
+	var jsonMessage *jsonmessage.JSONMessage
+	for {
+		if err = responseDecoder.Decode(&jsonMessage); err != nil {
+			if err == io.EOF {
+				break
+			}
+			return stacktrace.Propagate(err, "ImagePull failed with the following error '%v'", jsonMessage.Error.Message), strings.HasPrefix(jsonMessage.Error.Message, architectureErrorString)
+		}
+	}
+	return nil, false
 }
