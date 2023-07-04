@@ -12,9 +12,9 @@ import (
 )
 
 const (
-	labelSearchFilterKey         = "label"
-	testImageNotAvailableOnArm64 = "ethpandaops/ethereum-genesis-generator:1.2.6"
-	arm64ArchitectureString      = "arm64"
+	labelSearchFilterKey             = "label"
+	tinyTestImageNotAvailableOnArm64 = "clearlinux:base"
+	arm64ArchitectureString          = "arm64"
 )
 
 func TestGetLabelsFilterList(t *testing.T) {
@@ -155,10 +155,10 @@ func TestPullImageWithRetries(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, dockerClient)
 	ctx := context.Background()
-	err, retry := pullImage(ctx, dockerClient, testImageNotAvailableOnArm64, defaultPlatform)
+	err, retry := pullImage(ctx, dockerClient, tinyTestImageNotAvailableOnArm64, defaultPlatform)
 	require.Error(t, err)
 	require.True(t, retry)
-	err, retry = pullImage(ctx, dockerClient, testImageNotAvailableOnArm64, linuxAmd64)
+	err, retry = pullImage(ctx, dockerClient, tinyTestImageNotAvailableOnArm64, linuxAmd64)
 	require.NoError(t, err)
 	require.False(t, retry)
 }
