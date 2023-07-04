@@ -50,6 +50,8 @@ func CreateEnclavePool(
 
 	// iterate on all the existing enclaves in order to find idle enclaves already created
 	// and reuse or destroy them if these were created from old Kurtosis version
+	// it's executed as the first operation because the engine could be restarted or could crash
+	// letting some idle enclaves hanging out there
 	if err := destroyIdleEnclaves(kurtosisBackend); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying previous idle enclave before creating the enclave pool")
 	}
