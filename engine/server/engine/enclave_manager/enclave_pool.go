@@ -23,6 +23,8 @@ const (
 	fill = true
 )
 
+// No changes on enclave pool
+
 type EnclavePool struct {
 	kurtosisBackend         backend_interface.KurtosisBackend
 	enclaveCreator          *EnclaveCreator

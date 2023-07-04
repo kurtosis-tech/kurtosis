@@ -33,6 +33,8 @@ const (
 	enclaveNameNotFound = "Name Not Found"
 )
 
+// No changes on enclave manager
+
 // TODO Move this to the KurtosisBackend to calculate!!
 // Completeness enforced via unit test
 var isContainerRunningDeterminer = map[types.ContainerStatus]bool{
