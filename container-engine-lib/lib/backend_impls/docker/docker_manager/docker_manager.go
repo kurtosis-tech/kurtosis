@@ -1022,7 +1022,7 @@ func (manager *DockerManager) PullImage(context context.Context, imageName strin
 	defer out.Close()
 	buf := new(strings.Builder)
 	_, err = io.Copy(buf, out)
-	logrus.Infof("It didn't error for '%v' and had output '%v'", imageName, out)
+	logrus.Infof("It didn't error for '%v' and had output '%s'", imageName, out)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred discarding the output")
 	}
