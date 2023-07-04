@@ -70,7 +70,8 @@ func CreateEnclavePool(
 	// It has the capacity = poolSize for not blocking the caller (for concurrent requests)
 	fillChan := make(chan bool, poolSize)
 
-	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
+	//ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
+	_, cancelCtxFunc := context.WithCancel(context.Background())
 
 	enclavePool := &EnclavePool{
 		kurtosisBackend:         kurtosisBackend,
@@ -81,7 +82,7 @@ func CreateEnclavePool(
 		cancelSubRoutineCtxFunc: cancelCtxFunc,
 	}
 
-	go enclavePool.run(ctxWithCancel)
+	//go enclavePool.run(ctxWithCancel)
 
 	enclavePool.init(poolSize)
 
