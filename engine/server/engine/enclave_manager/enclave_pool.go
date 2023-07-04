@@ -6,7 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -40,7 +39,6 @@ type EnclavePool struct {
 // 3- Will start a subroutine in charge of filling the pool
 func CreateEnclavePool(
 	kurtosisBackend backend_interface.KurtosisBackend,
-	kurtosisBackendType args.KurtosisBackendType,
 	enclaveCreator *EnclaveCreator,
 	poolSize uint8,
 	engineVersion string,
@@ -335,10 +333,8 @@ func destroyIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend) erro
 	ctx := context.Background()
 
 	filters := &enclave.EnclaveFilters{
-		UUIDs: map[enclave.EnclaveUUID]bool{},
-		Statuses: map[enclave.EnclaveStatus]bool{
-			enclave.EnclaveStatus_Running: true,
-		},
+		UUIDs:    nil,
+		Statuses: nil,
 	}
 
 	enclaves, err := kurtosisBackend.GetEnclaves(ctx, filters)
@@ -369,7 +365,7 @@ func destroyEnclavesByUUID(
 	enclavesToRemove map[enclave.EnclaveUUID]bool,
 ) error {
 
-	if len(enclavesToRemove) < 1 {
+	if len(enclavesToRemove) < 0 {
 		return nil
 	}
 
