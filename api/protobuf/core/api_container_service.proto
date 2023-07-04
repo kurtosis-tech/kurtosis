@@ -33,13 +33,7 @@ service ApiContainerService {
   rpc WaitForHttpPostEndpointAvailability(WaitForHttpPostEndpointAvailabilityArgs) returns (google.protobuf.Empty) {};
 
   // Uploads a files artifact to the Kurtosis File System
-  // Deprecated: please use UploadFilesArtifactV2 to stream the data and not be blocked by the 4MB limit
-  rpc UploadFilesArtifact(UploadFilesArtifactArgs) returns (UploadFilesArtifactResponse) {};
-
-  // Uploads a files artifact to the Kurtosis File System
-  // Can be deprecated once we do not use it anymore. For now, it is still used in the TS SDK as grp-file-transfer
-  // library is only implemented in Go
-  rpc UploadFilesArtifactV2(stream StreamedDataChunk) returns (UploadFilesArtifactResponse) {};
+  rpc UploadFilesArtifact(stream StreamedDataChunk) returns (UploadFilesArtifactResponse) {};
 
   // Downloads a files artifact from the Kurtosis File System
   rpc DownloadFilesArtifact(DownloadFilesArtifactArgs) returns (stream StreamedDataChunk) {};
@@ -164,7 +158,7 @@ message RunStarlarkPackageArgs {
 }
 
 enum KurtosisFeatureFlag {
-  USE_INSTRUCTIONS_CACHING = 0;
+  NO_INSTRUCTIONS_CACHING = 0;
 }
 
 // ==============================================================================================
@@ -365,14 +359,6 @@ message DataChunkMetadata {
 // ==============================================================================================
 //                                          Upload Files Artifact
 // ==============================================================================================
-message UploadFilesArtifactArgs {
-  // Bytes of the files artifact to store
-  bytes data = 1;
-
-  // Name of the files artifact
-  string name = 2;
-}
-
 message UploadFilesArtifactResponse {
   // UUID of the files artifact, for use when referencing it in the future
   string uuid = 1;

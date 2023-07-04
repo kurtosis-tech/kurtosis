@@ -3,6 +3,7 @@ package storeservice
 import (
 	"context"
 	"fmt"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -43,6 +44,7 @@ def run(plan, args):
 		name = args["name"],
 		service_name = args["service_name"],
 	)
+	plan.print(args["uuid"]) # we add this print of a random UUID to make sure the single store_service_files above won't get cached
 `
 
 	starlarkTemplateWithoutArtifactName = `
@@ -51,6 +53,7 @@ def run(plan, args):
 		src = args["src"],
 		service_name = args["service_name"],
 	)
+	plan.print(args["uuid"]) # we add this print of a random UUID to make sure the single store_service_files above won't get cached
 `
 	noParallelism = 1
 
@@ -160,8 +163,8 @@ func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.E
 	if artifactName == defaultName {
 		template = starlarkTemplateWithoutArtifactName
 	}
-
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName), false, noParallelism, noExperimentalFeature)
+	params := fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s", "uuid": "%s"}`, serviceName, filePath, artifactName, uuid.New().String())
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, params, false, noParallelism, noExperimentalFeature)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
