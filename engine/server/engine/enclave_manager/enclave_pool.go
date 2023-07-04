@@ -46,15 +46,6 @@ func CreateEnclavePool(
 	engineVersion string,
 ) (*EnclavePool, error) {
 
-	// The enclave pool feature is only available for Kubernetes so far
-	if kurtosisBackendType != args.KurtosisBackendType_Kubernetes {
-		return nil, stacktrace.NewError("The enclave pool feature is not enable for the '%v' Kurtosis backend type so far. "+
-			"You should use '%v' for using it",
-			kurtosisBackendType.String(),
-			args.KurtosisBackendType_Kubernetes.String(),
-		)
-	}
-
 	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
 	//TODO the reuse logic is not enable yet because we ned to store the APIC version on the APIContainer object in container-engine-lib
 	//TODO in order to using it for comparing it with the expected version
