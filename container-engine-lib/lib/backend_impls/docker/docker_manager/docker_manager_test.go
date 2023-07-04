@@ -14,6 +14,7 @@ import (
 const (
 	labelSearchFilterKey         = "label"
 	testImageNotAvailableOnArm64 = "ethpandaops/ethereum-genesis-generator:1.2.6"
+	arm64ArchitectureString      = "arm64"
 )
 
 func TestGetLabelsFilterList(t *testing.T) {
@@ -147,7 +148,7 @@ func TestCorrectSelectionWhenTwoOfSameIPs(t *testing.T) {
 }
 
 func TestPullImageWithRetries(t *testing.T) {
-	if runtime.GOARCH != "arm64" {
+	if runtime.GOARCH != arm64ArchitectureString {
 		t.Skip("Skipping the test as this is not running on arm64")
 	}
 	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
