@@ -357,12 +357,13 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 	return successfulNetworkRemovalEnclaveUuids, erroredEnclaveUuids, nil
 }
 
-func (backend *DockerKurtosisBackend) RenameEnclave(
+func (backend *DockerKurtosisBackend) UpdateEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	newName string,
+	newCreationTime *time.Time,
 ) error {
-	return stacktrace.NewError("RenameEnclave isn't implemented for Docker yet")
+	return stacktrace.NewError("UpdateEnclave isn't implemented for Docker yet")
 }
 
 // ====================================================================================================
