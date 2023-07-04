@@ -354,7 +354,9 @@ func destroyIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend) erro
 	idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{}
 
 	for enclaveUUID, enclaveObj := range enclaves {
-		if isIdleEnclave(enclaveObj) {
+		enclaveName := enclaveObj.GetName()
+		// is it an idle enclave from a previous run?
+		if strings.HasPrefix(enclaveName, idleEnclaveNamePrefix) {
 			idleEnclavesToRemove[enclaveUUID] = true
 		}
 	}
