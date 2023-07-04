@@ -1400,7 +1400,7 @@ func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDeamo
 
 // pullLinuxAmd64Image This function is a fallback incase we aren't able to pull an amd64 image for M1/M2s
 func (manager *DockerManager) pullLinuxAmd64Image(context context.Context, imageName string) (err error) {
-	logrus.Infof("Pulling image '%s'...", imageName)
+	logrus.Infof("Pulling backup linux amd64 image '%s'...", imageName)
 	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
 		All:           false,
 		RegistryAuth:  "",
