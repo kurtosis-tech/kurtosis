@@ -994,12 +994,6 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
 		err = manager.PullImage(ctx, dockerImage)
 		if err != nil {
-			// if we are on ARM we try pulling the amd64 image as backup
-			if runtime.GOARCH == arm64 {
-				if err = manager.PullLinuxAmd64Image(ctx, dockerImage); err != nil {
-					return stacktrace.Propagate(err, "Had failed to pull image '%v' so tried pulling '%v' version of the image but that failed as well", dockerImage, linuxAmd64)
-				}
-			}
 			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
 		}
 		logrus.Tracef("Image successfully pulled from remote to local")
@@ -1017,26 +1011,12 @@ func (manager *DockerManager) PullImage(context context.Context, imageName strin
 		Platform:      "",
 	})
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
-	}
-	defer out.Close()
-	_, err = io.Copy(ioutil.Discard, out)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred discarding the output")
-	}
-	return nil
-}
-
-// PullLinuxAmd64Image This function is a fallback incase we aren't able to pull an amd64 image for M1/M2s
-func (manager *DockerManager) PullLinuxAmd64Image(context context.Context, imageName string) (err error) {
-	logrus.Infof("Pulling image '%s'...", imageName)
-	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
-		All:           false,
-		RegistryAuth:  "",
-		PrivilegeFunc: nil,
-		Platform:      linuxAmd64,
-	})
-	if err != nil {
+		// if we are on ARM we try pulling the amd64 image as backup
+		if runtime.GOARCH == arm64 {
+			if err = manager.pullLinuxAmd64Image(context, imageName); err != nil {
+				return stacktrace.Propagate(err, "Had failed to pull image '%v' so tried pulling '%v' version of the image but that failed as well", imageName, linuxAmd64)
+			}
+		}
 		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
 	}
 	defer out.Close()
@@ -1416,6 +1396,26 @@ func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDeamo
 	}
 
 	return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
+}
+
+// pullLinuxAmd64Image This function is a fallback incase we aren't able to pull an amd64 image for M1/M2s
+func (manager *DockerManager) pullLinuxAmd64Image(context context.Context, imageName string) (err error) {
+	logrus.Infof("Pulling image '%s'...", imageName)
+	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
+		All:           false,
+		RegistryAuth:  "",
+		PrivilegeFunc: nil,
+		Platform:      linuxAmd64,
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
+	}
+	defer out.Close()
+	_, err = io.Copy(ioutil.Discard, out)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred discarding the output")
+	}
+	return nil
 }
 
 // Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface
