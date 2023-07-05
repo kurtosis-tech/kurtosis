@@ -11,7 +11,6 @@ When running the `kurtosis run` command, you may notice the following message ge
 SKIPPED - This instruction has already been run in this enclave
 ```
 The reason this happens is because Kurtosis will optimize each run of a Starlark package based on what has already been run in a given enclave, thus reducing execution time and resources.
-in the enclave. 
 
 For example if you try to run twice the exact same package, Kurtosis will skip all the instructions for the second run
 because they were already executed in the first run. 
