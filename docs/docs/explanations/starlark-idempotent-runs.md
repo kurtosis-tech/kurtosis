@@ -15,7 +15,7 @@ The reason this happens is because Kurtosis will optimize each run of a Starlark
 This means when you try to run the exact same package twice in a row, Kurtosis will skip all the instructions for the second run because they were already executed in the first run.
 
 :::info
-This feature is still experimental and can be deactivated by adding `--experimental NO_INSTRUCTIONS_CACHING` parameter 
+This feature is still experimental and can be deactivated by adding `--experimental NO_INSTRUCTIONS_CACHING` parameter to the `kurtosis run` command.
 to the `kurtosis run` command.
 :::
 
