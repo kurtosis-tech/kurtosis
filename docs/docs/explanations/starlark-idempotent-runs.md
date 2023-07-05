@@ -29,7 +29,7 @@ Within a plan, whether it be an _enclave_ or _submitted_ plan, Kurtosis consider
 
 
 
-Two instructions are said to be _equivalent_ iff their Starlark representations are strictly equal.
+Two instructions are said to be _equivalent_ if and only if their Starlark representations are strictly equal.
 
 #### Criteria to skip an instruction
 The way Kurtosis optimize the submitted plan before executing it is by following this heuristic:
