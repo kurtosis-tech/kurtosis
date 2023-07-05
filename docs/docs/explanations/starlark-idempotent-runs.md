@@ -1,6 +1,6 @@
 ---
 title: Idempotent runs
-sidebar_label: Starlark idempotent runs
+sidebar_label: Idempotent runs
 ---
 
 Background
