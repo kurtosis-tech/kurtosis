@@ -7,6 +7,7 @@ package docker_manager
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -14,6 +15,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
@@ -22,7 +24,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"math"
 	"net"
 	"strings"
@@ -114,6 +115,10 @@ const (
 	emptyNetworkAlias = ""
 
 	isDockerNetworkAttachable = true
+
+	linuxAmd64              = "linux/amd64"
+	defaultPlatform         = ""
+	architectureErrorString = "no matching manifest for linux/arm64/v8"
 )
 
 /*
@@ -1000,19 +1005,17 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 
 func (manager *DockerManager) PullImage(context context.Context, imageName string) (err error) {
 	logrus.Infof("Pulling image '%s'...", imageName)
-	out, err := manager.dockerClient.ImagePull(context, imageName, types.ImagePullOptions{
-		All:           false,
-		RegistryAuth:  "",
-		PrivilegeFunc: nil,
-		Platform:      "",
-	})
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pull image %s", imageName)
+	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClient, imageName, defaultPlatform)
+	if err == nil {
+		return nil
 	}
-	defer out.Close()
-	_, err = io.Copy(ioutil.Discard, out)
+	if err != nil && !retryWithLinuxAmd64 {
+		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
+	}
+	// we retry with linux/amd64
+	err, _ = pullImage(context, manager.dockerClient, imageName, linuxAmd64)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred discarding the output")
+		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
 	}
 	return nil
 }
@@ -1674,4 +1677,31 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 	}
 
 	return config
+}
+
+func pullImage(ctx context.Context, dockerClient *client.Client, imageName string, platform string) (error, bool) {
+	out, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{
+		All:           false,
+		RegistryAuth:  "",
+		PrivilegeFunc: nil,
+		Platform:      platform,
+	})
+	if err != nil {
+		return stacktrace.Propagate(err, "Tried pulling image '%v' with platform '%v' but failed", imageName, platform), false
+	}
+	defer out.Close()
+	responseDecoder := json.NewDecoder(out)
+	var jsonMessage *jsonmessage.JSONMessage
+	for {
+		if err = responseDecoder.Decode(&jsonMessage); err != nil {
+			if err == io.EOF {
+				break
+			}
+		}
+		if jsonMessage.Error == nil {
+			continue
+		}
+		return stacktrace.NewError("ImagePull failed with the following error '%v'", jsonMessage.Error.Message), strings.HasPrefix(jsonMessage.Error.Message, architectureErrorString)
+	}
+	return nil, false
 }

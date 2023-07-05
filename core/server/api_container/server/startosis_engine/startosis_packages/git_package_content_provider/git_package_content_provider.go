@@ -281,6 +281,12 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 			return startosis_errors.WrapWithInterpretationError(err, "Cloning the package '%s' failed. An error occurred while creating the directory '%s'.", parsedURL.gitURL, packageAuthorPath)
 		}
 	}
+	if _, err = os.Stat(packagePath); !os.IsNotExist(err) {
+		logrus.Debugf("Package '%s' already exists in enclave at path '%s'. Going to remove previous version.", parsedURL.gitURL, packagePath)
+		if err = os.RemoveAll(packagePath); err != nil {
+			return startosis_errors.NewInterpretationError("Unable to remove a previous version of package '%s' existing inside Kurtosis enclave at '%s'.", parsedURL.gitURL, packagePath)
+		}
+	}
 	if err = os.Rename(gitClonePath, packagePath); err != nil {
 		return startosis_errors.NewInterpretationError("Cloning the package '%s' failed. An error occurred while moving package at temporary destination '%s' to final destination '%s'", parsedURL.gitURL, gitClonePath, packagePath)
 	}
