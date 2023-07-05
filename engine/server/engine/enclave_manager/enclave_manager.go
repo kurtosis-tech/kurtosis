@@ -444,8 +444,7 @@ func (manager *EnclaveManager) cleanEnclaves(
 	}
 
 	destroyEnclaveFilters := &enclave.EnclaveFilters{
-		//UUIDs:    enclaveUUIDs,
-		UUIDs:    nil,
+		UUIDs:    enclaveUUIDs,
 		Statuses: enclaveStatusFilters,
 	}
 	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
@@ -477,9 +476,9 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 	result := map[enclave.EnclaveUUID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 	for enclaveId, enclaveObj := range enclaves {
 		// filter idle enclaves because these were not created by users
-		//if isIdleEnclave(enclaveObj) {
-		//	continue
-		//}
+		if isIdleEnclave(*enclaveObj) {
+			continue
+		}
 
 		enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, enclaveObj)
 		if err != nil {
