@@ -69,6 +69,7 @@ This command has options available to customize its execution:
 1. The `--verbosity` flag can be used to set the verbosity of the command output. The options include `BRIEF`, `DETAILED`, or `EXECUTABLE`. If unset, this flag defaults to `BRIEF` for a concise and explicit output. Use `DETAILED` to display the exhaustive list of arguments for each command. Meanwhile, `EXECUTABLE` will generate executable Starlark instructions. 
 1. The `--main-file` flag can be used to set the main file filepath, the "main" file is a file for the main method (i.e. the package's entrypoint) which will be executed first; the filepath has to be relative to the package's root. The default value is 'main.star'. This flag is only used for running packages. Example: if your main file is located in a path like this `github.com/my-org/my-package/src/internal/my-file.star` you should set `src/internal/my-file.star` as the relative path.
 1. The `--main-function-name` flag can be used to set the main function name, which will be executed first as the entrypoint of the package or the module. The default value is 'run'.
+1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
 
 Example of using setting the --main-function-name flag
 
