@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
+	"time"
 )
 
 // TODO CALL THE METRICS LIBRARY EVENT-REGISTRATION FUNCTIONS HERE!!!!
@@ -120,14 +121,15 @@ func (backend *MetricsReportingKurtosisBackend) GetEnclaves(
 	return results, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) RenameEnclave(
+func (backend *MetricsReportingKurtosisBackend) UpdateEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	newName string,
+	newCreationTime *time.Time,
 ) error {
 
-	if err := backend.underlying.RenameEnclave(ctx, enclaveUuid, newName); err != nil {
-		return stacktrace.Propagate(err, "An error occurred renaming enclave with UUID '%v' to '%s'", enclaveUuid, newName)
+	if err := backend.underlying.UpdateEnclave(ctx, enclaveUuid, newName, newCreationTime); err != nil {
+		return stacktrace.Propagate(err, "An error occurred updating enclave with UUID '%v', updating name to '%s' and creation time to '%v'", enclaveUuid, newName, newCreationTime)
 	}
 
 	return nil

@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"golang.org/x/sync/errgroup"
 	"io"
+	"time"
 )
 
 // RemoteContextKurtosisBackend is a dual context holding a reference to a local backend running on Docker (k8s is
@@ -91,8 +92,8 @@ func (backend *RemoteContextKurtosisBackend) GetEnclaves(ctx context.Context, fi
 	return backend.remoteKurtosisBackend.GetEnclaves(ctx, filters)
 }
 
-func (backend *RemoteContextKurtosisBackend) RenameEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, newName string) error {
-	return backend.remoteKurtosisBackend.RenameEnclave(ctx, enclaveUuid, newName)
+func (backend *RemoteContextKurtosisBackend) UpdateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, newName string, newCreationTime *time.Time) error {
+	return backend.remoteKurtosisBackend.UpdateEnclave(ctx, enclaveUuid, newName, newCreationTime)
 }
 
 func (backend *RemoteContextKurtosisBackend) StopEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (successfulEnclaveIds map[enclave.EnclaveUUID]bool, erroredEnclaveIds map[enclave.EnclaveUUID]error, resultErr error) {
