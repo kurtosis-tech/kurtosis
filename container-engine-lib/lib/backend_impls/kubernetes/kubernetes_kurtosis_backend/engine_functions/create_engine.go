@@ -127,12 +127,12 @@ func CreateEngine(
 	var shouldRemovePod = true
 	defer func() {
 		if shouldRemovePod {
-			logrus.Debugf("[LEO-DEBUG] removing the pod from Kurtosis Create Engine method because something fails")
-			//TODO [LEO-DEBUG] uncomment this to enable pod deletion
-			//if err := kubernetesManager.RemovePod(ctx, enginePod); err != nil {
-			//	logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePod.Name, err)
-			//	logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", enginePod.Name)
-			//}
+			logrus.Debugf("Removing Kurtosis engine Kubernetes pod because something fails during the creation process...")
+			if err := kubernetesManager.RemovePod(ctx, enginePod); err != nil {
+				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePod.Name, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", enginePod.Name)
+			}
+			logrus.Debugf("Removing Kurtosis engine Kubernetes pod succesfully removed")
 		}
 	}()
 
