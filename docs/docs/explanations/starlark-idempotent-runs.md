@@ -10,7 +10,7 @@ When running the `kurtosis run` command, you may notice the following message ge
 ```console
 SKIPPED - This instruction has already been run in this enclave
 ```
-To reduce execution time, Kurtosis tries to optimize each run of a Starlark package based on what has already been run 
+The reason this happens is because Kurtosis will optimize each run of a Starlark package based on what has already been run in a given enclave, thus reducing execution time and resources.
 in the enclave. 
 
 For example if you try to run twice the exact same package, Kurtosis will skip all the instructions for the second run
