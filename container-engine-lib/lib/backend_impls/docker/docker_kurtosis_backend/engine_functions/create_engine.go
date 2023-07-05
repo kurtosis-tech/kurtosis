@@ -55,6 +55,16 @@ func CreateEngine(
 		)
 	}
 
+	httpPortSpec, err := port_spec.NewPortSpec(uint16(9711), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the engine's http port spec object using number '%v' and protocol '%v'",
+			9711,
+			consts.EngineTransportProtocol.String(),
+		)
+	}
+
 	engineAttrs, err := objAttrsProvider.ForEngineServer(
 		engineGuid,
 		consts.KurtosisInternalContainerGrpcPortId,
@@ -74,8 +84,14 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
 
+	httpDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(httpPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
+	}
+
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort: docker_manager.NewManualPublishingSpec(grpcPortNum),
+		httpDockerPort:        docker_manager.NewManualPublishingSpec(uint16(9711)),
 	}
 
 	bindMounts := map[string]string{
