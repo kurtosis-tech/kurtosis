@@ -40,7 +40,7 @@ Kurtosis uses the following heuristic to determine which parts of a plan to skip
    1. And if at least ONE of the following assertions is true:
       1. There is no direct dependent instruction for the given instruction in the _submitted plan_. Put it simply, it is the last instruction of the _submitted plan_.
       1. There is no direct dependent instruction for the _matched instruction_ in the _enclave plan_. Put it simply, the _matched instruction_ is the last instruction of the _enclave plan_.
-      1. the sequence of direct dependent instructions for the _matched instruction_ in the _enclave plan_ is a _prefix_ of the sequence of direct dependent instructions of the _instruction_ from the _submitted plan_
+      1. The sequence of direct dependent instructions for the _matched instruction_ in the _enclave plan_ is a _prefix_ of the sequence of direct dependent instructions of the _instruction_ from the _submitted plan_.
 
 Examples
 --------
