@@ -28,7 +28,6 @@ The __enclave plan__ is defined as the sequence of Starlark instructions that we
 Within a plan, whether it be an _enclave_ or _submitted_ plan, Kurtosis considers a given instruction `instruction_2` to be dependent on another instruction `instruction_1` if and only if `instruction_2` is sequenced to take place _after_ `instruction_1` in the plan's instruction sequence.
 
 
-Inside a plan (enclave plan or submitted plan), it is said that an instruction (i.e. `instruction_1`) _depends_ on 
 another instruction (`instruction_2`) iff `instruction_2` is located _before_ `instruction_1` in the plan's instructions
 sequence.
 
