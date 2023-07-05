@@ -36,7 +36,7 @@ Kurtosis uses the following heuristic to determine which parts of a plan to skip
 
 1. Any instruction from the _submitted plan_ that is executed inside the enclave is appended to the _enclave plan_
 1. For any given instruction from the _submitted plan_, it is effectively skipped (i.e. not executed) if:
-   1. it exists one instruction in the *enclave plan* equivalent to this instruction (called the _matched instruction_ below)
+   1. There exists one instruction in the *enclave plan* that is equivalent to this instruction in the _enclave plan_(called the _matched instruction_ below)
    1. and ONE of the following assertions is true:
       1. there is no direct dependent instruction for this instruction in the _submitted plan_. Put it simply, it is the last instruction of the _submitted plan_
       1. there is no direct dependent instruction for the _matched instruction_ in the _enclave plan_. Put it simply, the _matched instruction_ is the last instruction of the _enclave plan_
