@@ -1,5 +1,5 @@
 ---
-title: Starlark idempotent runs
+title: Idempotent runs
 sidebar_label: Starlark idempotent runs
 ---
 
