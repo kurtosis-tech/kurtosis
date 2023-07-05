@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.7](https://github.com/kurtosis-tech/kurtosis/compare/0.80.6...0.80.7) (2023-07-05)
+
+
+### Bug Fixes
+
+* Remove existing package directory if it already exists in APIC ([#818](https://github.com/kurtosis-tech/kurtosis/issues/818)) ([4027485](https://github.com/kurtosis-tech/kurtosis/commit/4027485d20917729eb1271387be1317af89ff025))
+
 ## [0.80.6](https://github.com/kurtosis-tech/kurtosis/compare/0.80.5...0.80.6) (2023-07-04)
 
 
