@@ -72,10 +72,11 @@ func CreateEngine(
 	shouldRemoveNamespace := true
 	defer func() {
 		if shouldRemoveNamespace {
-			if err := kubernetesManager.RemoveNamespace(ctx, namespace); err != nil {
+			logrus.Debugf("[LEO-DEBUG] emulating removing the namespace from Kurtosis Create Engine method because something fails")
+			/*if err := kubernetesManager.RemoveNamespace(ctx, namespace); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes namespace '%v' that we created but an error was thrown:\n%v", namespace.Name, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes namespace with name '%v'!!!!!!!", namespace.Name)
-			}
+			}*/
 		}
 	}()
 	namespaceName := namespace.Name
@@ -87,10 +88,11 @@ func CreateEngine(
 	shouldRemoveServiceAccount := true
 	defer func() {
 		if shouldRemoveServiceAccount {
-			if err := kubernetesManager.RemoveServiceAccount(ctx, serviceAccount); err != nil {
+			logrus.Debugf("[LEO-DEBUG] emulating removing the service account from Kurtosis Create Engine method because something fails")
+			/*if err := kubernetesManager.RemoveServiceAccount(ctx, serviceAccount); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete service account '%v' in namespace '%v' that we created but an error was thrown:\n%v", serviceAccount.Name, namespaceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove service account with name '%v'!!!!!!!", serviceAccount.Name)
-			}
+			}*/
 		}
 	}()
 
@@ -101,10 +103,11 @@ func CreateEngine(
 	shouldRemoveClusterRole := true
 	defer func() {
 		if shouldRemoveClusterRole {
-			if err := kubernetesManager.RemoveClusterRole(ctx, clusterRole); err != nil {
+			logrus.Debugf("[LEO-DEBUG] emulating removing the cluster role from Kurtosis Create Engine method because something fails")
+			/*if err := kubernetesManager.RemoveClusterRole(ctx, clusterRole); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete cluster role '%v' that we created but an error was thrown:\n%v", clusterRole.Name, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove cluster role with name '%v'!!!!!!!", clusterRole.Name)
-			}
+			}*/
 		}
 	}()
 
@@ -115,10 +118,11 @@ func CreateEngine(
 	shouldRemoveClusterRoleBinding := true
 	defer func() {
 		if shouldRemoveClusterRoleBinding {
-			if err := kubernetesManager.RemoveClusterRoleBindings(ctx, clusterRoleBindings); err != nil {
+			logrus.Debugf("[LEO-DEBUG] emulating removing the cluster role binding from Kurtosis Create Engine method because something fails")
+			/*if err := kubernetesManager.RemoveClusterRoleBindings(ctx, clusterRoleBindings); err != nil {
 				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete cluster role bindings '%v' in namespace '%v' that we created but an error was thrown:\n%v", clusterRoleBindings.Name, namespaceName, err)
 				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove cluster role bindings with name '%v'!!!!!!!", clusterRoleBindings.Name)
-			}
+			}*/
 		}
 	}()
 
@@ -129,7 +133,7 @@ func CreateEngine(
 	var shouldRemovePod = true
 	defer func() {
 		if shouldRemovePod {
-			logrus.Debugf("[LEO-DEBUG] removing the pod from Kurtosis Create Engine method because something fails")
+			logrus.Debugf("[LEO-DEBUG] emulating removing the pod from Kurtosis Create Engine method because something fails")
 			//if err := kubernetesManager.RemovePod(ctx, enginePod); err != nil {
 			//	logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePod.Name, err)
 			//	logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", enginePod.Name)
@@ -151,10 +155,11 @@ func CreateEngine(
 	var shouldRemoveService = true
 	defer func() {
 		if shouldRemoveService {
-			if err := kubernetesManager.RemoveService(ctx, engineService); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes service '%v' that we created but an error was thrown:\n%v", engineService.Name, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service with name '%v'!!!!!!!", engineService.Name)
-			}
+			logrus.Debugf("[LEO-DEBUG] emulating removing the service from Kurtosis Create Engine method because something fails")
+			//if err := kubernetesManager.RemoveService(ctx, engineService); err != nil {
+			//logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes service '%v' that we created but an error was thrown:\n%v", engineService.Name, err)
+			//logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes service with name '%v'!!!!!!!", engineService.Name)
+			//}
 		}
 	}()
 
