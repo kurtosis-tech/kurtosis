@@ -48,21 +48,19 @@ func CreateEnclavePool(
 	//TODO the reuse logic is not enable yet because we ned to store the APIC version on the APIContainer object in container-engine-lib
 	//TODO in order to using it for comparing it with the expected version
 
-	// iterate on all the existing enclaves in order to find idle enclaves already created
-	// and reuse or destroy them if these were created from old Kurtosis version
-	// it's executed as the first operation because the engine could be restarted or could crash
-	// letting some idle enclaves hanging out there
-	// we do our best effort to destroy idle enclaves from previous runs, even with a retry strategy
-	// but we don't want to wait for it and if something fails we suggest users to manually
-	// destroy the old idle enclaves showing them they UUIDs
-	now := time.Now()
-	go destroyIdleEnclavesFromPreviousRuns(kurtosisBackend, now)
-
 	// validations
 	// poolSize = 0 means that the Enclave Pool won't be activated, it returns nil with no error
 	if poolSize == 0 {
 		return nil, nil
 	}
+
+	// Iterate on all the existing enclaves in order to find idle enclaves already created
+	// and reuse or destroy them if these were created from old Kurtosis version.
+	// We do our best effort to destroy idle enclaves from previous runs, even with a retry strategy
+	// but, we don't want to wait for it. If something fails, we suggest users to manually
+	// destroy the old idle enclaves showing them the UUIDs
+	now := time.Now()
+	go destroyIdleEnclavesFromPreviousRuns(kurtosisBackend, now)
 
 	// this channel is the repository of idle enclave UUIDs
 	idleEnclavesChan := make(chan enclave.EnclaveUUID, poolSize)
