@@ -99,7 +99,7 @@ func CreateEnclaveManager(
 
 // It's a liiiitle weird that we return an EnclaveInfo object (which is a Protobuf object), but as of 2021-10-21 this class
 //
-//	is only used by the EngineServerService so we might as well return the object that EngineServerService wants
+// is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
 	// If blank, will use the default
@@ -259,9 +259,14 @@ func (manager *EnclaveManager) Clean(ctx context.Context, shouldCleanAll bool) (
 		return nil, stacktrace.Propagate(err, "Tried retrieving existing enclaves but failed")
 	}
 
-	successfullyRemovedEnclaveUuidStrs, removalErrors, err := manager.cleanEnclaves(ctx, shouldCleanAll)
+	enclaveUUIDsToClean := map[enclave.EnclaveUUID]bool{}
+	for enclaveUUID := range enclavesForUuidNameMapping {
+		enclaveUUIDsToClean[enclaveUUID] = true
+	}
+
+	successfullyRemovedEnclaveUuidStrs, removalErrors, err := manager.cleanEnclaves(ctx, enclaveUUIDsToClean, shouldCleanAll)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with shouldCleanAll set to '%v'", shouldCleanAll)
+		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves with UUIDs '%+v' and shouldCleanAll set to '%v'", enclaveUUIDsToClean, shouldCleanAll)
 	}
 
 	if len(removalErrors) > 0 {
@@ -425,7 +430,11 @@ func (manager *EnclaveManager) stopEnclaveWithoutMutex(ctx context.Context, encl
 	return nil
 }
 
-func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll bool) ([]string, []error, error) {
+func (manager *EnclaveManager) cleanEnclaves(
+	ctx context.Context,
+	enclaveUUIDs map[enclave.EnclaveUUID]bool,
+	shouldCleanAll bool,
+) ([]string, []error, error) {
 	enclaveStatusFilters := map[enclave.EnclaveStatus]bool{
 		enclave.EnclaveStatus_Stopped: true,
 		enclave.EnclaveStatus_Empty:   true,
@@ -435,7 +444,7 @@ func (manager *EnclaveManager) cleanEnclaves(ctx context.Context, shouldCleanAll
 	}
 
 	destroyEnclaveFilters := &enclave.EnclaveFilters{
-		UUIDs:    nil,
+		UUIDs:    enclaveUUIDs,
 		Statuses: enclaveStatusFilters,
 	}
 	successfullyDestroyedEnclaves, erroredEnclaves, err := manager.kurtosisBackend.DestroyEnclaves(ctx, destroyEnclaveFilters)
@@ -466,6 +475,11 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 
 	result := map[enclave.EnclaveUUID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 	for enclaveId, enclaveObj := range enclaves {
+		// filter idle enclaves because these were not created by users
+		if isIdleEnclave(*enclaveObj) {
+			continue
+		}
+
 		enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, enclaveObj)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting information about enclave '%v'", enclaveId)
