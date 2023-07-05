@@ -449,7 +449,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 ) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 	kurtosisYamlFilepath := path.Join(packageRootPath, kurtosisYamlFilename)
 
-	kurtosisYaml, err := parseKurtosisYaml(kurtosisYamlFilepath)
+	kurtosisYaml, err := ParseKurtosisYaml(kurtosisYamlFilepath)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, packageRootPath)
 	}
