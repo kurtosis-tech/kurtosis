@@ -1,6 +1,7 @@
 package engine_functions
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
@@ -15,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"io"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	"time"
@@ -127,10 +129,11 @@ func CreateEngine(
 	var shouldRemovePod = true
 	defer func() {
 		if shouldRemovePod {
-			if err := kubernetesManager.RemovePod(ctx, enginePod); err != nil {
-				logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePod.Name, err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", enginePod.Name)
-			}
+			logrus.Debugf("[LEO-DEBUG] removing the pod from Kurtosis Create Engine method because something fails")
+			//if err := kubernetesManager.RemovePod(ctx, enginePod); err != nil {
+			//	logrus.Errorf("Creating the engine didn't complete successfully, so we tried to delete Kubernetes pod '%v' that we created but an error was thrown:\n%v", enginePod.Name, err)
+			//	logrus.Errorf("ACTION REQUIRED: You'll need to manually remove Kubernetes pod with name '%v'!!!!!!!", enginePod.Name)
+			//}
 		}
 	}()
 
@@ -173,6 +176,23 @@ func CreateEngine(
 	if !found {
 		return nil, stacktrace.NewError("Successfully converted the new engine's Kubernetes resources to an engine object, but the resulting map didn't have an entry for engine GUID '%v'", engineGuid)
 	}
+
+	// TODO remove this get logs
+	// Get logs
+	logReadCloser, err := kubernetesManager.GetContainerLogs(ctx, namespaceName, enginePod.Name, kurtosisEngineContainerName, false, true)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "[LEO-DEBUG] An error occurred getting the pod container logs")
+	}
+	defer logReadCloser.Close()
+
+	buffer := &bytes.Buffer{}
+	if _, copyErr := io.Copy(buffer, logReadCloser); copyErr != nil {
+		return nil, stacktrace.Propagate(err, "[LEO-DEBUG] An error occurred copying the container logs")
+	}
+
+	logrus.Debugf("[LEO-DEBUG] Container Logs:\n%s", buffer.String())
+	logrus.Debug("[LEO-DEBUG] Finished container logs")
+	// TODO remove this ^^ get logs
 
 	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
 		kubernetesManager,
