@@ -6,7 +6,7 @@ sidebar_label: Starlark idempotent runs
 Background
 ----------
 
-Did you notice those lines in the `kurtosis run` command output?
+When running the `kurtosis run` command, you may notice the following message get printed:
 ```console
 SKIPPED - This instruction has already been run in this enclave
 ```
