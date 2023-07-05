@@ -16,7 +16,6 @@ This means when you try to run the exact same package twice in a row, Kurtosis w
 
 :::info
 This feature is still experimental and can be deactivated by adding `--experimental NO_INSTRUCTIONS_CACHING` parameter to the `kurtosis run` command.
-to the `kurtosis run` command.
 :::
 
 How it works
