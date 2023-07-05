@@ -52,9 +52,11 @@ func CreateEnclavePool(
 	// and reuse or destroy them if these were created from old Kurtosis version
 	// it's executed as the first operation because the engine could be restarted or could crash
 	// letting some idle enclaves hanging out there
-	if err := destroyIdleEnclaves(kurtosisBackend); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred destroying previous idle enclave before creating the enclave pool")
-	}
+	// we do our best effort to destroy idle enclaves from previous runs, even with a retry strategy
+	// but we don't want to wait for it and if something fails we suggest users to manually
+	// destroy the old idle enclaves showing them they UUIDs
+	now := time.Now()
+	go destroyIdleEnclavesFromPreviousRuns(kurtosisBackend, now)
 
 	// validations
 	// poolSize = 0 means that the Enclave Pool won't be activated, it returns nil with no error
@@ -359,6 +361,64 @@ func destroyIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend) erro
 	}
 
 	return nil
+}
+
+// destroyIdleEnclavesFromPreviousRuns destroy idle enclaves created before the beforeTime with a retry strategy
+// We have seen the "context deadline exceeded" from Kubernetes in the past, and this usually happens
+// because the Kubernetes has just started, and it is a bit slow to retrieve the information and throws that error
+func destroyIdleEnclavesFromPreviousRuns(kurtosisBackend backend_interface.KurtosisBackend, beforeTime time.Time) {
+	var err error
+	var idleEnclavesToRemove map[enclave.EnclaveUUID]bool
+	maxRetries := uint(5)
+
+	for i := uint(0); i < maxRetries; i++ {
+		idleEnclavesToRemove, err = destroyOldIdleEnclaves(kurtosisBackend, beforeTime)
+		if err != nil {
+			maxRetries++
+			continue
+		}
+		break
+	}
+
+	if err != nil {
+		logrus.Errorf("We tried to destroy idle enclaves from previous run but something failed, even after retrying %v times; we suggest to manually remove these idle enclave with UUIDs '%+v'. Last error was:\n %v", maxRetries, idleEnclavesToRemove, err)
+		return
+	}
+
+	if len(idleEnclavesToRemove) > 0 {
+		logrus.Debugf("Succesfully destroyed idle eclaves with UUIDS '%+v' from previous runs", idleEnclavesToRemove)
+	}
+}
+
+func destroyOldIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend, beforeTime time.Time) (map[enclave.EnclaveUUID]bool, error) {
+	ctx := context.Background()
+
+	filters := &enclave.EnclaveFilters{
+		UUIDs:    nil,
+		Statuses: nil,
+	}
+
+	idleEnclavesToRemove := map[enclave.EnclaveUUID]bool{}
+
+	enclaves, err := kurtosisBackend.GetEnclaves(ctx, filters)
+	if err != nil {
+		return idleEnclavesToRemove, stacktrace.Propagate(err, "An error occurred getting enclaves using filters '%+v'", filters)
+	}
+
+	for enclaveUUID, enclaveObj := range enclaves {
+		enclaveName := enclaveObj.GetName()
+		enclaveCreationTime := enclaveObj.GetCreationTime()
+		// is it an idle enclave from a previous run?
+		if strings.HasPrefix(enclaveName, idleEnclaveNamePrefix) && enclaveCreationTime.Before(beforeTime) {
+			idleEnclavesToRemove[enclaveUUID] = true
+		}
+	}
+
+	if err := destroyEnclavesByUUID(ctx, kurtosisBackend, idleEnclavesToRemove); err != nil {
+		return idleEnclavesToRemove, stacktrace.Propagate(err, "An error occurred destroying enclaves with UUIDs '%v'", idleEnclavesToRemove)
+	}
+
+	return idleEnclavesToRemove, nil
 }
 
 func destroyEnclavesByUUID(
