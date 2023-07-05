@@ -16,7 +16,7 @@ type KurtosisYaml struct {
 	PackageName string `yaml:"name"`
 }
 
-func parseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
+func ParseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
 	kurtosisYamlContents, err := ioutil.ReadFile(kurtosisYamlFilepath)
 	if err != nil {
 		if os.IsNotExist(err) {
