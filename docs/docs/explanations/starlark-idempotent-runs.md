@@ -13,7 +13,6 @@ SKIPPED - This instruction has already been run in this enclave
 The reason this happens is because Kurtosis will optimize each run of a Starlark package based on what has already been run in a given enclave, thus reducing execution time and resources.
 
 This means when you try to run the exact same package twice in a row, Kurtosis will skip all the instructions for the second run because they were already executed in the first run.
-because they were already executed in the first run. 
 
 :::info
 This feature is still experimental and can be deactivated by adding `--experimental NO_INSTRUCTIONS_CACHING` parameter 
