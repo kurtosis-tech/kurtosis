@@ -32,7 +32,7 @@ Within a plan, whether it be an _enclave_ or _submitted_ plan, Kurtosis consider
 Two instructions are said to be _equivalent_ if and only if their Starlark representations are strictly equal.
 
 #### Criteria to skip an instruction
-The way Kurtosis optimize the submitted plan before executing it is by following this heuristic:
+Kurtosis uses the following heuristic to determine which parts of a plan to skip in order to optimize runs:
 
 1. any instruction from the _submitted plan_ that is executed inside the enclave is appended to the _enclave plan_
 1. for any given instruction from the _submitted plan_, it is effectively skipped (i.e. not executed) if:
