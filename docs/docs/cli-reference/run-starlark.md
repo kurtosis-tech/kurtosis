@@ -66,9 +66,23 @@ This command has options available to customize its execution:
 1. The `--parallelism` flag can be used to specify to what degree of parallelism certain commands can be run. For example: if the script contains an [`add_services`][add-services-reference] instruction and is run with `--parallelism 100`, up to 100 services will be run at one time.
 1. The `--enclave` flag can be used to instruct Kurtosis to run the script inside the specified enclave or create a new enclave (with the given enclave [identifier](../concepts-reference/resource-identifier.md)) if one does not exist. If this flag is not used, Kurtosis will create a new enclave with an auto-generated name, and run the script or package inside it.
 1. The `--with-subnetworks` flag can be used to enable [subnetwork capabilties](../concepts-reference/subnetworks.md) within the specified enclave that the script or package is instructed to run within. This flag is false by default.
-1. The `--verbosity` flag can be used to set the verbosity of the command output. The options include `BRIEF`, `DETAILED`, or `EXECUTABLE`. If unset, this flag defaults to `BRIEF` for a concise and explicit output. Use `DETAILED` to display the exhaustive list of arguments for each command. Meanwhile, `EXECUTABLE` will generate executable Starlark instructions. 
-1. The `--main-file` flag can be used to set the main file filepath, the "main" file is a file for the main method (i.e. the package's entrypoint) which will be executed first; the filepath has to be relative to the package's root. The default value is 'main.star'. This flag is only used for running packages. Example: if your main file is located in a path like this `github.com/my-org/my-package/src/internal/my-file.star` you should set `src/internal/my-file.star` as the relative path.
-1. The `--main-function-name` flag can be used to set the main function name, which will be executed first as the entrypoint of the package or the module. The default value is 'run'.
+1. The `--verbosity` flag can be used to set the verbosity of the command output. The options include `BRIEF`, `DETAILED`, or `EXECUTABLE`. If unset, this flag defaults to `BRIEF` for a concise and explicit output. Use `DETAILED` to display the exhaustive list of arguments for each command. Meanwhile, `EXECUTABLE` will generate executable Starlark instructions.
+1. The `--main-function-name` flag can be used to set the name of the main entrypoint Starlark function that will be called to start the run. The default value is `run`, meaning Starlark will look for a function called `run` in the main file defined by the `--main-file` flag. Regardless of the function, Kurtosis expects the main function to have a parameter called `plan` into which Kurtosis will inject [the Kurtosis plan](../concepts-reference/plan.md).
+
+   For example:
+
+   To run the `start_node` function in a `main.star` file, simple use:
+   ```bash
+   kurtosis run main.star --main-function-name start_node
+   ```
+   
+   Where `start_node` is a function defined in `main.star` like so:
+   ```python
+   # --------------- main.star --------------------
+   def start_node(plan, args):
+       # your code
+   ```
+1. The `--main-file` flag sets the main file in which Kurtosis looks for the main function defined via the `--main-function-name` flag. This can be thought of as the entrypoint file. This flag takes a filepath **relative to the package's root**, and defaults to `main.star`. This flag is only used for running packages. For example, if your package is `github.com/my-org/my-package` but your main file is located in subdirectories like `github.com/my-org/my-package/src/internal/my-file.star`, you should set this flag like `--main-file src/internal/my-file.star`.
 1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
 
 Example of using setting the --main-function-name flag
