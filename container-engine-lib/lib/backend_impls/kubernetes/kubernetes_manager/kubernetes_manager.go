@@ -1249,9 +1249,10 @@ func (manager *KubernetesManager) GetContainerLogs(
 // RunExecCommandWithContext This runs the exec to kubernetes with context, therefore
 // when context timeouts it stops the process.
 // TODO: merge RunExecCommand and this to one method
-//  Doing this for now to unblock myself for wait worflows for k8s
-//  In next PR, will include add context to WaitForPortAvailabilityUsingNetstat and
-//  CopyFilesFromUserService method. I am doing this to reduce the blast radius.
+//
+//	Doing this for now to unblock myself for wait worflows for k8s
+//	In next PR, will include add context to WaitForPortAvailabilityUsingNetstat and
+//	CopyFilesFromUserService method. I am doing this to reduce the blast radius.
 func (manager *KubernetesManager) RunExecCommandWithContext(
 	ctx context.Context,
 	namespaceName string,
@@ -1742,8 +1743,8 @@ func (manager *KubernetesManager) waitForPodTermination(ctx context.Context, nam
 	for time.Now().Before(deadline) {
 		pod, err := manager.GetPod(ctx, namespaceName, podName)
 		if err != nil {
-			// The pod info is not always available after deletion so we handle that gracefully
-			logrus.Warnf("An error occured trying to retrieve the just-deleted pod '%v': %v", podName, err)
+			// The pod info is not always available after deletion, so we handle that gracefully
+			logrus.Debugf("An error occured trying to retrieve the just-deleted pod '%v': %v, for checking if it was succesfully terminated; but we can't ignore this error beucase the pod info is not always available after deletion", podName, err)
 			return nil
 		}
 
