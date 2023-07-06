@@ -1,15 +1,20 @@
 package docker_manager
 
 import (
+	"context"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"runtime"
 	"testing"
 )
 
 const (
-	labelSearchFilterKey = "label"
+	labelSearchFilterKey             = "label"
+	tinyTestImageNotAvailableOnArm64 = "clearlinux:base"
+	arm64ArchitectureString          = "arm64"
 )
 
 func TestGetLabelsFilterList(t *testing.T) {
@@ -140,4 +145,20 @@ func TestCorrectSelectionWhenTwoOfSameIPs(t *testing.T) {
 	require.True(t, found)
 	require.Equal(t, "127.0.0.1", publicBinding2.HostIP)
 	require.Equal(t, "9711", publicBinding2.HostPort)
+}
+
+func TestPullImageWithRetries(t *testing.T) {
+	if runtime.GOARCH != arm64ArchitectureString {
+		t.Skip("Skipping the test as this is not running on arm64")
+	}
+	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	require.NoError(t, err)
+	require.NotNil(t, dockerClient)
+	ctx := context.Background()
+	err, retry := pullImage(ctx, dockerClient, tinyTestImageNotAvailableOnArm64, defaultPlatform)
+	require.Error(t, err)
+	require.True(t, retry)
+	err, retry = pullImage(ctx, dockerClient, tinyTestImageNotAvailableOnArm64, linuxAmd64)
+	require.NoError(t, err)
+	require.False(t, retry)
 }

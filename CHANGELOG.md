@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.80.7](https://github.com/kurtosis-tech/kurtosis/compare/0.80.6...0.80.7) (2023-07-05)
+
+
+### Bug Fixes
+
+* Remove existing package directory if it already exists in APIC ([#818](https://github.com/kurtosis-tech/kurtosis/issues/818)) ([4027485](https://github.com/kurtosis-tech/kurtosis/commit/4027485d20917729eb1271387be1317af89ff025))
+
+## [0.80.6](https://github.com/kurtosis-tech/kurtosis/compare/0.80.5...0.80.6) (2023-07-04)
+
+
+### Features
+
+* Invert USE_INSTRUCTIONS_CACHING feature flag ([#800](https://github.com/kurtosis-tech/kurtosis/issues/800)) ([9a358db](https://github.com/kurtosis-tech/kurtosis/commit/9a358db49d4d222db4c45de62c70e190c6fa7c12))
+
+
+### Bug Fixes
+
+* fallback to the amd64 image if there's a failure for arm64 image not existing ([#814](https://github.com/kurtosis-tech/kurtosis/issues/814)) ([9cc1033](https://github.com/kurtosis-tech/kurtosis/commit/9cc10332fd67dbe060b883296c7efe5284130b12))
+
 ## [0.80.5](https://github.com/kurtosis-tech/kurtosis/compare/0.80.4...0.80.5) (2023-06-30)
 
 

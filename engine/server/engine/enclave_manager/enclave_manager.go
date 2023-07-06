@@ -77,9 +77,12 @@ func CreateEnclaveManager(
 		enclavePool *EnclavePool
 	)
 
-	enclavePool, err = CreateEnclavePool(kurtosisBackend, kurtosisBackendType, enclaveCreator, poolSize, engineVersion)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
+	// The enclave pool feature is only available for Kubernetes so far
+	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
+		}
 	}
 
 	enclaveManager := &EnclaveManager{
@@ -473,7 +476,7 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 	result := map[enclave.EnclaveUUID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
 	for enclaveId, enclaveObj := range enclaves {
 		// filter idle enclaves because these were not created by users
-		if isIdleEnclave(enclaveObj) {
+		if isIdleEnclave(*enclaveObj) {
 			continue
 		}
 

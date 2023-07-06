@@ -373,7 +373,7 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.engine-server-image-filename >> "${image_name_with_version}"          
-          
+
 
       - save_cache:
           key: << pipeline.parameters.engine-server-build-cache-key-prefix>>-{{ checksum "engine/server/go.sum" }}
@@ -479,7 +479,7 @@ jobs:
                   touch /tmp/testsuite-failed
                 fi
 
-      # TODO TODO TODO DELETE THIS HACK!!!!! 
+      # TODO TODO TODO DELETE THIS HACK!!!!!
       # As of 2022-11-18, 'enclave dump' in Kubernetes in CircleCI (but not locally) takes 30s to run per enclave, and "suceeds"
       # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
       - when:
@@ -491,7 +491,7 @@ jobs:
       # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
       # Dump enclave data so we can debug any issues that arise
       # - <<: *run_dump_kurtosis_enclaves
-      
+
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
@@ -548,7 +548,7 @@ jobs:
                    touch /tmp/testsuite-failed
                  fi
 
-      # TODO TODO TODO DELETE THIS HACK!!!!! 
+      # TODO TODO TODO DELETE THIS HACK!!!!!
       # As of 2022-11-18, 'enclave dump' in Kubernetes in CircleCI (but not locally) takes 30s to run per enclave, and "suceeds"
       # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
       - when:
@@ -560,7 +560,7 @@ jobs:
       # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
       # Dump enclave data so we can debug any issues that arise
       # - <<: *run_dump_kurtosis_enclaves
-      
+
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
@@ -715,7 +715,7 @@ jobs:
 
       # Execute github starlark module
       - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
-        
+
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
       - run: "${KURTOSIS_BINPATH} enclave stop test-datastore"
@@ -809,11 +809,11 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_docker
 
-    # adding same enclave fails
+      # adding same enclave fails
       - run: "${KURTOSIS_BINPATH} enclave add --name test-enclave"
       - run: "! ${KURTOSIS_BINPATH} service add --name test-encalve"
 
-    # running a broken package fails
+      # running a broken package fails
       - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
 
   # -- End build jobs ---------------------------------------
@@ -1042,31 +1042,31 @@ workflows:
 #              ignore:
 #                - main
 
-      - build_contexts_config_store:
-          filters:
-            branches:
-              ignore:
-                - main
+#      - build_contexts_config_store:
+#          filters:
+#            branches:
+#              ignore:
+#                - main
 
-      - build_grpc_file_transfer:
-          filters:
-            branches:
-              ignore:
-                - main
+#      - build_grpc_file_transfer:
+#          filters:
+#            branches:
+#              ignore:
+#                - main
 
-      - build_name_generator:
-          filters:
-            branches:
-              ignore:
-                - main
+#      - build_name_generator:
+#          filters:
+#            branches:
+#              ignore:
+#                - main
 
-      - build_kurtosis_api_golang:
-          # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
-          context: []
-          filters:
-            branches:
-              ignore:
-                - main
+#      - build_kurtosis_api_golang:
+#          # NOTE: Do NOT add our private Github user here; the API must be publicly-accessible so must build without them
+#          context: []
+#          filters:
+#            branches:
+#              ignore:
+#                - main
 #      - build_kurtosis_api_typescript:
 #          filters:
 #            branches:
@@ -1119,17 +1119,17 @@ workflows:
 #            - build_files_artifacts_expander
 #          <<: *filters_ignore_main
 
-#      - test_basic_cli_functionality:
-#          name: "Test Basic CLI Functionality in Kubernetes"
-#          cli-cluster-backend: "minikube"
-#          context:
-#            - docker-user
-#          requires:
-#            - build_cli
-#            - build_api_container_server
-#            - build_engine_server
-#            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
+      #      - test_basic_cli_functionality:
+      #          name: "Test Basic CLI Functionality in Kubernetes"
+      #          cli-cluster-backend: "minikube"
+      #          context:
+      #            - docker-user
+      #          requires:
+      #            - build_cli
+      #            - build_api_container_server
+      #            - build_engine_server
+      #            - build_files_artifacts_expander
+      #          <<: *filters_ignore_main
 
 #      - test_ci_for_failure:
 #          name: "Test Basic CLI for failure"
