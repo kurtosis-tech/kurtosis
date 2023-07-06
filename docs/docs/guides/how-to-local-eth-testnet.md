@@ -106,7 +106,7 @@ The [smart-contract-example](https://github.com/kurtosis-tech/awesome-kurtosis/t
 
 ### Configure Hardhat to use the local testnet
 
-WWith your dApp development environment set up, you will now connect Hardhat to use the local Ethereum testnet generated using Kurtosis. To accomplish this, replace `<$YOUR_PORT>` in the `localnet` struct in your `hardhat.config.ts` config file with the port of the rpc uri output from any `el-client-<num>` service. In this sample case, the port would be `64248`. Your port will be different.
+With your dApp development environment set up, you will now connect Hardhat to use the local Ethereum testnet generated using Kurtosis. To accomplish this, replace `<$YOUR_PORT>` in the `localnet` struct in your `hardhat.config.ts` config file with the port of the rpc uri output from any `el-client-<num>` service. In this sample case, the port would be `64248`. Your port will be different.
 
 Example in `hardhat.config.ts`:
 ```typescript
