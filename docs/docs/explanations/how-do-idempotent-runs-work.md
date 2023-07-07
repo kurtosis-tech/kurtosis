@@ -1,6 +1,6 @@
 ---
-title: Idempotent runs
-sidebar_label: Idempotent runs
+title: How do idempotent runs work?
+sidebar_label: Idempotent Runs
 ---
 
 Background
