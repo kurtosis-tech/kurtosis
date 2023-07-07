@@ -5,7 +5,6 @@ sidebar_label: Idempotent Runs
 
 Background
 ----------
-
 :::tip
 To learn about what idempotent runs are in Kurtosis and the motivation behind this feature, go [here][idempotent-run-concept-reference].
 :::
@@ -78,7 +77,6 @@ Note that in this case, it is possible (and even likely) the execution of the su
 instruction 1 is an `add_service` instruction, it will fail because the service being added already exist inside the 
 enclave. 
 
-
-
 <!---------------------------------- REFERENCE LINKS ---------------------------------------------------------->
 [idempotent-run-concept-reference]: ../concepts-reference/idempotent-runs.md
+
