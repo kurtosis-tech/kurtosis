@@ -14,7 +14,7 @@ const (
 	remotePackage        = "github.com/kurtosis-tech/awesome-kurtosis/quickstart"
 	emptyParams          = "{}"
 	expectedOutputLength = 4
-	expectedServiceName = "postgres"
+	expectedServiceName  = "postgres"
 
 	useDefaultMainFile     = ""
 	useDefaultFunctionName = ""
@@ -33,7 +33,7 @@ func TestStarlarkRemotePackage(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Starlark Package: '%v'", remotePackage)
 
-	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, emptyParams, defaultDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, emptyParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
 	require.NoError(t, err, "Unexpected error executing starlark package")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")

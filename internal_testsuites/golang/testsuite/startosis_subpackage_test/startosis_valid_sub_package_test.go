@@ -33,7 +33,7 @@ func TestStarlarkValidLocalSubPackage(t *testing.T) {
 	require.Nil(t, err)
 	packageDirpath := path.Join(currentWorkingDirectory, relPathToKurtosisSubpackage)
 
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
 	require.NoError(t, err, "Unexpected error executing starlark package")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")

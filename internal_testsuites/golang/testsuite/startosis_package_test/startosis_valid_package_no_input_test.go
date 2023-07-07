@@ -33,7 +33,7 @@ func TestStartosisPackage_ValidPackageNoInput(t *testing.T) {
 
 	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
 	require.Nil(t, err, "Unexpected error executing Starlark package")
 
 	require.Nil(t, runResult.InterpretationError)
@@ -68,7 +68,7 @@ func TestStartosisPackage_ValidPackageNoInput_PassingParamsAlsoWorks(t *testing.
 	logrus.Infof("Starlark package path: \n%v", packageDirpath)
 
 	params := `{"greetings": "bonjour!"}`
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, params, defaultDryRun, defaultParallelism)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, params, defaultDryRun, defaultParallelism, noExperimentalFeature)
 	require.Nil(t, err, "Unexpected error executing Starlark package")
 
 	require.Nil(t, runResult.InterpretationError)
