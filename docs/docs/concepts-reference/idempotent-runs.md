@@ -3,7 +3,7 @@ title: Idempotent Runs
 sidebar_label: Idempotent Runs
 ---
 
-Idempotent runs refers to Kurtosis' ability to make calls of [`kurtosis run`](../cli-reference/run-starlark.md) against an [enclave][enclaves] idempotent, meaning that the [plan](./plan.md) being submitted via `kurtosis run` is a declarative state of how the enclave should look and Kurtosis makes it so regardless of the current state of the enclave. In plain English, this means that Kurtosis will diff the plan being submitted via `kurtosis run` against what already exists in the enclave, and make only the changes necessary to get to the desired state.
+Idempotent runs refers to Kurtosis' ability to make calls of [`kurtosis run`](../cli-reference/run.md) against an [enclave][enclaves] idempotent, meaning that the [plan](./plan.md) being submitted via `kurtosis run` is a declarative state of how the enclave should look and Kurtosis makes it so regardless of the current state of the enclave. In plain English, this means that Kurtosis will diff the plan being submitted via `kurtosis run` against what already exists in the enclave, and make only the changes necessary to get to the desired state.
 
 This has several uses:
 

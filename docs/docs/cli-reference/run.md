@@ -1,7 +1,7 @@
 ---
 title: run
 sidebar_label: run
-slug: /run-starlark
+slug: /run
 ---
 
 Kurtosis can be used to run a Starlark script or a [runnable package](../concepts-reference/packages.md) in an enclave. 

@@ -928,7 +928,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 <!--------------------------- Reference ------------------------------------>
 <!-- CLI Commands Reference -->
 [cli-reference]: /cli
-[kurtosis-run-reference]: ./cli-reference/run-starlark.md
+[kurtosis-run-reference]: ./cli-reference/run.md
 [kurtosis-clean-reference]: ./cli-reference/clean.md
 [kurtosis-enclave-inspect-reference]: ./cli-reference/enclave-inspect.md
 [kurtosis-files-upload-reference]: ./cli-reference/files-upload.md
