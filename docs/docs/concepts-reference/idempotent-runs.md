@@ -11,6 +11,8 @@ This has several uses:
 - **Eternal environments:** eternal environments like shared Dev or Staging are instantiated at their start (Day 0), and then receive a constant updates into the future (Days 1+). In order for these environments to live in Kurtosis, Kurtosis needs to be able to handle Days 1+. Idempotent runs allow this, as you to simply update your Starlark script and Kurtosis updates the environment in the enclave to match.
 - **GitOps:** the best DevOps companies in the world use Git to manage changes to environments: each commit updates the environment. This requires idempotency (what happens if the deploy fails for a transient reason? what happens if you need to revert a commit?). Kurtosis' idempotent runs pave the way for a native GitOps experience inside of Kurtosis itself, where the environment infrastructure-as-code is the Starlark itself.
 
+Kurtosis is able to do this because of its [multi-phase approach to running Starlark](./multi-phase-runs.md). Kurtosis constructs an abstract representation of the system you want before running anything (much like Terraform), so Kurtosis can compare the current state of the enclave to the desired state of the enclave and skip any unnecessary changes.
+
 To read in much more detail about how idempotent runs work, see [here](../explanations/how-do-idempotent-runs-work.md).
 
 <!-------------------------- ONLY LINKS BELOW HERE -------------------------------------->
