@@ -5,6 +5,7 @@ sidebar_label: Idempotent Runs
 
 Idempotent runs refers to Kurtosis' ability to make calls of [`kurtosis run`](../cli-reference/run.md) against an [enclave][enclaves] idempotent, meaning that the [plan](./plan.md) being submitted via `kurtosis run` is a declarative state of how the enclave should look and Kurtosis makes it so regardless of the current state of the enclave. In plain English, this means that Kurtosis will diff the plan being submitted via `kurtosis run` against what already exists in the enclave, and make only the changes necessary to get to the desired state.
 
+
 This has several uses:
 
 - **Speed:** when you're running a large [Starlark](./starlark.md) script or package and a step near the end has a bug, you don't want to start over from scratch with a fresh enclave and redo all the previous steps. Idempotent runs allows you to simply fix your bug and resubmit, and Kurtosis will skip all the steps that have already been run. 
