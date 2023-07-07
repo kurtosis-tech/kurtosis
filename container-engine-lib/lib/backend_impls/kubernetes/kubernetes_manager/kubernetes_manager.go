@@ -1744,7 +1744,7 @@ func (manager *KubernetesManager) waitForPodTermination(ctx context.Context, nam
 		pod, err := manager.GetPod(ctx, namespaceName, podName)
 		if err != nil {
 			// The pod info is not always available after deletion, so we handle that gracefully
-			logrus.Debugf("An error occured trying to retrieve the just-deleted pod '%v': %v, for checking if it was succesfully terminated; but we can't ignore this error beucase the pod info is not always available after deletion", podName, err)
+			logrus.Debugf("An error occurred trying to retrieve the just-deleted pod '%v': %v, for checking if it was successfully terminated; but we can ignore this error because the pod info is not always available after deletion", podName, err)
 			return nil
 		}
 
