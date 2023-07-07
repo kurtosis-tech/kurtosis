@@ -35,7 +35,7 @@ In Kurtosis, test environments have these properties:
 - Enable debugging and investigation of problems live, as they're happening in your test environment
 - Manage file dependencies to ensure complete portability of test environments across different test runs and backends
 
-#### Try out Kurtosis now
+## Try out Kurtosis now
 
 Try Kurtosis now with our [quickstart](./quickstart.md).
 
