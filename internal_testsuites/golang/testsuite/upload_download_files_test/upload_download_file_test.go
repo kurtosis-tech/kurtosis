@@ -8,8 +8,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -176,20 +176,13 @@ func testDirectoryContents(
 
 func createTestFiles(pathToCreateAt string, fileCount int) ([]string, error) {
 	filenames := []string{}
-	tempFiles := []*os.File{}
-	defer func() {
-		for _, tempFile := range tempFiles {
-			if err := tempFile.Close(); err != nil {
-				logrus.Errorf("An error occurred closing the temporary file '%v'", tempFile.Name())
-			}
-		}
-	}()
+
 	for i := 0; i < fileCount; i++ {
-		tempFile, err := os.CreateTemp(pathToCreateAt, archiveFileTestPattern)
+		tempFile, err := ioutil.TempFile(pathToCreateAt, archiveFileTestPattern)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Failed to create archive test files in '%s'.", pathToCreateAt)
 		}
-		tempFiles = append(tempFiles, tempFile)
+		defer tempFile.Close()
 
 		err = os.Chmod(tempFile.Name(), filePermission) //Change permission for nginx access.
 		if err != nil {
@@ -207,7 +200,6 @@ func createTestFiles(pathToCreateAt string, fileCount int) ([]string, error) {
 		}
 		filenames = append(filenames, tempFile.Name())
 	}
-
 	return filenames, nil
 }
 
@@ -216,13 +208,13 @@ func createTestFiles(pathToCreateAt string, fileCount int) ([]string, error) {
 // Where y is numberOfTempTestFilesToCreateInSubDir
 func createTestFolderToUpload() (map[string]string, error) {
 	//Create base directory.
-	baseTempDirPath, err := os.MkdirTemp("", archiveDirectoryTestPattern)
+	baseTempDirPath, err := ioutil.TempDir("", archiveDirectoryTestPattern)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create a temporary directory for testing files.")
 	}
 
 	//Create a single subdirectory.
-	tempSubDirectory, err := os.MkdirTemp(baseTempDirPath, archiveSubDirectoryTestPattern)
+	tempSubDirectory, err := ioutil.TempDir(baseTempDirPath, archiveSubDirectoryTestPattern)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create a temporary archive directory within '%s'.",
 			baseTempDirPath)

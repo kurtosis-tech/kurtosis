@@ -11,6 +11,8 @@ import (
 const (
 	testName              = "startosis_remove_service_test"
 	isPartitioningEnabled = false
+	defaultDryRun         = false
+	emptyArgs             = "{}"
 
 	serviceName = "example-datastore-server-1"
 	portId      = "grpc"

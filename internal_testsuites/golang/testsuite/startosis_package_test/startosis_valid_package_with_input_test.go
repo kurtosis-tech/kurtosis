@@ -2,20 +2,40 @@ package startosis_package_test
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"os"
+	"path"
+	"testing"
 )
 
 const (
-	validPackageWithInputRelPath = "../../../starlark/valid-kurtosis-package-with-input"
+	validPackageWithInputTestName = "valid-module-with-input"
+	missingKeyParamsTestName      = "missing-key-in-params"
+	validPackageWithInputRelPath  = "../../../starlark/valid-kurtosis-package-with-input"
 )
 
-func (suite *StartosisPackageTestSuite) TestStartosisPackage_ValidPackageWithInput() {
+func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-	params := `{"greetings": "bonjour!"}`
-	runResult, err := suite.RunPackageWithParams(ctx, validPackageWithInputRelPath, params)
 
-	t := suite.T()
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, validPackageWithInputTestName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
+
+	currentWorkingDirectory, err := os.Getwd()
+	require.Nil(t, err)
+	packageDirpath := path.Join(currentWorkingDirectory, validPackageWithInputRelPath)
+
+	// ------------------------------------- TEST RUN ----------------------------------------------
+	logrus.Info("Executing Startosis Package...")
+
+	logrus.Infof("Startosis package path: \n%v", packageDirpath)
+
+	params := `{"greetings": "bonjour!"}`
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, params, defaultDryRun, defaultParallelism)
 	require.NoError(t, err, "Unexpected error executing starlark package")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
@@ -33,12 +53,27 @@ Hello World!
 	logrus.Info("Successfully ran Startosis module")
 }
 
-func (suite *StartosisPackageTestSuite) TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams() {
+func TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams(t *testing.T) {
+	t.Parallel()
 	ctx := context.Background()
-	params := `{"hello": "world"}` // expecting key 'greetings' here
-	runResult, _ := suite.RunPackageWithParams(ctx, validPackageWithInputRelPath, params)
 
-	t := suite.T()
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, missingKeyParamsTestName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
+
+	currentWorkingDirectory, err := os.Getwd()
+	require.Nil(t, err)
+	moduleDirpath := path.Join(currentWorkingDirectory, validPackageWithInputRelPath)
+
+	// ------------------------------------- TEST RUN ----------------------------------------------
+	logrus.Info("Executing Startosis Package...")
+
+	logrus.Infof("Startosis module path: \n%v", moduleDirpath)
+
+	params := `{"hello": "world"}` // expecting key 'greetings' here
+	runResult, _ := enclaveCtx.RunStarlarkPackageBlocking(ctx, moduleDirpath, useDefaultMainFile, useDefaultFunctionName, params, defaultDryRun, defaultParallelism)
+
 	require.NotNil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), "Evaluation error: key \"greetings\" not in dict")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

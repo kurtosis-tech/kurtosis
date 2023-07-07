@@ -2,11 +2,14 @@ package startosis_request_wait_assert_test
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 const (
-	assertFailScript = `
+	assertFailTestName = "startosis_assert_fail_test"
+	assertFailScript   = `
 def run(plan):
 	service_config = ServiceConfig(
 		image = "mendhak/http-https-echo:26",
@@ -15,7 +18,7 @@ def run(plan):
 		}
 	)
 
-	plan.add_service(name = "web-server-assert-fail-test", config = service_config)
+	plan.add_service(name = "web-server", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
@@ -23,7 +26,7 @@ def run(plan):
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, interval="100ms", timeout="30s", service_name="web-server-assert-fail-test")
+	response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, interval="100ms", timeout="30s", service_name="web-server")
 	plan.assert(response["code"], "!=", 200)
 
 	# dumb test to validate we can pass 2 runtime values here
@@ -31,10 +34,9 @@ def run(plan):
 `
 )
 
-func (suite *StartosisRequestWaitAssertTestSuite) TestStartosis_AssertFail() {
+func TestStartosis_AssertFail(t *testing.T) {
 	ctx := context.Background()
-	t := suite.T()
-	runResult, _ := suite.RunScript(ctx, assertFailScript)
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, assertFailTestName, assertFailScript)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

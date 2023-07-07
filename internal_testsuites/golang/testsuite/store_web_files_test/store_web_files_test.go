@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"testing"
 )
@@ -95,7 +95,7 @@ func getFileContents(ipAddress string, portNum uint16, filename string) (string,
 		}
 	}()
 
-	bodyBytes, err := io.ReadAll(body)
+	bodyBytes, err := ioutil.ReadAll(body)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred reading the response body when getting the contents of file '%v'", filename)
 	}

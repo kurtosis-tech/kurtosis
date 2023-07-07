@@ -17,6 +17,8 @@ import (
 const (
 	testName              = "starlark_public_ports_test"
 	isPartitioningEnabled = false
+	defaultDryRun         = false
+	emptyArgs             = "{}"
 
 	serviceName         = "example-datastore-server-1"
 	portId              = "grpc"

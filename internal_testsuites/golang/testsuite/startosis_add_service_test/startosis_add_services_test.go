@@ -2,11 +2,15 @@ package startosis_add_service_test
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 const (
+	addServicesTestName = "add-services-test"
+
 	addServicesScript = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_NAME_PREFIX = "service-"
@@ -28,12 +32,19 @@ def run(plan):
 `
 )
 
-func (suite *StartosisAddServiceTestSuite) TestAddServices() {
+func TestAddServices(t *testing.T) {
 	ctx := context.Background()
-	runResult, err := suite.RunScript(ctx, addServicesScript)
 
-	t := suite.T()
+	// ------------------------------------- ENGINE SETUP ----------------------------------------------
+	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, addServicesTestName, isPartitioningEnabled)
+	require.NoError(t, err, "An error occurred creating an enclave")
+	defer destroyEnclaveFunc()
 
+	// ------------------------------------- TEST RUN ----------------------------------------------
+	logrus.Infof("Executing Starlark script...")
+	logrus.Debugf("Starlark script content: \n%v", addServicesScript)
+
+	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, addServicesScript)
 	require.NoError(t, err, "Unexpected error executing Starlark script")
 
 	expectedScriptOutput := `Adding 4 services to enclave
@@ -51,8 +62,9 @@ Successfully added the following '4' services:
 
 	// Ensure that the service is listed
 	expectedNumberOfServices := 4
-	serviceInfos, err := suite.enclaveCtx.GetServices()
+	serviceInfos, err := enclaveCtx.GetServices()
 	require.Nil(t, err)
 	actualNumberOfServices := len(serviceInfos)
 	require.Equal(t, expectedNumberOfServices, actualNumberOfServices)
+
 }

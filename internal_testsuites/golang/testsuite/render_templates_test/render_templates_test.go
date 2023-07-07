@@ -59,6 +59,8 @@ def run(plan):
 		response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, service_name="file-server")
 		plan.assert(response["body"], "==", expected_contents)
 `
+	noStarlarkParams = "{}"
+	doNotDryRun      = false
 )
 
 func TestRenderTemplates(t *testing.T) {

@@ -3,10 +3,14 @@ package startosis_add_service_test
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 const (
+	addServiceWithReadyConditionsTestName = "service-test"
+
 	addServiceWithReadyConditionsScript = `
 def run(plan):
 	get_recipe = GetHttpRequestRecipe(
@@ -31,30 +35,30 @@ def run(plan):
         ready_conditions = ready_conditions
 	)
 
-	plan.add_service(name = "ws-ready-conditions-%v", config = service_config)
+	plan.add_service(name = "web-server", config = service_config)
 `
 
 	okStatusCode          = 200
 	serverErrorStatusCode = 500
 )
 
-func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyConditionsCheck() {
+func TestStartosis_AddServiceWithReadyConditionsCheck(t *testing.T) {
 	ctx := context.Background()
-	script := fmt.Sprintf(addServiceWithReadyConditionsScript, okStatusCode, okStatusCode)
-	_, err := suite.RunScript(ctx, script)
 
-	t := suite.T()
+	script := fmt.Sprintf(addServiceWithReadyConditionsScript, okStatusCode)
 
+	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServiceWithReadyConditionsTestName, script)
 	require.Nil(t, err)
 }
 
-func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyConditionsCheckFail() {
+func TestStartosis_AddServiceWithReadyConditionsCheckFail(t *testing.T) {
 	ctx := context.Background()
-	script := fmt.Sprintf(addServiceWithReadyConditionsScript, serverErrorStatusCode, serverErrorStatusCode)
-	runResult, _ := suite.RunScript(ctx, script)
 
-	t := suite.T()
 	expectedLastAssertionErrorStr := fmt.Sprintf("Assertion failed '%v' '==' '%v'", okStatusCode, serverErrorStatusCode)
+
+	script := fmt.Sprintf(addServiceWithReadyConditionsScript, serverErrorStatusCode)
+
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, addServiceWithReadyConditionsTestName, script)
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

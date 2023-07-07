@@ -12,10 +12,12 @@ import (
 const (
 	testName              = "add-service-with-port-spec1"
 	isPartitioningEnabled = false
+	defaultDryRun         = false
 
 	serviceName = "docker-getting-started-success"
+	emptyArgs   = "{}"
 
-	starlarkScriptWithPortSpecSuccess = `
+	starlarkScriptWithPortSpec_Success = `
 DOCKER_GETTING_STARTED_IMAGE = "docker/getting-started:latest"
 SERVICE_NAME = "` + serviceName + `"
 
@@ -45,7 +47,7 @@ func TestAddServiceWithPortSpec_Success(t *testing.T) {
 	defer destroyEnclaveFunc()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
-	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, starlarkScriptWithPortSpecSuccess)
+	runResult, err := test_helpers.RunScriptWithDefaultConfig(ctx, enclaveCtx, starlarkScriptWithPortSpec_Success)
 	logrus.Infof("Test Output: %v", runResult)
 	require.NoError(t, err, "Unexpected error executing starlark script")
 

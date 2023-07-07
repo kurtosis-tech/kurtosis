@@ -15,6 +15,8 @@ import (
 const (
 	starlarkSubnetworkTestName = "starlark-subnetwork"
 	isPartitioningEnabled      = true
+	executeNoDryRun            = false
+	emptyArgs                  = "{}"
 
 	serviceId1                 = "service-1"
 	serviceId2                 = "service-2"

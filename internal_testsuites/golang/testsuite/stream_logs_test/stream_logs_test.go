@@ -108,7 +108,7 @@ func TestStreamLogs(t *testing.T) {
 			ctx,
 			testTimeOut,
 			kurtosisCtx,
-			requestedEnclaveIdentifier,
+			string(requestedEnclaveIdentifier),
 			requestedServiceUuids,
 			expectedLogLinesByService,
 			requestedShouldFollowLogs,
