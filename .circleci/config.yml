@@ -844,6 +844,9 @@ jobs:
       - k3d/k3d-helpers
       - k3d/k3d-up:
           cluster-name: circleci-k8s-1
+      - run:
+          command: "${KURTOSIS_BINPATH} gateway"
+          background: true
       - k3d/k3d-run:
           command: >
             k3d image import -c circleci-k8s-1 "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
@@ -854,9 +857,6 @@ jobs:
 
           step-name: push images to k3d k8s cluster
       - run: "${KURTOSIS_BINPATH} cluster set k3d-k3s-default --cli-log-level trace"
-      - run:
-          command: "${KURTOSIS_BINPATH} gateway"
-          background: true
       - run: |
           if ! ./internal_testsuites/golang/scripts/test.sh minikube; then
             touch /tmp/testsuite-failed
