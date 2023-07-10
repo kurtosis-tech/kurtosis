@@ -4,7 +4,7 @@ RUN apk update && apk add bash
 
 WORKDIR /run
 
-ADD ./dist ./dist
+ADD ./webapp ./webapp
 
 COPY ./build/kurtosis-engine ./
 

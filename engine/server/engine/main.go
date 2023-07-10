@@ -135,14 +135,13 @@ func runMain() error {
 	)
 
 	go func() {
-		staticPath := "/run/dist"
+		staticPath := "/run/webapp"
 		indexPath := "index.html"
 
 		fileServer := http.FileServer(http.Dir(staticPath))
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)
-			logrus.Infof("HELLLO %v", path)
 			if err != nil {
 				http.Error(w, err.Error(), http.StatusBadRequest)
 				return
