@@ -822,7 +822,8 @@ jobs:
       - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
 
   test-k3d:
-    executor: ubuntu_vm
+    docker:
+      - image: "cimg/go:<< pipeline.parameters.go-version>>"
     parameters:
       <<: *param_cli_cluster_backend
     steps:
