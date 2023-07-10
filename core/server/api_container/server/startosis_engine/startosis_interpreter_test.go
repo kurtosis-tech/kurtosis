@@ -942,7 +942,7 @@ def run(plan):
 	require.Nil(t, instructionsPlan)
 }
 
-func TestStartosisInterpreter_RunWithoutArgsNoArgsPassed(t *testing.T) {
+func TestStartosisInterpreter_RunWithoutArgsAndNoArgsPassed(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
@@ -961,7 +961,7 @@ def run(plan):
 	validateScriptOutputFromPrintInstructions(t, instructionsPlan, expectedOutput)
 }
 
-func TestStartosisInterpreter_RunWithoutArgsArgsPassed(t *testing.T) {
+func TestStartosisInterpreter_RunWithoutArgsAndArgsPassed(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
@@ -972,15 +972,11 @@ def run(plan):
 `
 
 	_, instructionsPlan, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, `{"number": 4}`, emptyInstructionsPlanMask)
-	require.Nil(t, interpretationError)
-	require.Equal(t, 1, instructionsPlan.Size())
-
-	expectedOutput := `Hello World!
-`
-	validateScriptOutputFromPrintInstructions(t, instructionsPlan, expectedOutput)
+	require.NotNil(t, interpretationError)
+	require.Nil(t, instructionsPlan)
 }
 
-func TestStartosisInterpreter_RunWithArgsArgsPassed(t *testing.T) {
+func TestStartosisInterpreter_RunWithArgsAndArgsPassed(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
@@ -999,7 +995,7 @@ def run(plan, args):
 	validateScriptOutputFromPrintInstructions(t, instructionsPlan, expectedOutput)
 }
 
-func TestStartosisInterpreter_RunWithArgsNoArgsPassed(t *testing.T) {
+func TestStartosisInterpreter_RunWithArgsAndNoArgsPassed(t *testing.T) {
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	defer packageContentProvider.RemoveAll()
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
@@ -1036,6 +1032,41 @@ def run(plan, args, invalid_arg):
 	expectedError := fmt.Sprintf("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, 3)
 	require.Equal(t, expectedError, interpretationError.GetErrorMessage())
 	require.Nil(t, instructionsPlan)
+}
+
+func TestStartosisInterpreter_RunWithUnpackedDictButMissingArgs(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	script := `
+def run(plan, a, b):
+	plan.print("this wouldn't interpret so the text here doesnt matter")
+`
+	missingArgumentCount := 1
+	missingArgument := "b"
+	_, instructionsPlan, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, `{"a": "x"}`, emptyInstructionsPlanMask)
+	require.NotNil(t, interpretationError)
+
+	expectedError := fmt.Sprintf("Evaluation error: function run missing %d argument (%v)", missingArgumentCount, missingArgument)
+	require.Contains(t, interpretationError.GetErrorMessage(), expectedError)
+	require.Nil(t, instructionsPlan)
+}
+
+func TestStartosisInterpreter_RunWithUnpackedDict(t *testing.T) {
+	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
+	defer packageContentProvider.RemoveAll()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
+	script := `
+def run(plan, a, b=1):
+	plan.print("My favorite number is {0}, but my favorite letter is {1}".format(b, a))
+`
+	_, instructionsPlan, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, `{"a": "x"}`, emptyInstructionsPlanMask)
+	require.Nil(t, interpretationError)
+	require.Equal(t, 1, instructionsPlan.Size())
+	expectedOutput := "My favorite number is 1, but my favorite letter is x\n"
+	validateScriptOutputFromPrintInstructions(t, instructionsPlan, expectedOutput)
 }
 
 func TestStartosisInterpreter_PrintWithoutPlanErrorsNicely(t *testing.T) {
