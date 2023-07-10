@@ -1029,7 +1029,7 @@ def run(plan, args, invalid_arg):
 
 	_, instructionsPlan, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs, emptyInstructionsPlanMask)
 	require.NotNil(t, interpretationError)
-	expectedError := fmt.Sprintf("Evaluation error: function run missing 2 arguments (args, invalid_arg)")
+	expectedError := "Evaluation error: function run missing 2 arguments (args, invalid_arg)"
 	require.Contains(t, interpretationError.GetErrorMessage(), expectedError)
 	require.Nil(t, instructionsPlan)
 }
