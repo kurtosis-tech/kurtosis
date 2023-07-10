@@ -325,7 +325,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	// throw an error as execution of the command failed
 	if createDefaultDirectoryResult.GetExitCode() != 0 {
 		return "", stacktrace.NewError(
-			"error occurred and shell command: %q exited with code %d with output %q",
+			"Shell command: %q exited with code %d and output \n%v",
 			commandToRun, createDefaultDirectoryResult.GetExitCode(), createDefaultDirectoryResult.GetOutput())
 	}
 
