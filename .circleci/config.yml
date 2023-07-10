@@ -1245,7 +1245,7 @@ workflows:
           cli-cluster-backend: "minikube"
           context:
             - docker-user
-#          requires:
+          requires:
             - build_cli
             - build_api_container_server
             - build_engine_server
