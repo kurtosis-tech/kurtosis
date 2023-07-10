@@ -838,15 +838,17 @@ jobs:
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
       - run: "${KURTOSIS_BINPATH} analytics disable"
+      #Rewrite kurtosis-config.yml file in order to add the k3d-k3s cluster configuration
+      #Rewrite cluster-setting file in order to avoid trying to start the kurtosis engine wihout calling the gateway port number
       - run: |
-         echo -e "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default\n       storage-class: standard\n       enclave-size-in-megabytes: 2048" > "$($KURTOSIS_BINPATH config path)"
-
+         KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
+         echo -e "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default\n       storage-class: standard\n       enclave-size-in-megabytes: 2048" > "$KURTOSIS_CONFIG_FILEPATH"
+         KURTOSIS_CONFIG_DIR=$(dirname "$KURTOSIS_CONFIG_FILEPATH")
+         KURTOSIS_CLUSTER_SETTING_FILEPATH="$KURTOSIS_CONFIG_DIR/cluster-setting"
+         echo "k3d-k3s-default" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
       - k3d/k3d-helpers
       - k3d/k3d-up:
           cluster-name: circleci-k8s-1
-      - run:
-          command: "${KURTOSIS_BINPATH} gateway"
-          background: true
       - k3d/k3d-run:
           command: >
             k3d image import -c circleci-k8s-1 "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
@@ -857,6 +859,9 @@ jobs:
 
           step-name: push images to k3d k8s cluster
       - run: "${KURTOSIS_BINPATH} cluster set k3d-k3s-default --cli-log-level trace"
+      - run:
+          command: "${KURTOSIS_BINPATH} gateway"
+          background: true
       - run: |
           if ! ./internal_testsuites/golang/scripts/test.sh minikube; then
             touch /tmp/testsuite-failed
