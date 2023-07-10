@@ -90,6 +90,7 @@ orbs:
   npm-publisher: uraway/npm-publisher@0.2.0
   kurtosis-docs-checker: kurtosis-tech/docs-checker@0.2.4
   slack: circleci/slack@4.10.1
+  k3d: devopsspiral/k3d@0.1.0
 
 executors:
   ubuntu_vm:
@@ -290,6 +291,7 @@ jobs:
       - run: |
           core/launcher/scripts/build.sh
 
+
   build_api_container_server:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
@@ -346,6 +348,7 @@ jobs:
 
       - run: |
           engine/launcher/scripts/build.sh
+
 
   build_engine_server:
     docker:
@@ -648,6 +651,7 @@ jobs:
               false
             fi
 
+
   test_basic_cli_functionality:
     executor: ubuntu_vm
     parameters:
@@ -778,6 +782,7 @@ jobs:
                     false
                   fi
 
+
   test_ci_for_failure:
     executor: ubuntu_vm
     parameters:
@@ -816,6 +821,48 @@ jobs:
       # running a broken package fails
       - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
 
+  test-k3d:
+    executor: k3d/default
+    parameters:
+      <<: *param_cli_cluster_backend
+    steps:
+      - setup_remote_docker
+      - checkout
+      - <<: *abort_job_if_only_docs_changes
+      - attach_workspace:
+          at: "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>"
+      - <<: *steps_install_go
+          # We call Kurtosis a bunch later, so add it to the PATH so we can call it easily
+      - run: |
+          echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
+      #Run config init to avoid metrics consent prompt when execute engine start command,
+      #We do not send metrics from CI to not dirty the metrics data
+      - run: "${KURTOSIS_BINPATH} analytics disable"
+      - run: |
+         echo "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default" > "$($KURTOSIS_BINPATH config path)"
+
+      - k3d/k3d-helpers
+      - k3d/k3d-up:
+          cluster-name: circleci-k8s-1
+      - k3d/k3d-run:
+          command: >
+            k3d image import -c circleci-k8s-1 "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+            
+            k3d image import -c circleci-k8s-1 "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+            
+            k3d image import -c circleci-k8s-1 "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>" 
+
+          step-name: push images to k3d k8s cluster
+      - run: "${KURTOSIS_BINPATH} cluster set k3d-k3s-default --cli-log-level trace"
+      - run:
+          command: "${KURTOSIS_BINPATH} gateway"
+          background: true
+      - run: |
+          if ! ./internal_testsuites/golang/scripts/test.sh minikube; then
+            touch /tmp/testsuite-failed
+          fi
+      - run: "! [ -f /tmp/testsuite-failed ]"
+
   # -- End build jobs ---------------------------------------
 
   # -- Publish jobs --------------------------------------------
@@ -834,6 +881,7 @@ jobs:
       - run: |
           cd api/rust/
           cargo publish
+
 
   publish_kurtosis_api_typescript:
     docker:
@@ -883,6 +931,7 @@ jobs:
           push_to_dockerhub=true
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
+
   publish_api_container_server_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
@@ -920,6 +969,7 @@ jobs:
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
           push_to_dockerhub=true
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
+
 
   publish_engine_server_image:
     docker:
@@ -959,6 +1009,7 @@ jobs:
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
           push_to_dockerhub=true
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
+
 
   push_cli_artifacts:
     docker:
@@ -1072,6 +1123,7 @@ workflows:
 #            branches:
 #              ignore:
 #                - main
+
       - build_files_artifacts_expander:
           context:
             - docker-user
@@ -1079,11 +1131,13 @@ workflows:
             branches:
               ignore:
                 - main
-      - build_core_launcher:
-          filters:
-            branches:
-              ignore:
-                - main
+
+#      - build_core_launcher:
+#          filters:
+#            branches:
+#              ignore:
+#                - main
+
       - build_api_container_server:
           context:
             - docker-user
@@ -1092,11 +1146,12 @@ workflows:
               ignore:
                 - main
 
-      - build_engine_launcher:
-          filters:
-            branches:
-              ignore:
-                - main
+#      - build_engine_launcher:
+#          filters:
+#            branches:
+#              ignore:
+#                - main
+
       - build_engine_server:
           context:
             - docker-user
@@ -1107,6 +1162,7 @@ workflows:
 
       - build_cli:
           <<: *filters_ignore_main
+
 #      - test_basic_cli_functionality:
 #          name: "Test Basic CLI Functionality in Docker"
 #          cli-cluster-backend: "docker"
@@ -1155,8 +1211,20 @@ workflows:
 #            - build_files_artifacts_expander
 #          <<: *filters_ignore_main
 
-      - build_golang_testsuite:
-          name: "Build golang testsuite against Kubernetes"
+#      - build_golang_testsuite:
+#          name: "Build golang testsuite against Kubernetes"
+#          cli-cluster-backend: "minikube"
+#          context:
+#            - docker-user
+#          requires:
+#            - build_cli
+#            - build_api_container_server
+#            - build_engine_server
+#            - build_files_artifacts_expander
+#          <<: *filters_ignore_main
+
+      - test-k3d:
+          name: "Build golang testsuite against Kubernetes with k3d"
           cli-cluster-backend: "minikube"
           context:
             - docker-user
