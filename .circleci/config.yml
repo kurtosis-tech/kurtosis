@@ -827,9 +827,9 @@ jobs:
       <<: *param_cli_cluster_backend
     steps:
       - run: |
-          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh
-      - run: k3d cluster create --servers 1 kurtosis-k3d-cluster
-      - run: kubectl get nodes
+          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+          k3d cluster create --servers 1 kurtosis-k3d-cluster
+          kubectl get nodes
 
 #  test-k3d-with-the-orb:
 #    executor: k3d/default
