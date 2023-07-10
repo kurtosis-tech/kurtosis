@@ -33,77 +33,77 @@ jobs:
       - name: lint-container-engine-lib
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: container-engine-lib/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-contexts-config-store
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: contexts-config-store/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-grpc-file-transfer
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: grpc-file-transfer/golang/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-name-generator
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: name_generator/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-api-golang
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: api/golang/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-core-server
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: core/server
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-core-launcher
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: core/launcher/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-engine-server
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: engine/server/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-engine-launcher
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: engine/launcher/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-internal-test-suites
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: internal_testsuites/golang/
           args: --timeout=3m
           skip-pkg-cache: true
       - name: lint-cli
         uses: golangci/golangci-lint-action@v3
         with:
-          version: $GOLINT_VERSION
+          version: "$GOLINT_VERSION"
           working-directory: cli/cli/
           args: --timeout=3m
           skip-pkg-cache: true
