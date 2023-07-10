@@ -826,6 +826,8 @@ jobs:
     parameters:
       <<: *param_cli_cluster_backend
     steps:
+      - setup_remote_docker:
+          version: "<< pipeline.parameters.docker-engine-version>>"
       - run: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
           k3d cluster create --servers 1 kurtosis-k3d-cluster
