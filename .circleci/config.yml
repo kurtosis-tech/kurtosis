@@ -845,7 +845,7 @@ jobs:
          echo -e "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default\n       storage-class: standard\n       enclave-size-in-megabytes: 2048" > "$KURTOSIS_CONFIG_FILEPATH"
          KURTOSIS_CONFIG_DIR=$(dirname "$KURTOSIS_CONFIG_FILEPATH")
          KURTOSIS_CLUSTER_SETTING_FILEPATH="$KURTOSIS_CONFIG_DIR/cluster-setting"
-         echo "k3d-k3s-default" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
+         echo -n "k3d-k3s-default" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
       - k3d/k3d-helpers
       - k3d/k3d-up:
           cluster-name: circleci-k8s-1
