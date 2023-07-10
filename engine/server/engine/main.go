@@ -162,14 +162,6 @@ func runMain() error {
 			fileServer.ServeHTTP(w, r)
 		})
 
-		//webapp := http.FileServer(http.Dir("/run/dist"))
-		//http.Handle("/*", webapp)
-
-		//http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		//	path := filepath.Join("/run/dist", "index.html")
-		//	http.ServeFile(w, r, path)
-		//})
-
 		err := http.ListenAndServe(":9711", handler)
 		if err != nil {
 			fmt.Sprintf("error frontend: %v", err)
