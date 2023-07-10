@@ -292,6 +292,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	runWithGenericDictArgs := false
 	if isUsingDefaultMainFunction && mainFuncParamsNum == paramsRequiredForArgs {
 		if paramName, _ := mainFunction.Param(argsParamIndex); paramName == argsParamName {
+			logrus.Warnf("Using args dictionary as parameter is deprecated. Consider unpacking the dictionary into individual parameters. For example: run(plan, args) to run(plan, param1, param2, ...)")
 			argsTuple = append(argsTuple, inputArgs)
 			kwArgs = noKwargs
 			runWithGenericDictArgs = true
