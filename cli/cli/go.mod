@@ -9,7 +9,6 @@ replace (
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../../engine/launcher
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
-	github.com/kurtosis-tech/minimal-grpc-server/golang => ../../../minimal-grpc-server/golang
 )
 
 require (
@@ -47,7 +46,7 @@ require (
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/uuid v1.3.0
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230328194643-b4dea3081e25
-	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0
+	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230406131103-c466e04f1b89
 	github.com/mholt/archiver v3.1.1+incompatible
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0

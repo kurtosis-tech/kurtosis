@@ -11,7 +11,6 @@ replace (
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
-	github.com/kurtosis-tech/minimal-grpc-server/golang => ../../../minimal-grpc-server/golang
 )
 
 require (
@@ -20,7 +19,6 @@ require (
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // local dependency
-	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.3
@@ -51,7 +49,10 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require github.com/gorilla/websocket v1.4.2
+require (
+	github.com/gorilla/websocket v1.4.2
+	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
+)
 
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect

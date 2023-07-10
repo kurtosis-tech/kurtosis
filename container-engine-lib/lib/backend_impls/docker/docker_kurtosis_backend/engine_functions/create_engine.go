@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	frontendPortSpec                            = 9711
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 )
@@ -55,7 +56,7 @@ func CreateEngine(
 		)
 	}
 
-	httpPortSpec, err := port_spec.NewPortSpec(uint16(9711), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	httpPortSpec, err := port_spec.NewPortSpec(uint16(frontendPortSpec), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,

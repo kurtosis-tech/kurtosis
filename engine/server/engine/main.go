@@ -44,6 +44,7 @@ const (
 	logMethodAlongWithLogLine = true
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
+	webappPortAddr            = ":9711"
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -162,9 +163,9 @@ func runMain() error {
 			fileServer.ServeHTTP(w, r)
 		})
 
-		err := http.ListenAndServe(":9711", handler)
+		err := http.ListenAndServe(webappPortAddr, handler)
 		if err != nil {
-			fmt.Sprintf("error frontend: %v", err)
+			logrus.Debugf("error while starting the webapp: \n%v", err)
 		}
 	}()
 
