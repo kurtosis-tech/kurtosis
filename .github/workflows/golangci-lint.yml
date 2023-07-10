@@ -40,7 +40,6 @@ jobs:
           working-directory: container-engine-lib/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-contexts-config-store
         uses: golangci/golangci-lint-action@v3
         with:
@@ -48,7 +47,6 @@ jobs:
           working-directory: contexts-config-store/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-grpc-file-transfer
         uses: golangci/golangci-lint-action@v3
         with:
@@ -56,7 +54,6 @@ jobs:
           working-directory: grpc-file-transfer/golang/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-name-generator
         uses: golangci/golangci-lint-action@v3
         with:
@@ -64,7 +61,6 @@ jobs:
           working-directory: name_generator/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-api-golang
         uses: golangci/golangci-lint-action@v3
         with:
@@ -72,7 +68,6 @@ jobs:
           working-directory: api/golang/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-core-server
         uses: golangci/golangci-lint-action@v3
         with:
@@ -80,7 +75,6 @@ jobs:
           working-directory: core/server
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-core-launcher
         uses: golangci/golangci-lint-action@v3
         with:
@@ -88,7 +82,6 @@ jobs:
           working-directory: core/launcher/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-engine-server
         uses: golangci/golangci-lint-action@v3
         with:
@@ -96,7 +89,6 @@ jobs:
           working-directory: engine/server/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-engine-launcher
         uses: golangci/golangci-lint-action@v3
         with:
@@ -104,7 +96,6 @@ jobs:
           working-directory: engine/launcher/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-internal-test-suites
         uses: golangci/golangci-lint-action@v3
         with:
@@ -112,7 +103,6 @@ jobs:
           working-directory: internal_testsuites/golang/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
       - name: lint-cli
         uses: golangci/golangci-lint-action@v3
         with:
@@ -120,4 +110,3 @@ jobs:
           working-directory: cli/cli/
           args: --timeout=3m
           skip-pkg-cache: true
-          only-new-issues: true
