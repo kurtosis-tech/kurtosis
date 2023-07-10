@@ -839,7 +839,7 @@ jobs:
       #We do not send metrics from CI to not dirty the metrics data
       - run: "${KURTOSIS_BINPATH} analytics disable"
       - run: |
-         echo -e "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default\n      storage-class: standard\n      enclave-size-in-megabytes: 2048" > "$($KURTOSIS_BINPATH config path)"
+         echo -e "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default\n       storage-class: standard\n       enclave-size-in-megabytes: 2048" > "$($KURTOSIS_BINPATH config path)"
 
       - k3d/k3d-helpers
       - k3d/k3d-up:
