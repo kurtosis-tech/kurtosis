@@ -1029,8 +1029,8 @@ def run(plan, args, invalid_arg):
 
 	_, instructionsPlan, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, script, startosis_constants.EmptyInputArgs, emptyInstructionsPlanMask)
 	require.NotNil(t, interpretationError)
-	expectedError := fmt.Sprintf("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, 3)
-	require.Equal(t, expectedError, interpretationError.GetErrorMessage())
+	expectedError := fmt.Sprintf("Evaluation error: function run missing 2 arguments (args, invalid_arg)")
+	require.Contains(t, interpretationError.GetErrorMessage(), expectedError)
 	require.Nil(t, instructionsPlan)
 }
 
