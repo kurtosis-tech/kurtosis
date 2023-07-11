@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	k8s_rest "k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
@@ -209,7 +210,7 @@ func (connection *gatewayConnectionToKurtosisImpl) GetGrpcClientConn() (resultCl
 	}
 	localGrpcPortNum := localPorts[grpcPortId].GetNumber()
 	localGrpcServerAddress := fmt.Sprintf("%v:%v", localHostIpStr, localGrpcPortNum)
-	grpcConnection, err := grpc.Dial(localGrpcServerAddress, grpc.WithInsecure())
+	grpcConnection, err := grpc.Dial(localGrpcServerAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create a GRPC client connection on address '%v', but a non-nil error was returned", localGrpcServerAddress)
 	}
