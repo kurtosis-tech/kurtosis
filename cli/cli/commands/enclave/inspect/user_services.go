@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"sort"
 	"strings"
 )
@@ -205,7 +206,7 @@ func getUserServiceInfoMapFromAPIContainer(ctx context.Context, enclaveInfo *kur
 		apicHostMachineIp,
 		apicHostMachineGrpcPort,
 	)
-	conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithInsecure())
+	conn, err := grpc.Dial(apiContainerHostGrpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
