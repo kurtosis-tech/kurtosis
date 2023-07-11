@@ -70,20 +70,14 @@ func CopyFilesFromUserService(
 	var commandToRun string
 
 	if srcPathBase == doNotIncludeParentDirInArchiveSymbol {
-		commandToRun = fmt.Sprintf(
-			commandString,
-			srcPathDir,
-			ignoreParentDirInArchiveSymbol,
-			srcPath,
-		)
-	} else {
-		commandToRun = fmt.Sprintf(
-			commandString,
-			srcPathDir,
-			srcPathBase,
-			srcPath,
-		)
+		srcPathBase = ignoreParentDirInArchiveSymbol
 	}
+	commandToRun = fmt.Sprintf(
+		commandString,
+		srcPathDir,
+		srcPathBase,
+		srcPath,
+	)
 
 	shWrappedCommandToRun := []string{
 		"sh",
