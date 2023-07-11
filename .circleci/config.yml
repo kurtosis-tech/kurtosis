@@ -871,7 +871,7 @@ jobs:
 
             k3d image import -c circleci-k8s-1 "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
 
-            ${KURTOSIS_BINPATH} cluster set k3d-k3s-default --cli-log-level trace
+            ${KURTOSIS_BINPATH} engine start
 
           step-name: push images to k3d k8s cluster
       - run: |
