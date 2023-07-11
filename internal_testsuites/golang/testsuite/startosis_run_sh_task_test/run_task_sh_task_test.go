@@ -55,7 +55,7 @@ func TestStarlark_RunshTaskFileArtifact(t *testing.T) {
 func TestStarlark_RunshTaskFileArtifactFailure(t *testing.T) {
 	ctx := context.Background()
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkFileArtifactFailure)
-	expectedErrorMessage := "An error occurred executing instruction (number 1) at DEFAULT_PACKAGE_ID_FOR_SCRIPT[3:23]:\nrun_sh(run=\"cat /tmp/kurtosis.txt\")\n --- at /Users/preetrawal/work/kurtosis/core/server/api_container/server/startosis_engine/startosis_executor.go:121 (sendErrorAndFail) ---\nCaused by: Shell command: \"cat /tmp/kurtosis.txt\" exited with code 1 and output \ncat: can't open '/tmp/kurtosis.txt': No such file or directory\n --- at /Users/preetrawal/work/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/run_sh/run_sh.go:327 (RunShCapabilities.Execute) ---"
+	expectedErrorMessage := "cat: can't open '/tmp/kurtosis.txt': No such file or directory"
 	require.NotNil(t, runResult.ExecutionError)
 	require.Contains(t, runResult.ExecutionError.GetErrorMessage(), expectedErrorMessage)
 }
