@@ -865,11 +865,16 @@ jobs:
           background: true
       - k3d/k3d-run:
           command: >
-            k3d image import -c circleci-k8s-1 "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+            kurtosis_version="$(./scripts/get-docker-tag.sh)"
+            
+            docker image load --input "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+            k3d image import -c circleci-k8s-1 "kurtosistech/core:$kurtosis_version"
 
-            k3d image import -c circleci-k8s-1 "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+            docker image load --input "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+            k3d image import -c circleci-k8s-1 "kurtosistech/engine:$kurtosis_version"
 
-            k3d image import -c circleci-k8s-1 "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+            docker image load --input "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+            k3d image import -c circleci-k8s-1 "kurtosistech/files-artifacts-expander:$kurtosis_version" 
 
             ${KURTOSIS_BINPATH} engine start
 
