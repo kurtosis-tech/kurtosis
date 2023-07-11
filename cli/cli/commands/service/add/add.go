@@ -307,7 +307,7 @@ func run(
 	plan.add_service(name = "%s", config = %s)
 	plan.print("%s") # we add this print of a random UUID to make sure the single add_service above won't get cached
 `, serviceName, serviceConfigStarlark, uuid.New().String())
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "", false, defaultParallelism, noExperimentalFeature)
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
