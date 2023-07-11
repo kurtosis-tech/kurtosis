@@ -18,6 +18,7 @@ import (
 )
 
 const (
+	//TODO: pass this parameter
 	frontendPortSpec                            = 9711
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
@@ -61,7 +62,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred creating the engine's http port spec object using number '%v' and protocol '%v'",
-			9711,
+			frontendPortSpec,
 			consts.EngineTransportProtocol.String(),
 		)
 	}
@@ -87,12 +88,12 @@ func CreateEngine(
 
 	httpDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(httpPortSpec)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private http port spec to a Docker port")
 	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort: docker_manager.NewManualPublishingSpec(grpcPortNum),
-		httpDockerPort:        docker_manager.NewManualPublishingSpec(uint16(9711)),
+		httpDockerPort:        docker_manager.NewManualPublishingSpec(uint16(frontendPortSpec)),
 	}
 
 	bindMounts := map[string]string{
