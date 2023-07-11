@@ -13,6 +13,11 @@ import (
 	"path/filepath"
 )
 
+const (
+	doNotIncludeParentDirInArchiveSymbol = "*"
+	ignoreParentDirInArchiveSymbolFormat = "%v/."
+)
+
 // It returns io.ReadCloser which is a tar stream. It's up to the caller to close the reader.
 func CopyFilesFromUserService(
 	ctx context.Context,
@@ -25,9 +30,9 @@ func CopyFilesFromUserService(
 
 	srcPath := srcPathOnContainer
 	srcPathBase := filepath.Base(srcPathOnContainer)
-	if srcPathBase == "*" {
+	if srcPathBase == doNotIncludeParentDirInArchiveSymbol {
 		srcPath = filepath.Dir(srcPathOnContainer)
-		srcPath = fmt.Sprintf("%v/.", srcPath)
+		srcPath = fmt.Sprintf(ignoreParentDirInArchiveSymbolFormat, srcPath)
 	}
 
 	logrus.Debugf("Copying contents from the src path: %v and base %v", srcPath, srcPathBase)
