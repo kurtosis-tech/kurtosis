@@ -135,10 +135,10 @@ func runMain() error {
 	)
 
 	go func() {
-		staticPath := "/run/webapp"
+		pathToStaticFolder := "/run/webapp"
 		indexPath := "index.html"
 
-		fileServer := http.FileServer(http.Dir(staticPath))
+		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
 
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)
@@ -147,12 +147,12 @@ func runMain() error {
 				return
 			}
 
-			path = filepath.Join(staticPath, path)
+			path = filepath.Join(pathToStaticFolder, path)
 
 			_, err = os.Stat(path)
 			if os.IsNotExist(err) {
 				// file does not exist, serve index.html
-				http.ServeFile(w, r, filepath.Join(staticPath, indexPath))
+				http.ServeFile(w, r, filepath.Join(pathToStaticFolder, indexPath))
 				return
 			} else if err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
