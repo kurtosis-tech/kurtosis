@@ -6,7 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_update_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -32,7 +32,7 @@ func newAddServicesTestCase(t *testing.T) *addServicesTestCase {
 }
 
 func (t *addServicesTestCase) GetId() string {
-	return add_service.AddServicesBuiltinName
+	return add_update_service.AddServicesBuiltinName
 }
 
 func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -179,7 +179,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		TLS:              nil,
 	}, nil)
 
-	return add_service.NewAddServices(serviceNetwork, runtimeValueStore)
+	return add_update_service.NewAddServices(serviceNetwork, runtimeValueStore)
 }
 
 func (t *addServicesTestCase) GetStarlarkCode() string {
@@ -196,7 +196,7 @@ func (t *addServicesTestCase) GetStarlarkCode() string {
 	)
 	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, subnetwork=%q, ready_conditions=%s)", TestContainerImageName, TestSubnetwork, service1ReadyConditionsScriptPart)
 	serviceConfig2 := fmt.Sprintf("ServiceConfig(image=%q, cpu_allocation=%d, memory_allocation=%d, ready_conditions=%s)", TestContainerImageName, TestCpuAllocation, TestMemoryAllocation, service2ReadyConditionsScriptPart)
-	return fmt.Sprintf(`%s(%s={%q: %s, %q: %s})`, add_service.AddServicesBuiltinName, add_service.ConfigsArgName, TestServiceName, serviceConfig1, TestServiceName2, serviceConfig2)
+	return fmt.Sprintf(`%s(%s={%q: %s, %q: %s})`, add_update_service.AddServicesBuiltinName, add_update_service.ConfigsArgName, TestServiceName, serviceConfig1, TestServiceName2, serviceConfig2)
 }
 
 func (t *addServicesTestCase) GetStarlarkCodeForAssertion() string {

@@ -1,4 +1,4 @@
-package add_service
+package add_update_service
 
 import (
 	"context"

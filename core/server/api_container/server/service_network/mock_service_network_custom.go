@@ -85,7 +85,12 @@ func (m *MockServiceNetworkCustom) AddServices(
 	panic(unimplementedMsg)
 }
 
-func (m *MockServiceNetworkCustom) UpdateService(ctx context.Context, updateServiceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig) (map[service.ServiceName]bool, map[service.ServiceName]error, error) {
+func (m *MockServiceNetworkCustom) UpdateServices(ctx context.Context, updateServiceConfigs map[service.ServiceName]*service.ServiceConfig, batchSize int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
+func (m *MockServiceNetworkCustom) UpdateServiceSubnetwork(ctx context.Context, updateServiceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig) (map[service.ServiceName]bool, map[service.ServiceName]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)
 }

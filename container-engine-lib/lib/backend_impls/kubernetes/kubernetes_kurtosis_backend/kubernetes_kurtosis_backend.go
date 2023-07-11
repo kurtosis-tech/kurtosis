@@ -263,6 +263,18 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 	return successfullyStartedServices, failedServices, nil
 }
 
+func (backend *KubernetesKurtosisBackend) RemoveRegisteredUserServiceProcesses(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	services map[service.ServiceUUID]bool,
+) (
+	map[service.ServiceUUID]bool,
+	map[service.ServiceUUID]error,
+	error,
+) {
+	return nil, nil, stacktrace.NewError("Not implemented")
+}
+
 func (backend *KubernetesKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,

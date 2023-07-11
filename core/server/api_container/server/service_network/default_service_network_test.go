@@ -1269,7 +1269,7 @@ func TestUpdateService(t *testing.T) {
 	network.networkingSidecars[serviceAlreadyInPartition.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 	network.networkingSidecars[serviceToMoveOutOfDefaultPartition.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	success, failure, err := network.UpdateService(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
+	success, failure, err := network.UpdateServiceSubnetwork(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
 		successfulService.GetName():                  binding_constructors.NewUpdateServiceConfig(string(partition2)),
 		serviceAlreadyInPartition.GetName():          binding_constructors.NewUpdateServiceConfig(string(partition0)),
 		nonExistentService.GetName():                 binding_constructors.NewUpdateServiceConfig(string(partition2)),
@@ -1351,7 +1351,7 @@ func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
 	// do not add sidecar for failingService so that it fails updating the connections
 	network.networkingSidecars[successfulService.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	success, failure, err := network.UpdateService(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
+	success, failure, err := network.UpdateServiceSubnetwork(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
 		failingService.GetName():    binding_constructors.NewUpdateServiceConfig(string(partition2)),
 		successfulService.GetName(): binding_constructors.NewUpdateServiceConfig(string(partition2)),
 	})

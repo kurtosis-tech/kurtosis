@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_update_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
@@ -18,7 +18,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/start_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/stop_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/update_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -43,8 +42,8 @@ import (
 // Examples: add_service, exec, wait, etc.
 func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, packageContentProvider startosis_packages.PackageContentProvider) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
-		add_service.NewAddService(serviceNetwork, runtimeValueStore),
-		add_service.NewAddServices(serviceNetwork, runtimeValueStore),
+		add_update_service.NewAddService(serviceNetwork, runtimeValueStore),
+		add_update_service.NewAddServices(serviceNetwork, runtimeValueStore),
 		assert.NewAssert(runtimeValueStore),
 		exec.NewExec(serviceNetwork, runtimeValueStore),
 		kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore),
@@ -57,7 +56,7 @@ func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, run
 		run_sh.NewRunShService(serviceNetwork, runtimeValueStore),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
-		update_service.NewUpdateService(serviceNetwork),
+		add_update_service.NewUpdateService(serviceNetwork),
 		upload_files.NewUploadFiles(serviceNetwork, packageContentProvider),
 		wait.NewWait(serviceNetwork, runtimeValueStore),
 	}

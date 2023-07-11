@@ -1,28 +1,23 @@
-package update_service
+package add_update_service
 
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/update_service_config"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"reflect"
 )
 
 const (
 	UpdateServiceBuiltinName = "update_service"
-
-	ServiceNameArgName         = "name"
-	UpdateServiceConfigArgName = "config"
 )
 
 func NewUpdateService(serviceNetwork service_network.ServiceNetwork) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -40,13 +35,13 @@ func NewUpdateService(serviceNetwork service_network.ServiceNetwork) *kurtosis_p
 					},
 				},
 				{
-					Name:              UpdateServiceConfigArgName,
+					Name:              ServiceConfigArgName,
 					IsOptional:        false,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[*update_service_config.UpdateServiceConfig],
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*service_config.ServiceConfig],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						// we just try to convert the configs here to validate their shape, to avoid code duplication
 						// with Interpret
-						if _, err := validateAndConvertConfig(value); err != nil {
+						if _, _, err := validateAndConvertConfigAndReadyCondition(serviceNetwork, value); err != nil {
 							return err
 						}
 						return nil
@@ -59,14 +54,14 @@ func NewUpdateService(serviceNetwork service_network.ServiceNetwork) *kurtosis_p
 			return &UpdateServiceCapabilities{
 				serviceNetwork: serviceNetwork,
 
-				serviceName:         "",  // populated at interpretation time
-				updateServiceConfig: nil, // populated at interpretation time
+				serviceName:      "",  // populated at interpretation time
+				newServiceConfig: nil, // populated at interpretation time
 			}
 		},
 
 		DefaultDisplayArguments: map[string]bool{
-			ServiceNameArgName:         true,
-			UpdateServiceConfigArgName: false,
+			ServiceNameArgName:   true,
+			ServiceConfigArgName: false,
 		},
 	}
 }
@@ -74,8 +69,9 @@ func NewUpdateService(serviceNetwork service_network.ServiceNetwork) *kurtosis_p
 type UpdateServiceCapabilities struct {
 	serviceNetwork service_network.ServiceNetwork
 
-	serviceName         service.ServiceName
-	updateServiceConfig *kurtosis_core_rpc_api_bindings.UpdateServiceConfig
+	serviceName      service.ServiceName
+	newServiceConfig *service.ServiceConfig
+	readyCondition   *service_config.ReadyCondition
 }
 
 func (builtin *UpdateServiceCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -84,24 +80,26 @@ func (builtin *UpdateServiceCapabilities) Interpret(arguments *builtin_argument.
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
 	}
 
-	updateServiceConfig, err := builtin_argument.ExtractArgumentValue[*update_service_config.UpdateServiceConfig](arguments, UpdateServiceConfigArgName)
+	updateServiceConfig, err := builtin_argument.ExtractArgumentValue[*service_config.ServiceConfig](arguments, ServiceConfigArgName)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", UpdateServiceConfigArgName)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceConfigArgName)
 	}
-	apiUpdateServiceConfig, interpretationErr := validateAndConvertConfig(updateServiceConfig)
+	apiUpdateServiceConfig, readyCondition, interpretationErr := validateAndConvertConfigAndReadyCondition(builtin.serviceNetwork, updateServiceConfig)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
-	builtin.updateServiceConfig = apiUpdateServiceConfig
+	builtin.newServiceConfig = apiUpdateServiceConfig
+	builtin.readyCondition = readyCondition
 	return starlark.None, nil
 }
 
 func (builtin *UpdateServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if partition_topology.ParsePartitionId(builtin.updateServiceConfig.Subnetwork) != partition_topology.DefaultPartitionId {
+	potentiallyNewSubnetwork := builtin.newServiceConfig.GetSubnetwork()
+	if partition_topology.ParsePartitionId(&potentiallyNewSubnetwork) != partition_topology.DefaultPartitionId {
 		if !validatorEnvironment.IsNetworkPartitioningEnabled() {
-			return startosis_errors.NewValidationError("Service was about to be moved to subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.", *builtin.updateServiceConfig.Subnetwork)
+			return startosis_errors.NewValidationError("Service was about to be moved to subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.", builtin.newServiceConfig.GetSubnetwork())
 		}
 	}
 	if !validatorEnvironment.DoesServiceNameExist(builtin.serviceName) {
@@ -116,11 +114,11 @@ func (builtin *UpdateServiceCapabilities) Execute(ctx context.Context, _ *builti
 		return "", stacktrace.Propagate(err, "Updating service '%s' failed as it could not be retrieved from the enclave", builtin.serviceName)
 	}
 
-	updateServiceConfigMap := map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
-		builtin.serviceName: builtin.updateServiceConfig,
+	updateServiceConfigMap := map[service.ServiceName]*service.ServiceConfig{
+		builtin.serviceName: builtin.newServiceConfig,
 	}
 
-	serviceSuccessful, serviceFailed, err := builtin.serviceNetwork.UpdateService(ctx, updateServiceConfigMap)
+	serviceSuccessful, serviceFailed, err := builtin.serviceNetwork.UpdateServices(ctx, updateServiceConfigMap, 1)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed updating service '%s' with an unexpected error", builtin.serviceName)
 	}
@@ -133,16 +131,4 @@ func (builtin *UpdateServiceCapabilities) Execute(ctx context.Context, _ *builti
 	}
 	instructionResult := fmt.Sprintf("Service '%s' with UUID '%s' updated", builtin.serviceName, runningService.GetRegistration().GetUUID())
 	return instructionResult, nil
-}
-
-func validateAndConvertConfig(rawConfig starlark.Value) (*kurtosis_core_rpc_api_bindings.UpdateServiceConfig, *startosis_errors.InterpretationError) {
-	config, ok := rawConfig.(*update_service_config.UpdateServiceConfig)
-	if !ok {
-		return nil, startosis_errors.NewInterpretationError("The '%s' argument is not an UpdateServiceConfig (was '%s').", UpdateServiceConfigArgName, reflect.TypeOf(rawConfig))
-	}
-	apiUpdateServiceConfig, interpretationErr := config.ToKurtosisType()
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	return apiUpdateServiceConfig, nil
 }

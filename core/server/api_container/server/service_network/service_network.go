@@ -50,7 +50,17 @@ type ServiceNetwork interface {
 		error,
 	)
 
-	UpdateService(
+	UpdateServices(
+		ctx context.Context,
+		updateServiceConfigs map[service.ServiceName]*service.ServiceConfig,
+		batchSize int,
+	) (
+		map[service.ServiceName]*service.Service,
+		map[service.ServiceName]error,
+		error,
+	)
+
+	UpdateServiceSubnetwork(
 		ctx context.Context,
 		updateServiceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig,
 	) (

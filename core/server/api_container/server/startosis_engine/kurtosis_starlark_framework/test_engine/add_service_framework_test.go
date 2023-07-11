@@ -6,7 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_update_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
@@ -29,7 +29,7 @@ func newAddServiceTestCase(t *testing.T) *addServiceTestCase {
 }
 
 func (t *addServiceTestCase) GetId() string {
-	return add_service.AddServiceBuiltinName
+	return add_update_service.AddServiceBuiltinName
 }
 
 func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -65,12 +65,12 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 		nil,
 	)
 
-	return add_service.NewAddService(serviceNetwork, runtimeValueStore)
+	return add_update_service.NewAddService(serviceNetwork, runtimeValueStore)
 }
 
 func (t *addServiceTestCase) GetStarlarkCode() string {
 	serviceConfig := fmt.Sprintf("ServiceConfig(image=%q)", TestContainerImageName)
-	return fmt.Sprintf(`%s(%s=%q, %s=%s)`, add_service.AddServiceBuiltinName, add_service.ServiceNameArgName, TestServiceName, add_service.ServiceConfigArgName, serviceConfig)
+	return fmt.Sprintf(`%s(%s=%q, %s=%s)`, add_update_service.AddServiceBuiltinName, add_update_service.ServiceNameArgName, TestServiceName, add_update_service.ServiceConfigArgName, serviceConfig)
 }
 
 func (t *addServiceTestCase) GetStarlarkCodeForAssertion() string {

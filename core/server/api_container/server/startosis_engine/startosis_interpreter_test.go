@@ -10,7 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_update_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
@@ -243,7 +243,7 @@ def run(plan):
 	require.Nil(t, interpretationError)
 	require.Equal(t, 5, instructionsPlan.Size())
 
-	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 15, 38)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_update_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 15, 38)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
@@ -429,9 +429,9 @@ def run(plan):
 	require.Nil(t, interpretationError)
 	require.Equal(t, 8, instructionsPlan.Size())
 
-	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 19, 19)
-	assertInstructionTypeAndPosition(t, instructionsPlan, 4, add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 19, 19)
-	assertInstructionTypeAndPosition(t, instructionsPlan, 6, add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 19, 19)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_update_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 19, 19)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 4, add_update_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 19, 19)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 6, add_update_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 19, 19)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server-0
@@ -637,7 +637,7 @@ def run(plan):
 	require.Nil(t, interpretationError)
 	require.Equal(t, 3, instructionsPlan.Size())
 
-	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 6, 18)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_update_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 6, 18)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server
@@ -685,9 +685,9 @@ def run(plan):
 	require.Nil(t, interpretationError)
 	require.Equal(t, 8, instructionsPlan.Size())
 
-	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_service.AddServiceBuiltinName, moduleBar, 18, 25)
-	assertInstructionTypeAndPosition(t, instructionsPlan, 4, add_service.AddServiceBuiltinName, moduleBar, 18, 25)
-	assertInstructionTypeAndPosition(t, instructionsPlan, 6, add_service.AddServiceBuiltinName, moduleBar, 18, 25)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_update_service.AddServiceBuiltinName, moduleBar, 18, 25)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 4, add_update_service.AddServiceBuiltinName, moduleBar, 18, 25)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 6, add_update_service.AddServiceBuiltinName, moduleBar, 18, 25)
 
 	expectedOutput := `Starting Startosis script!
 Adding service example-datastore-server-0
@@ -759,7 +759,7 @@ Starting Startosis script!
 	_, instructionsPlan, interpretationError := interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, scriptA, startosis_constants.EmptyInputArgs, emptyInstructionsPlanMask)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 4, instructionsPlan.Size())
-	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_service.AddServiceBuiltinName, moduleBar, 12, 18)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_update_service.AddServiceBuiltinName, moduleBar, 12, 18)
 	validateScriptOutputFromPrintInstructions(t, instructionsPlan, expectedOutputFromScriptA)
 
 	scriptB := `
@@ -784,7 +784,7 @@ Adding service example-datastore-server
 	_, instructionsPlan, interpretationError = interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, scriptB, startosis_constants.EmptyInputArgs, emptyInstructionsPlanMask)
 	require.Nil(t, interpretationError)
 	require.Equal(t, 3, instructionsPlan.Size())
-	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 14, 18)
+	assertInstructionTypeAndPosition(t, instructionsPlan, 2, add_update_service.AddServiceBuiltinName, startosis_constants.PackageIdPlaceholderForStandaloneScript, 14, 18)
 	validateScriptOutputFromPrintInstructions(t, instructionsPlan, expectedOutputFromScriptB)
 }
 
