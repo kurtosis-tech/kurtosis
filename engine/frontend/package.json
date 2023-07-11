@@ -24,7 +24,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "postbuild": "cp -r build ../server/webapp",
+    "postbuild": "cp -r build/ ../server/webapp",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
