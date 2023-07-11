@@ -6,8 +6,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"strings"
 	"time"
 )
@@ -165,11 +167,30 @@ func (pool *EnclavePool) GetEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred updating enclave with UUID '%v', trying to update name to '%s' and creation time to '%v'", enclaveUUID, newEnclaveName, newCreationTime)
 	}
 
-	enclaveInfo, err := getEnclaveInfoForEnclave(ctx, pool.kurtosisBackend, enclaveObj)
+	/*enclaveInfo, err := getEnclaveInfoForEnclave(ctx, pool.kurtosisBackend, enclaveObj)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave info for enclave '%v'", enclaveObj)
 	}
-	enclaveInfo.Name = newEnclaveName
+	enclaveInfo.Name = newEnclaveName*/
+
+	enclaveCreationTimestamp := timestamppb.New(newCreationTime)
+	newEnclaveUuid := enclaveObj.GetUUID()
+	newEnclaveUuidStr := string(newEnclaveUuid)
+	shortenedUuid := uuid_generator.ShortenedUUIDString(newEnclaveUuidStr)
+	enclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
+		EnclaveUuid:        newEnclaveUuidStr,
+		Name:               newEnclaveName,
+		ShortenedUuid:      shortenedUuid,
+		ContainersStatus:   kurtosis_engine_rpc_api_bindings.EnclaveContainersStatus_EnclaveContainersStatus_RUNNING,
+		ApiContainerStatus: kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING,
+		ApiContainerInfo: &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
+			ContainerId:           "",
+			IpInsideEnclave:       "17.17.17.17",
+			GrpcPortInsideEnclave: uint32(apiContainerListenGrpcPortNumInsideNetwork),
+		},
+		ApiContainerHostMachineInfo: nil,
+		CreationTime:                enclaveCreationTimestamp,
+	}
 
 	logrus.Debugf("Returning enclave Info '%+v' for requested enclave name '%s'", enclaveInfo, newEnclaveName)
 
