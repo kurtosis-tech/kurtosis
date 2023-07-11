@@ -64,7 +64,7 @@ func CopyFilesFromUserService(
 	srcPath = filepath.Clean(srcPath)
 	// we get the base dir | file
 	srcPathBase := filepath.Base(srcPath)
-	//// we get the dir that holds base the dir | file
+	// we get the dir that holds base the dir | file
 	srcPathDir := filepath.Dir(srcPath)
 
 	var commandToRun string
