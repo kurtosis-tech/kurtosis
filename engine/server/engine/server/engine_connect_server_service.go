@@ -2,10 +2,12 @@ package server
 
 import (
 	"context"
-	"errors"
 	connect_go "github.com/bufbuild/connect-go"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -46,7 +48,6 @@ func NewEngineConnectServerService(
 }
 
 func (service *EngineConnectServerService) GetEngineInfo(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
-	logrus.Infof("HURRY CALLED HERE")
 	result := &kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse{
 		EngineVersion: service.imageVersionTag,
 	}
@@ -55,6 +56,7 @@ func (service *EngineConnectServerService) GetEngineInfo(context.Context, *conne
 
 func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, connectArgs *connect_go.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	args := connectArgs.Msg
+	logrus.Debugf("args: %+v", args)
 	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
@@ -129,5 +131,114 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 }
 
 func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, connectArgs *connect_go.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], stream *connect_go.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.GetServiceLogs is not implemented"))
+	args := connectArgs.Msg
+	enclaveIdentifier := args.GetEnclaveIdentifier()
+	enclaveUuid, err := service.enclaveManager.GetEnclaveUuidForEnclaveIdentifier(context.Background(), enclaveIdentifier)
+	if err != nil {
+		logrus.Errorf("An error occurred while fetching uuid for enclave '%v'. This could happen if the enclave has been deleted. Treating it as UUID", enclaveIdentifier)
+		enclaveUuid = enclave.EnclaveUUID(enclaveIdentifier)
+	}
+	serviceUuidStrSet := args.GetServiceUuidSet()
+	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidStrSet))
+	shouldFollowLogs := args.FollowLogs
+
+	for serviceUuidStr := range serviceUuidStrSet {
+		serviceUuid := user_service.ServiceUUID(serviceUuidStr)
+		requestedServiceUuids[serviceUuid] = true
+	}
+
+	if service.logsDatabaseClient == nil {
+		return stacktrace.NewError("It's not possible to return service logs because there is no logs database client; this is bug in Kurtosis")
+	}
+
+	var (
+		serviceLogsByServiceUuidChan chan map[user_service.ServiceUUID][]logline.LogLine
+		errChan                      chan error
+		cancelCtxFunc                func()
+	)
+
+	notFoundServiceUuids, err := service.reportAnyMissingUuidsAndGetNotFoundUuidsList(ctx, enclaveUuid, requestedServiceUuids, stream)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred reporting missing user service UUIDs for enclave '%v' and requested service UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
+	}
+
+	conjunctiveLogLineFilters, err := newConjunctiveLogLineFiltersFromGRPCLogLineFilters(args.GetConjunctiveFilters())
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveFilters())
+	}
+
+	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveUuid, requestedServiceUuids, conjunctiveLogLineFilters, shouldFollowLogs)
+	if err != nil {
+		return stacktrace.Propagate(
+			err,
+			"An error occurred streaming service logs for UUIDs '%+v' in enclave with ID '%v' using filters '%v+' "+
+				"and with should follow logs value as '%v'",
+			requestedServiceUuids,
+			enclaveUuid,
+			conjunctiveLogLineFilters,
+			shouldFollowLogs,
+		)
+	}
+	defer func() {
+		if cancelCtxFunc != nil {
+			cancelCtxFunc()
+		}
+	}()
+
+	for {
+		select {
+		//stream case
+		case serviceLogsByServiceUuid, isChanOpen := <-serviceLogsByServiceUuidChan:
+			//If the channel is closed means that the logs database client won't continue sending streams
+			if !isChanOpen {
+				logrus.Debug("Exiting the stream loop after receiving a close signal from the service logs by service UUID channel")
+				return nil
+			}
+
+			getServiceLogsResponse := newLogsResponse(requestedServiceUuids, serviceLogsByServiceUuid, notFoundServiceUuids)
+			if err := stream.Send(getServiceLogsResponse); err != nil {
+				return stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
+			}
+		//client cancel ctx case
+		case <-ctx.Done():
+			logrus.Debug("The user service logs stream has done")
+			return nil
+		//error from logs database case
+		case err, isChanOpen := <-errChan:
+			if isChanOpen {
+				logrus.Debug("Exiting the stream because and error from the logs database client was received through the error chan")
+				return stacktrace.Propagate(err, "An error occurred streaming user service logs")
+			}
+			logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
+			return nil
+		}
+	}
+}
+
+func (service *EngineConnectServerService) reportAnyMissingUuidsAndGetNotFoundUuidsList(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	requestedServiceUuids map[user_service.ServiceUUID]bool,
+	stream *connect_go.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
+) (map[string]bool, error) {
+	existingServiceUuids, err := service.logsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
+	}
+
+	notFoundServiceUuids := getNotFoundServiceUuidsAndEmptyServiceLogsMap(requestedServiceUuids, existingServiceUuids)
+
+	if len(notFoundServiceUuids) == 0 {
+		//there is nothing to report
+		return notFoundServiceUuids, nil
+	}
+
+	emptyServiceLogsByServiceUuid := map[user_service.ServiceUUID][]logline.LogLine{}
+
+	getServiceLogsResponse := newLogsResponse(requestedServiceUuids, emptyServiceLogsByServiceUuid, notFoundServiceUuids)
+	if err := stream.Send(getServiceLogsResponse); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
+	}
+
+	return notFoundServiceUuids, nil
 }
