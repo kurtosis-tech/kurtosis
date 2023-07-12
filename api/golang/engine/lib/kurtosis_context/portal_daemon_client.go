@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 const (
@@ -22,7 +23,7 @@ func CreatePortalDaemonClient(mustBuildClient bool) (portal_api.KurtosisPortalCl
 	// When the context is remote, we build a client to the locally running portal daemon
 	kurtosisPortalSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultGrpcPortalClientPortNum)
 	// TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers
-	portalConn, err := grpc.Dial(kurtosisPortalSocketStr, grpc.WithInsecure())
+	portalConn, err := grpc.Dial(kurtosisPortalSocketStr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
