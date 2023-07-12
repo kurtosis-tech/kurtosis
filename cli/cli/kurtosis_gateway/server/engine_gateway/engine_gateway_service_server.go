@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 	restclient "k8s.io/client-go/rest"
 	"sync"
@@ -293,7 +294,7 @@ func waitForGatewayReady(apiContainerHostMachineInfo *kurtosis_engine_rpc_api_bi
 	backgroundCtx := context.Background()
 	gatewayAddress := fmt.Sprintf("%v:%v", apiContainerHostMachineInfo.IpOnHostMachine, apiContainerHostMachineInfo.GrpcPortOnHostMachine)
 
-	conn, err := grpc.Dial(gatewayAddress, grpc.WithInsecure())
+	conn, err := grpc.Dial(gatewayAddress, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be dial in to API container running at address '%v', instead a non-nil error was returned", gatewayAddress)
 	}

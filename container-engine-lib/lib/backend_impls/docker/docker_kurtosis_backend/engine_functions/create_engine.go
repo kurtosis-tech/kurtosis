@@ -18,6 +18,8 @@ import (
 )
 
 const (
+	//TODO: pass this parameter
+	frontendPortSpec                            = 9711
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 )
@@ -55,6 +57,16 @@ func CreateEngine(
 		)
 	}
 
+	httpPortSpec, err := port_spec.NewPortSpec(uint16(frontendPortSpec), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the engine's http port spec object using number '%v' and protocol '%v'",
+			frontendPortSpec,
+			consts.EngineTransportProtocol.String(),
+		)
+	}
+
 	engineAttrs, err := objAttrsProvider.ForEngineServer(
 		engineGuid,
 		consts.KurtosisInternalContainerGrpcPortId,
@@ -74,8 +86,14 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
 
+	httpDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(httpPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the private http port spec to a Docker port")
+	}
+
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
 		privateGrpcDockerPort: docker_manager.NewManualPublishingSpec(grpcPortNum),
+		httpDockerPort:        docker_manager.NewManualPublishingSpec(uint16(frontendPortSpec)),
 	}
 
 	bindMounts := map[string]string{
@@ -115,7 +133,7 @@ func CreateEngine(
 	).Build()
 
 	// Best-effort pull attempt
-	if err = dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
+	if err = dockerManager.FetchImage(ctx, containerImageAndTag); err != nil {
 		logrus.Warnf("Failed to pull the latest version of engine server image '%v'; you may be running an out-of-date version", containerImageAndTag)
 	}
 

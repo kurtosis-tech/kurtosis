@@ -114,8 +114,7 @@ func (backend *DockerKurtosisBackend) CreateNetworkingSidecar(
 		skipAddingToBridgeNetwork,
 	).Build()
 
-	// Best-effort pull attempt
-	if err = backend.dockerManager.PullImage(ctx, networkingSidecarImageName); err != nil {
+	if err = backend.dockerManager.FetchImage(ctx, networkingSidecarImageName); err != nil {
 		logrus.Warnf("Failed to pull the latest version of networking sidecar container image '%v'; you may be running an out-of-date version", networkingSidecarImageName)
 	}
 
