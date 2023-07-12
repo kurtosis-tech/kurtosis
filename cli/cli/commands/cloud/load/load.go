@@ -78,6 +78,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	}
 
 	contextsConfigStore := store.GetContextsConfigStore()
+	// We first have to remove the context incase it's already loaded
 	err = contextsConfigStore.RemoveContext(parsedContext.Uuid)
 	if err != nil {
 		return stacktrace.Propagate(err, "While attempting to reload the context with uuid %s an error occurred while removing it from the context store", parsedContext.Uuid)
