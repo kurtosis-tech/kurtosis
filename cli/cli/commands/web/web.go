@@ -12,8 +12,8 @@ import (
 
 var WebCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.WebCmdStr,
-	ShortDescription:         "Opens the Kurtosis Web UI",
-	LongDescription:          "Opens the Kurtosis Web UI",
+	ShortDescription:         "Opens the Kurtosis Web UI(beta)",
+	LongDescription:          "Opens the Kurtosis Web UI. This feature is currently in beta.",
 	Flags:                    nil,
 	Args:                     nil,
 	PreValidationAndRunFunc:  nil,
