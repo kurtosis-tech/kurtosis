@@ -57,12 +57,14 @@ export const getServiceLogs = async (enclaveName, serviceUuid) => {
 }
 
 export const createEnclave = async () => {
-    const enclaveArgs = new CreateEnclaveArgs();
-    enclaveArgs.setApiContainerVersionTag("")
-    enclaveArgs.setApiContainerLogLevel("info");
-    enclaveArgs.setIsPartitioningEnabled(false);
-    const enclaveGRPC = await engineClient.createEnclave(enclaveArgs, null)
-    const enclave = enclaveGRPC.toObject().enclaveInfo;
+    const data = {
+        apiContainerVersionTag: "",
+        apiContainerLogLevel: "info",
+        isPartitioningEnabled: false,
+    }
+    const response = await axios.post("http://localhost:9710/engine_api.EngineService/CreateEnclave", JSON.stringify(data), {"headers":{'Content-Type': "application/json"}})
+
+    const enclave = response.data.enclaveInfo;
     const apiClient = createApiPromiseClient(enclave.apiContainerHostMachineInfo);
     return {enclave, apiClient}
 }
