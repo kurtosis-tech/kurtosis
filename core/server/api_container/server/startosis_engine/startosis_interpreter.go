@@ -263,17 +263,14 @@ func (interpreter *StartosisInterpreter) Interpret(
 
 	runFunctionExecutionThread := newStarlarkThread(starlarkGoThreadName)
 
-	if isUsingDefaultMainFunction && mainFunction.NumParams() > maximumParamsAllowedForRunFunction {
-		return startosis_constants.NoOutputObject, nil, startosis_errors.NewInterpretationError("The 'run' entrypoint function can have at most '%v' argument got '%v'", maximumParamsAllowedForRunFunction, mainFunction.NumParams()).ToAPIType()
-	}
-
 	var argsTuple starlark.Tuple
 	var kwArgs []starlark.Tuple
 
 	mainFuncParamsNum := mainFunction.NumParams()
 
+	// The plan object will always be injected if the first argument name is 'plan'
+	// If we are on main, 'plan' must be the first argument
 	if mainFuncParamsNum >= minimumParamsRequiredForPlan {
-		// the plan object will always be injected if the first argument name is 'plan'
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
 			kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
@@ -286,28 +283,27 @@ func (interpreter *StartosisInterpreter) Interpret(
 		}
 	}
 
-	if (isUsingDefaultMainFunction && mainFuncParamsNum == paramsRequiredForArgs) ||
-		(!isUsingDefaultMainFunction && mainFuncParamsNum > 0) {
-		if isUsingDefaultMainFunction {
-			if paramName, _ := mainFunction.Param(argsParamIndex); paramName != argsParamName {
-				return startosis_constants.NoOutputObject, nil, startosis_errors.NewInterpretationError(unexpectedArgNameError, argsParamIndex, argsParamName, paramName).ToAPIType()
-			}
-		}
-		// run function has an argument so we parse input args
-		inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
-		if interpretationError != nil {
-			return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
-		}
-		if isUsingDefaultMainFunction {
+	inputArgs, interpretationError := interpreter.parseInputArgs(runFunctionExecutionThread, serializedJsonParams)
+	if interpretationError != nil {
+		return startosis_constants.NoOutputObject, nil, interpretationError.ToAPIType()
+	}
+
+	// For backwards compatibility, deal with case run(plan, args), where args is a generic dictionary
+	runWithGenericDictArgs := false
+	if isUsingDefaultMainFunction && mainFuncParamsNum == paramsRequiredForArgs {
+		if paramName, _ := mainFunction.Param(argsParamIndex); paramName == argsParamName {
+			logrus.Warnf("Using args dictionary as parameter is deprecated. Consider unpacking the dictionary into individual parameters. For example: run(plan, args) to run(plan, param1, param2, ...)")
 			argsTuple = append(argsTuple, inputArgs)
 			kwArgs = noKwargs
-		} else {
-			argsDict, ok := inputArgs.(*starlark.Dict)
-			if !ok {
-				return startosis_constants.NoOutputObject, nil, startosis_errors.NewInterpretationError("An error occurred casting input args '%s' to Starlark Dict", inputArgs).ToAPIType()
-			}
-			kwArgs = append(kwArgs, argsDict.Items()...)
+			runWithGenericDictArgs = true
 		}
+	}
+	if !runWithGenericDictArgs {
+		argsDict, ok := inputArgs.(*starlark.Dict)
+		if !ok {
+			return startosis_constants.NoOutputObject, nil, startosis_errors.NewInterpretationError("An error occurred casting input args '%s' to Starlark Dict", inputArgs).ToAPIType()
+		}
+		kwArgs = append(kwArgs, argsDict.Items()...)
 	}
 
 	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, kwArgs)
