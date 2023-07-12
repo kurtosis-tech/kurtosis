@@ -9,10 +9,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"path"
+	"time"
 )
 
 const (
-	urlScheme = "tcp"
+	urlScheme           = "tcp"
+	dockerClientTimeout = 30 * time.Second
 
 	noTempDirPrefix    = ""
 	tempDirNamePattern = "kurtosis_backend_tls_*"
@@ -69,7 +71,7 @@ func buildRemoteDockerClient(remoteBackendConfig *KurtosisRemoteBackendConfig) (
 	}
 
 	// API version negotiation option
-	clientOptions = append(clientOptions, client.WithAPIVersionNegotiation())
+	clientOptions = append(clientOptions, client.WithTimeout(dockerClientTimeout), client.WithAPIVersionNegotiation())
 
 	remoteDockerClient, err := client.NewClientWithOpts(clientOptions...)
 	if err != nil {
