@@ -118,18 +118,20 @@ func (manager *EnclaveManager) CreateEnclave(
 		err         error
 	)
 
-	// TODO we could improve performance here by storing the names in memory for further requests
-	allCurrentEnclaves, err := manager.kurtosisBackend.GetEnclaves(setupCtx, getAllEnclavesFilter())
+
+	allExistingAndHistoricalIdentifiers, err := manager.getExistingAndHistoricalEnclaveIdentifiersWithoutMutex()
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred checking for enclaves with name '%v'", enclaveName)
+		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical enclave identifiers")
+	}
+
+	allEnclaveNames := []string{}
+	for _, enclaveIdentifier := range allExistingAndHistoricalIdentifiers {
+
+		allEnclaveNames = append(allEnclaveNames, enclaveIdentifier.Name)
 	}
 
 	if enclaveName == autogenerateEnclaveNameKeyword {
-		enclaveName = GetRandomEnclaveNameWithRetries(name_generator.GenerateNatureThemeNameForEnclave, allCurrentEnclaves, getRandomEnclaveIdRetries)
-	}
-
-	if isEnclaveNameInUse(enclaveName, allCurrentEnclaves) {
-		return nil, stacktrace.NewError("Cannot create enclave '%v' because an enclave with that name already exists", enclaveName)
+		enclaveName = GetRandomEnclaveNameWithRetries(name_generator.GenerateNatureThemeNameForEnclave, allEnclaveNames, getRandomEnclaveIdRetries)
 	}
 
 	if err := validateEnclaveName(enclaveName); err != nil {
@@ -313,6 +315,12 @@ func (manager *EnclaveManager) GetEnclaveUuidForEnclaveIdentifier(ctx context.Co
 func (manager *EnclaveManager) GetExistingAndHistoricalEnclaveIdentifiers() ([]*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
+
+	return manager.getExistingAndHistoricalEnclaveIdentifiersWithoutMutex()
+}
+
+// this should be called from a thread safe context
+func (manager *EnclaveManager) getExistingAndHistoricalEnclaveIdentifiersWithoutMutex() ([]*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers, error) {
 
 	if len(manager.allExistingAndHistoricalIdentifiers) > 0 {
 		return manager.allExistingAndHistoricalIdentifiers, nil
