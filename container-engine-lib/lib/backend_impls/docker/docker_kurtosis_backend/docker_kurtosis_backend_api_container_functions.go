@@ -159,8 +159,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).Build()
 
-	// Best-effort pull attempt
-	if err = backend.dockerManager.PullImage(ctx, image); err != nil {
+	if err = backend.dockerManager.FetchImage(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
 	}
 
