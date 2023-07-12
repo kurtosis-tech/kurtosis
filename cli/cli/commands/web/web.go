@@ -11,7 +11,7 @@ import (
 )
 
 var WebCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:               command_str_consts.TwitterCmdStr,
+	CommandStr:               command_str_consts.WebCmdStr,
 	ShortDescription:         "Opens the Kurtosis Web UI",
 	LongDescription:          "Opens the Kurtosis Web UI",
 	Flags:                    nil,
