@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
@@ -22,6 +23,8 @@ import (
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
 	"net/http"
 	"os"
@@ -137,8 +140,9 @@ func runMain() error {
 	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
 		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
 	}
-	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
-		serverArgs.GrpcListenPortNum,
+
+	minimal_grpc_server.NewMinimalGRPCServer(
+		9714,
 		grpcServerStopGracePeriod,
 		[]func(*grpc.Server){
 			engineServerServiceRegistrationFunc,
@@ -179,10 +183,27 @@ func runMain() error {
 		}
 	}()
 
-	logrus.Info("Running server...")
-	if err := engineServer.RunUntilInterrupted(); err != nil {
-		return stacktrace.Propagate(err, "An error occurred running the server.")
+	//logrus.Info("Running server...")
+	//if err := engineServer.RunUntilInterrupted(); err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred running the server.")
+	//}
+
+	engineConnectServer := server.NewEngineConnectServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
+	mux := http.NewServeMux()
+	ppath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
+	mux.Handle(ppath, handler)
+	err = http.ListenAndServe(
+		":9710",
+		// Use h2c so we can serve HTTP/2 without TLS.
+		h2c.NewHandler(mux, &http2.Server{}),
+	)
+	if err != nil {
+		return err
 	}
+	logrus.Info("Running server...")
+	//if err := engineServer.RunUntilInterrupted(); err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred running the server.")
+	//}
 	return nil
 }
 

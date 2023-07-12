@@ -15,7 +15,7 @@ service EngineService {
   //                                   Enclave Management
   // ==============================================================================================
   // Creates a new Kurtosis Enclave
-//  rpc CreateEnclave(CreateEnclaveArgs) returns (CreateEnclaveResponse) {};
+  rpc CreateEnclave(CreateEnclaveArgs) returns (CreateEnclaveResponse) {};
 //  // Returns information about the existing enclaves
   rpc GetEnclaves(google.protobuf.Empty) returns (GetEnclavesResponse) {};
   // Returns information about all existing & historical enclaves

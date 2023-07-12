@@ -11,6 +11,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
+	github.com/kurtosis-tech/kurtosis/connect-go-server => ../../connect-go-server
 )
 
 require (
@@ -21,9 +22,16 @@ require (
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
+<<<<<<< HEAD
 	github.com/stretchr/testify v1.8.3
 	google.golang.org/grpc v1.56.2
 	google.golang.org/protobuf v1.31.0
+=======
+	github.com/stretchr/testify v1.8.1
+	google.golang.org/grpc v1.41.0
+	google.golang.org/protobuf v1.29.1
+	github.com/kurtosis-tech/kurtosis/connect-go-server v0.0.0
+>>>>>>> 669c4a823 (hello)
 )
 
 require (
