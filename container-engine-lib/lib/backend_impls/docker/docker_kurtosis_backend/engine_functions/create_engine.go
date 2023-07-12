@@ -133,7 +133,7 @@ func CreateEngine(
 	).Build()
 
 	// Best-effort pull attempt
-	if err = dockerManager.PullImage(ctx, containerImageAndTag); err != nil {
+	if err = dockerManager.FetchImage(ctx, containerImageAndTag); err != nil {
 		logrus.Warnf("Failed to pull the latest version of engine server image '%v'; you may be running an out-of-date version", containerImageAndTag)
 	}
 
