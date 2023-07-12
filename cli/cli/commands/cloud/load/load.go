@@ -14,6 +14,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/context_switch"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+	"os"
 )
 
 const (
@@ -41,8 +43,16 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		return stacktrace.Propagate(err, "Expected a value for instance id arg '%v' but none was found; "+
 			"this is a bug in the Kurtosis CLI!", instanceIdentifierArgKey)
 	}
+	logrus.Infof("Loading cloud instance %s", instanceID)
+
 	// TODO: READ from some settings
 	connectionStr := "localhost:8080"
+	ApiKeyArg := "KURTOSIS_CLOUD_API_KEY"
+	apiKey := os.Getenv(ApiKeyArg)
+	if len(apiKey) < 1 {
+		return stacktrace.NewError("No API Key was found. An API Key must be provided as env var %s", ApiKeyArg)
+	}
+	logrus.Info("Loaded API Key...")
 
 	client, err := cloud.CreateCloudClient(connectionStr)
 	if err != nil {
@@ -50,16 +60,12 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	}
 
 	getConfigArgs := &api.GetCloudInstanceConfigArgs{
-		ApiKey:     "a987e301ffd494e0f44f3a6684e9274499cc131a51d3949c2d00cda767dd9090",
+		ApiKey:     apiKey,
 		InstanceId: instanceID,
 	}
-	result, err := client.GetCloudInstanceConfig(
-		ctx,
-		getConfigArgs,
-	)
-	//logrus.Info(result)
+	result, err := client.GetCloudInstanceConfig(ctx, getConfigArgs)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed call")
+		return stacktrace.Propagate(err, "An error occurred while calling the Kurtosis Cloud API")
 	}
 	decodedConfigBytes, err := base64.StdEncoding.DecodeString(result.ContextConfig)
 	if err != nil {
