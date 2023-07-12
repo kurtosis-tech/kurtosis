@@ -14,7 +14,7 @@ import (
 
 const (
 	urlScheme           = "tcp"
-	dockerClientTimeout = 10 * time.Second
+	dockerClientTimeout = 30 * time.Second
 
 	noTempDirPrefix    = ""
 	tempDirNamePattern = "kurtosis_backend_tls_*"
