@@ -993,30 +993,13 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 
 	if !doesImageExistLocally {
 		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
-		err = manager.PullImage(ctx, dockerImage)
+		err = manager.pullImage(ctx, dockerImage)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
 		}
 		logrus.Tracef("Image successfully pulled from remote to local")
 	}
 
-	return nil
-}
-
-func (manager *DockerManager) PullImage(context context.Context, imageName string) (err error) {
-	logrus.Infof("Pulling image '%s'...", imageName)
-	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClient, imageName, defaultPlatform)
-	if err == nil {
-		return nil
-	}
-	if err != nil && !retryWithLinuxAmd64 {
-		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
-	}
-	// we retry with linux/amd64
-	err, _ = pullImage(context, manager.dockerClient, imageName, linuxAmd64)
-	if err != nil {
-		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
-	}
 	return nil
 }
 
@@ -1101,6 +1084,23 @@ func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, image
 		)
 	}
 	return numMatchingImages > 0, nil
+}
+
+func (manager *DockerManager) pullImage(context context.Context, imageName string) (err error) {
+	logrus.Infof("Pulling image '%s'...", imageName)
+	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClient, imageName, defaultPlatform)
+	if err == nil {
+		return nil
+	}
+	if err != nil && !retryWithLinuxAmd64 {
+		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
+	}
+	// we retry with linux/amd64
+	err, _ = pullImage(context, manager.dockerClient, imageName, linuxAmd64)
+	if err != nil {
+		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
+	}
+	return nil
 }
 
 func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]types.NetworkResource, error) {
