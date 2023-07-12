@@ -432,7 +432,7 @@ The `files` dictionary argument accepts a key value pair, where `key` is the pat
 The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
    * `result.output` is a future reference to the output of the command
    * `result.code` is a future reference to the exit code
-   *  `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
+   * `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
 
 ```python
 
@@ -440,7 +440,9 @@ The instruction returns a `struct` with [future references][future-references-re
         run = "mkdir -p task && cd task && echo kurtosis > test.txt",
         store = [
             "/task",
-            "/task/test.txt",
+            # using '*' will only copy the contents of the parent directory and not the directory itself to file artifact
+            # in this case, only test.txt will be stored and task directory will be ignored
+            "/task/*", 
         ],
         ...
     )
@@ -685,7 +687,7 @@ plan.print(recipe_result["code"])
 [stop-service]: #stop_service
 [wait]: #wait
 
-[cli-run-reference]: ../cli-reference/run-starlark.md
+[cli-run-reference]: ../cli-reference/run.md
 
 [files-artifacts-reference]: ../concepts-reference/files-artifacts.md
 [future-references-reference]: ../concepts-reference/future-references.md

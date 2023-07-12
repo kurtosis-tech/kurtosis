@@ -23,8 +23,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"runtime"
 	"strings"
 	"time"
@@ -42,6 +44,7 @@ const (
 	logMethodAlongWithLogLine = true
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
+	webappPortAddr            = ":9711"
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -141,6 +144,40 @@ func runMain() error {
 			engineServerServiceRegistrationFunc,
 		},
 	)
+
+	go func() {
+		pathToStaticFolder := "/run/webapp"
+		indexPath := "index.html"
+
+		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
+
+		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			path, err := filepath.Abs(r.URL.Path)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+
+			path = filepath.Join(pathToStaticFolder, path)
+
+			_, err = os.Stat(path)
+			if os.IsNotExist(err) {
+				// file does not exist, serve index.html
+				http.ServeFile(w, r, filepath.Join(pathToStaticFolder, indexPath))
+				return
+			} else if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			fileServer.ServeHTTP(w, r)
+		})
+
+		err := http.ListenAndServe(webappPortAddr, handler)
+		if err != nil {
+			logrus.Debugf("error while starting the webapp: \n%v", err)
+		}
+	}()
 
 	logrus.Info("Running server...")
 	if err := engineServer.RunUntilInterrupted(); err != nil {

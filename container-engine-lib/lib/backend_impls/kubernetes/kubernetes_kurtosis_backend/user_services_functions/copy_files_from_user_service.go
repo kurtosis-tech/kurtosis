@@ -15,8 +15,12 @@ import (
 )
 
 const (
-	tarSuccessExitCode = 0
+	tarSuccessExitCode                   = 0
+	doNotIncludeParentDirInArchiveSymbol = "*"
+	ignoreParentDirInArchiveSymbol       = "."
 )
+
+var commandString = `if command -v 'tar' > /dev/null; then cd '%v' && tar cf - '%v'; else echo "Cannot copy files from path '%v' because the tar binary doesn't exist on the machine" >&2; exit 1; fi`
 
 func CopyFilesFromUserService(
 	ctx context.Context,
@@ -63,12 +67,18 @@ func CopyFilesFromUserService(
 	// we get the dir that holds base the dir | file
 	srcPathDir := filepath.Dir(srcPath)
 
-	commandToRun := fmt.Sprintf(
-		`if command -v 'tar' > /dev/null; then cd '%v' && tar cf - '%v'; else echo "Cannot copy files from path '%v' because the tar binary doesn't exist on the machine" >&2; exit 1; fi`,
+	var commandToRun string
+
+	if srcPathBase == doNotIncludeParentDirInArchiveSymbol {
+		srcPathBase = ignoreParentDirInArchiveSymbol
+	}
+	commandToRun = fmt.Sprintf(
+		commandString,
 		srcPathDir,
 		srcPathBase,
 		srcPath,
 	)
+
 	shWrappedCommandToRun := []string{
 		"sh",
 		"-c",

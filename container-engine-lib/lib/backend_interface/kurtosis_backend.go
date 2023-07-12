@@ -42,6 +42,10 @@ type KurtosisBackend interface {
 	// Gets engines using the given filters, returning a map of matched engines identified by their engine GUID
 	GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error)
 
+	// TODO remove this endpoint because now it's equivalent to DestroyEngines
+	// TODO this method left some backend resources (like the engine's container for the Docker version) in the previous version
+	// TODO for debugging purposes (get the engine logs after the engine was stopped) but this feat wasn't used
+	// TODO and it's not relevant, so was it better to remove it and remove the resources
 	// Stops the engines matching the given filters
 	StopEngines(
 		ctx context.Context,
