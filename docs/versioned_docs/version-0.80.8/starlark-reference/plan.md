@@ -685,7 +685,7 @@ plan.print(recipe_result["code"])
 [stop-service]: #stop_service
 [wait]: #wait
 
-[cli-run-reference]: ../cli-reference/run-starlark.md
+[cli-run-reference]: ../cli-reference/run.md
 
 [files-artifacts-reference]: ../concepts-reference/files-artifacts.md
 [future-references-reference]: ../concepts-reference/future-references.md
