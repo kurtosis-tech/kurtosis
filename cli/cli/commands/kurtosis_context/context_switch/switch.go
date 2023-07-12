@@ -43,7 +43,7 @@ var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
 func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	contextIdentifier, err := args.GetNonGreedyArg(contextIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for context identifier arg '%v' but none was found; this is a bug with Kurtosis!", contextIdentifierArgKey)
+		return stacktrace.Propagate(err, "Expected a value for context identifier arg '%v' but none was found; this is a bug in the Kurtosis CLI!", contextIdentifierArgKey)
 	}
 
 	engineManager, err := engine_manager.NewEngineManager(ctx)

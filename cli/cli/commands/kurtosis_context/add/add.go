@@ -44,7 +44,7 @@ func run(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	contextFilePath, err := args.GetNonGreedyArg(contextFilePathArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for context file arg '%v' but none was found; "+
-			"this is a bug with Kurtosis!", contextFilePathArgKey)
+			"this is a bug in the Kurtosis CLI!", contextFilePathArgKey)
 	}
 
 	contextsConfigStore := store.GetContextsConfigStore()
