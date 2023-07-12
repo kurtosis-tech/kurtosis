@@ -8,7 +8,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
+	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
@@ -19,10 +20,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"net/http"
 	"os"
 	"path"
@@ -121,6 +120,7 @@ func runMain() error {
 
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 
+<<<<<<< HEAD
 	engineServerService := server.NewEngineServerService(
 		serverArgs.ImageVersionTag,
 		enclaveManager,
@@ -145,6 +145,8 @@ func runMain() error {
 		},
 	)
 
+=======
+>>>>>>> d037bdb41 (feat: added connect-go for engine)
 	go func() {
 		pathToStaticFolder := "/run/webapp"
 		indexPath := "index.html"
@@ -179,8 +181,12 @@ func runMain() error {
 		}
 	}()
 
+	engineConnectServer := server.NewEngineConnectServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
+	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
+
 	logrus.Info("Running server...")
-	if err := engineServer.RunUntilInterrupted(); err != nil {
+	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
+	if err := engineHttpServer.RunServerUntilInterrupted(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 	return nil
