@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"google.golang.org/protobuf/types/known/timestamppb"
 	"strings"
 	"time"
 )
@@ -26,7 +27,7 @@ const (
 type EnclavePool struct {
 	kurtosisBackend         backend_interface.KurtosisBackend
 	enclaveCreator          *EnclaveCreator
-	idleEnclavesChan        chan enclave.EnclaveUUID
+	idleEnclavesChan        chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo
 	fillChan                chan bool
 	engineVersion           string
 	cancelSubRoutineCtxFunc context.CancelFunc
@@ -66,7 +67,7 @@ func CreateEnclavePool(
 	}
 
 	// this channel is the repository of idle enclave UUIDs
-	idleEnclavesChan := make(chan enclave.EnclaveUUID, poolSize)
+	idleEnclavesChan := make(chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo, poolSize)
 
 	// This channel is used as a signal to tell to the sub-routine that one idle enclave
 	// has been allocated from the pool
@@ -130,7 +131,7 @@ func (pool *EnclavePool) GetEnclave(
 	if len(pool.idleEnclavesChan) == 0 {
 		return nil, nil
 	}
-	enclaveUUID, ok := <-pool.idleEnclavesChan
+	enclaveInfo, ok := <-pool.idleEnclavesChan
 	if !ok {
 		return nil, stacktrace.NewError("A new enclave can't be returned from the pool because the internal channel is closed, it shouldn't happen; this is a bug in Kurtosis")
 	}
@@ -138,6 +139,7 @@ func (pool *EnclavePool) GetEnclave(
 	// and it has to fill the pool again
 	pool.fillChan <- fill
 
+	enclaveUUID := enclave.EnclaveUUID(enclaveInfo.GetEnclaveUuid())
 	shouldDestroyEnclaveBecauseSomethingFails := true
 	defer func() {
 		if shouldDestroyEnclaveBecauseSomethingFails {
@@ -153,8 +155,8 @@ func (pool *EnclavePool) GetEnclave(
 		}
 	}()
 
-	enclaveObj, err := pool.getRunningEnclave(ctx, enclaveUUID)
-	if err != nil {
+	// Check enclave is still running
+	if _, err := pool.getRunningEnclave(ctx, enclaveUUID); err != nil {
 		logrus.Debugf("The idle enclave with UUID '%v' is not longer running or have been destroyed", enclaveUUID)
 		return nil, stacktrace.Propagate(err, "An error occurred getting a running enclave with UUID '%v'", enclaveUUID)
 	}
@@ -165,11 +167,11 @@ func (pool *EnclavePool) GetEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred updating enclave with UUID '%v', trying to update name to '%s' and creation time to '%v'", enclaveUUID, newEnclaveName, newCreationTime)
 	}
 
-	enclaveInfo, err := getEnclaveInfoForEnclave(ctx, pool.kurtosisBackend, enclaveObj)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting enclave info for enclave '%v'", enclaveObj)
-	}
+	// update the enclave info before returning it
+	// we assume that container status and apic status both are RUNNING because we check it above in getRunningEnclave
+	enclaveCreationTimestamp := timestamppb.New(newCreationTime)
 	enclaveInfo.Name = newEnclaveName
+	enclaveInfo.CreationTime = enclaveCreationTimestamp
 
 	logrus.Debugf("Returning enclave Info '%+v' for requested enclave name '%s'", enclaveInfo, newEnclaveName)
 
@@ -241,9 +243,8 @@ func (pool *EnclavePool) createAndAddOneIdleEnclaveIfNeeded(ctx context.Context)
 		return stacktrace.Propagate(err, "An error occurred creating a new idle enclave.")
 	}
 
-	enclaveUUID := enclave.EnclaveUUID(newEnclaveInfo.EnclaveUuid)
-	pool.idleEnclavesChan <- enclaveUUID
-	logrus.Debugf("Enclave with UUID '%v' was added intho the pool channel", enclaveUUID)
+	pool.idleEnclavesChan <- newEnclaveInfo
+	logrus.Debugf("Enclave with UUID '%s' was added intho the pool channel", newEnclaveInfo.GetEnclaveUuid())
 
 	return nil
 }
