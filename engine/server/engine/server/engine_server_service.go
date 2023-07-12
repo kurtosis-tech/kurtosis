@@ -47,6 +47,7 @@ func NewEngineServerService(
 }
 
 func (service *EngineServerService) GetEngineInfo(ctx context.Context, empty *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse, error) {
+	logrus.Infof("WHY GO WHY")
 	result := &kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse{
 		EngineVersion: service.imageVersionTag,
 	}

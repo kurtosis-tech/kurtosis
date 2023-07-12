@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/bufbuild/connect-go"
+	connect_go "github.com/bufbuild/connect-go"
 	engine "github.com/kurtosis-tech/kurtosis/connect-go-server/gen/engine"
+	"github.com/kurtosis-tech/kurtosis/connect-go-server/gen/engine/engine_apiconnect"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"log"
 	"net/http"
@@ -21,35 +23,63 @@ type EngineServer struct{}
 
 func (s *GreetServer) Greet(
 	ctx context.Context,
-	req *connect.Request[greetv1.GreetRequest],
-) (*connect.Response[greetv1.GreetResponse], error) {
+	req *connect_go.Request[greetv1.GreetRequest],
+) (*connect_go.Response[greetv1.GreetResponse], error) {
 	log.Println("Request headers: ", req.Header())
-	res := connect.NewResponse(&greetv1.GreetResponse{
+	res := connect_go.NewResponse(&greetv1.GreetResponse{
 		Greeting: fmt.Sprintf("Hello, %s!", req.Msg.Name),
 	})
-	res.Header().Set("Greet-Version", "v1")
+	//res.Header().Set("Greet-Version", "v1")
 	return res, nil
 }
 
-func (e *EngineServer) GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[engine.GetEngineInfoResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetEngineInfo is not implemented"))
+func (e *EngineServer) GetEngineInfo(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[engine.GetEngineInfoResponse], error) {
+	log.Println("Request headers1")
+	res := &engine.GetEngineInfoResponse{
+		EngineVersion: "0.0.1",
+	}
+	return connect_go.NewResponse(res), nil
 }
 
-func (e *EngineServer) GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[engine.GetEnclavesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetEnclaves is not implemented"))
+func (e *EngineServer) GetEnclaves(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[engine.GetEnclavesResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.GetEnclaves is not implemented"))
+}
+
+func (e *EngineServer) CreateEnclave(context.Context, *connect_go.Request[engine.CreateEnclaveArgs]) (*connect_go.Response[engine.CreateEnclaveResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.CreateEnclave is not implemented"))
+}
+
+func (e *EngineServer) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[engine.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.GetExistingAndHistoricalEnclaveIdentifiers is not implemented"))
+}
+
+func (e *EngineServer) StopEnclave(context.Context, *connect_go.Request[engine.StopEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.StopEnclave is not implemented"))
+}
+
+func (e *EngineServer) DestroyEnclave(context.Context, *connect_go.Request[engine.DestroyEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.DestroyEnclave is not implemented"))
+}
+
+func (e *EngineServer) Clean(context.Context, *connect_go.Request[engine.CleanArgs]) (*connect_go.Response[engine.CleanResponse], error) {
+	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.Clean is not implemented"))
+}
+
+func (e *EngineServer) GetServiceLogs(context.Context, *connect_go.Request[engine.GetServiceLogsArgs], *connect_go.ServerStream[engine.GetServiceLogsResponse]) error {
+	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.GetServiceLogs is not implemented"))
 }
 
 func main() {
 	greeter := &GreetServer{}
 	mux := http.NewServeMux()
 	path, handler := greetv1connect.NewGreetServiceHandler(greeter)
+	engine := &EngineServer{}
+	epath, ehandler := engine_apiconnect.NewEngineServiceHandler(engine)
 	mux.Handle(path, handler)
+	mux.Handle(epath, ehandler)
 	http.ListenAndServe(
 		"localhost:8800",
 		// Use h2c so we can serve HTTP/2 without TLS.
 		h2c.NewHandler(mux, &http2.Server{}),
 	)
-
-	engine := &EngineServer{}
-
 }
