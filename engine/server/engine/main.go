@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
@@ -55,6 +56,21 @@ const (
 //	because this isn't the API container
 var apiContainerModeArgsForKurtosisBackend *backend_creator.APIContainerModeArgs = nil
 
+func CORS(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Add("Access-Control-Allow-Origin", "*")
+		w.Header().Add("Access-Control-Allow-Credentials", "true")
+		w.Header().Add("Access-Control-Allow-Headers", "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With")
+		w.Header().Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+
+		if r.Method == "OPTIONS" {
+			http.Error(w, "No Content", http.StatusNoContent)
+			return
+		}
+
+		next(w, r)
+	}
+}
 func main() {
 	// This allows the filename & function to be reported
 	logrus.SetReportCaller(logMethodAlongWithLogLine)
@@ -192,10 +208,11 @@ func runMain() error {
 	mux := http.NewServeMux()
 	ppath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
 	mux.Handle(ppath, handler)
+
 	err = http.ListenAndServe(
 		":9710",
 		// Use h2c so we can serve HTTP/2 without TLS.
-		h2c.NewHandler(mux, &http2.Server{}),
+		cors.Default().Handler(h2c.NewHandler(mux, &http2.Server{})),
 	)
 	if err != nil {
 		return err

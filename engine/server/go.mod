@@ -4,6 +4,7 @@ go 1.19
 
 replace (
 	github.com/kurtosis-tech/kurtosis/api/golang => ../../api/golang
+	github.com/kurtosis-tech/kurtosis/connect-go-server => ../../connect-go-server
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../../core/launcher
@@ -11,7 +12,6 @@ replace (
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
 	github.com/kurtosis-tech/kurtosis/name_generator => ../../name_generator
-	github.com/kurtosis-tech/kurtosis/connect-go-server => ../../connect-go-server
 )
 
 require (
@@ -22,16 +22,9 @@ require (
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0 // local dependency
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.8.1
-<<<<<<< HEAD
 	github.com/stretchr/testify v1.8.3
 	google.golang.org/grpc v1.56.2
 	google.golang.org/protobuf v1.31.0
-=======
-	github.com/stretchr/testify v1.8.1
-	google.golang.org/grpc v1.41.0
-	google.golang.org/protobuf v1.29.1
-	github.com/kurtosis-tech/kurtosis/connect-go-server v0.0.0
->>>>>>> 669c4a823 (hello)
 )
 
 require (
@@ -51,15 +44,17 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
-	golang.org/x/net v0.12.0 // indirect
+	golang.org/x/net v0.12.0
 	golang.org/x/sys v0.10.0 // indirect
 	golang.org/x/text v0.11.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
 require (
+	github.com/bufbuild/connect-go v1.9.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
+	github.com/rs/cors v1.9.0
 )
 
 require (
@@ -91,7 +86,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/rs/cors v1.9.0 // indirect
 	github.com/soheilhy/cmux v0.1.5 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect

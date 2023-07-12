@@ -1,10 +1,15 @@
 //import {EngineServicePromiseClient} from 'kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb'
-import {GetServiceLogsArgs, CreateEnclaveArgs} from 'kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/engine_service_pb'
-import {EngineServicePromiseClient} from "kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb"
+import {
+    CreateEnclaveArgs,
+    GetServiceLogsArgs
+} from 'kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/engine_service_pb'
+import {
+    EngineServicePromiseClient
+} from "kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb"
 //import {ApiContainerServiceClient} from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb'
-import google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
-import { StoreFilesArtifactFromServiceArgs } from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import {runStarlarkPackage} from "./container"
+import axios from "axios"
+
 
 const engineClient = new EngineServicePromiseClient("http://localhost:9710");
 
@@ -15,22 +20,27 @@ const createApiPromiseClient = (apiClient) => {
     return "";
 }
 
+
 export const getEnclavesFromKurtosis = async () => {
-    const respFromGrpc = await engineClient.getEnclaves(new google_protobuf_empty_pb.Empty, null);
-    const response = respFromGrpc.toObject()
+    const response = await axios.post("http://localhost:9710/engine_api.EngineService/GetEnclaves", {"field":""}, {"headers":{'Content-Type': "application/json"}})
+    console.log(typeof (response.data.enclaveInfo))
+    // const respFromGrpc = await engineClient.getEnclaves(new google_protobuf_empty_pb.Empty, null);
+    // const response = respFromGrpc.toObject()
     
     // processing the data so that frontend can consume it! 
-    const responseProcessed = response.enclaveInfoMap.map(enclave => {
-        return {
-            uuid: enclave[0],
-            name: enclave[1].name,
-            created: enclave[1].creationTime.seconds,
-            status: enclave[1].apiContainerStatus,
-            apiClient: createApiPromiseClient(enclave[1].apiContainerHostMachineInfo) 
-        }
-    });
 
-    return responseProcessed
+    return Object.keys(response.data.enclaveInfo).map(key => {
+        console.log(key)
+        const enclave = response.data.enclaveInfo[key]
+        console.log(enclave)
+        return {
+            uuid: enclave.enclaveUuid,
+            name: enclave.name,
+            created: enclave.creationTime,
+            status: enclave.apiContainerStatus,
+            apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo)
+        }
+    })
 }
 
 export const getServiceLogs = async (enclaveName, serviceUuid) => {
