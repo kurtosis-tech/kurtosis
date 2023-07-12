@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.80.8](https://github.com/kurtosis-tech/kurtosis/compare/0.80.7...0.80.8) (2023-07-11)
+
+
+### Features
+
+* auto assign docs issue to karla ([#834](https://github.com/kurtosis-tech/kurtosis/issues/834)) ([7d0a245](https://github.com/kurtosis-tech/kurtosis/commit/7d0a245fcac4043ab5b780248080b4832b1b0cfe))
+* exposing kurtosis frontend v0 ([#833](https://github.com/kurtosis-tech/kurtosis/issues/833)) ([110e910](https://github.com/kurtosis-tech/kurtosis/commit/110e9100ddc69244e7c317ab1e979e15de9f8863))
+* Make Run also accept argument other than args dict ([#859](https://github.com/kurtosis-tech/kurtosis/issues/859)) ([9fce411](https://github.com/kurtosis-tech/kurtosis/commit/9fce4112764dfdb135e066e2f54b954f79664b50))
+
+
+### Bug Fixes
+
+* fixed the output for port print ([#816](https://github.com/kurtosis-tech/kurtosis/issues/816)) ([ede32e7](https://github.com/kurtosis-tech/kurtosis/commit/ede32e795b77387d46ba49e37a6ccc0947fba79a))
+
+## [0.80.7](https://github.com/kurtosis-tech/kurtosis/compare/0.80.6...0.80.7) (2023-07-05)
+
+
+### Bug Fixes
+
+* Remove existing package directory if it already exists in APIC ([#818](https://github.com/kurtosis-tech/kurtosis/issues/818)) ([4027485](https://github.com/kurtosis-tech/kurtosis/commit/4027485d20917729eb1271387be1317af89ff025))
+
+## [0.80.6](https://github.com/kurtosis-tech/kurtosis/compare/0.80.5...0.80.6) (2023-07-04)
+
+
+### Features
+
+* Invert USE_INSTRUCTIONS_CACHING feature flag ([#800](https://github.com/kurtosis-tech/kurtosis/issues/800)) ([9a358db](https://github.com/kurtosis-tech/kurtosis/commit/9a358db49d4d222db4c45de62c70e190c6fa7c12))
+
+
+### Bug Fixes
+
+* fallback to the amd64 image if there's a failure for arm64 image not existing ([#814](https://github.com/kurtosis-tech/kurtosis/issues/814)) ([9cc1033](https://github.com/kurtosis-tech/kurtosis/commit/9cc10332fd67dbe060b883296c7efe5284130b12))
+
+## [0.80.5](https://github.com/kurtosis-tech/kurtosis/compare/0.80.4...0.80.5) (2023-06-30)
+
+
+### Bug Fixes
+
+* Fix TS proto bindings ([#797](https://github.com/kurtosis-tech/kurtosis/issues/797)) ([7958dba](https://github.com/kurtosis-tech/kurtosis/commit/7958dba5cec3dfb09eb69f24785d33dbd94051d6))
+* make dry run return the right return value ([#795](https://github.com/kurtosis-tech/kurtosis/issues/795)) ([be5f6e7](https://github.com/kurtosis-tech/kurtosis/commit/be5f6e75229a3887dc84c7a139aebe84b09fc77d))
+* More informative logging for instructions caching ([#785](https://github.com/kurtosis-tech/kurtosis/issues/785)) ([376ac8c](https://github.com/kurtosis-tech/kurtosis/commit/376ac8ceb7085a744c5cf84756b5d2c72a2577f7))
+
+## [0.80.4](https://github.com/kurtosis-tech/kurtosis/compare/0.80.3...0.80.4) (2023-06-28)
+
+
+### Features
+
+* make the docker network attachable ([#788](https://github.com/kurtosis-tech/kurtosis/issues/788)) ([aeb0b9f](https://github.com/kurtosis-tech/kurtosis/commit/aeb0b9f06749ac42b132f292bc4e24d2b177d472))
+
 ## [0.80.3](https://github.com/kurtosis-tech/kurtosis/compare/0.80.2...0.80.3) (2023-06-27)
 
 

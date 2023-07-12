@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"net"
 	"os"
 	"os/exec"
@@ -75,7 +76,7 @@ func runMain() error {
 	}
 	apiContainerPortNum := filesArtifactExpanderArgs.ApiContainerPort
 	grpcUrl := fmt.Sprintf("%v:%v", apiContainerIpAddr, apiContainerPortNum)
-	apiContainerConnection, err := grpc.Dial(grpcUrl, grpc.WithInsecure())
+	apiContainerConnection, err := grpc.Dial(grpcUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected to be able to create a client connection to API container at address '%v', instead a non-nil error was returned", grpcUrl)
 	}
