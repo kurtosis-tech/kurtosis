@@ -15,6 +15,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
@@ -57,7 +58,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 	kurtosisEngineSocketStr := fmt.Sprintf("%v:%v", localHostIPAddressStr, DefaultGrpcEngineServerPortNum)
 
 	// TODO SECURITY: Use HTTPS to ensure we're connecting to the real Kurtosis API servers
-	conn, err := grpc.Dial(kurtosisEngineSocketStr, grpc.WithInsecure())
+	conn, err := grpc.Dial(kurtosisEngineSocketStr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
@@ -383,7 +384,7 @@ func newEnclaveContextFromEnclaveInfo(
 		apiContainerHostMachineInfo.GrpcPortOnHostMachine,
 	)
 	// TODO SECURITY: use HTTPS!
-	apiContainerConn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithInsecure())
+	apiContainerConn, err := grpc.Dial(apiContainerHostMachineUrl, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred connecting to the API container on host machine URL '%v'", apiContainerHostMachineUrl)
 	}
