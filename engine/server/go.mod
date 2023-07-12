@@ -50,6 +50,7 @@ require (
 )
 
 require (
+	github.com/bufbuild/connect-go v1.9.0
 	github.com/gorilla/websocket v1.4.2
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 )

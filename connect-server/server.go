@@ -1,0 +1,82 @@
+package connect_server
+
+import (
+	"context"
+	"fmt"
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/rs/cors"
+	"github.com/sirupsen/logrus"
+	"golang.org/x/net/http2"
+	"golang.org/x/net/http2/h2c"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+)
+
+type ConnectServer struct {
+	listenPort      uint16
+	path            string
+	handler         http.Handler
+	stopGracePeriod time.Duration // How long we'll give the server to stop after asking nicely before we kill it
+}
+
+func NewConnectServer(listenPort uint16, stopGracePeriod time.Duration, handler http.Handler, path string) *ConnectServer {
+	return &ConnectServer{
+		listenPort:      listenPort,
+		stopGracePeriod: stopGracePeriod,
+		handler:         handler,
+		path:            path,
+	}
+}
+
+func (server *ConnectServer) RunServerUntilInterrupted() error {
+	// Signals are used to interrupt the server, so we catch them here
+	termSignalChan := make(chan os.Signal, 1)
+	signal.Notify(termSignalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	serverStopChan := make(chan struct{}, 1)
+	go func() {
+		<-termSignalChan
+		interruptSignal := struct{}{}
+		serverStopChan <- interruptSignal
+	}()
+	if err := server.RunServerUntilStopped(serverStopChan); err != nil {
+		return stacktrace.Propagate(err, "An error occurred running the server using the interrupt channel for stopping")
+	}
+	return nil
+}
+
+func (server *ConnectServer) RunServerUntilStopped(stopper <-chan struct{}) error {
+	mux := http.NewServeMux()
+
+	mux.Handle(server.path, server.handler)
+
+	httpServer := http.Server{
+		Addr:    fmt.Sprintf(":%v", server.listenPort),
+		Handler: cors.Default().Handler(h2c.NewHandler(mux, &http2.Server{})),
+	}
+
+	go func() {
+		if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			logrus.Infof("Error occurred while starting the server, error: %+v", err)
+		}
+	}()
+
+	<-stopper
+	serverStoppedChan := make(chan interface{})
+	go func() {
+		httpServer.Shutdown(context.Background())
+		serverStoppedChan <- nil
+	}()
+	select {
+	case <-serverStoppedChan:
+		logrus.Debug("gRPC server has exited gracefully")
+	case <-time.After(server.stopGracePeriod):
+		if err := httpServer.Close(); err != nil {
+			logrus.Infof("Error occurred while forcefully closing the server, error: %+v", err)
+		}
+	}
+
+	return nil
+}
