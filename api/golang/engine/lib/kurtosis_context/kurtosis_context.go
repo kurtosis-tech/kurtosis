@@ -72,7 +72,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
-	// portal is still optional as it is incubating. For local context, everything will run fine if poral is not
+	// portal is still optional as it is incubating. For local context, everything will run fine if portal is not
 	// present. For remote context, is it expected that the caller checks that the portal is present before or after
 	// the Kurtosis Context is built, to avoid unexpected failures downstream
 	portalClient, err := CreatePortalDaemonClient(portalIsRequired)

@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/analytics"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/clean"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/cloud"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/cluster"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/discord"
@@ -107,6 +108,7 @@ func init() {
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(cluster.ClusterCmd)
 	RootCmd.AddCommand(kurtosis_context.ContextCmd)
+	RootCmd.AddCommand(cloud.CloudCmd)
 	RootCmd.AddCommand(kurtosisdump.KurtosisDump.MustGetCobraCommand())
 	RootCmd.AddCommand(config.ConfigCmd)
 	RootCmd.AddCommand(discord.DiscordCmd.MustGetCobraCommand())

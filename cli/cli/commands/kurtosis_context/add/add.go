@@ -47,14 +47,17 @@ func run(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 			"this is a bug in the Kurtosis CLI!", contextFilePathArgKey)
 	}
 
-	contextsConfigStore := store.GetContextsConfigStore()
 	newContextToAdd, err := parseContextFile(contextFilePath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to read content of context file at '%s'", contextFilePath)
 	}
+	return AddContext(newContextToAdd)
+}
 
+func AddContext(newContextToAdd *generated.KurtosisContext) error {
 	logrus.Infof("Adding new context '%s'", newContextToAdd.GetName())
-	if err = contextsConfigStore.AddNewContext(newContextToAdd); err != nil {
+	contextsConfigStore := store.GetContextsConfigStore()
+	if err := contextsConfigStore.AddNewContext(newContextToAdd); err != nil {
 		return stacktrace.Propagate(err, "New context '%s' with UUID '%s' could not be added to the list of "+
 			"contexts already configured", newContextToAdd.GetName(), newContextToAdd.GetUuid().GetValue())
 	}
@@ -67,10 +70,13 @@ func parseContextFile(contextFilePath string) (*generated.KurtosisContext, error
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to read context of context file")
 	}
+	return ParseContextData(contextFileContent)
+}
 
+func ParseContextData(contextContent []byte) (*generated.KurtosisContext, error) {
 	newContext := new(generated.KurtosisContext)
-	if err = protojson.Unmarshal(contextFileContent, newContext); err != nil {
-		return nil, stacktrace.Propagate(err, "Content of context file at does not seem to be valid. It couldn't be parsed.")
+	if err := protojson.Unmarshal(contextContent, newContext); err != nil {
+		return nil, stacktrace.Propagate(err, "Content of context file could not be parsed.")
 	}
 	return newContext, nil
 }
