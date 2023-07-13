@@ -208,24 +208,25 @@ func (provider *GitPackageContentProvider) GetAbsoluteModulePathForRelativeModul
 		return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
 	}
 
-	onDiskParentAbsolutePackagePath, err := provider.GetOnDiskAbsolutePackagePath(parentModuleId)
-	if err != nil {
-		return "", startosis_errors.NewInterpretationError("An error occurred while getting the absolute package path for '%v'", parentModuleId)
-	}
-
 	onDiskAbsoluteFilePathOfParentModule, err := provider.GetOnDiskAbsoluteFilePath(parentModuleId)
 	if err != nil {
 		return "", startosis_errors.NewInterpretationError("An error occurred while fetching the absolute path to parent package '%v'; this shouldn't happen", parentModuleId)
 	}
 
-	fullPathToTarget := path.Join(path.Base(onDiskAbsoluteFilePathOfParentModule), relativeOrAbsoluteModulePath)
+	maybeKurtosisYamlPath, err := getKurtosisYamlPathForFileUrl(onDiskAbsoluteFilePathOfParentModule, provider.packagesDir)
+	if err != nil {
+		return "", startosis_errors.NewInterpretationError("Error finding the path to Kurtosis YML")
+	}
+	packageParentPath := path.Dir(maybeKurtosisYamlPath)
 
-	if strings.HasPrefix(fullPathToTarget, onDiskParentAbsolutePackagePath) {
+	fullPathToTarget := path.Join(path.Dir(onDiskAbsoluteFilePathOfParentModule), relativeOrAbsoluteModulePath)
+
+	if !strings.HasPrefix(fullPathToTarget, packageParentPath) {
 		return "", startosis_errors.NewInterpretationError("Was able to get full path '%v' of relative path '%v' relative to '%v' but this escaped the pacakge", fullPathToTarget, relativeOrAbsoluteModulePath, parentModuleId)
 	}
 
 	// take these constants away
-	fullPathToTarget = strings.Replace(fullPathToTarget, onDiskAbsoluteFilePathOfParentModule, "", 1)
+	fullPathToTarget = strings.Replace(fullPathToTarget, packageParentPath, "", 1)
 
 	return path.Join(startosis_constants.GithubDomainPrefix, parsedParentModuleId.relativeRepoPath, fullPathToTarget), nil
 }
