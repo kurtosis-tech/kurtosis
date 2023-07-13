@@ -26,21 +26,21 @@ func InstanceIdentifierArg(
 		DefaultValue:          defaultValueEmpty,
 		IsGreedy:              isGreedy,
 		ValidationFunc:        validate,
-		ArgCompletionProvider: nil, // TODO: ADD TAB COMPLETION
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletionsFunc()),
 	}
 }
 
-// Make best-effort attempt to get context names
 func getCompletionsFunc() func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
 	return func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+		// TODO: Given the instance id and the API Key, we could potentially query the API for instance ids to
+		//  auto complete the typing but those endpoints don't exist (yet).
 		return []string{}, nil
 	}
 }
 
-// Context identifier validation function
 func getValidationFunc(argKey string, isGreedy bool) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-
+		// TODO: Add some basic validation, maybe just checking the string isn't empty
 		return nil
 	}
 }
