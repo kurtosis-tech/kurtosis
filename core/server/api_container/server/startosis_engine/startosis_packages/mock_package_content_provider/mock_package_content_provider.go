@@ -95,7 +95,7 @@ func (provider *MockPackageContentProvider) RemoveAll() map[string]error {
 	return nil
 }
 
-func (provider *MockPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath(_ string, _ string) (string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath(packageId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError)
 	panic(unimplementedMessage)
 }
 
