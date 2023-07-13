@@ -50,6 +50,7 @@ func (t *importModuleTestCase) GetId() string {
 func (t *importModuleTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
 	packageContentProvider := startosis_packages.NewMockPackageContentProvider(t)
 	packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
+	packageContentProvider.EXPECT().GetAbsoluteModulePathForRelativeModulePath(frameworkTestThreadName, TestModuleFileName).Return(TestModuleFileName, nil)
 
 	recursiveInterpret := func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		return importModule_mockStarlarkModule.Members, nil

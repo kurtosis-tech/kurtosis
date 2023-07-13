@@ -64,6 +64,14 @@ func (provider *MockPackageContentProvider) GetModuleContents(fileInsidePackageU
 	return string(fileContent), nil
 }
 
+func (provider *MockPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath(_ string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
+	if strings.HasPrefix(relativeOrAbsoluteModulePath, startosis_constants.GithubDomainPrefix) {
+		return relativeOrAbsoluteModulePath, nil
+	}
+	// implement properly
+	return "", nil
+}
+
 func (provider *MockPackageContentProvider) AddFileContent(packageId string, contents string) error {
 	absFilePath, err := writeContentToTempFile(contents)
 	if err != nil {
@@ -95,13 +103,6 @@ func (provider *MockPackageContentProvider) RemoveAll() map[string]error {
 		return deletionErrors
 	}
 	return nil
-}
-
-func (provider *MockPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath(_ string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
-	if strings.HasPrefix(relativeOrAbsoluteModulePath, startosis_constants.GithubDomainPrefix) {
-		return relativeOrAbsoluteModulePath, nil
-	}
-	panic("the mock only supports proper GitHub paths for now")
 }
 
 func writeContentToTempFile(fileContent string) (string, error) {
