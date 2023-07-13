@@ -1020,6 +1020,90 @@ export namespace ListFilesArtifactNamesAndUuidsResponse {
   }
 }
 
+export class InspectFilesArtifactContentsRequest extends jspb.Message {
+  getFileNamesAndUuid(): FilesArtifactNameAndUuid | undefined;
+  setFileNamesAndUuid(value?: FilesArtifactNameAndUuid): InspectFilesArtifactContentsRequest;
+  hasFileNamesAndUuid(): boolean;
+  clearFileNamesAndUuid(): InspectFilesArtifactContentsRequest;
+
+  getFilePath(): string;
+  setFilePath(value: string): InspectFilesArtifactContentsRequest;
+  hasFilePath(): boolean;
+  clearFilePath(): InspectFilesArtifactContentsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InspectFilesArtifactContentsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: InspectFilesArtifactContentsRequest): InspectFilesArtifactContentsRequest.AsObject;
+  static serializeBinaryToWriter(message: InspectFilesArtifactContentsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InspectFilesArtifactContentsRequest;
+  static deserializeBinaryFromReader(message: InspectFilesArtifactContentsRequest, reader: jspb.BinaryReader): InspectFilesArtifactContentsRequest;
+}
+
+export namespace InspectFilesArtifactContentsRequest {
+  export type AsObject = {
+    fileNamesAndUuid?: FilesArtifactNameAndUuid.AsObject,
+    filePath?: string,
+  }
+
+  export enum FilePathCase { 
+    _FILE_PATH_NOT_SET = 0,
+    FILE_PATH = 2,
+  }
+}
+
+export class InspectFilesArtifactContentsResponse extends jspb.Message {
+  getFileDescriptionsList(): Array<FileArtifactContentsFileDescription>;
+  setFileDescriptionsList(value: Array<FileArtifactContentsFileDescription>): InspectFilesArtifactContentsResponse;
+  clearFileDescriptionsList(): InspectFilesArtifactContentsResponse;
+  addFileDescriptions(value?: FileArtifactContentsFileDescription, index?: number): FileArtifactContentsFileDescription;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InspectFilesArtifactContentsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: InspectFilesArtifactContentsResponse): InspectFilesArtifactContentsResponse.AsObject;
+  static serializeBinaryToWriter(message: InspectFilesArtifactContentsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InspectFilesArtifactContentsResponse;
+  static deserializeBinaryFromReader(message: InspectFilesArtifactContentsResponse, reader: jspb.BinaryReader): InspectFilesArtifactContentsResponse;
+}
+
+export namespace InspectFilesArtifactContentsResponse {
+  export type AsObject = {
+    fileDescriptionsList: Array<FileArtifactContentsFileDescription.AsObject>,
+  }
+}
+
+export class FileArtifactContentsFileDescription extends jspb.Message {
+  getPath(): string;
+  setPath(value: string): FileArtifactContentsFileDescription;
+
+  getDescription(): string;
+  setDescription(value: string): FileArtifactContentsFileDescription;
+
+  getTextPreview(): string;
+  setTextPreview(value: string): FileArtifactContentsFileDescription;
+  hasTextPreview(): boolean;
+  clearTextPreview(): FileArtifactContentsFileDescription;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FileArtifactContentsFileDescription.AsObject;
+  static toObject(includeInstance: boolean, msg: FileArtifactContentsFileDescription): FileArtifactContentsFileDescription.AsObject;
+  static serializeBinaryToWriter(message: FileArtifactContentsFileDescription, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FileArtifactContentsFileDescription;
+  static deserializeBinaryFromReader(message: FileArtifactContentsFileDescription, reader: jspb.BinaryReader): FileArtifactContentsFileDescription;
+}
+
+export namespace FileArtifactContentsFileDescription {
+  export type AsObject = {
+    path: string,
+    description: string,
+    textPreview?: string,
+  }
+
+  export enum TextPreviewCase { 
+    _TEXT_PREVIEW_NOT_SET = 0,
+    TEXT_PREVIEW = 3,
+  }
+}
+
 export enum KurtosisFeatureFlag { 
   NO_INSTRUCTIONS_CACHING = 0,
 }

@@ -45,6 +45,8 @@ service ApiContainerService {
   rpc StoreFilesArtifactFromService(StoreFilesArtifactFromServiceArgs) returns (StoreFilesArtifactFromServiceResponse) {}
 
   rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (ListFilesArtifactNamesAndUuidsResponse) {}
+
+  rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (InspectFilesArtifactContentsResponse) {}
 }
 
 // ==============================================================================================
@@ -427,4 +429,23 @@ message FilesArtifactNameAndUuid {
 
 message ListFilesArtifactNamesAndUuidsResponse {
   repeated FilesArtifactNameAndUuid file_names_and_uuids = 1;
+}
+
+// ==============================================================================================
+//                               Inspect Files Artifact Contents
+// ==============================================================================================
+
+message InspectFilesArtifactContentsRequest {
+  FilesArtifactNameAndUuid file_names_and_uuid = 1;
+  optional string file_path = 2;
+}
+
+message InspectFilesArtifactContentsResponse {
+  repeated FileArtifactContentsFileDescription file_descriptions = 1;
+}
+
+message FileArtifactContentsFileDescription {
+  string path = 1;
+  string description = 2; // One-liner description of the file (similar to UNIX's 'file')
+  optional string text_preview = 3; // A bit of text content, if the file allows (similar to UNIX's 'head')
 }

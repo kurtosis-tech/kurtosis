@@ -533,6 +533,32 @@ pub struct ListFilesArtifactNamesAndUuidsResponse {
     #[prost(message, repeated, tag = "1")]
     pub file_names_and_uuids: ::prost::alloc::vec::Vec<FilesArtifactNameAndUuid>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct InspectFilesArtifactContentsRequest {
+    #[prost(message, optional, tag = "1")]
+    pub file_names_and_uuid: ::core::option::Option<FilesArtifactNameAndUuid>,
+    #[prost(string, optional, tag = "2")]
+    pub file_path: ::core::option::Option<::prost::alloc::string::String>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct InspectFilesArtifactContentsResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub file_descriptions: ::prost::alloc::vec::Vec<FileArtifactContentsFileDescription>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct FileArtifactContentsFileDescription {
+    #[prost(string, tag = "1")]
+    pub path: ::prost::alloc::string::String,
+    /// One-liner description of the file (similar to UNIX's 'file')
+    #[prost(string, tag = "2")]
+    pub description: ::prost::alloc::string::String,
+    /// A bit of text content, if the file allows (similar to UNIX's 'head')
+    #[prost(string, optional, tag = "3")]
+    pub text_preview: ::core::option::Option<::prost::alloc::string::String>,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum KurtosisFeatureFlag {
@@ -1038,6 +1064,36 @@ pub mod api_container_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        pub async fn inspect_files_artifact_contents(
+            &mut self,
+            request: impl tonic::IntoRequest<super::InspectFilesArtifactContentsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::InspectFilesArtifactContentsResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/api_container_api.ApiContainerService/InspectFilesArtifactContents",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "api_container_api.ApiContainerService",
+                        "InspectFilesArtifactContents",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -1157,6 +1213,13 @@ pub mod api_container_service_server {
             request: tonic::Request<()>,
         ) -> std::result::Result<
             tonic::Response<super::ListFilesArtifactNamesAndUuidsResponse>,
+            tonic::Status,
+        >;
+        async fn inspect_files_artifact_contents(
+            &self,
+            request: tonic::Request<super::InspectFilesArtifactContentsRequest>,
+        ) -> std::result::Result<
+            tonic::Response<super::InspectFilesArtifactContentsResponse>,
             tonic::Status,
         >;
     }
@@ -1852,6 +1915,57 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = ListFilesArtifactNamesAndUuidsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/api_container_api.ApiContainerService/InspectFilesArtifactContents" => {
+                    #[allow(non_camel_case_types)]
+                    struct InspectFilesArtifactContentsSvc<T: ApiContainerService>(
+                        pub Arc<T>,
+                    );
+                    impl<
+                        T: ApiContainerService,
+                    > tonic::server::UnaryService<
+                        super::InspectFilesArtifactContentsRequest,
+                    > for InspectFilesArtifactContentsSvc<T> {
+                        type Response = super::InspectFilesArtifactContentsResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<
+                                super::InspectFilesArtifactContentsRequest,
+                            >,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).inspect_files_artifact_contents(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = InspectFilesArtifactContentsSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(
