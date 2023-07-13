@@ -505,7 +505,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		if !ok {
 			return nil, stacktrace.NewError(
 				"An error occurred downcasting data returned from the get enclave Kubernetes resources operation for enclave with UUID: %v. "+
-					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding Operation.", enclaveUUID)
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding operation.", enclaveUUID)
 		}
 		result[enclaveUUID] = enclaveResources
 	}
