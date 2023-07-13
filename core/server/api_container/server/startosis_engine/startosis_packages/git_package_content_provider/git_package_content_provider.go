@@ -195,8 +195,39 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	return packageAbsolutePathOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) GetAbsolutePackagePathForRelativeModulePath(packageId string, relativeOrAbsoluteModulePath string) (string, error) {
-	return "", nil
+func (provider *GitPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath(parentModuleId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
+	// TODO rename a few things here modules/packages??
+	// TODO push this logic elsewhere where its easier to test??
+	_, errorParsingUrl := parseGitURL(relativeOrAbsoluteModulePath)
+	if errorParsingUrl == nil {
+		return relativeOrAbsoluteModulePath, nil
+	}
+
+	parsedParentModuleId, errorParsingPackageId := parseGitURL(parentModuleId)
+	if errorParsingPackageId == nil {
+		return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parsedParentModuleId)
+	}
+
+	onDiskParentAbsolutePackagePath, err := provider.GetOnDiskAbsolutePackagePath(parentModuleId)
+	if err != nil {
+		return "", startosis_errors.NewInterpretationError("An error occurred while getting the absolute package path for '%v'", parentModuleId)
+	}
+
+	onDiskAbsoluteFilePathOfParentModule, err := provider.GetOnDiskAbsoluteFilePath(parentModuleId)
+	if err != nil {
+		return "", startosis_errors.NewInterpretationError("An error occurred while fetching the absolute path to parent package '%v'; this shouldn't happen", parentModuleId)
+	}
+
+	fullPathToTarget := path.Join(path.Base(onDiskAbsoluteFilePathOfParentModule), relativeOrAbsoluteModulePath)
+
+	if strings.HasSuffix(fullPathToTarget, onDiskParentAbsolutePackagePath) {
+		return "", startosis_errors.NewInterpretationError("Was able to get full path '%v' of relative path '%v' relative to '%v' but this escaped the pacakge", fullPathToTarget, relativeOrAbsoluteModulePath, parentModuleId)
+	}
+
+	// take these constants away
+	fullPathToTarget = strings.Replace(fullPathToTarget, onDiskAbsoluteFilePathOfParentModule, "", 1)
+
+	return path.Join(startosis_constants.GithubDomainPrefix, parsedParentModuleId.relativeRepoPath, fullPathToTarget), nil
 }
 
 // atomicClone This first clones to a temporary directory and then moves it

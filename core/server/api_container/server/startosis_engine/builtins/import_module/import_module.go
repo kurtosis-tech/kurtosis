@@ -65,14 +65,16 @@ type importModuleCapabilities struct {
 	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
 }
 
-func (builtin *importModuleCapabilities) Interpret(packageId string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *importModuleCapabilities) Interpret(parentModuleId string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	moduleInPackageStarlarkStr, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
 	if err != nil {
 		return nil, explicitInterpretationError(err)
 	}
 	moduleInPackage := moduleInPackageStarlarkStr.GoString()
-
-	// TODO do some work here to get the module in package relative path and apply it to the present pacakge path
+	moduleInPackage, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteModulePathForRelativeModulePath(parentModuleId, moduleInPackage)
+	if err != nil {
+		return nil, relativePathParsingInterpretationErr
+	}
 
 	var loadInProgress *startosis_packages.ModuleCacheEntry
 	cacheEntry, found := builtin.moduleGlobalCache[moduleInPackage]
