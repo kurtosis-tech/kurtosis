@@ -72,7 +72,7 @@ func (builtin *importModuleCapabilities) Interpret(parentModuleId string, argume
 	}
 	moduleInPackage := moduleInPackageStarlarkStr.GoString()
 	moduleInPackage, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteModulePathForRelativeModulePath(parentModuleId, moduleInPackage)
-	if err != nil {
+	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}
 

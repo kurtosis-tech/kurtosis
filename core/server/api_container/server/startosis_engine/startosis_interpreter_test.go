@@ -495,7 +495,7 @@ def run(plan):
 
 func TestStartosisInterpreter_TransitiveLoading(t *testing.T) {
 	seedModules := make(map[string]string)
-	moduleBar := "github.com/foo/bar/lib.star"
+	moduleBar := "github.com/foo/doo/crib.star"
 	seedModules[moduleBar] = `a="World!"`
 	moduleDooWhichLoadsModuleBar := "github.com/foo/doo/lib.star"
 	seedModules[moduleDooWhichLoadsModuleBar] = `module_bar = import_module("` + moduleBar + `")
