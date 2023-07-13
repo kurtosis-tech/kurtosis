@@ -195,6 +195,10 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	return packageAbsolutePathOnDisk, nil
 }
 
+func (provider *GitPackageContentProvider) GetAbsolutePackagePathForRelativeModulePath(packageId string, relativeOrAbsoluteModulePath string) (string, error) {
+	return "", nil
+}
+
 // atomicClone This first clones to a temporary directory and then moves it
 // TODO make this support versioning via tags, commit hashes or branches
 func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) *startosis_errors.InterpretationError {

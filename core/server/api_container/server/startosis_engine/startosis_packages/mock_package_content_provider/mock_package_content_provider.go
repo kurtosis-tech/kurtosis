@@ -95,6 +95,10 @@ func (provider *MockPackageContentProvider) RemoveAll() map[string]error {
 	return nil
 }
 
+func (provider *MockPackageContentProvider) GetAbsolutePackagePathForRelativeModulePath(_ string, _ string) (string, error) {
+	panic(unimplementedMessage)
+}
+
 func writeContentToTempFile(fileContent string) (string, error) {
 	tempFile, err := os.CreateTemp(defaultTempDir, tempProviderFilePattern)
 	if err != nil {

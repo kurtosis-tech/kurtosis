@@ -21,4 +21,7 @@ type PackageContentProvider interface {
 
 	// ClonePackage clones the package with the given id and returns the absolute path on disk
 	ClonePackage(packageId string) (string, *startosis_errors.InterpretationError)
+
+	// GetAbsolutePackagePathForRelativeModulePath returns the absolute package path for a relative module path
+	GetAbsolutePackagePathForRelativeModulePath(packageId string, relativeOrAbsoluteModulePath string) (string, error)
 }

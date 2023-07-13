@@ -72,6 +72,8 @@ func (builtin *importModuleCapabilities) Interpret(packageId string, arguments *
 	}
 	moduleInPackage := moduleInPackageStarlarkStr.GoString()
 
+	// TODO do some work here to get the module in package relative path and apply it to the present pacakge path
+
 	var loadInProgress *startosis_packages.ModuleCacheEntry
 	cacheEntry, found := builtin.moduleGlobalCache[moduleInPackage]
 	if found && cacheEntry == loadInProgress {
