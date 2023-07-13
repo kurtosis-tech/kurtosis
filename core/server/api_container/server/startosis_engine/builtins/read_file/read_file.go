@@ -41,7 +41,7 @@ type readFileCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 }
 
-func (builtin *readFileCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *readFileCapabilities) Interpret(packageId string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	srcValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, SrcArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for arg '%s'", srcValue)

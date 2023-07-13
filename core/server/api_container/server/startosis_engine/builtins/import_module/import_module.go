@@ -65,7 +65,7 @@ type importModuleCapabilities struct {
 	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
 }
 
-func (builtin *importModuleCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *importModuleCapabilities) Interpret(packageId string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	moduleInPackageStarlarkStr, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
 	if err != nil {
 		return nil, explicitInterpretationError(err)
