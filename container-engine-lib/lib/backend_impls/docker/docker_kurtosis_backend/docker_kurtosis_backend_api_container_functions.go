@@ -173,15 +173,15 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		if shouldKillContainer {
 			// NOTE: We use the background context here so that the kill will still go off even if the reason for
 			// the failure was the original context being cancelled
-			if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
-				logrus.Errorf(
-					"Launching API container '%v' with container ID '%v' didn't complete successfully so we "+
-						"tried to kill the container we started, but doing so exited with an error:\n%v",
-					apiContainerAttrs.GetName(),
-					containerId,
-					err)
-				logrus.Errorf("ACTION REQUIRED: You'll need to manually stop API container with ID '%v'!!!!!!", containerId)
-			}
+			//if err := backend.dockerManager.KillContainer(context.Background(), containerId); err != nil {
+			//	logrus.Errorf(
+			//		"Launching API container '%v' with container ID '%v' didn't complete successfully so we "+
+			//			"tried to kill the container we started, but doing so exited with an error:\n%v",
+			//		apiContainerAttrs.GetName(),
+			//		containerId,
+			//		err)
+			//	logrus.Errorf("ACTION REQUIRED: You'll need to manually stop API container with ID '%v'!!!!!!", containerId)
+			//}
 		}
 	}()
 
@@ -196,16 +196,16 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
 	}
 
-	if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
-		ctx,
-		backend.dockerManager,
-		containerId,
-		privateGrpcPortSpec,
-		maxWaitForApiContainerAvailabilityRetries,
-		timeBetweenWaitForApiContainerAvailabilityRetries,
-	); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
-	}
+	//if err := shared_helpers.WaitForPortAvailabilityUsingNetstat(
+	//	ctx,
+	//	backend.dockerManager,
+	//	containerId,
+	//	privateGrpcPortSpec,
+	//	maxWaitForApiContainerAvailabilityRetries,
+	//	timeBetweenWaitForApiContainerAvailabilityRetries,
+	//); err != nil {
+	//	return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
+	//}
 
 	result, err := getApiContainerObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
 	if err != nil {

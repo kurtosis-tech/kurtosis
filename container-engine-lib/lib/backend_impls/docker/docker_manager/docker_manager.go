@@ -526,11 +526,11 @@ func (manager *DockerManager) CreateAndStartContainer(
 	functionFinishedSuccessfully := false
 	defer func() {
 		if !functionFinishedSuccessfully {
-			if err := manager.KillContainer(ctx, containerId); err != nil {
-				logrus.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
-				fmt.Fprintln(logrus.StandardLogger().Out, err)
-				logrus.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
-			}
+			//if err := manager.KillContainer(ctx, containerId); err != nil {
+			//	logrus.Error("The container creation function didn't finish successfully, meaning we needed to kill the container we created. However, the killing threw an error:")
+			//	fmt.Fprintln(logrus.StandardLogger().Out, err)
+			//	logrus.Errorf("ACTION NEEDED: You'll need to manually kill this container with ID '%v'", containerId)
+			//}
 		}
 	}()
 
