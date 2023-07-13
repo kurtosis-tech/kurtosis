@@ -239,7 +239,10 @@ func (interpreter *StartosisInterpreter) Interpret(
 	defer interpreter.mutex.Unlock()
 	newInstructionsPlan := instructions_plan.NewInstructionsPlan()
 	logrus.Debugf("Interpreting package '%v' with contents '%v' and params '%v'", packageId, serializedStarlark, serializedJsonParams)
-	moduleLocator := packageId + relativePathtoMainFile
+	moduleLocator := packageId
+	if packageId != startosis_constants.PackageIdPlaceholderForStandaloneScript {
+		moduleLocator = moduleLocator + "/" + relativePathtoMainFile
+	}
 	globalVariables, interpretationErr := interpreter.interpretInternal(moduleLocator, serializedStarlark, newInstructionsPlan)
 	if interpretationErr != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
