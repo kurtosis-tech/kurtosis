@@ -220,7 +220,7 @@ func (provider *GitPackageContentProvider) GetAbsoluteModulePathForRelativeModul
 
 	fullPathToTarget := path.Join(path.Base(onDiskAbsoluteFilePathOfParentModule), relativeOrAbsoluteModulePath)
 
-	if strings.HasSuffix(fullPathToTarget, onDiskParentAbsolutePackagePath) {
+	if strings.HasPrefix(fullPathToTarget, onDiskParentAbsolutePackagePath) {
 		return "", startosis_errors.NewInterpretationError("Was able to get full path '%v' of relative path '%v' relative to '%v' but this escaped the pacakge", fullPathToTarget, relativeOrAbsoluteModulePath, parentModuleId)
 	}
 

@@ -1,9 +1,11 @@
 package mock_package_content_provider
 
 import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"os"
+	"strings"
 )
 
 const (
@@ -95,8 +97,11 @@ func (provider *MockPackageContentProvider) RemoveAll() map[string]error {
 	return nil
 }
 
-func (provider *MockPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath(packageId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError)
-	panic(unimplementedMessage)
+func (provider *MockPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath(_ string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
+	if strings.HasPrefix(relativeOrAbsoluteModulePath, startosis_constants.GithubDomainPrefix) {
+		return relativeOrAbsoluteModulePath, nil
+	}
+	panic("the mock only supports proper GitHub paths for now")
 }
 
 func writeContentToTempFile(fileContent string) (string, error) {
