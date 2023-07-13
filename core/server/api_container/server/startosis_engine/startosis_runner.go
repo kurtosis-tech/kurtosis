@@ -110,7 +110,7 @@ func (runner *StartosisRunner) Run(
 				ctx,
 				packageId,
 				mainFunctionName,
-				relativePathtoMainFile,
+				relativePathToMainFile,
 				serializedStartosis,
 				serializedParams,
 				runner.startosisExecutor.enclavePlan,
