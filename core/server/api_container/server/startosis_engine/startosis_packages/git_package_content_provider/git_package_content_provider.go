@@ -204,8 +204,8 @@ func (provider *GitPackageContentProvider) GetAbsoluteModulePathForRelativeModul
 	}
 
 	parsedParentModuleId, errorParsingPackageId := parseGitURL(parentModuleId)
-	if errorParsingPackageId == nil {
-		return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parsedParentModuleId)
+	if errorParsingPackageId != nil {
+		return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
 	}
 
 	onDiskParentAbsolutePackagePath, err := provider.GetOnDiskAbsolutePackagePath(parentModuleId)
