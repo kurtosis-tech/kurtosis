@@ -3,6 +3,7 @@ package load
 import (
 	"context"
 	"encoding/base64"
+	"fmt"
 	api "github.com/kurtosis-tech/kurtosis-cloud-backend/api/golang/kurtosis_backend_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/cloud"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/instance_id_arg"
@@ -21,6 +22,9 @@ import (
 const (
 	instanceIdentifierArgKey      = "instance-id"
 	instanceIdentifierArgIsGreedy = false
+	kurtosisCloudApiKeyEnvVarArg  = "KURTOSIS_CLOUD_API_KEY"
+	KurtosisCloudApiUrl           = "https://cloud-api.kurtosis.com"
+	kurtosisCloudApiPort          = 8080
 )
 
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -45,22 +49,20 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	}
 	logrus.Infof("Loading cloud instance %s", instanceID)
 
-	// TODO: READ from some settings
-	connectionStr := "localhost:8080"
-	ApiKeyArg := "KURTOSIS_CLOUD_API_KEY"
-	apiKey := os.Getenv(ApiKeyArg)
-	if len(apiKey) < 1 {
-		return stacktrace.NewError("No API Key was found. An API Key must be provided as env var %s", ApiKeyArg)
+	apiKey, err := loadApiKey()
+	if err != nil {
+		return stacktrace.Propagate(err, "Could not load an API Key. Check that it's defined using the "+
+			"%s env var and it's a valid (active) key", kurtosisCloudApiKeyEnvVarArg)
 	}
-	logrus.Info("Loaded API Key...")
 
+	connectionStr := fmt.Sprintf("%s:%d", KurtosisCloudApiUrl, kurtosisCloudApiPort)
 	client, err := cloud.CreateCloudClient(connectionStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error building client for Kurtosis Cloud")
 	}
 
 	getConfigArgs := &api.GetCloudInstanceConfigArgs{
-		ApiKey:     apiKey,
+		ApiKey:     *apiKey,
 		InstanceId: instanceID,
 	}
 	result, err := client.GetCloudInstanceConfig(ctx, getConfigArgs)
@@ -89,4 +91,13 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	}
 	contextIdentifier := parsedContext.GetName()
 	return context_switch.SwitchContext(ctx, contextIdentifier)
+}
+
+func loadApiKey() (*string, error) {
+	apiKey := os.Getenv(kurtosisCloudApiKeyEnvVarArg)
+	if len(apiKey) < 1 {
+		return nil, stacktrace.NewError("No API Key was found. An API Key must be provided as env var %s", kurtosisCloudApiKeyEnvVarArg)
+	}
+	logrus.Info("Successfully Loaded API Key...")
+	return &apiKey, nil
 }
