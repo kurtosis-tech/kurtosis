@@ -139,7 +139,13 @@ func (apicService ApiContainerService) UploadStarlarkPackage(server kurtosis_cor
 }
 
 func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Context, args *kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
-	artifactIdentifier := args.GetFileNamesAndUuid().GetFileUuid()
+	artifactIdentifier := ""
+	if args.GetFileNamesAndUuid().GetFileUuid() != "" {
+		artifactIdentifier = args.GetFileNamesAndUuid().GetFileUuid()
+	}
+	if args.GetFileNamesAndUuid().GetFileName() != "" {
+		artifactIdentifier = args.GetFileNamesAndUuid().GetFileName()
+	}
 	if artifactIdentifier == "" {
 		return nil, stacktrace.NewError("An error occurred because files artifact identifier is empty '%v'", artifactIdentifier)
 	}
@@ -731,7 +737,6 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 			}
 		}
 		textRepresentation.WriteString(line)
-		textRepresentation.WriteRune('\n')
 	}
 
 	if err := scanner.Err(); err != nil {
