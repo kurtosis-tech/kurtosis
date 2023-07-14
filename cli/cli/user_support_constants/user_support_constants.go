@@ -49,5 +49,4 @@ var urlsToValidateInTest = []string{
 	KurtosisDiscordUrl,
 	KurtosisOnBoardCalendlyUrl,
 	HowImportWorksLink,
-	KurtosisTechTwitterProfileLink,
 }
