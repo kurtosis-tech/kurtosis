@@ -30,7 +30,7 @@ const (
 	KurtosisOnBoardCalendlyUrl        = "https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding"
 	FeedbackEmail                     = "feedback@" + OldDomain
 	FeedbackEmailLink                 = "mailto:" + FeedbackEmail
-
+	KurtosisTechTwitterProfileLink    = "twitter"
 	//    If you add new URLs above, make sure to add them to the urlsToValidateInTest below!!!
 	// WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING WARNING
 )
