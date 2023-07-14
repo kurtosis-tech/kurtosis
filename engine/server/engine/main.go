@@ -19,7 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
+	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server-test/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"

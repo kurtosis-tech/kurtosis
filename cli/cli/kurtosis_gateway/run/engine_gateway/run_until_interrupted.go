@@ -6,7 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/engine_gateway"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
+	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server-test/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"

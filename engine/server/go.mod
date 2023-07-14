@@ -51,7 +51,6 @@ require (
 
 require (
 	github.com/gorilla/websocket v1.4.2
-	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 )
 
 require (
@@ -76,6 +75,7 @@ require (
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect
+	github.com/kurtosis-tech/minimal-grpc-server-test/golang v0.0.0-20230714141141-e5507956f7c3 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
