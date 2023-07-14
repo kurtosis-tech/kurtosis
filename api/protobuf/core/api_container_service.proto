@@ -437,7 +437,6 @@ message ListFilesArtifactNamesAndUuidsResponse {
 
 message InspectFilesArtifactContentsRequest {
   FilesArtifactNameAndUuid file_names_and_uuid = 1;
-  optional string file_path = 2;
 }
 
 message InspectFilesArtifactContentsResponse {

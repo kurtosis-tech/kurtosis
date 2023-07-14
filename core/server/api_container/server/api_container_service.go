@@ -27,11 +27,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/exp/slices"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"path"
@@ -56,7 +56,8 @@ const (
 	// given module
 	doOverwriteExistingModule = true
 
-	defaultLineCountPreview = 10
+	defaultLineCountPreview = unlimitedLineCount
+	unlimitedLineCount      = math.MaxInt
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -151,15 +152,6 @@ func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Co
 	fileDescriptions, err := getFileDescriptionsFromArtifact(filesArtifact.GetAbsoluteFilepath())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting file descriptions from '%v'", artifactIdentifier)
-	}
-	if args.GetFilePath() != "" {
-		sliceLocation := slices.IndexFunc(fileDescriptions, func(e *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) bool {
-			return e.GetPath() == args.GetFilePath()
-		})
-		if sliceLocation == -1 {
-			return nil, stacktrace.NewError("An error occurred finding file '%v' on artifact '%v'", args.GetFilePath(), artifactIdentifier)
-		}
-		fileDescriptions = fileDescriptions[sliceLocation : sliceLocation+1]
 	}
 
 	return &kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse{
@@ -715,7 +707,7 @@ func getFileDescriptionsFromArtifact(artifactPath string) ([]*kurtosis_core_rpc_
 
 		filePath := header.Name
 		description := fmt.Sprintf("Size: %v", header.Size)
-		textPreview, err := getTextRepresentation(tarReader, defaultLineCountPreview)
+		textPreview, err := getTextRepresentation(tarReader, unlimitedLineCount)
 		if err != nil {
 			logrus.Debugf("Failed to get text preview for file '%v' with error '%v'", filePath, textPreview)
 		}

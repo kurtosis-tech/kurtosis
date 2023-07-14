@@ -8121,8 +8121,7 @@ proto.api_container_api.InspectFilesArtifactContentsRequest.prototype.toObject =
  */
 proto.api_container_api.InspectFilesArtifactContentsRequest.toObject = function(includeInstance, msg) {
   var f, obj = {
-    fileNamesAndUuid: (f = msg.getFileNamesAndUuid()) && proto.api_container_api.FilesArtifactNameAndUuid.toObject(includeInstance, f),
-    filePath: jspb.Message.getFieldWithDefault(msg, 2, "")
+    fileNamesAndUuid: (f = msg.getFileNamesAndUuid()) && proto.api_container_api.FilesArtifactNameAndUuid.toObject(includeInstance, f)
   };
 
   if (includeInstance) {
@@ -8164,10 +8163,6 @@ proto.api_container_api.InspectFilesArtifactContentsRequest.deserializeBinaryFro
       reader.readMessage(value,proto.api_container_api.FilesArtifactNameAndUuid.deserializeBinaryFromReader);
       msg.setFileNamesAndUuid(value);
       break;
-    case 2:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setFilePath(value);
-      break;
     default:
       reader.skipField();
       break;
@@ -8203,13 +8198,6 @@ proto.api_container_api.InspectFilesArtifactContentsRequest.serializeBinaryToWri
       1,
       f,
       proto.api_container_api.FilesArtifactNameAndUuid.serializeBinaryToWriter
-    );
-  }
-  f = /** @type {string} */ (jspb.Message.getField(message, 2));
-  if (f != null) {
-    writer.writeString(
-      2,
-      f
     );
   }
 };
@@ -8249,42 +8237,6 @@ proto.api_container_api.InspectFilesArtifactContentsRequest.prototype.clearFileN
  */
 proto.api_container_api.InspectFilesArtifactContentsRequest.prototype.hasFileNamesAndUuid = function() {
   return jspb.Message.getField(this, 1) != null;
-};
-
-
-/**
- * optional string file_path = 2;
- * @return {string}
- */
-proto.api_container_api.InspectFilesArtifactContentsRequest.prototype.getFilePath = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
-};
-
-
-/**
- * @param {string} value
- * @return {!proto.api_container_api.InspectFilesArtifactContentsRequest} returns this
- */
-proto.api_container_api.InspectFilesArtifactContentsRequest.prototype.setFilePath = function(value) {
-  return jspb.Message.setField(this, 2, value);
-};
-
-
-/**
- * Clears the field making it undefined.
- * @return {!proto.api_container_api.InspectFilesArtifactContentsRequest} returns this
- */
-proto.api_container_api.InspectFilesArtifactContentsRequest.prototype.clearFilePath = function() {
-  return jspb.Message.setField(this, 2, undefined);
-};
-
-
-/**
- * Returns whether this field is set.
- * @return {boolean}
- */
-proto.api_container_api.InspectFilesArtifactContentsRequest.prototype.hasFilePath = function() {
-  return jspb.Message.getField(this, 2) != null;
 };
 
 

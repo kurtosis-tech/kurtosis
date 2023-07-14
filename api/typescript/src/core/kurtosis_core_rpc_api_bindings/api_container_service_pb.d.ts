@@ -1026,11 +1026,6 @@ export class InspectFilesArtifactContentsRequest extends jspb.Message {
   hasFileNamesAndUuid(): boolean;
   clearFileNamesAndUuid(): InspectFilesArtifactContentsRequest;
 
-  getFilePath(): string;
-  setFilePath(value: string): InspectFilesArtifactContentsRequest;
-  hasFilePath(): boolean;
-  clearFilePath(): InspectFilesArtifactContentsRequest;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): InspectFilesArtifactContentsRequest.AsObject;
   static toObject(includeInstance: boolean, msg: InspectFilesArtifactContentsRequest): InspectFilesArtifactContentsRequest.AsObject;
@@ -1042,12 +1037,6 @@ export class InspectFilesArtifactContentsRequest extends jspb.Message {
 export namespace InspectFilesArtifactContentsRequest {
   export type AsObject = {
     fileNamesAndUuid?: FilesArtifactNameAndUuid.AsObject,
-    filePath?: string,
-  }
-
-  export enum FilePathCase { 
-    _FILE_PATH_NOT_SET = 0,
-    FILE_PATH = 2,
   }
 }
 

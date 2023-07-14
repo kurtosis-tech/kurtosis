@@ -538,8 +538,6 @@ pub struct ListFilesArtifactNamesAndUuidsResponse {
 pub struct InspectFilesArtifactContentsRequest {
     #[prost(message, optional, tag = "1")]
     pub file_names_and_uuid: ::core::option::Option<FilesArtifactNameAndUuid>,
-    #[prost(string, optional, tag = "2")]
-    pub file_path: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
