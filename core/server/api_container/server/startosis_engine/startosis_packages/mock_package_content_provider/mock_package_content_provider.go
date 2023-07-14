@@ -68,7 +68,7 @@ func (provider *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleL
 	if strings.HasPrefix(relativeOrAbsoluteModulePath, startosis_constants.GithubDomainPrefix) {
 		return relativeOrAbsoluteModulePath, nil
 	}
-	// implement properly
+	// TODO implement properly so that it works with relative paths
 	return "", nil
 }
 
