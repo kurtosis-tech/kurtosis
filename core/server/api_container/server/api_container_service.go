@@ -604,8 +604,7 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 		return "", interpretationError
 	}
 
-	var pathToMainFile string
-	pathToMainFile = path.Join(packageRootPathOnDisk, relativePathToMainFile)
+	pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
 
 	if _, err := os.Stat(pathToMainFile); err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
