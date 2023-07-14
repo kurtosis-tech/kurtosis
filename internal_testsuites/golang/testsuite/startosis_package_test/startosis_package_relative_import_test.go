@@ -17,6 +17,6 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_RelativeImports() {
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
-	expectedResult := "John Doe\n"
+	expectedResult := "John Doe\nOpen Sesame\n"
 	require.Equal(t, expectedResult, string(runResult.RunOutput))
 }
