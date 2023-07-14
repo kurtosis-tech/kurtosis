@@ -740,20 +740,20 @@ Args:
 	containerId: ID of Docker container to kill
 */
 func (manager *DockerManager) KillContainer(ctx context.Context, containerId string) error {
-	if err := manager.killContainerWithRetriesWhenErrorResponseFromDeamon(
-		ctx,
-		containerId,
-		defaultKillContainerMaxRetries,
-		defaultKillContainerTimeBetweenRetries,
-	); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred killing container '%v', even after %v retries with '%v' in between retries",
-			containerId,
-			defaultKillContainerMaxRetries,
-			defaultKillContainerTimeBetweenRetries,
-		)
-	}
+	//if err := manager.killContainerWithRetriesWhenErrorResponseFromDeamon(
+	//	ctx,
+	//	containerId,
+	//	defaultKillContainerMaxRetries,
+	//	defaultKillContainerTimeBetweenRetries,
+	//); err != nil {
+	//	return stacktrace.Propagate(
+	//		err,
+	//		"An error occurred killing container '%v', even after %v retries with '%v' in between retries",
+	//		containerId,
+	//		defaultKillContainerMaxRetries,
+	//		defaultKillContainerTimeBetweenRetries,
+	//	)
+	//}
 	return nil
 }
 
