@@ -119,3 +119,20 @@ func TestParsedGitURL_WorksWithVersioningInformation(t *testing.T) {
 
 	require.Equal(t, expectedParsedURL, parsedURL)
 }
+
+func TestParsedGitUrl_ResolvesRelativeUrl(t *testing.T) {
+	parsedUrl, err := parseGitURL(githubSampleURL)
+	require.Nil(t, err)
+
+	relativeUrl := "./lib.star"
+	absoluteUrl := parsedUrl.getLocatorRelativeToThisURl(relativeUrl)
+	require.Nil(t, err)
+	expected := "github.com/kurtosis-tech/sample-startosis-load/lib.star"
+	require.Equal(t, expected, absoluteUrl)
+
+	relativeUrl = "./src/lib.star"
+	absoluteUrl = parsedUrl.getLocatorRelativeToThisURl(relativeUrl)
+	require.Nil(t, err)
+	expected = "github.com/kurtosis-tech/sample-startosis-load/src/lib.star"
+	require.Equal(t, expected, absoluteUrl)
+}

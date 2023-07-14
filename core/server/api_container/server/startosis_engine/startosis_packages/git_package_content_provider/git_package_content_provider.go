@@ -195,12 +195,11 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	return packageAbsolutePathOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath(parentModuleId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
-	// TODO rename a few things here modules/packages??
-	// TODO push this logic elsewhere where its easier to test??
-	_, errorParsingUrl := parseGitURL(relativeOrAbsoluteModulePath)
+func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator(parentModuleId string, maybeRelativeLocator string) (string, *startosis_errors.InterpretationError) {
+	// maybe it's not a relative url in which case we return the url
+	_, errorParsingUrl := parseGitURL(maybeRelativeLocator)
 	if errorParsingUrl == nil {
-		return relativeOrAbsoluteModulePath, nil
+		return maybeRelativeLocator, nil
 	}
 
 	parsedParentModuleId, errorParsingPackageId := parseGitURL(parentModuleId)
@@ -208,27 +207,7 @@ func (provider *GitPackageContentProvider) GetAbsoluteModulePathForRelativeModul
 		return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
 	}
 
-	onDiskAbsoluteFilePathOfParentModule, err := provider.GetOnDiskAbsoluteFilePath(parentModuleId)
-	if err != nil {
-		return "", startosis_errors.NewInterpretationError("An error occurred while fetching the absolute path to parent package '%v'; this shouldn't happen", parentModuleId)
-	}
-
-	maybeKurtosisYamlPath, err := getKurtosisYamlPathForFileUrl(onDiskAbsoluteFilePathOfParentModule, provider.packagesDir)
-	if err != nil {
-		return "", startosis_errors.NewInterpretationError("Error finding the path to Kurtosis YML")
-	}
-	packageParentPath := path.Dir(maybeKurtosisYamlPath)
-
-	fullPathToTarget := path.Join(path.Dir(onDiskAbsoluteFilePathOfParentModule), relativeOrAbsoluteModulePath)
-
-	if !strings.HasPrefix(fullPathToTarget, packageParentPath) {
-		return "", startosis_errors.NewInterpretationError("Was able to get full path '%v' of relative path '%v' relative to '%v' but this escaped the pacakge", fullPathToTarget, relativeOrAbsoluteModulePath, parentModuleId)
-	}
-
-	// take these constants away
-	fullPathToTarget = strings.Replace(fullPathToTarget, packageParentPath, "", 1)
-
-	return path.Join(startosis_constants.GithubDomainPrefix, parsedParentModuleId.relativeRepoPath, fullPathToTarget), nil
+	return parsedParentModuleId.getLocatorRelativeToThisURl(maybeRelativeLocator), nil
 }
 
 // atomicClone This first clones to a temporary directory and then moves it

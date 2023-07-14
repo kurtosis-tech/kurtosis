@@ -75,7 +75,7 @@ func (_c *MockPackageContentProvider_ClonePackage_Call) RunAndReturn(run func(st
 }
 
 // GetAbsoluteModulePathForRelativeModulePath provides a mock function with given fields: packageId, relativeOrAbsoluteModulePath
-func (_m *MockPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath(packageId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
+func (_m *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator(packageId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
 	ret := _m.Called(packageId, relativeOrAbsoluteModulePath)
 
 	var r0 string
@@ -100,7 +100,7 @@ func (_m *MockPackageContentProvider) GetAbsoluteModulePathForRelativeModulePath
 	return r0, r1
 }
 
-// MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteModulePathForRelativeModulePath'
+// MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteLocatorForRelativeModuleLocator'
 type MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call struct {
 	*mock.Call
 }
@@ -109,7 +109,7 @@ type MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call 
 //   - packageId string
 //   - relativeOrAbsoluteModulePath string
 func (_e *MockPackageContentProvider_Expecter) GetAbsoluteModulePathForRelativeModulePath(packageId interface{}, relativeOrAbsoluteModulePath interface{}) *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call {
-	return &MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call{Call: _e.mock.On("GetAbsoluteModulePathForRelativeModulePath", packageId, relativeOrAbsoluteModulePath)}
+	return &MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call{Call: _e.mock.On("GetAbsoluteLocatorForRelativeModuleLocator", packageId, relativeOrAbsoluteModulePath)}
 }
 
 func (_c *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call) Run(run func(packageId string, relativeOrAbsoluteModulePath string)) *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call {
