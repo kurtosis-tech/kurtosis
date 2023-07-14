@@ -74,7 +74,7 @@ func (_c *MockPackageContentProvider_ClonePackage_Call) RunAndReturn(run func(st
 	return _c
 }
 
-// GetAbsoluteModulePathForRelativeModulePath provides a mock function with given fields: packageId, relativeOrAbsoluteModulePath
+// GetAbsoluteLocatorForRelativeModuleLocator provides a mock function with given fields: packageId, relativeOrAbsoluteModulePath
 func (_m *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator(packageId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
 	ret := _m.Called(packageId, relativeOrAbsoluteModulePath)
 
@@ -100,31 +100,31 @@ func (_m *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator
 	return r0, r1
 }
 
-// MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteLocatorForRelativeModuleLocator'
-type MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call struct {
+// MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteLocatorForRelativeModuleLocator'
+type MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call struct {
 	*mock.Call
 }
 
-// GetAbsoluteModulePathForRelativeModulePath is a helper method to define mock.On call
+// GetAbsoluteLocatorForRelativeModuleLocator is a helper method to define mock.On call
 //   - packageId string
 //   - relativeOrAbsoluteModulePath string
-func (_e *MockPackageContentProvider_Expecter) GetAbsoluteModulePathForRelativeModulePath(packageId interface{}, relativeOrAbsoluteModulePath interface{}) *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call {
-	return &MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call{Call: _e.mock.On("GetAbsoluteLocatorForRelativeModuleLocator", packageId, relativeOrAbsoluteModulePath)}
+func (_e *MockPackageContentProvider_Expecter) GetAbsoluteLocatorForRelativeModuleLocator(packageId interface{}, relativeOrAbsoluteModulePath interface{}) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call {
+	return &MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call{Call: _e.mock.On("GetAbsoluteLocatorForRelativeModuleLocator", packageId, relativeOrAbsoluteModulePath)}
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call) Run(run func(packageId string, relativeOrAbsoluteModulePath string)) *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call) Run(run func(packageId string, relativeOrAbsoluteModulePath string)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(string), args[1].(string))
 	})
 	return _c
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call) RunAndReturn(run func(string, string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetAbsoluteModulePathForRelativeModulePath_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call) RunAndReturn(run func(string, string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call {
 	_c.Call.Return(run)
 	return _c
 }
