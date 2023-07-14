@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/api_container_gateway"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
+	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server-test/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
 	"time"
