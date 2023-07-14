@@ -22,7 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
+	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server-test/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
