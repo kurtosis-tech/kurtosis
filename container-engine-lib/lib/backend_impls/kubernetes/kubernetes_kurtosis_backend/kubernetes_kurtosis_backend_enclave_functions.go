@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -21,6 +22,7 @@ import (
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"os"
 	"path"
+	"strings"
 	"time"
 )
 
@@ -477,8 +479,46 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 	}
 
 	// Per-namespace objects
-	result := map[enclave.EnclaveUUID]*enclaveKubernetesResources{}
+	getEnclaveResourcesOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 	for enclaveIdStr, namespacesForEnclaveId := range namespaces {
+		getEnclaveResourcesOperations[operation_parallelizer.OperationID(enclaveIdStr)] = backend.createGetEnclaveResourcesOperation(ctx, namespacesForEnclaveId, enclaveIdStr)
+	}
+	successfulEnclaveResources, failedEnclaveResources := operation_parallelizer.RunOperationsInParallel(getEnclaveResourcesOperations)
+
+	if len(failedEnclaveResources) > 0 {
+		var allOperationsErrors []string
+		var erroredEnclaveUUIDs []enclave.EnclaveUUID
+		for operationID, operationErr := range failedEnclaveResources {
+			enclaveUUID := enclave.EnclaveUUID(operationID)
+			erroredEnclaveUUIDs = append(erroredEnclaveUUIDs, enclaveUUID)
+			operationErrStr := fmt.Sprintf("enclave UUID '%v' - error:%v", enclaveUUID, operationErr.Error())
+			allOperationsErrors = append(allOperationsErrors, operationErrStr)
+		}
+		allOperationsErrorsStr := strings.Join(allOperationsErrors, "\n")
+		return nil, stacktrace.NewError("Running the get enclave Kubernetes resources operations for enclaves with UUIDs '%+v' returned errors. Errors:\n%v", erroredEnclaveUUIDs, allOperationsErrorsStr)
+	}
+
+	result := map[enclave.EnclaveUUID]*enclaveKubernetesResources{}
+	for id, enclaveResourcesUncasted := range successfulEnclaveResources {
+		enclaveUUID := enclave.EnclaveUUID(id)
+		enclaveResources, ok := enclaveResourcesUncasted.(*enclaveKubernetesResources)
+		if !ok {
+			return nil, stacktrace.NewError(
+				"An error occurred downcasting data returned from the get enclave Kubernetes resources operation for enclave with UUID: %v. "+
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding operation.", enclaveUUID)
+		}
+		result[enclaveUUID] = enclaveResources
+	}
+
+	return result, nil
+}
+
+func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
+	ctx context.Context,
+	namespacesForEnclaveId []*apiv1.Namespace,
+	enclaveIdStr string,
+) operation_parallelizer.Operation {
+	return func() (interface{}, error) {
 		if len(namespacesForEnclaveId) == 0 {
 			return nil, stacktrace.NewError(
 				"Ostensibly found namespaces for enclave ID '%v', but no namespace objects were returned",
@@ -500,28 +540,20 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(): enclaveIdStr,
 		}
 
-		// Pods
-		podsList, err := backend.kubernetesManager.GetPodsByLabels(
+		// Pods and Services
+		podsList, servicesList, err := backend.kubernetesManager.GetPodsAndServicesByLabels(
 			ctx,
 			namespaceName,
 			enclaveWithIDMatchLabels,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
+			return nil, stacktrace.Propagate(err, "An error occurred getting pods and services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
+
 		pods := []apiv1.Pod{}
 		pods = append(pods, podsList.Items...)
 
-		// Services
-		servicesList, err := backend.kubernetesManager.GetServicesByLabels(
-			ctx,
-			namespaceName,
-			enclaveWithIDMatchLabels,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
-		}
-		var services []apiv1.Service
+		services := []apiv1.Service{}
 		services = append(services, servicesList.Items...)
 
 		enclaveResources := &enclaveKubernetesResources{
@@ -529,10 +561,9 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 			pods:      pods,
 			services:  services,
 		}
-		result[enclave.EnclaveUUID(enclaveIdStr)] = enclaveResources
-	}
 
-	return result, nil
+		return enclaveResources, nil
+	}
 }
 
 func getEnclaveObjectsFromKubernetesResources(
