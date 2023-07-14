@@ -103,7 +103,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 	return parsedGitURL, nil
 }
 
-func (parsedUrl *ParsedGitURL) getLocatorRelativeToThisURL(relativeUrl string) string {
+func (parsedUrl *ParsedGitURL) getAbsoluteLocatorRelativeToThisURL(relativeUrl string) string {
 	absoluteUrl := path.Join(startosis_constants.GithubDomainPrefix, path.Dir(parsedUrl.relativeFilePath), relativeUrl)
 	return absoluteUrl
 }

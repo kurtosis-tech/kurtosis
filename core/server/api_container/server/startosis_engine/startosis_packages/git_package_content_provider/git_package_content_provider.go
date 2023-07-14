@@ -207,7 +207,7 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLo
 		return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
 	}
 
-	return parsedParentModuleId.getLocatorRelativeToThisURL(maybeRelativeLocator), nil
+	return parsedParentModuleId.getAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator), nil
 }
 
 // atomicClone This first clones to a temporary directory and then moves it
