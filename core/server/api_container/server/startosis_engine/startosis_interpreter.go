@@ -22,6 +22,7 @@ import (
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
+	"path"
 	"strings"
 	"sync"
 )
@@ -241,7 +242,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	logrus.Debugf("Interpreting package '%v' with contents '%v' and params '%v'", packageId, serializedStarlark, serializedJsonParams)
 	moduleLocator := packageId
 	if packageId != startosis_constants.PackageIdPlaceholderForStandaloneScript {
-		moduleLocator = moduleLocator + "/" + relativePathtoMainFile
+		moduleLocator = path.Join(moduleLocator, relativePathtoMainFile)
 	}
 	globalVariables, interpretationErr := interpreter.interpretInternal(moduleLocator, serializedStarlark, newInstructionsPlan)
 	if interpretationErr != nil {
@@ -333,6 +334,7 @@ func (interpreter *StartosisInterpreter) interpretInternal(moduleLocator string,
 	// We spin up a new thread for every call to interpreterInternal such that the stacktrace provided by the Starlark
 	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
 	// previous calls inside the same thread
+	// The thread name is set to the locator of the module so that we can use it to resolve relative paths
 	thread := newStarlarkThread(moduleLocator)
 	predeclared, interpretationErr := interpreter.buildBindings(instructionPlan)
 	if interpretationErr != nil {

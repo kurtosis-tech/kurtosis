@@ -7,5 +7,5 @@ import (
 )
 
 type KurtosisHelperCapabilities interface {
-	Interpret(packageId string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError)
+	Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError)
 }

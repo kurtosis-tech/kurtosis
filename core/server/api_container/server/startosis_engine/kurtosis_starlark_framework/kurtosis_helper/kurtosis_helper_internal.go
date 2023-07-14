@@ -20,6 +20,6 @@ func newKurtosisHelperInternal(wrappedBuiltin *kurtosis_starlark_framework.Kurto
 	}
 }
 
-func (builtin *kurtosisHelperInternal) interpret(packageId string) (starlark.Value, *startosis_errors.InterpretationError) {
-	return builtin.capabilities.Interpret(packageId, builtin.GetArguments())
+func (builtin *kurtosisHelperInternal) interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string) (starlark.Value, *startosis_errors.InterpretationError) {
+	return builtin.capabilities.Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled, builtin.GetArguments())
 }
