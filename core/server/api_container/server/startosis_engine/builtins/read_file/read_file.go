@@ -41,12 +41,17 @@ type readFileCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 }
 
-func (builtin *readFileCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *readFileCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	srcValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, SrcArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for arg '%s'", srcValue)
 	}
-	packageContent, interpretationErr := builtin.packageContentProvider.GetModuleContents(srcValue.GoString())
+	fileToReadStr := srcValue.GoString()
+	fileToReadStr, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, fileToReadStr)
+	if relativePathParsingInterpretationErr != nil {
+		return nil, relativePathParsingInterpretationErr
+	}
+	packageContent, interpretationErr := builtin.packageContentProvider.GetModuleContents(fileToReadStr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
