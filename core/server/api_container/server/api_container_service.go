@@ -712,7 +712,7 @@ func getFileDescriptionsFromArtifact(artifactPath string) ([]*kurtosis_core_rpc_
 		}
 
 		filePath := header.Name
-		description := fmt.Sprintf("Size: %v", header.Size)
+		description := fmt.Sprintf("Size: %.2fkb", float32(header.Size)/1024)
 		textPreview, err := getTextRepresentation(tarReader, unlimitedLineCount)
 		if err != nil {
 			logrus.Debugf("Failed to get text preview for file '%v' with error '%v'", filePath, textPreview)
@@ -737,6 +737,7 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 			}
 		}
 		textRepresentation.WriteString(line)
+		textRepresentation.WriteByte('\n')
 	}
 
 	if err := scanner.Err(); err != nil {

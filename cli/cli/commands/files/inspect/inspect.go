@@ -124,7 +124,7 @@ func run(
 	if index == -1 {
 		return stacktrace.NewError("An error finding file '%v' on artifact identifier '%v', from '%v'", filePath, artifactIdentifierName, enclaveIdentifier)
 	}
-	logrus.Info(fileDescriptions[index].GetTextPreview())
+	logrus.Infof("File contents:\n%v", fileDescriptions[index].GetTextPreview())
 	return nil
 }
 
