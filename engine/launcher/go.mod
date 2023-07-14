@@ -16,6 +16,8 @@ require (
 	github.com/stretchr/testify v1.8.3
 )
 
+require github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0-00010101000000-000000000000
+
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
