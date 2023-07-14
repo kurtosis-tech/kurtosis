@@ -41,6 +41,7 @@ const (
 	FeedbackCmdStr          = "feedback"
 	FilesCmdStr             = "files"
 	FilesUploadCmdStr       = "upload"
+	FilesInspectCmdStr      = "inspect"
 	FilesDownloadCmdStr     = "download"
 	FilesStoreWebCmdStr     = "storeweb"
 	FilesStoreServiceCmdStr = "storeservice"
