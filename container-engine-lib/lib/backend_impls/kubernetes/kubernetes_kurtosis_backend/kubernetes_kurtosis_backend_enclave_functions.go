@@ -540,28 +540,20 @@ func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
 			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(): enclaveIdStr,
 		}
 
-		// Pods
-		podsList, err := backend.kubernetesManager.GetPodsByLabels(
+		// Pods and Services
+		podsList, servicesList, err := backend.kubernetesManager.GetPodsAndServicesByLabels(
 			ctx,
 			namespaceName,
 			enclaveWithIDMatchLabels,
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting pods matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
+			return nil, stacktrace.Propagate(err, "An error occurred getting pods and services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
+
 		pods := []apiv1.Pod{}
 		pods = append(pods, podsList.Items...)
 
-		// Services
-		servicesList, err := backend.kubernetesManager.GetServicesByLabels(
-			ctx,
-			namespaceName,
-			enclaveWithIDMatchLabels,
-		)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
-		}
-		var services []apiv1.Service
+		services := []apiv1.Service{}
 		services = append(services, servicesList.Items...)
 
 		enclaveResources := &enclaveKubernetesResources{
