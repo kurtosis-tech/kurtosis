@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
-import { LeftView } from "./LeftView";
+
+import RightPanel from "../component/RightPanel";
+import LeftPanel from "../component/LeftPanel";
+import Heading  from "../component/Heading";
 import { LogView } from "./LogView";
+
 import {useNavigate} from "react-router-dom";
 
 import {runStarlark} from "../api/enclave";
@@ -26,7 +30,6 @@ export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
           setEnclave(enclave);
           stream.on("data", data => {
             const result = data.toObject();
-            console.log(result);
             if (result.instruction && result.instruction.executableInstruction) {
                 setLogs(logs => [...logs, result.instruction.executableInstruction])
             }
@@ -84,19 +87,20 @@ export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
     }
 
     return (
-        <div className="grid grid-cols-6 h-full w-full">
-            <LeftView 
+        <div className="flex h-full w-full bg-white">
+            <LeftPanel 
+                home={false} 
                 heading={"Services"} 
-                renderList={() => renderServices()}
-            /> 
-            <div className="col-span-5">
-                <div className='flex flex-col h-screen space-y-5'>
-                    <div className="text-3xl text-center"> 
-                        {enclaveInfo.enclave.name} 
-                    </div>
-                    <LogView classAttr={"flex flex-col p-2 h-fit"} heading={"Starlark Logs"} logs={logs}/>
+                renderList={ ()=> renderServices(services, ()=>{})}
+            />
+            <div className="flex-1">
+                <Heading content={enclaveInfo.enclave.name} color={"text-black"}/>
+                <div className='flex flex-col h-full space-y-1'>                        
+                    <LogView classAttr={"flex flex-col p-2"} heading={"Logs"} logs={logs}/>
                 </div>
-            </div> 
+            </div>
+                    
+            <RightPanel home={false}/>
         </div>
     )
 }

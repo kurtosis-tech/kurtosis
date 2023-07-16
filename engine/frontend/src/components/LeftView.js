@@ -12,8 +12,8 @@ export const LeftView = ({heading, renderList}) => {
     // }
 
     return (
-        <div className='flex flex-col h-screen space-y-5 bg-slate-800'>
-            <div className="text-3xl text-center mt-5 mb-3 text-white"> 
+        <div className='flex flex-col bg-slate-800'>
+            <div className="text-3xl text-center mt-5 mb-3 text-white">
                 {heading} 
             </div>
             <div className="flex flex-col space-y-4 p-2 overflow-auto">
@@ -22,6 +22,6 @@ export const LeftView = ({heading, renderList}) => {
                 }
             </div> 
             {/* <div className="flex text-3xl justify-center py-10 text-white border-t-4"> {username} </div> */}
-     </div>
+        </div>
     )
 }

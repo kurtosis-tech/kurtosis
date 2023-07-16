@@ -12,12 +12,11 @@ export const CreateEnclaveModal = ({handleSubmit, name, setName}) => {
   };
 
   return (
-    <div className="flex justify-center items-center h-full">
-      <form onSubmit={handleFormSubmit} className="bg-gray-100 p-6 rounded-lg shadow-md">
+    <div className="flex justify-center w-full h-fit m-14">
+      <form onSubmit={handleFormSubmit} className="bg-gray-100 p-6 rounded-lg shadow-md w-1/3">
         <div className="text-center">
-          <h2 className="text-2xl mb-4">{name}</h2>
-          <label className="block mb-4">
-            Name:
+          <label className="block mb-4 text-2xl">
+            Package Id:
             <input
               type="text"
               value={name}

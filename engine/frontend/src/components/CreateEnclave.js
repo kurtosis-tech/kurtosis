@@ -12,7 +12,7 @@ const CreateEnclave = () => {
     }
 
     return (
-        <div className='h-screen w-screen'>
+        <div className="flex h-full">
             {enclaveInfo !== null ? <CreateEnclaveView packageId={name} enclaveInfo={enclaveInfo}/> : <CreateEnclaveModal name={name} setName={setName} handleSubmit={handleModalSubmit}/>}
         </div>
     )

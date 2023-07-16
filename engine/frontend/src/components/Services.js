@@ -124,22 +124,6 @@ const Services = () => {
                     </div>
                 </div>  
             </div>
-            {/* <div className="col-span-5 grid grid-rows-6">
-                <div className="text-center justify-center pt-5 text-2xl"> {name} </div>
-                <div className="row-span-5"> 
-                    <div className="text-center justify-center text-xl"> Services </div>
-                    <div className="flex flex-col h-screen space-y-2">
-                        {renderServices(services)}
-                    </div>
-                </div>
-            </div> */}
-            {/* {
-                enclaves.map(enclave => {
-                    return (
-                       <Enclave key={enclave.name} name={enclave.name} status={enclave.status} created={enclave.created} />
-                    )
-                })
-            } */}
         </div>
     )
 }
