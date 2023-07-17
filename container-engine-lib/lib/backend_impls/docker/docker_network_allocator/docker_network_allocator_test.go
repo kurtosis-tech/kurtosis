@@ -2,11 +2,11 @@ package docker_network_allocator
 
 import (
 	"context"
-	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"net"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestErrorOnInstantiationWithoutConstructor(t *testing.T) {
@@ -25,31 +25,15 @@ func TestErrorOnNoFreeIps(t *testing.T) {
 	networks := parseNetworks(t, cidrs)
 	_, err := findRandomFreeNetwork(networks)
 	assert.Error(t, err)
-
 }
 
 func TestEntireNetworkingSpace(t *testing.T) {
 	takenNetworks := []*net.IPNet{}
-	allPossibleNetworks := []*net.IPNet{}
-	for thirdOctet := thirdOctetLowestPossibleValue; thirdOctet <= thirdOctetHighestPossibleValue; thirdOctet++ {
-		ipAddressString := fmt.Sprintf("%v.%v.%v.0", allowedNetworkFirstOctet, allowedNetworkSecondOctet, thirdOctet)
-		resultNetworkIp := net.ParseIP(ipAddressString)
-		resultNetwork := &net.IPNet{
-			IP:   resultNetworkIp,
-			Mask: networkCidrMask,
-		}
-		allPossibleNetworks = append(allPossibleNetworks, resultNetwork)
-	}
-	i := 0
-	for {
-		if i == thirdOctetHighestPossibleValue {
-			break
-		}
+	for i := 0; i < (1 << enclaveWidthBits); i++ {
 		freeIPAddress, err := findRandomFreeNetwork(takenNetworks)
-		require.NoError(t, err, "Got an unexpected error when finding a free network with already-occupied networks %+v", takenNetworks)
+		require.NoError(t, err, "Got an unexpected error when finding a free network with already-occupied networks %+v (len %v)", takenNetworks, len(takenNetworks))
+		require.NotContains(t, takenNetworks, freeIPAddress)
 		takenNetworks = append(takenNetworks, freeIPAddress)
-		require.Equal(t, allPossibleNetworks[i], freeIPAddress)
-		i += 1
 	}
 }
 

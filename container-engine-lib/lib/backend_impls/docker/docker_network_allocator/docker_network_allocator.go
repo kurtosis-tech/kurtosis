@@ -3,23 +3,25 @@ package docker_network_allocator
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/network_helpers"
-	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"math/rand"
 	"net"
 	"strings"
 	"time"
+
+	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/network_helpers"
 )
 
 const (
 	supportedIpAddrBitLength = uint32(32)
 
 	// We hardcode this because the algorithm for finding slots for variable-sized networks is MUCH more complex
-	// This will give 256 IPs per address; if this isn't enough we can up it in the future
-	// This limits us to 256 Services per APIC
-	networkWidthBits = uint32(8)
+	// This will give 2^10 IPs per address, so this limits us to 1024 Services per APIC, with 64 APICs
+	networkWidthBits = uint32(10)
+	enclaveWidthBits = uint32(6)
 
 	// Docker returns an error with this text when we try to create a network with a CIDR mask
 	//  that overlaps with a preexisting network
@@ -29,14 +31,16 @@ const (
 
 	timeBetweenNetworkCreationRetries = 1 * time.Second
 
-	allowedNetworkFirstOctet       = 172
-	allowedNetworkSecondOctet      = 16
-	thirdOctetHighestPossibleValue = 255
-	thirdOctetLowestPossibleValue  = 1
+	allowedNetworkFirstOctet  = 172
+	allowedNetworkSecondOctet = 16
+	enclaveSubrangeStart      = 0
+	enclaveSubrangeEnd        = 1 << enclaveWidthBits
 )
 
-var networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
-var emptyIpSet = map[string]bool{}
+var (
+	networkCidrMask = net.CIDRMask(int(supportedIpAddrBitLength-networkWidthBits), int(supportedIpAddrBitLength))
+	emptyIpSet      = map[string]bool{}
+)
 
 type DockerNetworkAllocator struct {
 	// Our constructor sets the rand.Seed, so we want to force users to use the constructor
@@ -148,8 +152,10 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 // Just with this range we can get 256 APICs; if we limit services per APIC to 256(/24)
 // For simplicity we limit it to 256 APICs and allow networks 172.16.1.0/24 - 17.16.255.0/24
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
-	for thirdOctet := thirdOctetLowestPossibleValue; thirdOctet <= thirdOctetHighestPossibleValue; thirdOctet++ {
+	for enclaveSubrange := enclaveSubrangeStart; enclaveSubrange < enclaveSubrangeEnd; enclaveSubrange++ {
+		thirdOctet := enclaveSubrange << (8 - enclaveWidthBits)
 		ipAddressString := fmt.Sprintf("%v.%v.%v.0", allowedNetworkFirstOctet, allowedNetworkSecondOctet, thirdOctet)
+		fmt.Println(ipAddressString)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{
 			IP:   resultNetworkIp,
