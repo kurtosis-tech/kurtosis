@@ -36,10 +36,37 @@ github.com/kurtosis-tech/kurtosis/starlark/test.star
 Only locators pointing to public GitHub repositories are currently allowed.
 :::
 
+Relative Locators are supported but the relative locator needs to be inside the package. Relative locators are relative to the file being interpreted. For a Starlark script to reference a local file (i.e. one that lives next to in the filesystem), the Starlark script must use the name of the package that it lives inside.
+
+For example, suppose we had a [Kurtosis package][packages] like so:
+
+```
+/
+    package-repo
+        main.star
+        src/
+            lib.star
+```
+
+with a `kurtosis.yml` file like so:
+
+```yaml
+name: github.com/package-author/package-repo
+```
+
+The `main.star` can refer to the `lib.star` in both of the following ways
+
+
+```
+# valid relative import
+lib_via_relative_import = import_module("./src/lib.star")
+
+# valid absolute import
+lib_via_absolute_import = import_module("github.com/kurtosis-tech/package-repo/src/lib.star")
+```
+
 Any Starlark script that wishes to use external resources must be
 a part of a [Kurtosis package][packages].
-
-All locators are absolute; "relative" locators do not exist. For a Starlark script to reference a local file (i.e. one that lives next to in the filesystem), the Starlark script must use the name of the package that it lives inside.
 
 For example, suppose we had a [Kurtosis package][packages] like so:
 
