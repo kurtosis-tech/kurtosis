@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.10](https://github.com/kurtosis-tech/kurtosis/compare/0.80.9...0.80.10) (2023-07-17)
+
+
+### Features
+
+* Added enclave pool for improving performance on enclave creation  ([#787](https://github.com/kurtosis-tech/kurtosis/issues/787)) ([d6efa43](https://github.com/kurtosis-tech/kurtosis/commit/d6efa435efeb9989de8f20f1d2d80603b7ef6827))
+
 ## [0.80.9](https://github.com/kurtosis-tech/kurtosis/compare/0.80.8...0.80.9) (2023-07-17)
 
 

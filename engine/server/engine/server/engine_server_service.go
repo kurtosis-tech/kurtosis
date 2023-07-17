@@ -54,6 +54,7 @@ func (service *EngineServerService) GetEngineInfo(ctx context.Context, empty *em
 }
 
 func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
+
 	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
@@ -61,6 +62,7 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
+		service.imageVersionTag,
 		args.ApiContainerVersionTag,
 		apiContainerLogLevel,
 		args.EnclaveName,
@@ -212,6 +214,13 @@ func (service *EngineServerService) GetServiceLogs(
 		}
 	}
 
+}
+
+func (service *EngineServerService) Close() error {
+	if err := service.enclaveManager.Close(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred closing the enclave manager")
+	}
+	return nil
 }
 
 // ====================================================================================================

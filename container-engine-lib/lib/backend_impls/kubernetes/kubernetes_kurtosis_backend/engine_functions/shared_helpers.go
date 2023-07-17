@@ -312,16 +312,3 @@ func getEngineMatchLabels() map[string]string {
 	}
 	return engineMatchLabels
 }
-
-func DestroyEngines(
-	ctx context.Context,
-	filters *engine.EngineFilters,
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (
-	resultSuccessfulEngineGuids map[engine.EngineGUID]bool,
-	resultErroredEngineGuids map[engine.EngineGUID]error,
-	resultErr error,
-) {
-
-	return destroyEngines(ctx, filters, kubernetesManager)
-}

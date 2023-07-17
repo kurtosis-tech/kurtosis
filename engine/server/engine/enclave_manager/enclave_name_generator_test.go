@@ -1,7 +1,6 @@
 package enclave_manager
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -17,9 +16,9 @@ const (
 func TestGetRandomEnclaveIdWithRetriesSuccess(t *testing.T) {
 	retries := uint16(3)
 
-	currentEnclavePresent := map[enclave.EnclaveUUID]*enclave.Enclave{
-		"123": enclave.NewEnclave("123", nonUniqueName, enclave.EnclaveStatus_Empty, nil),
-		"456": enclave.NewEnclave("456", nameAlreadyExists1, enclave.EnclaveStatus_Empty, nil),
+	currentEnclaveName := []string{
+		nonUniqueName,
+		nameAlreadyExists1,
 	}
 
 	timesCalled := 0
@@ -37,7 +36,7 @@ func TestGetRandomEnclaveIdWithRetriesSuccess(t *testing.T) {
 		return nameAlreadyExists1
 	}
 
-	randomEnclaveId := GetRandomEnclaveNameWithRetries(mockNatureThemeName, currentEnclavePresent, retries)
+	randomEnclaveId := GetRandomEnclaveNameWithRetries(mockNatureThemeName, currentEnclaveName, retries)
 	require.NotEmpty(t, randomEnclaveId)
 	require.Equal(t, uniqueNameFoundOnLastTry, randomEnclaveId)
 }
@@ -45,10 +44,10 @@ func TestGetRandomEnclaveIdWithRetriesSuccess(t *testing.T) {
 func TestGetRandomEnclaveIdWithRetriesUniqueNameNotFound(t *testing.T) {
 	retries := uint16(3)
 
-	currentEnclavePresent := map[enclave.EnclaveUUID]*enclave.Enclave{
-		"123": enclave.NewEnclave("123", nonUniqueName, enclave.EnclaveStatus_Empty, nil),
-		"456": enclave.NewEnclave("456", nameAlreadyExists1, enclave.EnclaveStatus_Empty, nil),
-		"789": enclave.NewEnclave("789", nameAlreadyExists2, enclave.EnclaveStatus_Empty, nil),
+	currentEnclaveName := []string{
+		nonUniqueName,
+		nameAlreadyExists1,
+		nameAlreadyExists2,
 	}
 
 	timesCalled := 0
@@ -62,7 +61,7 @@ func TestGetRandomEnclaveIdWithRetriesUniqueNameNotFound(t *testing.T) {
 		return nonUniqueName
 	}
 
-	randomEnclaveId := GetRandomEnclaveNameWithRetries(mockNatureThemeName, currentEnclavePresent, retries)
+	randomEnclaveId := GetRandomEnclaveNameWithRetries(mockNatureThemeName, currentEnclaveName, retries)
 	require.NotEmpty(t, randomEnclaveId)
 	require.Equal(t, expectedUniqueNameWithRandomNum, randomEnclaveId)
 }
