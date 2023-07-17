@@ -64,6 +64,7 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
+		service.imageVersionTag,
 		args.ApiContainerVersionTag,
 		apiContainerLogLevel,
 		args.EnclaveName,
