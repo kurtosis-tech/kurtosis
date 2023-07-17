@@ -26,6 +26,10 @@ const (
 
 	DefaultWaitTimeoutDurationStr = "180s"
 	DisableWaitTimeoutDurationStr = ""
+
+	runResultCodeKey     = "code"
+	runResultOutputKey   = "output"
+	runFilesArtifactsKey = "files_artifacts"
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
@@ -99,8 +103,8 @@ func copyFilesFromTask(ctx context.Context, serviceNetwork service_network.Servi
 // Copied some of the command from: exec_recipe.ResultMapToString
 // TODO: create a utility method that can be used by add_service(s) and run_sh method.
 func resultMapToString(resultMap map[string]starlark.Comparable) string {
-	exitCode := resultMap[runshCodeKey]
-	rawOutput := resultMap[runshOutputKey]
+	exitCode := resultMap[runResultCodeKey]
+	rawOutput := resultMap[runResultOutputKey]
 
 	outputStarlarkStr, ok := rawOutput.(starlark.String)
 	if !ok {

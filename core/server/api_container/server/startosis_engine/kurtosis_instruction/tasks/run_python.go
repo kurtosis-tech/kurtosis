@@ -34,10 +34,7 @@ const (
 
 	DefaultRunPythonImageName = "python:3.11-alpine"
 
-	runPythonCodeKey         = "code"
-	runPythonOutputKey       = "output"
-	runPythonFileArtifactKey = "files_artifacts"
-	spaceDelimiter           = " "
+	spaceDelimiter = " "
 
 	shellWrapperCommand = "/bin/sh"
 
@@ -307,12 +304,12 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 	randomUuid := uuid.NewRandom()
 	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
-	runPythonCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runPythonCodeKey)
-	runPythonOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runPythonOutputKey)
+	runPythonCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runResultCodeKey)
+	runPythonOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runResultOutputKey)
 
 	dict := map[string]starlark.Value{}
-	dict[runPythonCodeKey] = starlark.String(runPythonCodeValue)
-	dict[runPythonOutputKey] = starlark.String(runPythonOutputValue)
+	dict[runResultCodeKey] = starlark.String(runPythonCodeValue)
+	dict[runResultOutputKey] = starlark.String(runPythonOutputValue)
 
 	// converting go slice to starlark list
 	artifactNamesList := &starlark.List{}
@@ -322,7 +319,7 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 			_ = artifactNamesList.Append(starlark.String(name))
 		}
 	}
-	dict[runPythonFileArtifactKey] = artifactNamesList
+	dict[runFilesArtifactsKey] = artifactNamesList
 	response := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	return response, nil
 }
@@ -391,8 +388,8 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	}
 
 	result := map[string]starlark.Comparable{
-		runPythonOutputKey: starlark.String(createDefaultDirectoryResult.GetOutput()),
-		runPythonCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
+		runResultOutputKey: starlark.String(createDefaultDirectoryResult.GetOutput()),
+		runResultCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
 	}
 
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
