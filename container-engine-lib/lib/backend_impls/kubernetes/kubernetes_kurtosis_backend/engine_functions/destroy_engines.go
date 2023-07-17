@@ -7,7 +7,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-func DestroyEngines(
+func destroyEngines(
 	ctx context.Context,
 	filters *engine.EngineFilters,
 	kubernetesManager *kubernetes_manager.KubernetesManager,

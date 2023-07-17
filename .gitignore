@@ -85,6 +85,7 @@ cli/cli/scripts/completions/
 # Node
 node_modules
 yarn-error.log
+frontend/node_modules/
 
 # Bazel
 /bazel-*

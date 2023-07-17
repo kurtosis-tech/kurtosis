@@ -18,6 +18,7 @@ type readFileTestCase struct {
 
 func newReadFileTestCase(t *testing.T) *readFileTestCase {
 	packageContentProvider := startosis_packages.NewMockPackageContentProvider(t)
+	packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(frameworkTestThreadName, TestModuleFileName).Return(TestModuleFileName, nil)
 	packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
 	return &readFileTestCase{
 		T:                      t,
@@ -42,6 +43,7 @@ func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
 }
 
 func (t *readFileTestCase) Assert(result starlark.Value) {
+	t.packageContentProvider.AssertCalled(t, "GetAbsoluteLocatorForRelativeModuleLocator", frameworkTestThreadName, TestModuleFileName)
 	t.packageContentProvider.AssertCalled(t, "GetModuleContents", TestModuleFileName)
 	require.Equal(t, result, starlark.String("Hello World!"))
 }

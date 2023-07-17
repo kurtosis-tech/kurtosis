@@ -479,7 +479,7 @@ func createStartServiceOperation(
 		createAndStartArgs := createAndStartArgsBuilder.Build()
 
 		// Best-effort pull attempt
-		if err = dockerManager.PullImage(ctx, containerImageName); err != nil {
+		if err = dockerManager.FetchImage(ctx, containerImageName); err != nil {
 			logrus.Warnf("Failed to pull the latest version of user service container image '%v'; you may be running an out-of-date version", containerImageName)
 		}
 
