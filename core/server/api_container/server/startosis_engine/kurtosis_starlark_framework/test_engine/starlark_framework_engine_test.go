@@ -20,7 +20,8 @@ import (
 )
 
 const (
-	resultStarlarkVar = "result"
+	resultStarlarkVar       = "result"
+	frameworkTestThreadName = "framework-testing-engine"
 )
 
 func TestAllRegisteredBuiltins(t *testing.T) {
@@ -75,7 +76,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBaseTest) {
 	testId := builtin.GetId()
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
-	thread := newStarlarkThread("framework-testing-engine")
+	thread := newStarlarkThread(frameworkTestThreadName)
 
 	predeclared := getBasePredeclaredDict(t)
 	// Add the KurtosisPlanInstruction that is being tested

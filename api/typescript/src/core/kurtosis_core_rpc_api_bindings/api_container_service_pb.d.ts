@@ -1064,8 +1064,8 @@ export class FileArtifactContentsFileDescription extends jspb.Message {
   getPath(): string;
   setPath(value: string): FileArtifactContentsFileDescription;
 
-  getDescription(): string;
-  setDescription(value: string): FileArtifactContentsFileDescription;
+  getSize(): number;
+  setSize(value: number): FileArtifactContentsFileDescription;
 
   getTextPreview(): string;
   setTextPreview(value: string): FileArtifactContentsFileDescription;
@@ -1083,7 +1083,7 @@ export class FileArtifactContentsFileDescription extends jspb.Message {
 export namespace FileArtifactContentsFileDescription {
   export type AsObject = {
     path: string,
-    description: string,
+    size: number,
     textPreview?: string,
   }
 

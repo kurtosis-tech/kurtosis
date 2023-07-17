@@ -33,7 +33,7 @@ const (
 	isArtifactIdentifierArgGreedy   = false
 
 	destinationPathArgKey        = "destination-path"
-	isDestinationPathArgOptional = false
+	isDestinationPathArgOptional = true
 	emptyDestinationPathArg      = ""
 
 	noExtractFlagKey          = "no-extract"
@@ -77,7 +77,7 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			IsOptional:            isArtifactIdentifierArgOptional,
 			IsGreedy:              isArtifactIdentifierArgGreedy,
 			DefaultValue:          nil,
-			ArgCompletionProvider: nil,
+			ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
 		},
 		file_system_path_arg.NewDirpathArg(
 			destinationPathArgKey,
@@ -110,6 +110,9 @@ func run(
 	destinationPath, err := args.GetNonGreedyArg(destinationPathArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the destination path to write downloaded file to using key '%v'", destinationPath)
+	}
+	if destinationPath == "" {
+		destinationPath = fmt.Sprintf("./%v", artifactIdentifier)
 	}
 	absoluteDestinationPath, err := filepath.Abs(destinationPath)
 	if err != nil {
@@ -193,4 +196,41 @@ func validateArtifactIdentifier(ctx context.Context, flags *flags.ParsedFlags, a
 	}
 
 	return nil
+}
+
+func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred connecting to the Kurtosis engine for retrieving the names for tab completion",
+		)
+	}
+
+	enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdentifierArgKey)
+	}
+	enclave, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting the enclave identifiers",
+		)
+	}
+
+	fileArtifacts, err := enclave.GetAllFilesArtifactNamesAndUuids(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred getting the file artifacts",
+		)
+	}
+	fileArtifactNames := []string{}
+	for _, fileArtifact := range fileArtifacts {
+		fileName := fileArtifact.GetFileName()
+		fileArtifactNames = append(fileArtifactNames, fileName)
+	}
+
+	return fileArtifactNames, nil
 }

@@ -98,7 +98,7 @@ executors:
 parameters:
   go-version:
     type: string
-    default: "1.19"
+    default: "1.19.10"
   container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
@@ -108,12 +108,12 @@ parameters:
     default: 20.10.7
   api-go-version:
     type: string
-    default: "1.18"
+    default: "1.19.10"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
   server-go-version:
     type: string
-    default: "1.19"
+    default: "1.19.10"
   rust-version:
     type: string
     default: 1.68.2
@@ -128,7 +128,7 @@ parameters:
     default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
   cli-go-version:
     type: string
-    default: "1.19"
+    default: "1.19.10"
   workspace-with-cli-binary-and-images-mountpoint:
     type: string
     default: "/tmp/workspace"
@@ -372,7 +372,7 @@ jobs:
           image_name_with_version="${IMAGE_ORG_AND_REPO}:${version_to_publish}"
           echo "Version that will be persisted to workspace: ${version_to_publish}"
           docker save -o << pipeline.parameters.engine-server-image-filename >> "${image_name_with_version}"          
-          
+
 
       - save_cache:
           key: << pipeline.parameters.engine-server-build-cache-key-prefix>>-{{ checksum "engine/server/go.sum" }}
@@ -478,7 +478,7 @@ jobs:
                   touch /tmp/testsuite-failed
                 fi
 
-      # TODO TODO TODO DELETE THIS HACK!!!!! 
+      # TODO TODO TODO DELETE THIS HACK!!!!!
       # As of 2022-11-18, 'enclave dump' in Kubernetes in CircleCI (but not locally) takes 30s to run per enclave, and "suceeds"
       # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
       - when:
@@ -490,7 +490,7 @@ jobs:
       # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
       # Dump enclave data so we can debug any issues that arise
       # - <<: *run_dump_kurtosis_enclaves
-      
+
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
@@ -547,7 +547,7 @@ jobs:
                    touch /tmp/testsuite-failed
                  fi
 
-      # TODO TODO TODO DELETE THIS HACK!!!!! 
+      # TODO TODO TODO DELETE THIS HACK!!!!!
       # As of 2022-11-18, 'enclave dump' in Kubernetes in CircleCI (but not locally) takes 30s to run per enclave, and "suceeds"
       # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
       - when:
@@ -559,7 +559,7 @@ jobs:
       # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
       # Dump enclave data so we can debug any issues that arise
       # - <<: *run_dump_kurtosis_enclaves
-      
+
       - store_artifacts:
           path: /tmp/enclave-dumps.zip
           destination: enclave-dumps.zip
@@ -573,10 +573,6 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
-      # TODO remove this after version > 0.68.12 is out
-      # This exits the test_old_enclave_continuity immediately
-      # after a new version is out we remove these comments and this line
-      - run: circleci-agent step halt
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
@@ -623,7 +619,7 @@ jobs:
       - run:
           name: "Verify only the engine container remains after the clean"
           command: |
-            if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 1 ]; then
+            if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 0 ]; then
               docker container ls -a
               false
             fi
@@ -714,7 +710,7 @@ jobs:
 
       # Execute github starlark module
       - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
-        
+
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
       - run: "${KURTOSIS_BINPATH} enclave stop test-datastore"
@@ -808,11 +804,11 @@ jobs:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_docker
 
-    # adding same enclave fails
+      # adding same enclave fails
       - run: "${KURTOSIS_BINPATH} enclave add --name test-enclave"
       - run: "! ${KURTOSIS_BINPATH} service add --name test-encalve"
 
-    # running a broken package fails
+      # running a broken package fails
       - run: "! ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package@25ecb4c271f870d6fdf8745169a142519e49aab8"
 
   # -- End build jobs ---------------------------------------
@@ -1118,17 +1114,17 @@ workflows:
             - build_files_artifacts_expander
           <<: *filters_ignore_main
 
-#      - test_basic_cli_functionality:
-#          name: "Test Basic CLI Functionality in Kubernetes"
-#          cli-cluster-backend: "minikube"
-#          context:
-#            - docker-user
-#          requires:
-#            - build_cli
-#            - build_api_container_server
-#            - build_engine_server
-#            - build_files_artifacts_expander
-#          <<: *filters_ignore_main
+      #      - test_basic_cli_functionality:
+      #          name: "Test Basic CLI Functionality in Kubernetes"
+      #          cli-cluster-backend: "minikube"
+      #          context:
+      #            - docker-user
+      #          requires:
+      #            - build_cli
+      #            - build_api_container_server
+      #            - build_engine_server
+      #            - build_files_artifacts_expander
+      #          <<: *filters_ignore_main
 
       - test_ci_for_failure:
           name: "Test Basic CLI for failure"
