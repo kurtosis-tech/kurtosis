@@ -98,7 +98,7 @@ func newFileSystemPathArg(
 	validationFunc fileSystemArgumentValidationFunc,
 ) *args.ArgConfig {
 
-	validate := getValidationFunc(argKey, pathType, validationFunc)
+	validate := getValidationFunc(argKey, defaultValue, pathType, validationFunc)
 
 	return &args.ArgConfig{
 		Key:            argKey,
@@ -114,6 +114,7 @@ func newFileSystemPathArg(
 // Create a validation function using the previously-created
 func getValidationFunc(
 	argKey string,
+	defaultValue string,
 	pathType FileSystemPathType,
 	validationFunc fileSystemArgumentValidationFunc,
 ) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
@@ -124,6 +125,9 @@ func getValidationFunc(
 			return stacktrace.Propagate(err, "Expected a value for greedy arg '%v' but didn't find one", argKey)
 		}
 
+		if filePathOrDirpath == defaultValue {
+			return nil
+		}
 		filePathOrDirpath = strings.TrimSpace(filePathOrDirpath)
 		if filePathOrDirpath == "" {
 			return stacktrace.NewError("Received an empty '%v'. It should be a non empty string.", argKey)
