@@ -31,6 +31,11 @@ const (
 	isArtifactIdentifierArgOptional = false
 	isArtifactIdentifierArgGreedy   = false
 
+	filePathArgKey        = "file-path"
+	emptyFilePath         = ""
+	isFilePathArgOptional = true
+	isFilePathArgGreedy   = false
+
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 )
@@ -65,10 +70,10 @@ var FilesInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 			ArgCompletionProvider: nil,
 		},
 		{
-			Key:                   "file-path",
-			IsOptional:            true,
-			IsGreedy:              false,
-			DefaultValue:          "",
+			Key:                   filePathArgKey,
+			IsOptional:            isFilePathArgOptional,
+			IsGreedy:              isFilePathArgGreedy,
+			DefaultValue:          emptyFilePath,
 			ArgCompletionProvider: nil,
 		},
 	},
