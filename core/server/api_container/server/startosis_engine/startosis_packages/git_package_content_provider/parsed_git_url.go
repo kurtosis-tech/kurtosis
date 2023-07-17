@@ -103,6 +103,11 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 	return parsedGitURL, nil
 }
 
+func (parsedUrl *ParsedGitURL) getAbsoluteLocatorRelativeToThisURL(relativeUrl string) string {
+	absoluteUrl := path.Join(startosis_constants.GithubDomainPrefix, path.Dir(parsedUrl.relativeFilePath), relativeUrl)
+	return absoluteUrl
+}
+
 // cleanPath removes empty "" from the string slice
 func cleanPathAndSplit(urlPath string) []string {
 	cleanPath := path.Clean(urlPath)

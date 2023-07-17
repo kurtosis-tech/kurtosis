@@ -195,6 +195,21 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	return packageAbsolutePathOnDisk, nil
 }
 
+func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator(parentModuleId string, maybeRelativeLocator string) (string, *startosis_errors.InterpretationError) {
+	// maybe it's not a relative url in which case we return the url
+	_, errorParsingUrl := parseGitURL(maybeRelativeLocator)
+	if errorParsingUrl == nil {
+		return maybeRelativeLocator, nil
+	}
+
+	parsedParentModuleId, errorParsingPackageId := parseGitURL(parentModuleId)
+	if errorParsingPackageId != nil {
+		return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
+	}
+
+	return parsedParentModuleId.getAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator), nil
+}
+
 // atomicClone This first clones to a temporary directory and then moves it
 // TODO make this support versioning via tags, commit hashes or branches
 func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) *startosis_errors.InterpretationError {
