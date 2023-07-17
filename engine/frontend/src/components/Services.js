@@ -83,8 +83,9 @@ const Services = () => {
             //const response = await axios.get(`http://localhost:5050/enclaves/${name}/services`)
             //setFileArtifacts(response.data.body.fileArtifacts)
             const selected = enclaves.filter(enclave => enclave.name === name);
-            const services = await getEnclaveInformation(selected[0].apiClient);
+            const {services, artifacts} = await getEnclaveInformation(selected[0].apiClient);
             setServices(services)
+            setFileArtifacts(artifacts)
         } 
         fetch()
     }, [name])

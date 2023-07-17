@@ -33,7 +33,7 @@ const (
 	isArtifactIdentifierArgGreedy   = false
 
 	destinationPathArgKey        = "destination-path"
-	isDestinationPathArgOptional = false
+	isDestinationPathArgOptional = true
 	emptyDestinationPathArg      = ""
 
 	noExtractFlagKey          = "no-extract"
@@ -110,6 +110,9 @@ func run(
 	destinationPath, err := args.GetNonGreedyArg(destinationPathArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the destination path to write downloaded file to using key '%v'", destinationPath)
+	}
+	if destinationPath == "" {
+		destinationPath = fmt.Sprintf("./%v", artifactIdentifier)
 	}
 	absoluteDestinationPath, err := filepath.Abs(destinationPath)
 	if err != nil {
