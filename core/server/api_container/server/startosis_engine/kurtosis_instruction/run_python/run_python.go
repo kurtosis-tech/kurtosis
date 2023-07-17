@@ -59,6 +59,8 @@ const (
 	pythonScriptReadPermission     = 0644
 	enforceMaxSizeLimit            = true
 	temporaryPythonDirectoryPrefix = "run-python-*"
+
+	successfulPipRunExitCode = 0
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
@@ -379,8 +381,15 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
 	}
 
-	// create work directory and cd into that directory
-	// TODO separate pacakge download and run as this pollutes output or pipe to dev null
+	pipInstallationResult, err := setupRequiredPackages(ctx, builtin)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "an error occurred while installing dependencies")
+	}
+
+	if pipInstallationResult.GetExitCode() != successfulPipRunExitCode {
+		return "", stacktrace.NewError("an error occurred while installing dependencies as pip exited with code '%v' instead of '%v'. The error was:\n%v", pipInstallationResult.GetExitCode(), successfulPipRunExitCode, pipInstallationResult.GetOutput())
+	}
+
 	commandToRun, err := getCommandToRun(builtin)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
@@ -456,16 +465,37 @@ func resultMapToString(resultMap map[string]starlark.Comparable) string {
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
-func getCommandToRun(builtin *RunPythonCapabilities) (string, error) {
+func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
 	var maybePackagesWithRuntimeValuesReplaced []string
 	for _, pythonPackage := range builtin.packages {
 		maybePackageWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(pythonPackage, builtin.runtimeValueStore)
 		if err != nil {
-			return "", stacktrace.Propagate(err, "an error occurred while replacing runtime value in a package passed to run_python")
+			return nil, stacktrace.Propagate(err, "an error occurred while replacing runtime value in a package passed to run_python")
 		}
 		maybePackagesWithRuntimeValuesReplaced = append(maybePackagesWithRuntimeValuesReplaced, maybePackageWithRuntimeValueReplaced)
 	}
 
+	if len(maybePackagesWithRuntimeValuesReplaced) == 0 {
+		return nil, nil
+	}
+
+	packageInstallationSubCommand := fmt.Sprintf("pip install %v", strings.Join(maybePackagesWithRuntimeValuesReplaced, " "))
+	packageInstallationCommand := []string{shellWrapperCommand, "-c", packageInstallationSubCommand}
+
+	executionResult, err := builtin.serviceNetwork.RunExec(
+		ctx,
+		builtin.name,
+		packageInstallationCommand,
+	)
+
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while installing required dependencies")
+	}
+
+	return executionResult, nil
+}
+
+func getCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	var maybePythonArgumentsWithRuntimeValueReplaced []string
 	for _, pythonArgument := range builtin.pythonArguments {
 		maybePythonArgumentWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(pythonArgument, builtin.runtimeValueStore)
@@ -476,21 +506,11 @@ func getCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	}
 	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, " ")
 
-	var commandToRun []string
-
-	if len(maybePythonArgumentsWithRuntimeValueReplaced) > 0 {
-		// TODO put " " in constants
-		commandToRun = append(commandToRun, fmt.Sprintf("pip install %v > /dev/null", strings.Join(maybePackagesWithRuntimeValuesReplaced, " ")))
-	}
-
 	pythonScriptAbsolutePath := path.Join(pythonWorkspace, pythonScriptFileName)
 	if len(argumentsAsString) > 0 {
-		commandToRun = append(commandToRun, fmt.Sprintf("python %s %s", pythonScriptAbsolutePath, argumentsAsString))
-	} else {
-		commandToRun = append(commandToRun, fmt.Sprintf("python %s", pythonScriptAbsolutePath))
+		return fmt.Sprintf("python %s %s", pythonScriptAbsolutePath, argumentsAsString), nil
 	}
-
-	return strings.Join(commandToRun, " && "), nil
+	return fmt.Sprintf("python %s", pythonScriptAbsolutePath), nil
 }
 
 // TODO(gm) put this in utils share with run_sh
