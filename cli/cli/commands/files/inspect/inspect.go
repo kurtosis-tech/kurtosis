@@ -2,6 +2,8 @@ package inspect
 
 import (
 	"context"
+	"fmt"
+	"github.com/fatih/color"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -19,6 +21,7 @@ import (
 	"github.com/xlab/treeprint"
 	"golang.org/x/exp/slices"
 	"path/filepath"
+	"strings"
 )
 
 const (
@@ -27,7 +30,6 @@ const (
 	isEnclaveIdArgGreedy    = false
 
 	artifactIdentifierArgKey        = "artifact-identifier"
-	emptyArtifactIdentifier         = ""
 	isArtifactIdentifierArgOptional = false
 	isArtifactIdentifierArgGreedy   = false
 
@@ -38,7 +40,12 @@ const (
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
+	emptyFileStr          = ""
+
+	byteGroup = 1024
 )
+
+var sizeSuffix = []byte{'K', 'M', 'G', 'T', 'P'}
 
 var FilesInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.FilesInspectCmdStr,
@@ -46,14 +53,7 @@ var FilesInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 	LongDescription:           "Inspect the requested file artifact, returning the file tree, metadata and a preview, if avaliable",
 	KurtosisBackendContextKey: kurtosisBackendCtxKey,
 	EngineClientContextKey:    engineClientCtxKey,
-	Flags:                     []*flags.FlagConfig{
-		//{
-		//	Key:     nameFlagKey,
-		//	Usage:   "The name to be given to the produced of the artifact, auto generated if not passed",
-		//	Type:    flags.FlagType_String,
-		//	Default: defaultName,
-		//},
-	},
+	Flags:                     []*flags.FlagConfig{},
 	Args: []*args.ArgConfig{
 		enclave_id_arg.NewEnclaveIdentifierArg(
 			enclaveIdentifierArgKey,
@@ -131,19 +131,58 @@ func run(
 	return nil
 }
 
+type treeMap struct {
+	internalMap map[string]*treeMap
+	subtree     treeprint.Tree
+}
+
+func (nm *treeMap) addBranchIfNotPresent(s string) *treeMap {
+	if value, ok := nm.internalMap[s]; ok {
+		return value
+	}
+	nm.internalMap[s] = &treeMap{
+		map[string]*treeMap{},
+		nm.subtree.AddBranch(s),
+	}
+	return nm.internalMap[s]
+}
+
+func (nm *treeMap) addNodeIfNotPresent(s string) *treeMap {
+	if value, ok := nm.internalMap[s]; ok {
+		return value
+	}
+	nm.internalMap[s] = &treeMap{
+		map[string]*treeMap{},
+		nm.subtree.AddNode(s),
+	}
+	return nm.internalMap[s]
+}
+
 func buildTree(artifactIdentifierName string, fileDescritions []*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) string {
-	// to add a custom root name use `treeprint.NewWithRoot()` instead
-	tree := treeprint.NewWithRoot(artifactIdentifierName)
+	tree := treeprint.NewWithRoot(color.BlueString(artifactIdentifierName))
+	tMap := &treeMap{map[string]*treeMap{}, tree}
 	for _, fileDescription := range fileDescritions {
 		dir, file := filepath.Split(fileDescription.GetPath())
-		subdirs := filepath.SplitList(dir)
-		cp := tree
+		subdirs := strings.Split(filepath.Clean(dir), string(filepath.Separator))
+		curTree := tMap
 		for _, subdir := range subdirs {
-			cp = cp.AddBranch(subdir)
+			curTree = curTree.addBranchIfNotPresent(color.GreenString(subdir))
 		}
-		if file != "" {
-			cp.AddNode(file)
+		if file != emptyFileStr {
+			curTree.addNodeIfNotPresent(fmt.Sprintf("%v [%s]", file, humanReadableSize(fileDescription.GetSize())))
 		}
 	}
 	return tree.String()
+}
+
+func humanReadableSize(size uint64) string {
+	if size < byteGroup {
+		return fmt.Sprintf("%4d", size)
+	}
+	suffixIdx := 0
+	fSize := float64(size) / byteGroup
+	for ; fSize >= byteGroup; suffixIdx++ {
+		fSize /= byteGroup
+	}
+	return fmt.Sprintf("%3.1f%c", fSize, sizeSuffix[suffixIdx])
 }
