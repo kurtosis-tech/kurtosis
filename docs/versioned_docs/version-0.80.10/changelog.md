@@ -1,5 +1,63 @@
 # Changelog
 
+## [0.80.10](https://github.com/kurtosis-tech/kurtosis/compare/0.80.9...0.80.10) (2023-07-17)
+
+
+### Features
+
+* Added enclave pool for improving performance on enclave creation  ([#787](https://github.com/kurtosis-tech/kurtosis/issues/787)) ([d6efa43](https://github.com/kurtosis-tech/kurtosis/commit/d6efa435efeb9989de8f20f1d2d80603b7ef6827))
+
+## [0.80.9](https://github.com/kurtosis-tech/kurtosis/compare/0.80.8...0.80.9) (2023-07-17)
+
+
+### Features
+
+* added a command that opens the Kurtosis Web UI ([#870](https://github.com/kurtosis-tech/kurtosis/issues/870)) ([5098969](https://github.com/kurtosis-tech/kurtosis/commit/509896934656161002d674fa7c61ccd32c6f899d))
+* allow for relative imports from packages ([#891](https://github.com/kurtosis-tech/kurtosis/issues/891)) ([42bedab](https://github.com/kurtosis-tech/kurtosis/commit/42bedab9d45e4988f019dea7ccb2985f058e8199))
+* Autocomplete file artifact name on download ([#910](https://github.com/kurtosis-tech/kurtosis/issues/910)) ([2cedd08](https://github.com/kurtosis-tech/kurtosis/commit/2cedd0802a8595c3b299cb844fb42e3495991114))
+* Make output directory optional for files download ([#909](https://github.com/kurtosis-tech/kurtosis/issues/909)) ([2543d9a](https://github.com/kurtosis-tech/kurtosis/commit/2543d9ad9c68b86c1c1f09137ca60ddfce785b22))
+* Starlark package arguments will be parsed as a deep Struct when `"_kurtosis_parser": "struct"` is passed in the arguments JSON ([#884](https://github.com/kurtosis-tech/kurtosis/issues/884)) ([39ec8c2](https://github.com/kurtosis-tech/kurtosis/commit/39ec8c2d4a867420a76119523eb302dc652adb9b))
+* updated golang api sdk to 1.19 ([#908](https://github.com/kurtosis-tech/kurtosis/issues/908)) ([fabbb1c](https://github.com/kurtosis-tech/kurtosis/commit/fabbb1cde6b827ef2255bf184356b2f8a3ba9fbf))
+
+
+### Bug Fixes
+
+* fixed the log and file artifact issue ([#890](https://github.com/kurtosis-tech/kurtosis/issues/890)) ([7f7fe7b](https://github.com/kurtosis-tech/kurtosis/commit/7f7fe7b2d5dc91ddaa8b088129c5be8de0d9f396))
+* pinned go version to 1.19.10 for now ([#907](https://github.com/kurtosis-tech/kurtosis/issues/907)) ([847a37c](https://github.com/kurtosis-tech/kurtosis/commit/847a37c756b50588a567459956f49fcd26d99c28))
+
+## [0.80.8](https://github.com/kurtosis-tech/kurtosis/compare/0.80.7...0.80.8) (2023-07-11)
+
+
+### Features
+
+* auto assign docs issue to karla ([#834](https://github.com/kurtosis-tech/kurtosis/issues/834)) ([7d0a245](https://github.com/kurtosis-tech/kurtosis/commit/7d0a245fcac4043ab5b780248080b4832b1b0cfe))
+* exposing kurtosis frontend v0 ([#833](https://github.com/kurtosis-tech/kurtosis/issues/833)) ([110e910](https://github.com/kurtosis-tech/kurtosis/commit/110e9100ddc69244e7c317ab1e979e15de9f8863))
+* Make Run also accept argument other than args dict ([#859](https://github.com/kurtosis-tech/kurtosis/issues/859)) ([9fce411](https://github.com/kurtosis-tech/kurtosis/commit/9fce4112764dfdb135e066e2f54b954f79664b50))
+
+
+### Bug Fixes
+
+* fixed the output for port print ([#816](https://github.com/kurtosis-tech/kurtosis/issues/816)) ([ede32e7](https://github.com/kurtosis-tech/kurtosis/commit/ede32e795b77387d46ba49e37a6ccc0947fba79a))
+
+## [0.80.7](https://github.com/kurtosis-tech/kurtosis/compare/0.80.6...0.80.7) (2023-07-05)
+
+
+### Bug Fixes
+
+* Remove existing package directory if it already exists in APIC ([#818](https://github.com/kurtosis-tech/kurtosis/issues/818)) ([4027485](https://github.com/kurtosis-tech/kurtosis/commit/4027485d20917729eb1271387be1317af89ff025))
+
+## [0.80.6](https://github.com/kurtosis-tech/kurtosis/compare/0.80.5...0.80.6) (2023-07-04)
+
+
+### Features
+
+* Invert USE_INSTRUCTIONS_CACHING feature flag ([#800](https://github.com/kurtosis-tech/kurtosis/issues/800)) ([9a358db](https://github.com/kurtosis-tech/kurtosis/commit/9a358db49d4d222db4c45de62c70e190c6fa7c12))
+
+
+### Bug Fixes
+
+* fallback to the amd64 image if there's a failure for arm64 image not existing ([#814](https://github.com/kurtosis-tech/kurtosis/issues/814)) ([9cc1033](https://github.com/kurtosis-tech/kurtosis/commit/9cc10332fd67dbe060b883296c7efe5284130b12))
+
 ## [0.80.5](https://github.com/kurtosis-tech/kurtosis/compare/0.80.4...0.80.5) (2023-06-30)
 
 
