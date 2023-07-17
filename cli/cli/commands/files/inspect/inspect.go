@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/artifact_identifier_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -18,7 +19,6 @@ import (
 	"github.com/xlab/treeprint"
 	"golang.org/x/exp/slices"
 	"path/filepath"
-	"strings"
 )
 
 const (
@@ -61,14 +61,12 @@ var FilesInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		{
-			Key:                   artifactIdentifierArgKey,
-			ValidationFunc:        validateArtifactIdentifier,
-			IsOptional:            isArtifactIdentifierArgOptional,
-			IsGreedy:              isArtifactIdentifierArgGreedy,
-			DefaultValue:          nil,
-			ArgCompletionProvider: nil,
-		},
+		artifact_identifier_arg.NewArtifactIdentifierArg(
+			artifactIdentifierArgKey,
+			enclaveIdentifierArgKey,
+			isArtifactIdentifierArgOptional,
+			isArtifactIdentifierArgGreedy,
+		),
 		{
 			Key:                   filePathArgKey,
 			IsOptional:            isFilePathArgOptional,
@@ -144,26 +142,8 @@ func buildTree(artifactIdentifierName string, fileDescritions []*kurtosis_core_r
 			cp = cp.AddBranch(subdir)
 		}
 		if file != "" {
-			if fileDescription.GetDescription() == "" {
-				cp.AddNode(file)
-			} else {
-				cp.AddMetaNode(fileDescription.GetDescription(), file)
-			}
+			cp.AddNode(file)
 		}
 	}
 	return tree.String()
-}
-
-// TODO(vcolombo): Dedupe this
-func validateArtifactIdentifier(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	artifactIdentifier, err := args.GetNonGreedyArg(artifactIdentifierArgKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the identifier to validate using key '%v'", artifactIdentifier)
-	}
-
-	if strings.TrimSpace(artifactIdentifier) == emptyArtifactIdentifier {
-		return stacktrace.NewError("Artifact identifier cannot be an empty string")
-	}
-
-	return nil
 }
