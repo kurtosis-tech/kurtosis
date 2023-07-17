@@ -1,6 +1,7 @@
 import {useNavigate} from "react-router-dom";
 import NoData from "./NoData";
 import LoadingOverlay from "./LoadingOverflow";
+import RightPanel from "./RightPanel";
 
 const Enclave = ({name, status, created, handleClick}) => {
     const backgroundColor = status === 1 ? "bg-green-700": "bg-red-600"
@@ -50,6 +51,7 @@ const Enclaves = ({enclaves, isLoading}) => {
             {
                 (isLoading) ? <LoadingOverlay/> : <EnclaveComponent enclaves={enclaves} handleClick={handleClick}/>
             }
+            <RightPanel />
         </div>
     ) 
 }

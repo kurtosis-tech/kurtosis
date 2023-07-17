@@ -5,7 +5,7 @@ const RightPanel = () => {
     const navigate = useNavigate()
     
     const handleGotoMenu = () => {
-        navigate("/")
+        navigate("/enclaves")
     }
 
     const handleCreateEnclave = () => {
