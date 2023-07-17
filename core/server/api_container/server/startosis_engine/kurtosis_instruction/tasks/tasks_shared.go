@@ -4,7 +4,10 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -153,4 +156,30 @@ func resultMapToString(resultMap map[string]starlark.Comparable) string {
 --------------------`, exitCode, outputStr)
 	}
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
+}
+
+func getServiceConfig(image string, filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion) *service.ServiceConfig {
+	return service.NewServiceConfig(
+		image,
+		nil,
+		nil,
+		// This make sure that the container does not stop as soon as it starts
+		// This only is needed for kubernetes at the moment
+		// TODO: Instead of creating a service and running exec commands
+		//  we could probably run the command as an entrypoint and retrieve the results as soon as the
+		//  command is completed
+		runTailCommandToPreventContainerToStopOnCreating,
+		nil,
+		nil,
+		filesArtifactExpansion,
+		0,
+		0,
+		service_config.DefaultPrivateIPAddrPlaceholder,
+		0,
+		0,
+		// TODO: hardcoding subnetwork to default is what we do now but is incorrect as the run_sh might not be able to
+		//  reach some services outside of the default subnetwork. It should be re-worked if users want to use that in
+		//  conjunction with subnetworks
+		service_config.DefaultSubnetwork,
+	)
 }

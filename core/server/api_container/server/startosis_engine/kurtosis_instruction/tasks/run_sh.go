@@ -145,29 +145,7 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig = service.NewServiceConfig(
-		image,
-		nil,
-		nil,
-		// This make sure that the container does not stop as soon as it starts
-		// This only is needed for kubernetes at the moment
-		// TODO: Instead of creating a service and running exec commands
-		//  we could probably run the command as an entrypoint and retrieve the results as soon as the
-		//  command is completed
-		runTailCommandToPreventContainerToStopOnCreating,
-		nil,
-		nil,
-		filesArtifactExpansion,
-		0,
-		0,
-		service_config.DefaultPrivateIPAddrPlaceholder,
-		0,
-		0,
-		// TODO: hardcoding subnetwork to default is what we do now but is incorrect as the run_sh might not be able to
-		//  reach some services outside of the default subnetwork. It should be re-worked if users want to use that in
-		//  conjunction with subnetworks
-		service_config.DefaultSubnetwork,
-	)
+	builtin.serviceConfig = getServiceConfig(image, filesArtifactExpansion)
 
 	if arguments.IsSet(StoreFilesArgName) {
 		storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, StoreFilesArgName)
