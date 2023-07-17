@@ -429,7 +429,7 @@ jobs:
 
   build_golang_testsuite:
     executor: ubuntu_vm
-    resource_class: 2xlarge
+    resource_class: xlarge
     parameters:
       <<: *param_cli_cluster_backend
     steps:
