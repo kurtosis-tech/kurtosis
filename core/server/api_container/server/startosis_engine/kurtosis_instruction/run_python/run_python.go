@@ -46,6 +46,7 @@ const (
 	runPythonOutputKey       = "output"
 	runPythonFileArtifactKey = "files_artifacts"
 	newlineChar              = "\n"
+	spaceDelimiter           = " "
 
 	shellWrapperCommand = "/bin/sh"
 
@@ -81,6 +82,7 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 				},
+				// TODO figure out how this should handle arguments with spaces between them
 				{
 					Name:              PackagesArgName,
 					IsOptional:        true,
@@ -479,7 +481,7 @@ func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) 
 		return nil, nil
 	}
 
-	packageInstallationSubCommand := fmt.Sprintf("pip install %v", strings.Join(maybePackagesWithRuntimeValuesReplaced, " "))
+	packageInstallationSubCommand := fmt.Sprintf("pip install %v", strings.Join(maybePackagesWithRuntimeValuesReplaced, spaceDelimiter))
 	packageInstallationCommand := []string{shellWrapperCommand, "-c", packageInstallationSubCommand}
 
 	executionResult, err := builtin.serviceNetwork.RunExec(
@@ -504,7 +506,7 @@ func getCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 		}
 		maybePythonArgumentsWithRuntimeValueReplaced = append(maybePythonArgumentsWithRuntimeValueReplaced, maybePythonArgumentWithRuntimeValueReplaced)
 	}
-	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, " ")
+	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, spaceDelimiter)
 
 	pythonScriptAbsolutePath := path.Join(pythonWorkspace, pythonScriptFileName)
 	if len(argumentsAsString) > 0 {
