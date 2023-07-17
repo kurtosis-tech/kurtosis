@@ -348,7 +348,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 		return "", stacktrace.Propagate(err, "an error occurred while installing dependencies")
 	}
 
-	if pipInstallationResult.GetExitCode() != successfulPipRunExitCode {
+	if pipInstallationResult != nil && pipInstallationResult.GetExitCode() != successfulPipRunExitCode {
 		return "", stacktrace.NewError("an error occurred while installing dependencies as pip exited with code '%v' instead of '%v'. The error was:\n%v", pipInstallationResult.GetExitCode(), successfulPipRunExitCode, pipInstallationResult.GetOutput())
 	}
 
