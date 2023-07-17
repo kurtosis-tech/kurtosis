@@ -30,6 +30,8 @@ const (
 	RunPythonBuiltinName = "run_python"
 
 	ImageNameArgName  = "image"
+	ArgsArgName       = "args"
+	PackagesArgName   = "packages"
 	RunArgName        = "run"
 	StoreFilesArgName = "store"
 	WaitArgName       = "wait"
@@ -42,7 +44,7 @@ const (
 	runshFileArtifactKey = "files_artifacts"
 	newlineChar          = "\n"
 
-	shellCommand = "/bin/sh"
+	shellCommand = "python"
 
 	DefaultWaitTimeoutDurationStr = "180s"
 	DisableWaitTimeoutDurationStr = ""
@@ -60,6 +62,16 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 					Name:              RunArgName,
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
+				},
+				{
+					Name:              ArgsArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
+				},
+				{
+					Name:              PackagesArgName,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 				},
 				{
 					Name:              ImageNameArgName,
@@ -96,6 +108,8 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 			return &RunPythonCapabilities{
 				serviceNetwork:      serviceNetwork,
 				runtimeValueStore:   runtimeValueStore,
+				args:                nil,
+				packages:            nil,
 				name:                "",
 				serviceConfig:       nil, // populated at interpretation time
 				run:                 "",  // populated at interpretation time
@@ -108,6 +122,8 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 
 		DefaultDisplayArguments: map[string]bool{
 			RunArgName:        true,
+			ArgsArgName:       true,
+			PackagesArgName:   true,
 			ImageNameArgName:  true,
 			FilesArgName:      true,
 			StoreFilesArgName: true,
@@ -123,6 +139,9 @@ type RunPythonCapabilities struct {
 	resultUuid string
 	name       string
 	run        string
+
+	args     []string
+	packages []string
 
 	serviceConfig       *service.ServiceConfig
 	fileArtifactNames   []string
@@ -233,6 +252,30 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 		builtin.wait = waitTimeout
 	}
 
+	if arguments.IsSet(PackagesArgName) {
+		packagesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PackagesArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting packages information")
+		}
+		packagesList, err := kurtosis_types.SafeCastToStringSlice(packagesValue, PackagesArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of packages to a golang string slice")
+		}
+		builtin.packages = packagesList
+	}
+
+	if arguments.IsSet(ArgsArgName) {
+		argsValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, ArgsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting passed argument information")
+		}
+		argsList, err := kurtosis_types.SafeCastToStringSlice(argsValue, ArgsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of passed arguments to a golang string slice")
+		}
+		builtin.args = argsList
+	}
+
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunPythonBuiltinName)
@@ -241,12 +284,12 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 	randomUuid := uuid.NewRandom()
 	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
-	runShCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshCodeKey)
-	runShOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshOutputKey)
+	runPythonCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshCodeKey)
+	runPythonOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshOutputKey)
 
 	dict := map[string]starlark.Value{}
-	dict[runshCodeKey] = starlark.String(runShCodeValue)
-	dict[runshOutputKey] = starlark.String(runShOutputValue)
+	dict[runshCodeKey] = starlark.String(runPythonCodeValue)
+	dict[runshOutputKey] = starlark.String(runPythonOutputValue)
 
 	// converting go slice to starlark list
 	artifactNamesList := &starlark.List{}
