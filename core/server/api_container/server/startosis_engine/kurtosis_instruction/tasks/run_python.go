@@ -323,33 +323,12 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 }
 
 func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if builtin.fileArtifactNames != nil {
-		if len(builtin.fileArtifactNames) != len(builtin.pathToFileArtifacts) {
-			return startosis_errors.NewValidationError("error occurred while validating file artifact name for each file in store array. "+
-				"This seems to be a bug, please create a ticket for it. names: %v paths: %v", len(builtin.fileArtifactNames), len(builtin.pathToFileArtifacts))
-		}
-
-		err := validatePathIsUniqueWhileCreatingFileArtifact(builtin.pathToFileArtifacts)
-		if err != nil {
-			return startosis_errors.WrapWithValidationError(err, "error occurred while validating file paths to copy into file artifact")
-		}
-
-		for _, name := range builtin.fileArtifactNames {
-			validatorEnvironment.AddArtifactName(name)
-		}
-	}
-
+	// TODO add validation for python script
+	var serviceDirpathsToArtifactIdentifiers map[string]string
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
-		for _, artifactName := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
-				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunPythonBuiltinName, artifactName)
-			}
-		}
+		serviceDirpathsToArtifactIdentifiers = builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers
 	}
-	// TODO(gm) validate Python Script(run)
-
-	validatorEnvironment.AppendRequiredContainerImage(builtin.serviceConfig.GetContainerImageName())
-	return nil
+	return validateTasksCommon(validatorEnvironment, builtin.fileArtifactNames, builtin.pathToFileArtifacts, serviceDirpathsToArtifactIdentifiers, builtin.serviceConfig.GetContainerImageName())
 }
 
 // Execute This is just v0 for run_python task - we can later improve on it.

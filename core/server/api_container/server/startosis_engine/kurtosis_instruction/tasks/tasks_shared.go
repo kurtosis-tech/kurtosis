@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
@@ -35,6 +36,34 @@ const (
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
+
+func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, fileArtifactNames []string, pathToFileArtifacts []string, serviceDirpathsToArtifactIdentifiers map[string]string, imageName string) *startosis_errors.ValidationError {
+	if fileArtifactNames != nil {
+		if len(fileArtifactNames) != len(pathToFileArtifacts) {
+			return startosis_errors.NewValidationError("error occurred while validating file artifact name for each file in store array. "+
+				"This seems to be a bug, please create a ticket for it. names: %v paths: %v", len(fileArtifactNames), len(pathToFileArtifacts))
+		}
+
+		err := validatePathIsUniqueWhileCreatingFileArtifact(pathToFileArtifacts)
+		if err != nil {
+			return startosis_errors.WrapWithValidationError(err, "error occurred while validating file paths to copy into file artifact")
+		}
+
+		for _, name := range fileArtifactNames {
+			validatorEnvironment.AddArtifactName(name)
+		}
+	}
+
+	for _, artifactName := range serviceDirpathsToArtifactIdentifiers {
+		if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
+			return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunPythonBuiltinName, artifactName)
+		}
+	}
+
+	validatorEnvironment.AppendRequiredContainerImage(imageName)
+	return nil
+
+}
 
 func executeWithWait(ctx context.Context, serviceNetwork service_network.ServiceNetwork, serviceName string, wait string, commandToRun []string) (*exec_result.ExecResult, error) {
 	// Wait is set to None
