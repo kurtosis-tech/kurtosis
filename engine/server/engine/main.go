@@ -119,34 +119,7 @@ func runMain() error {
 	}
 
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
-
-<<<<<<< HEAD
-	engineServerService := server.NewEngineServerService(
-		serverArgs.ImageVersionTag,
-		enclaveManager,
-		serverArgs.MetricsUserID,
-		serverArgs.DidUserAcceptSendingMetrics,
-		logsDatabaseClient,
-	)
-	defer func() {
-		if err := engineServerService.Close(); err != nil {
-			logrus.Errorf("We tried to close the engine server service but something fails. Err:\n%v", err)
-		}
-	}()
-
-	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
-		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
-	}
-	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
-		serverArgs.GrpcListenPortNum,
-		grpcServerStopGracePeriod,
-		[]func(*grpc.Server){
-			engineServerServiceRegistrationFunc,
-		},
-	)
-
-=======
->>>>>>> d037bdb41 (feat: added connect-go for engine)
+	
 	go func() {
 		pathToStaticFolder := "/run/webapp"
 		indexPath := "index.html"
