@@ -42,7 +42,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     # Set minikube cluster with some previous steps to force minikube cluster type in the cluster-setting file, this save us to start the engine with the cluster set command
     # because we are going to start it on the next step
     - run: |
-        KURTOSIS_CLUSTER_SETTING_FILEPATH="/home/circleci/.local/share/kurtosis/cluster-setting"
+        KURTOSIS_CLUSTER_SETTING_FILEPATH="<< pipeline.parameters.kurtosis-cluster-setting-abs-filepath >>"
         echo -n "minikube" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
         echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
     - run: |
@@ -174,6 +174,9 @@ parameters:
   rendertemplate-cli-test-data-json-relative-path:
     type: string
     default: "internal_testsuites/resources/render_template_cli_test/data.json"
+  kurtosis-cluster-setting-abs-filepath:
+    type: string
+    default: "/home/circleci/.local/share/kurtosis/cluster-setting"
 
 
 
