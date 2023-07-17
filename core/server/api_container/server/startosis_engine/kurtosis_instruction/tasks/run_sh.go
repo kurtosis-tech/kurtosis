@@ -25,9 +25,7 @@ import (
 const (
 	RunShBuiltinName = "run_sh"
 
-	DefaultRunShImageName = "badouralix/curl-jq"
-
-	shellCommand = "/bin/sh"
+	defaultRunShImageName = "badouralix/curl-jq"
 )
 
 func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -125,7 +123,7 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 		}
 		image = imageStarlark.GoString()
 	} else {
-		image = DefaultRunShImageName
+		image = defaultRunShImageName
 	}
 
 	var filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion
@@ -286,7 +284,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
 	}
-	fullCommandToRun := []string{shellCommand, "-c", commandToRun}
+	fullCommandToRun := []string{shellWrapperCommand, "-c", commandToRun}
 
 	// run the command passed in by user in the container
 	createDefaultDirectoryResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)

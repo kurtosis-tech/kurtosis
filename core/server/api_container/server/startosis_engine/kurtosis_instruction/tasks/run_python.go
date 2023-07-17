@@ -32,11 +32,9 @@ const (
 	PythonArgumentsArgName = "args"
 	PackagesArgName        = "packages"
 
-	DefaultRunPythonImageName = "python:3.11-alpine"
+	defaultRunPythonImageName = "python:3.11-alpine"
 
 	spaceDelimiter = " "
-
-	shellWrapperCommand = "/bin/sh"
 
 	pythonScriptFileName = "main.py"
 	pythonWorkspace      = "/tmp/python"
@@ -175,7 +173,7 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 		}
 		image = imageStarlark.GoString()
 	} else {
-		image = DefaultRunPythonImageName
+		image = defaultRunPythonImageName
 	}
 
 	var filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion

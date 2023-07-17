@@ -30,6 +30,8 @@ const (
 	runResultCodeKey     = "code"
 	runResultOutputKey   = "output"
 	runFilesArtifactsKey = "files_artifacts"
+
+	shellWrapperCommand = "/bin/sh"
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
