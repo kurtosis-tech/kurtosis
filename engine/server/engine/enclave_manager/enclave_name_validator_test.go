@@ -4,7 +4,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 const (
@@ -18,10 +17,6 @@ const (
 )
 
 var (
-	creationTime               = time.Now()
-	firstEnclaveForTest        = enclave.NewEnclave(firstEnclaveUuidForTest, firstEnclaveNameForTest, runningEnclaveStatus, &creationTime)
-	secondEnclaveForTest       = enclave.NewEnclave(secondEnclaveUuidForTest, secondEnclaveNameForTest, runningEnclaveStatus, &creationTime)
-	theirEnclaveForTest        = enclave.NewEnclave(theirEnclaveUuidForTest, theirEnclaveNameForTest, runningEnclaveStatus, &creationTime)
 	currentEnclaveNamesForTest = []string{
 		firstEnclaveNameForTest,
 		secondEnclaveNameForTest,
