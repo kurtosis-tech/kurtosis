@@ -501,6 +501,7 @@ func (manager *EnclaveManager) Close() error {
 	if err := manager.enclavePool.Close(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred closing the enclave pool")
 	}
+	logrus.Debugf("Enclave manager sucessfully closed")
 	return nil
 }
 

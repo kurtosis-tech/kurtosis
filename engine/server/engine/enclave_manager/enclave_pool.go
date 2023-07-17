@@ -63,6 +63,7 @@ func CreateEnclavePool(
 	// validations
 	// poolSize = 0 means that the Enclave Pool won't be activated, it returns nil with no error
 	if poolSize == 0 {
+		logrus.Debugf("The enclave pool won't be activated due the pool size value is equal to zero")
 		return nil, nil
 	}
 
@@ -203,6 +204,7 @@ func (pool *EnclavePool) Close() error {
 //
 // ====================================================================================================
 func (pool *EnclavePool) init(poolSize uint8) {
+	logrus.Debugf("Initializing enclave pool with size '%v'...", poolSize)
 	for i := uint8(0); i < poolSize; i++ {
 		pool.fillChan <- fill
 	}
@@ -212,7 +214,6 @@ func (pool *EnclavePool) init(poolSize uint8) {
 // 1- for creating and add a new idle enclave in the pool
 // 2- for closing the subroutine
 func (pool *EnclavePool) run(ctx context.Context) {
-
 	for {
 		// wait until receive the re-fill signal or the ctx has done signal
 		select {
@@ -374,6 +375,7 @@ func destroyIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend) erro
 // We have seen the "context deadline exceeded" from Kubernetes in the past, and this usually happens
 // because the Kubernetes has just started, and it is a bit slow to retrieve the information and throws that error
 func destroyIdleEnclavesFromPreviousRuns(kurtosisBackend backend_interface.KurtosisBackend, beforeTime time.Time) {
+	logrus.Debugf("Destroying idle enclaves created before '%s'...", beforeTime)
 	var err error
 	var idleEnclavesToRemove map[enclave.EnclaveUUID]bool
 	maxRetries := uint(5)
@@ -434,7 +436,7 @@ func destroyEnclavesByUUID(
 	enclavesToRemove map[enclave.EnclaveUUID]bool,
 ) error {
 
-	if len(enclavesToRemove) < 0 {
+	if len(enclavesToRemove) == 0 {
 		return nil
 	}
 
