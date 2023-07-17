@@ -15,7 +15,7 @@ export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
     const [services, setServices] = useState([])
 
     const getServices = async (apiClient) => {
-        const services = await getEnclaveInformation(apiClient);
+        const {services} = await getEnclaveInformation(apiClient);
         setServices(services) 
     }
 
