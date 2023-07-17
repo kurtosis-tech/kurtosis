@@ -42,12 +42,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     # Set minikube cluster with some previous steps to force minikube cluster type in the cluster-setting file, this save us to start the engine with the cluster set command
     # because we are going to start it on the next step
     - run: |
-        KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
-        echo "Kurtosis Config filepath: $KURTOSIS_CONFIG_FILEPATH"
-        KURTOSIS_CONFIG_DIR=$(dirname "$KURTOSIS_CONFIG_FILEPATH")
-        echo "Kurtosis Config Dir: $KURTOSIS_CONFIG_DIR"
-        KURTOSIS_CLUSTER_SETTING_FILEPATH="$KURTOSIS_CONFIG_DIR/cluster-setting"
-        echo "Kurtosis cluster setting filepath: $KURTOSIS_CLUSTER_SETTING_FILEPATH"
+        KURTOSIS_CLUSTER_SETTING_FILEPATH="/home/circleci/.local/share/kurtosis/cluster-setting"
         echo -n "minikube" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
         echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
     - run: |
