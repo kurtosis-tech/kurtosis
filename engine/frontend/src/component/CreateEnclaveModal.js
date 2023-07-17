@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {createEnclave} from "../api/enclave";
 
 export const CreateEnclaveModal = ({handleSubmit, name, setName}) => {

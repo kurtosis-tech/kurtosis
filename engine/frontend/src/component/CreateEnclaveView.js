@@ -1,19 +1,20 @@
 import { useEffect, useState } from "react";
 
-import RightPanel from "../component/RightPanel";
-import LeftPanel from "../component/LeftPanel";
-import Heading  from "../component/Heading";
+import RightPanel from "./RightPanel";
+import LeftPanel from "./LeftPanel";
+import Heading  from "./Heading";
 import { LogView } from "./LogView";
 
 import {useNavigate} from "react-router-dom";
-
 import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
+import LoadingOverlay from "./LoadingOverflow";
 
 const SERVICE_IS_ADDED = "added with service";
 
 export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
     const navigate = useNavigate();
+    const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
     const [enclave, setEnclave] = useState("")
     const [services, setServices] = useState([])
@@ -24,6 +25,7 @@ export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
     }
 
     useEffect(() => {
+        setLoading(true)
         let stream;
         const fetch = async () => {
           stream = await runStarlark(enclaveInfo.apiClient, packageId);
@@ -62,7 +64,7 @@ export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
           });
 
           stream.on("end", () => {
-            //navigate("/");
+            setLoading(false)
           });
         }
 
@@ -74,29 +76,31 @@ export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
         };
     }, [packageId])
 
-    const renderServices = () => {
-        return services.map(service => {
-            return (
-                <div 
-                    className={`cursor-default flex text-white items-center justify-center h-14 rounded-md border-4 bg-green-700`} 
-                    key={service.uuid}>
-                    {service.name}
-                </div>
-            )   
-        }) 
+    const handleServiceClick = (service) => {
+        navigate(`/enclaves/${enclaveInfo.enclave.name}/services/${service.uuid}`, {state: {services, selected: service}})
     }
 
+    const renderServices = (services, handleClick) => {
+        return services.map(service => {
+            return (
+                <div className={`flex items-center justify-center h-14 text-base bg-green-700`} key={service.name} onClick={()=>handleClick(service)}>
+                    <div className='cursor-default text-lg text-white'> {service.name} </div>
+                </div>
+            )
+        })
+    }
+    
     return (
         <div className="flex h-full w-full bg-white">
             <LeftPanel 
                 home={false} 
                 heading={"Services"} 
-                renderList={ ()=> renderServices(services, ()=>{})}
+                renderList={ ()=> renderServices(services, handleServiceClick)}
             />
             <div className="flex-1">
                 <Heading content={enclaveInfo.enclave.name} color={"text-black"}/>
                 <div className='flex flex-col h-full space-y-1'>                        
-                    <LogView classAttr={"flex flex-col p-2"} heading={"Logs"} logs={logs}/>
+                    <LogView classAttr={"flex flex-col p-2"} heading={"Logs"} logs={logs} loading={loading && logs.length===0}/>
                 </div>
             </div>
                     

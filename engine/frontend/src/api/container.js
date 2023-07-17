@@ -22,8 +22,14 @@ const getDataFromApiContainer = async (request, process) => {
 }
 
 export const getEnclaveInformation = async (url) => {
-    const containerClient = new ApiContainerServicePromiseClient(url);
+    if (url === "") {
+        return {
+            services: [],
+            artifacts: []
+        }
+    }
 
+    const containerClient = new ApiContainerServicePromiseClient(url);
     const makeGetServiceRequest = async () => {
         const serviceArgs = new GetServicesArgs();
         const responseFromGrpc = await containerClient.getServices(serviceArgs, null)

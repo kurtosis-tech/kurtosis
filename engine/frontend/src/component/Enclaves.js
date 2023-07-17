@@ -1,7 +1,6 @@
-import Heading from "./Heading";
 import {useNavigate} from "react-router-dom";
-import {getEnclavesFromKurtosis} from "../api/enclave";
-import { useEffect, useState } from "react";
+import NoData from "./NoData";
+import LoadingOverlay from "./LoadingOverflow";
 
 const Enclave = ({name, status, created, handleClick}) => {
     const backgroundColor = status === 1 ? "bg-green-700": "bg-red-600"
@@ -13,31 +12,44 @@ const Enclave = ({name, status, created, handleClick}) => {
     )
 }
 
+const EnclaveMainComponent = ({enclaves, handleClick}) => (
+    <div className='grid grid-cols-2 gap-4 flex-1'>
+     {
+        enclaves.map(enclave => {
+            return (
+                <Enclave 
+                    key={enclave.name} 
+                    name={enclave.name} 
+                    status={enclave.status} 
+                    created={enclave.created}
+                    handleClick={handleClick}
+                />
+                )
+            })
+   }       
+    </div>
+)
 
-const Enclaves = ({enclaves}) => {
+const EnclaveComponent = ({enclaves, handleClick}) => {
+    return (
+        <div className="flex-1 bg-slate-800 overflow-auto">
+            {
+                (enclaves.length === 0) ? <NoData /> : <EnclaveMainComponent enclaves={enclaves} handleClick={handleClick} />
+            }
+        </div>
+    )
+}
+
+const Enclaves = ({enclaves, isLoading}) => {
     const navigate = useNavigate()
     const handleClick = (enclaveName) => {
         navigate(`/enclaves/${enclaveName}`)
     }
     return (
         <div className="flex h-full">
-            <div className="flex-1 bg-slate-800 overflow-auto">
-                <div className='grid grid-cols-2 gap-4 flex-1'>
-                    {
-                        enclaves.map(enclave => {
-                            return (
-                            <Enclave 
-                                    key={enclave.name} 
-                                    name={enclave.name} 
-                                    status={enclave.status} 
-                                    created={enclave.created}
-                                    handleClick={handleClick}
-                                />
-                            )
-                        })
-                    }
-                </div>
-            </div>
+            {
+                (isLoading) ? <LoadingOverlay/> : <EnclaveComponent enclaves={enclaves} handleClick={handleClick}/>
+            }
         </div>
     ) 
 }

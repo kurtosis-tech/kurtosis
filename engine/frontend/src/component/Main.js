@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 const Main = () => {
   
@@ -19,11 +19,11 @@ const Main = () => {
         <div className="flex flex-col min-w-fit w-1/3">
             <div className='flex justify-center items-center w-full'>
                 <div className='text-center w-full'>
-                    <div className="mb-4 bg-green-800 h-16 rounded" onClick={handleViewEnvsClick}>
-                        <div className='text-3xl p-2'> View Environments </div>
+                    <div className="mb-4 bg-green-600 h-16 rounded" onClick={handleViewEnvsClick}>
+                        <div className='cursor-default text-3xl text-slate-800 p-2'> View Environments </div>
                     </div>
-                    <div className="mb-4 bg-green-800 h-16 rounded" onClick={handleCreateEnvClick}>
-                        <div className='text-3xl p-2'> Create Environment </div>
+                    <div className="mb-4 bg-green-600 h-16 rounded" onClick={handleCreateEnvClick}>
+                        <div className='cursor-default text-3xl text-slate-800 p-2'> Create Environment </div>
                     </div>
                 </div>
             </div>

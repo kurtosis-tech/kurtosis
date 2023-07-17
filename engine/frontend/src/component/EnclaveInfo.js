@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import {useNavigate, useParams, useLocation} from "react-router-dom";
 import {getEnclaveInformation} from "../api/container";
 
+import NoData from "./NoData";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
+import LoadingOverlay from "./LoadingOverflow";
 
 
 const renderEnclaves = (enclaves, handleClick) => {
@@ -21,11 +23,13 @@ const renderEnclaves = (enclaves, handleClick) => {
 const renderServices = (services, handleClick) => {
     if (services.length === 0) {
         return (
-            <div className="text-3xl text-red-600 text-center justify-center">
-                No Data: 
-                This occurs because either enclave is stopped or there was error while executing
-                the package.
-             </div>
+            <NoData 
+                text={`No Data Available: 
+                    This occurs because either enclave is stopped or there was error while executing
+                    the package.`}
+                size={`text-xl`}
+                color={`text-red-400`} 
+            />
         )
     }
 
@@ -41,9 +45,13 @@ const renderServices = (services, handleClick) => {
 const renderFileArtifacts = (file_artifacts) => {
     if (file_artifacts.length === 0) {
         return (
-            <div className="text-3xl text-slate-200 text-center justify-center">
-                No Data
-             </div>
+            <NoData 
+                text={`No Data Available: 
+                    This occurs because either enclave is stopped or there was error while executing
+                    the package.`}
+                size={`text-xl`}
+                color={`text-red-400`} 
+            />
         )
     }
 
@@ -64,15 +72,18 @@ const EncalveInfo = ({enclaves}) => {
 
     const [services, setServices] = useState([])
     const [fileArtifacts, setFileArtifacts] = useState([])
+    const [encalveInfoLoading, setEnclaveInfoLoading] = useState(false)
     
     useEffect(() => {
+        setEnclaveInfoLoading(true)
         const fetch = async () => {
             const selected = enclaves.filter(enclave => enclave.name === name);
-            
             if (selected.length > 0) {
                 const {services, artifacts} = await getEnclaveInformation(selected[0].apiClient);
+                console.log(services, artifacts)
                 setServices(services)
                 setFileArtifacts(artifacts)
+                setEnclaveInfoLoading(false)
             }
             
         } 
@@ -87,6 +98,24 @@ const EncalveInfo = ({enclaves}) => {
         navigate(`/enclaves/${enclaveName}`, {replace:true})
     }
 
+
+    const EnclaveInfoCompoenent = ({services, fileArtifacts, handleServiceClick}) => (
+        <div className='flex flex-col h-full space-y-1'>
+            <div className="flex flex-col h-1/2 min-h-1/2 border-8">
+                <Heading content={"Services"} size={"text-xl"} />
+                <div className="overflow-auto space-y-2">
+                    {renderServices(services, handleServiceClick)}
+                </div>
+            </div>  
+            <div className="flex flex-col overflow-auto h-full border-8">
+                <Heading content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
+                <div className="overflow-auto space-y-2">
+                    {renderFileArtifacts(fileArtifacts)}
+                </div>
+            </div>  
+        </div>
+    )
+    
     return (
         <div className="flex h-full bg-white">
             <LeftPanel 
@@ -97,20 +126,14 @@ const EncalveInfo = ({enclaves}) => {
 
             <div className="flex-1">
                 <Heading content={name} />
-                <div className='flex flex-col h-full space-y-1'>
-                    <div className="flex flex-col h-1/2 min-h-1/2 border-8">
-                        <Heading content={"Services"} size={"text-xl"} />
-                        <div className="overflow-auto space-y-2">
-                            {renderServices(services, handleServiceClick)}
-                        </div>
-                    </div>  
-                    <div className="flex flex-col overflow-auto h-full border-8">
-                        <Heading content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
-                        <div className="overflow-auto space-y-2">
-                            {renderFileArtifacts(fileArtifacts)}
-                        </div>
-                    </div>  
-                </div>
+                {encalveInfoLoading ? 
+                    <LoadingOverlay /> : 
+                    <EnclaveInfoCompoenent 
+                        services={services} 
+                        fileArtifacts={fileArtifacts}
+                        handleServiceClick={handleServiceClick}
+                    />
+                }
             </div>
                     
             <RightPanel/>

@@ -1,7 +1,6 @@
 import Heading from "./Heading";
 import { useEffect, useState } from "react";
 import {useNavigate, useParams, useLocation} from "react-router-dom";
-import {getEnclaveInformation} from "../api/container";
 import { LogView } from "../components/LogView";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
@@ -9,16 +8,6 @@ import {getServiceLogs} from "../api/enclave";
 
 
 const renderServices = (services, handleClick) => {
-    if (services.length === 0) {
-        return (
-            <div className="text-3xl text-red-600 text-center justify-center">
-                No Data: 
-                This occurs because either enclave is stopped or there was error while executing
-                the package.
-             </div>
-        )
-    }
-
     return services.map(service => {
         return (
             <div className={`flex items-center justify-center h-14 text-base bg-green-700`} key={service.name} onClick={()=>handleClick(service)}>
@@ -54,8 +43,6 @@ const ServiceInfo = ({enclaves}) => {
 
     const params = useParams()
     const {name: enclaveName, uuid:serviceUuid} = params;
-
-    console.log(selected)
 
     useEffect(() => {
         let stream;
