@@ -43,9 +43,14 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
     # because we are going to start it on the next step
     - run: |
         KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
+        echo "Kurtosis Config filepath: $KURTOSIS_CONFIG_FILEPATH"
         KURTOSIS_CONFIG_DIR=$(dirname "$KURTOSIS_CONFIG_FILEPATH")
+        echo "Kurtosis Config Dir: $KURTOSIS_CONFIG_DIR"
         KURTOSIS_CLUSTER_SETTING_FILEPATH="$KURTOSIS_CONFIG_DIR/cluster-setting"
+        echo "Kurtosis cluster setting filepath: $KURTOSIS_CLUSTER_SETTING_FILEPATH"
         echo -n "minikube" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
+        echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
+    - run: |
         ${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace
         ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
     - run:
