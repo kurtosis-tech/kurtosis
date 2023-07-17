@@ -70,3 +70,25 @@ Done! Now you can run any Kurtosis command or package just like if you were doin
 :::tip Kurtosis Kloud Early Access
 To switch back to using Kurtosis locally, simply use: `kurtosis cluster set docker`
 :::
+
+
+V. Activate the enclave pool to accelerate the enclave creation time
+--------------------------------
+
+This step is optional, but we recommend to do it in order to improve the user experience during the enclave creation.
+
+Creating a new enclave from scratch demands several time-consuming engine's tasks and resources creation that can't be omitted.
+
+Kurtosis includes the enclave pool feature that users can enable for reducing the enclave creation time by creating enclaves before these are requested.
+
+The enclave pool is a functionality of the Kurtosis engine that automatically creates `idle` enclaves, since the engine is started, that will be available to be used when users need to create a new enclave (e.g: when running the `kurtosis enclave add` command)
+
+This mechanism speed-up the enclave creation time by using a running `idle` enclave when a new enclave is requested to the engine
+
+To enable this feature you have to run the following:
+
+1. Run `kurtosis engine restart --enclave-pool-size {pool-size-number}`. If you already follow the previous step and replace the {pool-size-number} with an integer
+
+OR
+
+1. Run `kurtosis engine start --enclave-pool-size {pool-size-number}`. If the engine has not been started yet.
