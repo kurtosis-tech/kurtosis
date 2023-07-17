@@ -56,8 +56,8 @@ const (
 	// given module
 	doOverwriteExistingModule = true
 
-	defaultLineCountPreview = unlimitedLineCount
-	unlimitedLineCount      = math.MaxInt
+	emptyFileArtifactIdentifier = ""
+	unlimitedLineCount          = math.MaxInt
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -140,13 +140,13 @@ func (apicService ApiContainerService) UploadStarlarkPackage(server kurtosis_cor
 
 func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Context, args *kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
 	artifactIdentifier := ""
-	if args.GetFileNamesAndUuid().GetFileUuid() != "" {
+	if args.GetFileNamesAndUuid().GetFileUuid() != emptyFileArtifactIdentifier {
 		artifactIdentifier = args.GetFileNamesAndUuid().GetFileUuid()
 	}
-	if args.GetFileNamesAndUuid().GetFileName() != "" {
+	if args.GetFileNamesAndUuid().GetFileName() != emptyFileArtifactIdentifier {
 		artifactIdentifier = args.GetFileNamesAndUuid().GetFileName()
 	}
-	if artifactIdentifier == "" {
+	if artifactIdentifier == emptyFileArtifactIdentifier {
 		return nil, stacktrace.NewError("An error occurred because files artifact identifier is empty '%v'", artifactIdentifier)
 	}
 
@@ -716,7 +716,8 @@ func getFileDescriptionsFromArtifact(artifactPath string) ([]*kurtosis_core_rpc_
 		fileSize := header.Size
 		textPreview, err := getTextRepresentation(tarReader, unlimitedLineCount)
 		if err != nil {
-			logrus.Debugf("Failed to get text preview for file '%v' with error '%v'", filePath, textPreview)
+			// TODO(vcolombo): Return this as part of the request?
+			logrus.Debugf("Failed to get text preview for file '%v' with error '%v'", filePath, err)
 		}
 		fileDescriptions = append(fileDescriptions, &kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription{
 			Path:        filePath,
