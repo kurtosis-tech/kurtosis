@@ -1,8 +1,9 @@
-package run_sh
+package run_python
 
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -21,6 +22,8 @@ import (
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"os"
+	"path"
 	"reflect"
 	"strings"
 	"time"
@@ -29,25 +32,33 @@ import (
 const (
 	RunPythonBuiltinName = "run_python"
 
-	ImageNameArgName  = "image"
-	ArgsArgName       = "args"
-	PackagesArgName   = "packages"
-	RunArgName        = "run"
-	StoreFilesArgName = "store"
-	WaitArgName       = "wait"
-	FilesArgName      = "files"
+	ImageNameArgName       = "image"
+	PythonArgumentsArgName = "args"
+	PackagesArgName        = "packages"
+	RunArgName             = "run"
+	StoreFilesArgName      = "store"
+	WaitArgName            = "wait"
+	FilesArgName           = "files"
 
 	DefaultImageName = "python:alpine-3.17"
 
-	runshCodeKey         = "code"
-	runshOutputKey       = "output"
-	runshFileArtifactKey = "files_artifacts"
-	newlineChar          = "\n"
+	runPythonCodeKey         = "code"
+	runPythonOutputKey       = "output"
+	runPythonFileArtifactKey = "files_artifacts"
+	newlineChar              = "\n"
 
 	shellCommand = "python"
 
 	DefaultWaitTimeoutDurationStr = "180s"
 	DisableWaitTimeoutDurationStr = ""
+
+	pythonScriptFileName = "main.py"
+	pythonWorkspace      = "/tmp/python"
+
+	defaultTmpDir              = ""
+	pythonScriptTempDirPrefix  = "run-python-*"
+	pythonScriptReadPermission = 0644
+	enforceMaxSizeLimit        = true
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
@@ -64,7 +75,7 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 				},
 				{
-					Name:              ArgsArgName,
+					Name:              PythonArgumentsArgName,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.List],
 				},
@@ -108,7 +119,7 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 			return &RunPythonCapabilities{
 				serviceNetwork:      serviceNetwork,
 				runtimeValueStore:   runtimeValueStore,
-				args:                nil,
+				pythonArguments:     nil,
 				packages:            nil,
 				name:                "",
 				serviceConfig:       nil, // populated at interpretation time
@@ -121,13 +132,13 @@ func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeV
 		},
 
 		DefaultDisplayArguments: map[string]bool{
-			RunArgName:        true,
-			ArgsArgName:       true,
-			PackagesArgName:   true,
-			ImageNameArgName:  true,
-			FilesArgName:      true,
-			StoreFilesArgName: true,
-			WaitArgName:       true,
+			RunArgName:             true,
+			PythonArgumentsArgName: true,
+			PackagesArgName:        true,
+			ImageNameArgName:       true,
+			FilesArgName:           true,
+			StoreFilesArgName:      true,
+			WaitArgName:            true,
 		},
 	}
 }
@@ -140,8 +151,8 @@ type RunPythonCapabilities struct {
 	name       string
 	run        string
 
-	args     []string
-	packages []string
+	pythonArguments []string
+	packages        []string
 
 	serviceConfig       *service.ServiceConfig
 	fileArtifactNames   []string
@@ -150,11 +161,24 @@ type RunPythonCapabilities struct {
 }
 
 func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	runCommand, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
+	pythonScript, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RunArgName)
 	}
-	builtin.run = runCommand.GoString()
+	builtin.run = pythonScript.GoString()
+
+	compressedScript, scriptCompressionInterpretationErr := getCompressedPythonScriptForUpload(builtin.run)
+	if err != nil {
+		return nil, scriptCompressionInterpretationErr
+	}
+	uniqueFilesArtifactName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("an error occurred while generating unique artifact name for python script")
+	}
+	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, uniqueFilesArtifactName)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while storing the python script to disk")
+	}
 
 	var image string
 	if arguments.IsSet(ImageNameArgName) {
@@ -178,6 +202,7 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
+			filesArtifactMountDirPaths[pythonWorkspace] = uniqueFilesArtifactName
 			filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
 			if interpretationErr != nil {
 				return nil, interpretationErr
@@ -264,16 +289,16 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 		builtin.packages = packagesList
 	}
 
-	if arguments.IsSet(ArgsArgName) {
-		argsValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, ArgsArgName)
+	if arguments.IsSet(PythonArgumentsArgName) {
+		argsValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PythonArgumentsArgName)
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting passed argument information")
 		}
-		argsList, err := kurtosis_types.SafeCastToStringSlice(argsValue, ArgsArgName)
+		argsList, err := kurtosis_types.SafeCastToStringSlice(argsValue, PythonArgumentsArgName)
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of passed arguments to a golang string slice")
 		}
-		builtin.args = argsList
+		builtin.pythonArguments = argsList
 	}
 
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
@@ -284,12 +309,12 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 	randomUuid := uuid.NewRandom()
 	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
-	runPythonCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshCodeKey)
-	runPythonOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runshOutputKey)
+	runPythonCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runPythonCodeKey)
+	runPythonOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runPythonOutputKey)
 
 	dict := map[string]starlark.Value{}
-	dict[runshCodeKey] = starlark.String(runPythonCodeValue)
-	dict[runshOutputKey] = starlark.String(runPythonOutputValue)
+	dict[runPythonCodeKey] = starlark.String(runPythonCodeValue)
+	dict[runPythonOutputKey] = starlark.String(runPythonOutputValue)
 
 	// converting go slice to starlark list
 	artifactNamesList := &starlark.List{}
@@ -299,7 +324,7 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 			_ = artifactNamesList.Append(starlark.String(name))
 		}
 	}
-	dict[runshFileArtifactKey] = artifactNamesList
+	dict[runPythonFileArtifactKey] = artifactNamesList
 	response := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
 	return response, nil
 }
@@ -328,16 +353,18 @@ func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValue
 			}
 		}
 	}
+	// TODO(gm) validate Python Script(run)
 
 	validatorEnvironment.AppendRequiredContainerImage(builtin.serviceConfig.GetContainerImageName())
 	return nil
 }
 
-// Execute This is just v0 for run_sh task - we can later improve on it.
+// Execute This is just v0 for run_python task - we can later improve on it.
 //
+//	 These TODOs are copied from run-sh
 //		TODO: stop the container as soon as task completed.
-//	  Create an mechanism for other services to retrieve files from the task container
-//	  Make task as its own entity instead of currently shown under services
+//		Create an mechanism for other services to retrieve files from the task container
+//		Make task as its own entity instead of currently shown under services
 func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
 	if err != nil {
@@ -358,8 +385,8 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	}
 
 	result := map[string]starlark.Comparable{
-		runshOutputKey: starlark.String(createDefaultDirectoryResult.GetOutput()),
-		runshCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
+		runPythonOutputKey: starlark.String(createDefaultDirectoryResult.GetOutput()),
+		runPythonCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
 	}
 
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
@@ -397,10 +424,10 @@ func copyFilesFromTask(ctx context.Context, builtin *RunPythonCapabilities) erro
 }
 
 // Copied some of the command from: exec_recipe.ResultMapToString
-// TODO: create a utility method that can be used by add_service(s) and run_sh method.
+// TODO: create a utility method that can be used by add_service(s), run_python and run_sh method.
 func resultMapToString(resultMap map[string]starlark.Comparable) string {
-	exitCode := resultMap[runshCodeKey]
-	rawOutput := resultMap[runshOutputKey]
+	exitCode := resultMap[runPythonCodeKey]
+	rawOutput := resultMap[runPythonOutputKey]
 
 	outputStarlarkStr, ok := rawOutput.(starlark.String)
 	if !ok {
@@ -421,16 +448,43 @@ func resultMapToString(resultMap map[string]starlark.Comparable) string {
 }
 
 func getCommandToRun(builtin *RunPythonCapabilities) (string, error) {
-	// replace future references to actual strings
-	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while replacing runtime values in run_sh")
+	var maybePackagesWithRuntimeValuesReplaced []string
+	for _, pythonPackage := range builtin.packages {
+		maybePackageWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(pythonPackage, builtin.runtimeValueStore)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "an error occurred while replacing runtime value in a package passed to run_python")
+		}
+		maybePackagesWithRuntimeValuesReplaced = append(maybePackagesWithRuntimeValuesReplaced, maybePackageWithRuntimeValueReplaced)
 	}
-	commandWithNoNewLines := strings.ReplaceAll(maybeSubCommandWithRuntimeValues, newlineChar, " ")
 
-	return commandWithNoNewLines, nil
+	var maybePythonArgumentsWithRuntimeValueReplaced []string
+	for _, pythonArgument := range builtin.pythonArguments {
+		maybePythonArgumentWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(pythonArgument, builtin.runtimeValueStore)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "an error occurred while replacing runtime value in a python arg to run_python")
+		}
+		maybePythonArgumentsWithRuntimeValueReplaced = append(maybePythonArgumentsWithRuntimeValueReplaced, maybePythonArgumentWithRuntimeValueReplaced)
+	}
+	argumentsAsString := strings.Join(maybePythonArgumentsWithRuntimeValueReplaced, " ")
+
+	var commandToRun []string
+
+	if len(maybePythonArgumentsWithRuntimeValueReplaced) > 0 {
+		// TODO put " " in constants
+		commandToRun = append(commandToRun, fmt.Sprintf("pip install %v", strings.Join(maybePackagesWithRuntimeValuesReplaced, " ")))
+	}
+
+	pythonScriptAbsolutePath := path.Join(pythonWorkspace, pythonScriptFileName)
+	if len(argumentsAsString) > 0 {
+		commandToRun = append(commandToRun, fmt.Sprintf("python %s %s", pythonScriptAbsolutePath, argumentsAsString))
+	} else {
+		commandToRun = append(commandToRun, fmt.Sprintf("python %s", pythonScriptAbsolutePath))
+	}
+
+	return strings.Join(commandToRun, " && "), nil
 }
 
+// TODO(gm) put this in utils share with run_sh
 func executeWithWait(ctx context.Context, builtin *RunPythonCapabilities, commandToRun []string) (*exec_result.ExecResult, error) {
 	// Wait is set to None
 	if builtin.wait == DisableWaitTimeoutDurationStr {
@@ -480,4 +534,20 @@ func validatePathIsUniqueWhileCreatingFileArtifact(storeFiles []string) *startos
 		}
 	}
 	return nil
+}
+
+func getCompressedPythonScriptForUpload(pythonScript string) ([]byte, *startosis_errors.InterpretationError) {
+	temporaryDir, err := os.CreateTemp(defaultTmpDir, pythonScriptTempDirPrefix)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("an error occurred while creating a temporary directory to write the python script too")
+	}
+	pythonFilePath := path.Join(temporaryDir.Name(), pythonScriptFileName)
+	if err = os.WriteFile(pythonFilePath, []byte(pythonScript), pythonScriptReadPermission); err != nil {
+		return nil, startosis_errors.NewInterpretationError("an error occurred while writing python script to disk")
+	}
+	compressed, err := shared_utils.CompressPath(pythonScript, enforceMaxSizeLimit)
+	if err != nil {
+		return nil, startosis_errors.NewInterpretationError("an error occurred while compressing the python script")
+	}
+	return compressed, nil
 }
