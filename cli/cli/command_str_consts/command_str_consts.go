@@ -61,12 +61,12 @@ const (
 	StarlarkRunCmdStr       = "run"
 	TwitterCmdStr           = "twitter"
 	ConfigCmdStr            = "config"
-	InitCmdStr              = "init"
 	PathCmdStr              = "path"
 	VersionCmdStr           = "version"
 	GatewayCmdStr           = "gateway"
 	PortCmdStr              = "port"
 	PortPrintCmdStr         = "print"
+	WebCmdStr               = "web"
 )
 
 // TODO: added constant error message here, can we move to another file later.
