@@ -165,6 +165,30 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while storing the python script to disk")
 	}
 
+	if arguments.IsSet(PythonArgumentsArgName) {
+		argsValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PythonArgumentsArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting passed argument information")
+		}
+		argsList, sliceParsingErr := kurtosis_types.SafeCastToStringSlice(argsValue, PythonArgumentsArgName)
+		if sliceParsingErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of passed arguments to a golang string slice")
+		}
+		builtin.pythonArguments = argsList
+	}
+
+	if arguments.IsSet(PackagesArgName) {
+		packagesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PackagesArgName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting packages information")
+		}
+		packagesList, sliceParsingErr := kurtosis_types.SafeCastToStringSlice(packagesValue, PackagesArgName)
+		if sliceParsingErr != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of packages to a golang string slice")
+		}
+		builtin.packages = packagesList
+	}
+
 	var image string
 	if arguments.IsSet(ImageNameArgName) {
 		imageStarlark, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ImageNameArgName)
@@ -248,30 +272,6 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 		builtin.wait = waitTimeout
 	}
 
-	if arguments.IsSet(PackagesArgName) {
-		packagesValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PackagesArgName)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting packages information")
-		}
-		packagesList, sliceParsingErr := kurtosis_types.SafeCastToStringSlice(packagesValue, PackagesArgName)
-		if sliceParsingErr != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of packages to a golang string slice")
-		}
-		builtin.packages = packagesList
-	}
-
-	if arguments.IsSet(PythonArgumentsArgName) {
-		argsValue, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, PythonArgumentsArgName)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting passed argument information")
-		}
-		argsList, sliceParsingErr := kurtosis_types.SafeCastToStringSlice(argsValue, PythonArgumentsArgName)
-		if sliceParsingErr != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of passed arguments to a golang string slice")
-		}
-		builtin.pythonArguments = argsList
-	}
-
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunPythonBuiltinName)
@@ -337,24 +337,24 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	fullCommandToRun := []string{shellWrapperCommand, "-c", commandToRun}
 
 	// run the command passed in by user in the container
-	createDefaultDirectoryResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
+	runPythonExecutionResult, err := executeWithWait(ctx, builtin.serviceNetwork, builtin.name, builtin.wait, fullCommandToRun)
 	if err != nil {
 		return "", stacktrace.Propagate(err, fmt.Sprintf("error occurred while executing one time task command: %v ", builtin.run))
 	}
 
 	result := map[string]starlark.Comparable{
-		runResultOutputKey: starlark.String(createDefaultDirectoryResult.GetOutput()),
-		runResultCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
+		runResultOutputKey: starlark.String(runPythonExecutionResult.GetOutput()),
+		runResultCodeKey:   starlark.MakeInt(int(runPythonExecutionResult.GetExitCode())),
 	}
 
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := resultMapToString(result)
 
 	// throw an error as execution of the command failed
-	if createDefaultDirectoryResult.GetExitCode() != 0 {
+	if runPythonExecutionResult.GetExitCode() != 0 {
 		return "", stacktrace.NewError(
-			"error occurred and shell command: %q exited with code %d with output %q",
-			commandToRun, createDefaultDirectoryResult.GetExitCode(), createDefaultDirectoryResult.GetOutput())
+			"error occurred and python command: %q exited with code %d with output %q",
+			commandToRun, runPythonExecutionResult.GetExitCode(), runPythonExecutionResult.GetOutput())
 	}
 
 	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
