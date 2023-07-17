@@ -39,7 +39,15 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-    - run: "${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace"
+    # Set minikube cluster with some previous steps to force minikube cluster type in the cluster-setting file, this save us to start the engine with the cluster set command
+    # because we are going to start it on the next step
+    - run: |
+        KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
+        KURTOSIS_CONFIG_DIR=$(dirname "$KURTOSIS_CONFIG_FILEPATH")
+        KURTOSIS_CLUSTER_SETTING_FILEPATH="$KURTOSIS_CONFIG_DIR/cluster-setting"
+        echo -n "minikube" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
+        ${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace
+        ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
