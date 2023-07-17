@@ -13,12 +13,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/request"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/run_python"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/run_sh"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/set_connection"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/start_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/stop_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/tasks"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/update_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
@@ -55,8 +54,8 @@ func KurtosisPlanInstructions(serviceNetwork service_network.ServiceNetwork, run
 		request.NewRequest(serviceNetwork, runtimeValueStore),
 		set_connection.NewSetConnection(serviceNetwork),
 		start_service.NewStartService(serviceNetwork),
-		run_python.NewRunPythonService(serviceNetwork, runtimeValueStore),
-		run_sh.NewRunShService(serviceNetwork, runtimeValueStore),
+		tasks.NewRunPythonService(serviceNetwork, runtimeValueStore),
+		tasks.NewRunShService(serviceNetwork, runtimeValueStore),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
 		update_service.NewUpdateService(serviceNetwork),
