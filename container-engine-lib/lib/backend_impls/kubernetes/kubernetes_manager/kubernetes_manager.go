@@ -28,6 +28,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -1249,9 +1250,10 @@ func (manager *KubernetesManager) GetContainerLogs(
 // RunExecCommandWithContext This runs the exec to kubernetes with context, therefore
 // when context timeouts it stops the process.
 // TODO: merge RunExecCommand and this to one method
-//  Doing this for now to unblock myself for wait worflows for k8s
-//  In next PR, will include add context to WaitForPortAvailabilityUsingNetstat and
-//  CopyFilesFromUserService method. I am doing this to reduce the blast radius.
+//
+//	Doing this for now to unblock myself for wait worflows for k8s
+//	In next PR, will include add context to WaitForPortAvailabilityUsingNetstat and
+//	CopyFilesFromUserService method. I am doing this to reduce the blast radius.
 func (manager *KubernetesManager) RunExecCommandWithContext(
 	ctx context.Context,
 	namespaceName string,
@@ -1403,6 +1405,56 @@ func (manager *KubernetesManager) RunExecCommand(
 	}
 
 	return successExecCommandExitCode, nil
+}
+
+func (manager *KubernetesManager) GetPodsAndServicesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, error) {
+
+	var (
+		wg               = sync.WaitGroup{}
+		errChan          = make(chan error)
+		allCallsDoneChan = make(chan bool)
+		podList          *apiv1.PodList
+		serviceList      *apiv1.ServiceList
+	)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var err error
+		podList, err = manager.GetPodsByLabels(ctx, namespace, labels)
+		if err != nil {
+			errChan <- stacktrace.Propagate(err, "Expected to be able to get pods with labels '%+v', instead a non-nil error was returned", labels)
+		}
+	}()
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		var err error
+		serviceList, err = manager.GetServicesByLabels(ctx, namespace, labels)
+		if err != nil {
+			errChan <- stacktrace.Propagate(err, "Expected to be able to get services with labels '%+v', instead a non-nil error was returned", labels)
+		}
+	}()
+
+	go func() {
+		wg.Wait()
+		close(allCallsDoneChan)
+	}()
+
+	select {
+	case <-allCallsDoneChan:
+		break
+	case err, isChanOpen := <-errChan:
+		if isChanOpen {
+			return nil, nil, stacktrace.NewError("The error chan has been closed; this is a bug in Kurtosis")
+		}
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting pods and services for labels '%+v' in namespace '%s'", labels, namespace)
+		}
+	}
+
+	return podList, serviceList, nil
 }
 
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
@@ -1742,8 +1794,8 @@ func (manager *KubernetesManager) waitForPodTermination(ctx context.Context, nam
 	for time.Now().Before(deadline) {
 		pod, err := manager.GetPod(ctx, namespaceName, podName)
 		if err != nil {
-			// The pod info is not always available after deletion so we handle that gracefully
-			logrus.Warnf("An error occured trying to retrieve the just-deleted pod '%v': %v", podName, err)
+			// The pod info is not always available after deletion, so we handle that gracefully
+			logrus.Debugf("An error occurred trying to retrieve the just-deleted pod '%v': %v, for checking if it was successfully terminated; but we can ignore this error because the pod info is not always available after deletion", podName, err)
 			return nil
 		}
 
