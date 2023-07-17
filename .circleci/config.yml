@@ -47,7 +47,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
     - run: |
         ${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace
-        ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
+        ${KURTOSIS_BINPATH} engine start --enclave-pool-size 4
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
