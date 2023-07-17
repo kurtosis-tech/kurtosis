@@ -65,12 +65,16 @@ type importModuleCapabilities struct {
 	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
 }
 
-func (builtin *importModuleCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	moduleInPackageStarlarkStr, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
 	if err != nil {
 		return nil, explicitInterpretationError(err)
 	}
 	moduleInPackage := moduleInPackageStarlarkStr.GoString()
+	moduleInPackage, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, moduleInPackage)
+	if relativePathParsingInterpretationErr != nil {
+		return nil, relativePathParsingInterpretationErr
+	}
 
 	var loadInProgress *startosis_packages.ModuleCacheEntry
 	cacheEntry, found := builtin.moduleGlobalCache[moduleInPackage]

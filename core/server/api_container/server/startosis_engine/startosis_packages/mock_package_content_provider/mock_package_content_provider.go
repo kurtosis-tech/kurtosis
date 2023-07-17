@@ -1,9 +1,11 @@
 package mock_package_content_provider
 
 import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"os"
+	"strings"
 )
 
 const (
@@ -60,6 +62,14 @@ func (provider *MockPackageContentProvider) GetModuleContents(fileInsidePackageU
 		return "", startosis_errors.NewInterpretationError("Unable to read content of package '%v'", fileInsidePackageUrl)
 	}
 	return string(fileContent), nil
+}
+
+func (provider *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator(_ string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
+	if strings.HasPrefix(relativeOrAbsoluteModulePath, startosis_constants.GithubDomainPrefix) {
+		return relativeOrAbsoluteModulePath, nil
+	}
+	// TODO implement properly so that it works with relative paths
+	return "", nil
 }
 
 func (provider *MockPackageContentProvider) AddFileContent(packageId string, contents string) error {
