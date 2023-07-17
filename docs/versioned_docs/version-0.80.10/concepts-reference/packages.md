@@ -59,7 +59,7 @@ A Kurtosis package that has a `main.star` file next to its `kurtosis.yml` file i
 
 ```python
 def run(plan):
-    print("Hello, world.")
+    plan.print("Hello, world.")
 ```
 
 :::info
