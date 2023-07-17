@@ -376,13 +376,14 @@ For more details see [ `jq`'s builtin operators and functions](https://stedolan.
 run_python
 ----------
 
-The `run_python` instruction executes a one-time execution task. It runs the Python command specified by the mandatory field `run` on an image specified by the optional `image` field.
+The `run_python` instruction executes a one-time execution task. It runs the Python script specified by the mandatory field `run` on an image specified by the optional `image` field.
 
 ```python
     result = plan.run_python(
         # The Python script to execute as a string
         # This will get executed via '/bin/sh -c "python /tmp/python/main.py"'.
-        # Where `/tmp/python/main.py` is path on the temporary container on which the script is written before it gets run
+        # Where `/tmp/python/main.py` is path on the temporary container;
+        # on which the script is written before it gets run
         # MANDATORY
         run = """
     import requests
@@ -396,15 +397,14 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
             some_other_service.ports["http"].url,
         ],
 
-
-        # Packages that the Python Script requires which will be installed via `pip`
+        # Packages that the Python script requires which will be installed via `pip`
         # OPTIONAL (default: [])
         packages = [
             "selenium",
             "requests",
         ],
     
-        # Image the command will be run on
+        # Image the Python script will be run on
         # OPTIONAL (Default: python:3.11-alpine)
         image = "python:3.11-alpine",
 
@@ -429,7 +429,7 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
         ],
 
         # The time to allow for the command to complete. If the Python script takes longer than this,
-        # Kurtosis will kill the command and mark it as failed.
+        # Kurtosis will kill the script and mark it as failed.
         # You may specify a custom wait timeout duration or disable the feature entirely.
         # You may specify a custom wait timeout duration with a string:
         #  wait = "2m"
