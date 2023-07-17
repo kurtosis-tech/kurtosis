@@ -230,43 +230,18 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 	builtin.serviceConfig = getServiceConfig(image, filesArtifactExpansion)
 
 	if arguments.IsSet(StoreFilesArgName) {
-		storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, StoreFilesArgName)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", StoreFilesArgName)
+		pathToFileArtifacts, fileArtifactNames, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)
+		if interpretationErr != nil {
+			return nil, interpretationErr
 		}
-		if storeFilesList.Len() > 0 {
-
-			storeFilesArray, interpretationErr := kurtosis_types.SafeCastToStringSlice(storeFilesList, StoreFilesArgName)
-			if interpretationErr != nil {
-				return nil, interpretationErr
-			}
-
-			builtin.pathToFileArtifacts = storeFilesArray
-
-			// generate unique names
-			var uniqueNames []string
-			for range storeFilesArray {
-				uniqueNameForArtifact, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
-				if err != nil {
-					return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
-				}
-				uniqueNames = append(uniqueNames, uniqueNameForArtifact)
-			}
-
-			builtin.fileArtifactNames = uniqueNames
-		}
+		builtin.pathToFileArtifacts = pathToFileArtifacts
+		builtin.fileArtifactNames = fileArtifactNames
 	}
 
 	if arguments.IsSet(WaitArgName) {
-		var waitTimeout string
-		waitValue, err := builtin_argument.ExtractArgumentValue[starlark.Value](arguments, WaitArgName)
-		if err != nil {
-			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting wait information")
-		}
-		if waitValueStr, ok := waitValue.(starlark.String); ok {
-			waitTimeout = waitValueStr.GoString()
-		} else if _, ok := waitValue.(starlark.NoneType); ok {
-			waitTimeout = DisableWaitTimeoutDurationStr
+		waitTimeout, interpretationErr := parseWaitArg(arguments)
+		if interpretationErr != nil {
+			return nil, interpretationErr
 		}
 		builtin.wait = waitTimeout
 	}

@@ -8,6 +8,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
@@ -41,6 +43,52 @@ const (
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
+
+func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]string, []string, *startosis_errors.InterpretationError) {
+	storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, StoreFilesArgName)
+	if err != nil {
+		return nil, nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", StoreFilesArgName)
+	}
+
+	if storeFilesList.Len() == 0 {
+		return nil, nil, nil
+	}
+
+	storeFilesArray, interpretationErr := kurtosis_types.SafeCastToStringSlice(storeFilesList, StoreFilesArgName)
+	if interpretationErr != nil {
+		return nil, nil, interpretationErr
+	}
+
+	pathToFileArtifacts := storeFilesArray
+
+	// generate unique names
+	var uniqueNames []string
+	for range storeFilesArray {
+		uniqueNameForArtifact, err := serviceNetwork.GetUniqueNameForFileArtifact()
+		if err != nil {
+			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
+		}
+		uniqueNames = append(uniqueNames, uniqueNameForArtifact)
+	}
+
+	fileArtifactNames := uniqueNames
+
+	return pathToFileArtifacts, fileArtifactNames, nil
+}
+
+func parseWaitArg(arguments *builtin_argument.ArgumentValuesSet) (string, *startosis_errors.InterpretationError) {
+	var waitTimeout string
+	waitValue, err := builtin_argument.ExtractArgumentValue[starlark.Value](arguments, WaitArgName)
+	if err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting wait information")
+	}
+	if waitValueStr, ok := waitValue.(starlark.String); ok {
+		waitTimeout = waitValueStr.GoString()
+	} else if _, ok := waitValue.(starlark.NoneType); ok {
+		waitTimeout = DisableWaitTimeoutDurationStr
+	}
+	return waitTimeout, nil
+}
 
 func createInterpretationResult(resultUuid string, fileArtifactNames []string) *starlarkstruct.Struct {
 	runPythonCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultCodeKey)
