@@ -4,7 +4,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/stretchr/testify/require"
 	"testing"
-	"time"
 )
 
 const (
@@ -18,14 +17,10 @@ const (
 )
 
 var (
-	creationTime             = time.Now()
-	firstEnclaveForTest      = enclave.NewEnclave(firstEnclaveUuidForTest, firstEnclaveNameForTest, runningEnclaveStatus, &creationTime)
-	secondEnclaveForTest     = enclave.NewEnclave(secondEnclaveUuidForTest, secondEnclaveNameForTest, runningEnclaveStatus, &creationTime)
-	theirEnclaveForTest      = enclave.NewEnclave(theirEnclaveUuidForTest, theirEnclaveNameForTest, runningEnclaveStatus, &creationTime)
-	currentEnclaveIdsForTest = map[enclave.EnclaveUUID]*enclave.Enclave{
-		firstEnclaveUuidForTest:  firstEnclaveForTest,
-		secondEnclaveUuidForTest: secondEnclaveForTest,
-		theirEnclaveUuidForTest:  theirEnclaveForTest,
+	currentEnclaveNamesForTest = []string{
+		firstEnclaveNameForTest,
+		secondEnclaveNameForTest,
+		theirEnclaveNameForTest,
 	}
 )
 
@@ -49,11 +44,11 @@ func TestValidateEnclaveId_failureTooLong(t *testing.T) {
 
 func TestIsEnclaveIdInUse_isNotInUse(t *testing.T) {
 	newEnclaveName := "new-enclave-name"
-	isInUse := isEnclaveNameInUse(newEnclaveName, currentEnclaveIdsForTest)
+	isInUse := isEnclaveNameInUse(newEnclaveName, currentEnclaveNamesForTest)
 	require.False(t, isInUse)
 }
 
 func TestIsEnclaveIdInUse_isInUse(t *testing.T) {
-	isInUse := isEnclaveNameInUse(firstEnclaveNameForTest, currentEnclaveIdsForTest)
+	isInUse := isEnclaveNameInUse(firstEnclaveNameForTest, currentEnclaveNamesForTest)
 	require.True(t, isInUse)
 }
