@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	RunShBuiltinName = "run_sh"
+	RunPythonBuiltinName = "run_python"
 
 	ImageNameArgName  = "image"
 	RunArgName        = "run"
@@ -50,10 +50,10 @@ const (
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
 
-func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
-			Name: RunShBuiltinName,
+			Name: RunPythonBuiltinName,
 
 			Arguments: []*builtin_argument.BuiltinArgument{
 				{
@@ -93,7 +93,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 		},
 
 		Capabilities: func() kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities {
-			return &RunShCapabilities{
+			return &RunPythonCapabilities{
 				serviceNetwork:      serviceNetwork,
 				runtimeValueStore:   runtimeValueStore,
 				name:                "",
@@ -116,7 +116,7 @@ func NewRunShService(serviceNetwork service_network.ServiceNetwork, runtimeValue
 	}
 }
 
-type RunShCapabilities struct {
+type RunPythonCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 	serviceNetwork    service_network.ServiceNetwork
 
@@ -130,7 +130,7 @@ type RunShCapabilities struct {
 	wait                string
 }
 
-func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	runCommand, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RunArgName)
@@ -235,7 +235,7 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 
 	resultUuid, err := builtin.runtimeValueStore.CreateValue()
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunShBuiltinName)
+		return nil, startosis_errors.NewInterpretationError("An error occurred while generating UUID for future reference for %v instruction", RunPythonBuiltinName)
 	}
 	builtin.resultUuid = resultUuid
 	randomUuid := uuid.NewRandom()
@@ -261,7 +261,7 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 	return response, nil
 }
 
-func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
+func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
 	if builtin.fileArtifactNames != nil {
 		if len(builtin.fileArtifactNames) != len(builtin.pathToFileArtifacts) {
 			return startosis_errors.NewValidationError("error occurred while validating file artifact name for each file in store array. "+
@@ -281,7 +281,7 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 	if builtin.serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, artifactName := range builtin.serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
 			if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
-				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunShBuiltinName, artifactName)
+				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunPythonBuiltinName, artifactName)
 			}
 		}
 	}
@@ -295,7 +295,7 @@ func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 //		TODO: stop the container as soon as task completed.
 //	  Create an mechanism for other services to retrieve files from the task container
 //	  Make task as its own entity instead of currently shown under services
-func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
@@ -338,7 +338,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	return instructionResult, err
 }
 
-func copyFilesFromTask(ctx context.Context, builtin *RunShCapabilities) error {
+func copyFilesFromTask(ctx context.Context, builtin *RunPythonCapabilities) error {
 	if builtin.fileArtifactNames == nil || builtin.pathToFileArtifacts == nil {
 		return nil
 	}
@@ -377,7 +377,7 @@ func resultMapToString(resultMap map[string]starlark.Comparable) string {
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
-func getCommandToRun(builtin *RunShCapabilities) (string, error) {
+func getCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	// replace future references to actual strings
 	maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(builtin.run, builtin.runtimeValueStore)
 	if err != nil {
@@ -388,7 +388,7 @@ func getCommandToRun(builtin *RunShCapabilities) (string, error) {
 	return commandWithNoNewLines, nil
 }
 
-func executeWithWait(ctx context.Context, builtin *RunShCapabilities, commandToRun []string) (*exec_result.ExecResult, error) {
+func executeWithWait(ctx context.Context, builtin *RunPythonCapabilities, commandToRun []string) (*exec_result.ExecResult, error) {
 	// Wait is set to None
 	if builtin.wait == DisableWaitTimeoutDurationStr {
 		return builtin.serviceNetwork.RunExec(ctx, builtin.name, commandToRun)
