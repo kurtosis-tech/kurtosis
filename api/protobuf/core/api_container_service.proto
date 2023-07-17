@@ -444,7 +444,10 @@ message InspectFilesArtifactContentsResponse {
 }
 
 message FileArtifactContentsFileDescription {
+  // Path relative to the file artifact
   string path = 1;
-  string description = 2; // One-liner description of the file (similar to UNIX's 'file')
-  optional string text_preview = 3; // A bit of text content, if the file allows (similar to UNIX's 'head')
+  // Size of the file, in bytes
+  uint64 size = 2;
+  // A bit of text content, if the file allows (similar to UNIX's 'head')
+  optional string text_preview = 3;
 }

@@ -548,11 +548,12 @@ pub struct InspectFilesArtifactContentsResponse {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct FileArtifactContentsFileDescription {
+    /// Path relative to the file artifact
     #[prost(string, tag = "1")]
     pub path: ::prost::alloc::string::String,
-    /// One-liner description of the file (similar to UNIX's 'file')
-    #[prost(string, tag = "2")]
-    pub description: ::prost::alloc::string::String,
+    /// Size of the file, in bytes
+    #[prost(uint64, tag = "2")]
+    pub size: u64,
     /// A bit of text content, if the file allows (similar to UNIX's 'head')
     #[prost(string, optional, tag = "3")]
     pub text_preview: ::core::option::Option<::prost::alloc::string::String>,

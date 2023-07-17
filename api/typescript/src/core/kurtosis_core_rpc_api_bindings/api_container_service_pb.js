@@ -8433,7 +8433,7 @@ proto.api_container_api.FileArtifactContentsFileDescription.prototype.toObject =
 proto.api_container_api.FileArtifactContentsFileDescription.toObject = function(includeInstance, msg) {
   var f, obj = {
     path: jspb.Message.getFieldWithDefault(msg, 1, ""),
-    description: jspb.Message.getFieldWithDefault(msg, 2, ""),
+    size: jspb.Message.getFieldWithDefault(msg, 2, 0),
     textPreview: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
@@ -8476,8 +8476,8 @@ proto.api_container_api.FileArtifactContentsFileDescription.deserializeBinaryFro
       msg.setPath(value);
       break;
     case 2:
-      var value = /** @type {string} */ (reader.readString());
-      msg.setDescription(value);
+      var value = /** @type {number} */ (reader.readUint64());
+      msg.setSize(value);
       break;
     case 3:
       var value = /** @type {string} */ (reader.readString());
@@ -8519,9 +8519,9 @@ proto.api_container_api.FileArtifactContentsFileDescription.serializeBinaryToWri
       f
     );
   }
-  f = message.getDescription();
-  if (f.length > 0) {
-    writer.writeString(
+  f = message.getSize();
+  if (f !== 0) {
+    writer.writeUint64(
       2,
       f
     );
@@ -8555,20 +8555,20 @@ proto.api_container_api.FileArtifactContentsFileDescription.prototype.setPath = 
 
 
 /**
- * optional string description = 2;
- * @return {string}
+ * optional uint64 size = 2;
+ * @return {number}
  */
-proto.api_container_api.FileArtifactContentsFileDescription.prototype.getDescription = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+proto.api_container_api.FileArtifactContentsFileDescription.prototype.getSize = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 2, 0));
 };
 
 
 /**
- * @param {string} value
+ * @param {number} value
  * @return {!proto.api_container_api.FileArtifactContentsFileDescription} returns this
  */
-proto.api_container_api.FileArtifactContentsFileDescription.prototype.setDescription = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
+proto.api_container_api.FileArtifactContentsFileDescription.prototype.setSize = function(value) {
+  return jspb.Message.setProto3IntField(this, 2, value);
 };
 
 

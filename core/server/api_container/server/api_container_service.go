@@ -713,14 +713,14 @@ func getFileDescriptionsFromArtifact(artifactPath string) ([]*kurtosis_core_rpc_
 		}
 
 		filePath := header.Name
-		description := fmt.Sprintf("Size: %v", header.Size)
+		fileSize := header.Size
 		textPreview, err := getTextRepresentation(tarReader, unlimitedLineCount)
 		if err != nil {
 			logrus.Debugf("Failed to get text preview for file '%v' with error '%v'", filePath, textPreview)
 		}
 		fileDescriptions = append(fileDescriptions, &kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription{
 			Path:        filePath,
-			Description: description,
+			Size:        uint64(fileSize),
 			TextPreview: textPreview,
 		})
 	}
