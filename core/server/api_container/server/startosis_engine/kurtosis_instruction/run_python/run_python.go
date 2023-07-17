@@ -290,8 +290,8 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting packages information")
 		}
-		packagesList, err := kurtosis_types.SafeCastToStringSlice(packagesValue, PackagesArgName)
-		if err != nil {
+		packagesList, sliceParsingErr := kurtosis_types.SafeCastToStringSlice(packagesValue, PackagesArgName)
+		if sliceParsingErr != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of packages to a golang string slice")
 		}
 		builtin.packages = packagesList
@@ -302,8 +302,8 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 		if err != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while extracting passed argument information")
 		}
-		argsList, err := kurtosis_types.SafeCastToStringSlice(argsValue, PythonArgumentsArgName)
-		if err != nil {
+		argsList, sliceParsingErr := kurtosis_types.SafeCastToStringSlice(argsValue, PythonArgumentsArgName)
+		if sliceParsingErr != nil {
 			return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while converting Starlark list of passed arguments to a golang string slice")
 		}
 		builtin.pythonArguments = argsList
