@@ -108,7 +108,7 @@ parameters:
     default: 20.10.7
   api-go-version:
     type: string
-    default: "1.18"
+    default: "1.19.10"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
   server-go-version:
