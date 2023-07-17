@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.80.9](https://github.com/kurtosis-tech/kurtosis/compare/0.80.8...0.80.9) (2023-07-17)
+
+
+### Features
+
+* added a command that opens the Kurtosis Web UI ([#870](https://github.com/kurtosis-tech/kurtosis/issues/870)) ([5098969](https://github.com/kurtosis-tech/kurtosis/commit/509896934656161002d674fa7c61ccd32c6f899d))
+* allow for relative imports from packages ([#891](https://github.com/kurtosis-tech/kurtosis/issues/891)) ([42bedab](https://github.com/kurtosis-tech/kurtosis/commit/42bedab9d45e4988f019dea7ccb2985f058e8199))
+* Autocomplete file artifact name on download ([#910](https://github.com/kurtosis-tech/kurtosis/issues/910)) ([2cedd08](https://github.com/kurtosis-tech/kurtosis/commit/2cedd0802a8595c3b299cb844fb42e3495991114))
+* Make output directory optional for files download ([#909](https://github.com/kurtosis-tech/kurtosis/issues/909)) ([2543d9a](https://github.com/kurtosis-tech/kurtosis/commit/2543d9ad9c68b86c1c1f09137ca60ddfce785b22))
+* Starlark package arguments will be parsed as a deep Struct when `"_kurtosis_parser": "struct"` is passed in the arguments JSON ([#884](https://github.com/kurtosis-tech/kurtosis/issues/884)) ([39ec8c2](https://github.com/kurtosis-tech/kurtosis/commit/39ec8c2d4a867420a76119523eb302dc652adb9b))
+* updated golang api sdk to 1.19 ([#908](https://github.com/kurtosis-tech/kurtosis/issues/908)) ([fabbb1c](https://github.com/kurtosis-tech/kurtosis/commit/fabbb1cde6b827ef2255bf184356b2f8a3ba9fbf))
+
+
+### Bug Fixes
+
+* fixed the log and file artifact issue ([#890](https://github.com/kurtosis-tech/kurtosis/issues/890)) ([7f7fe7b](https://github.com/kurtosis-tech/kurtosis/commit/7f7fe7b2d5dc91ddaa8b088129c5be8de0d9f396))
+* pinned go version to 1.19.10 for now ([#907](https://github.com/kurtosis-tech/kurtosis/issues/907)) ([847a37c](https://github.com/kurtosis-tech/kurtosis/commit/847a37c756b50588a567459956f49fcd26d99c28))
+
 ## [0.80.8](https://github.com/kurtosis-tech/kurtosis/compare/0.80.7...0.80.8) (2023-07-11)
 
 

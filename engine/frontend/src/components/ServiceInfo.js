@@ -26,6 +26,9 @@ const ServiceInfo = () => {
         return () => {
             if (stream) {
                 stream.cancel();
+                // need to do this - this means that we are getting logs from
+                // different service
+                setLogs([])
             };
         };
     }, [serviceUuid])
