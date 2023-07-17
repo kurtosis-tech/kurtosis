@@ -5,11 +5,13 @@ import (
 	"crypto/md5"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/slices"
 	"os"
 	"path/filepath"
 	"strings"
@@ -80,6 +82,15 @@ func TestUploadAndDownloadFiles(t *testing.T) {
 
 	require.Equal(t, archiveBytesViaShortenedUuid, archiveBytesViaUuid)
 	require.Equal(t, archiveBytesViaName, archiveBytesViaUuid)
+
+	inspectedFiles, err := enclaveCtx.InspectFilesArtifact(ctx, testArtifactName)
+	require.Nil(t, err)
+	containsText := slices.ContainsFunc(inspectedFiles.GetFileDescriptions(), func(description *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) bool {
+		return description.GetTextPreview() == archiveTestFileContent &&
+			strings.Contains(description.GetPath(), archiveFileTestPattern) &&
+			strings.Contains(description.GetPath(), archiveFileTestPattern)
+	})
+	require.True(t, containsText)
 }
 
 func TestUploadAndDownloadLargeFilesCheckingConsistency(t *testing.T) {
