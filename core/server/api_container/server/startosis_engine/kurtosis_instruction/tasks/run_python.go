@@ -311,7 +311,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	// throw an error as execution of the command failed
 	if runPythonExecutionResult.GetExitCode() != 0 {
 		return "", stacktrace.NewError(
-			"error occurred and python command: %q exited with code %d with output %q",
+			"Python command: %q exited with code %d and output \n%v",
 			commandToRun, runPythonExecutionResult.GetExitCode(), runPythonExecutionResult.GetOutput())
 	}
 
