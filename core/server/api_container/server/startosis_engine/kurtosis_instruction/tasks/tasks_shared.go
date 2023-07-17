@@ -7,12 +7,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"reflect"
 	"strings"
 	"time"
@@ -39,6 +41,27 @@ const (
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
+
+func createInterpretationResult(resultUuid string, fileArtifactNames []string) *starlarkstruct.Struct {
+	runPythonCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultCodeKey)
+	runPythonOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultOutputKey)
+
+	dict := map[string]starlark.Value{}
+	dict[runResultCodeKey] = starlark.String(runPythonCodeValue)
+	dict[runResultOutputKey] = starlark.String(runPythonOutputValue)
+
+	// converting go slice to starlark list
+	artifactNamesList := &starlark.List{}
+	if len(fileArtifactNames) > 0 {
+		for _, name := range fileArtifactNames {
+			// purposely not checking error for list because it's mutable so should not throw any errors until this point
+			_ = artifactNamesList.Append(starlark.String(name))
+		}
+	}
+	dict[runFilesArtifactsKey] = artifactNamesList
+	result := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
+	return result
+}
 
 func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, fileArtifactNames []string, pathToFileArtifacts []string, serviceDirpathsToArtifactIdentifiers map[string]string, imageName string) *startosis_errors.ValidationError {
 	if fileArtifactNames != nil {

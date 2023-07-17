@@ -18,7 +18,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 	"strings"
 )
 
@@ -197,24 +196,8 @@ func (builtin *RunShCapabilities) Interpret(arguments *builtin_argument.Argument
 	randomUuid := uuid.NewRandom()
 	builtin.name = fmt.Sprintf("task-%v", randomUuid.String())
 
-	runShCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runResultCodeKey)
-	runShOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, builtin.resultUuid, runResultOutputKey)
-
-	dict := map[string]starlark.Value{}
-	dict[runResultCodeKey] = starlark.String(runShCodeValue)
-	dict[runResultOutputKey] = starlark.String(runShOutputValue)
-
-	// converting go slice to starlark list
-	artifactNamesList := &starlark.List{}
-	if len(builtin.fileArtifactNames) > 0 {
-		for _, name := range builtin.fileArtifactNames {
-			// purposely not checking error for list because it's mutable so should not throw any errors until this point
-			_ = artifactNamesList.Append(starlark.String(name))
-		}
-	}
-	dict[runFilesArtifactsKey] = artifactNamesList
-	response := starlarkstruct.FromStringDict(starlarkstruct.Default, dict)
-	return response, nil
+	result := createInterpretationResult(resultUuid, builtin.fileArtifactNames)
+	return result, nil
 }
 
 func (builtin *RunShCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
