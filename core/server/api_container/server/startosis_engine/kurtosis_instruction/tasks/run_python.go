@@ -306,7 +306,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	}
 
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
-	instructionResult := resultMapToString(result)
+	instructionResult := resultMapToString(result, RunPythonBuiltinName)
 
 	// throw an error as execution of the command failed
 	if runPythonExecutionResult.GetExitCode() != 0 {

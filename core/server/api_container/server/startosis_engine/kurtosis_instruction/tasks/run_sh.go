@@ -214,7 +214,7 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	}
 
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
-	instructionResult := resultMapToString(result)
+	instructionResult := resultMapToString(result, RunShBuiltinName)
 
 	// throw an error as execution of the command failed
 	if createDefaultDirectoryResult.GetExitCode() != 0 {

@@ -207,13 +207,13 @@ func copyFilesFromTask(ctx context.Context, serviceNetwork service_network.Servi
 
 // Copied some of the command from: exec_recipe.ResultMapToString
 // TODO: create a utility method that can be used by add_service(s) and run_sh method.
-func resultMapToString(resultMap map[string]starlark.Comparable) string {
+func resultMapToString(resultMap map[string]starlark.Comparable, builtinNameForLogging string) string {
 	exitCode := resultMap[runResultCodeKey]
 	rawOutput := resultMap[runResultOutputKey]
 
 	outputStarlarkStr, ok := rawOutput.(starlark.String)
 	if !ok {
-		logrus.Errorf("Result of run_sh was not a string (was: '%v' of type '%s'). This is not fatal but the object might be malformed in CLI output. It is very unexpected and hides a Kurtosis internal bug. This issue should be reported", rawOutput, reflect.TypeOf(rawOutput))
+		logrus.Errorf("Result of %s was not a string (was: '%v' of type '%s'). This is not fatal but the object might be malformed in CLI output. It is very unexpected and hides a Kurtosis internal bug. This issue should be reported", builtinNameForLogging, rawOutput, reflect.TypeOf(rawOutput))
 		outputStarlarkStr = starlark.String(outputStarlarkStr.String())
 	}
 	outputStr := outputStarlarkStr.GoString()
