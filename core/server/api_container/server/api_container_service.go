@@ -92,7 +92,7 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
 
-	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
+	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
 	return nil
 }
 
@@ -138,6 +138,10 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	relativePathToMainFile := args.GetRelativePathToMainFile()
 	mainFuncName := args.GetMainFunctionName()
 
+	if relativePathToMainFile == "" {
+		relativePathToMainFile = startosis_constants.MainFileName
+	}
+
 	// TODO: remove this fork once everything uses the UploadStarlarkPackage endpoint prior to calling this
 	//  right now the TS SDK still uses the old deprecated behavior
 	var scriptWithRunFunction string
@@ -155,7 +159,8 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		}
 		return nil
 	}
-	apicService.runStarlark(parallelism, dryRun, packageId, mainFuncName, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
+
+	apicService.runStarlark(parallelism, dryRun, packageId, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 	return nil
 }
 
@@ -599,12 +604,7 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 		return "", interpretationError
 	}
 
-	var pathToMainFile string
-	if relativePathToMainFile == "" {
-		pathToMainFile = path.Join(packageRootPathOnDisk, startosis_constants.MainFileName)
-	} else {
-		pathToMainFile = path.Join(packageRootPathOnDisk, relativePathToMainFile)
-	}
+	pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
 
 	if _, err := os.Stat(pathToMainFile); err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
@@ -623,12 +623,13 @@ func (apicService ApiContainerService) runStarlark(
 	dryRun bool,
 	packageId string,
 	mainFunctionName string,
+	relativePathToMainFile string,
 	serializedStarlark string,
 	serializedParams string,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, serializedStarlark, serializedParams, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():
