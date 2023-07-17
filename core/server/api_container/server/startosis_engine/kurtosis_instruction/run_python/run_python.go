@@ -40,14 +40,14 @@ const (
 	WaitArgName            = "wait"
 	FilesArgName           = "files"
 
-	DefaultImageName = "python:alpine-3.17"
+	DefaultImageName = "python:3.11-alpine"
 
 	runPythonCodeKey         = "code"
 	runPythonOutputKey       = "output"
 	runPythonFileArtifactKey = "files_artifacts"
 	newlineChar              = "\n"
 
-	shellCommand = "python"
+	shellWrapperCommand = "/bin/sh"
 
 	DefaultWaitTimeoutDurationStr = "180s"
 	DisableWaitTimeoutDurationStr = ""
@@ -55,10 +55,10 @@ const (
 	pythonScriptFileName = "main.py"
 	pythonWorkspace      = "/tmp/python"
 
-	defaultTmpDir              = ""
-	pythonScriptTempDirPrefix  = "run-python-*"
-	pythonScriptReadPermission = 0644
-	enforceMaxSizeLimit        = true
+	defaultTmpDir                  = ""
+	pythonScriptReadPermission     = 0644
+	enforceMaxSizeLimit            = true
+	temporaryPythonDirectoryPrefix = "run-python-*"
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
@@ -207,6 +207,14 @@ func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.Argu
 			if interpretationErr != nil {
 				return nil, interpretationErr
 			}
+		}
+	} else {
+		filesArtifactMountDirPaths := map[string]string{}
+		filesArtifactMountDirPaths[pythonWorkspace] = uniqueFilesArtifactName
+		var interpretationErr *startosis_errors.InterpretationError
+		filesArtifactExpansion, interpretationErr = service_config.ConvertFilesArtifactsMounts(filesArtifactMountDirPaths, builtin.serviceNetwork)
+		if interpretationErr != nil {
+			return nil, interpretationErr
 		}
 	}
 
@@ -372,11 +380,12 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	}
 
 	// create work directory and cd into that directory
+	// TODO separate pacakge download and run as this pollutes output or pipe to dev null
 	commandToRun, err := getCommandToRun(builtin)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while preparing the sh command to execute on the image")
 	}
-	fullCommandToRun := []string{shellCommand, "-c", commandToRun}
+	fullCommandToRun := []string{shellWrapperCommand, "-c", commandToRun}
 
 	// run the command passed in by user in the container
 	createDefaultDirectoryResult, err := executeWithWait(ctx, builtin, fullCommandToRun)
@@ -471,7 +480,7 @@ func getCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 
 	if len(maybePythonArgumentsWithRuntimeValueReplaced) > 0 {
 		// TODO put " " in constants
-		commandToRun = append(commandToRun, fmt.Sprintf("pip install %v", strings.Join(maybePackagesWithRuntimeValuesReplaced, " ")))
+		commandToRun = append(commandToRun, fmt.Sprintf("pip install %v > /dev/null", strings.Join(maybePackagesWithRuntimeValuesReplaced, " ")))
 	}
 
 	pythonScriptAbsolutePath := path.Join(pythonWorkspace, pythonScriptFileName)
@@ -537,15 +546,16 @@ func validatePathIsUniqueWhileCreatingFileArtifact(storeFiles []string) *startos
 }
 
 func getCompressedPythonScriptForUpload(pythonScript string) ([]byte, *startosis_errors.InterpretationError) {
-	temporaryDir, err := os.CreateTemp(defaultTmpDir, pythonScriptTempDirPrefix)
+	temporaryPythonScriptDir, err := os.MkdirTemp(defaultTmpDir, temporaryPythonDirectoryPrefix)
+	defer os.Remove(temporaryPythonScriptDir)
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while creating a temporary directory to write the python script too")
+		return nil, startosis_errors.NewInterpretationError("an error occurred while creating a temporary folder to write the python script too")
 	}
-	pythonFilePath := path.Join(temporaryDir.Name(), pythonScriptFileName)
-	if err = os.WriteFile(pythonFilePath, []byte(pythonScript), pythonScriptReadPermission); err != nil {
+	pythonScriptFilePath := path.Join(temporaryPythonScriptDir, pythonScriptFileName)
+	if err = os.WriteFile(pythonScriptFilePath, []byte(pythonScript), pythonScriptReadPermission); err != nil {
 		return nil, startosis_errors.NewInterpretationError("an error occurred while writing python script to disk")
 	}
-	compressed, err := shared_utils.CompressPath(pythonScript, enforceMaxSizeLimit)
+	compressed, err := shared_utils.CompressPath(pythonScriptFilePath, enforceMaxSizeLimit)
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("an error occurred while compressing the python script")
 	}
