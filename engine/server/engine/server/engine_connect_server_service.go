@@ -64,6 +64,7 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
+		service.imageVersionTag,
 		args.ApiContainerVersionTag,
 		apiContainerLogLevel,
 		args.EnclaveName,
@@ -241,4 +242,98 @@ func (service *EngineConnectServerService) reportAnyMissingUuidsAndGetNotFoundUu
 	}
 
 	return notFoundServiceUuids, nil
+}
+
+func newLogsResponse(
+	requestedServiceUuids map[user_service.ServiceUUID]bool,
+	serviceLogsByServiceUuid map[user_service.ServiceUUID][]logline.LogLine,
+	notFoundServiceUuids map[string]bool,
+) *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
+	serviceLogLinesByUuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(serviceLogsByServiceUuid))
+
+	for serviceUuid := range requestedServiceUuids {
+		serviceUuidStr := string(serviceUuid)
+		_, isInNotFoundUuidList := notFoundServiceUuids[serviceUuidStr]
+		serviceLogLines, found := serviceLogsByServiceUuid[serviceUuid]
+		// should continue in the not-found-UUID list
+		if !found && isInNotFoundUuidList {
+			continue
+		}
+		// there is no new log lines but is a found UUID, so it has to be included in the service logs map
+		if !found && !isInNotFoundUuidList {
+			serviceLogLinesByUuid[serviceUuidStr] = &kurtosis_engine_rpc_api_bindings.LogLine{
+				Line: nil,
+			}
+		}
+		//Remove the service's UUID from the initial not found list, if it was returned from the logs database
+		//This could happen because some services could send the first log line several minutes after the bootstrap
+		if found && isInNotFoundUuidList {
+			delete(notFoundServiceUuids, serviceUuidStr)
+		}
+
+		logLines := newRPCBindingsLogLineFromLogLines(serviceLogLines)
+		serviceLogLinesByUuid[serviceUuidStr] = logLines
+	}
+
+	getServiceLogsResponse := &kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse{
+		ServiceLogsByServiceUuid: serviceLogLinesByUuid,
+		NotFoundServiceUuidSet:   notFoundServiceUuids,
+	}
+	return getServiceLogsResponse
+}
+
+func newRPCBindingsLogLineFromLogLines(logLines []logline.LogLine) *kurtosis_engine_rpc_api_bindings.LogLine {
+
+	logLinesStr := make([]string, len(logLines))
+
+	for logLineIndex, logLine := range logLines {
+		logLinesStr[logLineIndex] = logLine.GetContent()
+	}
+
+	rpcBindingsLogLines := &kurtosis_engine_rpc_api_bindings.LogLine{Line: logLinesStr}
+
+	return rpcBindingsLogLines
+}
+
+func getNotFoundServiceUuidsAndEmptyServiceLogsMap(
+	requestedServiceUuids map[user_service.ServiceUUID]bool,
+	existingServiceUuids map[user_service.ServiceUUID]bool,
+) map[string]bool {
+	notFoundServiceUuids := map[string]bool{}
+
+	for requestedServiceUuid := range requestedServiceUuids {
+		if _, found := existingServiceUuids[requestedServiceUuid]; !found {
+			requestedServiceUuidStr := string(requestedServiceUuid)
+			notFoundServiceUuids[requestedServiceUuidStr] = true
+		}
+	}
+
+	return notFoundServiceUuids
+}
+
+func newConjunctiveLogLineFiltersFromGRPCLogLineFilters(
+	grpcLogLineFilters []*kurtosis_engine_rpc_api_bindings.LogLineFilter,
+) (logline.ConjunctiveLogLineFilters, error) {
+	var conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters
+
+	for _, grpcLogLineFilter := range grpcLogLineFilters {
+		var logLineFilter *logline.LogLineFilter
+		operator := grpcLogLineFilter.GetOperator()
+		filterTextPattern := grpcLogLineFilter.GetTextPattern()
+		switch operator {
+		case kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_CONTAIN_TEXT:
+			logLineFilter = logline.NewDoesContainTextLogLineFilter(filterTextPattern)
+		case kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_NOT_CONTAIN_TEXT:
+			logLineFilter = logline.NewDoesNotContainTextLogLineFilter(filterTextPattern)
+		case kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_CONTAIN_MATCH_REGEX:
+			logLineFilter = logline.NewDoesContainMatchRegexLogLineFilter(filterTextPattern)
+		case kurtosis_engine_rpc_api_bindings.LogLineOperator_LogLineOperator_DOES_NOT_CONTAIN_MATCH_REGEX:
+			logLineFilter = logline.NewDoesNotContainMatchRegexLogLineFilter(filterTextPattern)
+		default:
+			return nil, stacktrace.NewError("Unrecognized log line filter operator '%v' in GRPC filter '%v'; this is a bug in Kurtosis", operator, grpcLogLineFilter)
+		}
+		conjunctiveLogLineFilters = append(conjunctiveLogLineFilters, *logLineFilter)
+	}
+
+	return conjunctiveLogLineFilters, nil
 }
