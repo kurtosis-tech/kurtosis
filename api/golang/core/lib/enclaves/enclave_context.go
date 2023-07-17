@@ -345,6 +345,20 @@ func (enclaveCtx *EnclaveContext) DownloadFilesArtifact(ctx context.Context, art
 	return fileContent, nil
 }
 
+func (enclaveCtx *EnclaveContext) InspectFilesArtifact(ctx context.Context, artifactName services.FileArtifactName) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
+	// TODO(vcolombo): Add a more intuitive return type to this call instead of returning the RPC response
+	response, err := enclaveCtx.client.InspectFilesArtifactContents(ctx, &kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest{
+		FileNamesAndUuid: &kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid{
+			FileName: string(artifactName),
+			FileUuid: "",
+		},
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred inspecting file artifacts")
+	}
+	return response, nil
+}
+
 // Docs available at https://docs.kurtosis.com/sdk#getexistingandhistoricalserviceidentifiers---serviceidentifiers-serviceidentifiers
 func (enclaveCtx *EnclaveContext) GetExistingAndHistoricalServiceIdentifiers(ctx context.Context) (*services.ServiceIdentifiers, error) {
 	response, err := enclaveCtx.client.GetExistingAndHistoricalServiceIdentifiers(ctx, &emptypb.Empty{})
