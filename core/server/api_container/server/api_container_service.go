@@ -6,8 +6,10 @@
 package server
 
 import (
+	"archive/tar"
 	"bufio"
 	"bytes"
+	"compress/gzip"
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
@@ -27,12 +29,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"os"
 	"path"
 	"strings"
 	"time"
+	"unicode"
 )
 
 const (
@@ -50,6 +55,9 @@ const (
 	// Overwrite existing module with new module, this allows user to iterate on an enclave with a
 	// given module
 	doOverwriteExistingModule = true
+
+	emptyFileArtifactIdentifier = ""
+	unlimitedLineCount          = math.MaxInt
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -128,6 +136,33 @@ func (apicService ApiContainerService) UploadStarlarkPackage(server kurtosis_cor
 		return stacktrace.Propagate(err, "An error occurred receiving the Starlark package payload")
 	}
 	return nil
+}
+
+func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Context, args *kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
+	artifactIdentifier := ""
+	if args.GetFileNamesAndUuid().GetFileUuid() != emptyFileArtifactIdentifier {
+		artifactIdentifier = args.GetFileNamesAndUuid().GetFileUuid()
+	}
+	if args.GetFileNamesAndUuid().GetFileName() != emptyFileArtifactIdentifier {
+		artifactIdentifier = args.GetFileNamesAndUuid().GetFileName()
+	}
+	if artifactIdentifier == emptyFileArtifactIdentifier {
+		return nil, stacktrace.NewError("An error occurred because files artifact identifier is empty '%v'", artifactIdentifier)
+	}
+
+	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
+	}
+
+	fileDescriptions, err := getFileDescriptionsFromArtifact(filesArtifact.GetAbsoluteFilepath())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting file descriptions from '%v'", artifactIdentifier)
+	}
+
+	return &kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse{
+		FileDescriptions: fileDescriptions,
+	}, nil
 }
 
 func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
@@ -650,4 +685,66 @@ func (apicService ApiContainerService) runStarlark(
 			}
 		}
 	}
+}
+
+func getFileDescriptionsFromArtifact(artifactPath string) ([]*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription, error) {
+	file, err := os.Open(artifactPath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get file descriptions for artifact path '%v'", artifactPath)
+	}
+	defer file.Close()
+
+	gzipReader, err := gzip.NewReader(file)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get create gzip reader for artifact path '%v'", artifactPath)
+	}
+	defer gzipReader.Close()
+
+	tarReader := tar.NewReader(gzipReader)
+
+	fileDescriptions := []*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription{}
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "Failed to get header from artifact path '%v'", artifactPath)
+		}
+
+		filePath := header.Name
+		fileSize := header.Size
+		textPreview, err := getTextRepresentation(tarReader, unlimitedLineCount)
+		if err != nil {
+			// TODO(vcolombo): Return this as part of the request?
+			logrus.Debugf("Failed to get text preview for file '%v' with error '%v'", filePath, err)
+		}
+		fileDescriptions = append(fileDescriptions, &kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription{
+			Path:        filePath,
+			Size:        uint64(fileSize),
+			TextPreview: textPreview,
+		})
+	}
+	return fileDescriptions, nil
+}
+
+func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
+	scanner := bufio.NewScanner(reader)
+	textRepresentation := strings.Builder{}
+	for i := 0; i < lineCount && scanner.Scan(); i += 1 {
+		line := scanner.Text()
+		for _, char := range line {
+			if !unicode.IsPrint(char) {
+				return nil, stacktrace.NewError("File has no text representation because '%v' is not printable", char)
+			}
+		}
+		textRepresentation.WriteString(line)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, stacktrace.Propagate(err, "Scanning file failed")
+	}
+
+	text := textRepresentation.String()
+	return &text, nil
 }

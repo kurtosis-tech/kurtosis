@@ -71,6 +71,28 @@ function deserialize_api_container_api_GetServicesResponse(buffer_arg) {
   return api_container_service_pb.GetServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_InspectFilesArtifactContentsRequest(arg) {
+  if (!(arg instanceof api_container_service_pb.InspectFilesArtifactContentsRequest)) {
+    throw new Error('Expected argument of type api_container_api.InspectFilesArtifactContentsRequest');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_InspectFilesArtifactContentsRequest(buffer_arg) {
+  return api_container_service_pb.InspectFilesArtifactContentsRequest.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_InspectFilesArtifactContentsResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.InspectFilesArtifactContentsResponse)) {
+    throw new Error('Expected argument of type api_container_api.InspectFilesArtifactContentsResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_InspectFilesArtifactContentsResponse(buffer_arg) {
+  return api_container_service_pb.InspectFilesArtifactContentsResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse(arg) {
   if (!(arg instanceof api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse)) {
     throw new Error('Expected argument of type api_container_api.ListFilesArtifactNamesAndUuidsResponse');
@@ -370,6 +392,17 @@ storeFilesArtifactFromService: {
     requestDeserialize: deserialize_google_protobuf_Empty,
     responseSerialize: serialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse,
     responseDeserialize: deserialize_api_container_api_ListFilesArtifactNamesAndUuidsResponse,
+  },
+  inspectFilesArtifactContents: {
+    path: '/api_container_api.ApiContainerService/InspectFilesArtifactContents',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.InspectFilesArtifactContentsRequest,
+    responseType: api_container_service_pb.InspectFilesArtifactContentsResponse,
+    requestSerialize: serialize_api_container_api_InspectFilesArtifactContentsRequest,
+    requestDeserialize: deserialize_api_container_api_InspectFilesArtifactContentsRequest,
+    responseSerialize: serialize_api_container_api_InspectFilesArtifactContentsResponse,
+    responseDeserialize: deserialize_api_container_api_InspectFilesArtifactContentsResponse,
   },
 };
 

@@ -175,6 +175,14 @@ func (service *ApiContainerGatewayServiceServer) StoreFilesArtifactFromService(c
 	return remoteApiContainerResponse, nil
 }
 
+func (service *ApiContainerGatewayServiceServer) InspectFilesArtifactContents(ctx context.Context, args *kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.InspectFilesArtifactContents(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+	return remoteApiContainerResponse, nil
+}
+
 func (service *ApiContainerGatewayServiceServer) DownloadFilesArtifact(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactServer) error {
 	client, err := service.remoteApiContainerClient.DownloadFilesArtifact(server.Context(), args)
 	if err != nil {
