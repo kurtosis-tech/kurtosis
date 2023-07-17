@@ -35,6 +35,8 @@ const (
 
 	spaceDelimiter = " "
 
+	pipInstallCmd = "pip install"
+
 	pythonScriptFileName = "main.py"
 	pythonWorkspace      = "/tmp/python"
 
@@ -338,7 +340,7 @@ func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) 
 		return nil, nil
 	}
 
-	packageInstallationSubCommand := fmt.Sprintf("pip install %v", strings.Join(maybePackagesWithRuntimeValuesReplaced, spaceDelimiter))
+	packageInstallationSubCommand := fmt.Sprintf("%v %v", pipInstallCmd, strings.Join(maybePackagesWithRuntimeValuesReplaced, spaceDelimiter))
 	packageInstallationCommand := []string{shellWrapperCommand, "-c", packageInstallationSubCommand}
 
 	executionResult, err := builtin.serviceNetwork.RunExec(

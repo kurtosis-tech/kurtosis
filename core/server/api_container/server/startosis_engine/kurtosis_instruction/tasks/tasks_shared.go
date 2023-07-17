@@ -91,12 +91,12 @@ func parseWaitArg(arguments *builtin_argument.ArgumentValuesSet) (string, *start
 }
 
 func createInterpretationResult(resultUuid string, fileArtifactNames []string) *starlarkstruct.Struct {
-	runPythonCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultCodeKey)
-	runPythonOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultOutputKey)
+	runCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultCodeKey)
+	runOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultOutputKey)
 
 	dict := map[string]starlark.Value{}
-	dict[runResultCodeKey] = starlark.String(runPythonCodeValue)
-	dict[runResultOutputKey] = starlark.String(runPythonOutputValue)
+	dict[runResultCodeKey] = starlark.String(runCodeValue)
+	dict[runResultOutputKey] = starlark.String(runOutputValue)
 
 	// converting go slice to starlark list
 	artifactNamesList := &starlark.List{}
