@@ -1,7 +1,6 @@
 package magic_string_helper
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -20,8 +19,9 @@ const (
 	runtimeValueSubgroupName      = "runtime_value"
 	runtimeValueFieldSubgroupName = "runtime_value_field"
 	runtimeValueKeyRegexp         = "[a-zA-Z0-9-_\\.]+"
+	uuidFormat                    = "[a-f0-9]{32}"
 
-	runtimeValueReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + runtimeValueSubgroupName + ">" + service.ServiceNameRegex + ")" + ":(?P<" + runtimeValueFieldSubgroupName + ">" + runtimeValueKeyRegexp + ")\\.runtime_value\\}\\})"
+	runtimeValueReplacementRegex             = "(?P<" + allSubgroupName + ">\\{\\{" + kurtosisNamespace + ":(?P<" + runtimeValueSubgroupName + ">" + uuidFormat + ")" + ":(?P<" + runtimeValueFieldSubgroupName + ">" + runtimeValueKeyRegexp + ")\\.runtime_value\\}\\})"
 	RuntimeValueReplacementPlaceholderFormat = "{{" + kurtosisNamespace + ":%v:%v.runtime_value}}"
 
 	subExpNotFound = -1
