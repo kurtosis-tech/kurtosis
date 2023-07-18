@@ -75,8 +75,8 @@ func (builtin *kurtosisPlanInstructionInternal) Execute(ctx context.Context) (*s
 	return &result, nil
 }
 
-func (builtin *kurtosisPlanInstructionInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {
-	result, interpretationErr := builtin.capabilities.Interpret(builtin.GetArguments())
+func (builtin *kurtosisPlanInstructionInternal) interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string) (starlark.Value, *startosis_errors.InterpretationError) {
+	result, interpretationErr := builtin.capabilities.Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled, builtin.GetArguments())
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

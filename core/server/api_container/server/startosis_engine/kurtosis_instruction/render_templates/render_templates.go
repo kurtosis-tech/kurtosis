@@ -79,7 +79,7 @@ type RenderTemplatesCapabilities struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func (builtin *RenderTemplatesCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *RenderTemplatesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	if !arguments.IsSet(ArtifactNameArgName) {
 		natureThemeName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
 		if err != nil {
