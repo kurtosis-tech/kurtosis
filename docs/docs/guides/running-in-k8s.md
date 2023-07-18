@@ -83,7 +83,7 @@ The enclave pool feature was introduced to reduce the time it takes for a user t
 
 The enclave pool is a functionality of the Kurtosis engine that automatically creates `idle` enclaves, when the engine is started, that are then used whenever users need to create a new enclave (e.g: when running the `kurtosis enclave add` command).
 
-This mechanism speed-up the enclave creation time by using a running `idle` enclave when a new enclave is requested to the engine
+This mechanism reduces enclave creation time by using a running `idle` enclave when a new enclave is requested from the engine.
 
 To enable this feature you have to run the following:
 
