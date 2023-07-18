@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/artifact_identifier_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
@@ -19,7 +20,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 )
 
 const (
@@ -28,7 +28,6 @@ const (
 	isEnclaveIdArgGreedy    = false
 
 	artifactIdentifierArgKey        = "artifact-identifier"
-	emptyArtifactIdentifier         = ""
 	isArtifactIdentifierArgOptional = false
 	isArtifactIdentifierArgGreedy   = false
 
@@ -71,14 +70,12 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		{
-			Key:                   artifactIdentifierArgKey,
-			ValidationFunc:        validateArtifactIdentifier,
-			IsOptional:            isArtifactIdentifierArgOptional,
-			IsGreedy:              isArtifactIdentifierArgGreedy,
-			DefaultValue:          nil,
-			ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletions),
-		},
+		artifact_identifier_arg.NewArtifactIdentifierArg(
+			artifactIdentifierArgKey,
+			enclaveIdentifierArgKey,
+			isArtifactIdentifierArgOptional,
+			isArtifactIdentifierArgGreedy,
+		),
 		file_system_path_arg.NewDirpathArg(
 			destinationPathArgKey,
 			isDestinationPathArgOptional,
@@ -183,54 +180,4 @@ func run(
 
 	shouldCleanupTmpDir = true
 	return nil
-}
-
-func validateArtifactIdentifier(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	artifactIdentifier, err := args.GetNonGreedyArg(artifactIdentifierArgKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the identifier to validate using key '%v'", artifactIdentifier)
-	}
-
-	if strings.TrimSpace(artifactIdentifier) == emptyArtifactIdentifier {
-		return stacktrace.NewError("Artifact identifier cannot be an empty string")
-	}
-
-	return nil
-}
-
-func getCompletions(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
-	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred connecting to the Kurtosis engine for retrieving the names for tab completion",
-		)
-	}
-
-	enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveIdentifierArgKey)
-	}
-	enclave, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting the enclave identifiers",
-		)
-	}
-
-	fileArtifacts, err := enclave.GetAllFilesArtifactNamesAndUuids(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred getting the file artifacts",
-		)
-	}
-	fileArtifactNames := []string{}
-	for _, fileArtifact := range fileArtifacts {
-		fileName := fileArtifact.GetFileName()
-		fileArtifactNames = append(fileArtifactNames, fileName)
-	}
-
-	return fileArtifactNames, nil
 }
