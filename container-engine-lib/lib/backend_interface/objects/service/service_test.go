@@ -11,6 +11,10 @@ func TestValidServiceName(t *testing.T) {
 	require.True(t, IsServiceNameValid(ServiceName("abcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef123")))
 }
 
+func TestInvalidServiceName(t *testing.T) {
+	require.False(t, IsServiceNameValid(ServiceName("1-geth-lighthouse")))
+}
+
 func TestServiceNameWithSpecialChars(t *testing.T) {
 	require.True(t, IsServiceNameValid(ServiceName("a-b")))
 	require.False(t, IsServiceNameValid(ServiceName("-bc")))
