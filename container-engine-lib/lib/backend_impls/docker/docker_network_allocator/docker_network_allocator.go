@@ -150,12 +150,11 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 // https://github.com/hashicorp/serf/issues/385#issuecomment-208755148 - we try to follow RFC 6890
 // https://www.rfc-editor.org/rfc/rfc6890.html calls 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 Private-Use (docker usually picks from 172.16.0.0/12)
 // We take IPs from the range 170.16.0.0/16, split equally into 2^6 networks, so the mask of a given network is:
-// 170.16.nnnnnn00.0/22 where nnnnnn are 6 bits to address the network, and the other 8 bits address the services
+// 170.16.nnnnnn00.0/16 where nnnnnn are 6 bits to address the network, and the other 10 bits address the services
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 	for enclaveSubrange := enclaveSubrangeStart; enclaveSubrange < enclaveSubrangeEnd; enclaveSubrange++ {
 		thirdOctet := enclaveSubrange << (8 - enclaveWidthBits)
 		ipAddressString := fmt.Sprintf("%v.%v.%v.0", allowedNetworkFirstOctet, allowedNetworkSecondOctet, thirdOctet)
-		fmt.Println(ipAddressString)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{
 			IP:   resultNetworkIp,
