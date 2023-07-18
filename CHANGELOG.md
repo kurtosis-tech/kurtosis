@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.12](https://github.com/kurtosis-tech/kurtosis/compare/0.80.11...0.80.12) (2023-07-18)
+
+
+### Features
+
+* Service count can go up to 1024 in Docker backend ([#919](https://github.com/kurtosis-tech/kurtosis/issues/919)) ([e1dfff1](https://github.com/kurtosis-tech/kurtosis/commit/e1dfff119a0b6635e732e0e09de68b56d6af7d63))
+
 ## [0.80.11](https://github.com/kurtosis-tech/kurtosis/compare/0.80.10...0.80.11) (2023-07-18)
 
 
