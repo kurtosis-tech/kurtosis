@@ -75,7 +75,7 @@ To switch back to using Kurtosis locally, simply use: `kurtosis cluster set dock
 V. [Optional] Activate the enclave pool to accelerate the enclave creation time
 --------------------------------
 
-This step is optional, but we recommend to do it in order to improve the user experience during the enclave creation.
+This step is optional, but we recommend taking it as it improves the user experience during the enclave creation, specifically regarding speed.
 
 Creating a new enclave from scratch demands several time-consuming engine's tasks and resources creation that can't be omitted.
 
