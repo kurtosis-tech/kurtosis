@@ -312,9 +312,8 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 
 	// throw an error as execution of the command failed
 	if runPythonExecutionResult.GetExitCode() != 0 {
-		return "", stacktrace.NewError(
-			"Python command: %q exited with code %d and output \n%v",
-			commandToRun, runPythonExecutionResult.GetExitCode(), runPythonExecutionResult.GetOutput())
+		errorMessage := fmt.Sprintf("Python command: %q exited with code %d and output", commandToRun, runPythonExecutionResult.GetExitCode())
+		return "", stacktrace.NewError(formatErrorMessage(errorMessage, runPythonExecutionResult.GetOutput()))
 	}
 
 	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
