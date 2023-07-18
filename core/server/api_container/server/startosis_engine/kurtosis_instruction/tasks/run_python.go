@@ -146,7 +146,7 @@ type RunPythonCapabilities struct {
 	wait                string
 }
 
-func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	pythonScript, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RunArgName)

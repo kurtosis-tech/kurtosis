@@ -92,7 +92,7 @@ type AssertCapabilities struct {
 	target       starlark.Comparable
 }
 
-func (builtin *AssertCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *AssertCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	runtimeValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RuntimeValueArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RuntimeValueArgName)
