@@ -34,12 +34,13 @@ func (key *KubernetesObjectName) GetString() string {
 }
 
 // https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/identifiers.md
-// In Kubernetes, to create an object you must specify a 'name' that is a DNS_LABEL, following rfc1123
-// Most object names are valid rfc1123 DNS_SUBDOMAIN, but some are not. All Object names are valid DNS_LABEL
+// In Kubernetes, to create an object you must specify a 'name' that is a DNS_LABEL, following rfc1035
+// Most object names are valid rfc1035 DNS_SUBDOMAIN, but some are not. All Object names are valid DNS_LABEL
 // We chose DNS_LABEL, to ensure that our object names will always be valid in Kubernetes
+// We used to use rfc1123 but we are using rfc1035 as its more restrictive adn a requirement for ServiceNames
 // https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#names
 func validateKubernetesObjectName(str string) error {
-	validationErrs := validation.IsDNS1123Label(str)
+	validationErrs := validation.IsDNS1035Label(str)
 	if len(validationErrs) > 0 {
 		errString := strings.Join(validationErrs, "\n\n")
 		return stacktrace.NewError("Expected object name string '%v' to be a valid DNS_LABEL, instead it failed validation:\n%+v", str, errString)
