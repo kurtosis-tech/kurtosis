@@ -2,7 +2,6 @@ package docker_network_allocator
 
 import (
 	"context"
-	"math/big"
 	"net"
 	"testing"
 
@@ -39,14 +38,13 @@ func TestEntireNetworkingSpace(t *testing.T) {
 		require.NoError(t, err, "Got an unexpected error when finding a free network with already-occupied networks %+v (len %v)", takenNetworks, len(takenNetworks))
 		require.NotContains(t, takenNetworks, freeIPAddress)
 		takenNetworks = append(takenNetworks, freeIPAddress)
-		require.EqualValues(t, 1<<networkWidthBits, countIPAddresses(freeIPAddress))
+		require.EqualValues(t, 1<<networkWidthBits, ipAddressRangeSize(freeIPAddress))
 	}
 }
 
-func countIPAddresses(ipNet *net.IPNet) int64 {
+func ipAddressRangeSize(ipNet *net.IPNet) int {
 	ones, bits := ipNet.Mask.Size()
-	numIPs := big.NewInt(0).Exp(big.NewInt(2), big.NewInt(int64(bits-ones)), nil)
-	return numIPs.Int64()
+	return 1 << (bits - ones)
 }
 
 func parseNetworks(t *testing.T, cidrs []string) []*net.IPNet {
