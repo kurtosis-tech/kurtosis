@@ -81,7 +81,7 @@ type SetConnectionCapabilities struct {
 	connectionConfig *partition_topology.PartitionConnection
 }
 
-func (builtin *SetConnectionCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *SetConnectionCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	connectionConfigStarlark, err := builtin_argument.ExtractArgumentValue[*connection_config.ConnectionConfig](arguments, ConnectionConfigArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ConnectionConfigArgName)

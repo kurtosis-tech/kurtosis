@@ -73,7 +73,7 @@ type UploadFilesCapabilities struct {
 	pathOnDisk   string
 }
 
-func (builtin *UploadFilesCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	if !arguments.IsSet(ArtifactNameArgName) {
 		natureThemeName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
 		if err != nil {
@@ -93,7 +93,12 @@ func (builtin *UploadFilesCapabilities) Interpret(arguments *builtin_argument.Ar
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
 	}
 
-	pathOnDisk, interpretationErr := builtin.packageContentProvider.GetOnDiskAbsoluteFilePath(src.GoString())
+	absoluteLocator, interpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, src.GoString())
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed")
+	}
+
+	pathOnDisk, interpretationErr := builtin.packageContentProvider.GetOnDiskAbsoluteFilePath(absoluteLocator)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
