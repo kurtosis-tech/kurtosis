@@ -77,7 +77,7 @@ V. [Optional] Activate the enclave pool to accelerate the enclave creation time
 
 This step is optional, but we recommend taking it as it improves the user experience during the enclave creation, specifically regarding speed.
 
-Creating a new enclave from scratch demands several time-consuming engine's tasks and resources creation that can't be omitted.
+Creating a new enclave from scratch demands several time-consuming engine tasks and the creation of resources.
 
 Kurtosis includes the enclave pool feature that users can enable for reducing the enclave creation time by creating enclaves before these are requested.
 
