@@ -30,8 +30,8 @@ const Temp = () => {
             <div className="flex-grow overflow-hidden">
                 <Routes>
                     <Route exact path="/" element={<Main/>} />
+                    <Route path="/enclave/create" element={<CreateEnclave />} />
                     <Route exact path="/enclaves" element={<Enclaves enclaves={enclaves} isLoading={encalveLoading}/>} />
-                    <Route exact path="/enclaves/create" element={<CreateEnclave />} />
                     <Route path="/enclaves/:name" element={<EnclaveInfo enclaves={enclaves}/>} />
                     <Route path="/enclaves/:name/services/:uuid" element={<ServiceInfo/>} />
                 </Routes>

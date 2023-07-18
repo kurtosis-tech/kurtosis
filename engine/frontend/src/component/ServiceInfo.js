@@ -1,7 +1,7 @@
 import Heading from "./Heading";
 import { useEffect, useState } from "react";
 import {useNavigate, useParams, useLocation} from "react-router-dom";
-import { LogView } from "../components/LogView";
+import { LogView } from "./LogView";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import {getServiceLogs} from "../api/enclave";
@@ -57,8 +57,6 @@ const ServiceInfo = ({enclaves}) => {
         return () => {
             if (stream) {
                 stream.cancel();
-                // need to do this - this means that we are getting logs from
-                // different service
                 setLogs([])
             };
         };
@@ -67,10 +65,6 @@ const ServiceInfo = ({enclaves}) => {
     const handleServiceClick = (service) => {
         navigate(`/enclaves/${enclaveName}/services/${service.uuid}`, {state: {services, selected: service}})
     }
-
-    // const handleLeftPanelClick = (enclaveName) => {
-    //     navigate(`/enclaves/${enclaveName}`, {replace:true})
-    // }
 
     return (
         <div className="flex h-full bg-white">

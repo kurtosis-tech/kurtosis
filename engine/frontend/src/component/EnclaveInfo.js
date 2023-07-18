@@ -46,9 +46,7 @@ const renderFileArtifacts = (file_artifacts) => {
     if (file_artifacts.length === 0) {
         return (
             <NoData 
-                text={`No Data Available: 
-                    This occurs because either enclave is stopped or there was error while executing
-                    the package.`}
+                text={`No Data Available`}
                 size={`text-xl`}
                 color={`text-red-400`} 
             />
@@ -80,11 +78,10 @@ const EncalveInfo = ({enclaves}) => {
             const selected = enclaves.filter(enclave => enclave.name === name);
             if (selected.length > 0) {
                 const {services, artifacts} = await getEnclaveInformation(selected[0].apiClient);
-                console.log(services, artifacts)
                 setServices(services)
                 setFileArtifacts(artifacts)
-                setEnclaveInfoLoading(false)
             }
+            setEnclaveInfoLoading(false)
             
         } 
         fetch()

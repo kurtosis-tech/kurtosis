@@ -1,15 +1,26 @@
-import React from 'react';
+import React, {useState}from 'react';
 import {createEnclave} from "../api/enclave";
 
-export const CreateEnclaveModal = ({handleSubmit, name, setName}) => {
+export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs}) => {
+  const [jsonError, setJsonError] = useState("")
+  
   const handleFormSubmit = (e) => {
     e.preventDefault();
     const fetch = async () => {
       const enclaveInfo = await createEnclave();
       handleSubmit(enclaveInfo);
     }
-    fetch();
+
+    try {
+      setJsonError("")
+      JSON.parse(args)
+      fetch();
+    } catch (error) {
+      setJsonError("Invalid Json")
+    }
   };
+
+
 
   return (
     <div className="flex justify-center w-full h-fit m-14">
@@ -24,15 +35,16 @@ export const CreateEnclaveModal = ({handleSubmit, name, setName}) => {
               className="block w-full rounded-md border-gray-300 py-2 px-3 mt-1 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
             />
           </label>
-          {/* <label className="block mb-4">
-            Args (JSON format):
+          <label className="block mb-4">
+            Args: (Json)
             <textarea
               value={args}
-              onChange={(e) => setArgs(e.target.value)}
+              onChange={(e) => { setArgs(e.target.value); setJsonError("")}}
               className="block w-full rounded-md border-gray-300 py-2 px-3 mt-1 resize-none focus:outline-none focus:ring-blue-500 focus:border-blue-500"
               rows={4}
             ></textarea>
-          </label> */}
+            <p className='text-red-300 font-bold'>{jsonError}</p>
+          </label>
           <button
             type="submit"
             className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-blue-500 focus:ring-2 focus:ring-offset-2"

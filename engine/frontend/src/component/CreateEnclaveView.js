@@ -8,11 +8,10 @@ import { LogView } from "./LogView";
 import {useNavigate} from "react-router-dom";
 import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
-import LoadingOverlay from "./LoadingOverflow";
 
 const SERVICE_IS_ADDED = "added with service";
 
-export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
+export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
@@ -28,7 +27,7 @@ export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
         setLoading(true)
         let stream;
         const fetch = async () => {
-          stream = await runStarlark(enclaveInfo.apiClient, packageId);
+          stream = await runStarlark(enclaveInfo.apiClient, packageId, args);
           setEnclave(enclave);
           stream.on("data", data => {
             const result = data.toObject();
@@ -99,9 +98,7 @@ export const CreateEnclaveView = ({packageId, enclaveInfo}) => {
             />
             <div className="flex-1">
                 <Heading content={enclaveInfo.enclave.name} color={"text-black"}/>
-                <div className='flex flex-col h-full space-y-1'>                        
-                    <LogView classAttr={"flex flex-col p-2"} heading={"Logs"} logs={logs} loading={loading && logs.length===0}/>
-                </div>
+                <LogView classAttr={"flex flex-col p-2"} heading={"Logs"} logs={logs} loading={loading && logs.length===0}/>
             </div>
                     
             <RightPanel home={false}/>

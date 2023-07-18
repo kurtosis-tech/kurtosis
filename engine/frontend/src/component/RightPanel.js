@@ -9,7 +9,7 @@ const RightPanel = () => {
     }
 
     const handleCreateEnclave = () => {
-        navigate("/enclaves/create")
+        navigate("/enclave/create")
     }
 
     return (
