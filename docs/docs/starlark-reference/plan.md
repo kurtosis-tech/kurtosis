@@ -21,8 +21,9 @@ The `add_service` instruction adds a service to the Kurtosis enclave within whic
 service = plan.add_service(
     # The service name of the service being created.
     # The service name is a reference to the service, which can be used in the future to refer to the service.
-    # Service names of active services are unique per enclave and needs to be formatted according to RFC 1123. 
+    # Service names of active services are unique per enclave and needs to be formatted according to RFC 1035. 
     # Specifically, 1-63 lowercase alphanumeric characters with dashes and cannot start or end with dashes.
+    # Also service names have to start with a lowercase alphabet.
     # MANDATORY
     name = "example-datastore-server-1",
 
