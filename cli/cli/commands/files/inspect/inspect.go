@@ -131,6 +131,7 @@ func run(
 	return nil
 }
 
+// This structure helps assemble a file tree compatible with treeprint lib
 type treeMap struct {
 	internalMap map[string]*treeMap
 	subtree     treeprint.Tree
@@ -158,6 +159,7 @@ func (nm *treeMap) addNodeIfNotPresent(s string) *treeMap {
 	return nm.internalMap[s]
 }
 
+// Assembles a file tree string
 func buildTree(artifactIdentifierName string, fileDescritions []*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) string {
 	tree := treeprint.NewWithRoot(color.BlueString(artifactIdentifierName))
 	tMap := &treeMap{map[string]*treeMap{}, tree}
