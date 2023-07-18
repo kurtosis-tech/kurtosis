@@ -38,13 +38,10 @@ func TestEntireNetworkingSpace(t *testing.T) {
 		require.NoError(t, err, "Got an unexpected error when finding a free network with already-occupied networks %+v (len %v)", takenNetworks, len(takenNetworks))
 		require.NotContains(t, takenNetworks, freeIPAddress)
 		takenNetworks = append(takenNetworks, freeIPAddress)
-		require.EqualValues(t, 1<<networkWidthBits, ipAddressRangeSize(freeIPAddress))
+		enabledMaskBits, totalBitsInMask := freeIPAddress.Mask.Size()
+		require.EqualValues(t, supportedIpAddrBitLength, totalBitsInMask)
+		require.EqualValues(t, 1<<networkWidthBits, 1<<(totalBitsInMask-enabledMaskBits))
 	}
-}
-
-func ipAddressRangeSize(ipNet *net.IPNet) int {
-	ones, bits := ipNet.Mask.Size()
-	return 1 << (bits - ones)
 }
 
 func parseNetworks(t *testing.T, cidrs []string) []*net.IPNet {
