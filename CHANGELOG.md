@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.80.11](https://github.com/kurtosis-tech/kurtosis/compare/0.80.10...0.80.11) (2023-07-18)
+
+
+### Features
+
+* Add file artifact inspect API do APIC ([#885](https://github.com/kurtosis-tech/kurtosis/issues/885)) ([7ad8155](https://github.com/kurtosis-tech/kurtosis/commit/7ad81553a8056887e1399649536319922a05bdc1))
+* Add file inspect command to the CLI ([#905](https://github.com/kurtosis-tech/kurtosis/issues/905)) ([bb36a46](https://github.com/kurtosis-tech/kurtosis/commit/bb36a469925c3a8c00a88c0f5a16995088d26548))
+* added run python ([#913](https://github.com/kurtosis-tech/kurtosis/issues/913)) ([365f5cf](https://github.com/kurtosis-tech/kurtosis/commit/365f5cf15399dd0e79f7b82d5ab4ad823def00b5))
+* upload files support relative locators ([#930](https://github.com/kurtosis-tech/kurtosis/issues/930)) ([8d60968](https://github.com/kurtosis-tech/kurtosis/commit/8d609686ce78a72f82455592b48eeab94b44c359))
+
+
+### Bug Fixes
+
+* make service labels more restrictive ([#929](https://github.com/kurtosis-tech/kurtosis/issues/929)) ([a8fb599](https://github.com/kurtosis-tech/kurtosis/commit/a8fb5992d0e60bc50efa8585393048c168e878f0)), closes [#928](https://github.com/kurtosis-tech/kurtosis/issues/928)
+
 ## [0.80.10](https://github.com/kurtosis-tech/kurtosis/compare/0.80.9...0.80.10) (2023-07-17)
 
 
