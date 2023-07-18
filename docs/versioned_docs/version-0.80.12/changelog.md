@@ -1,5 +1,66 @@
 # Changelog
 
+## [0.80.12](https://github.com/kurtosis-tech/kurtosis/compare/0.80.11...0.80.12) (2023-07-18)
+
+
+### Features
+
+* Service count can go up to 1024 in Docker backend ([#919](https://github.com/kurtosis-tech/kurtosis/issues/919)) ([e1dfff1](https://github.com/kurtosis-tech/kurtosis/commit/e1dfff119a0b6635e732e0e09de68b56d6af7d63))
+
+## [0.80.11](https://github.com/kurtosis-tech/kurtosis/compare/0.80.10...0.80.11) (2023-07-18)
+
+
+### Features
+
+* Add file artifact inspect API do APIC ([#885](https://github.com/kurtosis-tech/kurtosis/issues/885)) ([7ad8155](https://github.com/kurtosis-tech/kurtosis/commit/7ad81553a8056887e1399649536319922a05bdc1))
+* Add file inspect command to the CLI ([#905](https://github.com/kurtosis-tech/kurtosis/issues/905)) ([bb36a46](https://github.com/kurtosis-tech/kurtosis/commit/bb36a469925c3a8c00a88c0f5a16995088d26548))
+* added run python ([#913](https://github.com/kurtosis-tech/kurtosis/issues/913)) ([365f5cf](https://github.com/kurtosis-tech/kurtosis/commit/365f5cf15399dd0e79f7b82d5ab4ad823def00b5))
+* upload files support relative locators ([#930](https://github.com/kurtosis-tech/kurtosis/issues/930)) ([8d60968](https://github.com/kurtosis-tech/kurtosis/commit/8d609686ce78a72f82455592b48eeab94b44c359))
+
+
+### Bug Fixes
+
+* make service labels more restrictive ([#929](https://github.com/kurtosis-tech/kurtosis/issues/929)) ([a8fb599](https://github.com/kurtosis-tech/kurtosis/commit/a8fb5992d0e60bc50efa8585393048c168e878f0)), closes [#928](https://github.com/kurtosis-tech/kurtosis/issues/928)
+
+## [0.80.10](https://github.com/kurtosis-tech/kurtosis/compare/0.80.9...0.80.10) (2023-07-17)
+
+
+### Features
+
+* Added enclave pool for improving performance on enclave creation  ([#787](https://github.com/kurtosis-tech/kurtosis/issues/787)) ([d6efa43](https://github.com/kurtosis-tech/kurtosis/commit/d6efa435efeb9989de8f20f1d2d80603b7ef6827))
+
+## [0.80.9](https://github.com/kurtosis-tech/kurtosis/compare/0.80.8...0.80.9) (2023-07-17)
+
+
+### Features
+
+* added a command that opens the Kurtosis Web UI ([#870](https://github.com/kurtosis-tech/kurtosis/issues/870)) ([5098969](https://github.com/kurtosis-tech/kurtosis/commit/509896934656161002d674fa7c61ccd32c6f899d))
+* allow for relative imports from packages ([#891](https://github.com/kurtosis-tech/kurtosis/issues/891)) ([42bedab](https://github.com/kurtosis-tech/kurtosis/commit/42bedab9d45e4988f019dea7ccb2985f058e8199))
+* Autocomplete file artifact name on download ([#910](https://github.com/kurtosis-tech/kurtosis/issues/910)) ([2cedd08](https://github.com/kurtosis-tech/kurtosis/commit/2cedd0802a8595c3b299cb844fb42e3495991114))
+* Make output directory optional for files download ([#909](https://github.com/kurtosis-tech/kurtosis/issues/909)) ([2543d9a](https://github.com/kurtosis-tech/kurtosis/commit/2543d9ad9c68b86c1c1f09137ca60ddfce785b22))
+* Starlark package arguments will be parsed as a deep Struct when `"_kurtosis_parser": "struct"` is passed in the arguments JSON ([#884](https://github.com/kurtosis-tech/kurtosis/issues/884)) ([39ec8c2](https://github.com/kurtosis-tech/kurtosis/commit/39ec8c2d4a867420a76119523eb302dc652adb9b))
+* updated golang api sdk to 1.19 ([#908](https://github.com/kurtosis-tech/kurtosis/issues/908)) ([fabbb1c](https://github.com/kurtosis-tech/kurtosis/commit/fabbb1cde6b827ef2255bf184356b2f8a3ba9fbf))
+
+
+### Bug Fixes
+
+* fixed the log and file artifact issue ([#890](https://github.com/kurtosis-tech/kurtosis/issues/890)) ([7f7fe7b](https://github.com/kurtosis-tech/kurtosis/commit/7f7fe7b2d5dc91ddaa8b088129c5be8de0d9f396))
+* pinned go version to 1.19.10 for now ([#907](https://github.com/kurtosis-tech/kurtosis/issues/907)) ([847a37c](https://github.com/kurtosis-tech/kurtosis/commit/847a37c756b50588a567459956f49fcd26d99c28))
+
+## [0.80.8](https://github.com/kurtosis-tech/kurtosis/compare/0.80.7...0.80.8) (2023-07-11)
+
+
+### Features
+
+* auto assign docs issue to karla ([#834](https://github.com/kurtosis-tech/kurtosis/issues/834)) ([7d0a245](https://github.com/kurtosis-tech/kurtosis/commit/7d0a245fcac4043ab5b780248080b4832b1b0cfe))
+* exposing kurtosis frontend v0 ([#833](https://github.com/kurtosis-tech/kurtosis/issues/833)) ([110e910](https://github.com/kurtosis-tech/kurtosis/commit/110e9100ddc69244e7c317ab1e979e15de9f8863))
+* Make Run also accept argument other than args dict ([#859](https://github.com/kurtosis-tech/kurtosis/issues/859)) ([9fce411](https://github.com/kurtosis-tech/kurtosis/commit/9fce4112764dfdb135e066e2f54b954f79664b50))
+
+
+### Bug Fixes
+
+* fixed the output for port print ([#816](https://github.com/kurtosis-tech/kurtosis/issues/816)) ([ede32e7](https://github.com/kurtosis-tech/kurtosis/commit/ede32e795b77387d46ba49e37a6ccc0947fba79a))
+
 ## [0.80.7](https://github.com/kurtosis-tech/kurtosis/compare/0.80.6...0.80.7) (2023-07-05)
 
 

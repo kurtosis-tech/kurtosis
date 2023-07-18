@@ -1,10 +1,13 @@
 ---
-title: Idempotent runs
-sidebar_label: Idempotent runs
+title: How do idempotent runs work?
+sidebar_label: Idempotent Runs
 ---
 
 Background
 ----------
+:::tip
+To learn about what idempotent runs are in Kurtosis and the motivation behind this feature, go [here][idempotent-run-concept-reference].
+:::
 
 When running the `kurtosis run` command, you may notice the following message get printed:
 ```console
@@ -70,6 +73,10 @@ behaviour of considering the _submitted plan_ as a sequence of new instructions.
 
 ![incompatible-plans.png](/img/explanations/starlark-idempotent-run/incompatible-plans.png)
 
-Note that in this case, it is possible (and even likely) the execution of the submitted plan will fail. For example, if 
-instruction 1 is an `add_service` instruction, it will fail because the service being added already exist inside the 
-enclave. 
+Note that in this case, it is possible (and even likely) the execution of the submitted plan will fail. In the example
+above, execution will fail because instruction 1 is an `add_service` instruction and a service cannot be added
+twice within the same enclave.
+
+<!---------------------------------- REFERENCE LINKS ---------------------------------------------------------->
+[idempotent-run-concept-reference]: ../concepts-reference/idempotent-runs.md
+
