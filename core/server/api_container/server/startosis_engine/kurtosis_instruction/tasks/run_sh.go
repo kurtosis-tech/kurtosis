@@ -218,9 +218,8 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 
 	// throw an error as execution of the command failed
 	if createDefaultDirectoryResult.GetExitCode() != 0 {
-		return "", stacktrace.NewError(
-			"Shell command: %q exited with code %d and output \n%v",
-			commandToRun, createDefaultDirectoryResult.GetExitCode(), createDefaultDirectoryResult.GetOutput())
+		errorMessage := fmt.Sprintf("Shell command: %q exited with code %d and output", commandToRun, createDefaultDirectoryResult.GetExitCode())
+		return "", stacktrace.NewError(formatErrorMessage(errorMessage, createDefaultDirectoryResult.GetOutput()))
 	}
 
 	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
