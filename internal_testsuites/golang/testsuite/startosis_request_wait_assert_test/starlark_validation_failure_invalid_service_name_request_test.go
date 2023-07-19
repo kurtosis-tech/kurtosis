@@ -2,10 +2,13 @@ package startosis_request_wait_assert_test
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 const (
+	requestInvalidServiceName       = "starlark-request-invalid-service"
 	requestInvalidServiceNameScript = `
 def run(plan):
 	service_config = ServiceConfig(
@@ -15,7 +18,7 @@ def run(plan):
 		}
 	)
 
-	plan.add_service(name = "web-server-failure-invalid-service-name-test", config = service_config)
+	plan.add_service(name = "web-server", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
@@ -27,11 +30,10 @@ def run(plan):
 `
 )
 
-func (suite *StartosisRequestWaitAssertTestSuite) TestStarlark_InvalidServiceRequest() {
+func TestStarlark_InvalidServiceRequest(t *testing.T) {
 	ctx := context.Background()
-	runResult, _ := suite.RunScript(ctx, requestInvalidServiceNameScript)
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, requestInvalidServiceName, requestInvalidServiceNameScript)
 
-	t := suite.T()
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation error")
 	require.Len(t, runResult.ValidationErrors, 1)

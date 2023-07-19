@@ -2,11 +2,14 @@ package startosis_request_wait_assert_test
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 const (
+	complexRequestWaitAssertTestName        = "startosis_complex_request_test"
 	complexRequestWaitAssertStartosisScript = `
 def run(plan):
 	service_config = ServiceConfig(
@@ -16,7 +19,7 @@ def run(plan):
 		}
 	)
 
-	plan.add_service(name = "web-server-complex-request-wait-test", config = service_config)
+	plan.add_service(name = "web-server", config = service_config)
 	get_recipe = GetHttpRequestRecipe(
 		port_id = "http-port",
 		endpoint = "?input=foo/bar",
@@ -24,7 +27,7 @@ def run(plan):
 			"exploded-slash": ".query.input | split(\"/\") | .[1]"
 		}
 	)
-	response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, interval="10s", timeout="200s", service_name="web-server-complex-request-wait-test")
+	response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, interval="10s", timeout="200s", service_name="web-server")
 	plan.assert(response["code"], "==", 200)
 	plan.assert("My test returned " + response["code"], "==", "My test returned 200")
 	plan.assert(response["code"], "!=", 500)
@@ -45,8 +48,8 @@ def run(plan):
 			"my-content-type": '.headers["content-type"]'
 		}
 	)
-	plan.wait(recipe=post_recipe, field="code", assertion="==", target_value=200, service_name="web-server-complex-request-wait-test")
-	post_response = plan.request(recipe=post_recipe, service_name="web-server-complex-request-wait-test")
+	plan.wait(recipe=post_recipe, field="code", assertion="==", target_value=200, service_name="web-server")
+	post_response = plan.request(recipe=post_recipe, service_name="web-server")
 	plan.assert(post_response["code"], "==", 200)
 	plan.assert(post_response["extract.my-content-type"], "==", "text/plain")
 	plan.assert(post_response["extract.my-body"], "==", "bar")
@@ -58,12 +61,12 @@ def run(plan):
 			"my-content-type": '.headers["content-type"]'
 		}
 	)
-	post_recipe_no_body_output = plan.wait(recipe=post_recipe_no_body, field="code", assertion="==", target_value=200, service_name = "web-server-complex-request-wait-test")
+	post_recipe_no_body_output = plan.wait(recipe=post_recipe_no_body, field="code", assertion="==", target_value=200, service_name = "web-server")
 	plan.assert(post_recipe_no_body_output["extract.my-content-type"], "==", "application/json")
 	exec_recipe = ExecRecipe(
 		command = ["echo", "hello", post_response["extract.my-body"]]
 	)
-	exec_result = plan.wait(recipe=exec_recipe, field="code", assertion="==", target_value=0, service_name="web-server-complex-request-wait-test")
+	exec_result = plan.wait(recipe=exec_recipe, field="code", assertion="==", target_value=0, service_name="web-server")
 	plan.assert(exec_result["output"], "==", "hello bar\n")
 
 	# content_type default to application/json
@@ -75,15 +78,14 @@ def run(plan):
 			"my-json": ".body"
 		}
 	)
-	post_json_response = plan.request(recipe = post_json, service_name = "web-server-complex-request-wait-test")
+	post_json_response = plan.request(recipe = post_json, service_name = "web-server")
 	plan.assert(post_json_response["extract.my-json"], "==", '{"a":"b"}')
 `
 )
 
-func (suite *StartosisRequestWaitAssertTestSuite) TestStartosis_ComplexRequestWaitAssert() {
+func TestStartosis_ComplexRequestWaitAssert(t *testing.T) {
 	ctx := context.Background()
-	t := suite.T()
-	_, err := suite.RunScript(ctx, complexRequestWaitAssertStartosisScript)
+	_, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, complexRequestWaitAssertTestName, complexRequestWaitAssertStartosisScript)
 
 	require.Nil(t, err)
 	logrus.Infof("Successfully ran Startosis script")
