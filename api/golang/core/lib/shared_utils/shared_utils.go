@@ -2,8 +2,7 @@ package shared_utils
 
 import (
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/mholt/archiver"
-	"io/ioutil"
+	"github.com/mholt/archiver/v3"
 	"os"
 	"path/filepath"
 	"strings"
@@ -26,7 +25,7 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) ([]byte, 
 	// This allows us to archive contents of dirs in root instead of nesting
 	var filepathsToUpload []string
 	if uploadFileInfo.IsDir() {
-		filesInDirectory, err := ioutil.ReadDir(pathToCompress)
+		filesInDirectory, err := os.ReadDir(pathToCompress)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
 		}
@@ -42,7 +41,8 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) ([]byte, 
 		filepathsToUpload = append(filepathsToUpload, pathToCompress)
 	}
 
-	tempDir, err := ioutil.TempDir(defaultTmpDir, tempCompressionDirPattern)
+	os.TempDir()
+	tempDir, err := os.MkdirTemp(defaultTmpDir, tempCompressionDirPattern)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
 	}
