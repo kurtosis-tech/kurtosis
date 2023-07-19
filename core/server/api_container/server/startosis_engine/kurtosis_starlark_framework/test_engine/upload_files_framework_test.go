@@ -29,7 +29,7 @@ func (t *uploadFilesTestCase) GetId() string {
 func (t *uploadFilesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	require.Nil(t, packageContentProvider.AddFileContent(TestSrcPath, "Hello World!"))
+	require.Nil(t, packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
 
 	serviceNetwork.EXPECT().UploadFilesArtifact(
 		mock.Anything, // data gets written to disk and compressed to it's a bit tricky to replicate here.
@@ -43,7 +43,7 @@ func (t *uploadFilesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 }
 
 func (t uploadFilesTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestSrcPath, upload_files.ArtifactNameArgName, TestArtifactName)
+	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName, upload_files.ArtifactNameArgName, TestArtifactName)
 }
 
 func (t *uploadFilesTestCase) GetStarlarkCodeForAssertion() string {

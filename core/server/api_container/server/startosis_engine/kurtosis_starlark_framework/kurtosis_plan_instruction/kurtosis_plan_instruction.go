@@ -44,7 +44,8 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 		}
 
 		instructionWrapper := newKurtosisPlanInstructionInternal(wrappedBuiltin, builtin.Capabilities(), builtin.DefaultDisplayArguments)
-		returnedFutureValue, interpretationErr := instructionWrapper.interpret()
+		locatorOfModuleInWhichInstructionIsBeingInterpreted := thread.Name
+		returnedFutureValue, interpretationErr := instructionWrapper.interpret(locatorOfModuleInWhichInstructionIsBeingInterpreted)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
