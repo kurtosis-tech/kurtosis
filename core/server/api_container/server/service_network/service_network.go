@@ -50,6 +50,15 @@ type ServiceNetwork interface {
 		error,
 	)
 
+	UpdateService(
+		ctx context.Context,
+		serviceName service.ServiceName,
+		serviceConfig *service.ServiceConfig,
+	) (
+		*service.Service,
+		error,
+	)
+
 	UpdateServices(
 		ctx context.Context,
 		updateServiceConfigs map[service.ServiceName]*service.ServiceConfig,

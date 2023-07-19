@@ -3,14 +3,10 @@ package kurtosis_instruction
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
-)
-
-const (
-	Representative    = true
-	NotRepresentative = false
 )
 
 var (
@@ -31,4 +27,8 @@ type KurtosisInstruction interface {
 	// ValidateAndUpdateEnvironment validates if the instruction can be applied to an environment, and mutates that
 	// environment to reflect how Kurtosis would look like after this instruction is successfully executed.
 	ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error
+
+	// TryResolveWith try to resolve the instruction with the one passed as an argument to this function
+	// It returns an enum
+	TryResolveWith(other KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionType
 }

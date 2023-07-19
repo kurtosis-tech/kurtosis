@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -103,7 +104,7 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 	builtin.serviceName = service.ServiceName(serviceName.GoString())
 	builtin.serviceConfig = apiServiceConfig
 	builtin.readyCondition = readyCondition
-	builtin.resultUuid, err = builtin.runtimeValueStore.CreateValue()
+	builtin.resultUuid, err = builtin.runtimeValueStore.GetOrCreateValueAssociatedWithService(builtin.serviceName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServiceBuiltinName)
 	}
@@ -113,7 +114,6 @@ func (builtin *AddServiceCapabilities) Interpret(arguments *builtin_argument.Arg
 		return nil, interpretationErr
 	}
 	return returnValue, nil
-
 }
 
 func (builtin *AddServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
@@ -128,12 +128,18 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred replace a magic string in '%s' instruction arguments for service '%s'. Execution cannot proceed", AddServiceBuiltinName, builtin.serviceName)
 	}
-	startedService, err := builtin.serviceNetwork.AddService(ctx, replacedServiceName, replacedServiceConfig)
+
+	var startedService *service.Service
+	if _, found := builtin.serviceNetwork.GetServiceRegistration(builtin.serviceName); found {
+		startedService, err = builtin.serviceNetwork.UpdateService(ctx, replacedServiceName, replacedServiceConfig)
+	} else {
+		startedService, err = builtin.serviceNetwork.AddService(ctx, replacedServiceName, replacedServiceConfig)
+	}
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting service '%s'", replacedServiceName)
 	}
 
-	if err := runServiceReadinessCheck(
+	if err = runServiceReadinessCheck(
 		ctx,
 		builtin.serviceNetwork,
 		builtin.runtimeValueStore,
@@ -146,6 +152,34 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore)
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
 	return instructionResult, nil
+}
+
+func (builtin *AddServiceCapabilities) TryResolveWith(areEquals bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionType {
+	if areEquals {
+		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentLeftIntact)
+		return enclave_structure.InstructionEqual
+	}
+	if other == nil {
+		return enclave_structure.InstructionUnknown
+	}
+	otherAddServiceCapabilities, ok := other.(*AddServiceCapabilities)
+	if !ok {
+		return enclave_structure.InstructionUnknown
+	}
+	if otherAddServiceCapabilities.serviceName == builtin.serviceName {
+		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentUpdated)
+		return enclave_structure.InstructionShouldBeRun
+	}
+	enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentNew)
+	return enclave_structure.InstructionUnknown
+}
+
+func (builtin *AddServiceCapabilities) IsEquivalentTo(other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities) bool {
+	otherAddServiceCapabilities, ok := other.(*AddServiceCapabilities)
+	if !ok {
+		return false
+	}
+	return otherAddServiceCapabilities.serviceName == builtin.serviceName
 }
 
 func validateAndConvertConfigAndReadyCondition(

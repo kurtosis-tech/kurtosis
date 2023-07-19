@@ -1174,6 +1174,62 @@ func (_c *MockServiceNetwork_UnsetConnection_Call) RunAndReturn(run func(context
 	return _c
 }
 
+// UpdateService provides a mock function with given fields: ctx, serviceName, serviceConfig
+func (_m *MockServiceNetwork) UpdateService(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) (*service.Service, error) {
+	ret := _m.Called(ctx, serviceName, serviceConfig)
+
+	var r0 *service.Service
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *service.ServiceConfig) (*service.Service, error)); ok {
+		return rf(ctx, serviceName, serviceConfig)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *service.ServiceConfig) *service.Service); ok {
+		r0 = rf(ctx, serviceName, serviceConfig)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*service.Service)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, service.ServiceName, *service.ServiceConfig) error); ok {
+		r1 = rf(ctx, serviceName, serviceConfig)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockServiceNetwork_UpdateService_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'UpdateService'
+type MockServiceNetwork_UpdateService_Call struct {
+	*mock.Call
+}
+
+// UpdateService is a helper method to define mock.On call
+//   - ctx context.Context
+//   - serviceName service.ServiceName
+//   - serviceConfig *service.ServiceConfig
+func (_e *MockServiceNetwork_Expecter) UpdateService(ctx interface{}, serviceName interface{}, serviceConfig interface{}) *MockServiceNetwork_UpdateService_Call {
+	return &MockServiceNetwork_UpdateService_Call{Call: _e.mock.On("UpdateService", ctx, serviceName, serviceConfig)}
+}
+
+func (_c *MockServiceNetwork_UpdateService_Call) Run(run func(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig)) *MockServiceNetwork_UpdateService_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(service.ServiceName), args[2].(*service.ServiceConfig))
+	})
+	return _c
+}
+
+func (_c *MockServiceNetwork_UpdateService_Call) Return(_a0 *service.Service, _a1 error) *MockServiceNetwork_UpdateService_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockServiceNetwork_UpdateService_Call) RunAndReturn(run func(context.Context, service.ServiceName, *service.ServiceConfig) (*service.Service, error)) *MockServiceNetwork_UpdateService_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // UpdateServiceSubnetwork provides a mock function with given fields: ctx, updateServiceConfigs
 func (_m *MockServiceNetwork) UpdateServiceSubnetwork(ctx context.Context, updateServiceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig) (map[service.ServiceName]bool, map[service.ServiceName]error, error) {
 	ret := _m.Called(ctx, updateServiceConfigs)

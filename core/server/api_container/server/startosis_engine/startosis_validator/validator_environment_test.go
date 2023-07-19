@@ -14,8 +14,7 @@ const (
 )
 
 func TestMultiplePortIdsForValidation(t *testing.T) {
-	emptyInitialMapping := map[service.ServiceName][]string{}
-	validatorEnvironment := NewValidatorEnvironment(false, nil, nil, emptyInitialMapping)
+	validatorEnvironment := NewValidatorEnvironment(false, nil)
 	validatorEnvironment.AddPrivatePortIDForService(fooPortId, testBarService)
 	validatorEnvironment.AddPrivatePortIDForService(fizzPortId, testBarService)
 	require.True(t, validatorEnvironment.DoesPrivatePortIDExistForService(fooPortId, testBarService))

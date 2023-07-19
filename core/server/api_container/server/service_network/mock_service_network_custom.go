@@ -85,6 +85,11 @@ func (m *MockServiceNetworkCustom) AddServices(
 	panic(unimplementedMsg)
 }
 
+func (m *MockServiceNetworkCustom) UpdateService(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) (*service.Service, error) {
+	//TODO implement me
+	panic(unimplementedMsg)
+}
+
 func (m *MockServiceNetworkCustom) UpdateServices(ctx context.Context, updateServiceConfigs map[service.ServiceName]*service.ServiceConfig, batchSize int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
 	//TODO implement me
 	panic(unimplementedMsg)

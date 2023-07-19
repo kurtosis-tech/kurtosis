@@ -460,6 +460,31 @@ func (network *DefaultServiceNetwork) AddServices(
 	return startedServices, map[service.ServiceName]error{}, nil
 }
 
+func (network *DefaultServiceNetwork) UpdateService(
+	ctx context.Context,
+	serviceName service.ServiceName,
+	serviceConfig *service.ServiceConfig,
+) (
+	*service.Service,
+	error,
+) {
+	serviceConfigMap := map[service.ServiceName]*service.ServiceConfig{
+		serviceName: serviceConfig,
+	}
+
+	updatedServices, serviceFailed, err := network.UpdateServices(ctx, serviceConfigMap, singleServiceStartupBatch)
+	if err != nil {
+		return nil, err
+	}
+	if failure, found := serviceFailed[serviceName]; found {
+		return nil, failure
+	}
+	if updatedService, found := updatedServices[serviceName]; found {
+		return updatedService, nil
+	}
+	return nil, stacktrace.NewError("Service '%s' could not be updated properly, but its state is unknown. This is a Kurtosis internal bug", serviceName)
+}
+
 func (network *DefaultServiceNetwork) UpdateServices(
 	ctx context.Context,
 	updateServiceConfigs map[service.ServiceName]*service.ServiceConfig,

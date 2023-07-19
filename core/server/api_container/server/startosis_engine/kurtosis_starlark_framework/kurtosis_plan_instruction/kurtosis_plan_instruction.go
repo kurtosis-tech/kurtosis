@@ -1,10 +1,12 @@
 package kurtosis_plan_instruction
 
 import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
@@ -22,15 +24,17 @@ type KurtosisPlanInstruction struct {
 type KurtosisPlanInstructionWrapper struct {
 	*KurtosisPlanInstruction
 
-	instructionPlanMask *resolver.InstructionsPlanMask
+	enclaveComponentsStore *enclave_structure.EnclaveComponents
+	instructionPlanMask    *resolver.InstructionsPlanMask
 
 	// TODO: This can be changed to KurtosisPlanInstructionInternal when we get rid of KurtosisInstruction
 	instructionsPlan *instructions_plan.InstructionsPlan
 }
 
-func NewKurtosisPlanInstructionWrapper(instruction *KurtosisPlanInstruction, instructionPlanMask *resolver.InstructionsPlanMask, instructionsPlan *instructions_plan.InstructionsPlan) *KurtosisPlanInstructionWrapper {
+func NewKurtosisPlanInstructionWrapper(instruction *KurtosisPlanInstruction, instructionPlanMask *resolver.InstructionsPlanMask, enclaveComponentsStore *enclave_structure.EnclaveComponents, instructionsPlan *instructions_plan.InstructionsPlan) *KurtosisPlanInstructionWrapper {
 	return &KurtosisPlanInstructionWrapper{
 		KurtosisPlanInstruction: instruction,
+		enclaveComponentsStore:  enclaveComponentsStore,
 		instructionPlanMask:     instructionPlanMask,
 		instructionsPlan:        instructionsPlan,
 	}
@@ -49,41 +53,59 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 			return nil, interpretationErr
 		}
 
-		var instructionPulledFromMaskIdx int
-		var instructionPulledFromMaskMaybe *instructions_plan.ScheduledInstruction
+		var scheduledInstructionPulledFromMaskMaybe *instructions_plan.ScheduledInstruction
+		var instructionResolutionStatus enclave_structure.InstructionResolutionType
 		if builtin.instructionPlanMask.HasNext() {
-			instructionPulledFromMaskIdx, instructionPulledFromMaskMaybe = builtin.instructionPlanMask.Next()
-			if instructionPulledFromMaskMaybe != nil && instructionPulledFromMaskMaybe.GetInstruction().String() != instructionWrapper.String() {
-				// if the instructions differs, then the mask is invalid
-				builtin.instructionPlanMask.MarkAsInvalid()
-				logrus.Debugf("The instruction number %d in the plan mask did not match the newly interpreter "+
-					"instruction and therefore the plan mask was marked as invalid:\nInstruction from mask - '%s'"+
-					"\nInstruction from interpretation: '%s'",
-					instructionPulledFromMaskIdx,
-					instructionPulledFromMaskMaybe.GetInstruction().String(),
-					instructionWrapper.String())
-				// TODO: we could interrupt the interpretation here, because with an invalid mask the list of
-				//  instruction generated will be invalid anyway. Though we currently don't have a nive way to
-				//  interrupt an interpretation in progress (other than by throwing an error, which would be
-				//  misleading here)
-				//  To properly solve that, I think we should switch to an interactive interpretation where we
-				//  interpret each instruction one after the other, and evaluating the state after each step
+			_, scheduledInstructionPulledFromMaskMaybe = builtin.instructionPlanMask.Next()
+			if scheduledInstructionPulledFromMaskMaybe != nil {
+				instructionResolutionStatus = instructionWrapper.TryResolveWith(scheduledInstructionPulledFromMaskMaybe.GetInstruction(), builtin.enclaveComponentsStore)
+			} else {
+				instructionResolutionStatus = instructionWrapper.TryResolveWith(nil, builtin.enclaveComponentsStore)
 			}
+		} else {
+			instructionResolutionStatus = instructionWrapper.TryResolveWith(nil, builtin.enclaveComponentsStore)
 		}
 
-		if instructionPulledFromMaskMaybe != nil {
-			// If there's a mask for this instruction, add the mask the plan and returned the mask's returned value
-			builtin.instructionsPlan.AddScheduledInstruction(instructionPulledFromMaskMaybe).Executed(true).ImportedFromCurrentEnclavePlan(false)
-			return instructionPulledFromMaskMaybe.GetReturnedValue(), nil
-		} else {
+		switch instructionResolutionStatus {
+		case enclave_structure.InstructionEqual:
+			// add instruction from the mask and mark it as executed but not imported from the current enclave plan
+			builtin.instructionsPlan.AddScheduledInstruction(scheduledInstructionPulledFromMaskMaybe).Executed(true).ImportedFromCurrentEnclavePlan(false)
+			return scheduledInstructionPulledFromMaskMaybe.GetReturnedValue(), nil
+		case enclave_structure.InstructionShouldBeRun:
 			// otherwise add the instruction as a new one to the plan and return its own returned value
 			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err,
-					"Unable to add Kurtosis instruction '%s' at position '%s' to the current plan being assembled. This is a Kurtosis internal bug",
+					"Unable to add Kurtosis instruction '%s' at position '%s' to the plan currently being assembled. This is a Kurtosis internal bug",
+					instructionWrapper.String(),
+					instructionWrapper.GetPositionInOriginalScript().String())
+			}
+			return returnedFutureValue, nil
+		case enclave_structure.InstructionUnknown:
+			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
+				return nil, startosis_errors.WrapWithInterpretationError(err,
+					"Unable to add Kurtosis instruction '%s' at position '%s' to the plan currently being assembled. This is a Kurtosis internal bug",
+					instructionWrapper.String(),
+					instructionWrapper.GetPositionInOriginalScript().String())
+			}
+			if scheduledInstructionPulledFromMaskMaybe != nil {
+				builtin.instructionPlanMask.MarkAsInvalid()
+				logrus.Debugf("Marking the plan as invalid as instruction '%s' differs from '%s'",
+					instructionWrapper.String(), scheduledInstructionPulledFromMaskMaybe.GetInstruction().String())
+			}
+			return returnedFutureValue, nil
+		case enclave_structure.InstructionNotResolvableAbort:
+			// if the instructions differs, then the mask is invalid
+			builtin.instructionPlanMask.MarkAsInvalid()
+			logrus.Debugf("Marking the plan as invalid as instruction '%s' had the following resolution status: '%s'",
+				instructionWrapper.String(), instructionResolutionStatus)
+			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
+				return nil, startosis_errors.WrapWithInterpretationError(err,
+					"Unable to add Kurtosis instruction '%s' at position '%s' to the plan currently being assembled. This is a Kurtosis internal bug",
 					instructionWrapper.String(),
 					instructionWrapper.GetPositionInOriginalScript().String())
 			}
 			return returnedFutureValue, nil
 		}
+		return nil, stacktrace.NewError("Unexpected error, resolution status of instruction '%s' did not match any of the covered case.", instructionResolutionStatus)
 	}
 }

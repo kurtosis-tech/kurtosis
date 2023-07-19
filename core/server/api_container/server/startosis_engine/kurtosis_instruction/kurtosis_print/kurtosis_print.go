@@ -3,6 +3,7 @@ package kurtosis_print
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -70,6 +71,13 @@ func (builtin *PrintCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet
 	// nothing to do for now
 	// TODO(gb): maybe in the future validate that if we're using a magic string, it points to something real
 	return nil
+}
+
+func (builtin *PrintCapabilities) TryResolveWith(areEquals bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionType {
+	if areEquals {
+		return enclave_structure.InstructionEqual
+	}
+	return enclave_structure.InstructionUnknown
 }
 
 func (builtin *PrintCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {

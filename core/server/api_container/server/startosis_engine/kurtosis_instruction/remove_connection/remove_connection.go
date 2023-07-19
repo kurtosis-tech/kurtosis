@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -86,6 +87,10 @@ func (builtin *RemoveConnectionCapabilities) Execute(ctx context.Context, _ *bui
 	}
 	instructionResult := fmt.Sprintf("Removed subnetwork connection override between '%s' and '%s'", builtin.subnetwork1, builtin.subnetwork2)
 	return instructionResult, nil
+}
+
+func (builtin *RemoveConnectionCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionType {
+	return enclave_structure.InstructionNotResolvableAbort
 }
 
 func validateSubnetworks(value starlark.Value) *startosis_errors.InterpretationError {
