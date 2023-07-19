@@ -29,7 +29,7 @@ func newKurtosisPlanInstructionInternal(internalBuiltin *kurtosis_starlark_frame
 	}
 }
 
-func (builtin *kurtosisPlanInstructionInternal) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+func (builtin *kurtosisPlanInstructionInternal) GetCanonicalInstruction(isSkipped bool) *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := make([]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg, len(builtin.GetArguments().GetDefinition()))
 	for idx, argument := range builtin.GetArguments().GetDefinition() {
 		name := argument.Name
@@ -44,7 +44,7 @@ func (builtin *kurtosisPlanInstructionInternal) GetCanonicalInstruction() *kurto
 		}
 		args[idx] = binding_constructors.NewStarlarkInstructionKwarg(builtin_argument.StringifyArgumentValue(value), name, shouldBeDisplayed)
 	}
-	return binding_constructors.NewStarlarkInstruction(builtin.GetPosition().ToAPIType(), builtin.GetName(), builtin.String(), args)
+	return binding_constructors.NewStarlarkInstruction(builtin.GetPosition().ToAPIType(), builtin.GetName(), builtin.String(), args, isSkipped)
 }
 
 // GetPositionInOriginalScript is here to implement the KurtosisInstruction interface. Remove it when it's not needed anymore
