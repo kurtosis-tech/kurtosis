@@ -263,6 +263,33 @@ func (backend *KubernetesKurtosisBackend) StartRegisteredUserServices(
 	return successfullyStartedServices, failedServices, nil
 }
 
+func (backend *KubernetesKurtosisBackend) RemoveRegisteredUserServiceProcesses(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	services map[service.ServiceUUID]bool,
+) (
+	map[service.ServiceUUID]bool,
+	map[service.ServiceUUID]error,
+	error,
+) {
+	successfullyStartedServices, failedServices, err := user_services_functions.RemoveRegisteredUserServiceProcesses(
+		ctx,
+		enclaveUuid,
+		services,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+	if err != nil {
+		var serviceUuids []service.ServiceUUID
+		for serviceUuid := range services {
+			serviceUuids = append(serviceUuids, serviceUuid)
+		}
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error removing services with GUIDs '%v' in enclave '%s'", serviceUuids, enclaveUuid)
+	}
+	return successfullyStartedServices, failedServices, nil
+}
+
 func (backend *KubernetesKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,

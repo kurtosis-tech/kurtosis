@@ -223,6 +223,19 @@ type KurtosisBackend interface {
 		error, // represents an error with the function itself, rather than the user services
 	)
 
+	// RemoveRegisteredUserServiceProcesses removes the running user service process but keeps the service registration
+	// TODO: As we don't persist user service logs anywhere, removing the container/pod will also remove all its
+	//  logs. We need a persistent log storage to address this issue.
+	RemoveRegisteredUserServiceProcesses(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		services map[service.ServiceUUID]bool,
+	) (
+		map[service.ServiceUUID]bool, // user service UUIDs that were successfully removed
+		map[service.ServiceUUID]error, // user service UUIDs that failed to be removed, with the error
+		error, // represents an error with the function itself, rather than the user services
+	)
+
 	// Gets user services using the given filters, returning a map of matched user services identified by their UUID
 	GetUserServices(
 		ctx context.Context,

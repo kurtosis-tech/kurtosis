@@ -120,7 +120,7 @@ func (builtin *UpdateServiceCapabilities) Execute(ctx context.Context, _ *builti
 		builtin.serviceName: builtin.updateServiceConfig,
 	}
 
-	serviceSuccessful, serviceFailed, err := builtin.serviceNetwork.UpdateService(ctx, updateServiceConfigMap)
+	serviceSuccessful, serviceFailed, err := builtin.serviceNetwork.UpdateServiceSubnetwork(ctx, updateServiceConfigMap)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed updating service '%s' with an unexpected error", builtin.serviceName)
 	}
