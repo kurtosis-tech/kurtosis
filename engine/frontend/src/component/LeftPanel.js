@@ -19,7 +19,7 @@ const LeftPanel = ({heading, renderList, home}) => {
                 </div>: 
                 <div></div>
             }
-           
+            
         </div>
     )
 }

@@ -71,6 +71,7 @@ const ServiceInfo = ({enclaves}) => {
         <div className="flex h-full">
             <LeftPanel 
                 home={false} 
+                isServiceInfo={true}
                 heading={"Services"} 
                 renderList={ ()=> renderServices(services, handleServiceClick)}
             />
@@ -78,8 +79,8 @@ const ServiceInfo = ({enclaves}) => {
                 <div className='flex flex-col h-full space-y-1 bg-white'>
                     <LogView heading={`Service Logs: ${selected.name}`} logs={logs}/>
                 </div>  
-        </div>                    
-        <RightPanel home={false}/>
+            </div>                    
+            <RightPanel home={false} isServiceInfo={true} enclaveName={enclaveName}/>
         </div>
     )
 }

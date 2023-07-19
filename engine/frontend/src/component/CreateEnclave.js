@@ -12,17 +12,15 @@ const CreateEnclave = () => {
 
     const handleModalSubmit = (enclaveInfo) => {
         setEnlaveInfo(enclaveInfo)
-        //navigate("/enclave/progress")
+        navigate("/enclave/progress")
     }
 
     return (
         <div className='h-full w-full flex'>
-            {/* <Routes>
-                <Route path="/create" element={></Route>
-                <Route path="/progress" element={}></Route>
-            </Routes> */}
-            {enclaveInfo !== null ? <CreateEnclaveView args={args} packageId={name} enclaveInfo={enclaveInfo}/>
-            :<CreateEnclaveModal name={name} setName={setName} args={args} setArgs={setArgs} handleSubmit={handleModalSubmit}/>}
+            <Routes>
+                <Route path="/create" element={<CreateEnclaveModal name={name} setName={setName} args={args} setArgs={setArgs} handleSubmit={handleModalSubmit}/>}/>
+                <Route path="/progress" element={<CreateEnclaveView args={args} packageId={name} enclaveInfo={enclaveInfo}/>} />
+            </Routes>
         </div>
     )
 }

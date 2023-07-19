@@ -20,7 +20,6 @@ export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
 
     const getServices = async (apiClient) => {
         const {services: newServices} = await getEnclaveInformation(apiClient);
-        console.log(newServices)
         if (newServices.length > services.length) {
             setServices(newServices) 
         }
@@ -94,17 +93,23 @@ export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
     
     return (
         <div className="flex h-full w-full bg-white">
-            <LeftPanel 
-                home={false} 
-                heading={"Services"} 
-                renderList={ ()=> renderServices(services, handleServiceClick)}
-            />
-            <div className="flex-1">
-                <Heading content={enclaveInfo.enclave.name} color={"text-black"}/>
-                <LogView classAttr={"flex flex-col p-2"} heading={"Logs"} logs={logs} loading={loading && logs.length===0}/>
+            <div className="flex h-full">
+                <LeftPanel 
+                    home={false} 
+                    heading={"Services"} 
+                    isServiceInfo={true}
+                    renderList={ ()=> renderServices(services, handleServiceClick)}
+                />
+                <div className="flex h-full w-[calc(100vw-24rem)] flex-col space-y-5">
+                    <div className='flex flex-col h-full space-y-1 bg-white'>
+                        <LogView 
+                            heading={`Starlark Logs: ${enclaveInfo.enclave.name}`} 
+                            logs={logs}
+                        />
+                    </div>  
+                </div>                    
+                <RightPanel home={false} isServiceInfo={true} enclaveName={enclaveInfo.enclave.name}/>
             </div>
-                    
-            <RightPanel home={false}/>
         </div>
     )
 }
