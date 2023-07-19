@@ -7,11 +7,12 @@ import (
 )
 
 const expectedTreeStr = `artifact
-└── path
-    ├── to
-    │   ├── file.txt [2.0K]
-    │   └── another.txt [ 123]
-    └── yet_another.txt [2.3M]
+├── path
+│   ├── to
+│   │   ├── file.txt [2.0K]
+│   │   └── another.txt [ 123]
+│   └── yet_another.txt [2.3M]
+└── root.txt [   1]
 `
 
 func TestTreeBuilding(t *testing.T) {
@@ -27,6 +28,10 @@ func TestTreeBuilding(t *testing.T) {
 		{
 			Path: "path/yet_another.txt",
 			Size: 2*1024*1024 + 300*1024,
+		},
+		{
+			Path: "root.txt",
+			Size: 1,
 		},
 	})
 	require.Equal(t, treeStr, expectedTreeStr)

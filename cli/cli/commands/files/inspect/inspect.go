@@ -165,10 +165,12 @@ func buildTree(artifactIdentifierName string, fileDescritions []*kurtosis_core_r
 	tMap := &treeMap{map[string]*treeMap{}, tree}
 	for _, fileDescription := range fileDescritions {
 		dir, file := filepath.Split(fileDescription.GetPath())
-		subdirs := strings.Split(filepath.Clean(dir), string(filepath.Separator))
 		curTree := tMap
-		for _, subdir := range subdirs {
-			curTree = curTree.addBranchIfNotPresent(color.GreenString(subdir))
+		if dir != "" {
+			subdirs := strings.Split(filepath.Clean(dir), string(filepath.Separator))
+			for _, subdir := range subdirs {
+				curTree = curTree.addBranchIfNotPresent(color.GreenString(subdir))
+			}
 		}
 		if file != emptyFileStr {
 			curTree.addNodeIfNotPresent(fmt.Sprintf("%v [%s]", file, humanReadableSize(fileDescription.GetSize())))
