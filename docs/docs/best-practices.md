@@ -44,7 +44,7 @@ Kurtosis service names implements [RFC-1035](https://datatracker.ietf.org/doc/ht
 * start with an alphabetic character
 * end with an alphanumeric character
 
-Failure to adhere to the above standards will result in errors when running Kurtosis in Kubernetes.
+Failure to adhere to the above standards will result in errors when running Kurtosis.
 
 
 
