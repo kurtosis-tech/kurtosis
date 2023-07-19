@@ -47,7 +47,7 @@ const Enclaves = ({enclaves, isLoading}) => {
         navigate(`/enclaves/${enclaveName}`)
     }
     return (
-        <div className="flex h-full">
+        <div className="flex h-full flex-grow">
             {
                 (isLoading) ? <LoadingOverlay/> : <EnclaveComponent enclaves={enclaves} handleClick={handleClick}/>
             }

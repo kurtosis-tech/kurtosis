@@ -27,9 +27,9 @@ const Temp = () => {
     return (
         <div className="h-screen flex flex-col bg-slate-800">
             <TitleBar />
-            <div className="flex-grow overflow-hidden">
+            <div className="flex h-[calc(100vh-4rem)]">
                 <Routes>
-                    <Route exact path="/" element={<Main/>} />
+                    <Route exact path="/" element={<Main totalEnclaves={enclaves.length}/>} />
                     <Route path="/enclave/create" element={<CreateEnclave />} />
                     <Route exact path="/enclaves" element={<Enclaves enclaves={enclaves} isLoading={encalveLoading}/>} />
                     <Route path="/enclaves/:name" element={<EnclaveInfo enclaves={enclaves}/>} />

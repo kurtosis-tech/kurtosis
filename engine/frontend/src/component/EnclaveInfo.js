@@ -97,14 +97,14 @@ const EncalveInfo = ({enclaves}) => {
 
 
     const EnclaveInfoCompoenent = ({services, fileArtifacts, handleServiceClick}) => (
-        <div className='flex flex-col h-full space-y-1'>
+        <div className='flex flex-col flew h-[calc(100vh-3rem)] space-y-1'>
             <div className="flex flex-col h-1/2 min-h-1/2 border-8">
                 <Heading content={"Services"} size={"text-xl"} />
                 <div className="overflow-auto space-y-2">
                     {renderServices(services, handleServiceClick)}
                 </div>
             </div>  
-            <div className="flex flex-col overflow-auto h-full border-8">
+            <div className="flex flex-col grow border-8">
                 <Heading content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
                 <div className="overflow-auto space-y-2">
                     {renderFileArtifacts(fileArtifacts)}
@@ -114,15 +114,17 @@ const EncalveInfo = ({enclaves}) => {
     )
     
     return (
-        <div className="flex h-full bg-white">
+        <div className="flex h-full">
             <LeftPanel 
                 home={false} 
                 heading={"Environments"} 
                 renderList={ ()=> renderEnclaves(enclaves, handleLeftPanelClick)}
             />
 
-            <div className="flex-1">
-                <Heading content={name} />
+            <div className="flex bg-white w-[calc(100vw-24rem)] flex-col space-y-5">
+                <div className="h-[3rem] flex items-center justify-center m-2">
+                    <Heading content={name} />
+                </div>
                 {encalveInfoLoading ? 
                     <LoadingOverlay /> : 
                     <EnclaveInfoCompoenent 

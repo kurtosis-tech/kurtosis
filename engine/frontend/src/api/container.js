@@ -23,6 +23,7 @@ const getDataFromApiContainer = async (request, process) => {
 }
 
 export const getEnclaveInformation = async (url) => {
+    console.log("url ", url)
     if (url === "") {
         return {
             services: [],
@@ -32,9 +33,14 @@ export const getEnclaveInformation = async (url) => {
 
     const containerClient = new ApiContainerServicePromiseClient(url);
     const makeGetServiceRequest = async () => {
-        const serviceArgs = new GetServicesArgs();
-        const responseFromGrpc = await containerClient.getServices(serviceArgs, null)
-        return responseFromGrpc.toObject()
+        try {
+            const serviceArgs = new GetServicesArgs();
+            const responseFromGrpc = await containerClient.getServices(serviceArgs, null)
+            console.log(responseFromGrpc.toObject())
+            return responseFromGrpc.toObject()
+        } catch (error) {
+            return {serviceInfoMap:[]}
+        }
     }
 
     const makeFileArtifactRequest = async () => {

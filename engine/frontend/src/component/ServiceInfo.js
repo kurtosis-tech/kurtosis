@@ -50,6 +50,7 @@ const ServiceInfo = ({enclaves}) => {
             stream = await getServiceLogs(enclaveName, serviceUuid);
             stream.on("data", data => {
                 const log = data.toObject().serviceLogsByServiceUuidMap[0][1].lineList
+                console.log(log[0])
                 setLogs(logs => [...logs, log[0]])
             })
         }
@@ -67,17 +68,28 @@ const ServiceInfo = ({enclaves}) => {
     }
 
     return (
-        <div className="flex h-full bg-white">
+        <div className="flex h-full">
             <LeftPanel 
                 home={false} 
                 heading={"Services"} 
                 renderList={ ()=> renderServices(services, handleServiceClick)}
             />
+            <div className="flex h-full w-[calc(100vw-24rem)] flex-col space-y-5">
+                <div className='flex flex-col h-full space-y-1 bg-white'>
+                    <LogView heading={`Service Logs: ${selected.name}`} logs={logs}/>
+                </div>  
+        </div>                    
+        <RightPanel home={false}/>
+        </div>
+    )
+}
 
-            <div className="flex-1">
+export default ServiceInfo;
+
+{/* <div className="flex w-[calc(100vw-24rem)] flex-col bg-white">
                 <Heading content={selected.name} color={"text-black"}/>
                 <div className='flex flex-col h-full space-y-1'>
-                    <div className="flex flex-col h-1/6 border-4">
+                    <div className="flex flex-col h-1/6 border-4 bg-green-200">
                         <div className="text-xl text-left h-fit mb-2 ml-5"> 
                             Ports
                         </div>
@@ -98,15 +110,7 @@ const ServiceInfo = ({enclaves}) => {
                                         )
                                     })
                                 }
-                            </div>
                         </div>
-                    <LogView classAttr={"flex flex-col p-2 h-5/6"} heading={"Service Logs"} logs={logs}/>
                 </div>
-            </div>
-                    
-            <RightPanel home={false}/>
-        </div>
-    )
-}
-
-export default ServiceInfo;
+                </div>
+            </div> */}

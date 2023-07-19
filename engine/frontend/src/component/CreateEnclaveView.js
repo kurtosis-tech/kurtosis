@@ -19,8 +19,11 @@ export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
     const [services, setServices] = useState([])
 
     const getServices = async (apiClient) => {
-        const {services} = await getEnclaveInformation(apiClient);
-        setServices(services) 
+        const {services: newServices} = await getEnclaveInformation(apiClient);
+        console.log(newServices)
+        if (newServices.length > services.length) {
+            setServices(newServices) 
+        }
     }
 
     useEffect(() => {
