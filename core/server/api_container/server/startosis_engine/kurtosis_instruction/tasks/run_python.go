@@ -280,7 +280,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	defer func() {
 		errorWhileRemovingService := removeService(ctx, builtin.serviceNetwork, builtin.name)
 		if errorWhileRemovingService != nil {
-			logrus.Errorf("Attempted to delete the one time task '%v' but failed with following error %v",
+			logrus.Errorf("Attempted to delete the python task '%v' but failed with following error %v",
 				builtin.name, errorWhileRemovingService)
 		}
 	}()
