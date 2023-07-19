@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
 	"os"
@@ -276,6 +277,13 @@ func (builtin *RunPythonCapabilities) Validate(_ *builtin_argument.ArgumentValue
 //		Create an mechanism for other services to retrieve files from the task container
 //		Make task as its own entity instead of currently shown under services
 func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
+	defer func() {
+		errorWhileRemovingService := removeService(ctx, builtin.serviceNetwork, builtin.name)
+		if errorWhileRemovingService != nil {
+			logrus.Errorf("Attempted to delete the one time task '%v' but failed with following error %v",
+				builtin.name, errorWhileRemovingService)
+		}
+	}()
 	_, err := builtin.serviceNetwork.AddService(ctx, service.ServiceName(builtin.name), builtin.serviceConfig)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "error occurred while creating a run_sh task with image: %v", builtin.serviceConfig.GetContainerImageName())
