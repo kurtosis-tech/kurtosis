@@ -118,7 +118,7 @@ func run(
 	fileDescriptions := filesInspectResponse.GetFileDescriptions()
 
 	if filePath == "" {
-		logrus.Infof("Artifact '%v' contents:\n%v", artifactIdentifierName, buildTree(artifactIdentifierName, fileDescriptions))
+		logrus.Infof("Artifact '%v' contents:%v", artifactIdentifierName, buildTree(fileDescriptions))
 		return nil
 	}
 	index := slices.IndexFunc(fileDescriptions, func(desc *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) bool {
@@ -160,8 +160,8 @@ func (nm *treeMap) addNodeIfNotPresent(s string) *treeMap {
 }
 
 // Assembles a file tree string
-func buildTree(artifactIdentifierName string, fileDescritions []*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) string {
-	tree := treeprint.NewWithRoot(color.CyanString(artifactIdentifierName))
+func buildTree(fileDescritions []*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) string {
+	tree := treeprint.NewWithRoot("")
 	tMap := &treeMap{map[string]*treeMap{}, tree}
 	for _, fileDescription := range fileDescritions {
 		dir, file := filepath.Split(fileDescription.GetPath())
