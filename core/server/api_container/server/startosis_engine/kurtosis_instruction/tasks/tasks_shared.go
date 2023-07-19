@@ -254,3 +254,9 @@ func getServiceConfig(image string, filesArtifactExpansion *files_artifacts_expa
 		service_config.DefaultSubnetwork,
 	)
 }
+
+func formatErrorMessage(errorMessage string, errorFromExec string) string {
+	splitErrorMessageNewLine := strings.Split(errorFromExec, "\n")
+	reformattedErrorMessage := strings.Join(splitErrorMessageNewLine, "\n  ")
+	return fmt.Sprintf("%v\n  %v", errorMessage, reformattedErrorMessage)
+}

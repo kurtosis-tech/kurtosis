@@ -13,7 +13,13 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = Function('return this')();
+var global = (function() {
+  if (this) { return this; }
+  if (typeof window !== 'undefined') { return window; }
+  if (typeof global !== 'undefined') { return global; }
+  if (typeof self !== 'undefined') { return self; }
+  return Function('return this')();
+}.call(null));
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
@@ -3072,7 +3078,8 @@ proto.api_container_api.StarlarkInstruction.toObject = function(includeInstance,
     instructionName: jspb.Message.getFieldWithDefault(msg, 2, ""),
     argumentsList: jspb.Message.toObjectList(msg.getArgumentsList(),
     proto.api_container_api.StarlarkInstructionArg.toObject, includeInstance),
-    executableInstruction: jspb.Message.getFieldWithDefault(msg, 4, "")
+    executableInstruction: jspb.Message.getFieldWithDefault(msg, 4, ""),
+    isSkipped: jspb.Message.getBooleanFieldWithDefault(msg, 5, false)
   };
 
   if (includeInstance) {
@@ -3126,6 +3133,10 @@ proto.api_container_api.StarlarkInstruction.deserializeBinaryFromReader = functi
     case 4:
       var value = /** @type {string} */ (reader.readString());
       msg.setExecutableInstruction(value);
+      break;
+    case 5:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setIsSkipped(value);
       break;
     default:
       reader.skipField();
@@ -3183,6 +3194,13 @@ proto.api_container_api.StarlarkInstruction.serializeBinaryToWriter = function(m
   if (f.length > 0) {
     writer.writeString(
       4,
+      f
+    );
+  }
+  f = message.getIsSkipped();
+  if (f) {
+    writer.writeBool(
+      5,
       f
     );
   }
@@ -3297,6 +3315,24 @@ proto.api_container_api.StarlarkInstruction.prototype.getExecutableInstruction =
  */
 proto.api_container_api.StarlarkInstruction.prototype.setExecutableInstruction = function(value) {
   return jspb.Message.setProto3StringField(this, 4, value);
+};
+
+
+/**
+ * optional bool is_skipped = 5;
+ * @return {boolean}
+ */
+proto.api_container_api.StarlarkInstruction.prototype.getIsSkipped = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 5, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.api_container_api.StarlarkInstruction} returns this
+ */
+proto.api_container_api.StarlarkInstruction.prototype.setIsSkipped = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 5, value);
 };
 
 

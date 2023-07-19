@@ -28,8 +28,6 @@ import (
 )
 
 const (
-	starlarkGoThreadName = "Startosis interpreter thread"
-
 	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Starlark script. Listing each of them below."
 	evaluationErrorPrefix          = "Evaluation error: "
 
@@ -37,9 +35,8 @@ const (
 
 	runFunctionName = "run"
 
-	paramsRequiredForArgs              = 2
-	minimumParamsRequiredForPlan       = 1
-	maximumParamsAllowedForRunFunction = 2
+	paramsRequiredForArgs        = 2
+	minimumParamsRequiredForPlan = 1
 
 	planParamIndex         = 0
 	planParamName          = "plan"
@@ -268,7 +265,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		return startosis_constants.NoOutputObject, nil, missingMainFunctionError(packageId, mainFunctionName)
 	}
 
-	runFunctionExecutionThread := newStarlarkThread(starlarkGoThreadName)
+	runFunctionExecutionThread := newStarlarkThread(moduleLocator)
 
 	var argsTuple starlark.Tuple
 	var kwArgs []starlark.Tuple

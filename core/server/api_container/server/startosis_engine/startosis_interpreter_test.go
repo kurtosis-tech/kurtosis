@@ -1098,7 +1098,7 @@ func validateScriptOutputFromPrintInstructions(t *testing.T, instructionsPlan *i
 			continue
 		}
 		instruction := scheduledInstruction.GetInstruction()
-		switch instruction.GetCanonicalInstruction().InstructionName {
+		switch instruction.GetCanonicalInstruction(isSkipped).InstructionName {
 		case kurtosis_print.PrintBuiltinName:
 			instructionOutput, err := instruction.Execute(context.Background())
 			require.Nil(t, err, "Error running the print statements")
@@ -1116,7 +1116,7 @@ func assertInstructionTypeAndPosition(t *testing.T, instructionsPlan *instructio
 	require.Nil(t, err)
 	instruction := scheduledInstructions[idxInPlan].GetInstruction()
 
-	canonicalInstruction := instruction.GetCanonicalInstruction()
+	canonicalInstruction := instruction.GetCanonicalInstruction(isSkipped)
 	require.Equal(t, expectedInstructionName, canonicalInstruction.GetInstructionName())
 	expectedPosition := binding_constructors.NewStarlarkInstructionPosition(filename, expectedLine, expectedCol)
 	require.Equal(t, expectedPosition, canonicalInstruction.GetPosition())

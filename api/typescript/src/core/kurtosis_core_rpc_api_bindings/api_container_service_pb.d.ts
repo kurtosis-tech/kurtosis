@@ -344,6 +344,9 @@ export class StarlarkInstruction extends jspb.Message {
   getExecutableInstruction(): string;
   setExecutableInstruction(value: string): StarlarkInstruction;
 
+  getIsSkipped(): boolean;
+  setIsSkipped(value: boolean): StarlarkInstruction;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstruction.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstruction): StarlarkInstruction.AsObject;
@@ -358,6 +361,7 @@ export namespace StarlarkInstruction {
     instructionName: string,
     argumentsList: Array<StarlarkInstructionArg.AsObject>,
     executableInstruction: string,
+    isSkipped: boolean,
   }
 }
 

@@ -17,6 +17,6 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_RelativeImports() {
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
-	expectedResult := "John Doe\nOpen Sesame\n"
-	require.Equal(t, expectedResult, string(runResult.RunOutput))
+	expectedResult := "Files with artifact name 'upload' uploaded with artifact UUID '[a-f0-9]{32}'\nJohn Doe\nOpen Sesame\n"
+	require.Regexp(t, expectedResult, string(runResult.RunOutput))
 }

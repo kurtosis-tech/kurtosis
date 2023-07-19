@@ -6,7 +6,9 @@ slug: /k8s
 
 This guide assumes that you have [Kurtosis installed](./installing-the-cli.md).
 
-If you would like more information on Kubernetes and how to set up, run and manage a cluster check out these offical [docs](https://kubernetes.io/docs/home/)
+If you would like more information on Kubernetes and how to set up, run and manage a cluster check out these offical [docs](https://kubernetes.io/docs/home/). 
+
+Please note that in order to ensure Kurtosis works the same way over Kubernetes as it does over Docker locally, service names must be a valid [RFC-1035 Label Name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#rfc-1035-label-names). This means service names must contain: at most 63 characters, only lowercase alphanumeric characters or '-', start with an alphabetic character, and end with an alphanumeric character. 
 
 I. Create a Kubernetes Cluster
 -----------------
@@ -38,7 +40,7 @@ III. Add your cluster information to `kurtosis-config.yml`
 --------------------------------
 
 1. Open the file located at `"$(kurtosis config path)"`. This should look like `/Users/<YOUR_USER>/Library/Application Support/kurtosis/kurtosis-config.yml` on MacOS.
-1. Paste the following contents, changing `NAME-OF-YOUR-CLUSTER` to the cluster you created and save:
+2. Paste the following contents, changing `NAME-OF-YOUR-CLUSTER` to the cluster you created and save:
 ```yaml
 config-version: 2
 should-send-metrics: true
@@ -72,7 +74,7 @@ To switch back to using Kurtosis locally, simply use: `kurtosis cluster set dock
 :::
 
 
-V. [Optional] Activate the enclave pool to accelerate the enclave creation time
+V. \[Optional] Activate the enclave pool to accelerate the enclave creation time
 --------------------------------
 
 This step is optional, but we recommend taking it as it improves the user experience during the enclave creation, specifically regarding speed.

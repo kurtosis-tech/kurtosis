@@ -146,7 +146,7 @@ type RunPythonCapabilities struct {
 	wait                string
 }
 
-func (builtin *RunPythonCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	pythonScript, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RunArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RunArgName)
@@ -312,9 +312,8 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 
 	// throw an error as execution of the command failed
 	if runPythonExecutionResult.GetExitCode() != 0 {
-		return "", stacktrace.NewError(
-			"Python command: %q exited with code %d and output \n%v",
-			commandToRun, runPythonExecutionResult.GetExitCode(), runPythonExecutionResult.GetOutput())
+		errorMessage := fmt.Sprintf("Python command: %q exited with code %d and output", commandToRun, runPythonExecutionResult.GetExitCode())
+		return "", stacktrace.NewError(formatErrorMessage(errorMessage, runPythonExecutionResult.GetOutput()))
 	}
 
 	if builtin.fileArtifactNames != nil && builtin.pathToFileArtifacts != nil {
