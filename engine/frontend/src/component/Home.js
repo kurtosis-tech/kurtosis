@@ -10,7 +10,7 @@ import {getEnclavesFromKurtosis} from "../api/enclave";
 
 import { Route, Routes } from 'react-router-dom';
 
-const Temp = () => {
+const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [encalveLoading, setEnclaveLoading] = useState(false)
 
@@ -39,4 +39,4 @@ const Temp = () => {
   );
 }
 
-export default Temp;
+export default Home;

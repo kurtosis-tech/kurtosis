@@ -1,12 +1,12 @@
 import './App.css';
-import Temp from './component/Temp';
+import Home from './component/Home';
 import { BrowserRouter as Router } from 'react-router-dom';
 
 const App = () => {
   return (
       <div className="h-screen w-screen">
         <Router>
-          <Temp />
+          <Home />
         </Router>
       </div>   
   )
