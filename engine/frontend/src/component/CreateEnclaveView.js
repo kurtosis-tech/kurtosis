@@ -105,6 +105,7 @@ export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
                         <LogView 
                             heading={`Starlark Logs: ${enclaveInfo.enclave.name}`} 
                             logs={logs}
+                            size={"h-full"}
                         />
                     </div>  
                 </div>                    

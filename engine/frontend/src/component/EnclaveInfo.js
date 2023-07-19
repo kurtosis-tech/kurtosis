@@ -121,7 +121,7 @@ const EncalveInfo = ({enclaves}) => {
                 renderList={ ()=> renderEnclaves(enclaves, handleLeftPanelClick)}
             />
 
-            <div className="flex bg-white w-[calc(100vw-24rem)] flex-col space-y-5">
+            <div className="flex bg-white w-[calc(100vw-39rem)] flex-col space-y-5">
                 <div className="h-[3rem] flex items-center justify-center m-2">
                     <Heading content={name} />
                 </div>

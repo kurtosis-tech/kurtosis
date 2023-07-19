@@ -51,7 +51,6 @@ const Enclaves = ({enclaves, isLoading}) => {
             {
                 (isLoading) ? <LoadingOverlay/> : <EnclaveComponent enclaves={enclaves} handleClick={handleClick}/>
             }
-            <RightPanel />
         </div>
     ) 
 }

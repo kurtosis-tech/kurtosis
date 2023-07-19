@@ -75,9 +75,33 @@ const ServiceInfo = ({enclaves}) => {
                 heading={"Services"} 
                 renderList={ ()=> renderServices(services, handleServiceClick)}
             />
-            <div className="flex h-full w-[calc(100vw-24rem)] flex-col space-y-5">
+            <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
                 <div className='flex flex-col h-full space-y-1 bg-white'>
-                    <LogView heading={`Service Logs: ${selected.name}`} logs={logs}/>
+                    <Heading content={`${enclaveName}::${selected.name}`} />
+                    <div className="flex-1">
+                        <div className="text-xl text-left h-fit mb-2 ml-5"> 
+                            Ports
+                        </div>
+                        <div className="overflow-auto">
+                                {
+                                    selected.ports.map(port => {
+                                        const urlWithApplicationString = `${port.applicationProtocol}://localhost:${port.publicPortNumber}`
+                                        const urlWithoutApplicationString = `localhost:${port.publicPortNumber}`
+                                        const url = port.applicationProtocol ? urlWithApplicationString: urlWithoutApplicationString 
+                                        
+                                        return (
+                                            <div className="h-fit flex flex-row space-x-10 ml-5">
+                                                <div> {port.portName}: </div> 
+                                                <a href={url} rel="noreferrer" className="grow">
+                                                    <u> {url} </u>
+                                                </a>
+                                            </div>  
+                                        )
+                                    })
+                                }
+                        </div>
+                    </div>
+                    <LogView heading={`Service Logs`} logs={logs}/>
                 </div>  
             </div>                    
             <RightPanel home={false} isServiceInfo={true} enclaveName={enclaveName}/>

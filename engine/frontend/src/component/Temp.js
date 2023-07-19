@@ -30,7 +30,6 @@ const Temp = () => {
             <div className="flex h-[calc(100vh-4rem)]">
                 <Routes>
                     <Route exact path="/" element={<Main totalEnclaves={enclaves.length}/>} />
-                    {/* <Route path="/enclave/*" element={<CreateEnclave />} /> */}
                     <Route exact path="/enclaves" element={<Enclaves enclaves={enclaves} isLoading={encalveLoading}/>} />
                     <Route path="/enclaves/:name" element={<EnclaveInfo enclaves={enclaves}/>} />
                     <Route path="/enclaves/:name/services/:uuid" element={<ServiceInfo/>} />

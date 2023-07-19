@@ -1,8 +1,8 @@
 import Heading from "./Heading"
 
-export const LogView = ({heading, logs, classAttr}) => {
+export const LogView = ({heading, logs, size="h-[70%]" }) => {
     return (
-        <div className="flex-col flex h-full">
+        <div className={`flex-col flex ${size}`}>
             <Heading content={heading} />
             <div className="overflow-y-auto h-full">
                 <ul className="border border-gray-200 p-2">
