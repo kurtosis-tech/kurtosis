@@ -41,7 +41,6 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) ([]byte, 
 		filepathsToUpload = append(filepathsToUpload, pathToCompress)
 	}
 
-	os.TempDir()
 	tempDir, err := os.MkdirTemp(defaultTmpDir, tempCompressionDirPattern)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
