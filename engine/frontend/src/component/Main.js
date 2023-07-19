@@ -3,17 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import NoData from './NoData';
 
 const Main = ({totalEnclaves}) => {
-  
   const navigate = useNavigate()
-  
-  const handleCreateEnvClick = () => {
-    navigate("/enclaves/create")
-  }
-
+  // const handleCreateEnvClick = () => {
+  //   navigate("/enclaves/create")
+  // }
   const handleViewEnvsClick = () => {
     navigate("/enclaves")
   }
-
   return (
     <div className="flex-grow bg-slate-800 flex-row flex mt-28 w-screen">
         <div className='w-1/3'> </div>
@@ -23,7 +19,7 @@ const Main = ({totalEnclaves}) => {
                 {
                   totalEnclaves > 0 ? <div className="mb-4 bg-green-600 h-16 rounded" onClick={handleViewEnvsClick}>
                   <div className='cursor-default text-3xl text-slate-800 p-2'> View Environments </div>
-              </div> : <NoData text={"No Enclaves created"}/> 
+              </div> : <NoData text={"No Enclaves Created"}/> 
                 }
                 {/* <div className="mb-4 bg-green-600 h-16 rounded" onClick={handleCreateEnvClick}>
                     <div className='cursor-default text-3xl text-slate-800 p-2'> Create Environment </div>
@@ -35,5 +31,4 @@ const Main = ({totalEnclaves}) => {
     </div>
   );
 }
-
 export default Main;
