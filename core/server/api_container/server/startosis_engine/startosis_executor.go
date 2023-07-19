@@ -74,7 +74,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			starlarkRunResponseLineStream <- progress
 
 			instruction := scheduledInstruction.GetInstruction()
-			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction())
+			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()))
 			starlarkRunResponseLineStream <- canonicalInstruction
 
 			if !dryRun {
