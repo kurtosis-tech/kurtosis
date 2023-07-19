@@ -233,7 +233,9 @@ func getCompletionFunc(enclaveArgKey string, artifactArgKey string) func(ctx con
 		fileArtifactContentPaths := []string{}
 		for _, fileArtifactDescription := range fileArtifactContents.GetFileDescriptions() {
 			fileArtifactContentPath := fileArtifactDescription.GetPath()
-			fileArtifactContentPaths = append(fileArtifactContentPaths, fileArtifactContentPath)
+			if fileArtifactDescription.TextPreview != nil {
+				fileArtifactContentPaths = append(fileArtifactContentPaths, fileArtifactContentPath)
+			}
 		}
 
 		return fileArtifactContentPaths, nil
