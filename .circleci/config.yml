@@ -26,27 +26,46 @@ steps_install_go: &steps_install_go
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_k8s: &steps_prepare_testing_k8s
   steps:
-    - run: |
-        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
-        sudo dpkg -i minikube_latest_amd64.deb
-        minikube start --vm-driver=docker --kubernetes-version=v1.19.0
     - run:
-        name: Check status
-        command: |
-          minikube status
-    - run: |
-        eval $(minikube docker-env)
+      name: Install K3D and create the K3D/K3S cluster on Docker
+      command: |
+        curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+        k3d cluster create --servers 1 --wait --verbose
+    - run:
+      name: Load Kurtosis images into the K3S cluster
+      # First load the image into Docker and then import the images into K3S by taking the image from Docker
+      command: |
+        kurtosis_version="$(./scripts/get-docker-tag.sh)"
+        
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+        
+        k3d image import -c circleci-k8s-1 "kurtosistech/core:$kurtosis_version"
+        
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+        
+        k3d image import -c circleci-k8s-1 "kurtosistech/engine:$kurtosis_version"
+        
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-    # Set minikube cluster with some previous steps to force minikube cluster type in the cluster-setting file, this save us to start the engine with the cluster set command
+        
+        k3d image import -c circleci-k8s-1 "kurtosistech/files-artifacts-expander:$kurtosis_version"
+    # Edit the Kurtosis config file in order to have K3S cluster configuration
+    - run:
+      name: Add K3S cluster config in Kurtosis config file
+      command: |
+        KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
+        echo -e "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default\n       storage-class: standard\n       enclave-size-in-megabytes: 2048" > "$KURTOSIS_CONFIG_FILEPATH"
+    # Set the K3S cluster with some previous steps to force this cluster type in the cluster-setting file. This save us to start the engine with the cluster set command
     # because we are going to start it on the next step
-    - run: |
+    - run:
+      name: Set K3S Kurtosis cluster
+      command: |
         KURTOSIS_CLUSTER_SETTING_FILEPATH="<< pipeline.parameters.kurtosis-cluster-setting-abs-filepath >>"
-        echo -n "minikube" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
+        echo -n "k3d-k3s-default" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
         echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
-    - run: |
-        ${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace
+        ${KURTOSIS_BINPATH} cluster set k3d-k3s-default --cli-log-level trace
+    - run:
+      name: Start Kurtosis engine in K8s backend
+      command: |
         ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
