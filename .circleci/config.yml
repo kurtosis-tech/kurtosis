@@ -3,6 +3,8 @@ version: 2.1
 executors:
   ubuntu_vm:
     machine:
+      # This ubuntu-2004:202201-02 machine has a pre-installed Docker, so we are not using the CircleCI remote Docker when we
+      # initiate this machine. More here: https://discuss.circleci.com/t/linux-machine-executor-images-2022-january-q1-update/42831
       image: ubuntu-2004:202201-02
 
 jobs:
