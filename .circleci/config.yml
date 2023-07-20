@@ -30,7 +30,7 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         name: Install K3D and create the K3D/K3S cluster on Docker
         command: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
-          k3d cluster create --servers 2 --wait --verbose
+          k3d cluster create --servers 3 --wait --verbose
     - run:
         name: Load Kurtosis images into the K3S cluster
         # First load the image into Docker and then import the images into K3S by taking the image from Docker
