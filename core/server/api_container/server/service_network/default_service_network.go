@@ -460,8 +460,127 @@ func (network *DefaultServiceNetwork) AddServices(
 	return startedServices, map[service.ServiceName]error{}, nil
 }
 
-// UpdateService This is purely called from a Starlark context so this only works with Names
-func (network *DefaultServiceNetwork) UpdateService(
+// UpdateService updates a service currently running inside an enclave. See UpdateServices for more details
+func (network *DefaultServiceNetwork) UpdateService(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) (*service.Service, error) {
+	serviceConfigMap := map[service.ServiceName]*service.ServiceConfig{
+		serviceName: serviceConfig,
+	}
+
+	startedServices, serviceFailed, err := network.UpdateServices(ctx, serviceConfigMap, singleServiceStartupBatch)
+	if err != nil {
+		return nil, err
+	}
+	if failure, found := serviceFailed[serviceName]; found {
+		return nil, failure
+	}
+	if startedService, found := startedServices[serviceName]; found {
+		return startedService, nil
+	}
+	return nil, stacktrace.NewError("Service '%s' could not be updated properly, and its state is unknown. This is a Kurtosis internal bug", serviceName)
+}
+
+// UpdateServices updates the service by removing the current container and re-creating it, keeping the registration
+// identical. Note this function does not handle any kind of rollback if it fails halfway. This is because we have no
+// way to do soft-delete for containers. Once it's deleted, it's gone, so if Kurtosis fails at re-creating it, it
+// doesn't rollback to the state previous to calling this function
+func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, updateServiceConfigs map[service.ServiceName]*service.ServiceConfig, batchSize int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+	failedServicesPool := map[service.ServiceName]error{}
+	successfullyUpdatedService := map[service.ServiceName]*service.Service{}
+
+	// First, remove the service
+	serviceUuidToNameMap := map[service.ServiceUUID]service.ServiceName{}
+	serviceUuidsToRemove := map[service.ServiceUUID]bool{}
+	for serviceName := range updateServiceConfigs {
+		serviceRegistration, found := network.registeredServiceInfo[serviceName]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
+				"inside this enclave: '%s'", serviceName)
+		} else {
+			serviceUuid := serviceRegistration.GetUUID()
+			serviceUuidsToRemove[serviceUuid] = true
+			serviceUuidToNameMap[serviceUuid] = serviceName
+		}
+	}
+	successfullyRemovedServices, failedRemovedServices, err := network.kurtosisBackend.RemoveRegisteredUserServiceProcesses(ctx, network.enclaveUuid, serviceUuidsToRemove)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened updating services")
+	}
+	for serviceUuid, serviceErr := range failedRemovedServices {
+		if serviceName, found := serviceUuidToNameMap[serviceUuid]; found {
+			failedServicesPool[serviceName] = serviceErr
+		} else {
+			return nil, nil, stacktrace.NewError("Error mapping service UUID to service name. This is a bug in Kurtosis")
+		}
+	}
+
+	// Set service status back to registered and remove its currently saved service config
+	successfullyRemovedServicesIncludingSidecars := map[service.ServiceUUID]bool{}
+	for serviceUuid := range successfullyRemovedServices {
+		if serviceName, found := serviceUuidToNameMap[serviceUuid]; found {
+			if network.isPartitioningEnabled {
+				if sidecar, found := network.networkingSidecars[serviceName]; found {
+					if err = network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
+						failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with name '%v'", serviceName)
+					} else {
+						successfullyRemovedServicesIncludingSidecars[serviceUuid] = true
+						delete(network.networkingSidecars, serviceName)
+					}
+				}
+			} else {
+				successfullyRemovedServicesIncludingSidecars[serviceUuid] = true
+			}
+
+			network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Registered)
+			network.registeredServiceInfo[serviceName].SetConfig(nil)
+		} else {
+			return nil, nil, stacktrace.NewError("Error mapping service UUID to service name. This is a bug in Kurtosis")
+		}
+	}
+
+	// Re-create service with the new service config
+	serviceToRecreate := map[service.ServiceUUID]*service.ServiceConfig{}
+	for serviceUuid := range successfullyRemovedServicesIncludingSidecars {
+		serviceName, found := serviceUuidToNameMap[serviceUuid]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
+				"inside this enclave: '%s'", serviceName)
+			continue
+		}
+		newServiceConfig, found := updateServiceConfigs[serviceName]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service '%s' because no new "+
+				"service config could be found. This is a bug in Kurtosis", serviceName)
+			continue
+		}
+		serviceToRecreate[serviceUuid] = newServiceConfig
+	}
+	recreatedService, failedToRecreateService := network.startRegisteredServices(ctx, serviceToRecreate, batchSize)
+	for serviceUuid, failedToRecreateServiceErr := range failedToRecreateService {
+		serviceName, found := serviceUuidToNameMap[serviceUuid]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
+				"inside this enclave: '%s'", serviceName)
+			continue
+		}
+		failedServicesPool[serviceName] = failedToRecreateServiceErr
+	}
+	for serviceUuid, newServiceObj := range recreatedService {
+		serviceName, found := serviceUuidToNameMap[serviceUuid]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
+				"inside this enclave: '%s'", serviceName)
+			continue
+		}
+		successfullyUpdatedService[serviceName] = newServiceObj
+		network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Started)
+	}
+	return successfullyUpdatedService, failedServicesPool, nil
+}
+
+// UpdateServiceSubnetwork This is purely called from a Starlark context so this only works with Names
+func (network *DefaultServiceNetwork) UpdateServiceSubnetwork(
 	ctx context.Context,
 	updateServiceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig,
 ) (

@@ -193,6 +193,39 @@ func StartRegisteredUserServices(
 	return successfulServicesPool, failedServicesPool, nil
 }
 
+func RemoveRegisteredUserServiceProcesses(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	services map[service.ServiceUUID]bool,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
+	map[service.ServiceUUID]bool,
+	map[service.ServiceUUID]error,
+	error,
+) {
+	// in Kubernetes, removing service process is equivalent to stopping it. It sets its number of pod to zero
+	removeServiceProcessesFilters := &service.ServiceFilters{
+		Names:    nil,
+		UUIDs:    services,
+		Statuses: nil,
+	}
+	successfullyRemovedService, failedRemovedService, err := StopUserServices(
+		ctx,
+		enclaveUuid,
+		removeServiceProcessesFilters,
+		cliModeArgs,
+		apiContainerModeArgs,
+		engineServerModeArgs,
+		kubernetesManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error removing service processes")
+	}
+	return successfullyRemovedService, failedRemovedService, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper functions
