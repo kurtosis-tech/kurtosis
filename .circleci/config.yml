@@ -1,7 +1,5 @@
 version: 2.1
 
-orbs:
-
 executors:
   ubuntu_vm:
     machine:
