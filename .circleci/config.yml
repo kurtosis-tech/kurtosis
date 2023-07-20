@@ -14,8 +14,24 @@ jobs:
       - run: |
           curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
           k3d cluster create --servers 1 --wait --verbose
-          kubectl get nodes
-
+      - run: |
+          echo "deb [trusted=yes] https://apt.fury.io/kurtosis-tech/ /" | sudo tee /etc/apt/sources.list.d/kurtosis.list
+          sudo apt update
+          sudo apt install kurtosis-cli
+          kurtosis version
+      - run: |
+          KURTOSIS_CONFIG_FILEPATH=$(kurtosis config path)
+          echo -e "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default\n       storage-class: standard\n       enclave-size-in-megabytes: 2048" > "$KURTOSIS_CONFIG_FILEPATH"
+          KURTOSIS_CONFIG_DIR=$(dirname "$KURTOSIS_CONFIG_FILEPATH")
+          KURTOSIS_CLUSTER_SETTING_FILEPATH="$KURTOSIS_CONFIG_DIR/cluster-setting"
+          echo -n "k3d-k3s-default" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH" 
+      - run: |
+          kurtosis engine start
+      - run:
+          command: "kurtosis gateway"
+          background: true
+      - run: |
+          kurtosis enclave add
 workflows:
   build:
     jobs:
