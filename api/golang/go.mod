@@ -8,7 +8,7 @@ require (
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230712110324-ce92904bb514
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230427135111-ee2492059d06
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
-	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/mholt/archiver/v3 v3.5.1
 	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.8.3
 	google.golang.org/grpc v1.56.2
@@ -16,14 +16,16 @@ require (
 )
 
 require (
+	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dsnet/compress v0.0.1 // indirect
-	github.com/frankban/quicktest v1.14.3 // indirect
+	github.com/dsnet/compress v0.0.2-0.20210315054119-f66993602bf5 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/klauspost/compress v1.11.4 // indirect
+	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/nwaples/rardecode v1.1.3 // indirect
-	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
+	github.com/pierrec/lz4/v4 v4.1.2 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect

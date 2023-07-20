@@ -4,14 +4,15 @@ import {ApiContainerServicePromiseClient} from 'kurtosis-sdk/build/core/kurtosis
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
-export const runStarlarkPackage = async (url, packageId) => {
+export const runStarlarkPackage = async (url, packageId, args) => {
+    console.log(typeof args)
     const containerClient = new ApiContainerServicePromiseClient(url);
     const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
 
     runStarlarkPackageArgs.setDryRun(false);
     runStarlarkPackageArgs.setRemote(true);
     runStarlarkPackageArgs.setPackageId(packageId);
-    runStarlarkPackageArgs.setSerializedParams("{}")
+    runStarlarkPackageArgs.setSerializedParams(args)
     const stream = containerClient.runStarlarkPackage(runStarlarkPackageArgs, null);
     return stream;
 }
@@ -22,12 +23,24 @@ const getDataFromApiContainer = async (request, process) => {
 }
 
 export const getEnclaveInformation = async (url) => {
-    const containerClient = new ApiContainerServicePromiseClient(url);
+    console.log("url ", url)
+    if (url === "") {
+        return {
+            services: [],
+            artifacts: []
+        }
+    }
 
+    const containerClient = new ApiContainerServicePromiseClient(url);
     const makeGetServiceRequest = async () => {
-        const serviceArgs = new GetServicesArgs();
-        const responseFromGrpc = await containerClient.getServices(serviceArgs, null)
-        return responseFromGrpc.toObject()
+        try {
+            const serviceArgs = new GetServicesArgs();
+            const responseFromGrpc = await containerClient.getServices(serviceArgs, null)
+            console.log(responseFromGrpc.toObject())
+            return responseFromGrpc.toObject()
+        } catch (error) {
+            return {serviceInfoMap:[]}
+        }
     }
 
     const makeFileArtifactRequest = async () => {
