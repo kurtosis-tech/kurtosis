@@ -75,7 +75,7 @@ type StoreServiceFilesCapabilities struct {
 	artifactName string
 }
 
-func (builtin *StoreServiceFilesCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	if !arguments.IsSet(ArtifactNameArgName) {
 		natureThemeName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
 		if err != nil {

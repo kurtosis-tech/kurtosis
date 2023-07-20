@@ -14,6 +14,9 @@ const (
 	DefaultAPIContainerVersion = ""
 	// TODO perhaps move this to the metrics library
 	SendMetricsByDefault = true
+
+	// engine-enclave-pool-size = 0 means that enclave pool feat will be disabled
+	DefaultEngineEnclavePoolSize uint8 = 0
 )
 
 var DefaultApiContainerLogLevel = logrus.DebugLevel

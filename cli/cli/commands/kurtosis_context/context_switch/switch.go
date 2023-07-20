@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
@@ -113,7 +114,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	}
 	logrus.Infof("Context switched to '%s', Kurtosis engine will now be restarted", contextIdentifier)
 
-	_, engineClientCloseFunc, restartEngineErr := engineManager.RestartEngineIdempotently(ctx, logrus.InfoLevel, noEngineVersion, restartEngineOnSameVersionIfAnyRunning)
+	_, engineClientCloseFunc, restartEngineErr := engineManager.RestartEngineIdempotently(ctx, logrus.InfoLevel, noEngineVersion, restartEngineOnSameVersionIfAnyRunning, defaults.DefaultEngineEnclavePoolSize)
 	if restartEngineErr != nil {
 		return stacktrace.Propagate(restartEngineErr, "Engine could not be restarted after context was switched. The context"+
 			"will be rolled back, but it is possible the engine will remain stopped. Its status can be retrieved "+

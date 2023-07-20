@@ -39,8 +39,15 @@ steps_prepare_testing_k8s: &steps_prepare_testing_k8s
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
         docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-    - run: "${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace"
-    - run: "${KURTOSIS_BINPATH} engine restart --enclave-pool-size 4"
+    # Set minikube cluster with some previous steps to force minikube cluster type in the cluster-setting file, this save us to start the engine with the cluster set command
+    # because we are going to start it on the next step
+    - run: |
+        KURTOSIS_CLUSTER_SETTING_FILEPATH="<< pipeline.parameters.kurtosis-cluster-setting-abs-filepath >>"
+        echo -n "minikube" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
+        echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
+    - run: |
+        ${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace
+        ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
     - run:
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
@@ -100,7 +107,7 @@ executors:
 parameters:
   go-version:
     type: string
-    default: "1.19"
+    default: "1.19.10"
   container-engine-lib-build-cache-key-prefix:
     type: string
     default: "go-mod-v1"   # Can bump this version to bust the cache
@@ -110,12 +117,12 @@ parameters:
     default: 20.10.7
   api-go-version:
     type: string
-    default: "1.18"
+    default: "1.19.10"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
   server-go-version:
     type: string
-    default: "1.19"
+    default: "1.19.10"
   rust-version:
     type: string
     default: 1.68.2
@@ -130,7 +137,7 @@ parameters:
     default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
   cli-go-version:
     type: string
-    default: "1.19"
+    default: "1.19.10"
   workspace-with-cli-binary-and-images-mountpoint:
     type: string
     default: "/tmp/workspace"
@@ -168,6 +175,9 @@ parameters:
   rendertemplate-cli-test-data-json-relative-path:
     type: string
     default: "internal_testsuites/resources/render_template_cli_test/data.json"
+  kurtosis-cluster-setting-abs-filepath:
+    type: string
+    default: "/home/circleci/.local/share/kurtosis/cluster-setting"
 
 
 
@@ -291,7 +301,6 @@ jobs:
       - run: |
           core/launcher/scripts/build.sh
 
-
   build_api_container_server:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
@@ -348,7 +357,6 @@ jobs:
 
       - run: |
           engine/launcher/scripts/build.sh
-
 
   build_engine_server:
     docker:
@@ -577,10 +585,6 @@ jobs:
   test_old_enclave_continuity:
     executor: ubuntu_vm
     steps:
-      # TODO remove this after version > 0.68.12 is out
-      # This exits the test_old_enclave_continuity immediately
-      # after a new version is out we remove these comments and this line
-      - run: circleci-agent step halt
       - checkout
 
       - <<: *abort_job_if_only_docs_changes
@@ -627,7 +631,7 @@ jobs:
       - run:
           name: "Verify only the engine container remains after the clean"
           command: |
-            if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 1 ]; then
+            if ! [ "$(docker container ls -a | tail -n+2 | wc -l)" -eq 0 ]; then
               docker container ls -a
               false
             fi
@@ -650,7 +654,6 @@ jobs:
               docker network ls
               false
             fi
-
 
   test_basic_cli_functionality:
     executor: ubuntu_vm
@@ -782,7 +785,6 @@ jobs:
                     false
                   fi
 
-
   test_ci_for_failure:
     executor: ubuntu_vm
     parameters:
@@ -907,7 +909,6 @@ jobs:
           cd api/rust/
           cargo publish
 
-
   publish_kurtosis_api_typescript:
     docker:
       - image: "cimg/node:<< pipeline.parameters.api-node-version>>"
@@ -956,7 +957,6 @@ jobs:
           push_to_dockerhub=true
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
 
-
   publish_api_container_server_image:
     docker:
       - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
@@ -994,7 +994,6 @@ jobs:
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
           push_to_dockerhub=true
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
-
 
   publish_engine_server_image:
     docker:
@@ -1034,7 +1033,6 @@ jobs:
           image_name_to_publish_latest="${IMAGE_ORG_AND_REPO}:latest"
           push_to_dockerhub=true
           scripts/docker-image-builder.sh "${push_to_dockerhub}" "${dockerfile_filepath}" "${image_name_with_version}" "${image_name_to_publish_semver}" "${image_name_to_publish_latest}"
-
 
   push_cli_artifacts:
     docker:

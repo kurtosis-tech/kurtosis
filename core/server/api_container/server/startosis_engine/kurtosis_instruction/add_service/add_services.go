@@ -80,7 +80,7 @@ type AddServicesCapabilities struct {
 	resultUuids map[service.ServiceName]string
 }
 
-func (builtin *AddServicesCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *AddServicesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	ServiceConfigsDict, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, ConfigsArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ConfigsArgName)
