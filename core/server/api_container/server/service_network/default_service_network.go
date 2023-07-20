@@ -460,6 +460,25 @@ func (network *DefaultServiceNetwork) AddServices(
 	return startedServices, map[service.ServiceName]error{}, nil
 }
 
+// UpdateService updates a service currently running inside an enclave. See UpdateServices for more details
+func (network *DefaultServiceNetwork) UpdateService(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) (*service.Service, error) {
+	serviceConfigMap := map[service.ServiceName]*service.ServiceConfig{
+		serviceName: serviceConfig,
+	}
+
+	startedServices, serviceFailed, err := network.UpdateServices(ctx, serviceConfigMap, singleServiceStartupBatch)
+	if err != nil {
+		return nil, err
+	}
+	if failure, found := serviceFailed[serviceName]; found {
+		return nil, failure
+	}
+	if startedService, found := startedServices[serviceName]; found {
+		return startedService, nil
+	}
+	return nil, stacktrace.NewError("Service '%s' could not be updated properly, and its state is unknown. This is a Kurtosis internal bug", serviceName)
+}
+
 // UpdateServices updates the service by removing the current container and re-creating it, keeping the registration
 // identical. Note this function does not handle any kind of rollback if it fails halfway. This is because we have no
 // way to do soft-delete for containers. Once it's deleted, it's gone, so if Kurtosis fails at re-creating it, it
