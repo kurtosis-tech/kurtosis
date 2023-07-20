@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.80.13](https://github.com/kurtosis-tech/kurtosis/compare/0.80.12...0.80.13) (2023-07-20)
+
+
+### Features
+
+* Add autocomplete for file path of artifact files inspect ([#947](https://github.com/kurtosis-tech/kurtosis/issues/947)) ([f72dfce](https://github.com/kurtosis-tech/kurtosis/commit/f72dfce9b755c37dde849f9047ef4a6ca7e59cb2))
+
+
+### Bug Fixes
+
+* broken symlinks on Kurtosis packages ([#944](https://github.com/kurtosis-tech/kurtosis/issues/944)) ([fbb0aee](https://github.com/kurtosis-tech/kurtosis/commit/fbb0aee6edfce4598b0384aebfe71b1e12b9730c)), closes [#846](https://github.com/kurtosis-tech/kurtosis/issues/846)
+* improve frontend ([#940](https://github.com/kurtosis-tech/kurtosis/issues/940)) ([36153e2](https://github.com/kurtosis-tech/kurtosis/commit/36153e2c6e3c332508d6071d2f9101f77cfb6295))
+* improved error msg ([#936](https://github.com/kurtosis-tech/kurtosis/issues/936)) ([4f72ae1](https://github.com/kurtosis-tech/kurtosis/commit/4f72ae12409d6ddd8c2e2c6b61770081d9200bde))
+
 ## [0.80.12](https://github.com/kurtosis-tech/kurtosis/compare/0.80.11...0.80.12) (2023-07-18)
 
 
