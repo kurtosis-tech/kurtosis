@@ -57,7 +57,7 @@ export const createEnclave = async () => {
     return {enclave, apiClient}
 }
 
-export const runStarlark = async(apiClient, packageId) => {
-    const stream = await runStarlarkPackage(apiClient, packageId)
+export const runStarlark = async(apiClient, packageId, args) => {
+    const stream = await runStarlarkPackage(apiClient, packageId, args)
     return stream;
 }
