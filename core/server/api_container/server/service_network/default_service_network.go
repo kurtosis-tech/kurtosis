@@ -497,6 +497,7 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 	}
 
 	// Set service status back to registered and remove its currently saved service config
+	successfullyRemovedServicesIncludingSidecars := map[service.ServiceUUID]bool{}
 	for serviceUuid := range successfullyRemovedServices {
 		if serviceName, found := serviceUuidToNameMap[serviceUuid]; found {
 			if network.isPartitioningEnabled {
@@ -504,9 +505,12 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 					if err = network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
 						failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with name '%v'", serviceName)
 					} else {
+						successfullyRemovedServicesIncludingSidecars[serviceUuid] = true
 						delete(network.networkingSidecars, serviceName)
 					}
 				}
+			} else {
+				successfullyRemovedServicesIncludingSidecars[serviceUuid] = true
 			}
 
 			network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Registered)
@@ -518,7 +522,7 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 
 	// Re-create service with the new service config
 	serviceToRecreate := map[service.ServiceUUID]*service.ServiceConfig{}
-	for serviceUuid := range successfullyRemovedServices {
+	for serviceUuid := range successfullyRemovedServicesIncludingSidecars {
 		serviceName, found := serviceUuidToNameMap[serviceUuid]
 		if !found {
 			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
@@ -527,8 +531,8 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 		}
 		newServiceConfig, found := updateServiceConfigs[serviceName]
 		if !found {
-			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
-				"inside this enclave: '%s'", serviceName)
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service '%s' because no new "+
+				"service config could be found. This is a bug in Kurtosis", serviceName)
 			continue
 		}
 		serviceToRecreate[serviceUuid] = newServiceConfig

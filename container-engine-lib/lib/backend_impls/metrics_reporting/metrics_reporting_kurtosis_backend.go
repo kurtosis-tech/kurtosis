@@ -260,7 +260,7 @@ func (backend *MetricsReportingKurtosisBackend) StartRegisteredUserServices(ctx 
 func (backend *MetricsReportingKurtosisBackend) RemoveRegisteredUserServiceProcesses(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
 	successes, failures, err := backend.underlying.RemoveRegisteredUserServiceProcesses(ctx, enclaveUuid, services)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing services in enclave '%v' with the following service ids: %+v", enclaveUuid, services)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing service processes in enclave '%v' with the following service ids: %+v", enclaveUuid, services)
 	}
 	return successes, failures, nil
 }

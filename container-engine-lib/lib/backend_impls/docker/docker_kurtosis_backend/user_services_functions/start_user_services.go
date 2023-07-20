@@ -236,7 +236,7 @@ func RemoveRegisteredUserServiceProcesses(
 		serviceObj, found := allServiceObjs[uuid]
 		if !found {
 			// Should never happen; there should be a 1:1 mapping between service_objects:docker_resources by GUID
-			return nil, nil, stacktrace.NewError("No service object found for service '%v' that had Docker resources", uuid)
+			return nil, nil, stacktrace.NewError("No service object found for service '%v' that had Docker resources; this is a bug in Kurtosis", uuid)
 		}
 		servicesToStartByContainerId[serviceResources.ServiceContainer.GetId()] = serviceObj
 	}
@@ -247,7 +247,7 @@ func RemoveRegisteredUserServiceProcesses(
 		dockerObjectId string,
 	) error {
 		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
-			return stacktrace.Propagate(err, "An error occurred starting user service container with ID '%v'", dockerObjectId)
+			return stacktrace.Propagate(err, "An error occurred removing user service processes container with ID '%v'", dockerObjectId)
 		}
 		return nil
 	}
@@ -260,7 +260,7 @@ func RemoveRegisteredUserServiceProcesses(
 		dockerOperation,
 	)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred starting user service containers matching filters '%+v'", removeServiceFilters)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing user service processes containers matching filters '%+v'", removeServiceFilters)
 	}
 
 	for failedServiceUuid, failedServiceErr := range erroredUuidStrs {
@@ -271,8 +271,7 @@ func RemoveRegisteredUserServiceProcesses(
 		serviceUuid := service.ServiceUUID(serviceUuidStr)
 		serviceConfig, found := services[serviceUuid]
 		if !found {
-			failedServicesPool[serviceUuid] = stacktrace.NewError("Service '%s' was removed by the update service "+
-				"operation but could not be re-started as its service config could not be found", serviceUuid)
+			failedServicesPool[serviceUuid] = stacktrace.NewError("An error occurred removing user service processes for service with UUID '%s'", serviceUuid)
 		}
 		successfullyRemovedService[serviceUuid] = serviceConfig
 	}
