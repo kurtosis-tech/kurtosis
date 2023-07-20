@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -161,7 +162,7 @@ func (builtin *RequestCapabilities) Interpret(_ string, arguments *builtin_argum
 }
 
 func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if serviceExists := validatorEnvironment.DoesServiceNameExist(builtin.serviceName); !serviceExists {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ServiceNotFound {
 		return startosis_errors.NewValidationError("Tried creating a request for service '%s' which doesn't exist", builtin.serviceName)
 	}
 	if validationErr := recipe.ValidateHttpRequestRecipe(builtin.httpRequestRecipe, builtin.serviceName, validatorEnvironment); validationErr != nil {
@@ -181,6 +182,15 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := builtin.httpRequestRecipe.ResultMapToString(result)
 	return instructionResult, err
+}
+
+func (builtin *RequestCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	if instructionsAreEqual && enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
+		return enclave_structure.InstructionIsUpdate
+	} else if instructionsAreEqual {
+		return enclave_structure.InstructionIsEqual
+	}
+	return enclave_structure.InstructionIsUnknown
 }
 
 func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {

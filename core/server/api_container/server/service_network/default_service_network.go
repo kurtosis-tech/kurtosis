@@ -348,6 +348,10 @@ func (network *DefaultServiceNetwork) AddServices(
 	startedServices := map[service.ServiceName]*service.Service{}
 	failedServices := map[service.ServiceName]error{}
 
+	if len(serviceConfigs) == 0 {
+		return startedServices, failedServices, nil
+	}
+
 	// Save the services currently running in enclave for later
 	currentlyRunningServicesInEnclave := map[service.ServiceName]bool{}
 	for serviceName := range network.registeredServiceInfo {
@@ -460,10 +464,9 @@ func (network *DefaultServiceNetwork) AddServices(
 	return startedServices, map[service.ServiceName]error{}, nil
 }
 
-// UpdateService updates a service currently running inside an enclave. See UpdateServices for more details
-func (network *DefaultServiceNetwork) UpdateService(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) (*service.Service, error) {
+func (network *DefaultServiceNetwork) UpdateService(ctx context.Context, serviceName service.ServiceName, updateServiceConfig *service.ServiceConfig) (*service.Service, error) {
 	serviceConfigMap := map[service.ServiceName]*service.ServiceConfig{
-		serviceName: serviceConfig,
+		serviceName: updateServiceConfig,
 	}
 
 	startedServices, serviceFailed, err := network.UpdateServices(ctx, serviceConfigMap, singleServiceStartupBatch)
@@ -489,6 +492,10 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 	failedServicesPool := map[service.ServiceName]error{}
 	successfullyUpdatedService := map[service.ServiceName]*service.Service{}
 
+	if len(updateServiceConfigs) == 0 {
+		return successfullyUpdatedService, failedServicesPool, nil
+	}
+
 	// First, remove the service
 	serviceUuidToNameMap := map[service.ServiceUUID]service.ServiceName{}
 	serviceUuidsToRemove := map[service.ServiceUUID]bool{}
@@ -511,7 +518,7 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 		if serviceName, found := serviceUuidToNameMap[serviceUuid]; found {
 			failedServicesPool[serviceName] = serviceErr
 		} else {
-			return nil, nil, stacktrace.NewError("Error mapping service UUID to service name. This is a bug in Kurtosis")
+			return nil, nil, stacktrace.NewError("Error mapping service UUID to service name. This is a bug in Kurtosis.\nserviceUuidsToRemove=%v\nfailedRemovedServices=%v\nsuccessfullyRemovedServices=%v\nserviceUuidToNameMap=%v", serviceUuidsToRemove, failedRemovedServices, successfullyRemovedServices, serviceUuidToNameMap)
 		}
 	}
 

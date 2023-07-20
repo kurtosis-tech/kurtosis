@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -123,25 +124,48 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 		renderedServiceConfigs[renderedServiceName] = renderedServiceConfig
 	}
 
-	startedServices, failedServices, err := builtin.serviceNetwork.AddServices(ctx, renderedServiceConfigs, parallelism)
+	serviceToUpdate := map[service.ServiceName]*service.ServiceConfig{}
+	serviceToCreate := map[service.ServiceName]*service.ServiceConfig{}
+	for serviceName, serviceConfig := range renderedServiceConfigs {
+		if _, found := builtin.serviceNetwork.GetServiceRegistration(serviceName); found {
+			serviceToUpdate[serviceName] = serviceConfig
+		} else {
+			serviceToCreate[serviceName] = serviceConfig
+		}
+	}
+
+	updatedServices, failedToBeUpdatedServices, err := builtin.serviceNetwork.UpdateServices(ctx, serviceToUpdate, parallelism)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Unexpected error occurred updating a batch of services")
+	}
+
+	startedServices, failedToBeStartedServices, err := builtin.serviceNetwork.AddServices(ctx, renderedServiceConfigs, parallelism)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Unexpected error occurred starting a batch of services")
 	}
-	if len(failedServices) > 0 {
-		failedServiceNames := make([]service.ServiceName, len(failedServices))
-		idx := 0
-		for failedServiceName := range failedServices {
-			failedServiceNames[idx] = failedServiceName
-			idx++
+	if len(failedToBeStartedServices) > 0 || len(failedToBeUpdatedServices) > 0 {
+		var failedServiceNames []service.ServiceName
+		for failedServiceName := range failedToBeStartedServices {
+			failedServiceNames = append(failedServiceNames, failedServiceName)
 		}
-		return "", stacktrace.NewError("Some errors occurred starting the following services: '%v'. The entire batch was rolled back an no service was started. Errors were: \n%v", failedServiceNames, failedServices)
+		for failedServiceName := range failedToBeUpdatedServices {
+			failedServiceNames = append(failedServiceNames, failedServiceName)
+		}
+		return "", stacktrace.NewError("Some errors occurred starting or updating the following services: '%v'. The entire batch was rolled back an no service was started. Errors were:\nService creations: %v\nService Updates: %v", failedServiceNames, failedToBeStartedServices, failedToBeUpdatedServices)
+	}
+	startedAndUpdatedService := map[service.ServiceName]*service.Service{}
+	for startedServiceName, startedService := range startedServices {
+		startedAndUpdatedService[startedServiceName] = startedService
+	}
+	for updatedServiceName, updatedService := range updatedServices {
+		startedAndUpdatedService[updatedServiceName] = updatedService
 	}
 	shouldDeleteAllStartedServices := true
 
 	//TODO we should move the readiness check functionality to the default service network to improve performance
 	///TODO because we won't have to wait for all services to start for checking readiness, but first we have to
 	//TODO propagate the Recipes to this layer too and probably move the wait instruction also
-	if failedServicesChecks := builtin.allServicesReadinessCheck(ctx, startedServices, parallelism); len(failedServicesChecks) > 0 {
+	if failedServicesChecks := builtin.allServicesReadinessCheck(ctx, startedAndUpdatedService, parallelism); len(failedServicesChecks) > 0 {
 		var allServiceChecksErrMsg string
 		for serviceName, serviceErr := range failedServicesChecks {
 			serviceMsg := fmt.Sprintf("Service '%v' error:\n%v\n", serviceName, serviceErr)
@@ -151,19 +175,63 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	}
 	defer func() {
 		if shouldDeleteAllStartedServices {
-			builtin.removeAllStartedServices(ctx, startedServices)
+			builtin.removeAllStartedServices(ctx, startedAndUpdatedService)
 		}
 	}()
 
 	instructionResult := strings.Builder{}
 	instructionResult.WriteString(fmt.Sprintf("Successfully added the following '%d' services:", len(startedServices)))
-	for serviceName, serviceObj := range startedServices {
+	for serviceName, serviceObj := range startedAndUpdatedService {
 		fillAddServiceReturnValueWithRuntimeValues(serviceObj, builtin.resultUuids[serviceName], builtin.runtimeValueStore)
 		instructionResult.WriteString(fmt.Sprintf("\n  Service '%s' added with UUID '%s'", serviceName, serviceObj.GetRegistration().GetUUID()))
-
 	}
 	shouldDeleteAllStartedServices = false
 	return instructionResult.String(), nil
+}
+
+func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	if instructionsAreEqual {
+		for serviceName := range builtin.serviceConfigs {
+			enclaveComponents.AddService(serviceName, enclave_structure.ComponentWasLeftIntact)
+		}
+		return enclave_structure.InstructionIsEqual
+	}
+	otherAddServicesCapabilities, ok := other.(*AddServicesCapabilities)
+	if !ok {
+		for serviceName := range builtin.serviceConfigs {
+			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsNew)
+		}
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	// The instruction can be re-run only if the set of added services is a subset of what was added by the instruction it's being compared to
+	previouslyAddedService := map[service.ServiceName]bool{}
+	for serviceName := range otherAddServicesCapabilities.serviceConfigs {
+		previouslyAddedService[serviceName] = false
+	}
+	for serviceName := range builtin.serviceConfigs {
+		if _, found := previouslyAddedService[serviceName]; found {
+			previouslyAddedService[serviceName] = true // toggle the boolean to true
+		}
+	}
+	for _, servicePresentInCurrentInstruction := range previouslyAddedService {
+		if !servicePresentInCurrentInstruction {
+			// if one service is not present in the current instruction, instruction cannot be re-run
+			for serviceName := range builtin.serviceConfigs {
+				enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsNew)
+			}
+			return enclave_structure.InstructionIsUnknown
+		}
+	}
+
+	for serviceName := range builtin.serviceConfigs {
+		if _, found := previouslyAddedService[serviceName]; found {
+			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsUpdated)
+		} else {
+			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsNew)
+		}
+	}
+	return enclave_structure.InstructionIsUpdate
 }
 
 func (builtin *AddServicesCapabilities) removeAllStartedServices(

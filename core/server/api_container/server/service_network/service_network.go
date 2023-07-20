@@ -53,7 +53,7 @@ type ServiceNetwork interface {
 	UpdateService(
 		ctx context.Context,
 		serviceName service.ServiceName,
-		serviceConfig *service.ServiceConfig,
+		updateServiceConfig *service.ServiceConfig,
 	) (
 		*service.Service,
 		error,
