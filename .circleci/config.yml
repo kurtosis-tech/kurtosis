@@ -23,8 +23,8 @@ steps_install_go: &steps_install_go
       sudo rm -rf /usr/local/go
       sudo tar -C /usr/local -xzf go1.19.9.linux-amd64.tar.gz
 
-# Steps to prepare a job for Kubernetes testing
-steps_prepare_testing_k8s: &steps_prepare_testing_k8s
+# Steps to prepare a job for Kubernetes testing (with K3S K8S distribution)
+steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
   steps:
     - run:
         name: Install K3D and create the K3D/K3S cluster on Docker
@@ -478,7 +478,7 @@ jobs:
       - when:
           condition:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_k8s
+          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
@@ -550,7 +550,7 @@ jobs:
       - when:
           condition:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_k8s
+          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
@@ -699,7 +699,7 @@ jobs:
       - when:
           condition:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_k8s
+          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
@@ -825,7 +825,7 @@ jobs:
       - when:
           condition:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_k8s
+          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
