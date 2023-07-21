@@ -12,9 +12,9 @@ filters_ignore_main: &filters_ignore_main
 # cli cluster param used to run test suites against docker/kubernetes tests
 param_cli_cluster_backend: &param_cli_cluster_backend
   cli-cluster-backend:
-    description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'"
+    description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'kubernetes'"
     type: enum
-    enum: ["docker", "minikube"]
+    enum: ["docker", "kubernetes"]
 
 # Install go version 1.19 to run our integration tests on the minimal version we support
 steps_install_go: &steps_install_go
@@ -507,7 +507,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -518,7 +518,7 @@ jobs:
       # Run the testsuite for kubernetes and docker, but don't fail the job immediately so that we can upload the enclave dump
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
                 if ! ./internal_testsuites/golang/scripts/test.sh minikube; then
@@ -579,7 +579,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -590,7 +590,7 @@ jobs:
       # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
                 if ! ./internal_testsuites/typescript/scripts/test.sh minikube; then
@@ -725,10 +725,10 @@ jobs:
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
 
-      # When backend is 'minikube' install minikube and start a Kurtosis gateway
+      # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -788,7 +788,7 @@ jobs:
       # Ensure Kubernetes resources clean up successfully
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
             - run:
                 name: "Install kubectl"
@@ -858,10 +858,10 @@ jobs:
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
 
-      # When backend is 'minikube' install minikube and start a Kurtosis gateway
+      # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:
@@ -1181,7 +1181,7 @@ workflows:
 
       #      - test_basic_cli_functionality:
       #          name: "Test Basic CLI Functionality in Kubernetes"
-      #          cli-cluster-backend: "minikube"
+      #          cli-cluster-backend: "kubernetes"
       #          context:
       #            - docker-user
       #          requires:
@@ -1217,7 +1217,7 @@ workflows:
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
-          cli-cluster-backend: "minikube"
+          cli-cluster-backend: "kubernetes"
           context:
             - docker-user
           requires:
@@ -1241,7 +1241,7 @@ workflows:
 
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
-          cli-cluster-backend: "minikube"
+          cli-cluster-backend: "kubernetes"
           context:
             - docker-user
           requires:
