@@ -511,8 +511,17 @@ jobs:
       - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            and:
+                - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+                - equal: [ "k3s", << parameters.kubernetes-distro >> ]
           <<: *steps_prepare_testing_k8s_k3s
+
+      - when:
+          condition:
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+              - equal: [ "minikube", << parameters.kubernetes-distro >> ]
+          <<: *steps_prepare_testing_k8s_minikube
 
       - when:
           condition:
@@ -583,8 +592,17 @@ jobs:
       - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+              - equal: [ "k3s", << parameters.kubernetes-distro >> ]
           <<: *steps_prepare_testing_k8s_k3s
+
+      - when:
+          condition:
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+              - equal: [ "minikube", << parameters.kubernetes-distro >> ]
+          <<: *steps_prepare_testing_k8s_minikube
 
       - when:
           condition:
@@ -732,8 +750,17 @@ jobs:
       # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+              - equal: [ "k3s", << parameters.kubernetes-distro >> ]
           <<: *steps_prepare_testing_k8s_k3s
+
+      - when:
+          condition:
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+              - equal: [ "minikube", << parameters.kubernetes-distro >> ]
+          <<: *steps_prepare_testing_k8s_minikube
 
       - when:
           condition:
@@ -865,8 +892,17 @@ jobs:
       # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+              - equal: [ "k3s", << parameters.kubernetes-distro >> ]
           <<: *steps_prepare_testing_k8s_k3s
+
+      - when:
+          condition:
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+              - equal: [ "minikube", << parameters.kubernetes-distro >> ]
+          <<: *steps_prepare_testing_k8s_minikube
 
       - when:
           condition:
