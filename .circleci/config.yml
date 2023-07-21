@@ -93,6 +93,7 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         command: |
           ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
     - run:
+        name: Run Kurtosis gateway
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
 
