@@ -791,9 +791,16 @@ jobs:
             equal: [ "minikube", << parameters.cli-cluster-backend >> ]
           steps:
             - run:
+                name: "Install kubectl"
+                # Install kubectl and move it to the /usr/local/bin in order to make it accesible from the PATH
+                command: |
+                  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                  chmod +x kubectl
+                  sudo mv kubectl /usr/local/bin
+            - run:
                 name: "Verify no kurtosis pods are running after clean and stopping the engine"
                 command: |
-                  kurtosis_pods=$(minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis)
+                  kurtosis_pods=$(kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis)
                   if ! [ $(echo "${kurtosis_pods}" |  grep -f <(printf "%s\n" "Running") | wc -l) -eq 0 ]; then
                     echo "${kurtosis_pods}"
                     false
