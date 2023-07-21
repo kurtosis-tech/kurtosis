@@ -136,6 +136,10 @@ func (backend *RemoteContextKurtosisBackend) StartRegisteredUserServices(ctx con
 	return backend.remoteKurtosisBackend.StartRegisteredUserServices(ctx, enclaveUuid, services)
 }
 
+func (backend *RemoteContextKurtosisBackend) RemoveRegisteredUserServiceProcesses(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
+	return backend.remoteKurtosisBackend.RemoveRegisteredUserServiceProcesses(ctx, enclaveUuid, services)
+}
+
 func (backend *RemoteContextKurtosisBackend) GetUserServices(ctx context.Context, enclaveUuid enclave.EnclaveUUID, filters *service.ServiceFilters) (map[service.ServiceUUID]*service.Service, error) {
 	return backend.remoteKurtosisBackend.GetUserServices(ctx, enclaveUuid, filters)
 }

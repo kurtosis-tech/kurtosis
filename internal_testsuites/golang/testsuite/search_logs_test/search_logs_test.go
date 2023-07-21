@@ -1,5 +1,5 @@
-//go:build !minikube
-// +build !minikube
+//go:build !kubernetes
+// +build !kubernetes
 
 // We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
 //TODO remove this comments after Kubernetes implementation

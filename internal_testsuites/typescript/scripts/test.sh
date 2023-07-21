@@ -10,7 +10,7 @@ git_root_dirpath="$(dirname ""$(dirname "${root_dirpath}")"")"
 #                                             Constants
 # ==================================================================================================
 TESTSUITE_CLUSTER_BACKEND_DOCKER="docker"
-TESTSUITE_CLUSTER_BACKEND_MINIKUBE="minikube"
+TESTSUITE_CLUSTER_BACKEND_KUBERNETES="kubernetes"
 
 # By default, run testsuite against docker
 DEFAULT_TESTSUITE_CLUSTER_BACKEND="${TESTSUITE_CLUSTER_BACKEND_DOCKER}"
@@ -28,15 +28,15 @@ KUBERNETES_TEST_IGNORE_PATTERNS="/build/testsuite/(network_partition_starlark|ne
 show_helptext_and_exit() {
     echo "Usage: $(basename "${0}") cli_cluster_backend_arg"
     echo ""
-    echo "  cli_cluster_backend_arg   Optional argument describing the cluster backend tests are running against. Must be one of 'docker', 'minikube' (default: ${DEFAULT_TESTSUITE_CLUSTER_BACKEND})"
+    echo "  cli_cluster_backend_arg   Optional argument describing the cluster backend tests are running against. Must be one of 'docker', 'kubernetes' (default: ${DEFAULT_TESTSUITE_CLUSTER_BACKEND})"
     echo ""
     exit 1  # Exit with an error so that if this is accidentally called by CI, the script will fail
 }
 
 testsuite_cluster_backend_arg="${1:-"${DEFAULT_TESTSUITE_CLUSTER_BACKEND}"}"
 if [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_DOCKER}" ] &&
-   [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
-    echo "Error: unknown cluster provided to run tests against. Must be one of 'docker', 'minikube'"
+   [ "${testsuite_cluster_backend_arg}" != "${TESTSUITE_CLUSTER_BACKEND_KUBERNETES}" ]; then
+    echo "Error: unknown cluster provided to run tests against. Must be one of 'docker', 'kubernetes'"
     show_helptext_and_exit
 fi
 
@@ -57,7 +57,7 @@ rm -rf build
 yarn install
 yarn build
 
-if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_MINIKUBE}" ]; then
+if [ "${testsuite_cluster_backend_arg}" == "${TESTSUITE_CLUSTER_BACKEND_KUBERNETES}" ]; then
     # TODO This should be removed! Typescript Kurtosis tests should be completely agnostic to the backend they're running against
     # The only reason this exists is because, as of 2022-10-28, network partitioning doesn't work on Kubernetes so we have to know to skip
     #  those tests
