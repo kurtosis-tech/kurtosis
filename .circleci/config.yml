@@ -521,7 +521,7 @@ jobs:
             equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/test.sh minikube; then
+                if ! ./internal_testsuites/golang/scripts/test.sh kubernetes; then
                   touch /tmp/testsuite-failed
                 fi
 
@@ -593,7 +593,7 @@ jobs:
             equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/typescript/scripts/test.sh minikube; then
+                if ! ./internal_testsuites/typescript/scripts/test.sh kubernetes; then
                    touch /tmp/testsuite-failed
                 fi
       - when:
