@@ -6,16 +6,17 @@ import (
 	"testing"
 )
 
-const expectedTreeStr = `artifact
-└── path
-    ├── to
-    │   ├── file.txt [2.0K]
-    │   └── another.txt [ 123]
-    └── yet_another.txt [2.3M]
+const expectedTreeStr = `
+├── path
+│   ├── to
+│   │   ├── file.txt [2.0K]
+│   │   └── another.txt [ 123]
+│   └── yet_another.txt [2.3M]
+└── root.txt [   1]
 `
 
 func TestTreeBuilding(t *testing.T) {
-	treeStr := buildTree("artifact", []*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription{
+	treeStr := buildTree([]*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription{
 		{
 			Path: "path/to/file.txt",
 			Size: 2000,
@@ -27,6 +28,10 @@ func TestTreeBuilding(t *testing.T) {
 		{
 			Path: "path/yet_another.txt",
 			Size: 2*1024*1024 + 300*1024,
+		},
+		{
+			Path: "root.txt",
+			Size: 1,
 		},
 	})
 	require.Equal(t, treeStr, expectedTreeStr)

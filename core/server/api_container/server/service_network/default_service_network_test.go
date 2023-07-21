@@ -1206,6 +1206,164 @@ func TestUpdateService(t *testing.T) {
 	network, err := NewDefaultServiceNetwork(
 		enclaveName,
 		apiContainerInfo,
+		!partitioningEnabled,
+		backend,
+		unusedEnclaveDataDir,
+		networking_sidecar.NewStandardNetworkingSidecarManager(backend, enclaveName),
+		enclaveDb,
+	)
+	require.Nil(t, err)
+
+	initialServiceConfig := testServiceConfig(testContainerImageName, defaultSubnetwork)
+	updatedServiceConfig := testServiceConfig("kurtosistech/new-service-image", defaultSubnetwork)
+
+	// service that will be successfully updated
+	existingServiceIndex := 1
+	existingServiceIp := testIpFromInt(existingServiceIndex)
+	existingServiceRegistration := service.NewServiceRegistration(
+		testServiceNameFromInt(existingServiceIndex),
+		testServiceUuidFromInt(existingServiceIndex),
+		enclaveName,
+		existingServiceIp,
+		testServiceHostnameFromInt(existingServiceIndex))
+	existingServiceRegistration.SetConfig(initialServiceConfig)
+	existingServiceRegistration.SetStatus(service.ServiceStatus_Started)
+	network.registeredServiceInfo[existingServiceRegistration.GetName()] = existingServiceRegistration
+
+	// service that will fail because it's not registered in the enclave prior to update
+	unknownServiceIndex := 2
+	unknownServiceIp := testIpFromInt(unknownServiceIndex)
+	unknownServiceRegistration := service.NewServiceRegistration(
+		testServiceNameFromInt(unknownServiceIndex),
+		testServiceUuidFromInt(unknownServiceIndex),
+		enclaveName,
+		unknownServiceIp,
+		testServiceHostnameFromInt(unknownServiceIndex))
+
+	// service that will fail to be removed from the enclave
+	failedToBeRemovedServiceIndex := 3
+	failedToBeRemovedServiceIp := testIpFromInt(unknownServiceIndex)
+	failedToBeRemovedServiceRegistration := service.NewServiceRegistration(
+		testServiceNameFromInt(failedToBeRemovedServiceIndex),
+		testServiceUuidFromInt(failedToBeRemovedServiceIndex),
+		enclaveName,
+		failedToBeRemovedServiceIp,
+		testServiceHostnameFromInt(failedToBeRemovedServiceIndex))
+	failedToBeRemovedServiceRegistration.SetConfig(initialServiceConfig)
+	failedToBeRemovedServiceRegistration.SetStatus(service.ServiceStatus_Started)
+	network.registeredServiceInfo[failedToBeRemovedServiceRegistration.GetName()] = failedToBeRemovedServiceRegistration
+
+	// service that will fail to be re-created once it has been removed
+	failedToBeRecreatedServiceIndex := 4
+	failedToBeRecreatedServiceIp := testIpFromInt(unknownServiceIndex)
+	failedToBeRecreatedServiceRegistration := service.NewServiceRegistration(
+		testServiceNameFromInt(failedToBeRecreatedServiceIndex),
+		testServiceUuidFromInt(failedToBeRecreatedServiceIndex),
+		enclaveName,
+		failedToBeRecreatedServiceIp,
+		testServiceHostnameFromInt(failedToBeRecreatedServiceIndex))
+	failedToBeRecreatedServiceRegistration.SetConfig(initialServiceConfig)
+	failedToBeRecreatedServiceRegistration.SetStatus(service.ServiceStatus_Started)
+	network.registeredServiceInfo[failedToBeRecreatedServiceRegistration.GetName()] = failedToBeRecreatedServiceRegistration
+
+	// The service will be removed first
+	backend.EXPECT().RemoveRegisteredUserServiceProcesses(
+		ctx,
+		enclaveName,
+		map[service.ServiceUUID]bool{
+			existingServiceRegistration.GetUUID():            true,
+			failedToBeRemovedServiceRegistration.GetUUID():   true,
+			failedToBeRecreatedServiceRegistration.GetUUID(): true,
+		},
+	).Times(1).Return(
+		map[service.ServiceUUID]bool{
+			existingServiceRegistration.GetUUID():            true,
+			failedToBeRecreatedServiceRegistration.GetUUID(): true,
+		},
+		map[service.ServiceUUID]error{
+			failedToBeRemovedServiceRegistration.GetUUID(): stacktrace.NewError("Unable to remove service"),
+		},
+		nil,
+	)
+
+	// The services will then be re-created
+	serviceObj := service.NewService(existingServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, existingServiceIp, map[string]*port_spec.PortSpec{})
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveName,
+		map[service.ServiceUUID]*service.ServiceConfig{
+			existingServiceRegistration.GetUUID(): updatedServiceConfig,
+		},
+	).Times(1).Return(
+		map[service.ServiceUUID]*service.Service{
+			existingServiceRegistration.GetUUID(): serviceObj,
+		},
+		map[service.ServiceUUID]error{},
+		nil,
+	)
+	backend.EXPECT().StartRegisteredUserServices(
+		ctx,
+		enclaveName,
+		map[service.ServiceUUID]*service.ServiceConfig{
+			failedToBeRecreatedServiceRegistration.GetUUID(): updatedServiceConfig,
+		},
+	).Times(1).Return(
+		map[service.ServiceUUID]*service.Service{},
+		map[service.ServiceUUID]error{
+			failedToBeRecreatedServiceRegistration.GetUUID(): stacktrace.NewError("Unable to re-create service"),
+		},
+		nil,
+	)
+
+	success, failure, err := network.UpdateServices(ctx, map[service.ServiceName]*service.ServiceConfig{
+		existingServiceRegistration.GetName():            updatedServiceConfig,
+		unknownServiceRegistration.GetName():             updatedServiceConfig,
+		failedToBeRemovedServiceRegistration.GetName():   updatedServiceConfig,
+		failedToBeRecreatedServiceRegistration.GetName(): updatedServiceConfig,
+	}, 1)
+	require.Nil(t, err)
+	require.Len(t, success, 1)
+	require.Contains(t, success, existingServiceRegistration.GetName())
+
+	require.Len(t, failure, 3)
+	require.Contains(t, failure, unknownServiceRegistration.GetName())
+	require.Contains(t, failure, failedToBeRemovedServiceRegistration.GetName())
+	require.Contains(t, failure, failedToBeRecreatedServiceRegistration.GetName())
+
+	newExistingServiceRegistration, found := network.registeredServiceInfo[existingServiceRegistration.GetName()]
+	require.True(t, found)
+	require.Equal(t, newExistingServiceRegistration.GetStatus(), service.ServiceStatus_Started)
+	require.Equal(t, newExistingServiceRegistration.GetConfig(), updatedServiceConfig)
+
+	_, found = network.registeredServiceInfo[unknownServiceRegistration.GetName()]
+	require.False(t, found)
+
+	newFailedToBeRemovedServiceRegistration, found := network.registeredServiceInfo[failedToBeRemovedServiceRegistration.GetName()]
+	require.True(t, found)
+	require.Equal(t, newFailedToBeRemovedServiceRegistration.GetStatus(), service.ServiceStatus_Started)
+	require.Equal(t, newFailedToBeRemovedServiceRegistration.GetConfig(), initialServiceConfig)
+
+	newFailedToBeRecreatedServiceRegistration, found := network.registeredServiceInfo[failedToBeRecreatedServiceRegistration.GetName()]
+	require.True(t, found)
+	require.Equal(t, newFailedToBeRecreatedServiceRegistration.GetStatus(), service.ServiceStatus_Registered)
+	require.Nil(t, newFailedToBeRecreatedServiceRegistration.GetConfig())
+}
+
+func TestUpdateServiceSubnetwork(t *testing.T) {
+	ctx := context.Background()
+	backend := backend_interface.NewMockKurtosisBackend(t)
+
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer os.Remove(file.Name())
+	require.Nil(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.Nil(t, err)
+	defer db.Close()
+	enclaveDb := &enclave_db.EnclaveDB{DB: db}
+
+	network, err := NewDefaultServiceNetwork(
+		enclaveName,
+		apiContainerInfo,
 		partitioningEnabled,
 		backend,
 		unusedEnclaveDataDir,
@@ -1269,7 +1427,7 @@ func TestUpdateService(t *testing.T) {
 	network.networkingSidecars[serviceAlreadyInPartition.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 	network.networkingSidecars[serviceToMoveOutOfDefaultPartition.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	success, failure, err := network.UpdateService(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
+	success, failure, err := network.UpdateServiceSubnetwork(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
 		successfulService.GetName():                  binding_constructors.NewUpdateServiceConfig(string(partition2)),
 		serviceAlreadyInPartition.GetName():          binding_constructors.NewUpdateServiceConfig(string(partition0)),
 		nonExistentService.GetName():                 binding_constructors.NewUpdateServiceConfig(string(partition2)),
@@ -1300,7 +1458,7 @@ func TestUpdateService(t *testing.T) {
 	require.Equal(t, expectedPartitions, partitionServices)
 }
 
-func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
+func TestUpdateServiceSubnetwork_FullBatchFailureRollBack(t *testing.T) {
 	ctx := context.Background()
 	backend := backend_interface.NewMockKurtosisBackend(t)
 
@@ -1351,7 +1509,7 @@ func TestUpdateService_FullBatchFailureRollBack(t *testing.T) {
 	// do not add sidecar for failingService so that it fails updating the connections
 	network.networkingSidecars[successfulService.GetName()] = networking_sidecar.NewMockNetworkingSidecarWrapper()
 
-	success, failure, err := network.UpdateService(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
+	success, failure, err := network.UpdateServiceSubnetwork(ctx, map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
 		failingService.GetName():    binding_constructors.NewUpdateServiceConfig(string(partition2)),
 		successfulService.GetName(): binding_constructors.NewUpdateServiceConfig(string(partition2)),
 	})

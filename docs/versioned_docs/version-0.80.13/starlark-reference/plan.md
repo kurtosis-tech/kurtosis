@@ -21,8 +21,9 @@ The `add_service` instruction adds a service to the Kurtosis enclave within whic
 service = plan.add_service(
     # The service name of the service being created.
     # The service name is a reference to the service, which can be used in the future to refer to the service.
-    # Service names of active services are unique per enclave and needs to be formatted according to RFC 1123. 
+    # Service names of active services are unique per enclave and needs to be formatted according to RFC 1035. 
     # Specifically, 1-63 lowercase alphanumeric characters with dashes and cannot start or end with dashes.
+    # Also service names have to start with a lowercase alphabet.
     # MANDATORY
     name = "example-datastore-server-1",
 
@@ -373,6 +374,85 @@ response = plan.request(
 
 For more details see [ `jq`'s builtin operators and functions](https://stedolan.github.io/jq/manual/#Builtinoperatorsandfunctions)
 
+run_python
+----------
+
+The `run_python` instruction executes a one-time execution task. It runs the Python script specified by the mandatory field `run` on an image specified by the optional `image` field.
+
+```python
+    result = plan.run_python(
+        # The Python script to execute as a string
+        # This will get executed via '/bin/sh -c "python /tmp/python/main.py"'.
+        # Where `/tmp/python/main.py` is path on the temporary container;
+        # on which the script is written before it gets run
+        # MANDATORY
+        run = """
+    import requests
+    response = requests.get("docs.kurtosis.com")
+    print(response.status_code)      
+    """,
+
+        # Arguments to be passed t o the Python script defined in `run`
+        # OPTIONAL (Default: [])
+        args = [
+            some_other_service.ports["http"].url,
+        ],
+
+        # Packages that the Python script requires which will be installed via `pip`
+        # OPTIONAL (default: [])
+        packages = [
+            "selenium",
+            "requests",
+        ],
+    
+        # Image the Python script will be run on
+        # OPTIONAL (Default: python:3.11-alpine)
+        image = "python:3.11-alpine",
+
+        # A mapping of path_on_task_where_contents_will_be_mounted -> files_artifact_id_to_mount
+        # For more information about file artifacts, see below.
+        # CAUTION: duplicate paths to files or directories to be mounted is not supported, and it will fail
+        # OPTIONAL (Default: {})
+        files = {
+            "/path/to/file/1": files_artifact_1,
+            "/path/to/file/2": files_artifact_2,
+        },
+
+        # list of paths to directories or files that will be copied to a file artifact
+        # CAUTION: all the paths in this list must be unique 
+        # OPTIONAL (Default:[])
+        store = [
+            # copies a file into a file artifact
+            "/src/kurtosis.txt", 
+            
+            # copies the entire directory into a file artifact
+            "/src",
+        ],
+
+        # The time to allow for the command to complete. If the Python script takes longer than this,
+        # Kurtosis will kill the script and mark it as failed.
+        # You may specify a custom wait timeout duration or disable the feature entirely.
+        # You may specify a custom wait timeout duration with a string:
+        #  wait = "2m"
+        # Or, you can disable this feature by setting the value to None:
+        #  wait = None
+        # The feature is enabled by default with a default timeout of 180s
+        # OPTIONAL (Default: "180s")
+        wait="180s"
+    )
+
+    plan.print(result.code)  # returns the future reference to the exit code
+    plan.print(result.output) # returns the future reference to the output
+    plan.print(result.file_artifacts) # returns the file artifact names that can be referenced later
+```
+
+The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [file artifact][files-artifacts-reference] name.
+
+The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the Python script, alongside with future-reference to the file artifact names that were generated.
+* `result.output` is a future reference to the output of the command
+* `result.code` is a future reference to the exit code
+* `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
+
 run_sh
 -------------
 
@@ -432,7 +512,7 @@ The `files` dictionary argument accepts a key value pair, where `key` is the pat
 The instruction returns a `struct` with [future references][future-references-reference] to the ouput and exit code of the command, alongside with future-reference to the file artifact names that were generated. 
    * `result.output` is a future reference to the output of the command
    * `result.code` is a future reference to the exit code
-   *  `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
+   * `result.files_artifacts` is a future reference to the names of the file artifacts that were generated and can be used by the `files` property of `ServiceConfig` or `run_sh` instruction. An example is shown below:-
 
 ```python
 
@@ -440,7 +520,9 @@ The instruction returns a `struct` with [future references][future-references-re
         run = "mkdir -p task && cd task && echo kurtosis > test.txt",
         store = [
             "/task",
-            "/task/test.txt",
+            # using '*' will only copy the contents of the parent directory and not the directory itself to file artifact
+            # in this case, only test.txt will be stored and task directory will be ignored
+            "/task/*", 
         ],
         ...
     )
