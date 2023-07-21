@@ -1,4 +1,4 @@
-package startosis_add_service_test
+package startosis_add_service_with_ready_conditions_test
 
 import (
 	"context"
@@ -38,7 +38,7 @@ def run(plan):
 	serverErrorStatusCode = 500
 )
 
-func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyConditionsCheck() {
+func (suite *StartosisAddServiceReadyTestSuite) TestStartosis_AddServiceWithReadyConditionsCheck() {
 	ctx := context.Background()
 	script := fmt.Sprintf(addServiceWithReadyConditionsScript, okStatusCode, okStatusCode)
 	_, err := suite.RunScript(ctx, script)
@@ -48,7 +48,7 @@ func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyCond
 	require.Nil(t, err)
 }
 
-func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServiceWithReadyConditionsCheckFail() {
+func (suite *StartosisAddServiceReadyTestSuite) TestStartosis_AddServiceWithReadyConditionsCheckFail() {
 	ctx := context.Background()
 	script := fmt.Sprintf(addServiceWithReadyConditionsScript, serverErrorStatusCode, serverErrorStatusCode)
 	runResult, _ := suite.RunScript(ctx, script)

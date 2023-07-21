@@ -1,4 +1,4 @@
-package startosis_add_service_test
+package startosis_add_service_with_ready_conditions_test
 
 import (
 	"context"
@@ -45,7 +45,7 @@ def run(plan):
 `
 )
 
-func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyConditionsCheck() {
+func (suite *StartosisAddServiceReadyTestSuite) TestStartosis_AddServicesWithReadyConditionsCheck() {
 	ctx := context.Background()
 	script := fmt.Sprintf(addServicesWithReadyConditionsScript, okStatusCode, okStatusCode)
 
@@ -56,7 +56,7 @@ func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyCon
 	require.Nil(t, err)
 }
 
-func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyConditionsCheckFail() {
+func (suite *StartosisAddServiceReadyTestSuite) TestStartosis_AddServicesWithReadyConditionsCheckFail() {
 	ctx := context.Background()
 
 	expectedLastAssertionErrorStr := fmt.Sprintf("Assertion failed '%v' '==' '%v'", okStatusCode, serverErrorStatusCode)
