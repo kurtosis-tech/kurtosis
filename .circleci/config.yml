@@ -23,6 +23,35 @@ steps_install_go: &steps_install_go
       sudo rm -rf /usr/local/go
       sudo tar -C /usr/local -xzf go1.19.9.linux-amd64.tar.gz
 
+# Steps to prepare a job for Kubernetes testing (with Minikube K8S distribution)
+steps_prepare_testing_k8s_minikube: &steps_prepare_testing_k8s_minikube
+  steps:
+    - run: |
+        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
+        sudo dpkg -i minikube_latest_amd64.deb
+        minikube start --vm-driver=docker --kubernetes-version=v1.19.0
+    - run:
+        name: Check status
+        command: |
+          minikube status
+    - run: |
+        eval $(minikube docker-env)
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+    # Set minikube cluster with some previous steps to force minikube cluster type in the cluster-setting file, this save us to start the engine with the cluster set command
+    # because we are going to start it on the next step
+    - run: |
+        KURTOSIS_CLUSTER_SETTING_FILEPATH="<< pipeline.parameters.kurtosis-cluster-setting-abs-filepath >>"
+        echo -n "minikube" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
+        echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
+    - run: |
+        ${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace
+        ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
+    - run:
+        command: "${KURTOSIS_BINPATH} gateway"
+        background: true
+
 # Steps to prepare a job for Kubernetes testing (with K3S K8S distribution)
 steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
   steps:
