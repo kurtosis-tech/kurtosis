@@ -8,6 +8,7 @@ import { LogView } from "./LogView";
 import {useNavigate} from "react-router-dom";
 import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
+import LoadingOverlay from "./LoadingOverflow";
 
 const SERVICE_IS_ADDED = "added with service";
 
@@ -41,9 +42,9 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
             } 
             
             if (result.instructionResult && result.instructionResult.serializedInstructionResult) {
-                // if (result.instructionResult.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
-                //     getServices(enclave.apiClient)
-                // }
+                if (result.instructionResult.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
+                    getServices(enclave.apiClient)
+                }
                 setLogs(logs => [...logs, result.instructionResult.serializedInstructionResult])
             }
 
@@ -68,11 +69,6 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
         }
 
         fetch();
-        return () => {
-            if (stream) {
-                stream.cancel();
-            };
-        };
     }, [packageId])
 
     const handleServiceClick = (service) => {
@@ -88,7 +84,7 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
             )
         })
     }
-    
+
     return (
         <div className="flex h-full bg-white">
             <div className="flex h-full">
@@ -100,14 +96,14 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
                 />
                 <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
                     <div className='flex flex-col h-full space-y-1 bg-white'>
-                        <LogView 
+                        { (loading && logs.length === 0) ? <LoadingOverlay /> : <LogView 
                             heading={`Starlark Logs: ${enclave.name}`} 
                             logs={logs}
                             size={"h-full"}
-                        />
+                        />}
                     </div>  
                 </div>                    
-                <RightPanel home={false} isServiceInfo={true} enclaveName={enclave.name}/>
+                <RightPanel home={false} isServiceInfo={!loading} enclaveName={enclave.name}/>
             </div>
         </div>
     )

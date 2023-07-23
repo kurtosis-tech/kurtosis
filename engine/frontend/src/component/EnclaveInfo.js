@@ -24,9 +24,7 @@ const renderServices = (services, handleClick) => {
     if (services.length === 0) {
         return (
             <NoData 
-                text={`No Data Available: 
-                    This occurs because either enclave is stopped or there was error while executing
-                    the package.`}
+                text={`There are no running services in this enclave`}
                 size={`text-xl`}
                 color={`text-red-400`} 
             />
@@ -46,7 +44,7 @@ const renderFileArtifacts = (file_artifacts) => {
     if (file_artifacts.length === 0) {
         return (
             <NoData 
-                text={`No Data Available`}
+                text={`There are no file artifacts in this enclave`}
                 size={`text-xl`}
                 color={`text-red-400`} 
             />
@@ -98,14 +96,14 @@ const EncalveInfo = ({enclaves}) => {
 
 
     const EnclaveInfoCompoenent = ({services, fileArtifacts, handleServiceClick}) => (
-        <div className='flex flex-col flew h-[calc(100vh-3rem)] space-y-1'>
+        <div className='flex flex-col h-[calc(100vh-3rem)] space-y-1 overflow-auto'>
             <div className="flex flex-col h-1/2 min-h-1/2 border-8">
                 <Heading content={"Services"} size={"text-xl"} />
                 <div className="overflow-auto space-y-2">
                     {renderServices(services, handleServiceClick)}
                 </div>
             </div>  
-            <div className="flex flex-col grow border-8">
+            <div className="flex flex-col h-[46%] border-8">
                 <Heading content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
                 <div className="overflow-auto space-y-2">
                     {renderFileArtifacts(fileArtifacts)}
@@ -118,7 +116,7 @@ const EncalveInfo = ({enclaves}) => {
         <div className="flex h-full">
             <LeftPanel 
                 home={false} 
-                heading={"Environments"} 
+                heading={"Enclaves"} 
                 renderList={ ()=> renderEnclaves(enclaves, handleLeftPanelClick)}
             />
 

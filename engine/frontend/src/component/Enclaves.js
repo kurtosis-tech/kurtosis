@@ -31,11 +31,26 @@ const EnclaveMainComponent = ({enclaves, handleClick}) => (
     </div>
 )
 
-const EnclaveComponent = ({enclaves, handleClick}) => {
+const EnclaveComponent = ({enclaves, handleClick, handleCreateEnvClick}) => {
     return (
         <div className="flex-1 bg-slate-800 overflow-auto">
             {
-                (enclaves.length === 0) ? <NoData /> : <EnclaveMainComponent enclaves={enclaves} handleClick={handleClick} />
+                (enclaves.length === 0) ? 
+                <div>
+                    <NoData text={"No Enclaves Created"}/> 
+                    <div className="flex flex-row w-full">
+                        <div className="w-1/3"> </div>
+                        <div className="mb-4 bg-green-600 h-16 rounded w-1/3" >
+                            <div className='text-center w-full'>
+                                <div className='cursor-default text-3xl text-slate-800 p-2' onClick={handleCreateEnvClick}> 
+                                    Create Enclave
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+                : 
+                <EnclaveMainComponent enclaves={enclaves} handleClick={handleClick} />
             }
         </div>
     )
@@ -43,13 +58,17 @@ const EnclaveComponent = ({enclaves, handleClick}) => {
 
 const Enclaves = ({enclaves, isLoading}) => {
     const navigate = useNavigate()
+
+    const handleCreateEnvClick = () => {
+        navigate("/enclave/create")
+    }
     const handleClick = (enclaveName) => {
         navigate(`/enclaves/${enclaveName}`)
     }
     return (
         <div className="flex h-full flex-grow">
             {
-                (isLoading) ? <LoadingOverlay/> : <EnclaveComponent enclaves={enclaves} handleClick={handleClick}/>
+                (isLoading) ? <LoadingOverlay/> : <EnclaveComponent enclaves={enclaves} handleClick={handleClick} handleCreateEnvClick={handleCreateEnvClick}/>
             }
         </div>
     ) 

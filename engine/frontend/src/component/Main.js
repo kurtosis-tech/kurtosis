@@ -18,11 +18,11 @@ const Main = ({totalEnclaves}) => {
             <div className='text-center w-full'>
                 {
                   totalEnclaves > 0 ? <div className="mb-4 bg-green-600 h-16 rounded" onClick={handleViewEnvsClick}>
-                  <div className='cursor-default text-3xl text-slate-800 p-2'> View Environments </div>
+                  <div className='cursor-default text-3xl text-slate-800 p-2'> View Enclave </div>
               </div> : <NoData text={"No Enclaves Created"}/> 
                 }
                 <div className="mb-4 bg-green-600 h-16 rounded" onClick={handleCreateEnvClick}>
-                    <div className='cursor-default text-3xl text-slate-800 p-2'> Create Environment </div>
+                    <div className='cursor-default text-3xl text-slate-800 p-2'> Create Enclave </div>
                 </div>
             </div>
             </div>

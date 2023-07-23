@@ -22,7 +22,6 @@ const getDataFromApiContainer = async (request, process) => {
 }
 
 export const getEnclaveInformation = async (url) => {
-    console.log("url ", url)
     if (url === "") {
         return {
             services: [],
@@ -82,5 +81,6 @@ export const getEnclaveInformation = async (url) => {
     const fileArtifactsPromise = getDataFromApiContainer(makeFileArtifactRequest, processFileArtifactRequest)
 
     const [services, artifacts] = await Promise.all([servicesPromise, fileArtifactsPromise])
+    console.log("sa", services, artifacts)
     return { services, artifacts}
 }
