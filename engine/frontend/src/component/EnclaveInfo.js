@@ -73,6 +73,7 @@ const EncalveInfo = ({enclaves}) => {
     const [encalveInfoLoading, setEnclaveInfoLoading] = useState(false)
     
     useEffect(() => {
+        console.log("EnclaveInfo: ", enclaves)
         setEnclaveInfoLoading(true)
         const fetch = async () => {
             const selected = enclaves.filter(enclave => enclave.name === name);

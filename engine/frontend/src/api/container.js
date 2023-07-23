@@ -5,7 +5,6 @@ import {ApiContainerServicePromiseClient} from 'kurtosis-sdk/build/core/kurtosis
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
 export const runStarlarkPackage = async (url, packageId, args) => {
-    console.log(typeof args)
     const containerClient = new ApiContainerServicePromiseClient(url);
     const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
 
