@@ -19,9 +19,9 @@ param_cli_cluster_backend: &param_cli_cluster_backend
 # Install go version 1.19 to run our integration tests on the minimal version we support
 steps_install_go: &steps_install_go
   - run: |
-      wget https://go.dev/dl/go1.19.10.linux-amd64.tar.gz
+      wget https://go.dev/dl/go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz
       sudo rm -rf /usr/local/go
-      sudo tar -C /usr/local -xzf go1.19.10.linux-amd64.tar.gz
+      sudo tar -C /usr/local -xzf go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz
 
 # Steps to prepare a job for Kubernetes testing
 steps_prepare_testing_k8s: &steps_prepare_testing_k8s
@@ -119,9 +119,6 @@ parameters:
     default: "1.19.10"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
-  server-go-version:
-    type: string
-    default: "1.19.10"
   rust-version:
     type: string
     default: 1.68.2
@@ -134,9 +131,6 @@ parameters:
   engine-server-build-cache-key-prefix:
     type: string
     default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
-  cli-go-version:
-    type: string
-    default: "1.19.10"
   workspace-with-cli-binary-and-images-mountpoint:
     type: string
     default: "/tmp/workspace"
@@ -260,7 +254,7 @@ jobs:
 
   build_files_artifacts_expander:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -288,7 +282,7 @@ jobs:
 
   build_core_launcher:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -302,7 +296,7 @@ jobs:
 
   build_api_container_server:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -345,7 +339,7 @@ jobs:
 
   build_engine_launcher:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -359,7 +353,7 @@ jobs:
 
   build_engine_server:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -859,7 +853,7 @@ jobs:
 
   publish_files_artifacts_expander_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering
@@ -891,7 +885,7 @@ jobs:
 
   publish_api_container_server_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering
@@ -929,7 +923,7 @@ jobs:
 
   publish_engine_server_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering
