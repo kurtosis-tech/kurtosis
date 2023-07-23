@@ -130,7 +130,7 @@ func runMain() error {
 			EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
 			APIContainerIP: ownIpAddress,
 		}
-		kurtosisBackend, err = backend_creator.GetLocalDockerKurtosisBackend(apiContainerModeArgs)
+		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgs, nil)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}

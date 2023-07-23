@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -43,6 +44,7 @@ var (
 	apiContainerLogLevel = logrus.DebugLevel
 
 	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
+	enginePortTransportProtocol = portal_api.TransportProtocol_TCP
 )
 
 // Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
@@ -67,17 +69,30 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		)
 	}
 
-	engineServiceClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
-	if err = validateEngineApiVersion(ctx, engineServiceClient); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
-	}
-
 	// portal is still optional as it is incubating. For local context, everything will run fine if poral is not
 	// present. For remote context, is it expected that the caller checks that the portal is present before or after
 	// the Kurtosis Context is built, to avoid unexpected failures downstream
 	portalClient, err := CreatePortalDaemonClient(portalIsRequired)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
+	}
+
+	// Forward the remote engine port to the local machine if the current context is remote
+	if portalClient != nil {
+		currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+		if err == nil {
+			if store.IsRemote(currentContext) {
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(DefaultGrpcEngineServerPortNum), uint32(DefaultGrpcEngineServerPortNum), &enginePortTransportProtocol) 
+				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
+					return nil, stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
+				}
+			}
+		}
+	}	
+	
+	engineServiceClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
+	if err = validateEngineApiVersion(ctx, engineServiceClient); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
 	kurtosisContext := &KurtosisContext{

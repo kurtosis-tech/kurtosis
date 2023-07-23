@@ -2,11 +2,10 @@ package args
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
-	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"reflect"
 	"strings"
 
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -36,11 +35,8 @@ type EngineServerArgs struct {
 	// Should be deserialized differently depending on value of KurtosisBackendType
 	KurtosisLocalBackendConfig interface{} `json:"kurtosisBackendConfig"`
 
-	// KurtosisRemoteBackendConfig corresponds to the config to connect to an optional remote backend. It is used only
-	// when Kurtosis is using a dual-backend context (both local and remote). In this case, Kurtosis connects  to both
-	// the local backend and the remote backend using this configuration and the above KurtosisLocalBackendConfig
-	// Is nil when Kurtosis is used in a local-only context
-	KurtosisRemoteBackendConfig *remote_context_backend.KurtosisRemoteBackendConfig `json:"kurtosisRemoteBackendConfig,omitempty"`
+	// Engine server on bastion host?
+	OnBastionHost bool `json:"onBastionHost"`
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
@@ -84,7 +80,7 @@ func NewEngineServerArgs(
 	didUserAcceptSendingMetrics bool,
 	kurtosisBackendType KurtosisBackendType,
 	kurtosisLocalBackendConfig interface{},
-	kurtosisRemoteBackendConfig *remote_context_backend.KurtosisRemoteBackendConfig,
+	onBastionHost bool,
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
@@ -94,7 +90,7 @@ func NewEngineServerArgs(
 		DidUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		KurtosisBackendType:         kurtosisBackendType,
 		KurtosisLocalBackendConfig:  kurtosisLocalBackendConfig,
-		KurtosisRemoteBackendConfig: kurtosisRemoteBackendConfig,
+		OnBastionHost:               onBastionHost,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

@@ -32,8 +32,20 @@ func GetArgsFromEnv() (*EngineServerArgs, error) {
 	if !found {
 		return nil, stacktrace.NewError("No serialized args variable '%v' defined", serializedArgsEnvVar)
 	}
+	return getArgsFromSerializedParamsStr(serializedParamsStr)	
+}
+
+func GetArgsFromEnvVars(envVars map[string]string) (*EngineServerArgs, error) {
+	serializedParamsStr, found := envVars[serializedArgsEnvVar]
+	if !found {
+		return nil, stacktrace.NewError("No serialized args variable '%v' found in env vars map", serializedArgsEnvVar)
+	}
+	return getArgsFromSerializedParamsStr(serializedParamsStr)	
+}
+
+func getArgsFromSerializedParamsStr(serializedParamsStr string) (*EngineServerArgs, error) {
 	if serializedParamsStr == "" {
-		return nil, stacktrace.NewError("Found serialized args environment variable '%v', but the value was empty", serializedArgsEnvVar)
+		return nil, stacktrace.NewError("Empty serialized args parameter")
 	}
 	paramsJsonBytes := []byte(serializedParamsStr)
 	var args EngineServerArgs

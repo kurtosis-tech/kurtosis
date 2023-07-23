@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"time"
@@ -36,6 +37,11 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
+	serverArgs, err := args.GetArgsFromEnvVars(envVars)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Couldn't retrieve engine server args from the env vars")
+	}
+
 	engineGuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for the engine")
@@ -99,6 +105,10 @@ func CreateEngine(
 	bindMounts := map[string]string{
 		// Necessary so that the engine server can interact with the Docker engine
 		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
+	}
+
+	if serverArgs.OnBastionHost {
+		bindMounts[consts.HostEngineConfigDirToMount] = consts.EngineConfigLocalDir
 	}
 
 	containerImageAndTag := fmt.Sprintf(

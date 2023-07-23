@@ -46,11 +46,6 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		return stacktrace.Propagate(err, "Expected a value for context identifier arg '%v' but none was found; this is a bug with Kurtosis!", contextIdentifierArgKey)
 	}
 
-	engineManager, err := engine_manager.NewEngineManager(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
-	}
-
 	isContextSwitchSuccessful := false
 	logrus.Info("Switching context...")
 
@@ -112,6 +107,11 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		}
 	}
 	logrus.Infof("Context switched to '%s', Kurtosis engine will now be restarted", contextIdentifier)
+
+	engineManager, err := engine_manager.NewEngineManager(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
+	}
 
 	_, engineClientCloseFunc, restartEngineErr := engineManager.RestartEngineIdempotently(ctx, logrus.InfoLevel, noEngineVersion, restartEngineOnSameVersionIfAnyRunning)
 	if restartEngineErr != nil {
