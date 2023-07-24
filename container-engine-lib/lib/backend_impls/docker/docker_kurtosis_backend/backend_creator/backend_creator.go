@@ -46,6 +46,8 @@ var (
 	NoAPIContainerModeArgs *APIContainerModeArgs = nil
 )
 
+// GetDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
+// ONLY the API container should pass in the extra API container args, which will unlock extra API container functionality
 func GetDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 	optionalRemoteBackendConfig *configs.KurtosisRemoteBackendConfig,
@@ -53,12 +55,12 @@ func GetDockerKurtosisBackend(
 	var kurtosisBackend backend_interface.KurtosisBackend
 	var err error
 	if optionalRemoteBackendConfig != nil {
-		kurtosisBackend, err = GetRemoteDockerKurtosisBackend(optionalApiContainerModeArgs, optionalRemoteBackendConfig)
+		kurtosisBackend, err = getRemoteDockerKurtosisBackend(optionalApiContainerModeArgs, optionalRemoteBackendConfig)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating a remote Docker backend")
 		}
 	} else {
-		kurtosisBackend, err = GetLocalDockerKurtosisBackend(optionalApiContainerModeArgs)
+		kurtosisBackend, err = getLocalDockerKurtosisBackend(optionalApiContainerModeArgs)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating a local Docker backend")
 		}
@@ -66,9 +68,8 @@ func GetDockerKurtosisBackend(
 	return kurtosisBackend, nil
 }
 
-// GetLocalDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
-// ONLY the API container should pass in the extra API container args, which will unlock extra API container functionality
-func GetLocalDockerKurtosisBackend(
+// getLocalDockerKurtosisBackend is a Docker backend running locally
+func getLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
 	localDockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithTimeout(dockerClientTimeout), client.WithAPIVersionNegotiation())
@@ -83,8 +84,8 @@ func GetLocalDockerKurtosisBackend(
 	return localDockerBackend, nil
 }
 
-// GetRemoteDockerKurtosisBackend is a Docker backend running on a remote host
-func GetRemoteDockerKurtosisBackend(
+// getRemoteDockerKurtosisBackend is a Docker backend running on a remote host
+func getRemoteDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 	remoteBackendConfig *configs.KurtosisRemoteBackendConfig,
 ) (backend_interface.KurtosisBackend, error) {

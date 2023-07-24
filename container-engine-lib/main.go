@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/sirupsen/logrus"
 	"os"
 )
@@ -88,7 +89,7 @@ func runKubernetesManagerTesting() error {
 func runKurtosisBackendTesting() error {
 	ctx := context.Background()
 
-	backend, err := backend_creator.GetLocalDockerKurtosisBackend(nil)
+	backend, err := backend_creator.GetDockerKurtosisBackend(backend_creator.NoAPIContainerModeArgs, configs.NoRemoteBackendConfig)
 	if err != nil {
 		return err
 	}
