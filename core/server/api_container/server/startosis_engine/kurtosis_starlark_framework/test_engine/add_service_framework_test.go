@@ -36,6 +36,7 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
+	serviceNetwork.EXPECT().GetServiceRegistration(TestServiceName).Times(1).Return(nil, false)
 	serviceNetwork.EXPECT().AddService(
 		mock.Anything,
 		TestServiceName,

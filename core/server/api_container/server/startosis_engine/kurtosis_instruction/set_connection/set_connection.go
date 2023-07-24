@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -132,6 +133,10 @@ func (builtin *SetConnectionCapabilities) Execute(ctx context.Context, _ *builti
 		instructionResult = fmt.Sprintf("Configured subnetwork connection between '%s' and '%s'", subnetwork1, subnetwork2)
 	}
 	return instructionResult, nil
+}
+
+func (builtin *SetConnectionCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	return enclave_structure.InstructionIsNotResolvableAbort
 }
 
 func validateSubnetworks(value starlark.Value) *startosis_errors.InterpretationError {
