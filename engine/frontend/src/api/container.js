@@ -5,7 +5,6 @@ import {ApiContainerServicePromiseClient} from 'kurtosis-sdk/build/core/kurtosis
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
 export const runStarlarkPackage = async (url, packageId, args) => {
-    console.log(typeof args)
     const containerClient = new ApiContainerServicePromiseClient(url);
     const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
 
@@ -23,7 +22,6 @@ const getDataFromApiContainer = async (request, process) => {
 }
 
 export const getEnclaveInformation = async (url) => {
-    console.log("url ", url)
     if (url === "") {
         return {
             services: [],
@@ -83,5 +81,6 @@ export const getEnclaveInformation = async (url) => {
     const fileArtifactsPromise = getDataFromApiContainer(makeFileArtifactRequest, processFileArtifactRequest)
 
     const [services, artifacts] = await Promise.all([servicesPromise, fileArtifactsPromise])
+    console.log("sa", services, artifacts)
     return { services, artifacts}
 }

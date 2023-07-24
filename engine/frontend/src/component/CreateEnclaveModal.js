@@ -1,14 +1,15 @@
 import React, {useState}from 'react';
 import {createEnclave} from "../api/enclave";
 
-export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs}) => {
+export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, addEnclave}) => {
   const [jsonError, setJsonError] = useState("")
   
   const handleFormSubmit = (e) => {
     e.preventDefault();
     const fetch = async () => {
-      const enclaveInfo = await createEnclave();
-      handleSubmit(enclaveInfo);
+      const enclave = await createEnclave();
+      addEnclave(enclave)
+      handleSubmit(enclave);
     }
 
     try {
