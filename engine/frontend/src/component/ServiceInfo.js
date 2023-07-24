@@ -50,7 +50,6 @@ const ServiceInfo = ({enclaves}) => {
             stream = await getServiceLogs(enclaveName, serviceUuid);
             stream.on("data", data => {
                 const log = data.toObject().serviceLogsByServiceUuidMap[0][1].lineList
-                console.log(log[0])
                 setLogs(logs => [...logs, log[0]])
             })
         }

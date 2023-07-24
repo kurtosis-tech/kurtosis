@@ -16,8 +16,11 @@ const (
 func TestMultiplePortIdsForValidation(t *testing.T) {
 	emptyInitialMapping := map[service.ServiceName][]string{}
 	validatorEnvironment := NewValidatorEnvironment(false, nil, nil, emptyInitialMapping)
-	validatorEnvironment.AddPrivatePortIDForService(fooPortId, testBarService)
-	validatorEnvironment.AddPrivatePortIDForService(fizzPortId, testBarService)
+	portIds := []string{
+		fooPortId,
+		fizzPortId,
+	}
+	validatorEnvironment.AddPrivatePortIDForService(portIds, testBarService)
 	require.True(t, validatorEnvironment.DoesPrivatePortIDExistForService(fooPortId, testBarService))
 	require.True(t, validatorEnvironment.DoesPrivatePortIDExistForService(fizzPortId, testBarService))
 	require.False(t, validatorEnvironment.DoesPrivatePortIDExistForService(invalidPortId, testBarService))

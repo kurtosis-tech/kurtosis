@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -325,21 +326,19 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	return instructionResult, err
 }
 
-func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
-	var maybePackagesWithRuntimeValuesReplaced []string
-	for _, pythonPackage := range builtin.packages {
-		maybePackageWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(pythonPackage, builtin.runtimeValueStore)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "an error occurred while replacing runtime value in a package passed to run_python")
-		}
-		maybePackagesWithRuntimeValuesReplaced = append(maybePackagesWithRuntimeValuesReplaced, maybePackageWithRuntimeValueReplaced)
+func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	if instructionsAreEqual {
+		return enclave_structure.InstructionIsEqual
 	}
+	return enclave_structure.InstructionIsUnknown
+}
 
-	if len(maybePackagesWithRuntimeValuesReplaced) == 0 {
+func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
+	if len(builtin.packages) == 0 {
 		return nil, nil
 	}
 
-	packageInstallationSubCommand := fmt.Sprintf("%v %v", pipInstallCmd, strings.Join(maybePackagesWithRuntimeValuesReplaced, spaceDelimiter))
+	packageInstallationSubCommand := fmt.Sprintf("%v %v", pipInstallCmd, strings.Join(builtin.packages, spaceDelimiter))
 	packageInstallationCommand := []string{shellWrapperCommand, "-c", packageInstallationSubCommand}
 
 	executionResult, err := builtin.serviceNetwork.RunExec(
