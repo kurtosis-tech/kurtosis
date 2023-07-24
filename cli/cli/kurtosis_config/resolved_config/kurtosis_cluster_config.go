@@ -7,6 +7,7 @@ import (
 	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
@@ -16,9 +17,6 @@ import (
 const (
 	defaultKubernetesEnclaveDataVolumeSizeInMegabytes = uint(1024)
 )
-
-// Nil because the CLI will never operate in API container mode
-var dockerBackendApiContainerModeArgs *backend_creator.APIContainerModeArgs = nil
 
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
 
@@ -95,14 +93,14 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		}
 
 		backendSupplier = func(_ context.Context) (backend_interface.KurtosisBackend, error) {
-			var remoteBackendConfigMaybe *backend_creator.KurtosisRemoteBackendConfig
+			var remoteBackendConfigMaybe *configs.KurtosisRemoteBackendConfig
 			currentContext, _ := store.GetContextsConfigStore().GetCurrentContext()
 			if currentContext != nil {
 				if store.IsRemote(currentContext) {
-					remoteBackendConfigMaybe = backend_creator.NewRemoteBackendConfigFromRemoteContext(currentContext.GetRemoteContextV0())
+					remoteBackendConfigMaybe = configs.NewRemoteBackendConfigFromRemoteContext(currentContext.GetRemoteContextV0())
 				}
 			}
-			backend, err := backend_creator.GetDockerKurtosisBackend(nil, remoteBackendConfigMaybe)
+			backend, err := backend_creator.GetDockerKurtosisBackend(backend_creator.NoAPIContainerModeArgs, remoteBackendConfigMaybe)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the Docker Kurtosis backend")
 			}

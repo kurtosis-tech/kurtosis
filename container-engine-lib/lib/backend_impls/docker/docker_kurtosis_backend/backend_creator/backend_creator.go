@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/metrics_reporting"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
@@ -41,9 +42,13 @@ type APIContainerModeArgs struct {
 	APIContainerIP net.IP
 }
 
+var (
+	NoAPIContainerModeArgs *APIContainerModeArgs = nil
+)
+
 func GetDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
-	optionalRemoteBackendConfig *KurtosisRemoteBackendConfig,
+	optionalRemoteBackendConfig *configs.KurtosisRemoteBackendConfig,
 ) (backend_interface.KurtosisBackend, error) {
 	var kurtosisBackend backend_interface.KurtosisBackend
 	var err error
@@ -81,7 +86,7 @@ func GetLocalDockerKurtosisBackend(
 // GetRemoteDockerKurtosisBackend is a Docker backend running on a remote host
 func GetRemoteDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
-	remoteBackendConfig *KurtosisRemoteBackendConfig,
+	remoteBackendConfig *configs.KurtosisRemoteBackendConfig,
 ) (backend_interface.KurtosisBackend, error) {
 	remoteDockerClient, err := buildRemoteDockerClient(remoteBackendConfig)
 	if err != nil {
@@ -94,7 +99,7 @@ func GetRemoteDockerKurtosisBackend(
 	return kurtosisRemoteBackend, nil
 }
 
-func buildRemoteDockerClient(remoteBackendConfig *KurtosisRemoteBackendConfig) (*client.Client, error) {
+func buildRemoteDockerClient(remoteBackendConfig *configs.KurtosisRemoteBackendConfig) (*client.Client, error) {
 	var clientOptions []client.Opt
 
 	// host and port option

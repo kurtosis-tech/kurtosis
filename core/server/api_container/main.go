@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args"
@@ -130,7 +131,7 @@ func runMain() error {
 			EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
 			APIContainerIP: ownIpAddress,
 		}
-		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgs, nil)
+		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgs, configs.NoRemoteBackendConfig)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}

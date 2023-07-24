@@ -1,4 +1,4 @@
-package backend_creator
+package configs
 
 import (
 	"encoding/json"
@@ -11,6 +11,10 @@ import (
 // TODO: Move to the backend interface dir to be more generic
 const (
 	urlScheme = "tcp"
+)
+
+var (
+	NoRemoteBackendConfig *KurtosisRemoteBackendConfig = nil
 )
 
 type KurtosisRemoteBackendConfig struct {

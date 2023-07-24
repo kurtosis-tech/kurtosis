@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
@@ -109,7 +110,7 @@ func runMain() error {
 		return stacktrace.NewError("Backend configuration parameters are null - there must be backend configuration parameters.")
 	}
 
-	var remoteBackendConfigMaybe *backend_creator.KurtosisRemoteBackendConfig
+	var remoteBackendConfigMaybe *configs.KurtosisRemoteBackendConfig
 	if serverArgs.OnBastionHost {
 		// Read remote backend config from the local filesystem
 		remoteBackendConfigPath := filepath.Join(consts.EngineConfigLocalDir, remoteBackendConfigFilename)
@@ -117,7 +118,7 @@ func runMain() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "The remote backend config cannot be read")
 		}
-		remoteBackendConfigMaybe, err = backend_creator.NewRemoteBackendConfigFromJSON(remoteBackendConfigBytes)
+		remoteBackendConfigMaybe, err = configs.NewRemoteBackendConfigFromJSON(remoteBackendConfigBytes)
 		if err != nil {
 			return stacktrace.Propagate(err, "The remote backend config cannot be parsed")
 		}
@@ -230,7 +231,7 @@ func getEnclaveManager(
 	return enclaveManager, nil
 }
 
-func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}, remoteBackendConfigMaybe *backend_creator.KurtosisRemoteBackendConfig) (backend_interface.KurtosisBackend, error) {
+func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}, remoteBackendConfigMaybe *configs.KurtosisRemoteBackendConfig) (backend_interface.KurtosisBackend, error) {
 	var kurtosisBackend backend_interface.KurtosisBackend
 	var err error
 	switch kurtosisBackendType {
