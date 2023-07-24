@@ -49,7 +49,7 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         name: Add K3S cluster config in Kurtosis config file
         command: |
           KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
-          cat << EOF > "$KURTOSIS_CONFIG_FILEPATH"
+          cat \<< EOF > "$KURTOSIS_CONFIG_FILEPATH"
           config-version: 2
           should-send-metrics: true
           kurtosis-clusters:
