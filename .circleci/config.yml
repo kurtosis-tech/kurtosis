@@ -15,10 +15,6 @@ param_cli_cluster_backend: &param_cli_cluster_backend
     description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'kubernetes'"
     type: enum
     enum: ["docker", "kubernetes"]
-  kubernetes-distro:
-    description: "Kubernetes backend type can run on different distributions. Valid options are 'k3s', 'minikube' and 'not-used' (which has to be set for Docker backend type)"
-    type: enum
-    enum: ["k3s", "minikube", "not-used"]
 
 # Install go version 1.19 to run our integration tests on the minimal version we support
 steps_install_go: &steps_install_go
@@ -26,35 +22,6 @@ steps_install_go: &steps_install_go
       wget https://go.dev/dl/go1.19.9.linux-amd64.tar.gz
       sudo rm -rf /usr/local/go
       sudo tar -C /usr/local -xzf go1.19.9.linux-amd64.tar.gz
-
-# Steps to prepare a job for Kubernetes testing (with Minikube K8S distribution)
-steps_prepare_testing_k8s_minikube: &steps_prepare_testing_k8s_minikube
-  steps:
-    - run: |
-        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
-        sudo dpkg -i minikube_latest_amd64.deb
-        minikube start --vm-driver=docker --kubernetes-version=v1.19.0
-    - run:
-        name: Check status
-        command: |
-          minikube status
-    - run: |
-        eval $(minikube docker-env)
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-    # Set minikube cluster with some previous steps to force minikube cluster type in the cluster-setting file, this save us to start the engine with the cluster set command
-    # because we are going to start it on the next step
-    - run: |
-        KURTOSIS_CLUSTER_SETTING_FILEPATH="<< pipeline.parameters.kurtosis-cluster-setting-abs-filepath >>"
-        echo -n "minikube" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
-        echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
-    - run: |
-        ${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace
-        ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
-    - run:
-        command: "${KURTOSIS_BINPATH} gateway"
-        background: true
 
 # Steps to prepare a job for Kubernetes testing (with K3S K8S distribution)
 steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
@@ -509,19 +476,12 @@ jobs:
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
       - run: "${KURTOSIS_BINPATH} analytics disable"
-      - when:
-          condition:
-            and:
-                - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-                - equal: [ "k3s", << parameters.kubernetes-distro >> ]
-          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
             and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-              - equal: [ "minikube", << parameters.kubernetes-distro >> ]
-          <<: *steps_prepare_testing_k8s_minikube
+                - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
@@ -594,15 +554,7 @@ jobs:
           condition:
             and:
               - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-              - equal: [ "k3s", << parameters.kubernetes-distro >> ]
           <<: *steps_prepare_testing_k8s_k3s
-
-      - when:
-          condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-              - equal: [ "minikube", << parameters.kubernetes-distro >> ]
-          <<: *steps_prepare_testing_k8s_minikube
 
       - when:
           condition:
@@ -752,15 +704,7 @@ jobs:
           condition:
             and:
               - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-              - equal: [ "k3s", << parameters.kubernetes-distro >> ]
           <<: *steps_prepare_testing_k8s_k3s
-
-      - when:
-          condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-              - equal: [ "minikube", << parameters.kubernetes-distro >> ]
-          <<: *steps_prepare_testing_k8s_minikube
 
       - when:
           condition:
@@ -894,15 +838,7 @@ jobs:
           condition:
             and:
               - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-              - equal: [ "k3s", << parameters.kubernetes-distro >> ]
           <<: *steps_prepare_testing_k8s_k3s
-
-      - when:
-          condition:
-            and:
-              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
-              - equal: [ "minikube", << parameters.kubernetes-distro >> ]
-          <<: *steps_prepare_testing_k8s_minikube
 
       - when:
           condition:
@@ -1210,7 +1146,6 @@ workflows:
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
           cli-cluster-backend: "docker"
-          kubernetes-distro: "not-used"
           context:
             - docker-user
           requires:
@@ -1223,7 +1158,6 @@ workflows:
       #      - test_basic_cli_functionality:
       #          name: "Test Basic CLI Functionality in Kubernetes"
       #          cli-cluster-backend: "kubernetes"
-      #          kubernetes-distro: "k3s"
       #          context:
       #            - docker-user
       #          requires:
@@ -1236,7 +1170,6 @@ workflows:
       - test_ci_for_failure:
           name: "Test Basic CLI for failure"
           cli-cluster-backend: "docker"
-          kubernetes-distro: "not-used"
           context:
             - docker-user
           requires:
@@ -1249,7 +1182,6 @@ workflows:
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
           cli-cluster-backend: "docker"
-          kubernetes-distro: "not-used"
           context:
             - docker-user
           requires:
@@ -1262,7 +1194,6 @@ workflows:
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
           cli-cluster-backend: "kubernetes"
-          kubernetes-distro: "k3s"
           context:
             - docker-user
           requires:
@@ -1275,7 +1206,6 @@ workflows:
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
           cli-cluster-backend: "docker"
-          kubernetes-distro: "not-used"
           context:
             - docker-user
           requires:
@@ -1288,7 +1218,6 @@ workflows:
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
           cli-cluster-backend: "kubernetes"
-          kubernetes-distro: "k3s"
           context:
             - docker-user
           requires:
