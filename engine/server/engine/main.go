@@ -116,11 +116,11 @@ func runMain() error {
 		remoteBackendConfigPath := filepath.Join(consts.EngineConfigLocalDir, remoteBackendConfigFilename)
 		remoteBackendConfigBytes, err := os.ReadFile(remoteBackendConfigPath)
 		if err != nil {
-			return stacktrace.Propagate(err, "The remote backend config cannot be read")
+			return stacktrace.Propagate(err, "The remote backend config '%s' cannot be found", remoteBackendConfigPath)
 		}
 		remoteBackendConfigMaybe, err = configs.NewRemoteBackendConfigFromJSON(remoteBackendConfigBytes)
 		if err != nil {
-			return stacktrace.Propagate(err, "The remote backend config cannot be parsed")
+			return stacktrace.Propagate(err, "The remote backend config '%s' is not valid JSON", remoteBackendConfigPath)
 		}
 	}
 

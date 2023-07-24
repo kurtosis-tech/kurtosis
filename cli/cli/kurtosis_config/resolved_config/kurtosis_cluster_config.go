@@ -94,12 +94,15 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 
 		backendSupplier = func(_ context.Context) (backend_interface.KurtosisBackend, error) {
 			var remoteBackendConfigMaybe *configs.KurtosisRemoteBackendConfig
-			currentContext, _ := store.GetContextsConfigStore().GetCurrentContext()
-			if currentContext != nil {
-				if store.IsRemote(currentContext) {
-					remoteBackendConfigMaybe = configs.NewRemoteBackendConfigFromRemoteContext(currentContext.GetRemoteContextV0())
-				}
+			currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred retrieving the current context")
 			}
+			if store.IsRemote(currentContext) {
+				remoteBackendConfigMaybe = configs.NewRemoteBackendConfigFromRemoteContext(currentContext.GetRemoteContextV0())
+			}
+			// Get a local or remote docker backend based on the existence of the remote backend config.
+			// We do not pass APIC mode args since we are dealing with the engine here.
 			backend, err := backend_creator.GetDockerKurtosisBackend(backend_creator.NoAPIContainerModeArgs, remoteBackendConfigMaybe)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the Docker Kurtosis backend")

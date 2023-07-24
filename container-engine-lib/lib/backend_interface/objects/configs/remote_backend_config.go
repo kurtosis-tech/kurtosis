@@ -17,6 +17,7 @@ var (
 	NoRemoteBackendConfig *KurtosisRemoteBackendConfig = nil
 )
 
+// Backend agnostic remote backend config which can be used by the Docker or Kubernetes backend
 type KurtosisRemoteBackendConfig struct {
 	Endpoint string                    `json:"endpoint"`
 	Tls      *KurtosisBackendTlsConfig `json:"tls,omitempty"`
@@ -46,6 +47,7 @@ func NewRemoteBackendConfigFromRemoteContext(
 	}
 }
 
+// Used to parse the remote backend config on the bastion host
 func NewRemoteBackendConfigFromJSON(
 	data []byte,
 ) (*KurtosisRemoteBackendConfig, error) {

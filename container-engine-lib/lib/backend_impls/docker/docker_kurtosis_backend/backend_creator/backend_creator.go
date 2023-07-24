@@ -47,6 +47,7 @@ var (
 )
 
 // GetDockerKurtosisBackend is the entrypoint method we expect users of container-engine-lib to call
+// It creates a local or remote docker backend based on the existence of a remote backend config.
 // ONLY the API container should pass in the extra API container args, which will unlock extra API container functionality
 func GetDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
@@ -120,7 +121,7 @@ func buildRemoteDockerClient(remoteBackendConfig *configs.KurtosisRemoteBackendC
 		clientOptions = append(clientOptions, tlsOpt)
 	}
 
-	// API version negotiation option
+	// Timeout and API version negotiation option
 	clientOptions = append(clientOptions, client.WithTimeout(dockerClientTimeout), client.WithAPIVersionNegotiation())
 
 	remoteDockerClient, err := client.NewClientWithOpts(clientOptions...)

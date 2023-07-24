@@ -109,6 +109,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	}
 	logrus.Infof("Context switched to '%s', Kurtosis engine will now be restarted", contextIdentifier)
 
+	// Instantiate the engine manager after storing the new context so the manager can read it.
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")

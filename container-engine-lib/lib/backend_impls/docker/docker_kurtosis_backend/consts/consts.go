@@ -22,7 +22,7 @@ const (
 	DockerSocketFilepath = "/var/run/docker.sock"
 
 	// The host engine config directory to mount and its local mapping
-	HostEngineConfigDirToMount = "/root/engine"
+	HostEngineConfigDirToMount = "/root/engine_config"
 	EngineConfigLocalDir       = "/run/engine"
 
 	//The Docker network name where all the containers in the engine and logs service context will be added

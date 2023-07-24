@@ -108,6 +108,7 @@ func CreateEngine(
 	}
 
 	if serverArgs.OnBastionHost {
+		// Mount the host engine config directory so the engine can access files like the remote backend config.
 		bindMounts[consts.HostEngineConfigDirToMount] = consts.EngineConfigLocalDir
 	}
 
