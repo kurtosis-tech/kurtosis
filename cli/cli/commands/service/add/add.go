@@ -289,7 +289,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
-	serviceConfigStarlark, err := getServiceConfigStarlark(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
+	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -411,7 +411,8 @@ func run(
 	return nil
 }
 
-func getServiceConfigStarlark(
+// GetServiceConfigStarlark TODO(victor.colombo): Extract this to a more reasonable place
+func GetServiceConfigStarlark(
 	image string,
 	portsStr string,
 	cmdArgs []string,
