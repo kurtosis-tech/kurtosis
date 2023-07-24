@@ -136,12 +136,20 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 
 	updatedServices, failedToBeUpdatedServices, err := builtin.serviceNetwork.UpdateServices(ctx, serviceToUpdate, parallelism)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Unexpected error occurred updating a batch of services")
+		var allServiceNames []string
+		for serviceName := range serviceToUpdate {
+			allServiceNames = append(allServiceNames, string(serviceName))
+		}
+		return "", stacktrace.Propagate(err, "Unexpected error occurred updating the following batch of services: %s", strings.Join(allServiceNames, ", "))
 	}
 
-	startedServices, failedToBeStartedServices, err := builtin.serviceNetwork.AddServices(ctx, renderedServiceConfigs, parallelism)
+	startedServices, failedToBeStartedServices, err := builtin.serviceNetwork.AddServices(ctx, serviceToCreate, parallelism)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "Unexpected error occurred starting a batch of services")
+		var allServiceNames []string
+		for serviceName := range serviceToCreate {
+			allServiceNames = append(allServiceNames, string(serviceName))
+		}
+		return "", stacktrace.Propagate(err, "Unexpected error occurred starting the following batch of services: %s", strings.Join(allServiceNames, ", "))
 	}
 	if len(failedToBeStartedServices) > 0 || len(failedToBeUpdatedServices) > 0 {
 		var failedServiceNames []service.ServiceName
