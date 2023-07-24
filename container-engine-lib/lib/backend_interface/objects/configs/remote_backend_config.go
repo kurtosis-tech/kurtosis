@@ -18,7 +18,7 @@ var (
 )
 
 type KurtosisRemoteBackendConfig struct {
-	Endpoint string `json:"endpoint"`
+	Endpoint string                    `json:"endpoint"`
 	Tls      *KurtosisBackendTlsConfig `json:"tls,omitempty"`
 }
 
@@ -42,7 +42,7 @@ func NewRemoteBackendConfigFromRemoteContext(
 	endpoint := fmt.Sprintf("%s://%s:%d", urlScheme, remoteContext.GetHost(), remoteContext.GetKurtosisBackendPort())
 	return &KurtosisRemoteBackendConfig{
 		Endpoint: endpoint,
-		Tls:  tlsConfig,
+		Tls:      tlsConfig,
 	}
 }
 
