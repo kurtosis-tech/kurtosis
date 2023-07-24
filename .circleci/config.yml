@@ -19,9 +19,9 @@ param_cli_cluster_backend: &param_cli_cluster_backend
 # Install go version 1.19 to run our integration tests on the minimal version we support
 steps_install_go: &steps_install_go
   - run: |
-      wget https://go.dev/dl/go1.19.9.linux-amd64.tar.gz
+      wget https://go.dev/dl/go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz
       sudo rm -rf /usr/local/go
-      sudo tar -C /usr/local -xzf go1.19.9.linux-amd64.tar.gz
+      sudo tar -C /usr/local -xzf go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz
 
 # Steps to prepare a job for Kubernetes testing (with K3S K8S distribution)
 steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
@@ -49,7 +49,19 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         name: Add K3S cluster config in Kurtosis config file
         command: |
           KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
-          echo -e "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default\n       storage-class: standard\n       enclave-size-in-megabytes: 2048" > "$KURTOSIS_CONFIG_FILEPATH"
+          cat \<< EOF > "$KURTOSIS_CONFIG_FILEPATH"
+          config-version: 2
+          should-send-metrics: true
+          kurtosis-clusters:
+            docker:
+              type: docker
+            k3d-k3s-default:
+              type: kubernetes
+              config:
+                kubernetes-cluster-name: k3d-k3s-default
+                storage-class: standard
+                enclave-size-in-megabytes: 2048
+          EOF
     # Set the K3S cluster with some previous steps to force this cluster type in the cluster-setting file. This save us to start the engine with the cluster set command
     # because we are going to start it on the next step
     - run:
@@ -137,9 +149,6 @@ parameters:
     default: "1.19.10"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
-  server-go-version:
-    type: string
-    default: "1.19.10"
   rust-version:
     type: string
     default: 1.68.2
@@ -152,9 +161,6 @@ parameters:
   engine-server-build-cache-key-prefix:
     type: string
     default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
-  cli-go-version:
-    type: string
-    default: "1.19.10"
   workspace-with-cli-binary-and-images-mountpoint:
     type: string
     default: "/tmp/workspace"
@@ -278,7 +284,7 @@ jobs:
 
   build_files_artifacts_expander:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -306,7 +312,7 @@ jobs:
 
   build_core_launcher:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -320,7 +326,7 @@ jobs:
 
   build_api_container_server:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -363,7 +369,7 @@ jobs:
 
   build_engine_launcher:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -377,7 +383,7 @@ jobs:
 
   build_engine_server:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -889,7 +895,7 @@ jobs:
 
   publish_files_artifacts_expander_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering
@@ -921,7 +927,7 @@ jobs:
 
   publish_api_container_server_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering
@@ -959,7 +965,7 @@ jobs:
 
   publish_engine_server_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering

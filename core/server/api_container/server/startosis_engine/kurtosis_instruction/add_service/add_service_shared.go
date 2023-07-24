@@ -71,8 +71,8 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
 	}
 
-	if validatorEnvironment.DoesServiceNameExist(serviceName) {
-		return startosis_errors.NewValidationError("There was an error validating '%s' as service '%s' already exists", AddServiceBuiltinName, serviceName)
+	if validatorEnvironment.DoesServiceNameExist(serviceName) == startosis_validator.ServiceCreatedOrUpdatedDuringPackageRun {
+		return startosis_errors.NewValidationError("There was an error validating '%s' as service '%s' was created inside this package. Adding the same service twice in the same package is not allowed", AddServiceBuiltinName, serviceName)
 	}
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, artifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
@@ -83,9 +83,11 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 	}
 	validatorEnvironment.AddServiceName(serviceName)
 	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
+	var portIds []string
 	for portId := range serviceConfig.GetPrivatePorts() {
-		validatorEnvironment.AddPrivatePortIDForService(portId, serviceName)
+		portIds = append(portIds, portId)
 	}
+	validatorEnvironment.AddPrivatePortIDForService(portIds, serviceName)
 	return nil
 }
 
