@@ -4,8 +4,11 @@ package mock_instruction
 
 import (
 	context "context"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 
 	kurtosis_core_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	enclave_structure "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+
 	kurtosis_starlark_framework "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 
 	mock "github.com/stretchr/testify/mock"
@@ -204,6 +207,49 @@ func (_c *MockKurtosisInstruction_String_Call) Return(_a0 string) *MockKurtosisI
 }
 
 func (_c *MockKurtosisInstruction_String_Call) RunAndReturn(run func() string) *MockKurtosisInstruction_String_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// TryResolveWith provides a mock function with given fields: other, enclaveComponents
+func (_m *MockKurtosisInstruction) TryResolveWith(other kurtosis_instruction.KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	ret := _m.Called(other, enclaveComponents)
+
+	var r0 enclave_structure.InstructionResolutionStatus
+	if rf, ok := ret.Get(0).(func(kurtosis_instruction.KurtosisInstruction, *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus); ok {
+		r0 = rf(other, enclaveComponents)
+	} else {
+		r0 = ret.Get(0).(enclave_structure.InstructionResolutionStatus)
+	}
+
+	return r0
+}
+
+// MockKurtosisInstruction_TryResolveWith_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TryResolveWith'
+type MockKurtosisInstruction_TryResolveWith_Call struct {
+	*mock.Call
+}
+
+// TryResolveWith is a helper method to define mock.On call
+//   - other KurtosisInstruction
+//   - enclaveComponents *enclave_structure.EnclaveComponents
+func (_e *MockKurtosisInstruction_Expecter) TryResolveWith(other interface{}, enclaveComponents interface{}) *MockKurtosisInstruction_TryResolveWith_Call {
+	return &MockKurtosisInstruction_TryResolveWith_Call{Call: _e.mock.On("TryResolveWith", other, enclaveComponents)}
+}
+
+func (_c *MockKurtosisInstruction_TryResolveWith_Call) Run(run func(other kurtosis_instruction.KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents)) *MockKurtosisInstruction_TryResolveWith_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(kurtosis_instruction.KurtosisInstruction), args[1].(*enclave_structure.EnclaveComponents))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisInstruction_TryResolveWith_Call) Return(_a0 enclave_structure.InstructionResolutionStatus) *MockKurtosisInstruction_TryResolveWith_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisInstruction_TryResolveWith_Call) RunAndReturn(run func(kurtosis_instruction.KurtosisInstruction, *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus) *MockKurtosisInstruction_TryResolveWith_Call {
 	_c.Call.Return(run)
 	return _c
 }
