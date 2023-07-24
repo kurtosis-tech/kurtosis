@@ -67,17 +67,17 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		)
 	}
 
+	engineServiceClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
+	if err = validateEngineApiVersion(ctx, engineServiceClient); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
+	}
+
 	// portal is still optional as it is incubating. For local context, everything will run fine if poral is not
 	// present. For remote context, is it expected that the caller checks that the portal is present before or after
 	// the Kurtosis Context is built, to avoid unexpected failures downstream
 	portalClient, err := CreatePortalDaemonClient(portalIsRequired)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
-	}
-
-	engineServiceClient := kurtosis_engine_rpc_api_bindings.NewEngineServiceClient(conn)
-	if err = validateEngineApiVersion(ctx, engineServiceClient); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
 	kurtosisContext := &KurtosisContext{
