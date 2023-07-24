@@ -64,6 +64,7 @@ const sidebars = {
             ]
         },
         'sdk',
+        'faq',
         'best-practices',
         'package-index',
         'changelog',
