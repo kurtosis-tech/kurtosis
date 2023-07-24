@@ -49,7 +49,19 @@ steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
         name: Add K3S cluster config in Kurtosis config file
         command: |
           KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
-          echo -e "config-version: 2\nshould-send-metrics: false\nkurtosis-clusters:\n  docker:\n    type: docker\n  k3d-k3s-default:\n    type: kubernetes\n    config:\n       kubernetes-cluster-name: k3d-k3s-default\n       storage-class: standard\n       enclave-size-in-megabytes: 2048" > "$KURTOSIS_CONFIG_FILEPATH"
+          cat \<< EOF > "$KURTOSIS_CONFIG_FILEPATH"
+          config-version: 2
+          should-send-metrics: true
+          kurtosis-clusters:
+            docker:
+              type: docker
+            k3d-k3s-default:
+              type: kubernetes
+              config:
+                kubernetes-cluster-name: k3d-k3s-default
+                storage-class: standard
+                enclave-size-in-megabytes: 2048
+          EOF
     # Set the K3S cluster with some previous steps to force this cluster type in the cluster-setting file. This save us to start the engine with the cluster set command
     # because we are going to start it on the next step
     - run:

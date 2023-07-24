@@ -25,7 +25,7 @@ func TestStartosisRequestWaitAssertTestSuite(t *testing.T) {
 	suite.Run(t, new(StartosisRequestWaitAssertTestSuite))
 }
 
-func (suite *StartosisRequestWaitAssertTestSuite) SetupSuite() {
+func (suite *StartosisRequestWaitAssertTestSuite) SetupTest() {
 	ctx := context.Background()
 	t := suite.T()
 	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name, isPartitioningEnabled)
@@ -34,7 +34,7 @@ func (suite *StartosisRequestWaitAssertTestSuite) SetupSuite() {
 	suite.destroyEnclaveFunc = destroyEnclaveFunc
 }
 
-func (suite *StartosisRequestWaitAssertTestSuite) TearDownSuite() {
+func (suite *StartosisRequestWaitAssertTestSuite) TearDownTest() {
 	err := suite.destroyEnclaveFunc()
 	require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
 }
