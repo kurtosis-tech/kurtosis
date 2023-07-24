@@ -17,12 +17,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
+	"strings"
 )
 
 const (
-	pathArgKey        = "file-path"
-	isPathArgOptional = false
-	defaultPathArg    = ""
+	pathArgKey                = "file-path"
+	isPathArgOptional         = false
+	defaultPathArg            = ""
+	emptyPrivateIpPlaceholder = ""
+	nonSupportedField         = ""
 )
 
 var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -64,7 +67,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to convert compose to starlark")
 	}
-	logrus.Debugf("Generated starlark: %s", script)
+	logrus.Debugf("Generated starlark:\n%s", script)
 	err = runStarlark(ctx, script)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to run generated starlark from compose")
@@ -93,17 +96,25 @@ func convertComposeFileToStarlark(content []byte) (string, error) {
 	return script, nil
 }
 
+// TODO(victor.colombo): Have a better UX letting people know ports have been remapped
 func convertComposeProjectToStarlark(compose *types.Project) (string, error) {
 	serviceStarlarks := map[string]string{}
 	for _, serviceConfig := range compose.Services {
-
-		starlarkConfig, err := add.GetServiceConfigStarlark(serviceConfig.Image, "", []string{}, "", "", "", "")
+		portPiecesStr := []string{}
+		for _, port := range serviceConfig.Ports {
+			portStr := fmt.Sprintf("docker-%s=%d", port.Published, port.Target)
+			if port.Protocol != "" {
+				portStr += fmt.Sprintf("/%s", port.Protocol)
+			}
+			portPiecesStr = append(portPiecesStr, portStr)
+		}
+		starlarkConfig, err := add.GetServiceConfigStarlark(serviceConfig.Image, strings.Join(portPiecesStr, ","), serviceConfig.Command, serviceConfig.Entrypoint, nonSupportedField, nonSupportedField, emptyPrivateIpPlaceholder)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "Error getting service config starlark for '%v'", serviceConfig)
 		}
 		serviceStarlarks[serviceConfig.Name] = starlarkConfig
 	}
-	script := "def run(plan):"
+	script := "def run(plan):\n"
 	for serviceName, serviceConfig := range serviceStarlarks {
 		script += fmt.Sprintf("\tplan.add_service(name = '%s', config = %s)\n", serviceName, serviceConfig)
 	}
