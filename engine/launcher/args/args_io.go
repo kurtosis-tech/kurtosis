@@ -32,7 +32,7 @@ func GetArgsFromEnv() (*EngineServerArgs, error) {
 	if !found {
 		return nil, stacktrace.NewError("No serialized args variable '%v' defined", serializedArgsEnvVar)
 	}
-	return getArgsFromSerializedParamsStr(serializedParamsStr)	
+	return getArgsFromSerializedParamsStr(serializedParamsStr)
 }
 
 func GetArgsFromEnvVars(envVars map[string]string) (*EngineServerArgs, error) {
@@ -40,7 +40,7 @@ func GetArgsFromEnvVars(envVars map[string]string) (*EngineServerArgs, error) {
 	if !found {
 		return nil, stacktrace.NewError("No serialized args variable '%v' found in env vars map", serializedArgsEnvVar)
 	}
-	return getArgsFromSerializedParamsStr(serializedParamsStr)	
+	return getArgsFromSerializedParamsStr(serializedParamsStr)
 }
 
 func getArgsFromSerializedParamsStr(serializedParamsStr string) (*EngineServerArgs, error) {

@@ -91,8 +91,8 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		kurtosisBackend:   kurtosisBackend,
 		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
 		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
-		clusterConfig:                             clusterConfig,
-		onBastionHost:                             onBastionHost,
+		clusterConfig: clusterConfig,
+		onBastionHost: onBastionHost,
 	}, nil
 }
 

@@ -19,7 +19,7 @@ var (
 
 type KurtosisRemoteBackendConfig struct {
 	Endpoint string `json:"endpoint"`
-	Tls *KurtosisBackendTlsConfig `json:"tls,omitempty"`
+	Tls      *KurtosisBackendTlsConfig `json:"tls,omitempty"`
 }
 
 type KurtosisBackendTlsConfig struct {
