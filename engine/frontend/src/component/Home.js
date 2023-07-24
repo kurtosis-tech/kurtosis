@@ -5,6 +5,7 @@ import EnclaveInfo from "./EnclaveInfo";
 import ServiceInfo from "./ServiceInfo";
 import FileArtifactInfo from './FileArtifactInfo';
 import Enclaves from "./Enclaves";
+import CreateEnclave from "./CreateEnclave"
 import { useEffect, useState } from "react";
 import {getEnclavesFromKurtosis} from "../api/enclave";
 
