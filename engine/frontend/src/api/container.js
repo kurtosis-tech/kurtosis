@@ -4,42 +4,84 @@ import {ApiContainerServicePromiseClient} from 'kurtosis-sdk/build/core/kurtosis
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
-export const runStarlarkPackage = async (url, packageId) => {
+export const runStarlarkPackage = async (url, packageId, args) => {
+    console.log(typeof args)
     const containerClient = new ApiContainerServicePromiseClient(url);
     const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
 
     runStarlarkPackageArgs.setDryRun(false);
     runStarlarkPackageArgs.setRemote(true);
     runStarlarkPackageArgs.setPackageId(packageId);
-    runStarlarkPackageArgs.setSerializedParams("{}")
+    runStarlarkPackageArgs.setSerializedParams(args)
     const stream = containerClient.runStarlarkPackage(runStarlarkPackageArgs, null);
     return stream;
 }
 
+const getDataFromApiContainer = async (request, process) => {
+    const data = await request()
+    return process(data)
+}
+
 export const getEnclaveInformation = async (url) => {
+    console.log("url ", url)
+    if (url === "") {
+        return {
+            services: [],
+            artifacts: []
+        }
+    }
+
     const containerClient = new ApiContainerServicePromiseClient(url);
-    const serviceArgs = new GetServicesArgs();
-    const responseFromGrpc = await containerClient.getServices(serviceArgs, null)
-    const response = responseFromGrpc.toObject();
-    const services = response.serviceInfoMap.map(service => {
-        const ports = service[1].maybePublicPortsMap.map((publicPort, index) => {
-            const privatePort = service[1].privatePortsMap[index]; 
+    const makeGetServiceRequest = async () => {
+        try {
+            const serviceArgs = new GetServicesArgs();
+            const responseFromGrpc = await containerClient.getServices(serviceArgs, null)
+            console.log(responseFromGrpc.toObject())
+            return responseFromGrpc.toObject()
+        } catch (error) {
+            return {serviceInfoMap:[]}
+        }
+    }
+
+    const makeFileArtifactRequest = async () => {
+        const fileArtifactResponse = await containerClient.listFilesArtifactNamesAndUuids(new google_protobuf_empty_pb.Empty, null)
+        return fileArtifactResponse.toObject();      
+    }
+    
+    const processServiceRequest = (data) => {
+        return data.serviceInfoMap.map(service => {
+            const ports = service[1].maybePublicPortsMap.map((publicPort, index) => {
+                const privatePort = service[1].privatePortsMap[index]; 
+                return {
+                    publicPortNumber:publicPort[1].number,
+                    privatePortNumber: privatePort[1].number,
+                    applicationProtocol: privatePort[1].maybeApplicationProtocol,
+                    portName: privatePort[0],
+                    transportProtocol: TransportProtocolEnum[privatePort[1].transportProtocol]
+                }
+            })
+    
             return {
-                publicPortNumber:publicPort[1].number,
-                privatePortNumber: privatePort[1].number,
-                applicationProtocol: privatePort[1].maybeApplicationProtocol,
-                portName: privatePort[0],
-                transportProtocol: TransportProtocolEnum[privatePort[1].transportProtocol]
+                name: service[0],
+                uuid: service[1].serviceUuid,
+                privateIpAddr: service[1].privateIpAddr,
+                ports: ports,
+            }
+        }) 
+    }
+    
+    const processFileArtifactRequest = (data) => {
+        return data.fileNamesAndUuidsList.map(artifact => {
+            return {
+                name: artifact.filename,
+                uuid: artifact.fileuuid,
             }
         })
+    }
 
-        return {
-            name: service[0],
-            uuid: service[1].serviceUuid,
-            privateIpAddr: service[1].privateIpAddr,
-            ports: ports,
-        }
-    }) 
+    const servicesPromise = getDataFromApiContainer(makeGetServiceRequest, processServiceRequest)
+    const fileArtifactsPromise = getDataFromApiContainer(makeFileArtifactRequest, processFileArtifactRequest)
 
-    return services;
+    const [services, artifacts] = await Promise.all([servicesPromise, fileArtifactsPromise])
+    return { services, artifacts}
 }

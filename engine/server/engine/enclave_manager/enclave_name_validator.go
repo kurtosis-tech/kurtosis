@@ -2,7 +2,6 @@ package enclave_manager
 
 import (
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/stacktrace"
 	"regexp"
 )
@@ -27,9 +26,9 @@ func validateEnclaveName(enclaveName string) error {
 	return nil
 }
 
-func isEnclaveNameInUse(newEnclaveName string, allEnclaves map[enclave.EnclaveUUID]*enclave.Enclave) bool {
-	for _, enclave := range allEnclaves {
-		if enclave.GetName() == newEnclaveName {
+func isEnclaveNameInUse(newEnclaveName string, allCurrentEnclaveNames []string) bool {
+	for _, enclaveName := range allCurrentEnclaveNames {
+		if enclaveName == newEnclaveName {
 			return true
 		}
 	}

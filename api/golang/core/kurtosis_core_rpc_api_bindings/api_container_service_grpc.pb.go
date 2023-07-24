@@ -33,6 +33,7 @@ const (
 	ApiContainerService_StoreWebFilesArtifact_FullMethodName                      = "/api_container_api.ApiContainerService/StoreWebFilesArtifact"
 	ApiContainerService_StoreFilesArtifactFromService_FullMethodName              = "/api_container_api.ApiContainerService/StoreFilesArtifactFromService"
 	ApiContainerService_ListFilesArtifactNamesAndUuids_FullMethodName             = "/api_container_api.ApiContainerService/ListFilesArtifactNamesAndUuids"
+	ApiContainerService_InspectFilesArtifactContents_FullMethodName               = "/api_container_api.ApiContainerService/InspectFilesArtifactContents"
 )
 
 // ApiContainerServiceClient is the client API for ApiContainerService service.
@@ -64,6 +65,7 @@ type ApiContainerServiceClient interface {
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
 	StoreFilesArtifactFromService(ctx context.Context, in *StoreFilesArtifactFromServiceArgs, opts ...grpc.CallOption) (*StoreFilesArtifactFromServiceResponse, error)
 	ListFilesArtifactNamesAndUuids(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*ListFilesArtifactNamesAndUuidsResponse, error)
+	InspectFilesArtifactContents(ctx context.Context, in *InspectFilesArtifactContentsRequest, opts ...grpc.CallOption) (*InspectFilesArtifactContentsResponse, error)
 }
 
 type apiContainerServiceClient struct {
@@ -310,6 +312,15 @@ func (c *apiContainerServiceClient) ListFilesArtifactNamesAndUuids(ctx context.C
 	return out, nil
 }
 
+func (c *apiContainerServiceClient) InspectFilesArtifactContents(ctx context.Context, in *InspectFilesArtifactContentsRequest, opts ...grpc.CallOption) (*InspectFilesArtifactContentsResponse, error) {
+	out := new(InspectFilesArtifactContentsResponse)
+	err := c.cc.Invoke(ctx, ApiContainerService_InspectFilesArtifactContents_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ApiContainerServiceServer is the server API for ApiContainerService service.
 // All implementations should embed UnimplementedApiContainerServiceServer
 // for forward compatibility
@@ -339,6 +350,7 @@ type ApiContainerServiceServer interface {
 	// Tells the API container to copy a files artifact from a service to the Kurtosis File System
 	StoreFilesArtifactFromService(context.Context, *StoreFilesArtifactFromServiceArgs) (*StoreFilesArtifactFromServiceResponse, error)
 	ListFilesArtifactNamesAndUuids(context.Context, *emptypb.Empty) (*ListFilesArtifactNamesAndUuidsResponse, error)
+	InspectFilesArtifactContents(context.Context, *InspectFilesArtifactContentsRequest) (*InspectFilesArtifactContentsResponse, error)
 }
 
 // UnimplementedApiContainerServiceServer should be embedded to have forward compatible implementations.
@@ -383,6 +395,9 @@ func (UnimplementedApiContainerServiceServer) StoreFilesArtifactFromService(cont
 }
 func (UnimplementedApiContainerServiceServer) ListFilesArtifactNamesAndUuids(context.Context, *emptypb.Empty) (*ListFilesArtifactNamesAndUuidsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFilesArtifactNamesAndUuids not implemented")
+}
+func (UnimplementedApiContainerServiceServer) InspectFilesArtifactContents(context.Context, *InspectFilesArtifactContentsRequest) (*InspectFilesArtifactContentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InspectFilesArtifactContents not implemented")
 }
 
 // UnsafeApiContainerServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -655,6 +670,24 @@ func _ApiContainerService_ListFilesArtifactNamesAndUuids_Handler(srv interface{}
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ApiContainerService_InspectFilesArtifactContents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InspectFilesArtifactContentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ApiContainerServiceServer).InspectFilesArtifactContents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ApiContainerService_InspectFilesArtifactContents_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ApiContainerServiceServer).InspectFilesArtifactContents(ctx, req.(*InspectFilesArtifactContentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ApiContainerService_ServiceDesc is the grpc.ServiceDesc for ApiContainerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -693,6 +726,10 @@ var ApiContainerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListFilesArtifactNamesAndUuids",
 			Handler:    _ApiContainerService_ListFilesArtifactNamesAndUuids_Handler,
+		},
+		{
+			MethodName: "InspectFilesArtifactContents",
+			Handler:    _ApiContainerService_InspectFilesArtifactContents_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

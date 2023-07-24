@@ -147,7 +147,7 @@ func (manager *EngineManager) GetEngineStatus(
 }
 
 // StartEngineIdempotentlyWithDefaultVersion Starts an engine if one doesn't exist already, and returns a client to it
-func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx context.Context, logLevel logrus.Level, poolSize uint8) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -164,6 +164,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		engineVersion,
 		clusterType,
 		manager.onBastionHost,
+		poolSize,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -175,7 +176,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 }
 
 // StartEngineIdempotentlyWithCustomVersion Starts an engine if one doesn't exist already, and returns a client to it
-func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx context.Context, engineImageVersionTag string, logLevel logrus.Level, poolSize uint8) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	status, maybeHostMachinePortBinding, engineVersion, err := manager.GetEngineStatus(ctx)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
@@ -193,6 +194,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		engineVersion,
 		clusterType,
 		manager.onBastionHost,
+		poolSize,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -208,9 +210,16 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 	//  add a step here that will delete the engine data dirpath if it exists on the host machine
 	// host_machine_directories.GetEngineDataDirpath()
 
-	successfulEngineGuids, erroredEngineGuids, err := manager.kurtosisBackend.StopEngines(ctx, getRunningEnginesFilter())
+	// We execute the mechanism in three steps
+	// 1- We stop the engine in order to execute the Kurtosis engine graceful stop (this block us to execute the backend destroy call directly without a stop call before)
+	// 2- We wait until the engine was successfully stopped
+	// 3- We destroy the engine for not letting any resource leak (e.g. Kubernetes namespace or Docker container)
+
+	// First stop the engine in order to execute the graceful stop process inside the engine server
+	runningFilters := getRunningEnginesFilter()
+	successfulEngineGuids, erroredEngineGuids, err := manager.kurtosisBackend.StopEngines(ctx, runningFilters)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred stopping ")
+		return stacktrace.Propagate(err, "An error occurred stopping engines using filters '%+v'", runningFilters)
 	}
 	engineStopErrorStrs := []string{}
 	for engineGuid, err := range erroredEngineGuids {
@@ -236,7 +245,41 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 
 	logrus.Debugf("Stopped signal sent to engines %v", successfulEngineGuids)
 
-	return manager.waitUntilEngineStoppedOrError(ctx)
+	if err := manager.waitUntilEngineStoppedOrError(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred waiting until the engine is stopped or an error happens during that process")
+	}
+
+	// Then, destroy the stopped engines, for not letting any resource leak
+	stoppedFilters := getStoppedEnginesFilter()
+	successfulDestroyedEngineGuids, erroredDestroyedEngineGuids, err := manager.kurtosisBackend.DestroyEngines(ctx, stoppedFilters)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the engines using filters '%+v'", stoppedFilters)
+	}
+	engineDestroyErrorStrs := []string{}
+	for engineGuid, err := range erroredDestroyedEngineGuids {
+		if err != nil {
+			wrappedErr := stacktrace.Propagate(
+				err,
+				"An error occurred destroying engine with GUID '%v'",
+				engineGuid,
+			)
+			engineDestroyErrorStrs = append(engineDestroyErrorStrs, wrappedErr.Error())
+		}
+	}
+
+	if len(engineDestroyErrorStrs) > 0 {
+		return stacktrace.NewError(
+			"One or more errors occurred destroying the engine(s):\n%v",
+			strings.Join(
+				engineDestroyErrorStrs,
+				"\n\n",
+			),
+		)
+	}
+
+	logrus.Debugf("Destroyed signal sent to engines %v", successfulDestroyedEngineGuids)
+
+	return nil
 }
 
 // RestartEngineIdempotently restart the currently running engine.
@@ -244,7 +287,7 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 // If no optionalVersionToUse is passed, then the new engine will take the default version, unless
 // restartEngineOnSameVersionIfAnyRunning is set to true in which case it will take the version of the currently
 // running engine
-func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, logLevel logrus.Level, optionalVersionToUse string, restartEngineOnSameVersionIfAnyRunning bool) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
+func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, logLevel logrus.Level, optionalVersionToUse string, restartEngineOnSameVersionIfAnyRunning bool, poolSize uint8) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {
 	var versionOfNewEngine string
 	// We try to do our best to restart an engine on the same version the current on is on
 	_, _, currentEngineVersion, err := manager.GetEngineStatus(ctx)
@@ -269,9 +312,9 @@ func (manager *EngineManager) RestartEngineIdempotently(ctx context.Context, log
 	var engineClientCloseFunc func() error
 	var restartEngineErr error
 	if versionOfNewEngine != defaultEngineVersion {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel)
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithCustomVersion(ctx, versionOfNewEngine, logLevel, poolSize)
 	} else {
-		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel)
+		_, engineClientCloseFunc, restartEngineErr = manager.StartEngineIdempotentlyWithDefaultVersion(ctx, logLevel, poolSize)
 	}
 	if restartEngineErr != nil {
 		return nil, nil, stacktrace.Propagate(restartEngineErr, "An error occurred starting a new engine")
@@ -342,6 +385,16 @@ func getRunningEnginesFilter() *engine.EngineFilters {
 		GUIDs: nil,
 		Statuses: map[container_status.ContainerStatus]bool{
 			container_status.ContainerStatus_Running: true,
+		},
+	}
+}
+
+// getStoppedEnginesFilter returns a filter for engines with status engine.EngineStatus_Stopped
+func getStoppedEnginesFilter() *engine.EngineFilters {
+	return &engine.EngineFilters{
+		GUIDs: nil,
+		Statuses: map[container_status.ContainerStatus]bool{
+			container_status.ContainerStatus_Stopped: true,
 		},
 	}
 }

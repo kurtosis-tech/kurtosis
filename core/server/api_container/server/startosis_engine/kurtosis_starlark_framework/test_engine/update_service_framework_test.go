@@ -40,7 +40,7 @@ func (t *updateServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurt
 		nil,
 	)
 
-	serviceNetwork.EXPECT().UpdateService(
+	serviceNetwork.EXPECT().UpdateServiceSubnetwork(
 		mock.Anything,
 		map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
 			TestServiceName: binding_constructors.NewUpdateServiceConfig(string(TestSubnetwork)),

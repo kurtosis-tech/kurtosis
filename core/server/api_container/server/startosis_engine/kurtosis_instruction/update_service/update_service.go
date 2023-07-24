@@ -78,7 +78,7 @@ type UpdateServiceCapabilities struct {
 	updateServiceConfig *kurtosis_core_rpc_api_bindings.UpdateServiceConfig
 }
 
-func (builtin *UpdateServiceCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *UpdateServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", ServiceNameArgName)
@@ -120,7 +120,7 @@ func (builtin *UpdateServiceCapabilities) Execute(ctx context.Context, _ *builti
 		builtin.serviceName: builtin.updateServiceConfig,
 	}
 
-	serviceSuccessful, serviceFailed, err := builtin.serviceNetwork.UpdateService(ctx, updateServiceConfigMap)
+	serviceSuccessful, serviceFailed, err := builtin.serviceNetwork.UpdateServiceSubnetwork(ctx, updateServiceConfigMap)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Failed updating service '%s' with an unexpected error", builtin.serviceName)
 	}

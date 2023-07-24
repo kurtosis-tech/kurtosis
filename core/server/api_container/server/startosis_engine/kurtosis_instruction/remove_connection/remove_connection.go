@@ -59,7 +59,7 @@ type RemoveConnectionCapabilities struct {
 	subnetwork2 service_network_types.PartitionID
 }
 
-func (builtin *RemoveConnectionCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *RemoveConnectionCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	subnetworks, err := builtin_argument.ExtractArgumentValue[starlark.Tuple](arguments, SubnetworksArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SubnetworksArgName)

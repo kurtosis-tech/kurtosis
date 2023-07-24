@@ -37,6 +37,10 @@ type EngineServerArgs struct {
 
 	// Engine server on bastion host?
 	OnBastionHost bool `json:"onBastionHost"`
+
+	// PoolSize represents the enclave pool size, for instance if this value is 3, these amount of idle enclaves
+	// will be created when the engine start in order to be used when users request for a new enclave.
+	PoolSize uint8 `json:"poolSize"`
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
@@ -81,6 +85,7 @@ func NewEngineServerArgs(
 	kurtosisBackendType KurtosisBackendType,
 	kurtosisLocalBackendConfig interface{},
 	onBastionHost bool,
+	poolSize uint8,
 ) (*EngineServerArgs, error) {
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
@@ -91,6 +96,7 @@ func NewEngineServerArgs(
 		KurtosisBackendType:         kurtosisBackendType,
 		KurtosisLocalBackendConfig:  kurtosisLocalBackendConfig,
 		OnBastionHost:               onBastionHost,
+		PoolSize:                    poolSize,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

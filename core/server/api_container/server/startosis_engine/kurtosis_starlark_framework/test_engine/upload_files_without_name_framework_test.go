@@ -29,7 +29,7 @@ func (t *uploadFilesWithoutNameTestCase) GetId() string {
 func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	require.Nil(t, packageContentProvider.AddFileContent(TestSrcPath, "Hello World!"))
+	require.Nil(t, packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
 
 	serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
 		mockedFileArtifactName,
@@ -48,7 +48,7 @@ func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruc
 }
 
 func (t uploadFilesWithoutNameTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestSrcPath)
+	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName)
 }
 
 func (t *uploadFilesWithoutNameTestCase) GetStarlarkCodeForAssertion() string {

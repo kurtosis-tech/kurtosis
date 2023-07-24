@@ -42,10 +42,6 @@ type KurtosisBackend interface {
 	// Gets engines using the given filters, returning a map of matched engines identified by their engine GUID
 	GetEngines(ctx context.Context, filters *engine.EngineFilters) (map[engine.EngineGUID]*engine.Engine, error)
 
-	// TODO remove this endpoint because now it's equivalent to DestroyEngines
-	// TODO this method left some backend resources (like the engine's container for the Docker version) in the previous version
-	// TODO for debugging purposes (get the engine logs after the engine was stopped) but this feat wasn't used
-	// TODO and it's not relevant, so was it better to remove it and remove the resources
 	// Stops the engines matching the given filters
 	StopEngines(
 		ctx context.Context,
@@ -224,6 +220,19 @@ type KurtosisBackend interface {
 	) (
 		map[service.ServiceUUID]*service.Service, // "set" of user UUIDs that were successfully started
 		map[service.ServiceUUID]error, // "set" of user service UUIDs that errored when attempting to start, with the error
+		error, // represents an error with the function itself, rather than the user services
+	)
+
+	// RemoveRegisteredUserServiceProcesses removes the running user service process but keeps the service registration
+	// TODO: As we don't persist user service logs anywhere, removing the container/pod will also remove all its
+	//  logs. We need a persistent log storage to address this issue.
+	RemoveRegisteredUserServiceProcesses(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		services map[service.ServiceUUID]bool,
+	) (
+		map[service.ServiceUUID]bool, // user service UUIDs that were successfully removed
+		map[service.ServiceUUID]error, // user service UUIDs that failed to be removed, with the error
 		error, // represents an error with the function itself, rather than the user services
 	)
 
