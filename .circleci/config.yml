@@ -488,6 +488,7 @@ jobs:
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
       - run: "${KURTOSIS_BINPATH} analytics disable"
+
       - when:
           condition:
             and:

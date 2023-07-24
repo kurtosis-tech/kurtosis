@@ -139,7 +139,10 @@ func (runner *StartosisRunner) Run(
 		starlarkRunResponseLines <- progressInfo
 
 		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence)
-		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, starlarkRunResponseLines); isRunFinished {
+		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, starlarkRunResponseLines); isRunFinished {
+			if !isRunSuccessful {
+				logrus.Warnf("An error occurred validating the sequence of Kurtosis instructions. See logs above for more details")
+			}
 			return
 		}
 		logrus.Debugf("Successfully validated Starlark script")
@@ -150,26 +153,30 @@ func (runner *StartosisRunner) Run(
 		starlarkRunResponseLines <- progressInfo
 
 		executionResponseLinesChan := runner.startosisExecutor.Execute(ctx, dryRun, parallelism, instructionsSequence, serializedScriptOutput)
-		if isRunFinished := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
+		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(executionResponseLinesChan, starlarkRunResponseLines); !isRunFinished {
 			logrus.Warnf("Execution finished but no 'RunFinishedEvent' was received through the stream. This is unexpected as every execution should be terminal.")
+		} else if !isRunSuccessful {
+			logrus.Warnf("An error occurred executing the sequence of Kurtosis instructions. See logs above for more details")
+		} else {
+			logrus.Debugf("Successfully executed Kurtosis plan composed of %d Kurtosis instructions", totalNumberOfInstructions)
 		}
-		logrus.Debugf("Successfully executed the list of %d Kurtosis instructions", totalNumberOfInstructions)
-
 	}()
 	return starlarkRunResponseLines
 }
 
-func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, destChan chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) bool {
+func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, destChan chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine) (bool, bool) {
+	isSuccessful := false
 	isStarlarkRunFinished := false
 	for executionResponseLine := range sourceChan {
 		logrus.Debugf("Received kurtosis execution line Kurtosis:\n%v", executionResponseLine)
 		if executionResponseLine.GetRunFinishedEvent() != nil {
 			isStarlarkRunFinished = true
+			isSuccessful = executionResponseLine.GetRunFinishedEvent().GetIsRunSuccessful()
 		}
 		destChan <- executionResponseLine
 	}
-	logrus.Debugf("Kurtosis instructions stream was closed. Exiting execution loop. Run finishedL '%v'", isStarlarkRunFinished)
-	return isStarlarkRunFinished
+	logrus.Debugf("Kurtosis instructions stream was closed. Exiting execution loop. Run finished: '%v'", isStarlarkRunFinished)
+	return isStarlarkRunFinished, isSuccessful
 }
 
 func doesFeatureFlagsContain(featureFlags []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag, requestedFeatureFlag kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) bool {
