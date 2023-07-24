@@ -334,20 +334,11 @@ func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, 
 }
 
 func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
-	var maybePackagesWithRuntimeValuesReplaced []string
-	for _, pythonPackage := range builtin.packages {
-		maybePackageWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(pythonPackage, builtin.runtimeValueStore)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "an error occurred while replacing runtime value in a package passed to run_python")
-		}
-		maybePackagesWithRuntimeValuesReplaced = append(maybePackagesWithRuntimeValuesReplaced, maybePackageWithRuntimeValueReplaced)
-	}
-
-	if len(maybePackagesWithRuntimeValuesReplaced) == 0 {
+	if len(builtin.packages) == 0 {
 		return nil, nil
 	}
 
-	packageInstallationSubCommand := fmt.Sprintf("%v %v", pipInstallCmd, strings.Join(maybePackagesWithRuntimeValuesReplaced, spaceDelimiter))
+	packageInstallationSubCommand := fmt.Sprintf("%v %v", pipInstallCmd, strings.Join(builtin.packages, spaceDelimiter))
 	packageInstallationCommand := []string{shellWrapperCommand, "-c", packageInstallationSubCommand}
 
 	executionResult, err := builtin.serviceNetwork.RunExec(
