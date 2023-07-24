@@ -173,7 +173,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 		} else {
 			logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
 		}
-		
+
 		metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while creating metrics client")
