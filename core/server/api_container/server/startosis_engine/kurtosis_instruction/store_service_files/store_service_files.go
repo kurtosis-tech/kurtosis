@@ -5,6 +5,7 @@ import (
 	"fmt"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -106,7 +107,7 @@ func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *bui
 }
 
 func (builtin *StoreServiceFilesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if !validatorEnvironment.DoesServiceNameExist(builtin.serviceName) {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ServiceNotFound {
 		return startosis_errors.NewValidationError("There was an error validating '%v' with service name '%v' that does not exist", StoreServiceFilesBuiltinName, builtin.serviceName)
 	}
 	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
@@ -123,4 +124,11 @@ func (builtin *StoreServiceFilesCapabilities) Execute(ctx context.Context, _ *bu
 	}
 	instructionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, artifactUuid)
 	return instructionResult, nil
+}
+
+func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	if instructionsAreEqual {
+		return enclave_structure.InstructionIsEqual
+	}
+	return enclave_structure.InstructionIsUnknown
 }

@@ -25,7 +25,7 @@ func TestStartosisPortsWaitTestSuite(t *testing.T) {
 	suite.Run(t, new(StartosisPortsWaitTestSuite))
 }
 
-func (suite *StartosisPortsWaitTestSuite) SetupSuite() {
+func (suite *StartosisPortsWaitTestSuite) SetupTest() {
 	ctx := context.Background()
 	t := suite.T()
 	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name, isPartitioningEnabled)
@@ -34,7 +34,7 @@ func (suite *StartosisPortsWaitTestSuite) SetupSuite() {
 	suite.destroyEnclaveFunc = destroyEnclaveFunc
 }
 
-func (suite *StartosisPortsWaitTestSuite) TearDownSuite() {
+func (suite *StartosisPortsWaitTestSuite) TearDownTest() {
 	err := suite.destroyEnclaveFunc()
 	require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
 }

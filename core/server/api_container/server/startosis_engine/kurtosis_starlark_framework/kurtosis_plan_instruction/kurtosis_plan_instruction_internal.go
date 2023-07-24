@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -73,6 +75,25 @@ func (builtin *kurtosisPlanInstructionInternal) Execute(ctx context.Context) (*s
 		return nil, err
 	}
 	return &result, nil
+}
+
+func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other kurtosis_instruction.KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	isAnAbortAllInstruction := builtin.capabilities.TryResolveWith(false, nil, enclaveComponents) == enclave_structure.InstructionIsNotResolvableAbort
+	if isAnAbortAllInstruction {
+		return enclave_structure.InstructionIsNotResolvableAbort
+	}
+
+	if other == nil {
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	otherPlanInstruction, ok := other.(*kurtosisPlanInstructionInternal)
+	if !ok {
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	instructionsAreEqual := builtin.String() == other.String()
+	return builtin.capabilities.TryResolveWith(instructionsAreEqual, otherPlanInstruction.capabilities, enclaveComponents)
 }
 
 func (builtin *kurtosisPlanInstructionInternal) interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string) (starlark.Value, *startosis_errors.InterpretationError) {

@@ -1174,17 +1174,17 @@ func (_c *MockServiceNetwork_UnsetConnection_Call) RunAndReturn(run func(context
 	return _c
 }
 
-// UpdateService provides a mock function with given fields: ctx, serviceName, serviceConfig
-func (_m *MockServiceNetwork) UpdateService(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) (*service.Service, error) {
-	ret := _m.Called(ctx, serviceName, serviceConfig)
+// UpdateService provides a mock function with given fields: ctx, serviceName, updateServiceConfig
+func (_m *MockServiceNetwork) UpdateService(ctx context.Context, serviceName service.ServiceName, updateServiceConfig *service.ServiceConfig) (*service.Service, error) {
+	ret := _m.Called(ctx, serviceName, updateServiceConfig)
 
 	var r0 *service.Service
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *service.ServiceConfig) (*service.Service, error)); ok {
-		return rf(ctx, serviceName, serviceConfig)
+		return rf(ctx, serviceName, updateServiceConfig)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, service.ServiceName, *service.ServiceConfig) *service.Service); ok {
-		r0 = rf(ctx, serviceName, serviceConfig)
+		r0 = rf(ctx, serviceName, updateServiceConfig)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*service.Service)
@@ -1192,7 +1192,7 @@ func (_m *MockServiceNetwork) UpdateService(ctx context.Context, serviceName ser
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, service.ServiceName, *service.ServiceConfig) error); ok {
-		r1 = rf(ctx, serviceName, serviceConfig)
+		r1 = rf(ctx, serviceName, updateServiceConfig)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1208,12 +1208,12 @@ type MockServiceNetwork_UpdateService_Call struct {
 // UpdateService is a helper method to define mock.On call
 //   - ctx context.Context
 //   - serviceName service.ServiceName
-//   - serviceConfig *service.ServiceConfig
-func (_e *MockServiceNetwork_Expecter) UpdateService(ctx interface{}, serviceName interface{}, serviceConfig interface{}) *MockServiceNetwork_UpdateService_Call {
-	return &MockServiceNetwork_UpdateService_Call{Call: _e.mock.On("UpdateService", ctx, serviceName, serviceConfig)}
+//   - updateServiceConfig *service.ServiceConfig
+func (_e *MockServiceNetwork_Expecter) UpdateService(ctx interface{}, serviceName interface{}, updateServiceConfig interface{}) *MockServiceNetwork_UpdateService_Call {
+	return &MockServiceNetwork_UpdateService_Call{Call: _e.mock.On("UpdateService", ctx, serviceName, updateServiceConfig)}
 }
 
-func (_c *MockServiceNetwork_UpdateService_Call) Run(run func(ctx context.Context, serviceName service.ServiceName, serviceConfig *service.ServiceConfig)) *MockServiceNetwork_UpdateService_Call {
+func (_c *MockServiceNetwork_UpdateService_Call) Run(run func(ctx context.Context, serviceName service.ServiceName, updateServiceConfig *service.ServiceConfig)) *MockServiceNetwork_UpdateService_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(service.ServiceName), args[2].(*service.ServiceConfig))
 	})

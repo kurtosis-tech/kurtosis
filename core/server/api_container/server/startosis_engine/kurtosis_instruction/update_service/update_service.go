@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -104,7 +105,7 @@ func (builtin *UpdateServiceCapabilities) Validate(_ *builtin_argument.ArgumentV
 			return startosis_errors.NewValidationError("Service was about to be moved to subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.", *builtin.updateServiceConfig.Subnetwork)
 		}
 	}
-	if !validatorEnvironment.DoesServiceNameExist(builtin.serviceName) {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ServiceNotFound {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' does not exist", UpdateServiceBuiltinName, builtin.serviceName)
 	}
 	return nil
@@ -133,6 +134,10 @@ func (builtin *UpdateServiceCapabilities) Execute(ctx context.Context, _ *builti
 	}
 	instructionResult := fmt.Sprintf("Service '%s' with UUID '%s' updated", builtin.serviceName, runningService.GetRegistration().GetUUID())
 	return instructionResult, nil
+}
+
+func (builtin *UpdateServiceCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	return enclave_structure.InstructionIsNotResolvableAbort
 }
 
 func validateAndConvertConfig(rawConfig starlark.Value) (*kurtosis_core_rpc_api_bindings.UpdateServiceConfig, *startosis_errors.InterpretationError) {
