@@ -30,6 +30,7 @@ const (
 	emptyPrivateIpPlaceholder = ""
 	nonSupportedField         = ""
 	defaultMainFunction       = ""
+	noStarlarkParams          = ""
 
 	// Signifies that an enclave name should be auto-generated
 	autogenerateEnclaveNameKeyword = ""
@@ -146,6 +147,7 @@ func convertComposeProjectToStarlark(compose *types.Project) (string, error) {
 	return script, nil
 }
 
+// TODO(victor.colombo): This should be part of the SDK, since we implement this over and over again
 func runStarlark(ctx context.Context, enclaveName string, starlarkScript string) error {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
@@ -158,7 +160,7 @@ func runStarlark(ctx context.Context, enclaveName string, starlarkScript string)
 	}
 	defer output_printers.PrintEnclaveName(enclaveName)
 
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, defaultMainFunction, starlarkScript, "{}", false, 1, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, defaultMainFunction, starlarkScript, noStarlarkParams, false, 1, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
