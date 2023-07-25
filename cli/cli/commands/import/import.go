@@ -173,7 +173,7 @@ func runStarlark(ctx context.Context, enclaveName string, starlarkScript string)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", enclaveName)
 	}
-	defer output_printers.PrintEnclaveName(enclaveName)
+	defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
 
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, defaultMainFunction, starlarkScript, noStarlarkParams, false, 1, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
 	if err != nil {
