@@ -20,13 +20,13 @@ var (
 // Backend agnostic remote backend config which can be used by the Docker or Kubernetes backend
 type KurtosisRemoteBackendConfig struct {
 	Endpoint string                    `json:"endpoint"`
-	Tls      *KurtosisBackendTlsConfig `json:"tls,omitempty"`
+	Tls      *KurtosisBackendTlsConfig `json:"tlsConfig,omitempty"`
 }
 
 type KurtosisBackendTlsConfig struct {
-	Ca         []byte `json:"ca"`
-	ClientCert []byte `json:"cert"`
-	ClientKey  []byte `json:"key"`
+	Ca         []byte `json:"certificateAuthority"`
+	ClientCert []byte `json:"clientCertificate"`
+	ClientKey  []byte `json:"clientKey"`
 }
 
 func NewRemoteBackendConfigFromRemoteContext(
