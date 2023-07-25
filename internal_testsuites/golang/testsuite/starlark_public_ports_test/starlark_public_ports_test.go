@@ -1,5 +1,5 @@
-//go:build !minikube
-// +build !minikube
+//go:build !kubernetes
+// +build !kubernetes
 
 // We don't run this test in Kubernetes because public ports aren't supported in Kubernetes backend
 // TODO remove this test once we have the Kurtosis Portal, and public_ports isn't a thing

@@ -3,6 +3,7 @@ package kurtosis_print
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -57,7 +58,7 @@ type PrintCapabilities struct {
 	msg starlark.Value
 }
 
-func (builtin *PrintCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *PrintCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	msg, err := builtin_argument.ExtractArgumentValue[starlark.Value](arguments, PrintArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", PrintArgName)
@@ -85,4 +86,11 @@ func (builtin *PrintCapabilities) Execute(_ context.Context, _ *builtin_argument
 		return "", stacktrace.Propagate(err, "Error replacing runtime value '%v'", serializedMsg)
 	}
 	return maybeSerializedArgsWithRuntimeValue, nil
+}
+
+func (builtin *PrintCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	if instructionsAreEqual {
+		return enclave_structure.InstructionIsEqual
+	}
+	return enclave_structure.InstructionIsUnknown
 }

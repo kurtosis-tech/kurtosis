@@ -2,51 +2,67 @@ package startosis_engine
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
-	"go.starlark.net/starlark"
+	"github.com/stretchr/testify/suite"
 	"testing"
 )
 
 const (
 	noInputParams = "{}"
-	noReturnValue = starlark.None
 )
+
+type StartosisInterpreterIdempotentTestSuite struct {
+	suite.Suite
+	packageContentProvider *mock_package_content_provider.MockPackageContentProvider
+	interpreter            *StartosisInterpreter
+}
+
+func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
+	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
+	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	serviceNetwork := service_network.NewMockServiceNetwork(suite.T())
+	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore)
+}
+
+func TestRunStartosisInterpreterIdempotentTestSuite(t *testing.T) {
+	suite.Run(t, new(StartosisInterpreterIdempotentTestSuite))
+}
+
+func (suite *StartosisInterpreterIdempotentTestSuite) TearDownTest() {
+	suite.packageContentProvider.RemoveAll()
+}
 
 // Most simple case - replay the same package twice
 // Current plan ->     [`print("instruction1")`  `print("instruction2")`  `print("instruction3")`]
 // Package to run ->   [`print("instruction1")`  `print("instruction2")`  `print("instruction3")`]
 // Check that this results in the entire set of instruction being skipped
-func TestInterpretAndOptimize_IdenticalPackage(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan, args):
+func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_IdenticalPackage() {
+	script := `def run(plan, args):
 	plan.print("instruction1")
 	plan.print("instruction2")
 	plan.print("instruction3")
 `
+	// Interpretation of the initial script to generate the current enclave plan
+	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		script,
+		noInputParams,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0))
+	require.Nil(suite.T(), interpretationApiErr)
+	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
 
-	instruction1Str := `print(msg="instruction1")`
-	instruction1 := newMockInstruction(t, instruction1Str)
-	instruction2Str := `print(msg="instruction2")`
-	instruction2 := newMockInstruction(t, instruction2Str)
-	instruction3Str := `print(msg="instruction3")`
-	instruction3 := newMockInstruction(t, instruction3Str)
-
-	currentEnclavePlan := instructions_plan.NewInstructionsPlan()
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction1, noReturnValue))
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction2, noReturnValue))
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction3, noReturnValue))
-
-	_, instructionsPlan, interpretationError := interpreter.InterpretAndOptimizePlan(
+	// Interpret the updated script against the current enclave plan
+	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
@@ -55,83 +71,86 @@ def run(plan, args):
 		noInputParams,
 		currentEnclavePlan,
 	)
-	require.Nil(t, interpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
-	require.Nil(t, err)
-	require.Equal(t, 3, len(instructionSequence))
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 3, len(instructionSequence))
 
 	scheduledInstruction1 := instructionSequence[0]
-	require.Equal(t, instruction1Str, scheduledInstruction1.GetInstruction().String())
-	require.False(t, scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction1.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction1.IsExecuted())
 
 	scheduledInstruction2 := instructionSequence[1]
-	require.Equal(t, instruction2Str, scheduledInstruction2.GetInstruction().String())
-	require.False(t, scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction2.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction2.IsExecuted())
 
 	scheduledInstruction3 := instructionSequence[2]
-	require.Equal(t, instruction3Str, scheduledInstruction3.GetInstruction().String())
-	require.False(t, scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction3.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction3.IsExecuted())
 }
 
 // Add an instruction at the end of a package that was already run
 // Current plan ->     [`print("instruction1")`  `print("instruction2")`                         ]
 // Package to run ->   [`print("instruction1")`  `print("instruction2")`  `print("instruction3")`]
-// Check that the first two instructions are a;ready executed, and the last one is in the new plan marked as not
+// Check that the first two instructions are already executed, and the last one is in the new plan marked as not
 // executed
-func TestInterpretAndOptimize_AppendNewInstruction(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan, args):
+func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_AppendNewInstruction() {
+	initialScript := `def run(plan, args):
 	plan.print("instruction1")
 	plan.print("instruction2")
-	plan.print("instruction3")
 `
-
-	instruction1Str := `print(msg="instruction1")`
-	instruction1 := newMockInstruction(t, instruction1Str)
-	instruction2Str := `print(msg="instruction2")`
-	instruction2 := newMockInstruction(t, instruction2Str)
-
-	currentEnclavePlan := instructions_plan.NewInstructionsPlan()
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction1, noReturnValue))
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction2, noReturnValue))
-
-	_, instructionsPlan, interpretationError := interpreter.InterpretAndOptimizePlan(
+	// Interpretation of the initial script to generate the current enclave plan
+	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		script,
+		initialScript,
+		noInputParams,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0))
+	require.Nil(suite.T(), interpretationApiErr)
+	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
+
+	updatedScript := `def run(plan, args):
+	plan.print("instruction1")
+	plan.print("instruction2")
+	plan.print("instruction3")
+`
+	// Interpret the updated script against the current enclave plan
+	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		updatedScript,
 		noInputParams,
 		currentEnclavePlan,
 	)
-	require.Nil(t, interpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
-	require.Nil(t, err)
-	require.Equal(t, 3, len(instructionSequence))
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 3, len(instructionSequence))
 
 	scheduledInstruction1 := instructionSequence[0]
-	require.Equal(t, instruction1Str, scheduledInstruction1.GetInstruction().String())
-	require.False(t, scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction1.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction1.IsExecuted())
 
 	scheduledInstruction2 := instructionSequence[1]
-	require.Equal(t, instruction2Str, scheduledInstruction2.GetInstruction().String())
-	require.False(t, scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction2.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction2.IsExecuted())
 
 	scheduledInstruction3 := instructionSequence[2]
-	require.Equal(t, `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
-	require.False(t, scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
-	require.False(t, scheduledInstruction3.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction3.IsExecuted())
 }
 
 // Run an instruction inside an enclave that is not empty (other non-related package were run in the past)
@@ -139,54 +158,57 @@ def run(plan, args):
 // Package to run ->   [                                                  `print("instruction3")`]
 // Check that the first two instructions are marked as imported from a previous plan, already executed, and the last
 // one is in the new plan marked as not executed
-func TestInterpretAndOptimize_DisjointInstructionSet(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan, args):
-	plan.print("instruction3")
+func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_DisjointInstructionSet() {
+	initialScript := `def run(plan, args):
+	plan.print("instruction1")
+	plan.print("instruction2")
 `
-
-	instruction1Str := `print(msg="instruction1")`
-	instruction1 := newMockInstruction(t, instruction1Str)
-	instruction2Str := `print(msg="instruction2")`
-	instruction2 := newMockInstruction(t, instruction2Str)
-
-	currentEnclavePlan := instructions_plan.NewInstructionsPlan()
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction1, noReturnValue))
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction2, noReturnValue))
-
-	_, instructionsPlan, interpretationError := interpreter.InterpretAndOptimizePlan(
+	// Interpretation of the initial script to generate the current enclave plan
+	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		script,
+		initialScript,
+		noInputParams,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0))
+	require.Nil(suite.T(), interpretationApiErr)
+	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
+
+	updatedScript := `def run(plan, args):
+	plan.print("instruction3")
+`
+	// Interpret the updated script against the current enclave plan
+	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		updatedScript,
 		noInputParams,
 		currentEnclavePlan,
 	)
-	require.Nil(t, interpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
-	require.Nil(t, err)
-	require.Equal(t, 3, len(instructionSequence))
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 3, len(instructionSequence))
 
 	scheduledInstruction1 := instructionSequence[0]
-	require.Equal(t, instruction1Str, scheduledInstruction1.GetInstruction().String())
-	require.True(t, scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction1.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
+	require.True(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction1.IsExecuted())
 
 	scheduledInstruction2 := instructionSequence[1]
-	require.Equal(t, instruction2Str, scheduledInstruction2.GetInstruction().String())
-	require.True(t, scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction2.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
+	require.True(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction2.IsExecuted())
 
 	scheduledInstruction3 := instructionSequence[2]
-	require.Equal(t, `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
-	require.False(t, scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
-	require.False(t, scheduledInstruction3.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction3.IsExecuted())
 }
 
 // This is a bit of an edge case here, we run only part of the instruction that are identical to what was already run
@@ -194,58 +216,59 @@ def run(plan, args):
 // Package to run ->   [`print("instruction1")`  `print("instruction2")`                         ]
 // Check that instruction 1 and 2 are part of the new plan, already executed, and instruction3 is ALSO part of the
 // plan, but marked as imported from a previous plan
-func TestInterpretAndOptimize_ReplacePartOfInstructionWithIdenticalInstruction(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan, args):
+func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_ReplacePartOfInstructionWithIdenticalInstruction() {
+	initialScript := `def run(plan, args):
 	plan.print(msg="instruction1")
 	plan.print(msg="instruction2")
+	plan.print(msg="instruction3")
 `
-
-	instruction1Str := `print(msg="instruction1")`
-	instruction1 := newMockInstruction(t, instruction1Str)
-	instruction2Str := `print(msg="instruction2")`
-	instruction2 := newMockInstruction(t, instruction2Str)
-	instruction3Str := `print(msg="instruction3")`
-	instruction3 := newMockInstruction(t, instruction3Str)
-
-	currentEnclavePlan := instructions_plan.NewInstructionsPlan()
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction1, noReturnValue))
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction2, noReturnValue))
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction3, noReturnValue))
-
-	_, instructionsPlan, interpretationError := interpreter.InterpretAndOptimizePlan(
+	// Interpretation of the initial script to generate the current enclave plan
+	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		script,
+		initialScript,
+		noInputParams,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0))
+	require.Nil(suite.T(), interpretationApiErr)
+	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
+
+	updatedScript := `def run(plan, args):
+	plan.print(msg="instruction1")
+	plan.print(msg="instruction2")
+`
+	// Interpret the updated script against the current enclave plan
+	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		updatedScript,
 		noInputParams,
 		currentEnclavePlan,
 	)
-	require.Nil(t, interpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
-	require.Nil(t, err)
-	require.Equal(t, 3, len(instructionSequence))
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 3, len(instructionSequence))
 
 	scheduledInstruction1 := instructionSequence[0]
-	require.Equal(t, instruction1Str, scheduledInstruction1.GetInstruction().String())
-	require.False(t, scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction1.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction1.IsExecuted())
 
 	scheduledInstruction2 := instructionSequence[1]
-	require.Equal(t, instruction2Str, scheduledInstruction2.GetInstruction().String())
-	require.False(t, scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction2.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction2.IsExecuted())
 
 	scheduledInstruction3 := instructionSequence[2]
-	require.Equal(t, `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
-	require.True(t, scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction3.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
+	require.True(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction3.IsExecuted())
 }
 
 // Submit a package with a update on an instruction located "in the middle" of the package
@@ -254,78 +277,139 @@ def run(plan, args):
 // That will result in the concatenation of the two plans because we're not able to properly resolve dependencies yet
 // [`print("instruction1")`  `print("instruction2")`  `print("instruction3")`  `print("instruction1")`  `print("instruction2_NEW")`  `print("instruction3")`]
 // The first three are imported from a previous plan, already executed, while the last three are from all new
-func TestInterpretAndOptimize_InvalidNewVersionOfThePackage(t *testing.T) {
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	defer packageContentProvider.RemoveAll()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-	interpreter := NewStartosisInterpreter(testServiceNetwork, packageContentProvider, runtimeValueStore)
-	script := `
-def run(plan, args):
+func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_InvalidNewVersionOfThePackage() {
+	initialScript := `def run(plan, args):
 	plan.print(msg="instruction1")
-	plan.print(msg="instruction2_NEW")
+	plan.print(msg="instruction2")
 	plan.print(msg="instruction3")
 `
-
-	instruction1Str := `print(msg="instruction1")`
-	instruction1 := newMockInstruction(t, instruction1Str)
-	instruction2Str := `print(msg="instruction2")`
-	instruction2 := newMockInstruction(t, instruction2Str)
-	instruction3Str := `print(msg="instruction3")`
-	instruction3 := newMockInstruction(t, instruction3Str)
-
-	currentEnclavePlan := instructions_plan.NewInstructionsPlan()
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction1, noReturnValue))
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction2, noReturnValue))
-	require.Nil(t, currentEnclavePlan.AddInstruction(instruction3, noReturnValue))
-
-	_, instructionsPlan, interpretationError := interpreter.InterpretAndOptimizePlan(
+	// Interpretation of the initial script to generate the current enclave plan
+	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		script,
+		initialScript,
+		noInputParams,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0))
+	require.Nil(suite.T(), interpretationApiErr)
+	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
+
+	updatedScript := `def run(plan, args):
+	plan.print(msg="instruction1")
+	plan.print(msg="instruction2_NEW")
+	plan.print(msg="instruction3")
+`
+	// Interpret the updated script against the current enclave plan
+	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		updatedScript,
 		noInputParams,
 		currentEnclavePlan,
 	)
-	require.Nil(t, interpretationError)
+	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
-	require.Nil(t, err)
-	require.Equal(t, 6, len(instructionSequence))
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 6, len(instructionSequence))
 
 	scheduledInstruction1 := instructionSequence[0]
-	require.Equal(t, instruction1Str, scheduledInstruction1.GetInstruction().String())
-	require.True(t, scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction1.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
+	require.True(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction1.IsExecuted())
 
 	scheduledInstruction2 := instructionSequence[1]
-	require.Equal(t, instruction2Str, scheduledInstruction2.GetInstruction().String())
-	require.True(t, scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction2.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
+	require.True(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction2.IsExecuted())
 
 	scheduledInstruction3 := instructionSequence[2]
-	require.Equal(t, instruction3Str, scheduledInstruction3.GetInstruction().String())
-	require.True(t, scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
-	require.True(t, scheduledInstruction3.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
+	require.True(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction3.IsExecuted())
 
 	scheduledInstruction4 := instructionSequence[3]
-	require.Equal(t, instruction1Str, scheduledInstruction4.GetInstruction().String())
-	require.False(t, scheduledInstruction4.IsImportedFromCurrentEnclavePlan())
-	require.False(t, scheduledInstruction4.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction4.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction4.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction4.IsExecuted())
 
 	scheduledInstruction5 := instructionSequence[4]
-	require.Equal(t, `print(msg="instruction2_NEW")`, scheduledInstruction5.GetInstruction().String())
-	require.False(t, scheduledInstruction5.IsImportedFromCurrentEnclavePlan())
-	require.False(t, scheduledInstruction5.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction2_NEW")`, scheduledInstruction5.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction5.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction5.IsExecuted())
 
 	scheduledInstruction6 := instructionSequence[5]
-	require.Equal(t, instruction3Str, scheduledInstruction6.GetInstruction().String())
-	require.False(t, scheduledInstruction6.IsImportedFromCurrentEnclavePlan())
-	require.False(t, scheduledInstruction6.IsExecuted())
+	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction6.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction6.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction6.IsExecuted())
 }
 
-func newMockInstruction(t *testing.T, instructionName string) kurtosis_instruction.KurtosisInstruction {
-	mockInstruction := mock_instruction.NewMockKurtosisInstruction(t)
-	mockInstruction.EXPECT().String().Maybe().Return(instructionName)
-	return mockInstruction
+// Submit a package with an update to an add_service instruction. add_service instructions is the only one right now
+// support being run twice in an enclave, updating "live" the service underneath. Check that the add_service and its
+// direct dependencies are scheduled for a re-run but other instructions remains "SKIPPED"
+func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_AddServiceIdempotency() {
+	initialScript := `def run(plan):
+	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3"))
+	plan.print("Service 1 - IP: {} - Hostname: {}".format(service_1.ip_address, service_1.hostname))
+	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))
+	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip")
+`
+	// Interpretation of the initial script to generate the current enclave plan
+	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		initialScript,
+		noInputParams,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0))
+	require.Nil(suite.T(), interpretationApiErr)
+	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
+
+	updatedScript := `def run(plan):
+	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.5.0")) # <-- version updated
+	plan.print("Service 1 - IP: {} - Hostname: {}".format(service_1.ip_address, service_1.hostname)) # <-- identical
+	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"])) # <-- identical but should be rerun b/c service_1 updated
+	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip") # <-- identical b/c we don't track runtime value provenance yet
+`
+	// Interpret the updated script against the current enclave plan
+	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		updatedScript,
+		noInputParams,
+		currentEnclavePlan,
+	)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionSequence, err := instructionsPlan.GeneratePlan()
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 4, len(instructionSequence))
+
+	scheduledInstruction1 := instructionSequence[0]
+	require.Equal(suite.T(), `add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.5.0"))`, scheduledInstruction1.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction1.IsExecuted())
+
+	scheduledInstruction2 := instructionSequence[1]
+	require.Regexp(suite.T(), `print\(msg="Service 1 - IP: {{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}} - Hostname: {{kurtosis:[a-z0-9]{32}:hostname\.runtime_value}}"\)`, scheduledInstruction2.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction2.IsExecuted())
+
+	scheduledInstruction3 := instructionSequence[2]
+	require.Equal(suite.T(), `exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))`, scheduledInstruction3.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction3.IsExecuted())
+
+	scheduledInstruction4 := instructionSequence[3]
+	require.Regexp(suite.T(), `assert\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction4.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction4.IsExecuted())
 }

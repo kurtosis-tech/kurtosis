@@ -732,5 +732,66 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.listFilesArti
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.InspectFilesArtifactContentsRequest,
+ *   !proto.api_container_api.InspectFilesArtifactContentsResponse>}
+ */
+const methodDescriptor_ApiContainerService_InspectFilesArtifactContents = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/InspectFilesArtifactContents',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.InspectFilesArtifactContentsRequest,
+  proto.api_container_api.InspectFilesArtifactContentsResponse,
+  /**
+   * @param {!proto.api_container_api.InspectFilesArtifactContentsRequest} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.InspectFilesArtifactContentsResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.InspectFilesArtifactContentsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.InspectFilesArtifactContentsResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.InspectFilesArtifactContentsResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.inspectFilesArtifactContents =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/InspectFilesArtifactContents',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_InspectFilesArtifactContents,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.InspectFilesArtifactContentsRequest} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.InspectFilesArtifactContentsResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.inspectFilesArtifactContents =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/InspectFilesArtifactContents',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_InspectFilesArtifactContents);
+};
+
+
 module.exports = proto.api_container_api;
 

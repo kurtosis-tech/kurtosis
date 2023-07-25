@@ -12,6 +12,7 @@ import (
 const (
 	dryRun      = true
 	executedRun = false
+	isSkipped   = true
 )
 
 func testInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
@@ -25,7 +26,8 @@ func testInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 			binding_constructors.NewStarlarkInstructionArg(`["bar", "doo"]`, false),
 			binding_constructors.NewStarlarkInstructionKwarg("serviceA", "kwarg1", true),
 			binding_constructors.NewStarlarkInstructionKwarg(`struct(bonjour=42, hello="world")`, "kwarg2", false),
-		})
+		},
+		isSkipped)
 }
 
 func TestFormatInstruction_Executable(t *testing.T) {
@@ -71,7 +73,8 @@ func TestFormatInstruction_FormattingFail(t *testing.T) {
 		"print",
 		// This has issues with the quotes not being escaped
 		`print("UNSUPPORTED_TYPE['ModuleOutput(grafana_info=GrafanaInfo(dashboard_path="/d/QdTOwy-nz/eth2-merge-kurtosis-module-dashboard?orgId=1", user="admin", password="admin"))']")`,
-		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{})
+		[]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg{},
+		isSkipped)
 	formattedInstruction := formatInstruction(instruction, run.Executable)
 	// failure to format -> the instruction is returned with no formatting applied
 	expectedResult := `# from dummyFile[12:4]

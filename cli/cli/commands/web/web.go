@@ -22,7 +22,7 @@ var WebCmd = &lowlevel.LowlevelKurtosisCommand{
 }
 
 const (
-	webUiLink = "http://localhost:9711"
+	webUiLink = "http://localhost:9711/enclaves"
 )
 
 func run(_ context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {

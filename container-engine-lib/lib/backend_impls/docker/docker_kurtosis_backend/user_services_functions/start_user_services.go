@@ -196,6 +196,88 @@ func StartRegisteredUserServices(
 	return successfulServicesPool, failedServicesPool, nil
 }
 
+func RemoveRegisteredUserServiceProcesses(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	services map[service.ServiceUUID]bool,
+	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
+	dockerManager *docker_manager.DockerManager,
+) (
+	map[service.ServiceUUID]bool,
+	map[service.ServiceUUID]error,
+	error,
+) {
+	successfullyRemovedService := map[service.ServiceUUID]bool{}
+	failedServicesPool := map[service.ServiceUUID]error{}
+
+	serviceUuidsToUpdate := map[service.ServiceUUID]bool{}
+	for serviceUuid := range services {
+		if _, found := serviceRegistrations[serviceUuid]; found {
+			serviceUuidsToUpdate[serviceUuid] = true
+		} else {
+			failedServicesPool[serviceUuid] = stacktrace.NewError("Unable to update service '%s' that is not "+
+				"registered inside this enclave", serviceUuid)
+		}
+	}
+
+	removeServiceFilters := &service.ServiceFilters{
+		Names:    nil,
+		UUIDs:    serviceUuidsToUpdate,
+		Statuses: nil,
+	}
+
+	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveUuid, removeServiceFilters, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", removeServiceFilters)
+	}
+
+	servicesToStartByContainerId := map[string]*service.Service{}
+	for uuid, serviceResources := range allDockerResources {
+		serviceObj, found := allServiceObjs[uuid]
+		if !found {
+			// Should never happen; there should be a 1:1 mapping between service_objects:docker_resources by GUID
+			return nil, nil, stacktrace.NewError("No service object found for service '%v' that had Docker resources; this is a bug in Kurtosis", uuid)
+		}
+		servicesToStartByContainerId[serviceResources.ServiceContainer.GetId()] = serviceObj
+	}
+
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing user service processes container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulUuidStrs, erroredUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		servicesToStartByContainerId,
+		dockerManager,
+		extractServiceUUIDFromService,
+		dockerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing user service processes containers matching filters '%+v'", removeServiceFilters)
+	}
+
+	for failedServiceUuid, failedServiceErr := range erroredUuidStrs {
+		failedServicesPool[service.ServiceUUID(failedServiceUuid)] = failedServiceErr
+	}
+
+	for serviceUuidStr := range successfulUuidStrs {
+		serviceUuid := service.ServiceUUID(serviceUuidStr)
+		serviceConfig, found := services[serviceUuid]
+		if !found {
+			failedServicesPool[serviceUuid] = stacktrace.NewError("An error occurred removing user service processes for service with UUID '%s'", serviceUuid)
+		}
+		successfullyRemovedService[serviceUuid] = serviceConfig
+	}
+	return successfullyRemovedService, failedServicesPool, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper functions
@@ -464,6 +546,8 @@ func createStartServiceOperation(
 			memoryAllocationMegabytes,
 		).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
 			skipAddingUserServiceToBridgeNetwork,
+		).WithContainerInitEnabled(
+			true,
 		)
 
 		if entrypointArgs != nil {

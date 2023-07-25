@@ -227,6 +227,28 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 	return successfullyStartedService, failedService, nil
 }
 
+func (backend *DockerKurtosisBackend) RemoveRegisteredUserServiceProcesses(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
+				"request is being called where it shouldn't be (i.e. outside the API container)",
+			enclaveUuid,
+		)
+	}
+
+	successfullyStartedService, failedService, err := user_service_functions.RemoveRegisteredUserServiceProcesses(
+		ctx,
+		enclaveUuid,
+		services,
+		serviceRegistrationsForEnclave,
+		backend.dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error while updating user services")
+	}
+	return successfullyStartedService, failedService, nil
+}
+
 func (backend *DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,

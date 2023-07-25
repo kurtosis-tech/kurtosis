@@ -2,8 +2,10 @@ package exec
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -14,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"strings"
 )
 
 var defaultAcceptableCodes = []int64{
@@ -98,7 +101,7 @@ type ExecCapabilities struct {
 	skipCodeCheck   bool
 }
 
-func (builtin *ExecCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *ExecCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 
 	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
@@ -161,11 +164,22 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 		return "", stacktrace.Propagate(err, "Error executing exec recipe")
 	}
 	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
-		return "", stacktrace.NewError("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:\n%v", result["code"], builtin.acceptableCodes, result["output"])
+		errorMessage := fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+		return "", stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
 	}
+
 	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	instructionResult := builtin.execRecipe.ResultMapToString(result)
 	return instructionResult, err
+}
+
+func (builtin *ExecCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	if instructionsAreEqual && enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
+		return enclave_structure.InstructionIsUpdate
+	} else if instructionsAreEqual {
+		return enclave_structure.InstructionIsEqual
+	}
+	return enclave_structure.InstructionIsUnknown
 }
 
 func (builtin *ExecCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {
@@ -177,4 +191,10 @@ func (builtin *ExecCapabilities) isAcceptableCode(recipeResult map[string]starla
 		}
 	}
 	return isAcceptableCode
+}
+
+func formatErrorMessage(errorMessage string, errorFromExec string) string {
+	splitErrorMessageNewLine := strings.Split(errorFromExec, "\n")
+	reformattedErrorMessage := strings.Join(splitErrorMessageNewLine, "\n  ")
+	return fmt.Sprintf("%v\n  %v", errorMessage, reformattedErrorMessage)
 }

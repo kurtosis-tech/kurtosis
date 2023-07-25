@@ -39,6 +39,17 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
+	serviceNetwork.EXPECT().GetServiceRegistration(TestServiceName).Times(1).Return(nil, false)
+	serviceNetwork.EXPECT().GetServiceRegistration(TestServiceName2).Times(1).Return(nil, false)
+	serviceNetwork.EXPECT().UpdateServices(
+		mock.Anything,
+		map[service.ServiceName]*service.ServiceConfig{},
+		mock.Anything,
+	).Times(1).Return(
+		map[service.ServiceName]*service.Service{},
+		map[service.ServiceName]error{},
+		nil,
+	)
 	serviceNetwork.EXPECT().AddServices(
 		mock.Anything,
 		mock.MatchedBy(func(configs map[service.ServiceName]*service.ServiceConfig) bool {

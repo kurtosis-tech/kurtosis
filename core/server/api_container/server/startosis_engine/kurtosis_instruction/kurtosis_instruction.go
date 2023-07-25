@@ -3,6 +3,7 @@ package kurtosis_instruction
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
@@ -20,7 +21,7 @@ var (
 type KurtosisInstruction interface {
 	GetPositionInOriginalScript() *kurtosis_starlark_framework.KurtosisBuiltinPosition
 
-	GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction
+	GetCanonicalInstruction(isSkipped bool) *kurtosis_core_rpc_api_bindings.StarlarkInstruction
 
 	Execute(ctx context.Context) (*string, error)
 
@@ -31,4 +32,7 @@ type KurtosisInstruction interface {
 	// ValidateAndUpdateEnvironment validates if the instruction can be applied to an environment, and mutates that
 	// environment to reflect how Kurtosis would look like after this instruction is successfully executed.
 	ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error
+
+	// TryResolveWith assesses whether the instruction can be resolved with the one passed as an argument.
+	TryResolveWith(other KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
 }
