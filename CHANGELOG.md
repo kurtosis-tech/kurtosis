@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.16](https://github.com/kurtosis-tech/kurtosis/compare/0.80.15...0.80.16) (2023-07-25)
+
+
+### Features
+
+* folks can now use frontend to view file artifacts and it's content. ([#967](https://github.com/kurtosis-tech/kurtosis/issues/967)) ([fc87c31](https://github.com/kurtosis-tech/kurtosis/commit/fc87c31cd8deecfcba689ef0d0416be017f9ff36))
+
 ## [0.80.15](https://github.com/kurtosis-tech/kurtosis/compare/0.80.14...0.80.15) (2023-07-25)
 
 
