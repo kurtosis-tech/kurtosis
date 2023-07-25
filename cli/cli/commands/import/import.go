@@ -134,7 +134,22 @@ func convertComposeProjectToStarlark(compose *types.Project) (string, error) {
 			}
 			portPiecesStr = append(portPiecesStr, portStr)
 		}
-		starlarkConfig, err := add.GetServiceConfigStarlark(serviceConfig.Image, strings.Join(portPiecesStr, ","), serviceConfig.Command, serviceConfig.Entrypoint, nonSupportedField, nonSupportedField, emptyPrivateIpPlaceholder)
+		envvarsPiecesStr := []string{}
+		for envKey, envValue := range serviceConfig.Environment {
+			envValueStr := ""
+			if envValue != nil {
+				envValueStr = *envValue
+			}
+			envvarsPiecesStr = append(envvarsPiecesStr, fmt.Sprintf("%s=%s", envKey, envValueStr))
+		}
+		starlarkConfig, err := add.GetServiceConfigStarlark(
+			serviceConfig.Image,
+			strings.Join(portPiecesStr, ","),
+			serviceConfig.Command,
+			serviceConfig.Entrypoint,
+			strings.Join(envvarsPiecesStr, ","),
+			nonSupportedField,
+			emptyPrivateIpPlaceholder)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "Error getting service config starlark for '%v'", serviceConfig)
 		}

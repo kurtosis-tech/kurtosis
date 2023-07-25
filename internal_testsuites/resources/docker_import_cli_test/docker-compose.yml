@@ -1,6 +1,7 @@
 services:
   nginx-a:
     image: nginx:latest
-    container_name: nginx
+    environment:
+      KEY: VALUE
     ports:
       - 123:80
