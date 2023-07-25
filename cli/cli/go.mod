@@ -49,6 +49,8 @@ require (
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230406131103-c466e04f1b89
 	github.com/mholt/archiver v3.1.1+incompatible
+	github.com/xlab/treeprint v1.2.0
+	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
 	gopkg.in/segmentio/analytics-go.v3 v3.1.0
 	k8s.io/api v0.27.2
 )
@@ -120,7 +122,6 @@ require (
 	github.com/stretchr/objx v0.5.0 // indirect
 	github.com/ulikunitz/xz v0.5.10 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
-	github.com/xlab/treeprint v1.2.0 // indirect
 	github.com/xtgo/uuid v0.0.0-20140804021211-a0b114877d4c // indirect
 	go.etcd.io/bbolt v1.3.6 // indirect
 	go.lsp.dev/jsonrpc2 v0.9.0 // indirect
@@ -131,7 +132,6 @@ require (
 	go.uber.org/multierr v1.7.0 // indirect
 	go.uber.org/zap v1.20.0 // indirect
 	golang.org/x/arch v0.4.0 // indirect
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29 // indirect
 	golang.org/x/mod v0.10.0 // indirect
 	golang.org/x/net v0.12.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
