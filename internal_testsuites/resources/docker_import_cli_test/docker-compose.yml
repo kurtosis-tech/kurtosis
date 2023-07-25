@@ -1,0 +1,6 @@
+services:
+  nginx-a:
+    image: nginx:latest
+    container_name: nginx
+    ports:
+      - 123:80

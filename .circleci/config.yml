@@ -195,6 +195,9 @@ parameters:
   rendertemplate-cli-test-template-relative-path:
     type: string
     default: "internal_testsuites/resources/render_template_cli_test/template.txt"
+  dockerimport-cli-test-relative-path:
+    type: string
+    default: "internal_testsuites/resources/docker_import_cli_test/docker-compose.yml"
   rendertemplate-cli-test-data-json-relative-path:
     type: string
     default: "internal_testsuites/resources/render_template_cli_test/data.json"
@@ -749,6 +752,9 @@ jobs:
 
       # Execute github starlark module
       - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
+
+      # Execute docker compose import
+      - run: "${KURTOSIS_BINPATH} import --enclave test-import << pipeline.parameters.dockerimport-cli-test-relative-path >>"
 
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"

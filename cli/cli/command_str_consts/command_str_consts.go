@@ -64,6 +64,7 @@ const (
 	ConfigCmdStr            = "config"
 	PathCmdStr              = "path"
 	VersionCmdStr           = "version"
+	ImportCmdStr            = "import"
 	GatewayCmdStr           = "gateway"
 	PortCmdStr              = "port"
 	PortPrintCmdStr         = "print"

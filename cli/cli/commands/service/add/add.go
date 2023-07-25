@@ -289,7 +289,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
-	serviceConfigStarlark, err := getServiceConfigStarlark(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
+	entrypoint := []string{}
+	if entrypointStr != "" {
+		entrypoint = append(entrypoint, entrypointStr)
+	}
+	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -411,11 +415,12 @@ func run(
 	return nil
 }
 
-func getServiceConfigStarlark(
+// GetServiceConfigStarlark TODO(victor.colombo): Extract this to a more reasonable place
+func GetServiceConfigStarlark(
 	image string,
 	portsStr string,
 	cmdArgs []string,
-	entrypoint string,
+	entrypoint []string,
 	envvarsStr string,
 	filesArtifactMountsStr string,
 	privateIPAddressPlaceholder string,
@@ -434,11 +439,7 @@ func getServiceConfigStarlark(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
-	entryPointArgs := []string{}
-	if entrypoint != "" {
-		entryPointArgs = []string{entrypoint}
-	}
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entryPointArgs, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, 0, 0, 0, 0), nil
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, 0, 0, 0, 0), nil
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings
