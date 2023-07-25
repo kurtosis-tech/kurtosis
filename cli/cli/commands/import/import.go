@@ -30,7 +30,7 @@ const (
 	emptyPrivateIpPlaceholder = ""
 	nonSupportedField         = ""
 	defaultMainFunction       = ""
-	noStarlarkParams          = ""
+	noStarlarkParams          = "{}"
 
 	// Signifies that an enclave name should be auto-generated
 	autogenerateEnclaveNameKeyword = ""
