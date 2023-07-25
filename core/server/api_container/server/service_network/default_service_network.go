@@ -1402,8 +1402,8 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
-				"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
+			"An error occurred waiting for all TCP and UDP ports to be open for service '%v' with private IP '%v'; "+
+				"this is usually due to a misconfiguration in the service itself, so here are the logs:\n%s",
 			startedService.GetRegistration().GetName(),
 			startedService.GetRegistration().GetPrivateIP(),
 			serviceLogs,
