@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.80.14](https://github.com/kurtosis-tech/kurtosis/compare/0.80.13...0.80.14) (2023-07-24)
+
+
+### Features
+
+* Add ability to update a running service ([#943](https://github.com/kurtosis-tech/kurtosis/issues/943)) ([42a67f9](https://github.com/kurtosis-tech/kurtosis/commit/42a67f9a3f9d4413f58929867b4e6e61eeeaa25e))
+* added create enclave flow ([#962](https://github.com/kurtosis-tech/kurtosis/issues/962)) ([4c931b8](https://github.com/kurtosis-tech/kurtosis/commit/4c931b882e4298cf8d99d88425b0323576f7baf5))
+* Idempotent run V1 - services can now be live-updated inside an enclave ([#954](https://github.com/kurtosis-tech/kurtosis/issues/954)) ([a6a118d](https://github.com/kurtosis-tech/kurtosis/commit/a6a118d5b6cc0d3560a5e3abdd8b043397efeced))
+
+
+### Bug Fixes
+
+* Fix `successfully executed` bug in APIC logs when script fails ([#964](https://github.com/kurtosis-tech/kurtosis/issues/964)) ([32fe63f](https://github.com/kurtosis-tech/kurtosis/commit/32fe63fcb77a8db78b2e1e86be18d3857bfa5fc0))
+* no magic string replacement in python packages ([#966](https://github.com/kurtosis-tech/kurtosis/issues/966)) ([8b0fa62](https://github.com/kurtosis-tech/kurtosis/commit/8b0fa623a2c73ec195e2204da5a8463e016e6833))
+* the old go download ([#958](https://github.com/kurtosis-tech/kurtosis/issues/958)) ([f1b52ca](https://github.com/kurtosis-tech/kurtosis/commit/f1b52ca98215f090a849e626f934ccd341ad91c3))
+
 ## [0.80.13](https://github.com/kurtosis-tech/kurtosis/compare/0.80.12...0.80.13) (2023-07-20)
 
 

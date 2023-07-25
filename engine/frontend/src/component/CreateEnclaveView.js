@@ -8,14 +8,14 @@ import { LogView } from "./LogView";
 import {useNavigate} from "react-router-dom";
 import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
+import LoadingOverlay from "./LoadingOverflow";
 
 const SERVICE_IS_ADDED = "added with service";
 
-export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
+export const CreateEnclaveView = ({packageId, enclave, args}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
-    const [enclave, setEnclave] = useState("")
     const [services, setServices] = useState([])
 
     const getServices = async (apiClient) => {
@@ -29,8 +29,7 @@ export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
         setLoading(true)
         let stream;
         const fetch = async () => {
-          stream = await runStarlark(enclaveInfo.apiClient, packageId, args);
-          setEnclave(enclave);
+          stream = await runStarlark(enclave.apiClient, packageId, args);
           stream.on("data", data => {
             const result = data.toObject();
             if (result.instruction && result.instruction.executableInstruction) {
@@ -44,7 +43,7 @@ export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
             
             if (result.instructionResult && result.instructionResult.serializedInstructionResult) {
                 if (result.instructionResult.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
-                    getServices(enclaveInfo.apiClient)
+                    getServices(enclave.apiClient)
                 }
                 setLogs(logs => [...logs, result.instructionResult.serializedInstructionResult])
             }
@@ -70,15 +69,10 @@ export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
         }
 
         fetch();
-        return () => {
-            if (stream) {
-                stream.cancel();
-            };
-        };
     }, [packageId])
 
     const handleServiceClick = (service) => {
-        navigate(`/enclaves/${enclaveInfo.enclave.name}/services/${service.uuid}`, {state: {services, selected: service}})
+        navigate(`/enclaves/${enclave.name}/services/${service.uuid}`, {state: {services, selected: service}})
     }
 
     const renderServices = (services, handleClick) => {
@@ -90,9 +84,9 @@ export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
             )
         })
     }
-    
+
     return (
-        <div className="flex h-full w-full bg-white">
+        <div className="flex h-full bg-white">
             <div className="flex h-full">
                 <LeftPanel 
                     home={false} 
@@ -100,16 +94,16 @@ export const CreateEnclaveView = ({packageId, enclaveInfo, args}) => {
                     isServiceInfo={true}
                     renderList={ ()=> renderServices(services, handleServiceClick)}
                 />
-                <div className="flex h-full w-[calc(100vw-24rem)] flex-col space-y-5">
+                <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
                     <div className='flex flex-col h-full space-y-1 bg-white'>
-                        <LogView 
-                            heading={`Starlark Logs: ${enclaveInfo.enclave.name}`} 
+                        { (loading && logs.length === 0) ? <LoadingOverlay /> : <LogView 
+                            heading={`Starlark Logs: ${enclave.name}`} 
                             logs={logs}
                             size={"h-full"}
-                        />
+                        />}
                     </div>  
                 </div>                    
-                <RightPanel home={false} isServiceInfo={true} enclaveName={enclaveInfo.enclave.name}/>
+                <RightPanel home={false} isServiceInfo={!loading} enclaveName={enclave.name}/>
             </div>
         </div>
     )

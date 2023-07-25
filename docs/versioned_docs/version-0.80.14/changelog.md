@@ -1,5 +1,64 @@
 # Changelog
 
+## [0.80.14](https://github.com/kurtosis-tech/kurtosis/compare/0.80.13...0.80.14) (2023-07-24)
+
+
+### Features
+
+* Add ability to update a running service ([#943](https://github.com/kurtosis-tech/kurtosis/issues/943)) ([42a67f9](https://github.com/kurtosis-tech/kurtosis/commit/42a67f9a3f9d4413f58929867b4e6e61eeeaa25e))
+* added create enclave flow ([#962](https://github.com/kurtosis-tech/kurtosis/issues/962)) ([4c931b8](https://github.com/kurtosis-tech/kurtosis/commit/4c931b882e4298cf8d99d88425b0323576f7baf5))
+* Idempotent run V1 - services can now be live-updated inside an enclave ([#954](https://github.com/kurtosis-tech/kurtosis/issues/954)) ([a6a118d](https://github.com/kurtosis-tech/kurtosis/commit/a6a118d5b6cc0d3560a5e3abdd8b043397efeced))
+
+
+### Bug Fixes
+
+* Fix `successfully executed` bug in APIC logs when script fails ([#964](https://github.com/kurtosis-tech/kurtosis/issues/964)) ([32fe63f](https://github.com/kurtosis-tech/kurtosis/commit/32fe63fcb77a8db78b2e1e86be18d3857bfa5fc0))
+* no magic string replacement in python packages ([#966](https://github.com/kurtosis-tech/kurtosis/issues/966)) ([8b0fa62](https://github.com/kurtosis-tech/kurtosis/commit/8b0fa623a2c73ec195e2204da5a8463e016e6833))
+* the old go download ([#958](https://github.com/kurtosis-tech/kurtosis/issues/958)) ([f1b52ca](https://github.com/kurtosis-tech/kurtosis/commit/f1b52ca98215f090a849e626f934ccd341ad91c3))
+
+## [0.80.13](https://github.com/kurtosis-tech/kurtosis/compare/0.80.12...0.80.13) (2023-07-20)
+
+
+### Features
+
+* Add autocomplete for file path of artifact files inspect ([#947](https://github.com/kurtosis-tech/kurtosis/issues/947)) ([f72dfce](https://github.com/kurtosis-tech/kurtosis/commit/f72dfce9b755c37dde849f9047ef4a6ca7e59cb2))
+
+
+### Bug Fixes
+
+* broken symlinks on Kurtosis packages ([#944](https://github.com/kurtosis-tech/kurtosis/issues/944)) ([fbb0aee](https://github.com/kurtosis-tech/kurtosis/commit/fbb0aee6edfce4598b0384aebfe71b1e12b9730c)), closes [#846](https://github.com/kurtosis-tech/kurtosis/issues/846)
+* improve frontend ([#940](https://github.com/kurtosis-tech/kurtosis/issues/940)) ([36153e2](https://github.com/kurtosis-tech/kurtosis/commit/36153e2c6e3c332508d6071d2f9101f77cfb6295))
+* improved error msg ([#936](https://github.com/kurtosis-tech/kurtosis/issues/936)) ([4f72ae1](https://github.com/kurtosis-tech/kurtosis/commit/4f72ae12409d6ddd8c2e2c6b61770081d9200bde))
+
+## [0.80.12](https://github.com/kurtosis-tech/kurtosis/compare/0.80.11...0.80.12) (2023-07-18)
+
+
+### Features
+
+* Service count can go up to 1024 in Docker backend ([#919](https://github.com/kurtosis-tech/kurtosis/issues/919)) ([e1dfff1](https://github.com/kurtosis-tech/kurtosis/commit/e1dfff119a0b6635e732e0e09de68b56d6af7d63))
+
+## [0.80.11](https://github.com/kurtosis-tech/kurtosis/compare/0.80.10...0.80.11) (2023-07-18)
+
+
+### Features
+
+* Add file artifact inspect API do APIC ([#885](https://github.com/kurtosis-tech/kurtosis/issues/885)) ([7ad8155](https://github.com/kurtosis-tech/kurtosis/commit/7ad81553a8056887e1399649536319922a05bdc1))
+* Add file inspect command to the CLI ([#905](https://github.com/kurtosis-tech/kurtosis/issues/905)) ([bb36a46](https://github.com/kurtosis-tech/kurtosis/commit/bb36a469925c3a8c00a88c0f5a16995088d26548))
+* added run python ([#913](https://github.com/kurtosis-tech/kurtosis/issues/913)) ([365f5cf](https://github.com/kurtosis-tech/kurtosis/commit/365f5cf15399dd0e79f7b82d5ab4ad823def00b5))
+* upload files support relative locators ([#930](https://github.com/kurtosis-tech/kurtosis/issues/930)) ([8d60968](https://github.com/kurtosis-tech/kurtosis/commit/8d609686ce78a72f82455592b48eeab94b44c359))
+
+
+### Bug Fixes
+
+* make service labels more restrictive ([#929](https://github.com/kurtosis-tech/kurtosis/issues/929)) ([a8fb599](https://github.com/kurtosis-tech/kurtosis/commit/a8fb5992d0e60bc50efa8585393048c168e878f0)), closes [#928](https://github.com/kurtosis-tech/kurtosis/issues/928)
+
+## [0.80.10](https://github.com/kurtosis-tech/kurtosis/compare/0.80.9...0.80.10) (2023-07-17)
+
+
+### Features
+
+* Added enclave pool for improving performance on enclave creation  ([#787](https://github.com/kurtosis-tech/kurtosis/issues/787)) ([d6efa43](https://github.com/kurtosis-tech/kurtosis/commit/d6efa435efeb9989de8f20f1d2d80603b7ef6827))
+
 ## [0.80.9](https://github.com/kurtosis-tech/kurtosis/compare/0.80.8...0.80.9) (2023-07-17)
 
 
