@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/joho/godotenv"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -17,16 +18,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	"os"
 	"strings"
 )
 
 const (
 	enclaveNameFlagKey        = "enclave"
 	pathArgKey                = "file-path"
+	dotEnvPathFlagKey         = "dot-env-file-path"
 	isPathArgOptional         = false
 	defaultPathArg            = ""
+	defaultDotEnvPathFlag     = ".env"
 	emptyPrivateIpPlaceholder = ""
 	nonSupportedField         = ""
 	defaultMainFunction       = ""
@@ -52,6 +53,13 @@ var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
 			),
 			Type: flags.FlagType_String,
 		},
+		{
+			Key:       dotEnvPathFlagKey,
+			Shorthand: "d",
+			Default:   defaultDotEnvPathFlag,
+			Usage:     "The .env file path to be loaded into docker compose",
+			Type:      flags.FlagType_String,
+		},
 	},
 	Args: []*args.ArgConfig{
 		file_system_path_arg.NewFilepathOrDirpathArg(
@@ -71,19 +79,20 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Path arg '%v' is missing", pathArgKey)
 	}
-	file, err := os.Open(path)
-	if err != nil {
-		return stacktrace.Propagate(err, "File on '%v' was not found", path)
-	}
-	defer file.Close()
 
-	// Read the content of the file into a []byte slice
-	content, err := io.ReadAll(file)
+	dotEnvPath, err := flags.GetString(dotEnvPathFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error reading file: %s\n", err)
+		return stacktrace.Propagate(err, "Dot env path arg '%v' is missing", dotEnvPath)
 	}
 
-	script, err := convertComposeFileToStarlark(content)
+	dotEnvMap, err := godotenv.Read(dotEnvPath)
+	if err != nil {
+		logrus.Debugf("No dotenv file was found: %v", err)
+		dotEnvMap = map[string]string{}
+	}
+	logrus.Infof("Enviroment loaded: %v", dotEnvMap)
+
+	script, err := convertComposeFileToStarlark(path, dotEnvMap)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to convert compose to starlark")
 	}
@@ -101,16 +110,10 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	return nil
 }
 
-func convertComposeFileToStarlark(content []byte) (string, error) {
-	// Load the Compose configuration from the []byte slice
-	config, err := loader.ParseYAML(content)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Error parsing YAML: %s\n", err)
-	}
-
-	// Convert the generic map to a structured compose.Config
+func convertComposeFileToStarlark(path string, dotEnvMap map[string]string) (string, error) {
 	project, err := loader.Load(types.ConfigDetails{ //nolint:exhaustruct
-		ConfigFiles: []types.ConfigFile{{Config: config}},
+		ConfigFiles: []types.ConfigFile{{Filename: path}},
+		Environment: dotEnvMap,
 	})
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error parsing docker compose")
