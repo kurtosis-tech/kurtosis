@@ -40,7 +40,7 @@ func TestAddServiceWithPortSpec_Success(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 

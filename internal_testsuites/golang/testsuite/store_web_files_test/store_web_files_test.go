@@ -36,9 +36,9 @@ func TestStoreWebFiles(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer stopEnclaveFunc()
+	defer destroyEnclaveFunc()
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	filesArtifactUuid, err := enclaveCtx.StoreWebFiles(context.Background(), testFilesArtifactUrl, testArtifactName)
 	require.NoError(t, err, "An error occurred storing the files artifact")

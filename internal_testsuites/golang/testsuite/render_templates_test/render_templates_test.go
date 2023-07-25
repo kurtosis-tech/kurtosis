@@ -63,7 +63,7 @@ def run(plan):
 
 func TestRenderTemplates(t *testing.T) {
 	ctx := context.Background()
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer destroyEnclaveFunc()
 
