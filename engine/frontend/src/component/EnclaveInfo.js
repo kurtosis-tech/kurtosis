@@ -1,7 +1,7 @@
 import Heading from "./Heading";
 import { useEffect, useState } from "react";
 import {useNavigate, useParams, useLocation} from "react-router-dom";
-import {getEnclaveInformation} from "../api/container";
+import {getEnclaveInformation, getFileArtifactInfo} from "../api/container";
 
 import NoData from "./NoData";
 import LeftPanel from "./LeftPanel";
@@ -40,7 +40,7 @@ const renderServices = (services, handleClick) => {
     })
 }
 
-const renderFileArtifacts = (file_artifacts) => {
+const renderFileArtifacts = (file_artifacts, handleFileArtifactClick) => {
     if (file_artifacts.length === 0) {
         return (
             <NoData 
@@ -53,7 +53,7 @@ const renderFileArtifacts = (file_artifacts) => {
 
     return file_artifacts.map((file_artifact)=> {
         return (
-            <div className="border-4 bg-slate-800 text-lg align-middle text-center h-16 p-3 text-green-600"> 
+            <div className="border-4 bg-slate-800 text-lg align-middle text-center h-16 p-3 text-green-600" onClick={() => handleFileArtifactClick(file_artifact.name, file_artifacts)}> 
                 <div> {file_artifact.name} </div>
             </div>
         )
@@ -81,7 +81,6 @@ const EncalveInfo = ({enclaves}) => {
                 setFileArtifacts(artifacts)
             }
             setEnclaveInfoLoading(false)
-            
         } 
         fetch()
     }, [name, enclaves])
@@ -94,8 +93,15 @@ const EncalveInfo = ({enclaves}) => {
         navigate(`/enclaves/${enclaveName}`, {replace:true})
     }
 
+    const handleFileArtifactClick = async (fileArtifactName, fileArtifacts) => {
+        console.log("Artifacts: ", fileArtifacts)
+        const selected = enclaves.filter(enclave => enclave.name === name);
+        if (selected.length > 0) {
+            navigate(`/enclaves/${selected[0].name}/files/${fileArtifactName}`, {state: {fileArtifacts}})
+        }
+    }
 
-    const EnclaveInfoCompoenent = ({services, fileArtifacts, handleServiceClick}) => (
+    const EnclaveInfoCompoenent = ({services, fileArtifacts, handleServiceClick, handleFileArtifactClick}) => (
         <div className='flex flex-col h-[calc(100vh-3rem)] space-y-1 overflow-auto'>
             <div className="flex flex-col h-1/2 min-h-1/2 border-8">
                 <Heading content={"Services"} size={"text-xl"} />
@@ -106,7 +112,7 @@ const EncalveInfo = ({enclaves}) => {
             <div className="flex flex-col h-[46%] border-8">
                 <Heading content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
                 <div className="overflow-auto space-y-2">
-                    {renderFileArtifacts(fileArtifacts)}
+                    {renderFileArtifacts(fileArtifacts, handleFileArtifactClick)}
                 </div>
             </div>  
         </div>
@@ -130,6 +136,7 @@ const EncalveInfo = ({enclaves}) => {
                         services={services} 
                         fileArtifacts={fileArtifacts}
                         handleServiceClick={handleServiceClick}
+                        handleFileArtifactClick={handleFileArtifactClick}
                     />
                 }
             </div>
