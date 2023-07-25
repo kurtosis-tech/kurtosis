@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
+	portal_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/context_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -23,6 +25,10 @@ const (
 
 	noEngineVersion                        = ""
 	restartEngineOnSameVersionIfAnyRunning = true
+)
+
+var (
+	enginePortTransportProtocol = portal_api.TransportProtocol_TCP
 )
 
 var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -99,6 +105,14 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 			switchContextArg := constructors.NewSwitchContextArgs()
 			if _, err = portalDaemonClient.SwitchContext(ctx, switchContextArg); err != nil {
 				return stacktrace.Propagate(err, "Error switching Kurtosis portal context")
+			}
+			if store.IsRemote(currentContext) {
+				// Forward the remote engine port to the local machine
+				portalClient := portalManager.GetClient()
+				forwardEnginePortArgs := constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &enginePortTransportProtocol)
+				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
+					return stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
+				}
 			}
 		}
 	} else {
