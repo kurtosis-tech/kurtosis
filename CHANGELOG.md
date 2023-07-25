@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.80.15](https://github.com/kurtosis-tech/kurtosis/compare/0.80.14...0.80.15) (2023-07-25)
+
+
+### Features
+
+* Implement V0 of docker import ([#968](https://github.com/kurtosis-tech/kurtosis/issues/968)) ([6f8d90d](https://github.com/kurtosis-tech/kurtosis/commit/6f8d90d526293f676e50243d52aa132ea74447bd))
+
+
+### Bug Fixes
+
+* Run user service containers in --init mode for Docker ([#965](https://github.com/kurtosis-tech/kurtosis/issues/965)) ([b8989a8](https://github.com/kurtosis-tech/kurtosis/commit/b8989a8112e4f25fed0e595d32a28c45a58a8b1b))
+
 ## [0.80.14](https://github.com/kurtosis-tech/kurtosis/compare/0.80.13...0.80.14) (2023-07-24)
 
 
