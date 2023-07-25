@@ -754,7 +754,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
 
       # Execute docker compose import
-      - run: "${KURTOSIS_BINPATH} import --enclave test-datastore << pipeline.parameters.dockerimport-cli-test-relative-path >>"
+      - run: "${KURTOSIS_BINPATH} import --enclave test-import << pipeline.parameters.dockerimport-cli-test-relative-path >>"
 
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
