@@ -27,6 +27,7 @@ type CreateAndStartContainerArgs struct {
 	memoryAllocationMegabytes                uint64
 	loggingDriverConfig                      LoggingDriver
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
+	containerInitEnabled                     bool
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -51,6 +52,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	memoryAllocationMegabytes                uint64
 	loggingDriverCnfg                        LoggingDriver
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
+	containerInitEnabled                     bool
 }
 
 /*
@@ -82,6 +84,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		memoryAllocationMegabytes:                0,
 		loggingDriverCnfg:                        nil,
 		skipAddingToBridgeNetworkIfStaticIpIsSet: false,
+		containerInitEnabled:                     false,
 	}
 }
 
@@ -107,6 +110,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		memoryAllocationMegabytes:                builder.memoryAllocationMegabytes,
 		loggingDriverConfig:                      builder.loggingDriverCnfg,
 		skipAddingToBridgeNetworkIfStaticIpIsSet: builder.skipAddingToBridgeNetworkIfStaticIpIsSet,
+		containerInitEnabled:                     builder.containerInitEnabled,
 	}
 }
 
@@ -223,5 +227,15 @@ func (builder *CreateAndStartContainerArgsBuilder) WithLoggingDriver(loggingDriv
 // If the static ip address isn't set, then this has no effect, as Docker defaults to adding to the bridge network if no network is provided
 func (builder *CreateAndStartContainerArgsBuilder) WithSkipAddingToBridgeNetworkIfStaticIpIsSet(skipAddingToBridgeNetworkIfStaticIpIsSet bool) *CreateAndStartContainerArgsBuilder {
 	builder.skipAddingToBridgeNetworkIfStaticIpIsSet = skipAddingToBridgeNetworkIfStaticIpIsSet
+	return builder
+}
+
+// WithContainerInitEnabled allows you to set the `--init` options when a container is started in Docker.
+// `--init` option wraps the main container process with `tini`, making sure zombie processes are handled properly
+// at the container level.
+// If not used, a buggy container image can create zombie processes which can prevents docker from removing the
+// container. tini makes sure it keeps track of all processes and can kill the zombie ones appropriately.
+func (builder *CreateAndStartContainerArgsBuilder) WithContainerInitEnabled(containerInitEnabled bool) *CreateAndStartContainerArgsBuilder {
+	builder.containerInitEnabled = containerInitEnabled
 	return builder
 }

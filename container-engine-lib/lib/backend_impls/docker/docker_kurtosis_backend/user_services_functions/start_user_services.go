@@ -546,6 +546,8 @@ func createStartServiceOperation(
 			memoryAllocationMegabytes,
 		).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
 			skipAddingUserServiceToBridgeNetwork,
+		).WithContainerInitEnabled(
+			true,
 		)
 
 		if entrypointArgs != nil {
