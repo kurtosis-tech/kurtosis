@@ -6,6 +6,7 @@ import (
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
@@ -13,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -21,18 +23,35 @@ import (
 )
 
 const (
+	enclaveNameFlagKey        = "enclave"
 	pathArgKey                = "file-path"
 	isPathArgOptional         = false
 	defaultPathArg            = ""
 	emptyPrivateIpPlaceholder = ""
 	nonSupportedField         = ""
+	defaultMainFunction       = ""
+
+	// Signifies that an enclave name should be auto-generated
+	autogenerateEnclaveNameKeyword = ""
 )
 
 var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.ImportCmdStr,
 	ShortDescription: "Import external workflows into Kurtosis",
 	LongDescription:  "Import external workflow into Kurtosis (currently only supports Docker Compose)",
-	Flags:            nil,
+	Flags: []*flags.FlagConfig{
+		{
+			Key:       enclaveNameFlagKey,
+			Shorthand: "e",
+			Default:   autogenerateEnclaveNameKeyword,
+			Usage: fmt.Sprintf(
+				"The enclave name to give the new enclave, which must match regex '%v' "+
+					"(emptystring will autogenerate an enclave name)",
+				enclave_consts.AllowedEnclaveNameCharsRegexStr,
+			),
+			Type: flags.FlagType_String,
+		},
+	},
 	Args: []*args.ArgConfig{
 		file_system_path_arg.NewFilepathOrDirpathArg(
 			pathArgKey,
@@ -46,7 +65,7 @@ var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
 	PostValidationAndRunFunc: nil,
 }
 
-func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
+func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 	path, err := args.GetNonGreedyArg(pathArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Path arg '%v' is missing", pathArgKey)
@@ -67,8 +86,14 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to convert compose to starlark")
 	}
+	// TODO(victor.colombo): Make this as pretty as run is
 	logrus.Debugf("Generated starlark:\n%s", script)
-	err = runStarlark(ctx, script)
+
+	enclaveName, err := flags.GetString(enclaveNameFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Couldn't find enclave name flag '%v'", enclaveNameFlagKey)
+	}
+	err = runStarlark(ctx, enclaveName, script)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to run generated starlark from compose")
 	}
@@ -121,24 +146,23 @@ func convertComposeProjectToStarlark(compose *types.Project) (string, error) {
 	return script, nil
 }
 
-func runStarlark(ctx context.Context, starlarkScript string) error {
+func runStarlark(ctx context.Context, enclaveName string, starlarkScript string) error {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, "docker-compose-import", false)
+	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName, false)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", "docker-compose-import")
+		return stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", enclaveName)
 	}
+	defer output_printers.PrintEnclaveName(enclaveName)
 
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, "", starlarkScript, "{}", false, 1, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, defaultMainFunction, starlarkScript, "{}", false, 1, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
-	logrus.Infof("Enclave was built with following output: %s", starlarkRunResult.RunOutput)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error has occurred when getting service added using add command")
-	}
+	// TODO(victor.colombo): Make this as pretty as run is
+	logrus.Infof("Enclave was built with following output:\n%s", starlarkRunResult.RunOutput)
 	return nil
 }
