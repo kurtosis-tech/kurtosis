@@ -150,9 +150,12 @@ func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Co
 		return nil, stacktrace.NewError("An error occurred because files artifact identifier is empty '%v'", artifactIdentifier)
 	}
 
-	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
+	_, filesArtifact, _, found, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
+	}
+	if !found {
+		return nil, stacktrace.NewError("No file artifact with identifier '%s' could be found", artifactIdentifier)
 	}
 
 	fileDescriptions, err := getFileDescriptionsFromArtifact(filesArtifact.GetAbsoluteFilepath())
@@ -331,7 +334,8 @@ func (apicService ApiContainerService) UploadFilesArtifact(server kurtosis_core_
 			}
 
 			// finished receiving all the chunks and assembling them into a single byte array
-			filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(assembledContent, maybeArtifactName)
+			//TODO(gbouv): pass in the md5 from the CLI. Strictly speaking, it's not necessary so might be fine for now
+			filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(assembledContent, []byte{}, maybeArtifactName)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred while trying to upload the file")
 			}
@@ -351,7 +355,7 @@ func (apicService ApiContainerService) DownloadFilesArtifact(args *kurtosis_core
 		return stacktrace.NewError("Cannot download file with empty files artifact identifier")
 	}
 
-	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
+	_, filesArtifact, _, _, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
 	}
@@ -392,7 +396,7 @@ func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context
 	defer resp.Body.Close()
 	body := bufio.NewReader(resp.Body)
 
-	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(body, artifactName)
+	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(body, []byte{}, artifactName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred storing the file from URL '%v' in the files artifact store", url)
 	}

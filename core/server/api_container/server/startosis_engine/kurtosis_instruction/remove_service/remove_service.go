@@ -70,7 +70,7 @@ func (builtin *RemoveServiceCapabilities) Interpret(_ string, arguments *builtin
 }
 
 func (builtin *RemoveServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ServiceNotFound {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ComponentNotFound {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' doesn't exist", RemoveServiceBuiltinName, builtin.serviceName)
 	}
 	validatorEnvironment.RemoveServiceName(builtin.serviceName)
@@ -87,6 +87,23 @@ func (builtin *RemoveServiceCapabilities) Execute(ctx context.Context, _ *builti
 	return instructionResult, nil
 }
 
-func (builtin *RemoveServiceCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
-	return enclave_structure.InstructionIsNotResolvableAbort
+func (builtin *RemoveServiceCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	// if other instruction is nil, status is unknown
+	if other == nil {
+		return enclave_structure.InstructionIsUnknown
+	}
+	// if other instruction is not an AddService instruction, status is unknown
+	_, ok := other.(*RemoveServiceCapabilities)
+	if !ok {
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	if !instructionsAreEqual {
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	if enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
+		return enclave_structure.InstructionIsUpdate
+	}
+	return enclave_structure.InstructionIsEqual
 }

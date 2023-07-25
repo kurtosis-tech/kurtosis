@@ -71,16 +71,17 @@ func (cache *FileCache) AddFile(key string, reader io.Reader) (*EnclaveDataDirFi
 	return newFileObj, nil
 }
 
-func (cache *FileCache) GetFile(key string) (*EnclaveDataDirFile, error) {
+func (cache *FileCache) GetFile(key string) (*EnclaveDataDirFile, bool, error) {
 	cache.mutex.Lock()
 	defer cache.mutex.Unlock()
 
 	fileObj := cache.getFileObjFromKey(key)
 	if _, err := os.Stat(fileObj.absoluteFilepath); os.IsNotExist(err) {
-		return nil, stacktrace.NewError("No file with key '%v' exists in the cache", key)
+		return nil, false, nil
+	} else if err != nil {
+		return nil, false, stacktrace.NewError("No file with key '%v' exists in the cache", key)
 	}
-
-	return fileObj, nil
+	return fileObj, true, nil
 }
 
 func (cache *FileCache) RemoveFile(key string) error {

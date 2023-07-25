@@ -154,25 +154,44 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 }
 
 func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
-	if instructionsAreEqual {
-		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentWasLeftIntact)
-		return enclave_structure.InstructionIsEqual
-	}
+	// if other instruction is nil, status is unknown
 	if other == nil {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
+	// if other instruction is not an AddService instruction, status is unknown
 	otherAddServiceCapabilities, ok := other.(*AddServiceCapabilities)
 	if !ok {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
-	if otherAddServiceCapabilities.serviceName == builtin.serviceName {
+
+	// if service names don't match, status is unknown, instructions can't be resolved together
+	if otherAddServiceCapabilities.serviceName != builtin.serviceName {
+		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	// if service names are equal but the instructions are not equal, it means the service config has been updated.
+	// The instruction should be rerun
+	if !instructionsAreEqual {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsUpdated)
 		return enclave_structure.InstructionIsUpdate
 	}
-	enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
-	return enclave_structure.InstructionIsUnknown
+
+	// We need to check if one of the files has been updated
+	filesArtifactsExpansion := builtin.serviceConfig.GetFilesArtifactsExpansion()
+	if filesArtifactsExpansion != nil {
+		for _, filesArtifactName := range filesArtifactsExpansion.ServiceDirpathsToArtifactIdentifiers {
+			if enclaveComponents.HasFilesArtifactBeenUpdated(filesArtifactName) {
+				enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsUpdated)
+				return enclave_structure.InstructionIsUpdate
+			}
+		}
+	}
+
+	enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentWasLeftIntact)
+	return enclave_structure.InstructionIsEqual
 }
 
 func validateAndConvertConfigAndReadyCondition(

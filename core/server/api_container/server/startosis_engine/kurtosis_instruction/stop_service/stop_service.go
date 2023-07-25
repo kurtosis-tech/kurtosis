@@ -70,7 +70,7 @@ func (builtin *StopServiceCapabilities) Interpret(_ string, arguments *builtin_a
 }
 
 func (builtin *StopServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ServiceNotFound {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ComponentNotFound {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' doesn't exist", StopServiceBuiltinName, builtin.serviceName)
 	}
 	return nil

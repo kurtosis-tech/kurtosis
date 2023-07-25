@@ -154,7 +154,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 	builtin.run = pythonScript.GoString()
 
-	compressedScript, scriptCompressionInterpretationErr := getCompressedPythonScriptForUpload(builtin.run)
+	compressedScript, compressedScriptMd5, scriptCompressionInterpretationErr := getCompressedPythonScriptForUpload(builtin.run)
 	if err != nil {
 		return nil, scriptCompressionInterpretationErr
 	}
@@ -162,7 +162,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("an error occurred while generating unique artifact name for python script")
 	}
-	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, uniqueFilesArtifactName)
+	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, compressedScriptMd5, uniqueFilesArtifactName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while storing the python script to disk")
 	}
@@ -372,19 +372,19 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	return fmt.Sprintf("python %s", pythonScriptAbsolutePath), nil
 }
 
-func getCompressedPythonScriptForUpload(pythonScript string) ([]byte, *startosis_errors.InterpretationError) {
+func getCompressedPythonScriptForUpload(pythonScript string) ([]byte, []byte, *startosis_errors.InterpretationError) {
 	temporaryPythonScriptDir, err := os.MkdirTemp(defaultTmpDir, temporaryPythonDirectoryPrefix)
 	defer os.Remove(temporaryPythonScriptDir)
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while creating a temporary folder to write the python script too")
+		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while creating a temporary folder to write the python script too")
 	}
 	pythonScriptFilePath := path.Join(temporaryPythonScriptDir, pythonScriptFileName)
 	if err = os.WriteFile(pythonScriptFilePath, []byte(pythonScript), pythonScriptReadPermission); err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while writing python script to disk")
+		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while writing python script to disk")
 	}
-	compressed, err := shared_utils.CompressPath(pythonScriptFilePath, enforceMaxSizeLimit)
+	compressed, contentMd5, err := shared_utils.CompressPath(pythonScriptFilePath, enforceMaxSizeLimit)
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while compressing the python script")
+		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while compressing the python script")
 	}
-	return compressed, nil
+	return compressed, contentMd5, nil
 }

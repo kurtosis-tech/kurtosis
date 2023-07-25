@@ -108,7 +108,7 @@ func (builtin *RenderTemplatesCapabilities) Interpret(_ string, arguments *built
 }
 
 func (builtin *RenderTemplatesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
+	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as artifact name '%v' already exists", RenderTemplatesBuiltinName, builtin.artifactName)
 	}
 	validatorEnvironment.AddArtifactName(builtin.artifactName)
@@ -130,11 +130,28 @@ func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builti
 	return instructionResult, nil
 }
 
-func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
-	if instructionsAreEqual {
-		return enclave_structure.InstructionIsEqual
+func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	if other == nil {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
 	}
-	return enclave_structure.InstructionIsUnknown
+	otherRenderTemplateCapabilities, ok := other.(*RenderTemplatesCapabilities)
+	if !ok {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	if otherRenderTemplateCapabilities.artifactName != builtin.artifactName {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	if !instructionsAreEqual {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsUpdated)
+		return enclave_structure.InstructionIsUpdate
+	}
+	enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentWasLeftIntact)
+	return enclave_structure.InstructionIsEqual
 }
 
 func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*render_templates.TemplateData, *startosis_errors.InterpretationError) {
