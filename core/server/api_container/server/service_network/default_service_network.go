@@ -950,7 +950,7 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 
 		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 		if err != nil {
-			sendErrorAndFail(execOutputStream, err, "An error occurred while getting service registration for identifier", serviceIdentifier)
+			sendErrorAndFail(execOutputStream, err, "An error occurred while getting service registration for identifier")
 			return
 		}
 
