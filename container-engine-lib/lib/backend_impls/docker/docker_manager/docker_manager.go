@@ -1770,6 +1770,10 @@ func pullImage(ctx context.Context, dockerClient *client.Client, imageName strin
 // this is a best effort calculation, it creates a list of containers and then adds up resources on that list
 // if a container dies during list creation this just ignores it
 func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint64, float64, error) {
+	info, err := dockerClient.Info(ctx)
+	if err != nil {
+		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
+	}
 	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
 		// true - only show ids
 		Quiet:   onlyReturnContainerIds,
@@ -1783,10 +1787,6 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint
 	})
 	if err != nil {
 		return 0, 0, stacktrace.Propagate(err, "an error occurred while getting a list of all containers")
-	}
-	info, err := dockerClient.Info(ctx)
-	if err != nil {
-		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
 	}
 	totalFreeMemory := uint64(info.MemTotal)
 	totalUsedMemory := uint64(0)
