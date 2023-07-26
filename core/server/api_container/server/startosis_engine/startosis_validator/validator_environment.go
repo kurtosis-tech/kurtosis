@@ -3,6 +3,7 @@ package startosis_validator
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -131,16 +132,22 @@ func (environment *ValidatorEnvironment) ConsumeCPU(cpuConsumed uint64, serviceN
 	environment.minCPUByServiceName[serviceName] = compute_resources.CpuMilliCores(cpuConsumed)
 }
 
-func (environment *ValidatorEnvironment) HasEnoughCPU(cpuToConsume uint64) bool {
+func (environment *ValidatorEnvironment) HasEnoughCPU(cpuToConsume uint64, serviceNameForLogging service.ServiceName) *startosis_errors.ValidationError {
 	if !environment.isCpuInformationComplete {
-		return true
+		return nil
 	}
-	return environment.availableCpuInMilliCores > compute_resources.CpuMilliCores(cpuToConsume)
+	if environment.availableCpuInMilliCores >= compute_resources.CpuMilliCores(cpuToConsume) {
+		return nil
+	}
+	return startosis_errors.NewValidationError("service '%v' requires '%v' millicores of cpu but we only have '%v' millicores available", serviceNameForLogging, cpuToConsume, environment.availableCpuInMilliCores)
 }
 
-func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64) bool {
+func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64, serviceNameForLogging service.ServiceName) *startosis_errors.ValidationError {
 	if !environment.isMemoryInformationComplete {
-		return true
+		return nil
 	}
-	return environment.availableMemoryInMegaBytes > compute_resources.MemoryInMegaBytes(memoryToConsume)
+	if environment.availableMemoryInMegaBytes >= compute_resources.MemoryInMegaBytes(memoryToConsume) {
+		return nil
+	}
+	return startosis_errors.NewValidationError("service '%v' requires '%v' megabytes of memory but we only have '%v' millicores available", serviceNameForLogging, memoryToConsume, environment.availableCpuInMilliCores)
 }

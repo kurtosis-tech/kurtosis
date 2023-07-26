@@ -32,6 +32,6 @@ func TestMultiplePortIdsForValidation(t *testing.T) {
 	validatorEnvironment.RemoveServiceFromPrivatePortIDMapping(testBarService)
 	require.False(t, validatorEnvironment.DoesPrivatePortIDExistForService(fooPortId, testBarService))
 	require.False(t, validatorEnvironment.DoesPrivatePortIDExistForService(fizzPortId, testBarService))
-	require.False(t, validatorEnvironment.HasEnoughCPU(tooMuchCpu))
-	require.False(t, validatorEnvironment.HasEnoughMemory(tooMuchMemory))
+	require.Error(t, validatorEnvironment.HasEnoughCPU(tooMuchCpu, testBarService))
+	require.Error(t, validatorEnvironment.HasEnoughMemory(tooMuchMemory, testBarService))
 }

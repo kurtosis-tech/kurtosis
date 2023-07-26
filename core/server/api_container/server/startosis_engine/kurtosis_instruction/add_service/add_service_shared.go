@@ -82,12 +82,12 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		}
 	}
 
-	if !validatorEnvironment.HasEnoughCPU(serviceConfig.GetMinCPUAllocationMillicpus()) {
-		return startosis_errors.NewValidationError("There was an error validating '%v' as it required '%v' millicores of CPU which is more than the amount available", AddServiceBuiltinName, serviceConfig.GetMinCPUAllocationMillicpus())
+	if validationErr := validatorEnvironment.HasEnoughCPU(serviceConfig.GetMinCPUAllocationMillicpus(), serviceName); validationErr != nil {
+		return validationErr
 	}
 
-	if !validatorEnvironment.HasEnoughMemory(serviceConfig.GetMinMemoryAllocationMegabytes()) {
-		return startosis_errors.NewValidationError("There was an error validating '%v' as it required '%v' megabytes of memory which is more than the amount available", AddServiceBuiltinName, serviceConfig.GetMinMemoryAllocationMegabytes())
+	if validationErr := validatorEnvironment.HasEnoughMemory(serviceConfig.GetMinMemoryAllocationMegabytes(), serviceName); validationErr != nil {
+		return validationErr
 	}
 
 	validatorEnvironment.AddServiceName(serviceName)
