@@ -1,5 +1,50 @@
 # Changelog
 
+## [0.80.19](https://github.com/kurtosis-tech/kurtosis/compare/0.80.18...0.80.19) (2023-07-26)
+
+
+### Bug Fixes
+
+* Fix docker image pull hanging forever ([#994](https://github.com/kurtosis-tech/kurtosis/issues/994)) ([fd00d79](https://github.com/kurtosis-tech/kurtosis/commit/fd00d79efca2a7d8b3b04ce9d1f4d988dc1d956b))
+
+## [0.80.18](https://github.com/kurtosis-tech/kurtosis/compare/0.80.17...0.80.18) (2023-07-26)
+
+
+### Features
+
+* Add volume bind support for `kurtosis import` ([#984](https://github.com/kurtosis-tech/kurtosis/issues/984)) ([391c016](https://github.com/kurtosis-tech/kurtosis/commit/391c016ccaa24d454f746179bd096030596bf363))
+
+
+### Bug Fixes
+
+* CLI args marked as greedy were not greedy ([#975](https://github.com/kurtosis-tech/kurtosis/issues/975)) ([e6ff482](https://github.com/kurtosis-tech/kurtosis/commit/e6ff482cdf6758885ae9a1bdcd3ea6fb5e620a05))
+
+## [0.80.17](https://github.com/kurtosis-tech/kurtosis/compare/0.80.16...0.80.17) (2023-07-26)
+
+
+### Features
+
+* Add `environment` support for `kurtosis import`  ([#982](https://github.com/kurtosis-tech/kurtosis/issues/982)) ([24e71d1](https://github.com/kurtosis-tech/kurtosis/commit/24e71d1464b9d081056d61f43fde09fba2d8505f)), closes [#981](https://github.com/kurtosis-tech/kurtosis/issues/981)
+
+## [0.80.16](https://github.com/kurtosis-tech/kurtosis/compare/0.80.15...0.80.16) (2023-07-25)
+
+
+### Features
+
+* folks can now use frontend to view file artifacts and it's content. ([#967](https://github.com/kurtosis-tech/kurtosis/issues/967)) ([fc87c31](https://github.com/kurtosis-tech/kurtosis/commit/fc87c31cd8deecfcba689ef0d0416be017f9ff36))
+
+## [0.80.15](https://github.com/kurtosis-tech/kurtosis/compare/0.80.14...0.80.15) (2023-07-25)
+
+
+### Features
+
+* Implement V0 of docker import ([#968](https://github.com/kurtosis-tech/kurtosis/issues/968)) ([6f8d90d](https://github.com/kurtosis-tech/kurtosis/commit/6f8d90d526293f676e50243d52aa132ea74447bd))
+
+
+### Bug Fixes
+
+* Run user service containers in --init mode for Docker ([#965](https://github.com/kurtosis-tech/kurtosis/issues/965)) ([b8989a8](https://github.com/kurtosis-tech/kurtosis/commit/b8989a8112e4f25fed0e595d32a28c45a58a8b1b))
+
 ## [0.80.14](https://github.com/kurtosis-tech/kurtosis/compare/0.80.13...0.80.14) (2023-07-24)
 
 
