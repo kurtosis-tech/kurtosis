@@ -3,7 +3,6 @@ package status
 import (
 	"context"
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
-	portal_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
