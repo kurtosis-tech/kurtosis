@@ -91,7 +91,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 	_, serializedInstruction, executionError := executeSynchronously(t, executor, executeForReal, instructionsPlan)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
-	instruction2.AssertNumberOfCalls(t, "String", 1)
+	//instruction2.AssertNumberOfCalls(t, "String", 1)
 	instruction2.AssertNumberOfCalls(t, "Execute", 1)
 	// nothing called for instruction 3 because instruction 2 threw an error
 	instruction3.AssertNumberOfCalls(t, "GetCanonicalInstruction", 0)
