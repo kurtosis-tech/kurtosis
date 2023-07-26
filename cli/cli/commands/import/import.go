@@ -24,7 +24,7 @@ import (
 const (
 	enclaveNameFlagKey        = "enclave"
 	pathArgKey                = "file-path"
-	dotEnvPathFlagKey         = "dot-env-file-path"
+	dotEnvPathFlagKey         = "env"
 	isPathArgOptional         = false
 	defaultPathArg            = ""
 	defaultDotEnvPathFlag     = ".env"
@@ -44,7 +44,7 @@ var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
 	Flags: []*flags.FlagConfig{
 		{
 			Key:       enclaveNameFlagKey,
-			Shorthand: "e",
+			Shorthand: "n",
 			Default:   autogenerateEnclaveNameKeyword,
 			Usage: fmt.Sprintf(
 				"The enclave name to give the new enclave, which must match regex '%v' "+
@@ -55,7 +55,7 @@ var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
 		},
 		{
 			Key:       dotEnvPathFlagKey,
-			Shorthand: "d",
+			Shorthand: "e",
 			Default:   defaultDotEnvPathFlag,
 			Usage:     "The .env file path to be loaded into docker compose",
 			Type:      flags.FlagType_String,
