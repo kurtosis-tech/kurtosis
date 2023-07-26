@@ -1768,6 +1768,8 @@ func pullImage(ctx context.Context, dockerClient *client.Client, imageName strin
 }
 
 // getFreeMemoryAndCPU returns free memory in bytes and free cpu in MilliCores - on windows free cpu computes to 0 due to API limitations
+// this is a best effort calculation, it creates a list of containers and then adds up resources on that list
+// if a container dies during list creation this just ignores it
 func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint64, float64, bool, error) {
 	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
 		// true - only show ids
@@ -1788,18 +1790,21 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint
 	cpuUsageAsFractionOfAvailableCpu := float64(0)
 	totalOnlineCpus := uint32(0)
 	isWindows := false
-	for _, container := range containers {
-		// TODO(gyani) perhaps ignore the error if the container is dead between list generation and ping
-		containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, container.ID)
+	for _, maybeRunningContainer := range containers {
+		containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, maybeRunningContainer.ID)
 		if err != nil {
-			return 0, 0, false, stacktrace.Propagate(err, "An error occurred while getting resource usage information about container '%v'", container.ID)
+			if strings.HasSuffix(err.Error(), "No such container") {
+				logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", maybeRunningContainer.ID)
+				continue
+			}
+			return 0, 0, false, stacktrace.Propagate(err, "An unexpected error occurred while getting resource usage information about the container with id '%v'", maybeRunningContainer.ID)
 		}
 		var containerStats types.Stats
 		if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
-			return 0, 0, false, stacktrace.Propagate(err, "an error occurred while unmarshalling stats response for container with id '%v'", container.ID)
+			return 0, 0, false, stacktrace.Propagate(err, "an error occurred while unmarshalling stats response for maybeRunningContainer with id '%v'", maybeRunningContainer.ID)
 		}
 		if totalFreeMemory != 0 && totalFreeMemory != containerStats.MemoryStats.Limit {
-			return 0, 0, false, stacktrace.NewError("expected response of free available memory to be the same for every container but it changed from '%v' to '%v'", totalFreeMemory, containerStats.MemoryStats.Limit)
+			return 0, 0, false, stacktrace.NewError("expected response of free available memory to be the same for every maybeRunningContainer but it changed from '%v' to '%v'", totalFreeMemory, containerStats.MemoryStats.Limit)
 		}
 		totalFreeMemory = containerStats.MemoryStats.Limit
 		totalUsedMemory += containerStats.MemoryStats.Usage
