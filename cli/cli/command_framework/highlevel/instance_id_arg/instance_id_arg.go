@@ -4,11 +4,13 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/stacktrace"
 )
 
 const (
-	defaultIsRequired = true
-	defaultValueEmpty = ""
+	defaultIsRequired     = true
+	defaultValueEmpty     = ""
+	validInstanceIdLength = 32
 )
 
 // InstanceIdentifierArg pre-builds instance identifier arg which has tab-completion and validation ready out-of-the-box
@@ -40,7 +42,26 @@ func getCompletionsFunc() func(ctx context.Context, flags *flags.ParsedFlags, pr
 
 func getValidationFunc(argKey string, isGreedy bool) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-		// TODO: Add some basic validation, maybe just checking the string isn't empty
+		var instanceIdsToValidate []string
+		if isGreedy {
+			instanceID, err := args.GetGreedyArg(argKey)
+			if err != nil {
+				return stacktrace.Propagate(err, "Expected a value for greedy arg '%v' but didn't find one", argKey)
+			}
+			instanceIdsToValidate = instanceID
+		} else {
+			instanceID, err := args.GetNonGreedyArg(argKey)
+			if err != nil {
+				return stacktrace.Propagate(err, "Expected a value for non-greedy arg '%v' but didn't find one", argKey)
+			}
+			instanceIdsToValidate = []string{instanceID}
+		}
+
+		for _, instanceIdToValidate := range instanceIdsToValidate {
+			if len(instanceIdToValidate) < validInstanceIdLength {
+				return stacktrace.NewError("Instance Id is not valid: %s", instanceIdsToValidate)
+			}
+		}
 		return nil
 	}
 }
