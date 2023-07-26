@@ -106,7 +106,10 @@ func TestSearchLogs(t *testing.T) {
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
 	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFunc()
+	defer func() {
+		err = destroyEnclaveFunc()
+		require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
+	}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
