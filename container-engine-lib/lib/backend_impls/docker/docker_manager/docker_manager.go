@@ -1801,10 +1801,10 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint
 		}
 		var containerStats types.Stats
 		if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
-			return 0, 0, false, stacktrace.Propagate(err, "an error occurred while unmarshalling stats response for maybeRunningContainer with id '%v'", maybeRunningContainer.ID)
+			return 0, 0, false, stacktrace.Propagate(err, "an error occurred while unmarshalling stats response for container with id '%v'", maybeRunningContainer.ID)
 		}
 		if totalFreeMemory != 0 && totalFreeMemory != containerStats.MemoryStats.Limit {
-			return 0, 0, false, stacktrace.NewError("expected response of free available memory to be the same for every maybeRunningContainer but it changed from '%v' to '%v'", totalFreeMemory, containerStats.MemoryStats.Limit)
+			return 0, 0, false, stacktrace.NewError("expected response of free available memory to be the same for every container but it changed from '%v' to '%v'", totalFreeMemory, containerStats.MemoryStats.Limit)
 		}
 		totalFreeMemory = containerStats.MemoryStats.Limit
 		totalUsedMemory += containerStats.MemoryStats.Usage
