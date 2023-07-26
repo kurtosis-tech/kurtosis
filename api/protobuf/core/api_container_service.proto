@@ -45,6 +45,8 @@ service ApiContainerService {
   rpc StoreFilesArtifactFromService(StoreFilesArtifactFromServiceArgs) returns (StoreFilesArtifactFromServiceResponse) {}
 
   rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (ListFilesArtifactNamesAndUuidsResponse) {}
+
+  rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (InspectFilesArtifactContentsResponse) {}
 }
 
 // ==============================================================================================
@@ -187,6 +189,8 @@ message StarlarkInstruction {
   repeated StarlarkInstructionArg arguments = 3;
 
   string executable_instruction = 4;
+
+  bool is_skipped = 5;
 }
 
 message StarlarkInstructionResult {
@@ -427,4 +431,25 @@ message FilesArtifactNameAndUuid {
 
 message ListFilesArtifactNamesAndUuidsResponse {
   repeated FilesArtifactNameAndUuid file_names_and_uuids = 1;
+}
+
+// ==============================================================================================
+//                               Inspect Files Artifact Contents
+// ==============================================================================================
+
+message InspectFilesArtifactContentsRequest {
+  FilesArtifactNameAndUuid file_names_and_uuid = 1;
+}
+
+message InspectFilesArtifactContentsResponse {
+  repeated FileArtifactContentsFileDescription file_descriptions = 1;
+}
+
+message FileArtifactContentsFileDescription {
+  // Path relative to the file artifact
+  string path = 1;
+  // Size of the file, in bytes
+  uint64 size = 2;
+  // A bit of text content, if the file allows (similar to UNIX's 'head')
+  optional string text_preview = 3;
 }

@@ -36,6 +36,14 @@ def run(plan):
   result = plan.run_sh(run="sleep 45s", wait="30s")
   plan.assert(value=result.code, assertion="==", target_value="0")
 `
+
+	runshStarlarkIgnoreParentDir = `
+def run(plan):
+  result1 = plan.run_sh(run="mkdir -p /src/data && echo kurtosis > /src/data/kurtosis.txt",store=["/src/*"])
+  files_artifacts = result1.files_artifacts
+  result2 = plan.run_sh(files={"/temp": files_artifacts[0]}, run="cat /temp/data/kurtosis.txt")
+  plan.assert(result2.output, "==", "kurtosis\n")
+`
 )
 
 func TestStarlark_RunshTaskSimple(t *testing.T) {
@@ -55,7 +63,7 @@ func TestStarlark_RunshTaskFileArtifact(t *testing.T) {
 func TestStarlark_RunshTaskFileArtifactFailure(t *testing.T) {
 	ctx := context.Background()
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkFileArtifactFailure)
-	expectedErrorMessage := "error occurred and shell command: \"cat /tmp/kurtosis.txt\" exited with code 1 with output \"cat: can't open '/tmp/kurtosis.txt': No such file or directory\\n"
+	expectedErrorMessage := "cat: can't open '/tmp/kurtosis.txt': No such file or directory"
 	require.NotNil(t, runResult.ExecutionError)
 	require.Contains(t, runResult.ExecutionError.GetErrorMessage(), expectedErrorMessage)
 }
@@ -66,4 +74,11 @@ func TestStarlark_RunshTimesoutSuccess(t *testing.T) {
 	expectedErrorMessage := "The exec request timed out after 30 seconds"
 	require.NotNil(t, runResult.ExecutionError)
 	require.Contains(t, runResult.ExecutionError.GetErrorMessage(), expectedErrorMessage)
+}
+
+func TestStarlark_RunshFileArtifactWithoutParentDir(t *testing.T) {
+	ctx := context.Background()
+	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkIgnoreParentDir)
+	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nAssertion succeeded. Value is '\"kurtosis\\n\"'.\n"
+	require.Equal(t, expectedOutput, string(runResult.RunOutput))
 }

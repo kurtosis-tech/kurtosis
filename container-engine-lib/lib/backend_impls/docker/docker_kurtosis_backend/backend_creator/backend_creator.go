@@ -14,6 +14,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
+	"time"
+)
+
+const (
+	dockerClientTimeout = 30 * time.Second
 )
 
 // TODO Delete this when we split up KurtosisBackend into various parts
@@ -30,7 +35,7 @@ type APIContainerModeArgs struct {
 func GetLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
-	localDockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	localDockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithTimeout(dockerClientTimeout), client.WithAPIVersionNegotiation())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker client connected to the local environment")
 	}

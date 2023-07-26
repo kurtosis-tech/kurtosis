@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/artifact_identifier_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
@@ -19,7 +20,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 )
 
 const (
@@ -28,12 +28,11 @@ const (
 	isEnclaveIdArgGreedy    = false
 
 	artifactIdentifierArgKey        = "artifact-identifier"
-	emptyArtifactIdentifier         = ""
 	isArtifactIdentifierArgOptional = false
 	isArtifactIdentifierArgGreedy   = false
 
 	destinationPathArgKey        = "destination-path"
-	isDestinationPathArgOptional = false
+	isDestinationPathArgOptional = true
 	emptyDestinationPathArg      = ""
 
 	noExtractFlagKey          = "no-extract"
@@ -71,14 +70,12 @@ var FilesUploadCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		{
-			Key:                   artifactIdentifierArgKey,
-			ValidationFunc:        validateArtifactIdentifier,
-			IsOptional:            isArtifactIdentifierArgOptional,
-			IsGreedy:              isArtifactIdentifierArgGreedy,
-			DefaultValue:          nil,
-			ArgCompletionProvider: nil,
-		},
+		artifact_identifier_arg.NewArtifactIdentifierArg(
+			artifactIdentifierArgKey,
+			enclaveIdentifierArgKey,
+			isArtifactIdentifierArgOptional,
+			isArtifactIdentifierArgGreedy,
+		),
 		file_system_path_arg.NewDirpathArg(
 			destinationPathArgKey,
 			isDestinationPathArgOptional,
@@ -110,6 +107,9 @@ func run(
 	destinationPath, err := args.GetNonGreedyArg(destinationPathArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the destination path to write downloaded file to using key '%v'", destinationPath)
+	}
+	if destinationPath == "" {
+		destinationPath = fmt.Sprintf("./%v", artifactIdentifier)
 	}
 	absoluteDestinationPath, err := filepath.Abs(destinationPath)
 	if err != nil {
@@ -179,18 +179,5 @@ func run(
 	logrus.Infof("File package with identifier '%v' extracted to '%v'", artifactIdentifier, absoluteDestinationPath)
 
 	shouldCleanupTmpDir = true
-	return nil
-}
-
-func validateArtifactIdentifier(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
-	artifactIdentifier, err := args.GetNonGreedyArg(artifactIdentifierArgKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the identifier to validate using key '%v'", artifactIdentifier)
-	}
-
-	if strings.TrimSpace(artifactIdentifier) == emptyArtifactIdentifier {
-		return stacktrace.NewError("Artifact identifier cannot be an empty string")
-	}
-
 	return nil
 }

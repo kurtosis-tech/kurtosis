@@ -103,10 +103,12 @@ const (
 
 	minMemoryLimit = 6
 
-	containerIsNotRunningErrMsg = "is not running"
+	zombieProcessesCannotRemoveContainerErrMsg = "is zombie and can not be killed"
+	defaultRemoveProcessesMaxRetries           = uint8(3)
+	defaultRemoveContainerTimeBetweenRetries   = 10 * time.Second
 
-	cannotKillContainerErrMsg = "cannot kill container"
-
+	containerIsNotRunningErrMsg            = "is not running"
+	cannotKillContainerErrMsg              = "cannot kill container"
 	defaultKillContainerMaxRetries         = uint8(3)
 	defaultKillContainerTimeBetweenRetries = 10 * time.Millisecond
 
@@ -472,7 +474,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.needsAccessToDockerHostMachine,
 		args.cpuAllocationMillicpus,
 		args.memoryAllocationMegabytes,
-		args.loggingDriverConfig)
+		args.loggingDriverConfig,
+		args.containerInitEnabled)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -740,7 +743,7 @@ Args:
 	containerId: ID of Docker container to kill
 */
 func (manager *DockerManager) KillContainer(ctx context.Context, containerId string) error {
-	if err := manager.killContainerWithRetriesWhenErrorResponseFromDeamon(
+	if err := manager.killContainerWithRetriesWhenErrorResponseFromDaemon(
 		ctx,
 		containerId,
 		defaultKillContainerMaxRetries,
@@ -767,12 +770,18 @@ Args:
 	containerId: ID of Docker container to remove
 */
 func (manager *DockerManager) RemoveContainer(ctx context.Context, containerId string) error {
-	removeOpts := types.ContainerRemoveOptions{
+	removeOpts := &types.ContainerRemoveOptions{
 		RemoveVolumes: shouldRemoveAnonymousVolumesWhenRemovingContainers,
 		RemoveLinks:   shouldRemoveLinksWhenRemovingContainers,
 		Force:         shouldKillContainersWhenRemovingContainers,
 	}
-	if err := manager.dockerClient.ContainerRemove(ctx, containerId, removeOpts); err != nil {
+	err := manager.removeContainerWithRetriesOnFailureForZombieProcesses(
+		ctx,
+		containerId,
+		removeOpts,
+		defaultRemoveProcessesMaxRetries,
+		defaultRemoveContainerTimeBetweenRetries)
+	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred removing container with ID '%v'", containerId)
 	}
 	return nil
@@ -993,30 +1002,13 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 
 	if !doesImageExistLocally {
 		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
-		err = manager.PullImage(ctx, dockerImage)
+		err = manager.pullImage(ctx, dockerImage)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
 		}
 		logrus.Tracef("Image successfully pulled from remote to local")
 	}
 
-	return nil
-}
-
-func (manager *DockerManager) PullImage(context context.Context, imageName string) (err error) {
-	logrus.Infof("Pulling image '%s'...", imageName)
-	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClient, imageName, defaultPlatform)
-	if err == nil {
-		return nil
-	}
-	if err != nil && !retryWithLinuxAmd64 {
-		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
-	}
-	// we retry with linux/amd64
-	err, _ = pullImage(context, manager.dockerClient, imageName, linuxAmd64)
-	if err != nil {
-		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
-	}
 	return nil
 }
 
@@ -1103,6 +1095,23 @@ func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, image
 	return numMatchingImages > 0, nil
 }
 
+func (manager *DockerManager) pullImage(context context.Context, imageName string) (err error) {
+	logrus.Infof("Pulling image '%s'...", imageName)
+	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClient, imageName, defaultPlatform)
+	if err == nil {
+		return nil
+	}
+	if err != nil && !retryWithLinuxAmd64 {
+		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
+	}
+	// we retry with linux/amd64
+	err, _ = pullImage(context, manager.dockerClient, imageName, linuxAmd64)
+	if err != nil {
+		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
+	}
+	return nil
+}
+
 func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]types.NetworkResource, error) {
 	// NOTE: Even though this returns a `NetworkResource` object which has a Containers field on it, this is a lie!!
 	// For whatever insane reason, Docker doesn't fill this field out when NetworkList is used and there doesn't seem to
@@ -1144,6 +1153,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 	loggingDriverConfig LoggingDriver,
+	useInit bool,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -1265,6 +1275,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	// NOTE: Do NOT use PublishAllPorts here!!!! This will work if a Dockerfile doesn't have an EXPOSE directive, but
 	//  if the Dockerfile *does* have an EXPOSE directive then _only_ the ports with EXPOSE will be published
 	// See also: https://www.ctl.io/developers/blog/post/docker-networking-rules/
+
 	containerHostConfigPtr := &container.HostConfig{
 		Binds:           bindsList,
 		ContainerIDFile: "",
@@ -1308,7 +1319,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		Mounts:          nil,
 		MaskedPaths:     nil,
 		ReadonlyPaths:   nil,
-		Init:            nil,
+		Init:            &useInit,
 	}
 	return containerHostConfigPtr, nil
 }
@@ -1358,7 +1369,7 @@ func (manager *DockerManager) getContainerCfg(
 	return nodeConfigPtr, nil
 }
 
-func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDeamon(
+func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDaemon(
 	ctx context.Context,
 	containerId string,
 	maxRetries uint8,
@@ -1389,6 +1400,34 @@ func (manager *DockerManager) killContainerWithRetriesWhenErrorResponseFromDeamo
 	}
 
 	return stacktrace.Propagate(err, "An error occurred killing container with ID '%v'", containerId)
+}
+
+func (manager *DockerManager) removeContainerWithRetriesOnFailureForZombieProcesses(
+	ctx context.Context,
+	containerId string,
+	options *types.ContainerRemoveOptions,
+	maxRetries uint8,
+	timeBetweenRetries time.Duration,
+) error {
+	var err error
+	for i := uint8(0); i < maxRetries; i++ {
+		if err = manager.dockerClient.ContainerRemove(ctx, containerId, *options); err != nil {
+
+			errMsg := strings.ToLower(err.Error())
+
+			// For some stupid reason, ContainerKill throws an error if the container isn't running (even though
+			//  ContainerStop does not)
+			if strings.Contains(errMsg, zombieProcessesCannotRemoveContainerErrMsg) {
+				logrus.Warnf("Container with ID '%s' has zombie processes and cannot be removed. Removal will be retried in %f seconds", containerId, timeBetweenRetries.Seconds())
+				time.Sleep(timeBetweenRetries)
+				continue
+			} else {
+				return err
+			}
+		}
+		return nil
+	}
+	return stacktrace.Propagate(err, "All %d attempts to remove container with ID '%s' failed", maxRetries, containerId)
 }
 
 // Takes in a PortMap (as reported by Docker container inspect) and returns a map of the used ports -> host port binding on the expected interface

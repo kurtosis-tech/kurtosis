@@ -23,6 +23,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/feedback"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/files"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
+	_import "github.com/kurtosis-tech/kurtosis/cli/cli/commands/import"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lsp"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/port"
@@ -31,6 +32,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/twitter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/version"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/web"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_log_levels"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
@@ -118,13 +120,15 @@ func init() {
 	RootCmd.AddCommand(feedback.FeedbackCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(files.FilesCmd)
 	RootCmd.AddCommand(gateway.GatewayCmd)
+	RootCmd.AddCommand(lsp.NewLspCommand())
+	RootCmd.AddCommand(port.PortCmd)
 	RootCmd.AddCommand(portal.PortalCmd)
 	RootCmd.AddCommand(run.StarlarkRunCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(service.ServiceCmd)
+	RootCmd.AddCommand(_import.ImportCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
-	RootCmd.AddCommand(lsp.NewLspCommand())
-	RootCmd.AddCommand(port.PortCmd)
+	RootCmd.AddCommand(web.WebCmd.MustGetCobraCommand())
 }
 
 // ====================================================================================================

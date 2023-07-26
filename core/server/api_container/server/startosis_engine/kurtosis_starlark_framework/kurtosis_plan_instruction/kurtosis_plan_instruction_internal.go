@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -29,7 +31,7 @@ func newKurtosisPlanInstructionInternal(internalBuiltin *kurtosis_starlark_frame
 	}
 }
 
-func (builtin *kurtosisPlanInstructionInternal) GetCanonicalInstruction() *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
+func (builtin *kurtosisPlanInstructionInternal) GetCanonicalInstruction(isSkipped bool) *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := make([]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg, len(builtin.GetArguments().GetDefinition()))
 	for idx, argument := range builtin.GetArguments().GetDefinition() {
 		name := argument.Name
@@ -44,7 +46,7 @@ func (builtin *kurtosisPlanInstructionInternal) GetCanonicalInstruction() *kurto
 		}
 		args[idx] = binding_constructors.NewStarlarkInstructionKwarg(builtin_argument.StringifyArgumentValue(value), name, shouldBeDisplayed)
 	}
-	return binding_constructors.NewStarlarkInstruction(builtin.GetPosition().ToAPIType(), builtin.GetName(), builtin.String(), args)
+	return binding_constructors.NewStarlarkInstruction(builtin.GetPosition().ToAPIType(), builtin.GetName(), builtin.String(), args, isSkipped)
 }
 
 // GetPositionInOriginalScript is here to implement the KurtosisInstruction interface. Remove it when it's not needed anymore
@@ -75,8 +77,27 @@ func (builtin *kurtosisPlanInstructionInternal) Execute(ctx context.Context) (*s
 	return &result, nil
 }
 
-func (builtin *kurtosisPlanInstructionInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {
-	result, interpretationErr := builtin.capabilities.Interpret(builtin.GetArguments())
+func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other kurtosis_instruction.KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	isAnAbortAllInstruction := builtin.capabilities.TryResolveWith(false, nil, enclaveComponents) == enclave_structure.InstructionIsNotResolvableAbort
+	if isAnAbortAllInstruction {
+		return enclave_structure.InstructionIsNotResolvableAbort
+	}
+
+	if other == nil {
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	otherPlanInstruction, ok := other.(*kurtosisPlanInstructionInternal)
+	if !ok {
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	instructionsAreEqual := builtin.String() == other.String()
+	return builtin.capabilities.TryResolveWith(instructionsAreEqual, otherPlanInstruction.capabilities, enclaveComponents)
+}
+
+func (builtin *kurtosisPlanInstructionInternal) interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string) (starlark.Value, *startosis_errors.InterpretationError) {
+	result, interpretationErr := builtin.capabilities.Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled, builtin.GetArguments())
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

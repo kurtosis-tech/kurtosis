@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
@@ -22,13 +23,12 @@ import (
 	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
+	"path"
 	"strings"
 	"sync"
 )
 
 const (
-	starlarkGoThreadName = "Startosis interpreter thread"
-
 	multipleInterpretationErrorMsg = "Multiple errors caught interpreting the Starlark script. Listing each of them below."
 	evaluationErrorPrefix          = "Evaluation error: "
 
@@ -36,9 +36,8 @@ const (
 
 	runFunctionName = "run"
 
-	paramsRequiredForArgs              = 2
-	minimumParamsRequiredForPlan       = 1
-	maximumParamsAllowedForRunFunction = 2
+	paramsRequiredForArgs        = 2
+	minimumParamsRequiredForPlan = 1
 
 	planParamIndex         = 0
 	planParamName          = "plan"
@@ -86,14 +85,16 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	ctx context.Context,
 	packageId string,
 	mainFunctionName string,
+	relativePathtoMainFile string,
 	serializedStarlark string,
 	serializedJsonParams string,
 	currentEnclavePlan *instructions_plan.InstructionsPlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
+	enclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyPlanInstructionsMask := resolver.NewInstructionsPlanMask(0)
-	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, serializedStarlark, serializedJsonParams, emptyPlanInstructionsMask)
+	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, relativePathtoMainFile, serializedStarlark, serializedJsonParams, enclaveComponents, emptyPlanInstructionsMask)
 	if interpretationErrorApi != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErrorApi
 	}
@@ -163,7 +164,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 		}
 
 		// Now that we have a potential plan mask, try running interpretation again using this plan mask
-		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, serializedStarlark, serializedJsonParams, potentialMask)
+		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, relativePathtoMainFile, serializedStarlark, serializedJsonParams, enclaveComponents, potentialMask)
 		if interpretationErrorApi != nil {
 			// Note: there's no real reason why this interpretation would fail with an error, given that the package
 			// has been interpreted once already (right above). But to be on the safe side, check the error
@@ -229,15 +230,21 @@ func (interpreter *StartosisInterpreter) Interpret(
 	_ context.Context,
 	packageId string,
 	mainFunctionName string,
+	relativePathtoMainFile string,
 	serializedStarlark string,
 	serializedJsonParams string,
+	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionsPlanMask *resolver.InstructionsPlanMask,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	newInstructionsPlan := instructions_plan.NewInstructionsPlan()
 	logrus.Debugf("Interpreting package '%v' with contents '%v' and params '%v'", packageId, serializedStarlark, serializedJsonParams)
-	globalVariables, interpretationErr := interpreter.interpretInternal(packageId, serializedStarlark, newInstructionsPlan)
+	moduleLocator := packageId
+	if packageId != startosis_constants.PackageIdPlaceholderForStandaloneScript {
+		moduleLocator = path.Join(moduleLocator, relativePathtoMainFile)
+	}
+	globalVariables, interpretationErr := interpreter.interpretInternal(moduleLocator, serializedStarlark, newInstructionsPlan)
 	if interpretationErr != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
 	}
@@ -261,7 +268,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		return startosis_constants.NoOutputObject, nil, missingMainFunctionError(packageId, mainFunctionName)
 	}
 
-	runFunctionExecutionThread := newStarlarkThread(starlarkGoThreadName)
+	runFunctionExecutionThread := newStarlarkThread(moduleLocator)
 
 	var argsTuple starlark.Tuple
 	var kwArgs []starlark.Tuple
@@ -274,7 +281,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
 			kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
-			planModule := plan_module.PlanModule(newInstructionsPlan, instructionsPlanMask, kurtosisPlanInstructions)
+			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}
 
@@ -323,17 +330,18 @@ func (interpreter *StartosisInterpreter) Interpret(
 	return startosis_constants.NoOutputObject, newInstructionsPlan, nil
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(packageId string, serializedStarlark string, instructionPlan *instructions_plan.InstructionsPlan) (starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) interpretInternal(moduleLocator string, serializedStarlark string, instructionPlan *instructions_plan.InstructionsPlan) (starlark.StringDict, *startosis_errors.InterpretationError) {
 	// We spin up a new thread for every call to interpreterInternal such that the stacktrace provided by the Starlark
 	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
 	// previous calls inside the same thread
-	thread := newStarlarkThread(packageId)
+	// The thread name is set to the locator of the module so that we can use it to resolve relative paths
+	thread := newStarlarkThread(moduleLocator)
 	predeclared, interpretationErr := interpreter.buildBindings(instructionPlan)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	globalVariables, err := starlark.ExecFile(thread, packageId, serializedStarlark, *predeclared)
+	globalVariables, err := starlark.ExecFile(thread, moduleLocator, serializedStarlark, *predeclared)
 	if err != nil {
 		return nil, generateInterpretationError(err)
 	}
@@ -382,7 +390,10 @@ func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*instru
 		return -1 // no result as the naiveInstructionsList is empty
 	}
 	for i := minIndex; i < len(currentEnclaveInstructionsList); i++ {
-		if currentEnclaveInstructionsList[i].GetInstruction().String() == naiveInstructionsList[0].GetInstruction().String() {
+		// We just need to compare instructions to see if they match, without needing any enclave specific context here
+		fakeEnclaveComponent := enclave_structure.NewEnclaveComponents()
+		instructionResolutionResult := naiveInstructionsList[0].GetInstruction().TryResolveWith(currentEnclaveInstructionsList[i].GetInstruction(), fakeEnclaveComponent)
+		if instructionResolutionResult == enclave_structure.InstructionIsEqual || instructionResolutionResult == enclave_structure.InstructionIsUpdate {
 			return i
 		}
 	}

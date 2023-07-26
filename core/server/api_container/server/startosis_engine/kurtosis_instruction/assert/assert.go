@@ -3,6 +3,7 @@ package assert
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -92,7 +93,7 @@ type AssertCapabilities struct {
 	target       starlark.Comparable
 }
 
-func (builtin *AssertCapabilities) Interpret(arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+func (builtin *AssertCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	runtimeValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, RuntimeValueArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", RuntimeValueArgName)
@@ -140,6 +141,13 @@ func (builtin *AssertCapabilities) Execute(_ context.Context, _ *builtin_argumen
 	}
 	instructionResult := fmt.Sprintf("Assertion succeeded. Value is '%s'.", currentValue.String())
 	return instructionResult, nil
+}
+
+func (builtin *AssertCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	if instructionsAreEqual {
+		return enclave_structure.InstructionIsEqual
+	}
+	return enclave_structure.InstructionIsUnknown
 }
 
 // Assert verifies whether the currentValue matches the targetValue w.r.t. the assertion operator

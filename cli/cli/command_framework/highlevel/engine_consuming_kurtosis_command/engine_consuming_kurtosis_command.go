@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
@@ -144,6 +145,19 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 	return func(ctx context.Context) (context.Context, error) {
 		result := ctx
 
+		currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+		if err == nil {
+			if store.IsRemote(currentContext) && !portal_manager.NewPortalManager().IsReachable() {
+				return nil, stacktrace.NewError("Kurtosis is setup to use the remote context '%s' but Kurtosis "+
+					"Portal is unreachable for this context. Make sure Kurtosis Portal is running locally with 'kurtosis "+
+					"%s %s' and potentially 'kurtosis %s %s'. If it is, make sure the remote server is running and healthy",
+					currentContext.GetName(), command_str_consts.PortalCmdStr, command_str_consts.PortalStatusCmdStr,
+					command_str_consts.PortalCmdStr, command_str_consts.PortalStartCmdStr)
+			}
+		} else {
+			logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
+		}
+
 		metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while creating metrics client")
@@ -159,7 +173,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 		//  commands only access the Kurtosis APIs, we can remove this.
 		kurtosisBackend := engineManager.GetKurtosisBackend()
 
-		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel)
+		engineClient, closeClientFunc, err := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating a new Kurtosis engine client")
 		}

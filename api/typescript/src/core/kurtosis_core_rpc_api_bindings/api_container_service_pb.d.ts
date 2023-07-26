@@ -344,6 +344,9 @@ export class StarlarkInstruction extends jspb.Message {
   getExecutableInstruction(): string;
   setExecutableInstruction(value: string): StarlarkInstruction;
 
+  getIsSkipped(): boolean;
+  setIsSkipped(value: boolean): StarlarkInstruction;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): StarlarkInstruction.AsObject;
   static toObject(includeInstance: boolean, msg: StarlarkInstruction): StarlarkInstruction.AsObject;
@@ -358,6 +361,7 @@ export namespace StarlarkInstruction {
     instructionName: string,
     argumentsList: Array<StarlarkInstructionArg.AsObject>,
     executableInstruction: string,
+    isSkipped: boolean,
   }
 }
 
@@ -1017,6 +1021,79 @@ export class ListFilesArtifactNamesAndUuidsResponse extends jspb.Message {
 export namespace ListFilesArtifactNamesAndUuidsResponse {
   export type AsObject = {
     fileNamesAndUuidsList: Array<FilesArtifactNameAndUuid.AsObject>,
+  }
+}
+
+export class InspectFilesArtifactContentsRequest extends jspb.Message {
+  getFileNamesAndUuid(): FilesArtifactNameAndUuid | undefined;
+  setFileNamesAndUuid(value?: FilesArtifactNameAndUuid): InspectFilesArtifactContentsRequest;
+  hasFileNamesAndUuid(): boolean;
+  clearFileNamesAndUuid(): InspectFilesArtifactContentsRequest;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InspectFilesArtifactContentsRequest.AsObject;
+  static toObject(includeInstance: boolean, msg: InspectFilesArtifactContentsRequest): InspectFilesArtifactContentsRequest.AsObject;
+  static serializeBinaryToWriter(message: InspectFilesArtifactContentsRequest, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InspectFilesArtifactContentsRequest;
+  static deserializeBinaryFromReader(message: InspectFilesArtifactContentsRequest, reader: jspb.BinaryReader): InspectFilesArtifactContentsRequest;
+}
+
+export namespace InspectFilesArtifactContentsRequest {
+  export type AsObject = {
+    fileNamesAndUuid?: FilesArtifactNameAndUuid.AsObject,
+  }
+}
+
+export class InspectFilesArtifactContentsResponse extends jspb.Message {
+  getFileDescriptionsList(): Array<FileArtifactContentsFileDescription>;
+  setFileDescriptionsList(value: Array<FileArtifactContentsFileDescription>): InspectFilesArtifactContentsResponse;
+  clearFileDescriptionsList(): InspectFilesArtifactContentsResponse;
+  addFileDescriptions(value?: FileArtifactContentsFileDescription, index?: number): FileArtifactContentsFileDescription;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): InspectFilesArtifactContentsResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: InspectFilesArtifactContentsResponse): InspectFilesArtifactContentsResponse.AsObject;
+  static serializeBinaryToWriter(message: InspectFilesArtifactContentsResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): InspectFilesArtifactContentsResponse;
+  static deserializeBinaryFromReader(message: InspectFilesArtifactContentsResponse, reader: jspb.BinaryReader): InspectFilesArtifactContentsResponse;
+}
+
+export namespace InspectFilesArtifactContentsResponse {
+  export type AsObject = {
+    fileDescriptionsList: Array<FileArtifactContentsFileDescription.AsObject>,
+  }
+}
+
+export class FileArtifactContentsFileDescription extends jspb.Message {
+  getPath(): string;
+  setPath(value: string): FileArtifactContentsFileDescription;
+
+  getSize(): number;
+  setSize(value: number): FileArtifactContentsFileDescription;
+
+  getTextPreview(): string;
+  setTextPreview(value: string): FileArtifactContentsFileDescription;
+  hasTextPreview(): boolean;
+  clearTextPreview(): FileArtifactContentsFileDescription;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): FileArtifactContentsFileDescription.AsObject;
+  static toObject(includeInstance: boolean, msg: FileArtifactContentsFileDescription): FileArtifactContentsFileDescription.AsObject;
+  static serializeBinaryToWriter(message: FileArtifactContentsFileDescription, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): FileArtifactContentsFileDescription;
+  static deserializeBinaryFromReader(message: FileArtifactContentsFileDescription, reader: jspb.BinaryReader): FileArtifactContentsFileDescription;
+}
+
+export namespace FileArtifactContentsFileDescription {
+  export type AsObject = {
+    path: string,
+    size: number,
+    textPreview?: string,
+  }
+
+  export enum TextPreviewCase { 
+    _TEXT_PREVIEW_NOT_SET = 0,
+    TEXT_PREVIEW = 3,
   }
 }
 

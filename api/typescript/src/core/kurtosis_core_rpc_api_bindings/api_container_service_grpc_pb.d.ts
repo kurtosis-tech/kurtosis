@@ -21,6 +21,7 @@ interface IApiContainerServiceService extends grpc.ServiceDefinition<grpc.Untype
   storeWebFilesArtifact: grpc.MethodDefinition<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
   storeFilesArtifactFromService: grpc.MethodDefinition<api_container_service_pb.StoreFilesArtifactFromServiceArgs, api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
   listFilesArtifactNamesAndUuids: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
+  inspectFilesArtifactContents: grpc.MethodDefinition<api_container_service_pb.InspectFilesArtifactContentsRequest, api_container_service_pb.InspectFilesArtifactContentsResponse>;
 }
 
 export const ApiContainerServiceService: IApiContainerServiceService;
@@ -39,6 +40,7 @@ export interface IApiContainerServiceServer extends grpc.UntypedServiceImplement
   storeWebFilesArtifact: grpc.handleUnaryCall<api_container_service_pb.StoreWebFilesArtifactArgs, api_container_service_pb.StoreWebFilesArtifactResponse>;
   storeFilesArtifactFromService: grpc.handleUnaryCall<api_container_service_pb.StoreFilesArtifactFromServiceArgs, api_container_service_pb.StoreFilesArtifactFromServiceResponse>;
   listFilesArtifactNamesAndUuids: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>;
+  inspectFilesArtifactContents: grpc.handleUnaryCall<api_container_service_pb.InspectFilesArtifactContentsRequest, api_container_service_pb.InspectFilesArtifactContentsResponse>;
 }
 
 export class ApiContainerServiceClient extends grpc.Client {
@@ -79,4 +81,7 @@ export class ApiContainerServiceClient extends grpc.Client {
   listFilesArtifactNamesAndUuids(argument: google_protobuf_empty_pb.Empty, callback: grpc.requestCallback<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>): grpc.ClientUnaryCall;
   listFilesArtifactNamesAndUuids(argument: google_protobuf_empty_pb.Empty, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>): grpc.ClientUnaryCall;
   listFilesArtifactNamesAndUuids(argument: google_protobuf_empty_pb.Empty, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.ListFilesArtifactNamesAndUuidsResponse>): grpc.ClientUnaryCall;
+  inspectFilesArtifactContents(argument: api_container_service_pb.InspectFilesArtifactContentsRequest, callback: grpc.requestCallback<api_container_service_pb.InspectFilesArtifactContentsResponse>): grpc.ClientUnaryCall;
+  inspectFilesArtifactContents(argument: api_container_service_pb.InspectFilesArtifactContentsRequest, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.InspectFilesArtifactContentsResponse>): grpc.ClientUnaryCall;
+  inspectFilesArtifactContents(argument: api_container_service_pb.InspectFilesArtifactContentsRequest, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<api_container_service_pb.InspectFilesArtifactContentsResponse>): grpc.ClientUnaryCall;
 }
