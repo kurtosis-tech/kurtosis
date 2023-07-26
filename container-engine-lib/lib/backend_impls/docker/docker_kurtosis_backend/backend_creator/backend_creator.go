@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	dockerClientTimeout = 30 * time.Second
+	dockerClientTimeout = 5 * time.Minute
 )
 
 // TODO Delete this when we split up KurtosisBackend into various parts

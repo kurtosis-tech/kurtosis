@@ -1096,7 +1096,7 @@ func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, image
 }
 
 func (manager *DockerManager) pullImage(context context.Context, imageName string) (err error) {
-	logrus.Infof("Pulling image '%s'...", imageName)
+	logrus.Infof("Pulling image '%s'", imageName)
 	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClient, imageName, defaultPlatform)
 	if err == nil {
 		return nil
@@ -1105,10 +1105,12 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
 	}
 	// we retry with linux/amd64
+	logrus.Debugf("Retrying pulling image '%s' for '%s'", imageName, linuxAmd64)
 	err, _ = pullImage(context, manager.dockerClient, imageName, linuxAmd64)
 	if err != nil {
 		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
 	}
+	logrus.Warnf("Image '%s' successfully pulled for '%s' which is not the architecture this OS is running on.", imageName, linuxAmd64)
 	return nil
 }
 
@@ -1719,6 +1721,7 @@ func getEndpointSettingsForIpAddress(ipAddress string, alias string) *network.En
 }
 
 func pullImage(ctx context.Context, dockerClient *client.Client, imageName string, platform string) (error, bool) {
+	logrus.Tracef("Starting pulling '%s' for platform '%s'", imageName, platform)
 	out, err := dockerClient.ImagePull(ctx, imageName, types.ImagePullOptions{
 		All:           false,
 		RegistryAuth:  "",
@@ -1729,18 +1732,21 @@ func pullImage(ctx context.Context, dockerClient *client.Client, imageName strin
 		return stacktrace.Propagate(err, "Tried pulling image '%v' with platform '%v' but failed", imageName, platform), false
 	}
 	defer out.Close()
+	logrus.Tracef("Finished pulling '%s' for platform '%s'. Analyzing response to check for errors", imageName, platform)
 	responseDecoder := json.NewDecoder(out)
-	var jsonMessage *jsonmessage.JSONMessage
 	for {
-		if err = responseDecoder.Decode(&jsonMessage); err != nil {
-			if err == io.EOF {
-				break
-			}
+		jsonMessage := new(jsonmessage.JSONMessage)
+		err = responseDecoder.Decode(&jsonMessage)
+		if err == io.EOF {
+			break
 		}
-		if jsonMessage.Error == nil {
-			continue
+		if err != nil {
+			return stacktrace.Propagate(err, "ImagePull for '%s' on platform '%s' failed with an unexpected error", imageName, platform), false
 		}
-		return stacktrace.NewError("ImagePull failed with the following error '%v'", jsonMessage.Error.Message), strings.HasPrefix(jsonMessage.Error.Message, architectureErrorString)
+		if jsonMessage.Error != nil {
+			return stacktrace.NewError("ImagePull failed with the following error '%v'", jsonMessage.Error.Message), strings.HasPrefix(jsonMessage.Error.Message, architectureErrorString)
+		}
 	}
+	logrus.Tracef("No error pulling '%s' for platform '%s'. Returning", imageName, platform)
 	return nil, false
 }
