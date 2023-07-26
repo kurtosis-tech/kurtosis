@@ -11,6 +11,8 @@ type ValidatorEnvironment struct {
 	serviceNames                 map[service.ServiceName]ServiceExistence
 	artifactNames                map[string]bool
 	serviceNameToPrivatePortIDs  map[service.ServiceName][]string
+	minCpuSumSoFar               int
+	minMemorySumSoFar            int
 }
 
 func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string) *ValidatorEnvironment {
@@ -87,4 +89,28 @@ func (environment *ValidatorEnvironment) DoesArtifactNameExist(artifactName stri
 
 func (environment *ValidatorEnvironment) IsNetworkPartitioningEnabled() bool {
 	return environment.isNetworkPartitioningEnabled
+}
+
+func (environment *ValidatorEnvironment) AddMinMemoryConsumed(memoryConsumed int) {
+	environment.minMemorySumSoFar += memoryConsumed
+}
+
+func (environment *ValidatorEnvironment) RemoveMinMemoryConsumed(memoryConsumed int) {
+	environment.minMemorySumSoFar -= memoryConsumed
+}
+
+func (environment *ValidatorEnvironment) AddMinCPUConsumed(minCpuConsumed int) {
+	environment.minCpuSumSoFar += minCpuConsumed
+}
+
+func (environment *ValidatorEnvironment) RemoveMinCpuConsumed(memoryConsumed int) {
+	environment.minMemorySumSoFar -= memoryConsumed
+}
+
+func (environment *ValidatorEnvironment) HasEnoughCPU(minCpuConsumed int, freeCPUInBackend int) {
+
+}
+
+func (environment *ValidatorEnvironment) HasEnoughMemory(minMemoryConsumed int, freeMemoryInBackend int) {
+
 }
