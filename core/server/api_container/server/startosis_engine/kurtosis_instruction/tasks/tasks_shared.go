@@ -243,6 +243,7 @@ func getServiceConfig(image string, filesArtifactExpansion *files_artifacts_expa
 		nil,
 		nil,
 		filesArtifactExpansion,
+		nil,
 		0,
 		0,
 		service_config.DefaultPrivateIPAddrPlaceholder,

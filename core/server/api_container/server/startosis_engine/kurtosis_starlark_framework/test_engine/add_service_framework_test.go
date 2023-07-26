@@ -49,6 +49,7 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 				nil,
 				map[string]string{},
 				nil,
+				nil,
 				0,
 				0,
 				service_config.DefaultPrivateIPAddrPlaceholder,

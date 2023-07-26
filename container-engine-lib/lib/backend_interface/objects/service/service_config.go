@@ -22,6 +22,9 @@ type ServiceConfig struct {
 	// Leave as nil to not do any files artifact expansion
 	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion
 
+	// Mapping of dirpath -> volume name for persistent directory mounted into the service
+	persistentDirectories map[string]string
+
 	cpuAllocationMillicpus uint64
 
 	memoryAllocationMegabytes uint64
@@ -43,6 +46,7 @@ func NewServiceConfig(
 	cmdArgs []string,
 	envVars map[string]string,
 	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
+	persistentDirectories map[string]string,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 	privateIPAddrPlaceholder string,
@@ -58,6 +62,7 @@ func NewServiceConfig(
 		cmdArgs:                   cmdArgs,
 		envVars:                   envVars,
 		filesArtifactExpansion:    filesArtifactExpansion,
+		persistentDirectories:     persistentDirectories,
 		cpuAllocationMillicpus:    cpuAllocationMillicpus,
 		memoryAllocationMegabytes: memoryAllocationMegabytes,
 		privateIPAddrPlaceholder:  privateIPAddrPlaceholder,
@@ -94,6 +99,10 @@ func (serviceConfig *ServiceConfig) GetEnvVars() map[string]string {
 
 func (serviceConfig *ServiceConfig) GetFilesArtifactsExpansion() *files_artifacts_expansion.FilesArtifactsExpansion {
 	return serviceConfig.filesArtifactExpansion
+}
+
+func (serviceConfig *ServiceConfig) GetPersistentDirectories() map[string]string {
+	return serviceConfig.persistentDirectories
 }
 
 func (serviceConfig *ServiceConfig) GetCPUAllocationMillicpus() uint64 {

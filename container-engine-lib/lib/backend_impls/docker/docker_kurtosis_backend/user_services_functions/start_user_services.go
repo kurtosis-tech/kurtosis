@@ -2,6 +2,7 @@ package user_service_functions
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
@@ -171,6 +172,7 @@ func StartRegisteredUserServices(
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
+		enclaveUuid,
 		enclaveNetworkID,
 		serviceConfigsToStart,
 		serviceRegistrations,
@@ -370,6 +372,7 @@ func restartUserServices(
 
 func runStartServiceOperationsInParallel(
 	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
 	enclaveNetworkId string,
 	serviceConfigs map[service.ServiceUUID]*service.ServiceConfig,
 	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
@@ -393,6 +396,7 @@ func runStartServiceOperationsInParallel(
 		}
 		startServiceOperations[operation_parallelizer.OperationID(serviceUuid)] = createStartServiceOperation(
 			ctx,
+			enclaveUuid,
 			serviceUuid,
 			config,
 			serviceRegistration,
@@ -426,6 +430,7 @@ func runStartServiceOperationsInParallel(
 
 func createStartServiceOperation(
 	ctx context.Context,
+	enclaveUUID enclave.EnclaveUUID,
 	serviceUUID service.ServiceUUID,
 	serviceConfig *service.ServiceConfig,
 	serviceRegistration *service.ServiceRegistration,
@@ -491,6 +496,32 @@ func createStartServiceOperation(
 			}()
 			volumeMounts = candidateVolumeMounts
 		}
+
+		var createdPersistentVolumes []string
+		for mountedDirPath, volumeName := range serviceConfig.GetPersistentDirectories() {
+			compositeVolumeName := fmt.Sprintf("%s-%s-%s", enclaveUUID, serviceUUID, volumeName)
+			results, err := dockerManager.GetVolumesByName(ctx, compositeVolumeName)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Unable to retrieve existing volumes for '%s'", compositeVolumeName)
+			}
+			if len(results) == 0 {
+				if err := dockerManager.CreateVolume(ctx, compositeVolumeName, map[string]string{}); err != nil {
+					return nil, stacktrace.Propagate(err, "Unable to create volume '%s'", compositeVolumeName)
+				}
+				createdPersistentVolumes = append(createdPersistentVolumes, compositeVolumeName)
+			}
+			volumeMounts[compositeVolumeName] = mountedDirPath
+		}
+		defer func() {
+			if shouldDeleteVolumes {
+				for _, persistentVolume := range createdPersistentVolumes {
+					if err := dockerManager.RemoveVolume(context.Background(), persistentVolume); err != nil {
+						logrus.Errorf("Starting the service failed so we tried to delete persistent volume '%v' that we created, but doing so threw an error:\n%v", persistentVolume, err)
+						logrus.Errorf("You'll need to delete volume '%v' manually!", persistentVolume)
+					}
+				}
+			}
+		}()
 
 		containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
 			id,

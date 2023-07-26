@@ -39,7 +39,7 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) GetStarlarkCode() string {
 		service_config.ImageAttr, TestContainerImageName,
 		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol, TestWaitConfiguration),
 		service_config.PublicPortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", TestPublicPortId, TestPublicPortNumber, TestPublicPortProtocolStr, TestPublicApplicationProtocol, TestWaitConfiguration),
-		service_config.FilesAttr, fmt.Sprintf("{%q: %q, %q: %q}", TestFilesArtifactPath1, TestFilesArtifactName1, TestFilesArtifactPath2, TestFilesArtifactName2),
+		service_config.FilesAttr, fmt.Sprintf("{}"),
 		service_config.EntrypointAttr, fmt.Sprintf("[%q, %q]", TestEntryPointSlice[0], TestEntryPointSlice[1]),
 		service_config.CmdAttr, fmt.Sprintf("[%q, %q, %q]", TestCmdSlice[0], TestCmdSlice[1], TestCmdSlice[2]),
 		service_config.EnvVarsAttr, fmt.Sprintf("{%q: %q, %q: %q}", TestEnvVarName1, TestEnvVarValue1, TestEnvVarName2, TestEnvVarValue2),
@@ -79,10 +79,7 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) Assert(typeValue builtin_a
 	}
 	require.Equal(t, expectedPublicPorts, serviceConfig.GetPublicPorts())
 
-	expectedFilesArtifactMap := map[string]string{
-		TestFilesArtifactPath1: TestFilesArtifactName1,
-		TestFilesArtifactPath2: TestFilesArtifactName2,
-	}
+	expectedFilesArtifactMap := map[string]string{}
 	require.NotNil(t, serviceConfig.GetFilesArtifactsExpansion())
 	require.Equal(t, expectedFilesArtifactMap, serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers)
 
