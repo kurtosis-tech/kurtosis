@@ -86,8 +86,10 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				} else if instruction.String() == "" {
 					// check if its an exec command then print
 					logrus.Debugf("EXEC INSTRUCTION: %v", instruction.String())
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(instruction.String())
 				} else {
 					logrus.Debugf("INSTRUCTION: %v", instruction.String())
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(instruction.String())
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}
 				if err != nil {
