@@ -151,6 +151,8 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 	//  - Any arg after an optional arg (the parser wouldn't know whether you want the optional arg or the one after it)
 	//  - Any arg after an arg that consumes N args (since the CLI couldn't know where the greedy arg stops and the required arg begins)
 	terminalArgKey := ""
+	numberOfRequiredArgs := 0
+	lastArgIsGreedy := false
 	for _, argConfig := range kurtosisCmd.Args {
 		key := argConfig.Key
 		if terminalArgKey != "" {
@@ -161,8 +163,12 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 				key,
 			))
 		}
+		if !argConfig.IsOptional {
+			numberOfRequiredArgs += 1
+		}
 		if argConfig.IsOptional || argConfig.IsGreedy {
 			terminalArgKey = key
+			lastArgIsGreedy = argConfig.IsGreedy
 		}
 	}
 
@@ -319,7 +325,11 @@ func (kurtosisCmd *LowlevelKurtosisCommand) MustGetCobraCommand() *cobra.Command
 		Long:                  kurtosisCmd.LongDescription,
 		ValidArgsFunction:     getCompletionsFunc,
 		RunE:                  cobraRunFunc,
-		Args:                  cobra.MaximumNArgs(len(kurtosisCmd.Args)),
+	}
+	if lastArgIsGreedy {
+		result.Args = cobra.MinimumNArgs(numberOfRequiredArgs)
+	} else {
+		result.Args = cobra.RangeArgs(numberOfRequiredArgs, len(kurtosisCmd.Args))
 	}
 
 	// Validates that the default values for the declared flags match the declard types, and add them to the Cobra command
