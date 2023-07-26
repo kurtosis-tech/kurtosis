@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/compose-spec/compose-go/loader"
 	"github.com/compose-spec/compose-go/types"
+	"github.com/joho/godotenv"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -17,16 +18,16 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	"os"
 	"strings"
 )
 
 const (
 	enclaveNameFlagKey        = "enclave"
 	pathArgKey                = "file-path"
+	dotEnvPathFlagKey         = "env"
 	isPathArgOptional         = false
 	defaultPathArg            = ""
+	defaultDotEnvPathFlag     = ".env"
 	emptyPrivateIpPlaceholder = ""
 	nonSupportedField         = ""
 	defaultMainFunction       = ""
@@ -43,7 +44,7 @@ var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
 	Flags: []*flags.FlagConfig{
 		{
 			Key:       enclaveNameFlagKey,
-			Shorthand: "e",
+			Shorthand: "n",
 			Default:   autogenerateEnclaveNameKeyword,
 			Usage: fmt.Sprintf(
 				"The enclave name to give the new enclave, which must match regex '%v' "+
@@ -51,6 +52,13 @@ var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
 				enclave_consts.AllowedEnclaveNameCharsRegexStr,
 			),
 			Type: flags.FlagType_String,
+		},
+		{
+			Key:       dotEnvPathFlagKey,
+			Shorthand: "e",
+			Default:   defaultDotEnvPathFlag,
+			Usage:     "The .env file path to be loaded into docker compose",
+			Type:      flags.FlagType_String,
 		},
 	},
 	Args: []*args.ArgConfig{
@@ -71,19 +79,20 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Path arg '%v' is missing", pathArgKey)
 	}
-	file, err := os.Open(path)
-	if err != nil {
-		return stacktrace.Propagate(err, "File on '%v' was not found", path)
-	}
-	defer file.Close()
 
-	// Read the content of the file into a []byte slice
-	content, err := io.ReadAll(file)
+	dotEnvPath, err := flags.GetString(dotEnvPathFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Error reading file: %s\n", err)
+		return stacktrace.Propagate(err, "Dot env path arg '%v' is missing", dotEnvPath)
 	}
 
-	script, err := convertComposeFileToStarlark(content)
+	dotEnvMap, err := godotenv.Read(dotEnvPath)
+	if err != nil {
+		logrus.Debugf("No dotenv file was found: %v", err)
+		dotEnvMap = map[string]string{}
+	}
+	logrus.Infof("Enviroment loaded: %v", dotEnvMap)
+
+	script, err := convertComposeFileToStarlark(path, dotEnvMap)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to convert compose to starlark")
 	}
@@ -101,16 +110,10 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	return nil
 }
 
-func convertComposeFileToStarlark(content []byte) (string, error) {
-	// Load the Compose configuration from the []byte slice
-	config, err := loader.ParseYAML(content)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Error parsing YAML: %s\n", err)
-	}
-
-	// Convert the generic map to a structured compose.Config
+func convertComposeFileToStarlark(path string, dotEnvMap map[string]string) (string, error) {
 	project, err := loader.Load(types.ConfigDetails{ //nolint:exhaustruct
-		ConfigFiles: []types.ConfigFile{{Config: config}},
+		ConfigFiles: []types.ConfigFile{{Filename: path}},
+		Environment: dotEnvMap,
 	})
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error parsing docker compose")
@@ -134,7 +137,22 @@ func convertComposeProjectToStarlark(compose *types.Project) (string, error) {
 			}
 			portPiecesStr = append(portPiecesStr, portStr)
 		}
-		starlarkConfig, err := add.GetServiceConfigStarlark(serviceConfig.Image, strings.Join(portPiecesStr, ","), serviceConfig.Command, serviceConfig.Entrypoint, nonSupportedField, nonSupportedField, emptyPrivateIpPlaceholder)
+		envvarsPiecesStr := []string{}
+		for envKey, envValue := range serviceConfig.Environment {
+			envValueStr := ""
+			if envValue != nil {
+				envValueStr = *envValue
+			}
+			envvarsPiecesStr = append(envvarsPiecesStr, fmt.Sprintf("%s=%s", envKey, envValueStr))
+		}
+		starlarkConfig, err := add.GetServiceConfigStarlark(
+			serviceConfig.Image,
+			strings.Join(portPiecesStr, ","),
+			serviceConfig.Command,
+			serviceConfig.Entrypoint,
+			strings.Join(envvarsPiecesStr, ","),
+			nonSupportedField,
+			emptyPrivateIpPlaceholder)
 		if err != nil {
 			return "", stacktrace.Propagate(err, "Error getting service config starlark for '%v'", serviceConfig)
 		}
@@ -158,7 +176,7 @@ func runStarlark(ctx context.Context, enclaveName string, starlarkScript string)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", enclaveName)
 	}
-	defer output_printers.PrintEnclaveName(enclaveName)
+	defer output_printers.PrintEnclaveName(enclaveCtx.GetEnclaveName())
 
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, defaultMainFunction, starlarkScript, noStarlarkParams, false, 1, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
 	if err != nil {
