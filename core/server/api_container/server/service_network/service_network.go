@@ -104,6 +104,8 @@ type ServiceNetwork interface {
 
 	RunExec(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (*exec_result.ExecResult, error)
 
+	RunExecWithStreamedOutput(ctx context.Context, serviceIdentifier string, userServiceCommand []string) <-chan string
+
 	RunExecs(
 		ctx context.Context,
 		userServiceCommands map[string][]string,

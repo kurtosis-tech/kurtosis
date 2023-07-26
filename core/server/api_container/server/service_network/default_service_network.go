@@ -937,6 +937,49 @@ func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdenti
 		userServiceCommand, serviceIdentifier, serviceUuid)
 }
 
+func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Context, serviceIdentifier string, userServiceCommand []string) <-chan string {
+	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
+	// asynchronous
+	network.mutex.Lock()
+
+	execResponseChan := make(chan string)
+
+	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+	if err != nil {
+		//return nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
+		return execResponseChan
+	}
+
+	serviceUuid := serviceRegistration.GetUUID()
+	_ = map[service.ServiceUUID][]string{
+		serviceUuid: userServiceCommand,
+	}
+
+	go func() {
+		defer func() {
+			network.mutex.Unlock()
+			close(execResponseChan)
+		}()
+
+		//kurtosisBackendExecResponseChan := network.kurtosisBackend.RunUserServiceExecCommandWithStreamedOutput(...)
+		// if isExecOutputFinished := forward... {
+		// }
+		return
+	}()
+	return execResponseChan
+}
+
+func forwardKurtosisBackendExecOutputToServiceNetwork(sourceChan chan string, destChan chan string) bool {
+	isExecOutputFinished := false
+	for execOutput := range sourceChan {
+		if execOutput != "" {
+			isExecOutputFinished = true
+		}
+		destChan <- execOutput
+	}
+	return isExecOutputFinished
+}
+
 func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceCommands map[string][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous

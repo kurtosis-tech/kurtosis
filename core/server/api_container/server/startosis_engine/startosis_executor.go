@@ -84,6 +84,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
 				} else if instruction.String()[0:4] == "exec" { // catch exec commands, handle separately
+					// now return a channel
 					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(instruction.String())
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
@@ -125,3 +126,5 @@ func sendErrorAndFail(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_ap
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromExecutionError(serializedError)
 	starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
 }
+
+// func forwardExecChannelToExecuteChannel
