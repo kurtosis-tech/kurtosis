@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -34,8 +35,8 @@ type EngineManager struct {
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	shouldSendMetrics                         bool
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
-	remoteBackendConfigSupplier               *engine_server_launcher.KurtosisRemoteBackendConfigSupplier
 	clusterConfig                             *resolved_config.KurtosisClusterConfig
+	onBastionHost                             bool
 	// Make engine IP, port, and protocol configurable in the future
 }
 
@@ -77,14 +78,21 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for cluster '%v'", clusterName)
 	}
 	engineBackendConfigSupplier := clusterConfig.GetEngineBackendConfigSupplier()
-	remoteBackendConfigSupplier := clusterConfig.GetKurtosisRemoteBackendConfigSupplier()
+
+	onBastionHost := false
+	currentContext, _ := store.GetContextsConfigStore().GetCurrentContext()
+	if currentContext != nil {
+		if store.IsRemote(currentContext) {
+			onBastionHost = true
+		}
+	}
 
 	return &EngineManager{
 		kurtosisBackend:   kurtosisBackend,
 		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
 		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
-		remoteBackendConfigSupplier:               remoteBackendConfigSupplier,
-		clusterConfig:                             clusterConfig,
+		clusterConfig: clusterConfig,
+		onBastionHost: onBastionHost,
 	}, nil
 }
 
@@ -152,10 +160,10 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		manager.kurtosisBackend,
 		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
-		manager.remoteBackendConfigSupplier,
 		logLevel,
 		engineVersion,
 		clusterType,
+		manager.onBastionHost,
 		poolSize,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
@@ -181,11 +189,11 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		manager.kurtosisBackend,
 		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
-		manager.remoteBackendConfigSupplier,
 		engineImageVersionTag,
 		logLevel,
 		engineVersion,
 		clusterType,
+		manager.onBastionHost,
 		poolSize,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)

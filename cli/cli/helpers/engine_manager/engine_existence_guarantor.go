@@ -46,8 +46,6 @@ type engineExistenceGuarantor struct {
 
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 
-	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier
-
 	engineServerLauncher *engine_server_launcher.EngineServerLauncher
 
 	imageVersionTag string
@@ -65,6 +63,9 @@ type engineExistenceGuarantor struct {
 	//TODO This is a temporary hack we should remove it when centralized logs be implemented in the KubernetesBackend
 	kurtosisClusterType resolved_config.KurtosisClusterType
 
+	// Engine on bastion?
+	onBastionHost bool
+
 	poolSize uint8
 }
 
@@ -74,10 +75,10 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
-	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 	kurtosisClusterType resolved_config.KurtosisClusterType,
+	onBastionHost bool,
 	poolSize uint8,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
@@ -86,11 +87,11 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		kurtosisBackend,
 		shouldSendMetrics,
 		engineServerKurtosisBackendConfigSupplier,
-		kurtosisRemoteBackendConfigSupplier,
 		defaultEngineImageVersionTag,
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
 		kurtosisClusterType,
+		onBastionHost,
 		poolSize,
 	)
 }
@@ -101,11 +102,11 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
-	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 	kurtosisClusterType resolved_config.KurtosisClusterType,
+	onBastionHost bool,
 	poolSize uint8,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
@@ -113,7 +114,6 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		preVisitingMaybeHostMachineIpAndPort: preVisitingMaybeHostMachineIpAndPort,
 		kurtosisBackend:                      kurtosisBackend,
 		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
-		kurtosisRemoteBackendConfigSupplier:       kurtosisRemoteBackendConfigSupplier,
 		engineServerLauncher:                      engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
 		imageVersionTag:                           imageVersionTag,
 		logLevel:                                  logLevel,
@@ -121,6 +121,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		postVisitingHostMachineIpAndPort:          nil, // Will be filled in upon successful visitation
 		shouldSendMetrics:                         shouldSendMetrics,
 		kurtosisClusterType:                       kurtosisClusterType,
+		onBastionHost:                             onBastionHost,
 		poolSize:                                  poolSize,
 	}
 }
@@ -148,7 +149,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
-			guarantor.kurtosisRemoteBackendConfigSupplier,
+			guarantor.onBastionHost,
 			guarantor.poolSize,
 		)
 	} else {
@@ -160,7 +161,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
-			guarantor.kurtosisRemoteBackendConfigSupplier,
+			guarantor.onBastionHost,
 			guarantor.poolSize,
 		)
 	}
