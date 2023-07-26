@@ -1793,7 +1793,7 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint
 	for _, maybeRunningContainer := range containers {
 		containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, maybeRunningContainer.ID)
 		if err != nil {
-			if strings.HasSuffix(err.Error(), "No such container") {
+			if strings.Contains(err.Error(), "No such container") {
 				logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", maybeRunningContainer.ID)
 				continue
 			}
