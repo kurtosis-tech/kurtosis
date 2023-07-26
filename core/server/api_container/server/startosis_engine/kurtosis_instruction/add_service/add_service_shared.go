@@ -97,8 +97,8 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		portIds = append(portIds, portId)
 	}
 	validatorEnvironment.AddPrivatePortIDForService(portIds, serviceName)
-	validatorEnvironment.ConsumeMemory(serviceConfig.GetMinMemoryAllocationMegabytes())
-	validatorEnvironment.ConsumeCPU(serviceConfig.GetMinCPUAllocationMillicpus())
+	validatorEnvironment.ConsumeMemory(serviceConfig.GetMinMemoryAllocationMegabytes(), serviceName)
+	validatorEnvironment.ConsumeCPU(serviceConfig.GetMinCPUAllocationMillicpus(), serviceName)
 	return nil
 }
 

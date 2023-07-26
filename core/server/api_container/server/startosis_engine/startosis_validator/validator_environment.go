@@ -2,6 +2,7 @@ package startosis_validator
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/sirupsen/logrus"
 )
 
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
@@ -15,6 +16,8 @@ type ValidatorEnvironment struct {
 	availableMemoryInMegaBytes   uint64
 	isCpuInformationComplete     bool
 	isMemoryInformationComplete  bool
+	minCPUByServiceName          map[service.ServiceName]uint64
+	minMemoryByServiceName       map[service.ServiceName]uint64
 }
 
 func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores uint64, availableMemoryInMegaBytes uint64, isCpuInformationComplete bool, isMemoryInformationComplete bool) *ValidatorEnvironment {
@@ -32,6 +35,8 @@ func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map
 		availableMemoryInMegaBytes:   availableMemoryInMegaBytes,
 		isCpuInformationComplete:     isCpuInformationComplete,
 		isMemoryInformationComplete:  isMemoryInformationComplete,
+		minMemoryByServiceName:       map[service.ServiceName]uint64{},
+		minCPUByServiceName:          map[service.ServiceName]uint64{},
 	}
 }
 
@@ -97,20 +102,32 @@ func (environment *ValidatorEnvironment) IsNetworkPartitioningEnabled() bool {
 	return environment.isNetworkPartitioningEnabled
 }
 
-func (environment *ValidatorEnvironment) FreeMemory(memoryFreed uint64) {
-	environment.availableMemoryInMegaBytes += memoryFreed
+func (environment *ValidatorEnvironment) FreeMemory(serviceName service.ServiceName) {
+	memoryConsumedByService, found := environment.minMemoryByServiceName[serviceName]
+	if !found {
+		logrus.Warnf("tried to run 'FreeMemory' for service '%v' that didn't exist in validator", serviceName)
+		return
+	}
+	environment.availableMemoryInMegaBytes += memoryConsumedByService
 }
 
-func (environment *ValidatorEnvironment) ConsumeMemory(memoryConsumed uint64) {
+func (environment *ValidatorEnvironment) ConsumeMemory(memoryConsumed uint64, serviceName service.ServiceName) {
 	environment.availableMemoryInMegaBytes -= memoryConsumed
+	environment.minMemoryByServiceName[serviceName] = memoryConsumed
 }
 
-func (environment *ValidatorEnvironment) FreeCPU(cpuFreed uint64) {
-	environment.availableCpuInMilliCores += cpuFreed
+func (environment *ValidatorEnvironment) FreeCPU(serviceName service.ServiceName) {
+	cpuConsumedByService, found := environment.minCPUByServiceName[serviceName]
+	if !found {
+		logrus.Warnf("tried to run 'FreeCPU' for service '%v' that didn't exist in validator", serviceName)
+		return
+	}
+	environment.availableMemoryInMegaBytes += cpuConsumedByService
 }
 
-func (environment *ValidatorEnvironment) ConsumeCPU(cpuConsumed uint64) {
+func (environment *ValidatorEnvironment) ConsumeCPU(cpuConsumed uint64, serviceName service.ServiceName) {
 	environment.availableCpuInMilliCores -= cpuConsumed
+	environment.minCPUByServiceName[serviceName] = cpuConsumed
 }
 
 func (environment *ValidatorEnvironment) HasEnoughCPU(cpuToConsume uint64) bool {

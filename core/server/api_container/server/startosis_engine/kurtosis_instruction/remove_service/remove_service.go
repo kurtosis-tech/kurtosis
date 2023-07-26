@@ -75,9 +75,8 @@ func (builtin *RemoveServiceCapabilities) Validate(_ *builtin_argument.ArgumentV
 	}
 	validatorEnvironment.RemoveServiceName(builtin.serviceName)
 	validatorEnvironment.RemoveServiceFromPrivatePortIDMapping(builtin.serviceName)
-	// TODO(gm) get service configuration here and put the right values
-	validatorEnvironment.FreeMemory(0)
-	validatorEnvironment.FreeMemory(0)
+	validatorEnvironment.FreeMemory(builtin.serviceName)
+	validatorEnvironment.FreeCPU(builtin.serviceName)
 	return nil
 }
 
