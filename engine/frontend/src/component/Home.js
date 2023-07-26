@@ -3,8 +3,9 @@ import TitleBar from "./TitleBar"
 import Main from "./Main"
 import EnclaveInfo from "./EnclaveInfo";
 import ServiceInfo from "./ServiceInfo";
-import CreateEnclave from './CreateEnclave';
+import FileArtifactInfo from './FileArtifactInfo';
 import Enclaves from "./Enclaves";
+import CreateEnclave from "./CreateEnclave"
 import { useEffect, useState } from "react";
 import {getEnclavesFromKurtosis} from "../api/enclave";
 
@@ -38,6 +39,7 @@ const Home = () => {
                     <Route exact path="/enclaves" element={<Enclaves enclaves={enclaves} isLoading={encalveLoading}/>} />
                     <Route path="/enclaves/:name" element={<EnclaveInfo enclaves={enclaves}/>} />
                     <Route path="/enclaves/:name/services/:uuid" element={<ServiceInfo/>} />
+                    <Route path="/enclaves/:name/files/:fileArtifactName" element={<FileArtifactInfo enclaves={enclaves}/>} />
                 </Routes>
             </div>
         </div>
