@@ -58,7 +58,7 @@ func (suite *StartosisAddServiceTestSuite) TestAddServices_FailsIfWeConsumeMoreT
 	require.NotNil(t, err)
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation errors to be non empty")
-	require.Contains(t, runResult.ValidationErrors[0].GetErrorMessage(), "There was an error validating 'add_service' as it required '51200000' megabytes of memory which is more than the amount available")
+	require.Contains(t, runResult.ValidationErrors[0].GetErrorMessage(), "service 'datastore-1' requires '51200000' megabytes of memory but we only have")
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 }
 
@@ -71,6 +71,6 @@ func (suite *StartosisAddServiceTestSuite) TestAddServices_FailsIfWeConsumeMoreT
 	require.NotNil(t, err)
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 	require.NotEmpty(t, runResult.ValidationErrors, "Expected validation errors to be non empty")
-	require.Contains(t, runResult.ValidationErrors[0].GetErrorMessage(), "There was an error validating 'add_service' as it required '1000000' millicores of CPU which is more than the amount available")
+	require.Contains(t, runResult.ValidationErrors[0].GetErrorMessage(), "service 'datastore-1' requires '1000000' millicores of cpu but we only have")
 	require.Nil(t, runResult.ExecutionError, "Unexpected execution error")
 }
