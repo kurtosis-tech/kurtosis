@@ -695,6 +695,7 @@ func (backend *KubernetesKurtosisBackend) createGetApiContainerResourcesOperatio
 
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			// Services (canonical defining resource for an API container)
 			// TODO switch to GetSerivcesByLabels since we're already filtering on enclave ID by virtue of passing in namespace
 			services, err = kubernetes_resource_collectors.CollectMatchingServices(
@@ -714,6 +715,7 @@ func (backend *KubernetesKurtosisBackend) createGetApiContainerResourcesOperatio
 
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			// Pods
 			pods, err = kubernetes_resource_collectors.CollectMatchingPods(
 				ctx,
@@ -732,6 +734,7 @@ func (backend *KubernetesKurtosisBackend) createGetApiContainerResourcesOperatio
 
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			//Role Bindings
 			roleBindings, err = kubernetes_resource_collectors.CollectMatchingRoleBindings(
 				ctx,
@@ -750,6 +753,7 @@ func (backend *KubernetesKurtosisBackend) createGetApiContainerResourcesOperatio
 
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			//Roles
 			roles, err = kubernetes_resource_collectors.CollectMatchingRoles(
 				ctx,
@@ -768,6 +772,7 @@ func (backend *KubernetesKurtosisBackend) createGetApiContainerResourcesOperatio
 
 		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			// Service accounts
 			serviceAccounts, err = kubernetes_resource_collectors.CollectMatchingServiceAccounts(
 				ctx,
