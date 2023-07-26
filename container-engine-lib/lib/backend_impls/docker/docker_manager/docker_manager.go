@@ -1803,7 +1803,8 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint
 		}
 		var containerStats types.Stats
 		if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
-			return 0, 0, stacktrace.Propagate(err, "an error occurred while unmarshalling stats response for container with id '%v'", maybeRunningContainer.ID)
+			logrus.Errorf("an error occurred while unmarshalling stats response for container with id '%v':\n%v", maybeRunningContainer.ID, err)
+			continue
 		}
 		totalUsedMemory += containerStats.MemoryStats.Usage
 		cpuUsageAsFractionOfAvailableCpu += float64(containerStats.CPUStats.CPUUsage.TotalUsage-containerStats.PreCPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage-containerStats.PreCPUStats.SystemUsage)
