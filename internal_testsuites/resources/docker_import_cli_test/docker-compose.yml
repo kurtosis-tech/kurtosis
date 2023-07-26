@@ -1,6 +1,5 @@
 services:
   postgres:
-    container_name: postgres
     image: postgres:latest
     environment:
       - POSTGRES_USER=${POSTGRES_USER}
@@ -11,7 +10,6 @@ services:
     restart: always
 
   pgadmin:
-    container_name: pgadmin
     image: dpage/pgadmin4:latest
     environment:
       - PGADMIN_DEFAULT_EMAIL=${PGADMIN_MAIL}
@@ -19,3 +17,9 @@ services:
     ports:
       - "5050:80"
     restart: always
+
+  simple:
+    image: alpine:latest
+    entrypoint: ["cat", "/tmp/file.txt"]
+    volumes:
+      - "./volume/:/tmp"
