@@ -13,11 +13,11 @@ type ValidatorEnvironment struct {
 	serviceNameToPrivatePortIDs  map[service.ServiceName][]string
 	availableCpuInMilliCores     uint64
 	availableMemoryInMegaBytes   uint64
-	skipCPUResourceCheck         bool
-	skipMemoryResourceCheck      bool
+	isCpuInformationComplete     bool
+	isMemoryInformationComplete  bool
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores uint64, availableMemoryInMegaBytes uint64, skipCPUResourceCheck bool, skipMemoryResourceCheck bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores uint64, availableMemoryInMegaBytes uint64, isCpuInformationComplete bool, isMemoryInformationComplete bool) *ValidatorEnvironment {
 	serviceNamesWithServiceExistence := map[service.ServiceName]ServiceExistence{}
 	for serviceName := range serviceNames {
 		serviceNamesWithServiceExistence[serviceName] = ServiceExistedBeforePackageRun
@@ -30,8 +30,8 @@ func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map
 		serviceNameToPrivatePortIDs:  serviceNameToPrivatePortIds,
 		availableCpuInMilliCores:     availableCpuInMilliCores,
 		availableMemoryInMegaBytes:   availableMemoryInMegaBytes,
-		skipCPUResourceCheck:         skipCPUResourceCheck,
-		skipMemoryResourceCheck:      skipMemoryResourceCheck,
+		isCpuInformationComplete:     isCpuInformationComplete,
+		isMemoryInformationComplete:  isMemoryInformationComplete,
 	}
 }
 
@@ -114,14 +114,14 @@ func (environment *ValidatorEnvironment) ConsumeCPU(cpuConsumed uint64) {
 }
 
 func (environment *ValidatorEnvironment) HasEnoughCPU(cpuToConsume uint64) bool {
-	if environment.skipCPUResourceCheck {
+	if !environment.isCpuInformationComplete {
 		return true
 	}
 	return environment.availableCpuInMilliCores > cpuToConsume
 }
 
 func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64) bool {
-	if environment.skipMemoryResourceCheck {
+	if !environment.isMemoryInformationComplete {
 		return true
 	}
 	return environment.availableMemoryInMegaBytes > memoryToConsume
