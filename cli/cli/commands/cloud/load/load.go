@@ -23,8 +23,9 @@ const (
 	instanceIdentifierArgKey      = "instance-id"
 	instanceIdentifierArgIsGreedy = false
 	kurtosisCloudApiKeyEnvVarArg  = "KURTOSIS_CLOUD_API_KEY"
-	KurtosisCloudApiUrl           = "https://cloud-api.kurtosis.com"
-	kurtosisCloudApiPort          = 8080
+	// TODO: Move the connection information out into a configuration file. Will happen in future work:
+	KurtosisCloudApiUrl  = "cloud.kurtosis.com"
+	kurtosisCloudApiPort = 8080
 )
 
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
