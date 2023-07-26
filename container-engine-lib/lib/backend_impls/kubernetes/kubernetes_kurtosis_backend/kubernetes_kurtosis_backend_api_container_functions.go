@@ -2,6 +2,7 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	kubernetes_manager_consts "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager/consts"
@@ -11,12 +12,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -621,10 +624,50 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 	}
 
 	apiContainerMatchLabels := getApiContainerMatchLabels()
-
+	getApiContainerResourcesOperations := map[operation_parallelizer.OperationID]operation_parallelizer.Operation{}
 	// Per-namespace objects
-	result := map[enclave.EnclaveUUID]*apiContainerKubernetesResources{}
 	for enclaveIdStr, namespacesForEnclaveId := range namespaces {
+		getApiContainerResourcesOperations[operation_parallelizer.OperationID(enclaveIdStr)] = backend.createGetApiContainerResourcesOperation(ctx, namespacesForEnclaveId, enclaveIdStr, apiContainerMatchLabels)
+	}
+	successfulApiContainerResources, failedApiContainerResources := operation_parallelizer.RunOperationsInParallel(getApiContainerResourcesOperations)
+
+	// handle the operations fail case
+	if len(failedApiContainerResources) > 0 {
+		var allOperationsErrors []string
+		var erroredEnclaveUUIDs []enclave.EnclaveUUID
+		for operationID, operationErr := range failedApiContainerResources {
+			enclaveUUID := enclave.EnclaveUUID(operationID)
+			erroredEnclaveUUIDs = append(erroredEnclaveUUIDs, enclaveUUID)
+			operationErrStr := fmt.Sprintf("enclave UUID '%v' - error:%v", enclaveUUID, operationErr.Error())
+			allOperationsErrors = append(allOperationsErrors, operationErrStr)
+		}
+		allOperationsErrorsStr := strings.Join(allOperationsErrors, "\n")
+		return nil, stacktrace.NewError("Running the get API container Kubernetes resources operations for enclaves with UUIDs '%+v' returned errors. Errors:\n%v", erroredEnclaveUUIDs, allOperationsErrorsStr)
+	}
+
+	// handle the successful case
+	result := map[enclave.EnclaveUUID]*apiContainerKubernetesResources{}
+	for operationId, apiContainerResourcesUncasted := range successfulApiContainerResources {
+		enclaveUUID := enclave.EnclaveUUID(operationId)
+		apiContainerResources, ok := apiContainerResourcesUncasted.(*apiContainerKubernetesResources)
+		if !ok {
+			return nil, stacktrace.NewError(
+				"An error occurred downcasting data returned from the get API container Kubernetes resources operation for enclave with UUID: %v. "+
+					"This is a Kurtosis bug. Make sure the desired type is actually being returned in the corresponding operation.", enclaveUUID)
+		}
+		result[enclaveUUID] = apiContainerResources
+	}
+
+	return result, nil
+}
+
+func (backend *KubernetesKurtosisBackend) createGetApiContainerResourcesOperation(
+	ctx context.Context,
+	namespacesForEnclaveId []*apiv1.Namespace,
+	enclaveIdStr string,
+	apiContainerMatchLabels map[string]string,
+) operation_parallelizer.Operation {
+	return func() (interface{}, error) {
 		if len(namespacesForEnclaveId) > 1 {
 			return nil, stacktrace.NewError(
 				"Expected at most one namespace to match enclave ID '%v', but got '%v'",
@@ -651,9 +694,9 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 		}
 
 		servicesForEnclaveId, found := services[enclaveIdStr]
-		if !found {
+		if found {
 			// No API container services in the enclave means that the enclave doesn't have an API container
-			continue
+			return nil, nil
 		}
 		if len(servicesForEnclaveId) == 0 {
 			return nil, stacktrace.NewError(
@@ -818,18 +861,16 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 			serviceAccount = serviceAccountsForEnclaveId[0]
 		}
 
-		enclaveId := enclave.EnclaveUUID(enclaveIdStr)
-
-		result[enclaveId] = &apiContainerKubernetesResources{
+		apiContainerResources := &apiContainerKubernetesResources{
 			service:        service,
 			pod:            pod,
 			role:           role,
 			roleBinding:    roleBinding,
 			serviceAccount: serviceAccount,
 		}
-	}
 
-	return result, nil
+		return apiContainerResources, nil
+	}
 }
 
 func getApiContainerObjectsFromKubernetesResources(
