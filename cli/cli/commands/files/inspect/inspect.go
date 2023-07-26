@@ -169,17 +169,11 @@ func buildTree(fileDescritions []*kurtosis_core_rpc_api_bindings.FileArtifactCon
 		if dir != rootLevelFileStr {
 			subdirs := strings.Split(filepath.Clean(dir), string(filepath.Separator))
 			for _, subdir := range subdirs {
-				curTree = curTree.addBranchIfNotPresent(color.GreenString(subdir))
+				curTree = curTree.addBranchIfNotPresent(color.CyanString(subdir))
 			}
 		}
 		if file != emptyFileStr {
-			var coloredFile string
-			if fileDescription.TextPreview != nil {
-				coloredFile = color.BlueString(file)
-			} else {
-				coloredFile = file
-			}
-			curTree.addNodeIfNotPresent(fmt.Sprintf("%v [%s]", coloredFile, humanReadableSize(fileDescription.GetSize())))
+			curTree.addNodeIfNotPresent(fmt.Sprintf("%v [%s]", file, humanReadableSize(fileDescription.GetSize())))
 		}
 	}
 	return tree.String()
