@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.17](https://github.com/kurtosis-tech/kurtosis/compare/0.80.16...0.80.17) (2023-07-26)
+
+
+### Features
+
+* Add `environment` support for `kurtosis import`  ([#982](https://github.com/kurtosis-tech/kurtosis/issues/982)) ([24e71d1](https://github.com/kurtosis-tech/kurtosis/commit/24e71d1464b9d081056d61f43fde09fba2d8505f)), closes [#981](https://github.com/kurtosis-tech/kurtosis/issues/981)
+
 ## [0.80.16](https://github.com/kurtosis-tech/kurtosis/compare/0.80.15...0.80.16) (2023-07-25)
 
 
