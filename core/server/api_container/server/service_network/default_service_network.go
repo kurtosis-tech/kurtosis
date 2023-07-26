@@ -955,13 +955,16 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 		}
 
 		serviceUuid := serviceRegistration.GetUUID()
-		_ = map[service.ServiceUUID][]string{
+		userServiceCommands := map[service.ServiceUUID][]string{
 			serviceUuid: userServiceCommand,
 		}
-
-		//kurtosisBackendExecResponseChan := network.kurtosisBackend.RunUserServiceExecCommandWithStreamedOutput(...)
-		// if isExecOutputFinished := forward... {
-		// }
+		kurtosisBackendExecOutputChan := network.kurtosisBackend.RunUserServiceExecCommandsWithStreamedOutput(
+			ctx,
+			network.enclaveUuid,
+			userServiceCommands)
+		for execOutputLine := range kurtosisBackendExecOutputChan {
+			execOutputStream <- execOutputLine
+		}
 	}()
 	return execOutputStream
 }
@@ -978,7 +981,8 @@ func forwardKurtosisBackendExecOutputToServiceNetwork(sourceChan <-chan string, 
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
-	///
+	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
+	destChan <- propagatedErr.Error()
 }
 
 func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceCommands map[string][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {

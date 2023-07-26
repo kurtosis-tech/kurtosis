@@ -292,10 +292,7 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommandsWithStreamedOutp
 	enclaveUuid enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceUUID][]string,
 ) chan string {
-	execOutputChan := make(chan string)
-	///....
-
-	return execOutputChan
+	return user_service_functions.RunUserServiceExecCommandWithStreamedOutput(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) error {
