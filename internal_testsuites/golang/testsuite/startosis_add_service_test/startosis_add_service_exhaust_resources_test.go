@@ -1,7 +1,7 @@
 //go:build !kubernetes
 // +build !kubernetes
 
-// We don't run this on Kubernetes as we don't have resource calculation avaialble there
+// We don't run this on Kubernetes as we don't have resource calculation available there
 
 package startosis_add_service_test
 
