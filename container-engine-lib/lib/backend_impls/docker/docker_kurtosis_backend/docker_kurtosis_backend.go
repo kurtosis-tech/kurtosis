@@ -27,6 +27,10 @@ import (
 	"sync"
 )
 
+const (
+	memoryInformationIsComplete = true
+)
+
 type DockerKurtosisBackend struct {
 	dockerManager *docker_manager.DockerManager
 
@@ -494,6 +498,14 @@ func (backend *DockerKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(
 		return stacktrace.Propagate(err, "An error occurred while destroying the deprecated centralized logs collector")
 	}
 	return nil
+}
+
+func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, float64, bool, error) {
+	availableMemory, availableCpu, isCpuInformationComplete, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
+	if err != nil {
+		return 0, false, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
+	}
+	return availableMemory, memoryInformationIsComplete, availableCpu, isCpuInformationComplete, nil
 }
 
 // ====================================================================================================

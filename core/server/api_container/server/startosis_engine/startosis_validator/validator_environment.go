@@ -26,6 +26,8 @@ func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map
 		serviceNames:                 serviceNamesWithServiceExistence,
 		artifactNames:                artifactNames,
 		serviceNameToPrivatePortIDs:  serviceNameToPrivatePortIds,
+		minCpuSumSoFar:               0,
+		minMemorySumSoFar:            0,
 	}
 }
 

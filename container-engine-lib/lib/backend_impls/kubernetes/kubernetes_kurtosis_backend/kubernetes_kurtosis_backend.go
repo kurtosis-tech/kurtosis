@@ -36,6 +36,11 @@ type KubernetesKurtosisBackend struct {
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs
 }
 
+const (
+	isCpuInformationComplete    = false
+	isMemoryInformationCompleye = false
+)
+
 func (backend *KubernetesKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
 	//TODO implement me
 	panic("implement me")
@@ -390,6 +395,11 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
 		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, float64, bool, error) {
+	// both memory and cpu information are incomplete
+	return 0, isMemoryInformationCompleye, 0, isCpuInformationComplete, nil
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {

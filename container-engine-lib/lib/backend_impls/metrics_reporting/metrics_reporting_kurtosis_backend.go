@@ -528,3 +528,11 @@ func (backend *MetricsReportingKurtosisBackend) DestroyDeprecatedCentralizedLogs
 	}
 	return nil
 }
+
+func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, float64, bool, error) {
+	availableMemory, isMemoryInformationComplete, availableCpu, isCpuInformationComplete, err := backend.underlying.GetAvailableCPUAndMemory(ctx)
+	if err != nil {
+		return 0, false, 0, false, stacktrace.Propagate(err, "An error occurred while fetching cpu & memory information from the underlying backend")
+	}
+	return availableMemory, isMemoryInformationComplete, availableCpu, isCpuInformationComplete, nil
+}
