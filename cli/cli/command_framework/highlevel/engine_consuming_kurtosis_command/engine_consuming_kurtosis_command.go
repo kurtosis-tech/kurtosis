@@ -28,10 +28,6 @@ const (
 	metricsClientClosingFunctionKey = "metrics-client-closing-func"
 )
 
-var (
-	enginePortTransportProtocol = portal_api.TransportProtocol_TCP
-)
-
 // This is a convenience KurtosisCommand for commands that interact with the engine
 type EngineConsumingKurtosisCommand struct {
 	// The string for the command (e.g. "inspect" or "ls")
@@ -165,7 +161,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 				}
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &enginePortTransportProtocol)
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &kurtosis_context.EnginePortTransportProtocol)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return nil, stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
 				}

@@ -14,10 +14,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	enginePortTransportProtocol = portal_api.TransportProtocol_TCP
-)
-
 // StatusCmd Suppressing exhaustruct requirement because this struct has ~40 properties
 // nolint: exhaustruct
 var StatusCmd = &cobra.Command{
@@ -36,7 +32,7 @@ func run(cmd *cobra.Command, args []string) error {
 			if portalManager.IsReachable() {
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &enginePortTransportProtocol)
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &kurtosis_context.EnginePortTransportProtocol)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
 				}

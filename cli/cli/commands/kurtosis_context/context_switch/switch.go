@@ -27,10 +27,6 @@ const (
 	restartEngineOnSameVersionIfAnyRunning = true
 )
 
-var (
-	enginePortTransportProtocol = portal_api.TransportProtocol_TCP
-)
-
 var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.ContextSwitchCmdStr,
 	ShortDescription: "Switches to a different Kurtosis context",
@@ -109,7 +105,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 			if store.IsRemote(currentContext) {
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &enginePortTransportProtocol)
+				forwardEnginePortArgs := constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &kurtosis_context.EnginePortTransportProtocol)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
 				}
