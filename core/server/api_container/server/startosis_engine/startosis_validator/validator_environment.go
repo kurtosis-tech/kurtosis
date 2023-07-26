@@ -113,10 +113,16 @@ func (environment *ValidatorEnvironment) ConsumeCPU(cpuConsumed uint64) {
 	environment.availableCpuInMilliCores -= cpuConsumed
 }
 
-func (environment *ValidatorEnvironment) HasEnoughCPU(minCpuConsumed int, freeCPUInBackend int) {
-
+func (environment *ValidatorEnvironment) HasEnoughCPU(cpuToConsume uint64) bool {
+	if environment.skipCPUResourceCheck {
+		return true
+	}
+	return environment.availableCpuInMilliCores > cpuToConsume
 }
 
-func (environment *ValidatorEnvironment) HasEnoughMemory(minMemoryConsumed int, freeMemoryInBackend int) {
-
+func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64) bool {
+	if environment.skipMemoryResourceCheck {
+		return true
+	}
+	return environment.availableMemoryInMegaBytes > memoryToConsume
 }
