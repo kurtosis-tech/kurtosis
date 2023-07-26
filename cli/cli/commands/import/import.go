@@ -8,16 +8,19 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/name_generator"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -31,18 +34,22 @@ const (
 	defaultPathArg            = ""
 	defaultDotEnvPathFlag     = ".env"
 	emptyPrivateIpPlaceholder = ""
-	nonSupportedField         = ""
 	defaultMainFunction       = ""
 	noStarlarkParams          = "{}"
 
 	// Signifies that an enclave name should be auto-generated
 	autogenerateEnclaveNameKeyword = ""
+
+	kurtosisBackendCtxKey = "kurtosis-backend"
+	engineClientCtxKey    = "engine-client"
 )
 
-var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.ImportCmdStr,
-	ShortDescription: "Import external workflows into Kurtosis",
-	LongDescription:  "Import external workflow into Kurtosis (currently only supports Docker Compose)",
+var ImportCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
+	CommandStr:                command_str_consts.ImportCmdStr,
+	ShortDescription:          "Import external workflows into Kurtosis",
+	LongDescription:           "Import external workflow into Kurtosis (currently only supports Docker Compose)",
+	KurtosisBackendContextKey: kurtosisBackendCtxKey,
+	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
 			Key:       enclaveNameFlagKey,
@@ -71,12 +78,16 @@ var ImportCmd = &lowlevel.LowlevelKurtosisCommand{
 			file_system_path_arg.DefaultValidationFunc,
 		),
 	},
-	PreValidationAndRunFunc:  nil,
-	RunFunc:                  run,
-	PostValidationAndRunFunc: nil,
+	RunFunc: run,
 }
 
-func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
+func run(
+	ctx context.Context,
+	_ backend_interface.KurtosisBackend,
+	_ kurtosis_engine_rpc_api_bindings.EngineServiceClient,
+	_ metrics_client.MetricsClient,
+	flags *flags.ParsedFlags,
+	args *args.ParsedArgs) error {
 	path, err := args.GetNonGreedyArg(pathArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Path arg '%v' is missing", pathArgKey)
