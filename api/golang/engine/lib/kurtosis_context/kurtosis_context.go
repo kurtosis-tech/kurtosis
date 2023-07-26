@@ -43,7 +43,7 @@ var (
 	apiContainerLogLevel = logrus.DebugLevel
 
 	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
-	
+
 	EnginePortTransportProtocol = portal_api.TransportProtocol_TCP
 )
 
