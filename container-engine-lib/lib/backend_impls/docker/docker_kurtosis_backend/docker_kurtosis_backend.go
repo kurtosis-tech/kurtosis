@@ -500,7 +500,7 @@ func (backend *DockerKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, float64, bool, error) {
+func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, uint64, bool, error) {
 	availableMemory, availableCpu, isCpuInformationComplete, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
 		return 0, false, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")

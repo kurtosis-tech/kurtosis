@@ -11,11 +11,13 @@ type ValidatorEnvironment struct {
 	serviceNames                 map[service.ServiceName]ServiceExistence
 	artifactNames                map[string]bool
 	serviceNameToPrivatePortIDs  map[service.ServiceName][]string
-	minCpuSumSoFar               int
-	minMemorySumSoFar            int
+	availableCpuInMilliCores     uint64
+	availableMemoryInMegaBytes   uint64
+	skipCPUResourceCheck         bool
+	skipMemoryResourceCheck      bool
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string) *ValidatorEnvironment {
+func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores uint64, availableMemoryInMegaBytes uint64, skipCPUResourceCheck bool, skipMemoryResourceCheck bool) *ValidatorEnvironment {
 	serviceNamesWithServiceExistence := map[service.ServiceName]ServiceExistence{}
 	for serviceName := range serviceNames {
 		serviceNamesWithServiceExistence[serviceName] = ServiceExistedBeforePackageRun
@@ -26,8 +28,10 @@ func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map
 		serviceNames:                 serviceNamesWithServiceExistence,
 		artifactNames:                artifactNames,
 		serviceNameToPrivatePortIDs:  serviceNameToPrivatePortIds,
-		minCpuSumSoFar:               0,
-		minMemorySumSoFar:            0,
+		availableCpuInMilliCores:     availableCpuInMilliCores,
+		availableMemoryInMegaBytes:   availableMemoryInMegaBytes,
+		skipCPUResourceCheck:         skipCPUResourceCheck,
+		skipMemoryResourceCheck:      skipMemoryResourceCheck,
 	}
 }
 
@@ -93,20 +97,20 @@ func (environment *ValidatorEnvironment) IsNetworkPartitioningEnabled() bool {
 	return environment.isNetworkPartitioningEnabled
 }
 
-func (environment *ValidatorEnvironment) AddMinMemoryConsumed(memoryConsumed int) {
-	environment.minMemorySumSoFar += memoryConsumed
+func (environment *ValidatorEnvironment) FreeMemory(memoryFreed uint64) {
+	environment.availableMemoryInMegaBytes += memoryFreed
 }
 
-func (environment *ValidatorEnvironment) RemoveMinMemoryConsumed(memoryConsumed int) {
-	environment.minMemorySumSoFar -= memoryConsumed
+func (environment *ValidatorEnvironment) ConsumeMemory(memoryConsumed uint64) {
+	environment.availableMemoryInMegaBytes -= memoryConsumed
 }
 
-func (environment *ValidatorEnvironment) AddMinCPUConsumed(minCpuConsumed int) {
-	environment.minCpuSumSoFar += minCpuConsumed
+func (environment *ValidatorEnvironment) FreeCPU(cpuFreed uint64) {
+	environment.availableCpuInMilliCores += cpuFreed
 }
 
-func (environment *ValidatorEnvironment) RemoveMinCpuConsumed(memoryConsumed int) {
-	environment.minMemorySumSoFar -= memoryConsumed
+func (environment *ValidatorEnvironment) ConsumeCPU(cpuConsumed uint64) {
+	environment.availableCpuInMilliCores -= cpuConsumed
 }
 
 func (environment *ValidatorEnvironment) HasEnoughCPU(minCpuConsumed int, freeCPUInBackend int) {

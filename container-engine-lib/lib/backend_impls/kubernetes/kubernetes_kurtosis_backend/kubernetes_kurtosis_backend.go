@@ -397,7 +397,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, float64, bool, error) {
+func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, uint64, bool, error) {
 	// both memory and cpu information are incomplete
 	return 0, isMemoryInformationCompleye, 0, isCpuInformationComplete, nil
 }

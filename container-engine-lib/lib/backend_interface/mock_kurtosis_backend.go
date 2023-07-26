@@ -1064,7 +1064,7 @@ func (_c *MockKurtosisBackend_GetAPIContainers_Call) RunAndReturn(run func(conte
 }
 
 // GetAvailableCPUAndMemory provides a mock function with given fields: ctx
-func (_m *MockKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, float64, bool, error) {
+func (_m *MockKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, uint64, bool, error) {
 	ret := _m.Called(ctx)
 
 	var r0 uint64

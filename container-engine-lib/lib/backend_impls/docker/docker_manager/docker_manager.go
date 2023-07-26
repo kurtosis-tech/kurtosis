@@ -125,6 +125,7 @@ const (
 	onlyReturnContainerIds = true
 	coresToMilliCores      = 1000
 	osTypeWindows          = "windows"
+	bytesInMegaBytes       = 1000000
 )
 
 /*
@@ -1069,15 +1070,15 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 	return tarStreamReadCloser, nil
 }
 
-// GetAvailableCPUAndMemory returns free memory in bytes, free cpu in millicores, information on whether cpu information is complete
-func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (uint64, float64, bool, error) {
+// GetAvailableCPUAndMemory returns free memory in megabytes, free cpu in millicores, information on whether cpu information is complete
+func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (uint64, uint64, bool, error) {
 	availableMemoryInBytes, availableCpuInMilliCores, isWindows, err := getFreeMemoryAndCPU(ctx, manager.dockerClient)
 	if err != nil {
 		return 0, 0, false, stacktrace.Propagate(err, "an error occurred while getting available cpu and memory on docker")
 	}
 	// cpu isn't complete on windows but is complete on linux
 	isCpuInformationComplete := !isWindows
-	return availableMemoryInBytes, availableCpuInMilliCores, isCpuInformationComplete, nil
+	return availableMemoryInBytes, uint64(availableCpuInMilliCores), isCpuInformationComplete, nil
 }
 
 // =================================================================================================================
@@ -1814,5 +1815,5 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint
 		// according to Docker Go SDK this could be 0 in Windows; there's no good way to get online cpus
 		totalOnlineCpus = containerStats.CPUStats.OnlineCPUs
 	}
-	return totalFreeMemory - totalUsedMemory, float64(totalOnlineCpus*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu), isWindows, nil
+	return (totalFreeMemory - totalUsedMemory) / bytesInMegaBytes, float64(totalOnlineCpus*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu), isWindows, nil
 }
