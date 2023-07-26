@@ -1445,24 +1445,31 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 		},
 		Statuses: nil,
 	}
-	_, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
+	successfullyDestroyedUuids, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
 	if err != nil {
-		errorResult = stacktrace.Propagate(err, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
+		return stacktrace.Propagate(err, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
 	}
-	if failedToDestroyErr, found := failedToDestroyUuids[serviceUuid]; found {
-		errorResult = stacktrace.Propagate(failedToDestroyErr, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
+	if _, found := successfullyDestroyedUuids[serviceUuid]; found {
+		if len(failedToDestroyUuids) != 0 {
+			return stacktrace.NewError("Service '%s' was successfully destroyed but unexpected error were returned by Kurtosis backend. This is unexpected and should be investigated. Here are the errors:\n%v", serviceUuid, failedToDestroyUuids)
+		}
+	} else {
+		if failedToDestroyErr, found := failedToDestroyUuids[serviceUuid]; found {
+			return stacktrace.Propagate(failedToDestroyErr, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
+		} else {
+			return stacktrace.NewError("Attempted to destroy service '%s' but it was neither marked as successfully destroyed nor errored in the result. This is a Kurtosis bug", serviceUuid)
+		}
 	}
 
 	// deleting the sidecar
 	networkingSidecar, found := network.networkingSidecars[serviceName]
 	if found {
-		delete(network.networkingSidecars, serviceName)
-		err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
-		if errorResult == nil && err != nil {
-			errorResult = stacktrace.Propagate(err, "Attempted to clean up the sidecar for service with name '%s' but an error occurred.", serviceName)
+		if err = network.networkingSidecarManager.Remove(ctx, networkingSidecar); err != nil {
+			return stacktrace.Propagate(err, "Service '%s' was successfully detroyed byt an error occurred cleaning up its sidecar. The sidecar must be deleted manually.", serviceName)
 		}
+		delete(network.networkingSidecars, serviceName)
 	}
-	return errorResult
+	return nil
 }
 
 // startRegisteredServices starts multiple services in parallel
