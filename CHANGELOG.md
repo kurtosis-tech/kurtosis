@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.80.18](https://github.com/kurtosis-tech/kurtosis/compare/0.80.17...0.80.18) (2023-07-26)
+
+
+### Features
+
+* Add volume bind support for `kurtosis import` ([#984](https://github.com/kurtosis-tech/kurtosis/issues/984)) ([391c016](https://github.com/kurtosis-tech/kurtosis/commit/391c016ccaa24d454f746179bd096030596bf363))
+
+
+### Bug Fixes
+
+* CLI args marked as greedy were not greedy ([#975](https://github.com/kurtosis-tech/kurtosis/issues/975)) ([e6ff482](https://github.com/kurtosis-tech/kurtosis/commit/e6ff482cdf6758885ae9a1bdcd3ea6fb5e620a05))
+
 ## [0.80.17](https://github.com/kurtosis-tech/kurtosis/compare/0.80.16...0.80.17) (2023-07-26)
 
 

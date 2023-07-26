@@ -23,7 +23,7 @@ import (
 )
 
 const (
-	dockerClientTimeout = 30 * time.Second
+	dockerClientTimeout = 5 * time.Minute
 
 	noTempDirPrefix    = ""
 	tempDirNamePattern = "kurtosis_backend_tls_*"
