@@ -342,6 +342,17 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		backend.kubernetesManager)
 }
 
+func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommandsWithStreamedOutput(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	userServiceCommands map[service.ServiceUUID][]string,
+) chan string {
+	execOutputChan := make(chan string)
+	///....
+
+	return execOutputChan
+}
+
 func (backend *KubernetesKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {
 	objectAndResources, err := shared_helpers.GetSingleUserServiceObjectsAndResources(ctx, enclaveUuid, serviceUuid, backend.cliModeArgs, backend.apiContainerModeArgs, backend.engineServerModeArgs, backend.kubernetesManager)
 	if err != nil {
