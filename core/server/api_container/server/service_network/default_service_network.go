@@ -941,43 +941,44 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
-
-	execResponseChan := make(chan string)
-
-	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
-	if err != nil {
-		//return nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
-		return execResponseChan
-	}
-
-	serviceUuid := serviceRegistration.GetUUID()
-	_ = map[service.ServiceUUID][]string{
-		serviceUuid: userServiceCommand,
-	}
-
+	execOutputStream := make(chan string)
 	go func() {
 		defer func() {
 			network.mutex.Unlock()
-			close(execResponseChan)
+			close(execOutputStream)
 		}()
+
+		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+		if err != nil {
+			sendErrorAndFail(execOutputStream, err, "An error occurred while getting service registration for identifier", serviceIdentifier)
+			return
+		}
+
+		serviceUuid := serviceRegistration.GetUUID()
+		_ = map[service.ServiceUUID][]string{
+			serviceUuid: userServiceCommand,
+		}
 
 		//kurtosisBackendExecResponseChan := network.kurtosisBackend.RunUserServiceExecCommandWithStreamedOutput(...)
 		// if isExecOutputFinished := forward... {
 		// }
-		return
 	}()
-	return execResponseChan
+	return execOutputStream
 }
 
-func forwardKurtosisBackendExecOutputToServiceNetwork(sourceChan chan string, destChan chan string) bool {
-	isExecOutputFinished := false
+func forwardKurtosisBackendExecOutputToServiceNetwork(sourceChan <-chan string, destChan chan<- string) bool {
+	isExecCmdFinished := false
 	for execOutput := range sourceChan {
-		if execOutput != "" {
-			isExecOutputFinished = true
+		if execOutput != "" { // need to find someway to catch end of file
+			isExecCmdFinished = true
 		}
 		destChan <- execOutput
 	}
-	return isExecOutputFinished
+	return isExecCmdFinished
+}
+
+func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
+	///
 }
 
 func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceCommands map[string][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
