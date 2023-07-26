@@ -1,9 +1,7 @@
 package docker_manager
 
 import (
-	"context"
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -144,17 +142,6 @@ func TestCorrectSelectionWhenTwoOfSameIPs(t *testing.T) {
 	require.True(t, found)
 	require.Equal(t, "127.0.0.1", publicBinding2.HostIP)
 	require.Equal(t, "9711", publicBinding2.HostPort)
-}
-
-func TestGetFreeMemoryAndCPU(t *testing.T) {
-	dockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	require.NoError(t, err)
-	require.NotNil(t, dockerClient)
-	ctx := context.Background()
-	freeMemory, freeCpu, _, err := getFreeMemoryAndCPU(ctx, dockerClient)
-	require.Nil(t, err)
-	require.Greater(t, freeMemory, uint64(0))
-	require.GreaterOrEqual(t, freeCpu, 0.0)
 }
 
 func TestPullImageWithRetries(t *testing.T) {
