@@ -81,6 +81,15 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 			}
 		}
 	}
+
+	if !validatorEnvironment.HasEnoughCPU(serviceConfig.GetMinCPUAllocationMillicpus()) {
+		return startosis_errors.NewValidationError("There was an error validating '%v' as it required '%v' millicores of CPU which is more than the amount available", AddServiceBuiltinName, serviceConfig.GetMinCPUAllocationMillicpus())
+	}
+
+	if !validatorEnvironment.HasEnoughMemory(serviceConfig.GetMinMemoryAllocationMegabytes()) {
+		return startosis_errors.NewValidationError("There was an error validating '%v' as it required '%v' megabytes of memory which is more than the amount available", AddServiceBuiltinName, serviceConfig.GetMinMemoryAllocationMegabytes())
+	}
+
 	validatorEnvironment.AddServiceName(serviceName)
 	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
 	var portIds []string
@@ -88,6 +97,8 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		portIds = append(portIds, portId)
 	}
 	validatorEnvironment.AddPrivatePortIDForService(portIds, serviceName)
+	validatorEnvironment.ConsumeMemory(serviceConfig.GetMinMemoryAllocationMegabytes())
+	validatorEnvironment.ConsumeCPU(serviceConfig.GetMinCPUAllocationMillicpus())
 	return nil
 }
 
