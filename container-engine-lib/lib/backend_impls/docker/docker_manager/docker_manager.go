@@ -1071,14 +1071,13 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 }
 
 // GetAvailableCPUAndMemory returns free memory in megabytes, free cpu in millicores, information on whether cpu information is complete
-func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (uint64, uint64, bool, error) {
-	availableMemoryInBytes, availableCpuInMilliCores, isWindows, err := getFreeMemoryAndCPU(ctx, manager.dockerClient)
+func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (uint64, uint64, error) {
+	availableMemoryInBytes, availableCpuInMilliCores, err := getFreeMemoryAndCPU(ctx, manager.dockerClient)
 	if err != nil {
-		return 0, 0, false, stacktrace.Propagate(err, "an error occurred while getting available cpu and memory on docker")
+		return 0, 0, stacktrace.Propagate(err, "an error occurred while getting available cpu and memory on docker")
 	}
 	// cpu isn't complete on windows but is complete on linux
-	isCpuInformationComplete := !isWindows
-	return availableMemoryInBytes, uint64(availableCpuInMilliCores), isCpuInformationComplete, nil
+	return availableMemoryInBytes, uint64(availableCpuInMilliCores), nil
 }
 
 // =================================================================================================================
@@ -1767,10 +1766,10 @@ func pullImage(ctx context.Context, dockerClient *client.Client, imageName strin
 	return nil, false
 }
 
-// getFreeMemoryAndCPU returns free memory in bytes and free cpu in MilliCores - on windows free cpu computes to 0 due to API limitations
+// getFreeMemoryAndCPU returns free memory in bytes and free cpu in MilliCores
 // this is a best effort calculation, it creates a list of containers and then adds up resources on that list
 // if a container dies during list creation this just ignores it
-func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint64, float64, bool, error) {
+func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint64, float64, error) {
 	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
 		// true - only show ids
 		Quiet:   onlyReturnContainerIds,
@@ -1783,13 +1782,16 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint
 		Filters: filters.Args{},
 	})
 	if err != nil {
-		return 0, 0, false, stacktrace.Propagate(err, "an error occurred while getting a list of all containers")
+		return 0, 0, stacktrace.Propagate(err, "an error occurred while getting a list of all containers")
 	}
-	totalFreeMemory := uint64(0)
+	info, err := dockerClient.Info(ctx)
+	if err != nil {
+		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
+	}
+	totalFreeMemory := uint64(info.MemTotal)
 	totalUsedMemory := uint64(0)
 	cpuUsageAsFractionOfAvailableCpu := float64(0)
-	totalOnlineCpus := uint32(0)
-	isWindows := false
+	totalCPUs := info.NCPU
 	for _, maybeRunningContainer := range containers {
 		containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, maybeRunningContainer.ID)
 		if err != nil {
@@ -1797,28 +1799,14 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint
 				logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", maybeRunningContainer.ID)
 				continue
 			}
-			return 0, 0, false, stacktrace.Propagate(err, "An unexpected error occurred while getting resource usage information about the container with id '%v'", maybeRunningContainer.ID)
+			return 0, 0, stacktrace.Propagate(err, "An unexpected error occurred while getting resource usage information about the container with id '%v'", maybeRunningContainer.ID)
 		}
 		var containerStats types.Stats
 		if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
-			return 0, 0, false, stacktrace.Propagate(err, "an error occurred while unmarshalling stats response for container with id '%v'", maybeRunningContainer.ID)
+			return 0, 0, stacktrace.Propagate(err, "an error occurred while unmarshalling stats response for container with id '%v'", maybeRunningContainer.ID)
 		}
-		if totalFreeMemory != 0 && totalFreeMemory != containerStats.MemoryStats.Limit {
-			return 0, 0, false, stacktrace.NewError("expected response of free available memory to be the same for every container but it changed from '%v' to '%v'", totalFreeMemory, containerStats.MemoryStats.Limit)
-		}
-		totalFreeMemory = containerStats.MemoryStats.Limit
 		totalUsedMemory += containerStats.MemoryStats.Usage
-		// on windows one cannot get the number of CPUs
-		if containerStatsResponse.OSType == osTypeWindows {
-			isWindows = true
-			continue
-		}
 		cpuUsageAsFractionOfAvailableCpu += float64(containerStats.CPUStats.CPUUsage.TotalUsage-containerStats.PreCPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage-containerStats.PreCPUStats.SystemUsage)
-		if totalOnlineCpus != 0 && totalOnlineCpus != containerStats.CPUStats.OnlineCPUs {
-			return 0, 0, false, stacktrace.NewError("expected online cpus to be the same across listed containers got something different changed from '%v' to '%v'", totalOnlineCpus, containerStats.CPUStats.OnlineCPUs)
-		}
-		// according to Docker Go SDK this could be 0 in Windows; there's no good way to get online cpus
-		totalOnlineCpus = containerStats.CPUStats.OnlineCPUs
 	}
-	return (totalFreeMemory - totalUsedMemory) / bytesInMegaBytes, float64(totalOnlineCpus*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu), isWindows, nil
+	return (totalFreeMemory - totalUsedMemory) / bytesInMegaBytes, float64(totalCPUs*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu), nil
 }
