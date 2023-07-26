@@ -649,6 +649,9 @@ func (backend *KubernetesKurtosisBackend) getMatchingApiContainerKubernetesResou
 	result := map[enclave.EnclaveUUID]*apiContainerKubernetesResources{}
 	for operationId, apiContainerResourcesUncasted := range successfulApiContainerResources {
 		enclaveUUID := enclave.EnclaveUUID(operationId)
+		if apiContainerResourcesUncasted == nil {
+			continue
+		}
 		apiContainerResources, ok := apiContainerResourcesUncasted.(*apiContainerKubernetesResources)
 		if !ok {
 			return nil, stacktrace.NewError(
@@ -694,7 +697,7 @@ func (backend *KubernetesKurtosisBackend) createGetApiContainerResourcesOperatio
 		}
 
 		servicesForEnclaveId, found := services[enclaveIdStr]
-		if found {
+		if !found {
 			// No API container services in the enclave means that the enclave doesn't have an API container
 			return nil, nil
 		}
