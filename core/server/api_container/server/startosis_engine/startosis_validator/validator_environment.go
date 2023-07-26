@@ -1,6 +1,7 @@
 package startosis_validator
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/sirupsen/logrus"
 )
@@ -12,15 +13,15 @@ type ValidatorEnvironment struct {
 	serviceNames                 map[service.ServiceName]ServiceExistence
 	artifactNames                map[string]bool
 	serviceNameToPrivatePortIDs  map[service.ServiceName][]string
-	availableCpuInMilliCores     uint64
-	availableMemoryInMegaBytes   uint64
+	availableCpuInMilliCores     compute_resources.CpuMilliCores
+	availableMemoryInMegaBytes   compute_resources.MemoryInMegaBytes
 	isCpuInformationComplete     bool
 	isMemoryInformationComplete  bool
-	minCPUByServiceName          map[service.ServiceName]uint64
-	minMemoryByServiceName       map[service.ServiceName]uint64
+	minCPUByServiceName          map[service.ServiceName]compute_resources.CpuMilliCores
+	minMemoryByServiceName       map[service.ServiceName]compute_resources.MemoryInMegaBytes
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores uint64, availableMemoryInMegaBytes uint64, isCpuInformationComplete bool, isMemoryInformationComplete bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isCpuInformationComplete bool, isMemoryInformationComplete bool) *ValidatorEnvironment {
 	serviceNamesWithServiceExistence := map[service.ServiceName]ServiceExistence{}
 	for serviceName := range serviceNames {
 		serviceNamesWithServiceExistence[serviceName] = ServiceExistedBeforePackageRun
@@ -35,8 +36,8 @@ func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map
 		availableMemoryInMegaBytes:   availableMemoryInMegaBytes,
 		isCpuInformationComplete:     isCpuInformationComplete,
 		isMemoryInformationComplete:  isMemoryInformationComplete,
-		minMemoryByServiceName:       map[service.ServiceName]uint64{},
-		minCPUByServiceName:          map[service.ServiceName]uint64{},
+		minMemoryByServiceName:       map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
+		minCPUByServiceName:          map[service.ServiceName]compute_resources.CpuMilliCores{},
 	}
 }
 
@@ -112,8 +113,8 @@ func (environment *ValidatorEnvironment) FreeMemory(serviceName service.ServiceN
 }
 
 func (environment *ValidatorEnvironment) ConsumeMemory(memoryConsumed uint64, serviceName service.ServiceName) {
-	environment.availableMemoryInMegaBytes -= memoryConsumed
-	environment.minMemoryByServiceName[serviceName] = memoryConsumed
+	environment.availableMemoryInMegaBytes -= compute_resources.MemoryInMegaBytes(memoryConsumed)
+	environment.minMemoryByServiceName[serviceName] = compute_resources.MemoryInMegaBytes(memoryConsumed)
 }
 
 func (environment *ValidatorEnvironment) FreeCPU(serviceName service.ServiceName) {
@@ -122,24 +123,24 @@ func (environment *ValidatorEnvironment) FreeCPU(serviceName service.ServiceName
 		logrus.Warnf("tried to run 'FreeCPU' for service '%v' that didn't exist in validator", serviceName)
 		return
 	}
-	environment.availableMemoryInMegaBytes += cpuConsumedByService
+	environment.availableCpuInMilliCores += cpuConsumedByService
 }
 
 func (environment *ValidatorEnvironment) ConsumeCPU(cpuConsumed uint64, serviceName service.ServiceName) {
-	environment.availableCpuInMilliCores -= cpuConsumed
-	environment.minCPUByServiceName[serviceName] = cpuConsumed
+	environment.availableCpuInMilliCores -= compute_resources.CpuMilliCores(cpuConsumed)
+	environment.minCPUByServiceName[serviceName] = compute_resources.CpuMilliCores(cpuConsumed)
 }
 
 func (environment *ValidatorEnvironment) HasEnoughCPU(cpuToConsume uint64) bool {
 	if !environment.isCpuInformationComplete {
 		return true
 	}
-	return environment.availableCpuInMilliCores > cpuToConsume
+	return environment.availableCpuInMilliCores > compute_resources.CpuMilliCores(cpuToConsume)
 }
 
 func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64) bool {
 	if !environment.isMemoryInformationComplete {
 		return true
 	}
-	return environment.availableMemoryInMegaBytes > memoryToConsume
+	return environment.availableMemoryInMegaBytes > compute_resources.MemoryInMegaBytes(memoryToConsume)
 }

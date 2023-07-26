@@ -3,6 +3,7 @@ package backend_interface
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -388,5 +389,5 @@ type KurtosisBackend interface {
 	DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error
 
 	// GetAvailableCPUAndMemory - gets available memory in megabytes and cpu in millicores
-	GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, uint64, bool, error)
+	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error)
 }

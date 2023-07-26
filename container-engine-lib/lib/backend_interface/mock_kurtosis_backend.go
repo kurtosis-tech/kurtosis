@@ -3,9 +3,10 @@
 package backend_interface
 
 import (
-	context "context"
-
 	api_container "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
+	compute_resources "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
+
+	context "context"
 
 	enclave "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 
@@ -1064,21 +1065,21 @@ func (_c *MockKurtosisBackend_GetAPIContainers_Call) RunAndReturn(run func(conte
 }
 
 // GetAvailableCPUAndMemory provides a mock function with given fields: ctx
-func (_m *MockKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, uint64, bool, error) {
+func (_m *MockKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error) {
 	ret := _m.Called(ctx)
 
-	var r0 uint64
+	var r0 compute_resources.MemoryInMegaBytes
 	var r1 bool
-	var r2 uint64
+	var r2 compute_resources.CpuMilliCores
 	var r3 bool
 	var r4 error
-	if rf, ok := ret.Get(0).(func(context.Context) (uint64, bool, uint64, bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error)); ok {
 		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context) uint64); ok {
+	if rf, ok := ret.Get(0).(func(context.Context) compute_resources.MemoryInMegaBytes); ok {
 		r0 = rf(ctx)
 	} else {
-		r0 = ret.Get(0).(uint64)
+		r0 = ret.Get(0).(compute_resources.MemoryInMegaBytes)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context) bool); ok {
@@ -1087,10 +1088,10 @@ func (_m *MockKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (ui
 		r1 = ret.Get(1).(bool)
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context) uint64); ok {
+	if rf, ok := ret.Get(2).(func(context.Context) compute_resources.CpuMilliCores); ok {
 		r2 = rf(ctx)
 	} else {
-		r2 = ret.Get(2).(uint64)
+		r2 = ret.Get(2).(compute_resources.CpuMilliCores)
 	}
 
 	if rf, ok := ret.Get(3).(func(context.Context) bool); ok {
@@ -1126,12 +1127,12 @@ func (_c *MockKurtosisBackend_GetAvailableCPUAndMemory_Call) Run(run func(ctx co
 	return _c
 }
 
-func (_c *MockKurtosisBackend_GetAvailableCPUAndMemory_Call) Return(_a0 uint64, _a1 bool, _a2 uint64, _a3 bool, _a4 error) *MockKurtosisBackend_GetAvailableCPUAndMemory_Call {
+func (_c *MockKurtosisBackend_GetAvailableCPUAndMemory_Call) Return(_a0 compute_resources.MemoryInMegaBytes, _a1 bool, _a2 compute_resources.CpuMilliCores, _a3 bool, _a4 error) *MockKurtosisBackend_GetAvailableCPUAndMemory_Call {
 	_c.Call.Return(_a0, _a1, _a2, _a3, _a4)
 	return _c
 }
 
-func (_c *MockKurtosisBackend_GetAvailableCPUAndMemory_Call) RunAndReturn(run func(context.Context) (uint64, bool, uint64, bool, error)) *MockKurtosisBackend_GetAvailableCPUAndMemory_Call {
+func (_c *MockKurtosisBackend_GetAvailableCPUAndMemory_Call) RunAndReturn(run func(context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error)) *MockKurtosisBackend_GetAvailableCPUAndMemory_Call {
 	_c.Call.Return(run)
 	return _c
 }

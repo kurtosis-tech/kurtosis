@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -397,7 +398,7 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, uint64, bool, error) {
+func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error) {
 	// both memory and cpu information are incomplete
 	return 0, isMemoryInformationCompleye, 0, isCpuInformationComplete, nil
 }

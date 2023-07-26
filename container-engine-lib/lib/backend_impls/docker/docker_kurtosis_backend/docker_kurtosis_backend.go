@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
@@ -500,12 +501,12 @@ func (backend *DockerKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (uint64, bool, uint64, bool, error) {
+func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
 		return 0, false, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
 	}
-	return availableMemory, resourceInformationIsComplete, availableCpu, resourceInformationIsComplete, nil
+	return compute_resources.MemoryInMegaBytes(availableMemory), resourceInformationIsComplete, compute_resources.CpuMilliCores(availableCpu), resourceInformationIsComplete, nil
 }
 
 // ====================================================================================================
