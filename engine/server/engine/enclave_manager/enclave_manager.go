@@ -102,11 +102,11 @@ func CreateEnclaveManager(
 // is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-	// If blank, will use the default
+// If blank, will use the default
 	engineVersion string,
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-	//If blank, will use a random one
+//If blank, will use a random one
 	enclaveName string,
 	isPartitioningEnabled bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
@@ -480,21 +480,51 @@ func (manager *EnclaveManager) getEnclavesWithoutMutex(
 		return nil, stacktrace.Propagate(err, "Error thrown retrieving enclaves")
 	}
 
+	wg := sync.WaitGroup{}
+
+	errChan := make(chan error)
+	defer close(errChan)
+
+	allCallsDoneChan := make(chan bool)
+	defer close(allCallsDoneChan)
+
+	enclaveInfoChan := make(chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo, len(enclaves))
+
 	result := map[enclave.EnclaveUUID]*kurtosis_engine_rpc_api_bindings.EnclaveInfo{}
-	for enclaveId, enclaveObj := range enclaves {
+	for _, enclaveObj := range enclaves {
 		// filter idle enclaves because these were not created by users
 		if isIdleEnclave(*enclaveObj) {
 			continue
 		}
-
-		enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, enclaveObj)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting information about enclave '%v'", enclaveId)
-		}
-		result[enclaveId] = enclaveInfo
+		wg.Add(1)
+		go manager.addEnclaveInfoIntoTheChan(ctx, *enclaveObj, enclaveInfoChan, errChan, &wg)
 	}
-	return result, nil
 
+	// this subroutine wait for all the others subroutine finished ok
+	go func() {
+		wg.Wait()
+		// send the "all calls have been finished" signal
+		allCallsDoneChan <- true
+		// close the channel because it won't receive more data and we need to iterate it then
+		close(enclaveInfoChan)
+	}()
+
+	select {
+	case <-allCallsDoneChan:
+		for enclaveInfo := range enclaveInfoChan {
+			result[enclave.EnclaveUUID(enclaveInfo.GetEnclaveUuid())] = enclaveInfo
+		}
+		break
+	case err, isChanOpen := <-errChan:
+		if isChanOpen {
+			return nil, stacktrace.NewError("The error chan has been closed; this is a bug in Kurtosis")
+		}
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting enclaves")
+		}
+	}
+
+	return result, nil
 }
 
 func (manager *EnclaveManager) Close() error {
@@ -503,6 +533,27 @@ func (manager *EnclaveManager) Close() error {
 	}
 	logrus.Debugf("Enclave manager sucessfully closed")
 	return nil
+}
+
+// ====================================================================================================
+//
+//	Private helper functions
+//
+// ====================================================================================================
+
+func (manager *EnclaveManager) addEnclaveInfoIntoTheChan(
+	ctx context.Context,
+	enclaveObject enclave.Enclave,
+	enclaveInfoChan chan<- *kurtosis_engine_rpc_api_bindings.EnclaveInfo,
+	errChan chan<- error,
+	wg *sync.WaitGroup,
+) {
+	defer wg.Done()
+	enclaveInfo, err := getEnclaveInfoForEnclave(ctx, manager.kurtosisBackend, &enclaveObject)
+	if err != nil {
+		errChan <- stacktrace.Propagate(err, "An error occurred getting information about enclave with UUID '%v'", enclaveObject.GetUUID())
+	}
+	enclaveInfoChan <- enclaveInfo
 }
 
 func getEnclaveByEnclaveIdFilter(enclaveUuid enclave.EnclaveUUID) *enclave.EnclaveFilters {
