@@ -149,5 +149,5 @@ func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64,
 	if environment.availableMemoryInMegaBytes >= compute_resources.MemoryInMegaBytes(memoryToConsume) {
 		return nil
 	}
-	return startosis_errors.NewValidationError("service '%v' requires '%v' megabytes of memory but we only have '%v' millicores available", serviceNameForLogging, memoryToConsume, environment.availableCpuInMilliCores)
+	return startosis_errors.NewValidationError("service '%v' requires '%v' megabytes of memory but we only have '%v' megabytes available", serviceNameForLogging, memoryToConsume, environment.availableCpuInMilliCores)
 }
