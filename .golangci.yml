@@ -1,6 +1,7 @@
 linters:
   enable:
     - exhaustruct
+    - exportloopref
   disable:
     - staticcheck # TODO(vcolombo): Remove this
   max-issues-per-linter: 0
