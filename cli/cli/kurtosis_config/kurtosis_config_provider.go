@@ -1,6 +1,7 @@
 package kurtosis_config
 
 import (
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/email_collector"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -35,6 +36,7 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*resolved
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred executing init interactive config")
 		}
+		email_collector.AskUserForEmailAndLogIt()
 
 		if err = configProvider.configStore.SetConfig(kurtosisConfig); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred setting Kurtosis config")
