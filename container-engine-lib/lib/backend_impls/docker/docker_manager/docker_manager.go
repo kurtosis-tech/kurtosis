@@ -1088,12 +1088,12 @@ func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (com
 // =================================================================================================================
 func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (bool, error) {
 	referenceArg := filters.Arg("reference", imageName)
-	filters := filters.NewArgs(referenceArg)
+	filterArgs := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
 		ctx,
 		types.ImageListOptions{
 			All:     true,
-			Filters: filters,
+			Filters: filterArgs,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to list images.")
