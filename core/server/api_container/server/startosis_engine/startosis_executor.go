@@ -9,12 +9,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"math"
 	"sync"
 )
 
 const (
 	progressMsg      = "Execution in progress"
 	ParallelismParam = "PARALLELISM"
+	// we put a three megabyte limit here as there is a 4 megabyte limit on what can be recieved
+	threeMegaByteLimit = 3 * 1024 * 1024
 )
 
 var (
@@ -91,7 +94,17 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					return
 				}
 				if instructionOutput != nil {
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(*instructionOutput)
+					lengthOfInstructionOutput := len(*instructionOutput)
+					totalNumberOfChunks := int(math.Ceil(float64(lengthOfInstructionOutput) / float64(threeMegaByteLimit)))
+					for i := 0; i < totalNumberOfChunks; i++ {
+						start := i * threeMegaByteLimit
+						end := (i + 1) * threeMegaByteLimit
+						if end > lengthOfInstructionOutput {
+							end = lengthOfInstructionOutput
+						}
+						chunk := (*instructionOutput)[start:end]
+						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(chunk)
+					}
 				}
 				// mark the instruction as executed and add it to the current instruction plan
 				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
