@@ -126,8 +126,8 @@ const (
 
 	onlyReturnContainerIds = true
 	coresToMilliCores      = 1000
-	osTypeWindows          = "windows"
 	bytesInMegaBytes       = 1000000
+	dontStreamStats        = false
 )
 
 /*
@@ -1802,7 +1802,7 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 		wg.Add(1)
 		go func(containerId string) {
 			defer wg.Done()
-			containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, containerId)
+			containerStatsResponse, err := dockerClient.ContainerStats(ctx, containerId, dontStreamStats)
 			if err != nil {
 				if strings.Contains(err.Error(), "No such container") {
 					logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", containerId)
