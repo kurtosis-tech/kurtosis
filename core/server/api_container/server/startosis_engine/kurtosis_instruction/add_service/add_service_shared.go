@@ -81,6 +81,15 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 			}
 		}
 	}
+
+	if validationErr := validatorEnvironment.HasEnoughCPU(serviceConfig.GetMinCPUAllocationMillicpus(), serviceName); validationErr != nil {
+		return validationErr
+	}
+
+	if validationErr := validatorEnvironment.HasEnoughMemory(serviceConfig.GetMinMemoryAllocationMegabytes(), serviceName); validationErr != nil {
+		return validationErr
+	}
+
 	validatorEnvironment.AddServiceName(serviceName)
 	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
 	var portIds []string
@@ -88,6 +97,8 @@ func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEn
 		portIds = append(portIds, portId)
 	}
 	validatorEnvironment.AddPrivatePortIDForService(portIds, serviceName)
+	validatorEnvironment.ConsumeMemory(serviceConfig.GetMinMemoryAllocationMegabytes(), serviceName)
+	validatorEnvironment.ConsumeCPU(serviceConfig.GetMinCPUAllocationMillicpus(), serviceName)
 	return nil
 }
 

@@ -25,6 +25,8 @@ type StartosisValidator struct {
 
 	serviceNetwork    service_network.ServiceNetwork
 	fileArtifactStore *enclave_data_directory.FilesArtifactStore
+
+	backend *backend_interface.KurtosisBackend
 }
 
 func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, serviceNetwork service_network.ServiceNetwork, fileArtifactStore *enclave_data_directory.FilesArtifactStore) *StartosisValidator {
@@ -33,6 +35,7 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 		dockerImagesValidator,
 		serviceNetwork,
 		fileArtifactStore,
+		kurtosisBackend,
 	}
 }
 
@@ -54,11 +57,22 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 			return
 		}
 
+		availableMemoryInMegaBytes, availableCpuInMilliCores, isResourceInformationComplete, err := (*validator.backend).GetAvailableCPUAndMemory(ctx)
+		if err != nil {
+			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Couldn't create validator environment as we ran into errors fetching information about available cpu & memory")
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+			return
+		}
+
 		environment := startosis_validator.NewValidatorEnvironment(
 			validator.serviceNetwork.IsNetworkPartitioningEnabled(),
 			serviceNames,
 			validator.fileArtifactStore.ListFiles(),
-			serviceNamePortIdMapping)
+			serviceNamePortIdMapping,
+			availableCpuInMilliCores,
+			availableMemoryInMegaBytes,
+			isResourceInformationComplete)
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAndUpdateEnvironment(instructionsSequence, environment, starlarkRunResponseLineStream)
