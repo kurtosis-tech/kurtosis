@@ -82,7 +82,6 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 
 			instruction := scheduledInstruction.GetInstruction()
 			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()))
-			logrus.Warnf("CURRENT INSTRUCTION: %s", instruction.String())
 			starlarkRunResponseLineStream <- canonicalInstruction
 
 			if !dryRun {
@@ -92,10 +91,11 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
 				} else if instruction.String()[0:4] == "exec" {
+					logrus.Debugf("FOUND EXEC COMMAND (STARTOSIS EXECUTOR): %s", instruction.String())
 					execOutputChan, streamErr := instruction.ExecuteWithStreamedOutput(ctx)
 					if execOutputChan != nil {
 						for execOutputLine := range execOutputChan {
-							logrus.Warnf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
+							logrus.Debugf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
 							starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 								execOutputLine, instructionNumber, totalNumberOfInstructions)
 						}

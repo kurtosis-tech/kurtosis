@@ -192,6 +192,7 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
+	logrus.Debugf("CALLING SERVICE NETWORK (EXEC RECIPE)")
 	execOutputChan := serviceNetwork.RunExecWithStreamedOutput(ctx, serviceNameStr, commandWithRuntimeValue)
 	//if err != nil {
 	//	//return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceName)
