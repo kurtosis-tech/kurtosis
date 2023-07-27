@@ -1,4 +1,4 @@
-package config_initializer
+package kurtosis_config
 
 import (
 	"fmt"
@@ -11,7 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func InitConfig() (*resolved_config.KurtosisConfig, error) {
+func initConfig() (*resolved_config.KurtosisConfig, error) {
 	printMetricsPreface()
 
 	userMetricsElectionEventBacklog := user_metrics_election_event_backlog.GetUserMetricsElectionEventBacklog()
