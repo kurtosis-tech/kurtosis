@@ -1,6 +1,7 @@
 package kurtosis_config
 
 import (
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_initializer"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -31,7 +32,7 @@ func (configProvider *KurtosisConfigProvider) GetOrInitializeConfig() (*resolved
 			return nil, stacktrace.Propagate(err, "An error occurred getting config")
 		}
 	} else {
-		kurtosisConfig, err = initConfig()
+		kurtosisConfig, err = config_initializer.InitConfig()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred executing init interactive config")
 		}
