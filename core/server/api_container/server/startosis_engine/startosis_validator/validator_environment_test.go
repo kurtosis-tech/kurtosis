@@ -20,7 +20,7 @@ const (
 
 func TestMultiplePortIdsForValidation(t *testing.T) {
 	emptyInitialMapping := map[service.ServiceName][]string{}
-	validatorEnvironment := NewValidatorEnvironment(false, nil, nil, emptyInitialMapping, availableCpuInMilliCores, availableMemoryInBytes, isResourceInformationComplete, isResourceInformationComplete)
+	validatorEnvironment := NewValidatorEnvironment(false, nil, nil, emptyInitialMapping, availableCpuInMilliCores, availableMemoryInBytes, isResourceInformationComplete)
 	portIds := []string{
 		fooPortId,
 		fizzPortId,
