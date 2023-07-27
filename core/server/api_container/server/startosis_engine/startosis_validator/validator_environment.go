@@ -137,7 +137,7 @@ func (environment *ValidatorEnvironment) HasEnoughCPU(cpuToConsume uint64, servi
 	if environment.availableCpuInMilliCores >= compute_resources.CpuMilliCores(cpuToConsume) {
 		return nil
 	}
-	return startosis_errors.NewValidationError("service '%v' requires '%v' millicores of cpu but we only have '%v' millicores available", serviceNameForLogging, cpuToConsume, environment.availableCpuInMilliCores)
+	return startosis_errors.NewValidationError("service '%v' requires '%v' millicores of cpu but based on our calculation we will only have '%v' millicores available at the time we start the service", serviceNameForLogging, cpuToConsume, environment.availableCpuInMilliCores)
 }
 
 func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64, serviceNameForLogging service.ServiceName) *startosis_errors.ValidationError {
@@ -147,5 +147,5 @@ func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64,
 	if environment.availableMemoryInMegaBytes >= compute_resources.MemoryInMegaBytes(memoryToConsume) {
 		return nil
 	}
-	return startosis_errors.NewValidationError("service '%v' requires '%v' megabytes of memory but we only have '%v' megabytes available", serviceNameForLogging, memoryToConsume, environment.availableMemoryInMegaBytes)
+	return startosis_errors.NewValidationError("service '%v' requires '%v' megabytes of memory but based on our calculation we will only have '%v' megabytes available at the time we start the service", serviceNameForLogging, memoryToConsume, environment.availableMemoryInMegaBytes)
 }
