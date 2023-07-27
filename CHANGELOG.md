@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.80.20](https://github.com/kurtosis-tech/kurtosis/compare/0.80.19...0.80.20) (2023-07-27)
+
+
+### Features
+
+* add `kurtosis cloud load to CLI` ([#882](https://github.com/kurtosis-tech/kurtosis/issues/882)) ([b2db8c9](https://github.com/kurtosis-tech/kurtosis/commit/b2db8c98d7b17c96d53c28154739e624fe48a63d))
+* ask user for email on first run of Kurtosis ([#1001](https://github.com/kurtosis-tech/kurtosis/issues/1001)) ([0f33b5b](https://github.com/kurtosis-tech/kurtosis/commit/0f33b5b4a3286d9f3a973ad55f7479f17a1782a6))
+* Start engine remotely with remote backend config when the context is remote ([#963](https://github.com/kurtosis-tech/kurtosis/issues/963)) ([6816d1f](https://github.com/kurtosis-tech/kurtosis/commit/6816d1f01d99e80609f808b57d2250ebc0b1c8bd))
+* validate min cpu & min memory are well under whats available ([#988](https://github.com/kurtosis-tech/kurtosis/issues/988)) ([768e95d](https://github.com/kurtosis-tech/kurtosis/commit/768e95d2dbeb7a554a97cff8b6650e734dccd66a))
+
+
+### Bug Fixes
+
+* Normalize destroy enclave in all tests ([#976](https://github.com/kurtosis-tech/kurtosis/issues/976)) ([20b635a](https://github.com/kurtosis-tech/kurtosis/commit/20b635a2fc7efc958e7bd7e007b2db65762b8b1c))
+
 ## [0.80.19](https://github.com/kurtosis-tech/kurtosis/compare/0.80.18...0.80.19) (2023-07-26)
 
 
