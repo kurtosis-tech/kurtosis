@@ -955,18 +955,21 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 			sendErrorAndFail(execOutputStream, err, "An error occurred while getting service registration for identifier")
 			return
 		}
-
+		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 4)
 		serviceUuid := serviceRegistration.GetUUID()
 		userServiceCommands := map[service.ServiceUUID][]string{
 			serviceUuid: userServiceCommand,
 		}
+		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 4)
 		kurtosisBackendExecOutputChan := network.kurtosisBackend.RunUserServiceExecCommandsWithStreamedOutput(
 			ctx,
 			network.enclaveUuid,
 			userServiceCommands)
+		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 5)
 		for execOutputLine := range kurtosisBackendExecOutputChan {
 			execOutputStream <- execOutputLine
 		}
+		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 7)
 	}()
 	return execOutputStream
 }

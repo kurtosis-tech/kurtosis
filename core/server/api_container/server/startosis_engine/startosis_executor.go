@@ -99,6 +99,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}
 				if err != nil {
+					logrus.Debugf("ERR IS NOT NIL: %d", 1)
 					sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
 					return
 				}
