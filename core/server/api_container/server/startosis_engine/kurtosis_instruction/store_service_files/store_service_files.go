@@ -126,6 +126,10 @@ func (builtin *StoreServiceFilesCapabilities) Execute(ctx context.Context, _ *bu
 	return instructionResult, nil
 }
 
+func (builtin *StoreServiceFilesCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
+	return nil, nil
+}
+
 func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual

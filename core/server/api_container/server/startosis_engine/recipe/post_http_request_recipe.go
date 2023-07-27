@@ -177,6 +177,15 @@ func (recipe *PostHttpRequestRecipe) Execute(
 	return requestResultDict, nil
 }
 
+func (recipe *PostHttpRequestRecipe) ExecuteWithStreamedOutput(
+	ctx context.Context,
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	serviceName service.ServiceName,
+) (<-chan string, error) {
+	return nil, nil
+}
+
 func (recipe *PostHttpRequestRecipe) ResultMapToString(resultMap map[string]starlark.Comparable) string {
 	return resultMapToStringInternal(resultMap)
 }

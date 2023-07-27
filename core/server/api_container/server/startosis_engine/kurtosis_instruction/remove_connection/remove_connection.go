@@ -89,6 +89,10 @@ func (builtin *RemoveConnectionCapabilities) Execute(ctx context.Context, _ *bui
 	return instructionResult, nil
 }
 
+func (builtin *RemoveConnectionCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
+	return nil, nil
+}
+
 func (builtin *RemoveConnectionCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	return enclave_structure.InstructionIsNotResolvableAbort
 }

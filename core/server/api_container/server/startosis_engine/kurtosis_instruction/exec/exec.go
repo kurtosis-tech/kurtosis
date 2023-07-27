@@ -173,6 +173,26 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	return instructionResult, err
 }
 
+func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
+	execOutputChan, err := builtin.execRecipe.ExecuteWithStreamedOutput(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error executing exec recipe")
+	}
+	//if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
+	//	errorMessage := fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+	//	return nil, stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
+	//}
+
+	//builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
+	//instructionResult := builtin.execRecipe.ResultMapToString(result)
+	return execOutputChan, err
+}
+
+func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
+	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
+	destChan <- propagatedErr.Error()
+}
+
 func (builtin *ExecCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual && enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
 		return enclave_structure.InstructionIsUpdate

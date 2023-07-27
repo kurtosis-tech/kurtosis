@@ -25,6 +25,8 @@ type KurtosisInstruction interface {
 
 	Execute(ctx context.Context) (*string, error)
 
+	ExecuteWithStreamedOutput(ctx context.Context) (<-chan string, error)
+
 	// String is only for easy printing in logs and error messages.
 	// Most of the time it will just call GetCanonicalInstruction()
 	String() string

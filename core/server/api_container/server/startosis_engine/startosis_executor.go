@@ -15,6 +15,13 @@ import (
 const (
 	progressMsg      = "Execution in progress"
 	ParallelismParam = "PARALLELISM"
+
+	CommandAttr        = "command"
+	ExecRecipeTypeName = "ExecRecipe"
+
+	execOutputKey   = "output"
+	execExitCodeKey = "code"
+	newlineChar     = "\n"
 )
 
 var (
@@ -84,10 +91,13 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
 				} else if instruction.String()[0:4] == "exec" {
-					// exec processing
-					// now return a channel
-					// for loop to forwards things over that channel
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(instruction.String())
+					execOutputChan, streamErr := instruction.ExecuteWithStreamedOutput(ctx)
+					if execOutputChan != nil {
+						for execOutputLine := range execOutputChan {
+							starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(execOutputLine)
+						}
+					}
+					err = streamErr
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}

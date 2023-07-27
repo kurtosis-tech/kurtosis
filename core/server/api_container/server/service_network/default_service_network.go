@@ -969,17 +969,6 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 	return execOutputStream
 }
 
-func forwardKurtosisBackendExecOutputToServiceNetwork(sourceChan <-chan string, destChan chan<- string) bool {
-	isExecCmdFinished := false
-	for execOutput := range sourceChan {
-		if execOutput != "" { // need to find someway to catch end of file
-			isExecCmdFinished = true
-		}
-		destChan <- execOutput
-	}
-	return isExecCmdFinished
-}
-
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
 	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
 	destChan <- propagatedErr.Error()

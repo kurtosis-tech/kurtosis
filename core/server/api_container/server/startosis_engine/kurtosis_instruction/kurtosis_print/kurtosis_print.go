@@ -88,6 +88,10 @@ func (builtin *PrintCapabilities) Execute(_ context.Context, _ *builtin_argument
 	return maybeSerializedArgsWithRuntimeValue, nil
 }
 
+func (builtin *PrintCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
+	return nil, nil
+}
+
 func (builtin *PrintCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual
