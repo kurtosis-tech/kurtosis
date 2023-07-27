@@ -197,6 +197,10 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	return instructionResult.String(), nil
 }
 
+func (builtin *AddServicesCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
+	return nil, nil
+}
+
 func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		for serviceName := range builtin.serviceConfigs {

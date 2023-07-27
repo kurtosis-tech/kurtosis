@@ -153,7 +153,7 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 	return instructionResult, nil
 }
 
-func (builtin *AddServiceCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
+func (builtin *AddServiceCapabilities) ExecuteWithStreamedOutput(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
 	return nil, nil
 }
 

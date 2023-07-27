@@ -78,7 +78,7 @@ func (builtin *kurtosisPlanInstructionInternal) Execute(ctx context.Context) (*s
 }
 
 func (builtin *kurtosisPlanInstructionInternal) ExecuteWithStreamedOutput(ctx context.Context) (<-chan string, error) {
-	return nil, nil
+	return builtin.capabilities.ExecuteWithStreamedOutput(ctx, builtin.GetArguments())
 }
 
 func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other kurtosis_instruction.KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
