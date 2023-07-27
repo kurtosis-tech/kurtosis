@@ -24,7 +24,6 @@ require (
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230427161256-0c1550da27b5
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.19
@@ -51,6 +50,8 @@ require (
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230712110324-ce92904bb514
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230727152609-768e95d2dbeb
+	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230727131617-20b635a2fc7e
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230727131823-40788a849ce5
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230406131103-c466e04f1b89
 	github.com/mholt/archiver v3.1.1+incompatible
