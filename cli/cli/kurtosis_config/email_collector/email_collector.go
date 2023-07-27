@@ -35,6 +35,10 @@ func AskUserForEmailAndLogIt() {
 func logUserEmailAddressAsMetric(userEmail string) {
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
+	if err != nil {
+		logrus.Debugf("an error occurred while getting users metrics id:\n%v", err)
+		return
+	}
 	logger := logrus.StandardLogger()
 
 	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
@@ -51,7 +55,12 @@ func logUserEmailAddressAsMetric(userEmail string) {
 		logrus.Debugf("tried creating a metrics client but failed with error:\n%v", err)
 		return
 	}
-	defer metricsClientCloseFunc()
+	defer func() {
+		err = metricsClientCloseFunc()
+		if err != nil {
+			logrus.Debugf("an error occurred while closing the metrics client:\n%v", err)
+		}
+	}()
 	if err = metricsClient.TrackUserSharedEmailAddress(userEmail); err != nil {
 		logrus.Debugf("tried sending user email address as metric but failed:\n%v", err)
 		return
