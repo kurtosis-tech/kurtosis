@@ -91,11 +91,10 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				if scheduledInstruction.IsExecuted() {
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
-					//} else if instruction.String()[0:4] == "exec" {
-					//	logrus.Debugf("EXEC COMMAND AT STARTOSIS EXECUTOR LEVEL: %d", 1)
-					//	logrus.Debugf("INSTRUCTION TYPE %v", instruction)
-					//	execOutputChan, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
-					//	logrus.Debugf("LEAVING EXEC COMMAND AT STARTOSIS EXECUTOR LEVEL: %d", 1)
+				} else if instruction.String()[0:4] == "exec" {
+					logrus.Debugf("EXEC COMMAND AT STARTOSIS EXECUTOR LEVEL: %d", 1)
+					execOutputChan, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
+					logrus.Debugf("LEAVING EXEC COMMAND AT STARTOSIS EXECUTOR LEVEL: %d", 1)
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}
