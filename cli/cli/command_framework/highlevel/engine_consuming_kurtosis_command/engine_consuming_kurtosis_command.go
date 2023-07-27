@@ -2,7 +2,9 @@ package engine_consuming_kurtosis_command
 
 import (
 	"context"
+	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -147,12 +149,21 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 
 		currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
 		if err == nil {
-			if store.IsRemote(currentContext) && !portal_manager.NewPortalManager().IsReachable() {
-				return nil, stacktrace.NewError("Kurtosis is setup to use the remote context '%s' but Kurtosis "+
-					"Portal is unreachable for this context. Make sure Kurtosis Portal is running locally with 'kurtosis "+
-					"%s %s' and potentially 'kurtosis %s %s'. If it is, make sure the remote server is running and healthy",
-					currentContext.GetName(), command_str_consts.PortalCmdStr, command_str_consts.PortalStatusCmdStr,
-					command_str_consts.PortalCmdStr, command_str_consts.PortalStartCmdStr)
+			if store.IsRemote(currentContext) {
+				portalManager := portal_manager.NewPortalManager()
+				if !portalManager.IsReachable() {
+					return nil, stacktrace.NewError("Kurtosis is setup to use the remote context '%s' but Kurtosis "+
+						"Portal is unreachable for this context. Make sure Kurtosis Portal is running locally with 'kurtosis "+
+						"%s %s' and potentially 'kurtosis %s %s'. If it is, make sure the remote server is running and healthy",
+						currentContext.GetName(), command_str_consts.PortalCmdStr, command_str_consts.PortalStatusCmdStr,
+						command_str_consts.PortalCmdStr, command_str_consts.PortalStartCmdStr)
+				}
+				// Forward the remote engine port to the local machine
+				portalClient := portalManager.GetClient()
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &kurtosis_context.EnginePortTransportProtocol)
+				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
+					return nil, stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
+				}
 			}
 		} else {
 			logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")

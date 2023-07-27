@@ -10,9 +10,10 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
@@ -45,6 +46,8 @@ const (
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
 	webappPortAddr            = ":9711"
+
+	remoteBackendConfigFilename = "remote_backend_config.json"
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -107,9 +110,21 @@ func runMain() error {
 		return stacktrace.NewError("Backend configuration parameters are null - there must be backend configuration parameters.")
 	}
 
-	remoteContextBackendConfig := serverArgs.KurtosisRemoteBackendConfig
+	var remoteBackendConfigMaybe *configs.KurtosisRemoteBackendConfig
+	if serverArgs.OnBastionHost {
+		// Read remote backend config from the local filesystem
+		remoteBackendConfigPath := filepath.Join(consts.EngineConfigLocalDir, remoteBackendConfigFilename)
+		remoteBackendConfigBytes, err := os.ReadFile(remoteBackendConfigPath)
+		if err != nil {
+			return stacktrace.Propagate(err, "The remote backend config '%s' cannot be found", remoteBackendConfigPath)
+		}
+		remoteBackendConfigMaybe, err = configs.NewRemoteBackendConfigFromJSON(remoteBackendConfigBytes)
+		if err != nil {
+			return stacktrace.Propagate(err, "The remote backend config '%s' is not valid JSON", remoteBackendConfigPath)
+		}
+	}
 
-	kurtosisBackend, err := getKurtosisBackend(ctx, serverArgs.KurtosisBackendType, backendConfig, remoteContextBackendConfig)
+	kurtosisBackend, err := getKurtosisBackend(ctx, serverArgs.KurtosisBackendType, backendConfig, remoteBackendConfigMaybe)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
@@ -216,12 +231,12 @@ func getEnclaveManager(
 	return enclaveManager, nil
 }
 
-func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}, remoteBackendConfigMaybe *remote_context_backend.KurtosisRemoteBackendConfig) (backend_interface.KurtosisBackend, error) {
+func getKurtosisBackend(ctx context.Context, kurtosisBackendType args.KurtosisBackendType, backendConfig interface{}, remoteBackendConfigMaybe *configs.KurtosisRemoteBackendConfig) (backend_interface.KurtosisBackend, error) {
 	var kurtosisBackend backend_interface.KurtosisBackend
 	var err error
 	switch kurtosisBackendType {
 	case args.KurtosisBackendType_Docker:
-		kurtosisBackend, err = remote_context_backend.GetContextAwareKurtosisBackend(remoteBackendConfigMaybe, apiContainerModeArgsForKurtosisBackend)
+		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgsForKurtosisBackend, remoteBackendConfigMaybe)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting local Docker Kurtosis backend")
 		}

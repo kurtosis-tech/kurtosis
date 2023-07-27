@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.80.19](https://github.com/kurtosis-tech/kurtosis/compare/0.80.18...0.80.19) (2023-07-26)
+
+
+### Bug Fixes
+
+* Fix docker image pull hanging forever ([#994](https://github.com/kurtosis-tech/kurtosis/issues/994)) ([fd00d79](https://github.com/kurtosis-tech/kurtosis/commit/fd00d79efca2a7d8b3b04ce9d1f4d988dc1d956b))
+
 ## [0.80.18](https://github.com/kurtosis-tech/kurtosis/compare/0.80.17...0.80.18) (2023-07-26)
 
 

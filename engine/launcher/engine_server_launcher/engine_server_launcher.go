@@ -36,7 +36,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
-	kurtosisRemoteBackendConfigSupplier *KurtosisRemoteBackendConfigSupplier,
+	onBastionHost bool,
 	poolSize uint8,
 ) (
 	resultPublicIpAddr net.IP,
@@ -51,7 +51,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 		backendConfigSupplier,
-		kurtosisRemoteBackendConfigSupplier,
+		onBastionHost,
 		poolSize,
 	)
 	if err != nil {
@@ -68,7 +68,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
-	kurtosisRemoteBackendConfigSupplier *KurtosisRemoteBackendConfigSupplier,
+	onBastionHost bool,
 	poolSize uint8,
 ) (
 	resultPublicIpAddr net.IP,
@@ -76,10 +76,6 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	resultErr error,
 ) {
 	kurtosisBackendType, kurtosisBackendConfig := backendConfigSupplier.getKurtosisBackendConfig()
-	remoteBackendConfigMaybe, err := kurtosisRemoteBackendConfigSupplier.GetOptionalRemoteConfig()
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Error retrieving current Kurtosis context")
-	}
 	argsObj, err := args.NewEngineServerArgs(
 		grpcListenPortNum,
 		logLevel.String(),
@@ -88,7 +84,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		didUserAcceptSendingMetrics,
 		kurtosisBackendType,
 		kurtosisBackendConfig,
-		remoteBackendConfigMaybe,
+		onBastionHost,
 		poolSize,
 	)
 	if err != nil {
