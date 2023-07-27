@@ -14,7 +14,7 @@ import (
 
 const (
 	defaultEmailValue     = ""
-	emailValueInputPrompt = "(Optional) Share your email address for occasional updates & outreach for product feedback from Kurtosis:"
+	emailValueInputPrompt = "(Optional) Share your email address for occasional updates & outreach for product feedback from Kurtosis"
 	sendUserMetrics       = true
 	flushQueueOnEachEvent = false
 )
