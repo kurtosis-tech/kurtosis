@@ -94,7 +94,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					execOutputChan, streamErr := instruction.ExecuteWithStreamedOutput(ctx)
 					if execOutputChan != nil {
 						for execOutputLine := range execOutputChan {
-							starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(execOutputLine)
+							starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
+								execOutputLine, instructionNumber, totalNumberOfInstructions)
 						}
 					}
 					err = streamErr

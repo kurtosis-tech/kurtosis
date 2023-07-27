@@ -77,6 +77,10 @@ func (builtin *kurtosisPlanInstructionInternal) Execute(ctx context.Context) (*s
 	return &result, nil
 }
 
+func (builtin *kurtosisPlanInstructionInternal) ExecuteWithStreamedOutput(ctx context.Context) (<-chan string, error) {
+	return nil, nil
+}
+
 func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other kurtosis_instruction.KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	isAnAbortAllInstruction := builtin.capabilities.TryResolveWith(false, nil, enclaveComponents) == enclave_structure.InstructionIsNotResolvableAbort
 	if isAnAbortAllInstruction {
