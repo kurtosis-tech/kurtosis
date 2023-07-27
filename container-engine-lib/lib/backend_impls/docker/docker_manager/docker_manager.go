@@ -1075,10 +1075,12 @@ func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, image
 	filters := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
 		ctx,
-		types.ImageListOptions{
-			All:     true,
-			Filters: filters,
+		types.ImageListOptions{ //nolint:exhaustruct
+			All: true,
 		})
+	logrus.Infof("filters: %v", filters)
+	logrus.Infof("imageName: %v", imageName)
+	logrus.Infof("imageName: %v", images)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to list images.")
 	}

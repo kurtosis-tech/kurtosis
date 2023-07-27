@@ -41,7 +41,7 @@ if "${push_to_registry_container}"; then
   buildx_platform_arg='linux/arm64/v8,linux/amd64'
   push_flag='--push'
 else
-  buildx_platform_arg='linux/amd64' # TODO: infer the local arch if that's reasonable
+  buildx_platform_arg='linux/arm64/v8' # TODO: infer the local arch if that's reasonable
   push_flag='--load'
 fi
 echo "Building docker image for architecture '${buildx_platform_arg}' with flag '${push_flag}'"

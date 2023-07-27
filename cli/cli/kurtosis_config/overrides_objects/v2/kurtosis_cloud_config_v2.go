@@ -1,4 +1,4 @@
-package v3
+package v2
 
 /*
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -9,8 +9,8 @@ package v3
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 */
 
-type KurtosisClusterConfigV3 struct {
-	Type *string `yaml:"type,omitempty"`
-	// If we ever get another type of cluster that has configuration, this will need to be polymorphically deserialized
-	Config *KubernetesClusterConfigV3 `yaml:"config,omitempty"`
+type KurtosisCloudConfigV2 struct {
+	ApiUrl           *string `yaml:"api-url,omitempty"`
+	Port             *uint   `yaml:"port,omitempty"`
+	CertificateChain *string `yaml:"certificate-chain,omitempty"`
 }
