@@ -8,7 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
-	"golang.org/x/crypto/ssh/terminal"
+	terminal "golang.org/x/term"
 	"io"
 	"os"
 )
@@ -44,11 +44,16 @@ func GetShellOnUserService(ctx context.Context, enclaveId enclave.EnclaveUUID, s
 	// I just followed the solution here: https://stackoverflow.com/questions/58732588/accept-user-input-os-stdin-to-container-using-golang-docker-sdk-interactive-co
 	// This channel is being used to know the user exited the ContainerExec
 	finishChan := make(chan bool)
+	// TODO(victor.colombo): Decide what to do with errors that happen inside these go routines
 	go func() {
+		//nolint:errcheck
 		io.Copy(os.Stdout, newReader)
 		finishChan <- true
 	}()
+
+	//nolint:errcheck
 	go io.Copy(os.Stderr, newReader)
+	//nolint:errcheck
 	go io.Copy(newConnection, os.Stdin)
 
 	stdinFd := int(os.Stdin.Fd())
@@ -59,6 +64,7 @@ func GetShellOnUserService(ctx context.Context, enclaveId enclave.EnclaveUUID, s
 			// print error
 			return stacktrace.Propagate(err, "An error occurred making STDIN stream raw")
 		}
+		//nolint:errcheck
 		defer terminal.Restore(stdinFd, oldState)
 	}
 

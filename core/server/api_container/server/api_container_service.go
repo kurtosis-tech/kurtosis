@@ -30,7 +30,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -532,7 +531,7 @@ func (apicService ApiContainerService) waitForEndpointAvailability(
 		body := resp.Body
 		defer body.Close()
 
-		bodyBytes, err := ioutil.ReadAll(body)
+		bodyBytes, err := io.ReadAll(body)
 
 		if err != nil {
 			return stacktrace.Propagate(err,

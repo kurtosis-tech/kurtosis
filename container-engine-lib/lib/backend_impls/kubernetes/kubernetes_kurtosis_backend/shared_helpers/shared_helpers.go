@@ -86,20 +86,8 @@ func (apiContainerModeArgs *ApiContainerModeArgs) GetOwnNamespaceName() string {
 	return apiContainerModeArgs.ownNamespaceName
 }
 
-type EngineServerModeArgs struct {
-	/*
-		StorageClass name to be used for volumes in the cluster
-		StorageClasses must be defined by a cluster administrator.
-		passes this in when starting Kurtosis with Kubernetes.
-	*/
-	storageClassName string
-
-	/*
-		Enclave availability must be set and defined by a cluster administrator.
-		The user passes this in when starting Kurtosis with Kubernetes.
-	*/
-	enclaveDataVolumeSizeInMegabytes uint
-}
+// EngineServerModeArgs TODO(victor.colombo): Can we remove this?
+type EngineServerModeArgs struct{}
 
 type UserServiceObjectsAndKubernetesResources struct {
 	// Should never be nil because 1 Kubernetes service = 1 Kurtosis service registration

@@ -3,8 +3,8 @@ package package_io
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
+	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"reflect"
 )
