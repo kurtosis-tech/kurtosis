@@ -82,6 +82,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 
 			instruction := scheduledInstruction.GetInstruction()
 			canonicalInstruction := binding_constructors.NewStarlarkRunResponseLineFromInstruction(instruction.GetCanonicalInstruction(scheduledInstruction.IsExecuted()))
+			logrus.Warnf("CURRENT INSTRUCTION: %s", instruction.String())
 			starlarkRunResponseLineStream <- canonicalInstruction
 
 			if !dryRun {
