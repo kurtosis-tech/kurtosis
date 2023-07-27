@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"strings"
 )
@@ -174,6 +175,7 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 }
 
 func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
+	logrus.Debugf("ENTERING EXEC")
 	execOutputChan, err := builtin.execRecipe.ExecuteWithStreamedOutput(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error executing exec recipe")

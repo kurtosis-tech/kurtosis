@@ -940,6 +940,7 @@ func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdenti
 func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Context, serviceIdentifier string, userServiceCommand []string) <-chan string {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
+	logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK")
 	network.mutex.Lock()
 	execOutputStream := make(chan string)
 	go func() {

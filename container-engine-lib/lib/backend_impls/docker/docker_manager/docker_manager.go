@@ -926,6 +926,7 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 }
 
 func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.Context, containerId string, command []string) chan string {
+	logrus.Debugf("ENTERING DOCKER MANAGER")
 	execOutputChan := make(chan string)
 	go func() {
 		defer func() {
