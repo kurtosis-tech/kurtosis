@@ -75,6 +75,8 @@ func (builtin *RemoveServiceCapabilities) Validate(_ *builtin_argument.ArgumentV
 	}
 	validatorEnvironment.RemoveServiceName(builtin.serviceName)
 	validatorEnvironment.RemoveServiceFromPrivatePortIDMapping(builtin.serviceName)
+	validatorEnvironment.FreeMemory(builtin.serviceName)
+	validatorEnvironment.FreeCPU(builtin.serviceName)
 	return nil
 }
 

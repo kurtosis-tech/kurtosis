@@ -20,6 +20,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -121,6 +122,11 @@ const (
 	linuxAmd64              = "linux/amd64"
 	defaultPlatform         = ""
 	architectureErrorString = "no matching manifest for linux/arm64/v8"
+
+	onlyReturnContainerIds = true
+	coresToMilliCores      = 1000
+	osTypeWindows          = "windows"
+	bytesInMegaBytes       = 1000000
 )
 
 /*
@@ -1065,6 +1071,16 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 	return tarStreamReadCloser, nil
 }
 
+// GetAvailableCPUAndMemory returns free memory in megabytes, free cpu in millicores, information on whether cpu information is complete
+func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, error) {
+	availableMemoryInBytes, availableCpuInMilliCores, err := getFreeMemoryAndCPU(ctx, manager.dockerClient)
+	if err != nil {
+		return 0, 0, stacktrace.Propagate(err, "an error occurred while getting available cpu and memory on docker")
+	}
+	// cpu isn't complete on windows but is complete on linux
+	return compute_resources.MemoryInMegaBytes(availableMemoryInBytes), compute_resources.CpuMilliCores(availableCpuInMilliCores), nil
+}
+
 // =================================================================================================================
 //
 //	INSTANCE HELPER FUNCTIONS
@@ -1749,4 +1765,50 @@ func pullImage(ctx context.Context, dockerClient *client.Client, imageName strin
 	}
 	logrus.Tracef("No error pulling '%s' for platform '%s'. Returning", imageName, platform)
 	return nil, false
+}
+
+// getFreeMemoryAndCPU returns free memory in bytes and free cpu in MilliCores
+// this is a best effort calculation, it creates a list of containers and then adds up resources on that list
+// if a container dies during list creation this just ignores it
+func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, error) {
+	info, err := dockerClient.Info(ctx)
+	if err != nil {
+		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
+	}
+	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
+		// true - only show ids
+		Quiet:   onlyReturnContainerIds,
+		Size:    false,
+		All:     false,
+		Latest:  false,
+		Since:   "",
+		Before:  "",
+		Limit:   0,
+		Filters: filters.Args{},
+	})
+	if err != nil {
+		return 0, 0, stacktrace.Propagate(err, "an error occurred while getting a list of all containers")
+	}
+	totalFreeMemory := uint64(info.MemTotal)
+	totalUsedMemory := uint64(0)
+	cpuUsageAsFractionOfAvailableCpu := float64(0)
+	totalCPUs := info.NCPU
+	for _, maybeRunningContainer := range containers {
+		containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, maybeRunningContainer.ID)
+		if err != nil {
+			if strings.Contains(err.Error(), "No such container") {
+				logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", maybeRunningContainer.ID)
+				continue
+			}
+			return 0, 0, stacktrace.Propagate(err, "An unexpected error occurred while getting resource usage information about the container with id '%v'", maybeRunningContainer.ID)
+		}
+		var containerStats types.Stats
+		if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
+			logrus.Errorf("an error occurred while unmarshalling stats response for container with id '%v':\n%v", maybeRunningContainer.ID, err)
+			continue
+		}
+		totalUsedMemory += containerStats.MemoryStats.Usage
+		cpuUsageAsFractionOfAvailableCpu += float64(containerStats.CPUStats.CPUUsage.TotalUsage-containerStats.PreCPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage-containerStats.PreCPUStats.SystemUsage)
+	}
+	return compute_resources.MemoryInMegaBytes((totalFreeMemory - totalUsedMemory) / bytesInMegaBytes), compute_resources.CpuMilliCores(float64(totalCPUs*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu)), nil
 }
