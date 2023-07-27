@@ -171,7 +171,7 @@ func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *ku
 	isSuccessful := false
 	isStarlarkRunFinished := false
 	for executionResponseLine := range sourceChan {
-		logrus.Debugf("Received kurtosis execution line Kurtosis:\n%v", executionResponseLine)
+		logrus.Warnf("Received kurtosis execution line Kurtosis:\n%v", executionResponseLine)
 		fmt.Printf("EXEC OUTPUT AT STARTOSIS RUNNER LEVEL: %s", executionResponseLine)
 		if executionResponseLine.GetRunFinishedEvent() != nil {
 			isStarlarkRunFinished = true
