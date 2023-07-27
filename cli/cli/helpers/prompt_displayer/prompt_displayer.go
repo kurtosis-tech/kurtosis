@@ -37,10 +37,6 @@ func DisplayConfirmationPromptAndGetBooleanResult(label string, defaultValue str
 	}
 	logrus.Debugf("User input: '%v'", userInput)
 
-	if userInput != "" {
-		return "", nil
-	}
-
 	return userInput, nil
 }
 
