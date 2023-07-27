@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -35,6 +36,10 @@ type KubernetesKurtosisBackend struct {
 	// Will only be filled out for the API container
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs
 }
+
+const (
+	isResourceInformationComplete = false
+)
 
 func (backend *KubernetesKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
 	//TODO implement me
@@ -390,6 +395,11 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
 		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
+	// TODO - implement resource calculation in kubernetes
+	return 0, 0, isResourceInformationComplete, nil
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {
