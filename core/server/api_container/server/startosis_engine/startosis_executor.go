@@ -91,9 +91,9 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				if scheduledInstruction.IsExecuted() {
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
-				} else if instruction.String()[0:4] == "exec" {
-					logrus.Debugf("EXEC COMMAND AT STARTOSIS EXECUTOR LEVEL: %d", 1)
-					execOutputChan, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
+					//} else if instruction.String()[0:4] == "exec" {
+					//	logrus.Debugf("EXEC COMMAND AT STARTOSIS EXECUTOR LEVEL: %d", 1)
+					//	execOutputChan, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}

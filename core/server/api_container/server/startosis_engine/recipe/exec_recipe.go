@@ -90,6 +90,7 @@ func (recipe *ExecRecipe) Execute(
 	serviceName service.ServiceName,
 ) (map[string]starlark.Comparable, error) {
 	// parse argument
+	logrus.Debugf("ENTERING EXEC RECIPE STREAMED")
 	commandStarlarkList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
 		recipe.KurtosisValueTypeDefault, CommandAttr)
 	if interpretationErr != nil {
@@ -152,7 +153,7 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	serviceName service.ServiceName,
 ) (<-chan string, error) {
-	logrus.Debugf("ENTERING EXEC RECIPE")
+	logrus.Debugf("ENTERING EXEC RECIPE STREAMED")
 	// parse argument
 	commandStarlarkList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
 		recipe.KurtosisValueTypeDefault, CommandAttr)

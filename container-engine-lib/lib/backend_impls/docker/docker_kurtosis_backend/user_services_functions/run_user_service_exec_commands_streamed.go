@@ -16,7 +16,7 @@ func RunUserServiceExecCommandWithStreamedOutput(
 	userServiceCommands map[service.ServiceUUID][]string,
 	dockerManager *docker_manager.DockerManager,
 ) chan string {
-	logrus.Debugf("ENTERING DOCKER KURTOSIS BACKEND")
+	logrus.Debugf("ENTERING DOCKER KURTOSIS BACKEND STREAMED")
 	execOutputChan := make(chan string)
 	go func() {
 		defer func() {

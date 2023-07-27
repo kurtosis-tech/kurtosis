@@ -899,6 +899,7 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	}
 	defer attachResp.Close()
 
+	logrus.Debugf("ABOUT TO START READING FROM DOCKER CONNECTION")
 	// NOTE: We have to demultiplex the logs that come back
 	// This will keep reading until it receives EOF
 	concurrentWriter := concurrent_writer.NewConcurrentWriter(logOutput)
@@ -979,7 +980,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		defer attachResp.Close()
 
 		// Stream output from docker through channel
-		logrus.Debugf("ABOUT TO START READING FROM DOCKER CONNECTION")
+		logrus.Debugf("ABOUT TO START STREAMING FROM DOCKER CONNECTION")
 		reader := bufio.NewReader(attachResp.Reader)
 		for {
 			execOutputLine, err := reader.ReadString(endOfLineDelimiter)
