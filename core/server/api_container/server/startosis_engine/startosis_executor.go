@@ -105,6 +105,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(*instructionOutput)
 				}
 				if execOutputChan != nil {
+					logrus.Debugf("EXEC OUTPUT CHANNEL IS NOT NIL: %d", 1)
 					for execOutputLine := range execOutputChan {
 						logrus.Debugf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
 						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
