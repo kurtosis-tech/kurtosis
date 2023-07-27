@@ -3,6 +3,7 @@ package kurtosis_config
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
@@ -11,8 +12,21 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	defaultEmailValue     = ""
+	emailValueInputPrompt = "Hey! Thank you for downloading Kurtosis. If you are interested in getting updates from us; please share your email"
+)
+
 func initConfig() (*resolved_config.KurtosisConfig, error) {
 	printMetricsPreface()
+
+	userEmail, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(defaultEmailValue, emailValueInputPrompt)
+	if err != nil {
+		logrus.Debugf("The user tried to input his email address but it failed")
+	}
+
+	// TODO remove this before PR gets merged
+	fmt.Println("User email is " + userEmail)
 
 	userMetricsElectionEventBacklog := user_metrics_election_event_backlog.GetUserMetricsElectionEventBacklog()
 	if err := userMetricsElectionEventBacklog.Set(defaults.SendMetricsByDefault); err != nil {
