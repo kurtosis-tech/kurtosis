@@ -9,36 +9,34 @@ import (
 
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
-	isNetworkPartitioningEnabled bool
-	requiredDockerImages         map[string]bool
-	serviceNames                 map[service.ServiceName]ServiceExistence
-	artifactNames                map[string]bool
-	serviceNameToPrivatePortIDs  map[service.ServiceName][]string
-	availableCpuInMilliCores     compute_resources.CpuMilliCores
-	availableMemoryInMegaBytes   compute_resources.MemoryInMegaBytes
-	isCpuInformationComplete     bool
-	isMemoryInformationComplete  bool
-	minCPUByServiceName          map[service.ServiceName]compute_resources.CpuMilliCores
-	minMemoryByServiceName       map[service.ServiceName]compute_resources.MemoryInMegaBytes
+	isNetworkPartitioningEnabled  bool
+	requiredDockerImages          map[string]bool
+	serviceNames                  map[service.ServiceName]ServiceExistence
+	artifactNames                 map[string]bool
+	serviceNameToPrivatePortIDs   map[service.ServiceName][]string
+	availableCpuInMilliCores      compute_resources.CpuMilliCores
+	availableMemoryInMegaBytes    compute_resources.MemoryInMegaBytes
+	isResourceInformationComplete bool
+	minCPUByServiceName           map[service.ServiceName]compute_resources.CpuMilliCores
+	minMemoryByServiceName        map[service.ServiceName]compute_resources.MemoryInMegaBytes
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isCpuInformationComplete bool, isMemoryInformationComplete bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool) *ValidatorEnvironment {
 	serviceNamesWithServiceExistence := map[service.ServiceName]ServiceExistence{}
 	for serviceName := range serviceNames {
 		serviceNamesWithServiceExistence[serviceName] = ServiceExistedBeforePackageRun
 	}
 	return &ValidatorEnvironment{
-		isNetworkPartitioningEnabled: isNetworkPartitioningEnabled,
-		requiredDockerImages:         map[string]bool{},
-		serviceNames:                 serviceNamesWithServiceExistence,
-		artifactNames:                artifactNames,
-		serviceNameToPrivatePortIDs:  serviceNameToPrivatePortIds,
-		availableCpuInMilliCores:     availableCpuInMilliCores,
-		availableMemoryInMegaBytes:   availableMemoryInMegaBytes,
-		isCpuInformationComplete:     isCpuInformationComplete,
-		isMemoryInformationComplete:  isMemoryInformationComplete,
-		minMemoryByServiceName:       map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
-		minCPUByServiceName:          map[service.ServiceName]compute_resources.CpuMilliCores{},
+		isNetworkPartitioningEnabled:  isNetworkPartitioningEnabled,
+		requiredDockerImages:          map[string]bool{},
+		serviceNames:                  serviceNamesWithServiceExistence,
+		artifactNames:                 artifactNames,
+		serviceNameToPrivatePortIDs:   serviceNameToPrivatePortIds,
+		availableCpuInMilliCores:      availableCpuInMilliCores,
+		availableMemoryInMegaBytes:    availableMemoryInMegaBytes,
+		isResourceInformationComplete: isResourceInformationComplete,
+		minMemoryByServiceName:        map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
+		minCPUByServiceName:           map[service.ServiceName]compute_resources.CpuMilliCores{},
 	}
 }
 
@@ -133,7 +131,7 @@ func (environment *ValidatorEnvironment) ConsumeCPU(cpuConsumed uint64, serviceN
 }
 
 func (environment *ValidatorEnvironment) HasEnoughCPU(cpuToConsume uint64, serviceNameForLogging service.ServiceName) *startosis_errors.ValidationError {
-	if !environment.isCpuInformationComplete {
+	if !environment.isResourceInformationComplete {
 		return nil
 	}
 	if environment.availableCpuInMilliCores >= compute_resources.CpuMilliCores(cpuToConsume) {
@@ -143,7 +141,7 @@ func (environment *ValidatorEnvironment) HasEnoughCPU(cpuToConsume uint64, servi
 }
 
 func (environment *ValidatorEnvironment) HasEnoughMemory(memoryToConsume uint64, serviceNameForLogging service.ServiceName) *startosis_errors.ValidationError {
-	if !environment.isMemoryInformationComplete {
+	if !environment.isResourceInformationComplete {
 		return nil
 	}
 	if environment.availableMemoryInMegaBytes >= compute_resources.MemoryInMegaBytes(memoryToConsume) {

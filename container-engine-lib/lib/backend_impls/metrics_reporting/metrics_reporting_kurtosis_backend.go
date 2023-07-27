@@ -530,10 +530,10 @@ func (backend *MetricsReportingKurtosisBackend) DestroyDeprecatedCentralizedLogs
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error) {
-	availableMemory, isMemoryInformationComplete, availableCpu, isCpuInformationComplete, err := backend.underlying.GetAvailableCPUAndMemory(ctx)
+func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
+	availableMemory, availableCpu, isResourceInformationComplete, err := backend.underlying.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
-		return 0, false, 0, false, stacktrace.Propagate(err, "An error occurred while fetching cpu & memory information from the underlying backend")
+		return 0, 0, false, stacktrace.Propagate(err, "An error occurred while fetching cpu & memory information from the underlying backend")
 	}
-	return availableMemory, isMemoryInformationComplete, availableCpu, isCpuInformationComplete, nil
+	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }

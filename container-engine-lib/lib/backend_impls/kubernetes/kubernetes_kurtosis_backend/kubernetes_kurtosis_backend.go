@@ -38,8 +38,7 @@ type KubernetesKurtosisBackend struct {
 }
 
 const (
-	isCpuInformationComplete    = false
-	isMemoryInformationCompleye = false
+	isResourceInformationComplete = false
 )
 
 func (backend *KubernetesKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
@@ -398,9 +397,9 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.kubernetesManager)
 }
 
-func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error) {
-	// both memory and cpu information are incomplete
-	return 0, isMemoryInformationCompleye, 0, isCpuInformationComplete, nil
+func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
+	// TODO - implement resource calculation in kubernetes
+	return 0, 0, isResourceInformationComplete, nil
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {

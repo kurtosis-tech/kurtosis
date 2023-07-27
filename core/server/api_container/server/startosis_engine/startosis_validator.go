@@ -57,7 +57,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 			return
 		}
 
-		availableMemoryInMegaBytes, isMemoryInformationComplete, availableCpuInMilliCores, isCpuInformationComplete, err := (*validator.backend).GetAvailableCPUAndMemory(ctx)
+		availableMemoryInMegaBytes, availableCpuInMilliCores, isResourceInformationComplete, err := (*validator.backend).GetAvailableCPUAndMemory(ctx)
 		if err != nil {
 			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Couldn't create validator environment as we ran into errors fetching information about available cpu & memory")
 			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
@@ -72,8 +72,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 			serviceNamePortIdMapping,
 			availableCpuInMilliCores,
 			availableMemoryInMegaBytes,
-			isCpuInformationComplete,
-			isMemoryInformationComplete)
+			isResourceInformationComplete)
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAndUpdateEnvironment(instructionsSequence, environment, starlarkRunResponseLineStream)

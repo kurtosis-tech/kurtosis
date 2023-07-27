@@ -388,6 +388,6 @@ type KurtosisBackend interface {
 	// TODO(centralized-logs-resources-deprecation) remove this once we know people are on > 0.68.0
 	DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error
 
-	// GetAvailableCPUAndMemory - gets available memory in megabytes and cpu in millicores
-	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error)
+	// GetAvailableCPUAndMemory - gets available memory in megabytes and cpu in millicores, the boolean indicates whether the information is complete
+	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error)
 }

@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	resourceInformationIsComplete = true
+	isResourceInformationComplete = true
 )
 
 type DockerKurtosisBackend struct {
@@ -501,12 +501,12 @@ func (backend *DockerKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, bool, compute_resources.CpuMilliCores, bool, error) {
+func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
-		return 0, false, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
+		return 0, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
 	}
-	return compute_resources.MemoryInMegaBytes(availableMemory), resourceInformationIsComplete, compute_resources.CpuMilliCores(availableCpu), resourceInformationIsComplete, nil
+	return compute_resources.MemoryInMegaBytes(availableMemory), compute_resources.CpuMilliCores(availableCpu), isResourceInformationComplete, nil
 }
 
 // ====================================================================================================
