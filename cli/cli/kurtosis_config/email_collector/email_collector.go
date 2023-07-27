@@ -45,6 +45,8 @@ func logUserEmailAddressAsMetric(userEmail string) {
 		source.KurtosisCLISource,
 		kurtosis_version.KurtosisVersion,
 		metricsUserId,
+		// TODO this isn't relevant for the metric also this only runs at first install;
+		// The user hasn't ever used Kurtosis yet so it has to be the default cluster
 		resolved_config.DefaultDockerClusterName,
 		sendUserMetrics,
 		flushQueueOnEachEvent,
