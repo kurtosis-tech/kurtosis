@@ -33,7 +33,7 @@ func run(cmd *cobra.Command, args []string) error {
 				portalClient := portalManager.GetClient()
 				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &kurtosis_context.EnginePortTransportProtocol)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
-					logrus.Warnf("Unable to forward the remote engine port to the local machine.  This might be because the engine is not running remotely.")
+					return stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
 				}
 			}
 		}
