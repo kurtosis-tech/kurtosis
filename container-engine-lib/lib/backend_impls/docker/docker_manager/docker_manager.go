@@ -20,6 +20,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -1071,13 +1072,13 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 }
 
 // GetAvailableCPUAndMemory returns free memory in megabytes, free cpu in millicores, information on whether cpu information is complete
-func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (uint64, uint64, error) {
+func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, error) {
 	availableMemoryInBytes, availableCpuInMilliCores, err := getFreeMemoryAndCPU(ctx, manager.dockerClient)
 	if err != nil {
 		return 0, 0, stacktrace.Propagate(err, "an error occurred while getting available cpu and memory on docker")
 	}
 	// cpu isn't complete on windows but is complete on linux
-	return availableMemoryInBytes, uint64(availableCpuInMilliCores), nil
+	return compute_resources.MemoryInMegaBytes(availableMemoryInBytes), compute_resources.CpuMilliCores(availableCpuInMilliCores), nil
 }
 
 // =================================================================================================================
@@ -1769,7 +1770,7 @@ func pullImage(ctx context.Context, dockerClient *client.Client, imageName strin
 // getFreeMemoryAndCPU returns free memory in bytes and free cpu in MilliCores
 // this is a best effort calculation, it creates a list of containers and then adds up resources on that list
 // if a container dies during list creation this just ignores it
-func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint64, float64, error) {
+func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, error) {
 	info, err := dockerClient.Info(ctx)
 	if err != nil {
 		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
@@ -1809,5 +1810,5 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (uint
 		totalUsedMemory += containerStats.MemoryStats.Usage
 		cpuUsageAsFractionOfAvailableCpu += float64(containerStats.CPUStats.CPUUsage.TotalUsage-containerStats.PreCPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage-containerStats.PreCPUStats.SystemUsage)
 	}
-	return (totalFreeMemory - totalUsedMemory) / bytesInMegaBytes, float64(totalCPUs*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu), nil
+	return compute_resources.MemoryInMegaBytes((totalFreeMemory - totalUsedMemory) / bytesInMegaBytes), compute_resources.CpuMilliCores(float64(totalCPUs*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu)), nil
 }

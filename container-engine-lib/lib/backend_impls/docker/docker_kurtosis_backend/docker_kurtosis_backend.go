@@ -506,7 +506,7 @@ func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Conte
 	if err != nil {
 		return 0, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
 	}
-	return compute_resources.MemoryInMegaBytes(availableMemory), compute_resources.CpuMilliCores(availableCpu), isResourceInformationComplete, nil
+	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
 
 // ====================================================================================================
