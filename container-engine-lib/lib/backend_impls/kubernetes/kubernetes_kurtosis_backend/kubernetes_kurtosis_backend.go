@@ -20,6 +20,10 @@ import (
 	"io"
 )
 
+const (
+	isResourceInformationComplete = false
+)
+
 type KubernetesKurtosisBackend struct {
 	kubernetesManager *kubernetes_manager.KubernetesManager
 
@@ -95,9 +99,9 @@ func NewCLIModeKubernetesKurtosisBackend(
 
 func NewKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple
-//  backends per consumer, e.g. APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc.
-//  This can only happen once the CLI no longer uses the same functionality as API container, engine, etc. though
+	// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple
+	//  backends per consumer, e.g. APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc.
+	//  This can only happen once the CLI no longer uses the same functionality as API container, engine, etc. though
 	cliModeArgs *shared_helpers.CliModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	apiContainerModeargs *shared_helpers.ApiContainerModeArgs,
@@ -392,6 +396,11 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
 		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
+	// TODO - implement resource calculation in kubernetes
+	return 0, 0, isResourceInformationComplete, nil
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {
