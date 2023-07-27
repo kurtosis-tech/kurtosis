@@ -23,7 +23,6 @@ require (
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // Local dependency generated during build
-	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230427161256-0c1550da27b5
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/manifoldco/promptui v0.9.0
 	github.com/mattn/go-isatty v0.0.19
@@ -46,7 +45,10 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/uuid v1.3.0
+	github.com/joho/godotenv v1.5.1
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230712110324-ce92904bb514
+	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230727131617-20b635a2fc7e
+	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230727131823-40788a849ce5
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230406131103-c466e04f1b89
 	github.com/mholt/archiver v3.1.1+incompatible
@@ -93,7 +95,6 @@ require (
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
