@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/stretchr/testify/require"
+	"strings"
 	"testing"
 )
 
@@ -69,5 +70,6 @@ func TestStarlark_RunPythonWithLargeOutputGreaterThan4Mb(t *testing.T) {
 	ctx := context.Background()
 	runResult, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runPythonWithGiganticOutputGreaterThan4Mb, runPythonWithLargeOutputGreaterThan4MbScript)
 	require.Nil(t, err)
-	require.Greater(t, len(runResult.RunOutput), 2^20)
+	expectedOuptut := strings.Repeat("hello world", 2^20)
+	require.Contains(t, runResult.RunOutput, expectedOuptut)
 }
