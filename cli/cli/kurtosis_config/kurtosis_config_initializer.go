@@ -14,13 +14,13 @@ import (
 
 const (
 	defaultEmailValue     = ""
-	emailValueInputPrompt = "Hey! Thank you for downloading Kurtosis. If you are interested in getting updates from us; please share your email"
+	emailValueInputPrompt = "If you wish to share your email address Kurtosis will occasionally share updates with you"
 )
 
 func initConfig() (*resolved_config.KurtosisConfig, error) {
 	printMetricsPreface()
 
-	userEmail, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(defaultEmailValue, emailValueInputPrompt)
+	userEmail, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(emailValueInputPrompt, defaultEmailValue)
 	if err != nil {
 		logrus.Debugf("The user tried to input his email address but it failed")
 	}
