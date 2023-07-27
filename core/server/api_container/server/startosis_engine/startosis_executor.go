@@ -2,7 +2,6 @@ package startosis_engine
 
 import (
 	"context"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
@@ -95,7 +94,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					execOutputChan, streamErr := instruction.ExecuteWithStreamedOutput(ctx)
 					if execOutputChan != nil {
 						for execOutputLine := range execOutputChan {
-							fmt.Printf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
+							logrus.Warnf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
 							starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 								execOutputLine, instructionNumber, totalNumberOfInstructions)
 						}
