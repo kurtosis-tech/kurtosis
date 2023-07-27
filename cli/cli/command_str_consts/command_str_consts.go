@@ -13,6 +13,8 @@ var KurtosisCmdStr = path.Base(os.Args[0])
 const (
 	Analytics               = "analytics"
 	CleanCmdStr             = "clean"
+	CloudCmdStr             = "cloud"
+	CloudLoadCmdStr         = "load"
 	ClusterCmdStr           = "cluster"
 	ClusterSetCmdStr        = "set"
 	ClusterGetCmdStr        = "get"
@@ -22,8 +24,6 @@ const (
 	ContextLsCmdStr         = "ls"
 	ContextRmCmdStr         = "rm"
 	ContextSwitchCmdStr     = "switch"
-	CloudCmdStr             = "cloud"
-	CloudLoadCmdStr         = "load"
 	DiscordCmdStr           = "discord"
 	DocsCmdStr              = "docs"
 	EnclaveCmdStr           = "enclave"

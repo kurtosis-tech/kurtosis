@@ -30,7 +30,7 @@ const (
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.CloudLoadCmdStr,
 	ShortDescription: "Load a Kurtosis Cloud instance",
-	LongDescription: "Load a remote Kurtosis Cloud instance into the local context by providing the instance id." +
+	LongDescription: "Load a remote Kurtosis Cloud instance by providing the instance id." +
 		"Note, the remote instance must be in a running state for this operation to complete successfully",
 	Flags: []*flags.FlagConfig{},
 	Args: []*args.ArgConfig{
@@ -90,8 +90,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	if err != nil {
 		return stacktrace.Propagate(err, "While attempting to reload the context with uuid %s an error occurred while removing it from the context store", parsedContext.Uuid)
 	}
-	err = add.AddContext(parsedContext)
-	if err != nil {
+	if add.AddContext(parsedContext) != nil {
 		return stacktrace.Propagate(err, "Unable to add context to context store")
 	}
 	contextIdentifier := parsedContext.GetName()

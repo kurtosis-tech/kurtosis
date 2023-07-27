@@ -10,9 +10,9 @@ import (
 )
 
 func CreateCloudClient(connectionStr string, caCertChain string) (api.KurtosisCloudBackendServerClient, error) {
-	f := []byte(caCertChain)
+	caCertChainBytes := []byte(caCertChain)
 	p := x509.NewCertPool()
-	p.AppendCertsFromPEM(f)
+	p.AppendCertsFromPEM(caCertChainBytes)
 
 	tlsConfig := &tls.Config{RootCAs: p}
 	conn, err := grpc.Dial(connectionStr, grpc.WithTransportCredentials(credentials.NewTLS(tlsConfig)))
