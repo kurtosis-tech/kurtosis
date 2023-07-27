@@ -31,6 +31,7 @@ func AskUserForEmailAndLogIt() {
 
 }
 
+// TODO this recreates a metrics client instead of using the factory as there are circular dependencies - clean this up
 func logUserEmailAddressAsMetric(userEmail string) {
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
