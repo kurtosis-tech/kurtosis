@@ -90,18 +90,18 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				if scheduledInstruction.IsExecuted() {
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
-				} else if instruction.String()[0:4] == "exec" {
-					logrus.Debugf("FOUND EXEC COMMAND (STARTOSIS EXECUTOR): %s", instruction.String())
-					execOutputChan, streamErr := instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
-					if execOutputChan != nil {
-						for execOutputLine := range execOutputChan {
-							logrus.Debugf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
-							starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-								execOutputLine, instructionNumber, totalNumberOfInstructions)
-						}
-					}
-					err = streamErr
-					logrus.Debugf("SANITY CHECK %d", 1)
+					//} else if instruction.String()[0:4] == "exec" {
+					//	logrus.Debugf("FOUND EXEC COMMAND (STARTOSIS EXECUTOR): %s", instruction.String())
+					//	execOutputChan, streamErr := instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
+					//	if execOutputChan != nil {
+					//		for execOutputLine := range execOutputChan {
+					//			logrus.Debugf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
+					//			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
+					//				execOutputLine, instructionNumber, totalNumberOfInstructions)
+					//		}
+					//	}
+					//	err = streamErr
+					//	logrus.Debugf("SANITY CHECK %d", 1)
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}

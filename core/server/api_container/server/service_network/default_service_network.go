@@ -344,7 +344,7 @@ func (network *DefaultServiceNetwork) AddServices(
 ) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %s TO ADD SERVICE", 1)
+	logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO ADD SERVICE", 1)
 	batchSuccessfullyStarted := false
 	startedServices := map[service.ServiceName]*service.Service{}
 	failedServices := map[service.ServiceName]error{}
@@ -899,7 +899,7 @@ func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdenti
 	// asynchronous
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %s TO EXEC", 2)
+	logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC", 2)
 	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
@@ -942,14 +942,14 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
-	logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %s TO EXEC STREAMED", 1)
+	logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 1)
 	execOutputStream := make(chan string)
 	go func() {
 		defer func() {
 			network.mutex.Unlock()
 			close(execOutputStream)
 		}()
-
+		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 3)
 		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 		if err != nil {
 			sendErrorAndFail(execOutputStream, err, "An error occurred while getting service registration for identifier")
