@@ -92,7 +92,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					instructionOutput = &skippedInstructionOutput
 				} else if instruction.String()[0:4] == "exec" {
 					logrus.Debugf("FOUND EXEC COMMAND (STARTOSIS EXECUTOR): %s", instruction.String())
-					execOutputChan, streamErr := instruction.ExecuteWithStreamedOutput(ctx)
+					execOutputChan, streamErr := instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
 					if execOutputChan != nil {
 						for execOutputLine := range execOutputChan {
 							logrus.Debugf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
