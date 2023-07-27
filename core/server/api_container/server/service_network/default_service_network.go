@@ -1436,7 +1436,6 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 // the function might fail if the service is half-started
 // Note: the function also takes care of destroying any networking sidecar associated with the service
 func (network *DefaultServiceNetwork) destroyService(ctx context.Context, serviceName service.ServiceName, serviceUuid service.ServiceUUID) error {
-	var errorResult error
 	// deleting the service first
 	userServiceFilters := &service.ServiceFilters{
 		Names: nil,
