@@ -55,6 +55,21 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	if err != nil {
 		return stacktrace.NewError("An error occurred retrieving current context prior to switching to the new one '%s'", contextIdentifier)
 	}
+	
+	if !store.IsRemote(contextPriorToSwitch) {
+		engineManager, err := engine_manager.NewEngineManager(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
+		}
+		engineStatus, _, _, err := engineManager.GetEngineStatus(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred retrieving the engine status.")
+		}
+		if engineStatus == engine_manager.EngineStatus_Running {
+			logrus.Infof("An engine is running locally. Stop the engine before switching context so the remote engine port can be forwarded locally.")
+			return nil
+		}
+	}
 
 	contextsMatchingIdentifiers, err := context_id_arg.GetContextUuidForContextIdentifier(contextsConfigStore, []string{contextIdentifier})
 	if err != nil {

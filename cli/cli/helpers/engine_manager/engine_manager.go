@@ -156,7 +156,6 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		return nil, nil, stacktrace.Propagate(err, "An error occurred retrieving the Kurtosis engine status, which is necessary for creating a connection to the engine")
 	}
 	logrus.Debugf("Engine status: '%v'", status)
-	engineVersion = "latest"
 	clusterType := manager.clusterConfig.GetClusterType()
 	engineGuarantor := newEngineExistenceGuarantorWithDefaultVersion(
 		ctx,
@@ -349,7 +348,7 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 			if portalManager.IsReachable() {
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &kurtosis_context.EnginePortTransportProtocol)
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(hostMachinePortBinding.portNum), uint32(hostMachinePortBinding.portNum), &kurtosis_context.EnginePortTransportProtocol)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return nil, nil, stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine.")
 				}
