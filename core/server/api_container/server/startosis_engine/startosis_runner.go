@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -171,6 +172,7 @@ func forwardKurtosisResponseLineChannelUntilSourceIsClosed(sourceChan <-chan *ku
 	isStarlarkRunFinished := false
 	for executionResponseLine := range sourceChan {
 		logrus.Debugf("Received kurtosis execution line Kurtosis:\n%v", executionResponseLine)
+		fmt.Printf("EXEC OUTPUT AT STARTOSIS RUNNER LEVEL: %s", executionResponseLine)
 		if executionResponseLine.GetRunFinishedEvent() != nil {
 			isStarlarkRunFinished = true
 			isSuccessful = executionResponseLine.GetRunFinishedEvent().GetIsRunSuccessful()
