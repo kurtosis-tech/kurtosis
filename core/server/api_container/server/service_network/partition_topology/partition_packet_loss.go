@@ -2,11 +2,15 @@ package partition_topology
 
 import "fmt"
 
-const percentageSuffix = "%"
+const (
+	NoPacketLossPercentage     = 0.0
+	EntirePacketLossPercentage = 100.0
+	percentageSuffix           = "%"
+)
 
 var (
-	ConnectionWithNoPacketLoss     = NewPacketLoss(0)
-	ConnectionWithEntirePacketLoss = NewPacketLoss(100)
+	ConnectionWithNoPacketLoss     = NewPacketLoss(NoPacketLossPercentage)
+	ConnectionWithEntirePacketLoss = NewPacketLoss(EntirePacketLossPercentage)
 )
 
 type PacketLoss struct {

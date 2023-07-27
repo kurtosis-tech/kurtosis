@@ -73,6 +73,8 @@ const (
 	applicationProtocolIndex                             = 0
 	remainingPortSpecIndex                               = 1
 	maybePortSpecComponentsLengthWithApplicationProtocol = 2
+	expectedPortIdSpecComponentsCount                    = 2
+	expectedMountFragmentsCount                          = 2
 
 	minRemainingPortSpecComponents = 1
 	maxRemainingPortSpecComponents = 2
@@ -496,7 +498,7 @@ func parsePortsStr(portsStr string) (map[string]*kurtosis_core_rpc_api_bindings.
 		}
 
 		portIdSpecComponents := strings.Split(portDeclarationStr, portIdSpecDelimiter)
-		if len(portIdSpecComponents) != 2 {
+		if len(portIdSpecComponents) != expectedPortIdSpecComponentsCount {
 			return nil, stacktrace.NewError("Port declaration string '%v' must be of the form PORTID%vSPEC", portDeclarationStr, portIdSpecDelimiter)
 		}
 		portId := portIdSpecComponents[0]
@@ -573,21 +575,18 @@ of array is 2 then application protocol exists, otherwise it does not. This is b
 strings.Cut() does. // TODO: use that instead once we update go version
 */
 func getMaybeApplicationProtocolFromPortSpecString(portProtocolStr string) (string, string, error) {
-	remainingPortSpec := portProtocolStr
 
-	splitSpecArray := strings.SplitN(portProtocolStr, portApplicationProtocolDelimiter, 2)
+	beforeDelimiter, afterDelimiter, foundDelimiter := strings.Cut(portProtocolStr, portApplicationProtocolDelimiter)
 
-	if splitSpecArray[applicationProtocolIndex] == emptyApplicationProtocol {
+	if !foundDelimiter {
+		return emptyApplicationProtocol, beforeDelimiter, nil
+	}
+
+	if foundDelimiter && beforeDelimiter == emptyApplicationProtocol {
 		return emptyApplicationProtocol, "", stacktrace.NewError("optional application protocol argument cannot be empty")
 	}
 
-	maybeApplicationProtocol := emptyApplicationProtocol
-	if len(splitSpecArray) == maybePortSpecComponentsLengthWithApplicationProtocol {
-		maybeApplicationProtocol = splitSpecArray[applicationProtocolIndex]
-		remainingPortSpec = splitSpecArray[remainingPortSpecIndex]
-	}
-
-	return maybeApplicationProtocol, remainingPortSpec, nil
+	return beforeDelimiter, afterDelimiter, nil
 }
 
 func getPortNumberFromPortSpecString(portNumberStr string) (uint32, error) {
@@ -628,7 +627,7 @@ func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]stri
 		}
 
 		mountFragments := strings.Split(trimmedMountStr, filesArtifactMountpointDelimiter)
-		if len(mountFragments) != 2 {
+		if len(mountFragments) != expectedMountFragmentsCount {
 			return nil, stacktrace.NewError(
 				"Files artifact mountpoint string %v was '%v' but should be in the form 'mountpoint%sfiles_artifact_name'",
 				idx,
