@@ -95,7 +95,11 @@ func NewKurtosisConfigFromOverrides(uncastedOverrides interface{}) (*KurtosisCon
 		allClusterConfigs[clusterId] = clusterConfig
 	}
 
-	cloudConfig := &KurtosisCloudConfig{}
+	cloudConfig := &KurtosisCloudConfig{
+		ApiUrl:           DefaultCloudConfigApiUrl,
+		Port:             DefaultCloudConfigPort,
+		CertificateChain: DefaultCertificateChain,
+	}
 	if overrides.CloudConfig != nil {
 		if overrides.CloudConfig.ApiUrl != nil {
 			if len(*overrides.CloudConfig.ApiUrl) < 1 {

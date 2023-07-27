@@ -17,16 +17,11 @@ For an explanation, see the docs on TestKurtosisConfigIsUsingLatestConfigStruct.
 */
 
 var AllConfigVersionEmptyStructs = map[config_version.ConfigVersion]interface{}{
-	//config_version.ConfigVersion_v3: &v3.KurtosisConfigV3{
-	//	ConfigVersion:     0,
-	//	ShouldSendMetrics: nil,
-	//	KurtosisClusters:  nil,
-	//	CloudConfig:       nil,
-	//},
 	config_version.ConfigVersion_v2: &v2.KurtosisConfigV2{
 		ConfigVersion:     0,
 		ShouldSendMetrics: nil,
 		KurtosisClusters:  nil,
+		CloudConfig:       nil,
 	},
 	config_version.ConfigVersion_v1: &v1.KurtosisConfigV1{
 		ConfigVersion:     0,

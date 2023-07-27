@@ -29,56 +29,6 @@ var AllConfigOverridesMigrators = map[config_version.ConfigVersion]configOverrid
 }
 
 // vvvvvvvvvvvvvvvvvvvvvvv REVERSE chronological order so you don't have to scroll forever vvvvvvvvvvvvvvvvvvvv
-//
-//	func migrateFromV2(uncastedConfig interface{}) (interface{}, error) {
-//		// cast "uncastedConfig" to current version we're upgrading from
-//		castedOldConfig, ok := uncastedConfig.(*v2.KurtosisConfigV2)
-//		if !ok {
-//			return nil, stacktrace.NewError(
-//				"Failed to cast old configuration '%+v' to expected configuration struct",
-//				uncastedConfig,
-//			)
-//		}
-//
-//		var kurtosisClusters = map[string]*v3.KurtosisClusterConfigV3{}
-//		for key, clusterV2 := range castedOldConfig.KurtosisClusters {
-//			if clusterV2 != nil {
-//				var config *v3.KubernetesClusterConfigV3
-//				if clusterV2.Config != nil {
-//					config = &v3.KubernetesClusterConfigV3{
-//						KubernetesClusterName:  clusterV2.Config.KubernetesClusterName,
-//						StorageClass:           clusterV2.Config.StorageClass,
-//						EnclaveSizeInMegabytes: clusterV2.Config.EnclaveSizeInMegabytes,
-//					}
-//				}
-//				kurtosisClusterConfigV3 := &v3.KurtosisClusterConfigV3{
-//					Type:   clusterV2.Type,
-//					Config: config,
-//				}
-//				kurtosisClusters[key] = kurtosisClusterConfigV3
-//			}
-//		}
-//
-//		apiUrl := resolved_config.DefaultCloudConfigApiUrl
-//		port := resolved_config.DefaultCloudConfigPort
-//		certificateChain := resolved_config.DefaultCertificateChain
-//
-//		cloudConfig := &v3.KurtosisCloudConfigV3{
-//			ApiUrl:           &apiUrl,
-//			Port:             &port,
-//			CertificateChain: &certificateChain,
-//		}
-//
-//		// create a new configuration object to represent the migrated work
-//		newConfig := &v3.KurtosisConfigV3{
-//			ConfigVersion:     config_version.ConfigVersion_v3,
-//			ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
-//			KurtosisClusters:  kurtosisClusters,
-//			CloudConfig:       cloudConfig,
-//		}
-//
-//		return newConfig, nil
-//	}
 func migrateFromV1(uncastedConfig interface{}) (interface{}, error) {
 	// cast "uncastedConfig" to current version we're upgrading from
 	castedOldConfig, ok := uncastedConfig.(*v1.KurtosisConfigV1)
@@ -118,6 +68,7 @@ func migrateFromV1(uncastedConfig interface{}) (interface{}, error) {
 		ConfigVersion:     config_version.ConfigVersion_v2,
 		ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
 		KurtosisClusters:  newClusters,
+		CloudConfig:       nil,
 	}
 
 	return newConfig, nil
