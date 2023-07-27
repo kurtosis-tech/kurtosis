@@ -24,10 +24,7 @@ func initConfig() (*resolved_config.KurtosisConfig, error) {
 	if err != nil {
 		logrus.Debugf("The user tried to input his email address but it failed")
 	}
-
-	// TODO remove this before PR gets merged
-	fmt.Println("User email is " + userEmail)
-
+	
 	userMetricsElectionEventBacklog := user_metrics_election_event_backlog.GetUserMetricsElectionEventBacklog()
 	if err := userMetricsElectionEventBacklog.Set(defaults.SendMetricsByDefault); err != nil {
 		//We don't want to interrupt users flow if something fails when tracking metrics
