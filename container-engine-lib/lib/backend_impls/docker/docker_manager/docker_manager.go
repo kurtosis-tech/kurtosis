@@ -1816,9 +1816,9 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 				return
 			}
 			resourceMutex.Lock()
-			resourceMutex.Unlock()
 			totalUsedMemory += containerStats.MemoryStats.Usage
 			cpuUsageAsFractionOfAvailableCpu += float64(containerStats.CPUStats.CPUUsage.TotalUsage-containerStats.PreCPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage-containerStats.PreCPUStats.SystemUsage)
+			resourceMutex.Unlock()
 		}()
 	}
 	wg.Wait()
