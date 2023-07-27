@@ -3,7 +3,7 @@ package resolved_config
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	v3 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 	"github.com/stretchr/testify/require"
 	"sort"
 	"testing"
@@ -50,10 +50,11 @@ func TestNewKurtosisConfigFromRequiredFields_MetricsElectionIsSent(t *testing.T)
 }
 
 func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
-	_, err := NewKurtosisConfigFromOverrides(&v2.KurtosisConfigV2{
+	_, err := NewKurtosisConfigFromOverrides(&v3.KurtosisConfigV3{
 		ConfigVersion:     0,
 		ShouldSendMetrics: nil,
 		KurtosisClusters:  nil,
+		CloudConfig:       nil,
 	})
 	// You can not initialize a Kurtosis config with empty overrides - it needs at least `ShouldSendMetrics`
 	require.Error(t, err)
@@ -62,10 +63,11 @@ func TestNewKurtosisConfigEmptyOverrides(t *testing.T) {
 func TestNewKurtosisConfigJustMetrics(t *testing.T) {
 	version := config_version.ConfigVersion_v0
 	shouldSendMetrics := true
-	originalOverrides := v2.KurtosisConfigV2{
+	originalOverrides := v3.KurtosisConfigV3{
 		ConfigVersion:     version,
 		ShouldSendMetrics: &shouldSendMetrics,
 		KurtosisClusters:  nil,
+		CloudConfig:       nil,
 	}
 	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
 	// You can not initialize a Kurtosis config with empty originalOverrides - it needs at least `ShouldSendMetrics`
@@ -86,4 +88,27 @@ func TestNewKurtosisConfigOverridesAreLatestVersion(t *testing.T) {
 	overrides := config.GetOverrides()
 	// check that overrides are actually the latest version
 	require.Equal(t, latestVersion, overrides.ConfigVersion.String())
+}
+
+func TestCloudConfigOverridesApiUrl(t *testing.T) {
+	version := config_version.ConfigVersion_v0
+	shouldSendMetrics := true
+	apiUrl := "test.com"
+	originalOverrides := v3.KurtosisConfigV3{
+		ConfigVersion:     version,
+		ShouldSendMetrics: &shouldSendMetrics,
+		KurtosisClusters:  nil,
+		CloudConfig: &v3.KurtosisCloudConfigV3{
+			ApiUrl:           &apiUrl,
+			Port:             nil,
+			CertificateChain: nil,
+		},
+	}
+	config, err := NewKurtosisConfigFromOverrides(&originalOverrides)
+	require.NoError(t, err)
+
+	overrides := config.GetOverrides()
+	require.Equal(t, apiUrl, *overrides.CloudConfig.ApiUrl)
+	require.Nil(t, overrides.CloudConfig.Port)
+	require.Nil(t, overrides.CloudConfig.CertificateChain)
 }

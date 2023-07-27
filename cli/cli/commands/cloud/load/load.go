@@ -13,6 +13,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/add"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/context_switch"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -24,8 +26,8 @@ const (
 	instanceIdentifierArgIsGreedy = false
 	kurtosisCloudApiKeyEnvVarArg  = "KURTOSIS_CLOUD_API_KEY"
 	// TODO: Move the connection information out into a configuration file. Will happen in future work:
-	KurtosisCloudApiUrl  = "cloud.kurtosis.com"
-	kurtosisCloudApiPort = 8080
+	defaultKurtosisCloudApiUrl  = resolved_config.DefaultCloudConfigApiUrl
+	defaultKurtosisCloudApiPort = resolved_config.DefaultCloudConfigPort
 )
 
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -56,7 +58,12 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 			"%s env var and it's a valid (active) key", kurtosisCloudApiKeyEnvVarArg)
 	}
 
-	connectionStr := fmt.Sprintf("%s:%d", KurtosisCloudApiUrl, kurtosisCloudApiPort)
+	cloudConfig, err := getCloudConfig()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occured while loading the Cloud Config")
+	}
+	// Create the connection
+	connectionStr := fmt.Sprintf("%s:%d", cloudConfig.ApiUrl, cloudConfig.Port)
 	client, err := cloud.CreateCloudClient(connectionStr)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error building client for Kurtosis Cloud")
@@ -101,4 +108,30 @@ func loadApiKey() (*string, error) {
 	}
 	logrus.Info("Successfully Loaded API Key...")
 	return &apiKey, nil
+}
+
+func getCloudConfig() (*resolved_config.KurtosisCloudConfig, error) {
+	// Get the configuration
+	kurtosisConfigStore := kurtosis_config.GetKurtosisConfigStore()
+	configProvider := kurtosis_config.NewKurtosisConfigProvider(kurtosisConfigStore)
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get or initialize Kurtosis configuration")
+	}
+	if kurtosisConfig.GetCloudConfig() == nil {
+		return nil, stacktrace.Propagate(err, "No cloud config was found. This is an internal Kurtosis error.")
+	}
+	cloudConfig := kurtosisConfig.GetCloudConfig()
+
+	if cloudConfig.Port == 0 {
+		cloudConfig.Port = resolved_config.DefaultCloudConfigPort
+	}
+	if len(cloudConfig.ApiUrl) < 1 {
+		cloudConfig.ApiUrl = resolved_config.DefaultCloudConfigApiUrl
+	}
+	if len(cloudConfig.CertificateChain) < 1 {
+		cloudConfig.CertificateChain = resolved_config.DefaultCertificateChain
+	}
+
+	return cloudConfig, nil
 }

@@ -2,6 +2,8 @@ package overrides_migrators
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/config_version"
+	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	v3 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -31,4 +33,41 @@ func TestOverridesMigratorsCompletenessTest(t *testing.T) {
 		"There are %v Kurtosis config versions but %v config overrides migrators were declared; this likely means "+
 			"extra migrators were declared that shouldn't be (there should always be migrators = num_versions - 1)",
 	)
+}
+
+func TestOverridesMigratorsMigrateFromV2toV3(t *testing.T) {
+	newTrue := true
+	newDocker := "docker"
+	newKubernetes := "kubernetes"
+	newKubernetesClusterName := "minikube"
+	newStorageClass := "standard"
+	newEnclaveSizeInMegabytes := uint(10)
+
+	kurtosisClusters := map[string]*v2.KurtosisClusterConfigV2{}
+	kurtosisClusters["docker"] = &v2.KurtosisClusterConfigV2{
+		Type:   &newDocker,
+		Config: nil,
+	}
+
+	kurtosisClusters["minikube"] = &v2.KurtosisClusterConfigV2{
+		Type: &newKubernetes,
+		Config: &v2.KubernetesClusterConfigV2{
+			KubernetesClusterName:  &newKubernetesClusterName,
+			StorageClass:           &newStorageClass,
+			EnclaveSizeInMegabytes: &newEnclaveSizeInMegabytes,
+		},
+	}
+
+	k := &v2.KurtosisConfigV2{
+		ConfigVersion:     1,
+		ShouldSendMetrics: &newTrue,
+		KurtosisClusters:  kurtosisClusters,
+	}
+
+	result, err := migrateFromV2(k)
+	casted := result.(*v3.KurtosisConfigV3)
+	require.NoError(t, err)
+
+	require.Nil(t, casted.KurtosisClusters["docker"].Config)
+	require.NotNil(t, casted.KurtosisClusters["minikube"].Config)
 }

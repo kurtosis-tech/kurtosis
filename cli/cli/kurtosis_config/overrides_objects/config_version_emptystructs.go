@@ -5,6 +5,7 @@ import (
 	v0 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v0"
 	v1 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v1"
 	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	v3 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v3"
 )
 
 /*
@@ -17,6 +18,12 @@ For an explanation, see the docs on TestKurtosisConfigIsUsingLatestConfigStruct.
 */
 
 var AllConfigVersionEmptyStructs = map[config_version.ConfigVersion]interface{}{
+	config_version.ConfigVersion_v3: &v3.KurtosisConfigV3{
+		ConfigVersion:     0,
+		ShouldSendMetrics: nil,
+		KurtosisClusters:  nil,
+		CloudConfig:       nil,
+	},
 	config_version.ConfigVersion_v2: &v2.KurtosisConfigV2{
 		ConfigVersion:     0,
 		ShouldSendMetrics: nil,
