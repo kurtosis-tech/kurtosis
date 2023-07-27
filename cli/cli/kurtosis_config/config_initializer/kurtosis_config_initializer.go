@@ -3,8 +3,6 @@ package config_initializer
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_send_metrics_election/user_metrics_election_event_backlog"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
@@ -13,22 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-const (
-	defaultEmailValue     = ""
-	emailValueInputPrompt = "If you wish to share your email address Kurtosis will occasionally share updates with you"
-)
-
 func InitConfig() (*resolved_config.KurtosisConfig, error) {
 	printMetricsPreface()
-
-	userEmail, err := prompt_displayer.DisplayConfirmationPromptAndGetBooleanResult(emailValueInputPrompt, defaultEmailValue)
-	if err != nil {
-		logrus.Debugf("The user tried to input his email address but it failed")
-	}
-
-	if userEmail != defaultEmailValue {
-		logUserEmailAddressAsMetric(userEmail)
-	}
 
 	userMetricsElectionEventBacklog := user_metrics_election_event_backlog.GetUserMetricsElectionEventBacklog()
 	if err := userMetricsElectionEventBacklog.Set(defaults.SendMetricsByDefault); err != nil {
@@ -54,16 +38,4 @@ func printMetricsPreface() {
 	fmt.Println("In case you wish to not send metrics, you can do so by running - kurtosis analytics disable")
 	fmt.Printf("Read more at %v\n", user_support_constants.MetricsPhilosophyDocs)
 	fmt.Println("")
-}
-
-func logUserEmailAddressAsMetric(userEmail string) {
-	metricsClient, metricsClientCloser, err := metrics_client_factory.GetMetricsClient()
-	if err != nil {
-		logrus.Debugf("tried creating a metrics client log user email address but failed:\n%v", err)
-		return
-	}
-	defer metricsClientCloser()
-	if err = metricsClient.TrackUserSharedEmailAddress(userEmail); err != nil {
-		logrus.Debugf("tried sending user email address as metric but failed:\n%v", err)
-	}
 }
