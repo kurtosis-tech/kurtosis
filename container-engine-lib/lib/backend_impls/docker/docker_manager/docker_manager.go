@@ -1800,26 +1800,26 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 
 	for _, maybeRunningContainer := range containers {
 		wg.Add(1)
-		go func() {
+		go func(containerId string) {
 			defer wg.Done()
-			containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, maybeRunningContainer.ID)
+			containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, containerId)
 			if err != nil {
 				if strings.Contains(err.Error(), "No such container") {
-					logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", maybeRunningContainer.ID)
+					logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", containerId)
 				}
-				logrus.Errorf("An unexpected error occured while fetching information about container '%v':\n%v", maybeRunningContainer.ID, err)
+				logrus.Errorf("An unexpected error occured while fetching information about container '%v':\n%v", containerId, err)
 				return
 			}
 			var containerStats types.Stats
 			if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
-				logrus.Errorf("an error occurred while unmarshalling stats response for container with id '%v':\n%v", maybeRunningContainer.ID, err)
+				logrus.Errorf("an error occurred while unmarshalling stats response for container with id '%v':\n%v", containerId, err)
 				return
 			}
 			resourceMutex.Lock()
 			totalUsedMemory += containerStats.MemoryStats.Usage
 			cpuUsageAsFractionOfAvailableCpu += float64(containerStats.CPUStats.CPUUsage.TotalUsage-containerStats.PreCPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage-containerStats.PreCPUStats.SystemUsage)
 			resourceMutex.Unlock()
-		}()
+		}(maybeRunningContainer.ID)
 	}
 	wg.Wait()
 	return compute_resources.MemoryInMegaBytes((totalFreeMemory - totalUsedMemory) / bytesInMegaBytes), compute_resources.CpuMilliCores(float64(totalCPUs*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu)), nil
