@@ -46,7 +46,10 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/google/uuid v1.3.0
+	github.com/joho/godotenv v1.5.1
+	github.com/kurtosis-tech/kurtosis-cloud-backend/api/golang v0.0.0-20230710130842-109e293772f9
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230712110324-ce92904bb514
+	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230727152609-768e95d2dbeb
 	github.com/kurtosis-tech/minimal-grpc-server/golang v0.0.0-20230710164206-90b674acb269
 	github.com/kurtosis-tech/vscode-kurtosis/starlark-lsp v0.0.0-20230406131103-c466e04f1b89
 	github.com/mholt/archiver v3.1.1+incompatible
@@ -93,7 +96,6 @@ require (
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
