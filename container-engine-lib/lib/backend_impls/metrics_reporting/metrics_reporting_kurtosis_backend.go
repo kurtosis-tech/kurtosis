@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"io"
 	"time"
 )
@@ -323,10 +324,8 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandsWithSt
 	enclaveUuid enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceUUID][]string,
 ) chan string {
-	execOutputChan := make(chan string)
-	///....
-
-	return execOutputChan
+	logrus.Debug("ENTERING METRICS REPORTING DOCKER KURTOSIS BACKEND")
+	return backend.underlying.RunUserServiceExecCommandsWithStreamedOutput(ctx, enclaveUuid, userServiceCommands)
 }
 
 func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {
