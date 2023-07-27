@@ -28,6 +28,7 @@ import (
 	"math"
 	"net"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -1793,22 +1794,33 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 	totalUsedMemory := uint64(0)
 	cpuUsageAsFractionOfAvailableCpu := float64(0)
 	totalCPUs := info.NCPU
+
+	var wg sync.WaitGroup
+	resourceMutex := sync.Mutex{}
+
 	for _, maybeRunningContainer := range containers {
-		containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, maybeRunningContainer.ID)
-		if err != nil {
-			if strings.Contains(err.Error(), "No such container") {
-				logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", maybeRunningContainer.ID)
-				continue
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			containerStatsResponse, err := dockerClient.ContainerStatsOneShot(ctx, maybeRunningContainer.ID)
+			if err != nil {
+				if strings.Contains(err.Error(), "No such container") {
+					logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", maybeRunningContainer.ID)
+				}
+				logrus.Errorf("An unexpected error occured while fetching information about container '%v':\n%v", maybeRunningContainer.ID, err)
+				return
 			}
-			return 0, 0, stacktrace.Propagate(err, "An unexpected error occurred while getting resource usage information about the container with id '%v'", maybeRunningContainer.ID)
-		}
-		var containerStats types.Stats
-		if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
-			logrus.Errorf("an error occurred while unmarshalling stats response for container with id '%v':\n%v", maybeRunningContainer.ID, err)
-			continue
-		}
-		totalUsedMemory += containerStats.MemoryStats.Usage
-		cpuUsageAsFractionOfAvailableCpu += float64(containerStats.CPUStats.CPUUsage.TotalUsage-containerStats.PreCPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage-containerStats.PreCPUStats.SystemUsage)
+			var containerStats types.Stats
+			if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
+				logrus.Errorf("an error occurred while unmarshalling stats response for container with id '%v':\n%v", maybeRunningContainer.ID, err)
+				return
+			}
+			resourceMutex.Lock()
+			resourceMutex.Unlock()
+			totalUsedMemory += containerStats.MemoryStats.Usage
+			cpuUsageAsFractionOfAvailableCpu += float64(containerStats.CPUStats.CPUUsage.TotalUsage-containerStats.PreCPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage-containerStats.PreCPUStats.SystemUsage)
+		}()
 	}
+	wg.Wait()
 	return compute_resources.MemoryInMegaBytes((totalFreeMemory - totalUsedMemory) / bytesInMegaBytes), compute_resources.CpuMilliCores(float64(totalCPUs*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu)), nil
 }
