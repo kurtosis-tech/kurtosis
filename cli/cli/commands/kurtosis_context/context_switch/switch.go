@@ -55,7 +55,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	if err != nil {
 		return stacktrace.NewError("An error occurred retrieving current context prior to switching to the new one '%s'", contextIdentifier)
 	}
-	
+
 	if !store.IsRemote(contextPriorToSwitch) {
 		engineManager, err := engine_manager.NewEngineManager(ctx)
 		if err != nil {
