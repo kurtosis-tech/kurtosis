@@ -1072,15 +1072,13 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 // =================================================================================================================
 func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (bool, error) {
 	referenceArg := filters.Arg("reference", imageName)
-	filters := filters.NewArgs(referenceArg)
+	filterArgs := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
 		ctx,
-		types.ImageListOptions{ //nolint:exhaustruct
-			All: true,
+		types.ImageListOptions{
+			All:     true,
+			Filters: filterArgs,
 		})
-	logrus.Infof("filters: %v", filters)
-	logrus.Infof("imageName: %v", imageName)
-	logrus.Infof("imageName: %v", images)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to list images.")
 	}
