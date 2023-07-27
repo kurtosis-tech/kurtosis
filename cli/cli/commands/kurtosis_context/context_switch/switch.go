@@ -66,7 +66,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 			return stacktrace.Propagate(err, "An error occurred retrieving the engine status.")
 		}
 		if engineStatus == engine_manager.EngineStatus_Running {
-			logrus.Infof("An engine is running locally. Stop the engine before switching context so the remote engine port can be forwarded locally.")
+			logrus.Infof("Prior to switching context, stop the local engine by running kurtosis engine stop")
 			return nil
 		}
 	}
