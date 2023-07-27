@@ -25,9 +25,6 @@ const (
 	instanceIdentifierArgKey      = "instance-id"
 	instanceIdentifierArgIsGreedy = false
 	kurtosisCloudApiKeyEnvVarArg  = "KURTOSIS_CLOUD_API_KEY"
-	// TODO: Move the connection information out into a configuration file. Will happen in future work:
-	defaultKurtosisCloudApiUrl  = resolved_config.DefaultCloudConfigApiUrl
-	defaultKurtosisCloudApiPort = resolved_config.DefaultCloudConfigPort
 )
 
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
