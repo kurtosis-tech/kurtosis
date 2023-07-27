@@ -64,7 +64,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	}
 	// Create the connection
 	connectionStr := fmt.Sprintf("%s:%d", cloudConfig.ApiUrl, cloudConfig.Port)
-	client, err := cloud.CreateCloudClient(connectionStr)
+	client, err := cloud.CreateCloudClient(connectionStr, cloudConfig.CertificateChain)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error building client for Kurtosis Cloud")
 	}

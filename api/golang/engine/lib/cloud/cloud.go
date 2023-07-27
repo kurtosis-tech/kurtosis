@@ -7,13 +7,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
-	"os"
 )
 
-func CreateCloudClient(connectionStr string) (api.KurtosisCloudBackendServerClient, error) {
-	caChain := "/var/tmp/fullchain.pem" // CA cert that signed the proxy
-	f, err := os.ReadFile(caChain)
-
+func CreateCloudClient(connectionStr string, caCertChain string) (api.KurtosisCloudBackendServerClient, error) {
+	f := []byte(caCertChain)
 	p := x509.NewCertPool()
 	p.AppendCertsFromPEM(f)
 
