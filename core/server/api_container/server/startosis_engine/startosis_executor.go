@@ -87,21 +87,13 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			if !dryRun {
 				var err error
 				var instructionOutput *string
+				var execOutputChan <-chan string
 				if scheduledInstruction.IsExecuted() {
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
-					//} else if instruction.String()[0:4] == "exec" {
-					//	logrus.Debugf("FOUND EXEC COMMAND (STARTOSIS EXECUTOR): %s", instruction.String())
-					//	execOutputChan, streamErr := instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
-					//	if execOutputChan != nil {
-					//		for execOutputLine := range execOutputChan {
-					//			logrus.Debugf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
-					//			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
-					//				execOutputLine, instructionNumber, totalNumberOfInstructions)
-					//		}
-					//	}
-					//	err = streamErr
-					//	logrus.Debugf("SANITY CHECK %d", 1)
+				} else if instruction.String()[0:4] == "exec" {
+					logrus.Debugf("EXEC COMMAND AT STARTOSIS EXECUTOR LEVEL: %d", 1)
+					execOutputChan, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}
@@ -112,6 +104,15 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				if instructionOutput != nil {
 					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(*instructionOutput)
 				}
+				if execOutputChan != nil {
+					for execOutputLine := range execOutputChan {
+						logrus.Debugf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
+						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
+							execOutputLine, instructionNumber, totalNumberOfInstructions)
+					}
+					logrus.Debugf("SANITY CHECK %d", 1)
+				}
+
 				// mark the instruction as executed and add it to the current instruction plan
 				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
 			}
