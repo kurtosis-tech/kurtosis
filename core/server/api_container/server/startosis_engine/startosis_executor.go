@@ -101,6 +101,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 						}
 					}
 					err = streamErr
+					logrus.Debugf("SANITY CHECK %d", 1)
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}
