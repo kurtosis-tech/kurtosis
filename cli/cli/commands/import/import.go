@@ -23,6 +23,8 @@ import (
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -30,12 +32,15 @@ const (
 	enclaveNameFlagKey        = "enclave"
 	pathArgKey                = "file-path"
 	dotEnvPathFlagKey         = "env"
+	convertOnlyFlagKey        = "convert"
+	convertOnlyDefaultFlag    = false
 	isPathArgOptional         = false
 	defaultPathArg            = ""
 	defaultDotEnvPathFlag     = ".env"
 	emptyPrivateIpPlaceholder = ""
 	defaultMainFunction       = ""
 	noStarlarkParams          = "{}"
+	readWriteEveryone         = 0666
 
 	// Signifies that an enclave name should be auto-generated
 	autogenerateEnclaveNameKeyword = ""
@@ -69,6 +74,13 @@ var ImportCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisComman
 			Usage:     "The .env file path to be loaded into docker compose",
 			Type:      flags.FlagType_String,
 		},
+		{
+			Key:       convertOnlyFlagKey,
+			Shorthand: "c",
+			Default:   fmt.Sprintf("%v", convertOnlyDefaultFlag),
+			Usage:     "If enabled, only converts Docker Compose into Starlark without running it",
+			Type:      flags.FlagType_Bool,
+		},
 	},
 	Args: []*args.ArgConfig{
 		file_system_path_arg.NewFilepathOrDirpathArg(
@@ -95,7 +107,12 @@ func run(
 
 	dotEnvPath, err := flags.GetString(dotEnvPathFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Dot env path arg '%v' is missing", dotEnvPath)
+		return stacktrace.Propagate(err, "Dot env path flag '%v' is missing", dotEnvPath)
+	}
+
+	convertOnly, err := flags.GetBool(convertOnlyFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Convert only flag '%v' is missing", convertOnlyFlagKey)
 	}
 
 	dotEnvMap, err := godotenv.Read(dotEnvPath)
@@ -110,6 +127,15 @@ func run(
 		return stacktrace.Propagate(err, "Failed to convert compose to starlark")
 	}
 	// TODO(victor.colombo): Make this as pretty as run is
+	if convertOnly {
+		fileBase := filepath.Base(path)
+		fileName := fmt.Sprintf("%s.star", strings.TrimSuffix(fileBase, filepath.Ext(fileBase)))
+		err := os.WriteFile(fileName, []byte(script), readWriteEveryone)
+		if err != nil {
+			return stacktrace.Propagate(err, "failed to write starlark file '%v'", fileName)
+		}
+		return nil
+	}
 	logrus.Debugf("Generated starlark:\n%s", script)
 
 	enclaveName, err := flags.GetString(enclaveNameFlagKey)
