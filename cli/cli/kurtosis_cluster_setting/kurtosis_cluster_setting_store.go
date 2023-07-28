@@ -4,7 +4,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 	"os"
 	"sync"
 )
@@ -86,7 +85,7 @@ func (settingStore *kurtosisClusterSettingStore) getClusterSettingFromFile() (st
 	}
 	logrus.Debugf("Cluster setting filepath: '%v'", filepath)
 
-	fileContentBytes, err := ioutil.ReadFile(filepath)
+	fileContentBytes, err := os.ReadFile(filepath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred reading cluster setting file")
 	}
@@ -106,7 +105,7 @@ func (settingStore *kurtosisClusterSettingStore) saveClusterSettingFile(clusterN
 		return stacktrace.Propagate(err, "An error occurred getting the cluster setting filepath")
 	}
 
-	err = ioutil.WriteFile(filepath, fileContent, kurtosisClusterSettingFilePermissions)
+	err = os.WriteFile(filepath, fileContent, kurtosisClusterSettingFilePermissions)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred writing cluster setting file '%v'", filepath)
 	}

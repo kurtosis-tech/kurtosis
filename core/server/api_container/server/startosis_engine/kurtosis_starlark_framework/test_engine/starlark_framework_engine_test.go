@@ -12,9 +12,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
+	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"reflect"
 	"testing"
@@ -98,7 +98,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	instructionToExecute := instructionsSequence[0].GetInstruction()
 
 	// execute the instruction and run custom builtin assertions
-	executionResult, err := instructionToExecute.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
+	executionResult, err := instructionToExecute.Execute(context.WithValue(context.Background(), startosis_constants.ParallelismParam, 1))
 	require.Nil(t, err, "Builtin execution threw an error: \n%v", err)
 	builtin.Assert(interpretationResult, executionResult)
 

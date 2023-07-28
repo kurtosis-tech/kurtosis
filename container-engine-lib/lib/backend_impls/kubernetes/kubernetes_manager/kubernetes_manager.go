@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
+	terminal "golang.org/x/term"
 	"io"
 	apiv1 "k8s.io/api/core/v1"
 	rbacv1 "k8s.io/api/rbac/v1"
@@ -1383,7 +1383,7 @@ func (manager *KubernetesManager) RunExecCommand(
 		)
 	}
 
-	if err = exec.Stream(remotecommand.StreamOptions{
+	if err = exec.StreamWithContext(context.Background(), remotecommand.StreamOptions{
 		Stdin:             nil,
 		Stdout:            stdOutOutput,
 		Stderr:            stdErrOutput,

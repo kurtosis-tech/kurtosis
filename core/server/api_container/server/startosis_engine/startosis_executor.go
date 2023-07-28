@@ -8,18 +8,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sync"
 )
 
 const (
-	progressMsg      = "Execution in progress"
-	ParallelismParam = "PARALLELISM"
 	// we limit the output to 64k characters
 	// TODO(tedi) get rid of this in favor of streaming
 	outputSizeLimit          = 64 * 1024
 	outputLimitReachedSuffix = "..."
+	progressMsg              = "Execution in progress"
 )
 
 var (
@@ -54,7 +54,7 @@ func NewStartosisExecutor(runtimeValueStore *runtime_value_store.RuntimeValueSto
 func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	ctxWithParallelism := context.WithValue(ctx, ParallelismParam, parallelism)
+	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
 	go func() {
 		defer func() {
 			executor.mutex.Unlock()

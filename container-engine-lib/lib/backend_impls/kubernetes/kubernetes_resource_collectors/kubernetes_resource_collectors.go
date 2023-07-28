@@ -179,7 +179,7 @@ func postFilterKubernetesResources[T kubernetesResource](
 			)
 		}
 
-		if postFilterLabelValues != nil && len(postFilterLabelValues) > 0 {
+		if len(postFilterLabelValues) > 0 {
 			if _, found := postFilterLabelValues[labelValue]; !found {
 				continue
 			}

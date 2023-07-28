@@ -3,7 +3,7 @@ package yaml_parser
 import (
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/stacktrace"
-	"io/ioutil"
+	"os"
 )
 
 var noPackageNameFound = ""
@@ -35,5 +35,5 @@ func parseKurtosisYamlInternal(absPathToKurtosisYaml string, read func(filename 
 }
 
 func ParseKurtosisYaml(absPathToKurtosisYaml string) (*KurtosisYaml, error) {
-	return parseKurtosisYamlInternal(absPathToKurtosisYaml, ioutil.ReadFile)
+	return parseKurtosisYamlInternal(absPathToKurtosisYaml, os.ReadFile)
 }

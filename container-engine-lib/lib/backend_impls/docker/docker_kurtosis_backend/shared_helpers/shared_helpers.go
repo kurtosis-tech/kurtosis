@@ -21,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -257,7 +256,7 @@ func GetIpAndPortInfoFromContainer(
 
 	var containerPublicIp net.IP
 	var publicPortSpecs map[string]*port_spec.PortSpec
-	if hostMachinePortBindings == nil || len(hostMachinePortBindings) == 0 {
+	if len(hostMachinePortBindings) == 0 {
 		return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 	}
 
@@ -570,7 +569,7 @@ func getMatchingUserServiceDockerResources(
 		}
 		serviceUuid := service.ServiceUUID(serviceUuidStr)
 
-		if maybeUuidsToMatch != nil && len(maybeUuidsToMatch) > 0 {
+		if len(maybeUuidsToMatch) > 0 {
 			if _, found := maybeUuidsToMatch[serviceUuid]; !found {
 				continue
 			}
@@ -605,7 +604,7 @@ func getMatchingUserServiceDockerResources(
 		}
 		serviceUuid := service.ServiceUUID(serviceUuidStr)
 
-		if maybeUuidsToMatch != nil && len(maybeUuidsToMatch) > 0 {
+		if len(maybeUuidsToMatch) > 0 {
 			if _, found := maybeUuidsToMatch[serviceUuid]; !found {
 				continue
 			}
@@ -743,7 +742,7 @@ func dumpContainerInfo(
 		return stacktrace.Propagate(err, "An error occurred serializing the results of inspecting container with ID '%v' to JSON", containerId)
 	}
 	specOutputFilepath := path.Join(containerOutputDirpath, containerInspectResultFilename)
-	if err := ioutil.WriteFile(specOutputFilepath, jsonSerializedInspectResultBytes, createdFilePerms); err != nil {
+	if err := os.WriteFile(specOutputFilepath, jsonSerializedInspectResultBytes, createdFilePerms); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred writing the inspect output of container with name '%v' and ID '%v' to file '%v'",
