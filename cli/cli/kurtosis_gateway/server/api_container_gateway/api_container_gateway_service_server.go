@@ -2,6 +2,7 @@ package api_container_gateway
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/common"
 	"io"
 	"sync"
 
@@ -10,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -20,7 +20,7 @@ const (
 )
 
 type ApiContainerGatewayServiceServer struct {
-	// Id of enclave the API container is running in
+	// ID of enclave the API container is running in
 	enclaveId string
 	// Client for the api container we'll be connecting too
 	remoteApiContainerClient kurtosis_core_rpc_api_bindings.ApiContainerServiceClient
@@ -65,7 +65,7 @@ func (service *ApiContainerGatewayServiceServer) RunStarlarkScript(args *kurtosi
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
 	}
-	if err := forwardKurtosisExecutionStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamToReadFrom, streamToWriteTo); err != nil {
+	if err := common.ForwardKurtosisExecutionStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamToReadFrom, streamToWriteTo); err != nil {
 		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user")
 	}
 	return nil
@@ -86,7 +86,7 @@ func (service *ApiContainerGatewayServiceServer) RunStarlarkPackage(args *kurtos
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred starting the execution of Kurtosis code")
 	}
-	if err := forwardKurtosisExecutionStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamToReadFrom, streamToWriteTo); err != nil {
+	if err := common.ForwardKurtosisExecutionStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamToReadFrom, streamToWriteTo); err != nil {
 		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user while executing package '%s'", args.GetPackageId())
 	}
 	return nil
@@ -355,25 +355,6 @@ func (service *ApiContainerGatewayServiceServer) updateServicesLocalConnection(s
 	}
 
 	return nil
-}
-
-func forwardKurtosisExecutionStream[T any](streamToReadFrom grpc.ClientStream, streamToWriteTo grpc.ServerStream) error {
-	for {
-		starlarkRunResponseLine := new(T)
-		// RecvMsg blocks until either a message is received or an error is thrown
-		readErr := streamToReadFrom.RecvMsg(starlarkRunResponseLine)
-		if readErr == io.EOF {
-			logrus.Debug("Finished reading from the Kurtosis response line stream.")
-			return nil
-		}
-		if readErr != nil {
-			return stacktrace.Propagate(readErr, "Error reading Kurtosis execution lines from Kurtosis core stream")
-		}
-
-		if writeErr := streamToWriteTo.SendMsg(starlarkRunResponseLine); writeErr != nil {
-			return stacktrace.Propagate(readErr, "Received a Kurtosis execution line but failed forwarding it back to the user")
-		}
-	}
 }
 
 type dataChunkStreamReceiver interface {
