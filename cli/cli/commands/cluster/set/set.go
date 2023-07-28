@@ -67,7 +67,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 			return
 		}
 		if clusterPriorToUpdate == noClusterSetting {
-			logrus.Infof("Couldn't set clsuter to '%s' but as we didn't have a previous cluster setting we can't revert either")
+			logrus.Infof("Couldn't set cluster to '%s' but as we didn't have a previous cluster setting we can't revert either", clusterName)
 			return
 		}
 		if err = clusterSettingStore.SetClusterSetting(clusterPriorToUpdate); err != nil {
