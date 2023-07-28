@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -49,7 +50,10 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	clusterPriorToUpdate, err := clusterSettingStore.GetClusterSetting()
 	if err != nil {
-		return stacktrace.Propagate(err, "Tried to fetch the current cluster before changing clusters but failed")
+		logrus.Debugf("Unable to get current cluster set. If this is a fresh Kurtosis install, it's fine "+
+			"as the cluster config might not be set yet. Error was: %v", err.Error())
+		// if  there is no cluster file we fall back to docker
+		clusterPriorToUpdate = resolved_config.DefaultDockerClusterName
 	}
 
 	if clusterName == clusterPriorToUpdate {
