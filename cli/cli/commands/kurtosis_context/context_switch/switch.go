@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/context_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -64,6 +63,21 @@ func SwitchContext(
 		return stacktrace.NewError("An error occurred retrieving current context prior to switching to the new one '%s'", contextIdentifier)
 	}
 
+	if !store.IsRemote(contextPriorToSwitch) {
+		engineManager, err := engine_manager.NewEngineManager(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
+		}
+		engineStatus, _, _, err := engineManager.GetEngineStatus(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred retrieving the engine status.")
+		}
+		if engineStatus == engine_manager.EngineStatus_Running {
+			logrus.Infof("Prior to switching context, stop the local engine by running kurtosis engine stop")
+			return nil
+		}
+	}
+
 	contextsMatchingIdentifiers, err := context_id_arg.GetContextUuidForContextIdentifier(contextsConfigStore, []string{contextIdentifier})
 	if err != nil {
 		return stacktrace.Propagate(err, "Error searching for context matching context identifier: '%s'", contextIdentifier)
@@ -107,14 +121,6 @@ func SwitchContext(
 			switchContextArg := constructors.NewSwitchContextArgs()
 			if _, err = portalDaemonClient.SwitchContext(ctx, switchContextArg); err != nil {
 				return stacktrace.Propagate(err, "Error switching Kurtosis portal context")
-			}
-			if store.IsRemote(currentContext) {
-				// Forward the remote engine port to the local machine
-				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &kurtosis_context.EnginePortTransportProtocol)
-				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
-					return stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
-				}
 			}
 		}
 	} else {
