@@ -994,6 +994,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 				}
 			}
 			execOutputChan <- execOutputLine
+			time.Sleep(1 * time.Second)
 		}
 
 		inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
