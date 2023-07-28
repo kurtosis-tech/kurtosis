@@ -39,6 +39,15 @@ func GetErr() io.Writer {
 	return std.err
 }
 
+func PrintOut(msg string) {
+	if _, printErr := fmt.Fprint(std.out, msg); printErr != nil {
+		logrus.Errorf("Error printing message to StdOut. Message was:\n%s\nError was:\n%v", msg, printErr.Error())
+	}
+
+	printLogsToFile(msg)
+
+}
+
 func PrintOutLn(msg string) {
 	if _, printErr := fmt.Fprintln(std.out, msg); printErr != nil {
 		logrus.Errorf("Error printing message to StdOut. Message was:\n%s\nError was:\n%v", msg, printErr.Error())

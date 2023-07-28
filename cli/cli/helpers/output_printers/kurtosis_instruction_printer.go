@@ -165,6 +165,14 @@ func (printer *ExecutionPrinter) printPersistentLineToStdOut(lineToPrint string)
 	return nil
 }
 
+func (printer *ExecutionPrinter) printPersistentLineToStdOutWithoutNewLine(lineToPrint string) error {
+	// If spinner is being used, we have to stop spinner -> print -> start spinner in order to keep the spinner at the bottom of the output
+	printer.stopSpinnerIfUsed()
+	out.PrintOut(lineToPrint)
+	printer.startSpinnerIfUsed()
+	return nil
+}
+
 func FormatError(errorMessage string) string {
 	return colorizeError(errorMessage)
 }
