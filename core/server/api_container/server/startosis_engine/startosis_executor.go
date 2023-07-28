@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"math"
 	"sync"
 )
 
@@ -95,15 +94,12 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					return
 				}
 				if instructionOutput != nil {
-					lengthOfInstructionOutput := len(*instructionOutput)
-					totalNumberOfChunks := int(math.Ceil(float64(lengthOfInstructionOutput) / float64(threeMegaByteLimit)))
-					for i := 0; i < totalNumberOfChunks; i++ {
-						start := i * threeMegaByteLimit
-						end := (i + 1) * threeMegaByteLimit
-						if end > lengthOfInstructionOutput {
-							end = lengthOfInstructionOutput
+					for i := 0; i < len(*instructionOutput); i += threeMegaByteLimit {
+						end := i + threeMegaByteLimit
+						if end > len(*instructionOutput) {
+							end = len(*instructionOutput)
 						}
-						chunk := (*instructionOutput)[start:end]
+						chunk := (*instructionOutput)[i:end]
 						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(chunk)
 					}
 				}
