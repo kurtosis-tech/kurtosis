@@ -6,6 +6,7 @@ import (
 )
 
 const callerPosition = 1
+const minimumCallStackDepth = 2
 
 // GetCallerPositionFromThread gets you the position (line, col, filename) from where this function is called
 // We pick the first position on the stack based on this https://github.com/google/starlark-go/blob/eaacdf22efa54ae03ea2ec60e248be80d0cadda0/starlark/eval.go#L136
@@ -19,7 +20,7 @@ func GetCallerPositionFromThread(thread *starlark.Thread) *kurtosis_starlark_fra
 	// As the bottom of the stack is guaranteed to be a built in based on above,
 	// The 2nd item is the caller, this should always work when called from a GenerateXXXBuiltIn context
 	// We panic to eject early in case a bug occurs.
-	if thread.CallStackDepth() < 2 {
+	if thread.CallStackDepth() < minimumCallStackDepth {
 		panic("Call stack needs to contain at least 2 items for us to get the callers position. This is a Kurtosis Bug.")
 	}
 	callFrame := thread.CallStack().At(callerPosition)

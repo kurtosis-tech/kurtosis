@@ -15,6 +15,11 @@ const (
 	connectionSubmoduleAllowedAttrName = "ALLOWED"
 )
 
+const (
+	totalPacketLossPercentage = 100
+	noPacketLossPercentage    = 0
+)
+
 func KurtosisModule() (*starlarkstruct.Module, *startosis_errors.InterpretationError) {
 	connectionModule, interpretationErr := newConnectionModule()
 	if interpretationErr != nil {
@@ -29,11 +34,11 @@ func KurtosisModule() (*starlarkstruct.Module, *startosis_errors.InterpretationE
 }
 
 func newConnectionModule() (*starlarkstruct.Module, *startosis_errors.InterpretationError) {
-	blockedConnectionConfig, interpretationErr := connection_config.CreateConnectionConfig(starlark.Float(100))
+	blockedConnectionConfig, interpretationErr := connection_config.CreateConnectionConfig(starlark.Float(totalPacketLossPercentage))
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Unable to initiate the connection module. This is a Kurtosis internal bug")
 	}
-	allowedConnectionConfig, interpretationErr := connection_config.CreateConnectionConfig(starlark.Float(0))
+	allowedConnectionConfig, interpretationErr := connection_config.CreateConnectionConfig(starlark.Float(noPacketLossPercentage))
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Unable to initiate the connection module. This is a Kurtosis internal bug")
 	}

@@ -173,8 +173,8 @@ func DeserializePortSpecs(specsStr string) (map[string]*port_spec.PortSpec, erro
 				return nil, stacktrace.NewError(
 					"Expected splitting port spec string '%v' to yield '%v' to '%v' fragments but got '%v'",
 					portSpecFragments[portSpecOptionalFieldsIndex],
-					1,
-					2,
+					minExpectedPortSpecOptionalFragments,
+					maxExpectedPortSpecOptionalFragments,
 					len(optionalFieldsFragments),
 				)
 			}

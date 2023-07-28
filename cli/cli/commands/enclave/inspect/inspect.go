@@ -166,8 +166,8 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.
 			return stacktrace.NewError("No printing function found for enclave object '%v'; this is a bug in Kurtosis!", header)
 		}
 
-		numRunesInHeader := utf8.RuneCountInString(header) + 2 // 2 because there will be a space before and after the header
-		numPadChars := (headerWidthChars - numRunesInHeader) / 2
+		numRunesInHeader := utf8.RuneLen(' ') + utf8.RuneCountInString(header) + utf8.RuneLen(' ') // there will be a space before and after the header
+		numPadChars := (headerWidthChars - numRunesInHeader) / 2                                   //nolint:gomnd
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 

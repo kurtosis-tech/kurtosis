@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	defaultTmpDir = ""
-	dbSuffix      = "*.db"
+	defaultTmpDir               = ""
+	dbSuffix                    = "*.db"
+	readWriteEveryonePermission = 0666
 )
 
 // CreateEnclaveDbForTesting creates an enclaveDb for testing purposes
@@ -18,7 +19,7 @@ func CreateEnclaveDbForTesting() (*enclave_db.EnclaveDB, func(), error) {
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating temporary file to write enclave db too")
 	}
-	db, err := bolt.Open(file.Name(), 0666, nil)
+	db, err := bolt.Open(file.Name(), readWriteEveryonePermission, nil)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while opening enclave db at '%v'", file.Name())
 	}
