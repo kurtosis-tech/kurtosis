@@ -17,7 +17,8 @@ const (
 	progressMsg      = "Execution in progress"
 	ParallelismParam = "PARALLELISM"
 	// we put a three megabyte limit here as there is a 4 megabyte limit on what can be recieved
-	threeMegaByteLimit = 3 * 1024 * 1024
+	threeMegaByteLimit         = 3 * 1024 * 1024
+	instructionResultSeparator = "\n"
 )
 
 var (
@@ -106,6 +107,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(chunk)
 					}
 				}
+				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(instructionResultSeparator)
 				// mark the instruction as executed and add it to the current instruction plan
 				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
 			}
