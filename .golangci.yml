@@ -1,5 +1,7 @@
 linters:
   enable:
+    - exhaustruct
+    - exportloopref
     - staticcheck
   max-issues-per-linter: 0
   sort-results: true
