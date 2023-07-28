@@ -3,6 +3,7 @@ package grpc_file_streaming
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
+	"io"
 )
 
 // ClientStream is a wrapper around a GRPC ClientStream object to be able to send and receive payloads bypassing the
@@ -24,13 +25,15 @@ func NewClientStream[DataChunkMessageType any, ServerResponseType any](
 // back the final response object.
 func (clientStream *ClientStream[DataChunkMessageType, ServerResponseType]) SendData(
 	contentNameForLogging string,
-	contentToSend []byte,
+	contentToSend io.Reader,
+	contentSizeInBytes uint64,
 	grpcMsgConstructor func(previousChunkHash string, contentChunk []byte) (*DataChunkMessageType, error),
 ) (*ServerResponseType, error) {
 	// Split the content into chunks and stream them to the server
 	err := sendMessagesToStream[DataChunkMessageType](
 		contentNameForLogging,
 		contentToSend,
+		contentSizeInBytes,
 		clientStream.grpcStream.SendMsg,
 		grpcMsgConstructor,
 	)

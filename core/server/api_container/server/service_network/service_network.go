@@ -9,9 +9,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"io"
 	"net/http"
 )
 
+// ServiceNetwork handles the state of the enclave
+//
+// Regenerate mock with the following command from core/server directory:
+// mockery -r --name=ServiceNetwork --filename=mock_service_network.go --structname=MockServiceNetwork --with-expecter --inpackage
 type ServiceNetwork interface {
 	SetConnection(
 		ctx context.Context,
@@ -127,7 +132,7 @@ type ServiceNetwork interface {
 
 	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
-	UploadFilesArtifact(data []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
+	UploadFilesArtifact(data io.Reader, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
 	IsNetworkPartitioningEnabled() bool
 

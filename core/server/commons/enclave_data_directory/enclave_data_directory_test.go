@@ -7,14 +7,13 @@ package enclave_data_directory
 
 import (
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 )
 
 func TestGetFilesArtifactStore(t *testing.T) {
-	enclaveDirpath, err := ioutil.TempDir("", "")
+	enclaveDirpath, err := os.MkdirTemp("", "")
 	assert.Nil(t, err)
 
 	enclaveDir := NewEnclaveDataDirectory(enclaveDirpath)
