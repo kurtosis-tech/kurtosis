@@ -136,8 +136,7 @@ func run(
 	if convertOnly {
 		fileBase := filepath.Base(path)
 		fileName := fmt.Sprintf("%s.star", strings.TrimSuffix(fileBase, filepath.Ext(fileBase)))
-		err := os.WriteFile(fileName, []byte(script), readWriteEveryone)
-		if err != nil {
+		if err := os.WriteFile(fileName, []byte(script), readWriteEveryone); err != nil {
 			return stacktrace.Propagate(err, "failed to write starlark file '%v'", fileName)
 		}
 		return nil
