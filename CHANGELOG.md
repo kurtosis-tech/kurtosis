@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.80.21](https://github.com/kurtosis-tech/kurtosis/compare/0.80.20...0.80.21) (2023-07-28)
+
+
+### Bug Fixes
+
+* Check if a local engine is running before switching to a remote context and let the user know what to do ([#1011](https://github.com/kurtosis-tech/kurtosis/issues/1011)) ([141247f](https://github.com/kurtosis-tech/kurtosis/commit/141247f46fc5ca11644a35f865c737e96dd3a343))
+* fix cpu calculation by getting pre cpu stat ([52a191e](https://github.com/kurtosis-tech/kurtosis/commit/52a191e9e4a1cfaf011ef3b7c0d3d6ea02822756))
+* Implement GetEngineLogs in Kubernete backend ([#1005](https://github.com/kurtosis-tech/kurtosis/issues/1005)) ([3d0a3e2](https://github.com/kurtosis-tech/kurtosis/commit/3d0a3e2153da6254f62e53b9f03d9106c57e45a0))
+* Log streaming was timing out on docker ([#999](https://github.com/kurtosis-tech/kurtosis/issues/999)) ([d3b6c43](https://github.com/kurtosis-tech/kurtosis/commit/d3b6c434ee3229ba6f433fda5374c0676d690db0))
+* make continuity test work ([#1016](https://github.com/kurtosis-tech/kurtosis/issues/1016)) ([c430db2](https://github.com/kurtosis-tech/kurtosis/commit/c430db22616b0684711a79e4326a49102437abe6))
+* make resource fetching a parallel operation ([#1012](https://github.com/kurtosis-tech/kurtosis/issues/1012)) ([52a191e](https://github.com/kurtosis-tech/kurtosis/commit/52a191e9e4a1cfaf011ef3b7c0d3d6ea02822756))
+* only ask for emails on interactive terminals ([#1018](https://github.com/kurtosis-tech/kurtosis/issues/1018)) ([1bdac73](https://github.com/kurtosis-tech/kurtosis/commit/1bdac73eb07611cb6bcfd987ed4282b7eb06c26e))
+
 ## [0.80.20](https://github.com/kurtosis-tech/kurtosis/compare/0.80.19...0.80.20) (2023-07-27)
 
 
