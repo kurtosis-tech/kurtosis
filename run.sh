@@ -1,8 +1,5 @@
 #!/bin/bash
 
-git add .
-git commit -m"debug"
-
 kurtosis clean -a
 kurtosis engine stop
 

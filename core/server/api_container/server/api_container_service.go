@@ -681,7 +681,7 @@ func (apicService ApiContainerService) runStarlark(
 			// in addition to send the msg to the RPC stream, we also print the lines to the APIC logs at debug level
 			logrus.Debugf("Received response line from Starlark runner: '%v'", responseLine)
 			if err := stream.SendMsg(responseLine); err != nil {
-				logrus.Errorf("Starlark response line sent through the channel but could not be forwarded to API Container client. Some log lines will not be returned to the user.\nResponse line was: \n%v. Error was: \n%v", responseLine, err.Error())
+				logrus.Errorf("Starlark responsethe ch line sent through annel but could not be forwarded to API Container client. Some log lines will not be returned to the user.\nResponse line was: \n%v. Error was: \n%v", responseLine, err.Error())
 			}
 		}
 	}
