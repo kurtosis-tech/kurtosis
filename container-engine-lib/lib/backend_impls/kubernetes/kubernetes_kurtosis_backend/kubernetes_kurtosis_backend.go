@@ -2,8 +2,6 @@ package kubernetes_kurtosis_backend
 
 import (
 	"context"
-	"errors"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/engine_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/user_services_functions"
@@ -11,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
@@ -20,7 +19,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"strings"
+)
+
+const (
+	isResourceInformationComplete = false
 )
 
 type KubernetesKurtosisBackend struct {
@@ -34,11 +36,6 @@ type KubernetesKurtosisBackend struct {
 
 	// Will only be filled out for the API container
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs
-}
-
-func (backend *KubernetesKurtosisBackend) GetEngineLogs(ctx context.Context, outputDirpath string) error {
-	//TODO implement me
-	panic("implement me")
 }
 
 func (backend *KubernetesKurtosisBackend) DumpKurtosis(ctx context.Context, outputDirpath string) error {
@@ -166,6 +163,16 @@ func (backend *KubernetesKurtosisBackend) GetEngines(
 		return nil, stacktrace.Propagate(err, "An error occurred getting engines using filters '%+v'", filters)
 	}
 	return engines, nil
+}
+
+func (backend *KubernetesKurtosisBackend) GetEngineLogs(
+	ctx context.Context,
+	outputDirpath string,
+) error {
+	if err := engine_functions.GetEngineLogs(ctx, outputDirpath, backend.kubernetesManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting engine logs")
+	}
+	return nil
 }
 
 func (backend *KubernetesKurtosisBackend) StopEngines(
@@ -392,6 +399,11 @@ func (backend *KubernetesKurtosisBackend) DestroyUserServices(ctx context.Contex
 		backend.kubernetesManager)
 }
 
+func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
+	// TODO - implement resource calculation in kubernetes
+	return 0, 0, isResourceInformationComplete, nil
+}
+
 func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Creating the logs database isn't yet implemented on Kubernetes")
@@ -490,36 +502,4 @@ func getEnclaveMatchLabels() map[string]string {
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
 	}
 	return matchLabels
-}
-
-// This is a helper function that will take multiple errors, each identified by an ID, and format them together
-// If no errors are returned, this function returns nil
-func buildCombinedError(errorsById map[string]error, titleStr string) error {
-	allErrorStrs := []string{}
-	for errorId, stopErr := range errorsById {
-		errorFormatStr := ">>>>>>>>>>>>> %v %v <<<<<<<<<<<<<\n" +
-			"%v\n" +
-			">>>>>>>>>>>>> END %v %v <<<<<<<<<<<<<"
-		errorStr := fmt.Sprintf(
-			errorFormatStr,
-			strings.ToUpper(titleStr),
-			errorId,
-			stopErr.Error(),
-			strings.ToUpper(titleStr),
-			errorId,
-		)
-		allErrorStrs = append(allErrorStrs, errorStr)
-	}
-
-	if len(allErrorStrs) > 0 {
-		// NOTE: This is one of the VERY rare cases where we don't want to use stacktrace.Propagate, because
-		// attaching stack information for this method (which simply combines errors) just isn't useful. The
-		// expected behaviour is that the caller of this function will use stacktrace.Propagate
-		return errors.New(strings.Join(
-			allErrorStrs,
-			"\n\n",
-		))
-	}
-
-	return nil
 }

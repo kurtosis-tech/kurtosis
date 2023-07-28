@@ -1,5 +1,46 @@
 # Changelog
 
+## [0.80.20](https://github.com/kurtosis-tech/kurtosis/compare/0.80.19...0.80.20) (2023-07-27)
+
+
+### Features
+
+* add `kurtosis cloud load to CLI` ([#882](https://github.com/kurtosis-tech/kurtosis/issues/882)) ([b2db8c9](https://github.com/kurtosis-tech/kurtosis/commit/b2db8c98d7b17c96d53c28154739e624fe48a63d))
+* ask user for email on first run of Kurtosis ([#1001](https://github.com/kurtosis-tech/kurtosis/issues/1001)) ([0f33b5b](https://github.com/kurtosis-tech/kurtosis/commit/0f33b5b4a3286d9f3a973ad55f7479f17a1782a6))
+* Start engine remotely with remote backend config when the context is remote ([#963](https://github.com/kurtosis-tech/kurtosis/issues/963)) ([6816d1f](https://github.com/kurtosis-tech/kurtosis/commit/6816d1f01d99e80609f808b57d2250ebc0b1c8bd))
+* validate min cpu & min memory are well under whats available ([#988](https://github.com/kurtosis-tech/kurtosis/issues/988)) ([768e95d](https://github.com/kurtosis-tech/kurtosis/commit/768e95d2dbeb7a554a97cff8b6650e734dccd66a))
+
+
+### Bug Fixes
+
+* Normalize destroy enclave in all tests ([#976](https://github.com/kurtosis-tech/kurtosis/issues/976)) ([20b635a](https://github.com/kurtosis-tech/kurtosis/commit/20b635a2fc7efc958e7bd7e007b2db65762b8b1c))
+
+## [0.80.19](https://github.com/kurtosis-tech/kurtosis/compare/0.80.18...0.80.19) (2023-07-26)
+
+
+### Bug Fixes
+
+* Fix docker image pull hanging forever ([#994](https://github.com/kurtosis-tech/kurtosis/issues/994)) ([fd00d79](https://github.com/kurtosis-tech/kurtosis/commit/fd00d79efca2a7d8b3b04ce9d1f4d988dc1d956b))
+
+## [0.80.18](https://github.com/kurtosis-tech/kurtosis/compare/0.80.17...0.80.18) (2023-07-26)
+
+
+### Features
+
+* Add volume bind support for `kurtosis import` ([#984](https://github.com/kurtosis-tech/kurtosis/issues/984)) ([391c016](https://github.com/kurtosis-tech/kurtosis/commit/391c016ccaa24d454f746179bd096030596bf363))
+
+
+### Bug Fixes
+
+* CLI args marked as greedy were not greedy ([#975](https://github.com/kurtosis-tech/kurtosis/issues/975)) ([e6ff482](https://github.com/kurtosis-tech/kurtosis/commit/e6ff482cdf6758885ae9a1bdcd3ea6fb5e620a05))
+
+## [0.80.17](https://github.com/kurtosis-tech/kurtosis/compare/0.80.16...0.80.17) (2023-07-26)
+
+
+### Features
+
+* Add `environment` support for `kurtosis import`  ([#982](https://github.com/kurtosis-tech/kurtosis/issues/982)) ([24e71d1](https://github.com/kurtosis-tech/kurtosis/commit/24e71d1464b9d081056d61f43fde09fba2d8505f)), closes [#981](https://github.com/kurtosis-tech/kurtosis/issues/981)
+
 ## [0.80.16](https://github.com/kurtosis-tech/kurtosis/compare/0.80.15...0.80.16) (2023-07-25)
 
 

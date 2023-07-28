@@ -3,6 +3,7 @@ package shared_utils
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver/v3"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,11 +16,14 @@ const (
 	defaultTmpDir             = ""
 )
 
-func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) ([]byte, error) {
+// CompressPath compressed the entire content of the file or directory at pathToCompress and returns an io.ReadCloser
+// of the TGZ archive created, alongside the size (in bytes) of the archive
+// The consumer should take care of closing the io.ReadClose returned
+func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadCloser, uint64, error) {
 	pathToCompress = strings.TrimRight(pathToCompress, string(filepath.Separator))
 	uploadFileInfo, err := os.Stat(pathToCompress)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "There was a path error for '%s' during file compression.", pathToCompress)
+		return nil, 0, stacktrace.Propagate(err, "There was a path error for '%s' during file compression.", pathToCompress)
 	}
 
 	// This allows us to archive contents of dirs in root instead of nesting
@@ -27,10 +31,10 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) ([]byte, 
 	if uploadFileInfo.IsDir() {
 		filesInDirectory, err := os.ReadDir(pathToCompress)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
+			return nil, 0, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
 		}
 		if len(filesInDirectory) == 0 {
-			return nil, stacktrace.NewError("The directory '%s' you are trying to compress is empty", pathToCompress)
+			return nil, 0, stacktrace.NewError("The directory '%s' you are trying to compress is empty", pathToCompress)
 		}
 
 		for _, fileInDirectory := range filesInDirectory {
@@ -43,32 +47,42 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) ([]byte, 
 
 	tempDir, err := os.MkdirTemp(defaultTmpDir, tempCompressionDirPattern)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
+		return nil, 0, stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
 	}
 
 	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToCompress)+compressionExtension)
 	if err = archiver.Archive(filepathsToUpload, compressedFilePath); err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to compress '%s'.", pathToCompress)
+		return nil, 0, stacktrace.Propagate(err, "Failed to compress '%s'.", pathToCompress)
 	}
 
-	compressedFileInfo, err := os.Stat(compressedFilePath)
+	compressedFile, err := os.OpenFile(compressedFilePath, os.O_RDONLY, 0700)
 	if err != nil {
-		return nil, stacktrace.Propagate(err,
+		return nil, 0, stacktrace.Propagate(err,
 			"Failed to create a temporary archive file at '%s' during files upload for '%s'.",
 			tempDir, pathToCompress)
 	}
 
-	if enforceMaxFileSizeLimit && compressedFileInfo.Size() >= kurtosisDataTransferLimit {
-		return nil, stacktrace.NewError(
+	compressedFileInfo, err := compressedFile.Stat()
+	if err != nil {
+		return nil, 0, stacktrace.Propagate(err,
+			"Failed to inspect temporary archive file at '%s' during files upload for '%s'.",
+			tempDir, pathToCompress)
+	}
+
+	var compressedFileSize uint64
+	if compressedFileInfo.Size() >= 0 {
+		compressedFileSize = uint64(compressedFileInfo.Size())
+	} else {
+		return nil, 0, stacktrace.Propagate(err,
+			"Failed to compute archive size for temporary file '%s' obtained compressing path '%s'",
+			tempDir, pathToCompress)
+	}
+
+	if enforceMaxFileSizeLimit && compressedFileSize >= kurtosisDataTransferLimit {
+		return nil, 0, stacktrace.NewError(
 			"The files you are trying to upload, which are now compressed, exceed or reach 100mb. " +
 				"Manipulation (i.e. uploads or downloads) of files larger than 100mb is currently disallowed in Kurtosis.")
 	}
-	content, err := os.ReadFile(compressedFilePath)
-	if err != nil {
-		return nil, stacktrace.Propagate(err,
-			"There was an error reading from the temporary tar file '%s' recently compressed for upload.",
-			compressedFileInfo.Name())
-	}
 
-	return content, nil
+	return compressedFile, compressedFileSize, nil
 }

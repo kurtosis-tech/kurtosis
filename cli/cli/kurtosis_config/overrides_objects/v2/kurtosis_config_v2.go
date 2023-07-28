@@ -22,4 +22,5 @@ type KurtosisConfigV2 struct {
 
 	ShouldSendMetrics *bool                               `yaml:"should-send-metrics,omitempty"`
 	KurtosisClusters  map[string]*KurtosisClusterConfigV2 `yaml:"kurtosis-clusters,omitempty"`
+	CloudConfig       *KurtosisCloudConfigV2              `yaml:"cloud-config,omitempty"`
 }

@@ -21,6 +21,7 @@ const sidebars = {
             "href": "https://web3.kurtosis.com",
         },
         'quickstart',
+        'code-examples',
         {
             type: 'category',
             label: 'Guides',
@@ -66,7 +67,6 @@ const sidebars = {
         'sdk',
         'faq',
         'best-practices',
-        'package-index',
         'changelog',
     ],
 };
