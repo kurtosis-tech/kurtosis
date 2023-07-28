@@ -59,6 +59,7 @@ const (
 	filesFlagKey                     = "files"
 	filesArtifactMountsDelimiter     = ","
 	filesArtifactMountpointDelimiter = ":"
+	defaultLimits                    = 0
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -293,7 +294,7 @@ func run(
 	if entrypointStr != "" {
 		entrypoint = append(entrypoint, entrypointStr)
 	}
-	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
+	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -423,6 +424,10 @@ func GetServiceConfigStarlark(
 	entrypoint []string,
 	envvarsStr string,
 	filesArtifactMountsStr string,
+	cpuAllocationMillicpus int,
+	memoryAllocationMegabytes int,
+	minCpuMilliCores int,
+	minMemoryMegaBytes int,
 	privateIPAddressPlaceholder string,
 ) (string, error) {
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
@@ -439,7 +444,7 @@ func GetServiceConfigStarlark(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, 0, 0, 0, 0), nil
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes), nil
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings
