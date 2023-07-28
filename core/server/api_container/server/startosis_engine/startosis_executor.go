@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	progressMsg = "Execution in progress"
-	progressMsg      = "Execution in progress"
+	progressMsg              = "Execution in progress"
 	// we limit the output to 64k characters
 	// TODO(tedi) get rid of this in favor of streaming
 	outputSizeLimit          = 64 * 1024
