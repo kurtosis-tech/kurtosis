@@ -884,7 +884,7 @@ func dumpPodInfo(
 		if err != nil {
 			return stacktrace.Propagate(
 				err,
-				"An error occurred dumping logs of container '%v' in pod '%v' in namespace '%v'",
+				"An error occurred getting logs of container '%v' in pod '%v' in namespace '%v'",
 				containerName,
 				podName,
 				namespaceName,

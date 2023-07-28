@@ -46,12 +46,15 @@ func GetEngineLogs(
 		if len(namespacesForId) > 1 {
 			return stacktrace.NewError(
 				"Expected at most one namespace to match engine GUID '%v', but got '%v'",
-				len(namespacesForId),
 				engineGuidStr,
+				len(namespacesForId),
 			)
 		}
 
 		engineNamespace := namespacesForId[0]
+		if engineNamespace == nil {
+			return stacktrace.NewError("Expected at most one namespace to match engine GUID '%v', but it wasn't found; this is a bug in Kurtosis", engineGuid)
+		}
 		namespaceName := engineNamespace.GetName()
 
 		// get the engine's pod
