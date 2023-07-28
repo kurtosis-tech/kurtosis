@@ -283,12 +283,13 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]servic
 
 // Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, services.FileArtifactName, error) {
-	content, err := shared_utils.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
+	content, contentSize, err := shared_utils.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err,
 			"There was an error compressing the file '%v' before upload",
 			pathToUpload)
 	}
+	defer content.Close()
 
 	client, err := enclaveCtx.client.UploadFilesArtifact(context.Background())
 	if err != nil {
@@ -298,6 +299,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 	response, err := clientStream.SendData(
 		artifactName,
 		content,
+		contentSize,
 		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
 			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
 				Data:              contentChunk,
@@ -472,10 +474,11 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
 	logrus.Infof("Compressing package '%v' at '%v' for upload", packageId, packageRootPath)
-	compressedModule, err := shared_utils.CompressPath(packageRootPath, enforceMaxFileSizeLimit)
+	compressedModule, commpressedModuleSize, err := shared_utils.CompressPath(packageRootPath, enforceMaxFileSizeLimit)
 	if err != nil {
 		return stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", packageRootPath)
 	}
+	defer compressedModule.Close()
 	logrus.Infof("Uploading and executing package '%v'", packageId)
 
 	client, err := enclaveCtx.client.UploadStarlarkPackage(context.Background())
@@ -486,6 +489,7 @@ func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packag
 	_, err = clientStream.SendData(
 		packageId,
 		compressedModule,
+		commpressedModuleSize,
 		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
 			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
 				Data:              contentChunk,
