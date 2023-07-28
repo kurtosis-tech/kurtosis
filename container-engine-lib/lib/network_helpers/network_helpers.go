@@ -6,7 +6,10 @@ import (
 	"net"
 )
 
-const allOnesFourBytesMask = 0xffffffff
+const (
+	allOnesFourBytesMask = 0xffffffff
+	ipV6SuffixStart      = 12
+)
 
 /*
 GetFreeIpAddrFromSubnet
@@ -30,7 +33,7 @@ func GetFreeIpAddrFromSubnet(takenIps map[string]bool, subnet *net.IPNet) (net.I
 	// See https://gist.github.com/ammario/649d4c0da650162efd404af23e25b86b
 	var intIp uint32
 	if len(subnetIp) == net.IPv6len {
-		intIp = binary.BigEndian.Uint32(subnetIp[12:net.IPv6len])
+		intIp = binary.BigEndian.Uint32(subnetIp[ipV6SuffixStart:net.IPv6len])
 	} else {
 		intIp = binary.BigEndian.Uint32(subnetIp)
 	}
