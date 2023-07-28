@@ -116,7 +116,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 		}
 	} else if responseLine.GetInstructionResult() != nil {
 		formattedInstructionResult := formatInstructionResult(responseLine.GetInstructionResult())
-		if err := printer.printPersistentLineToStdOut(formattedInstructionResult); err != nil {
+		if err := printer.printPersistentLineToStdOutWithoutNewLine(formattedInstructionResult); err != nil {
 			return stacktrace.Propagate(err, "Error printing Kurtosis instruction result: \n%v", formattedInstructionResult)
 		}
 	} else if responseLine.GetError() != nil {
