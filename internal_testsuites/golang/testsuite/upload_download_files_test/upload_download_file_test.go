@@ -55,9 +55,12 @@ func TestUploadAndDownloadFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	enclaveCtx, pauseEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer pauseEnclaveFunc()
+	defer func() {
+		err = destroyEnclaveFunc()
+		require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
+	}()
 
 	pathToUpload := filePathsMap[diskDirKeyword]
 	require.NotEmptyf(t, pathToUpload, "Failed to store uploadable path in path map.")
