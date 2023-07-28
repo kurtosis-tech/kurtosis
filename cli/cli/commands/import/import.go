@@ -23,9 +23,9 @@ import (
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strconv"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
