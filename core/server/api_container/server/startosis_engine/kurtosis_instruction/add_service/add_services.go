@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -24,8 +25,7 @@ import (
 const (
 	AddServicesBuiltinName = "add_services"
 
-	ConfigsArgName   = "configs"
-	ParallelismParam = "PARALLELISM"
+	ConfigsArgName = "configs"
 )
 
 func NewAddServices(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -112,7 +112,7 @@ func (builtin *AddServicesCapabilities) Validate(_ *builtin_argument.ArgumentVal
 
 func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
 	renderedServiceConfigs := make(map[service.ServiceName]*service.ServiceConfig, len(builtin.serviceConfigs))
-	parallelism, ok := ctx.Value(ParallelismParam).(int)
+	parallelism, ok := ctx.Value(startosis_constants.ParallelismParam).(int)
 	if !ok {
 		return "", stacktrace.NewError("An error occurred when getting parallelism level from execution context")
 	}

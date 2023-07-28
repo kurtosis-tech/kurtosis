@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
+	"io"
 	"os"
 	"strings"
 )
@@ -48,7 +49,7 @@ func (provider *MockPackageContentProvider) GetOnDiskAbsolutePackagePath(package
 
 }
 
-func (provider *MockPackageContentProvider) StorePackageContents(_ string, _ []byte, _ bool) (string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) StorePackageContents(_ string, _ io.Reader, _ bool) (string, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 

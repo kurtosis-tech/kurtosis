@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
+	"io"
 	"os"
 	"path"
 	"strings"
@@ -158,6 +159,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	if err != nil {
 		return nil, scriptCompressionInterpretationErr
 	}
+	defer compressedScript.Close()
 	uniqueFilesArtifactName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("an error occurred while generating unique artifact name for python script")
@@ -372,7 +374,7 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	return fmt.Sprintf("python %s", pythonScriptAbsolutePath), nil
 }
 
-func getCompressedPythonScriptForUpload(pythonScript string) ([]byte, *startosis_errors.InterpretationError) {
+func getCompressedPythonScriptForUpload(pythonScript string) (io.ReadCloser, *startosis_errors.InterpretationError) {
 	temporaryPythonScriptDir, err := os.MkdirTemp(defaultTmpDir, temporaryPythonDirectoryPrefix)
 	defer os.Remove(temporaryPythonScriptDir)
 	if err != nil {
@@ -382,7 +384,7 @@ func getCompressedPythonScriptForUpload(pythonScript string) ([]byte, *startosis
 	if err = os.WriteFile(pythonScriptFilePath, []byte(pythonScript), pythonScriptReadPermission); err != nil {
 		return nil, startosis_errors.NewInterpretationError("an error occurred while writing python script to disk")
 	}
-	compressed, err := shared_utils.CompressPath(pythonScriptFilePath, enforceMaxSizeLimit)
+	compressed, _, err := shared_utils.CompressPath(pythonScriptFilePath, enforceMaxSizeLimit)
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("an error occurred while compressing the python script")
 	}
