@@ -153,7 +153,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsolutePackagePath(packageI
 	return packageAbsolutePathOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) StorePackageContents(packageId string, moduleTar []byte, overwriteExisting bool) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) StorePackageContents(packageId string, moduleTar io.Reader, overwriteExisting bool) (string, *startosis_errors.InterpretationError) {
 	parsedPackageId, interpretationError := parseGitURL(packageId)
 	if interpretationError != nil {
 		return "", interpretationError
@@ -180,12 +180,9 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	}
 	defer os.Remove(tempFile.Name())
 
-	bytesWritten, err := tempFile.Write(moduleTar)
+	_, err = io.Copy(tempFile, moduleTar)
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while writing contents of '%v' to '%v'", packageId, tempFile.Name())
-	}
-	if bytesWritten != len(moduleTar) {
-		return "", startosis_errors.NewInterpretationError("Expected to write '%v' bytes but wrote '%v'", len(moduleTar), bytesWritten)
 	}
 	err = archiver.Unarchive(tempFile.Name(), packageAbsolutePathOnDisk)
 	if err != nil {
