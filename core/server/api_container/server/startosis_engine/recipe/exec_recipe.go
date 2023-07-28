@@ -90,7 +90,6 @@ func (recipe *ExecRecipe) Execute(
 	serviceName service.ServiceName,
 ) (map[string]starlark.Comparable, error) {
 	// parse argument
-	logrus.Debugf("ENTERING EXEC RECIPE")
 	commandStarlarkList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
 		recipe.KurtosisValueTypeDefault, CommandAttr)
 	if interpretationErr != nil {
@@ -193,7 +192,6 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
-	logrus.Debugf("CALLING SERVICE NETWORK (EXEC RECIPE)")
 	execOutputChan := serviceNetwork.RunExecWithStreamedOutput(ctx, serviceNameStr, commandWithRuntimeValue)
 	//if err != nil {
 	//	//return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceName)

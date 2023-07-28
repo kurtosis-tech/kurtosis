@@ -15,7 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"strings"
 )
@@ -160,7 +159,6 @@ func (builtin *ExecCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet,
 }
 
 func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	logrus.Debugf("ENTERING EXEC %d", 2)
 	result, err := builtin.execRecipe.Execute(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "Error executing exec recipe")
@@ -184,7 +182,7 @@ func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, 
 	//	errorMessage := fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
 	//	return nil, stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
 	//}
-
+	//
 	//builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 	//instructionResult := builtin.execRecipe.ResultMapToString(result)
 	return execOutputChan, err
