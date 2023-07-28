@@ -2112,6 +2112,7 @@ func testServiceConfig(imageName string, subnetwork string) *service.ServiceConf
 		nil,
 		nil,
 		nil,
+		nil,
 		0,
 		0,
 		"",

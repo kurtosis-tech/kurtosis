@@ -1,6 +1,8 @@
 package object_attributes_provider
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_object_name"
@@ -9,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
@@ -19,7 +22,10 @@ import (
 const (
 	apiContainerNamePrefix                 = "kurtosis-api"
 	networkingSidecarContainerNameFragment = "networking-sidecar"
+
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
+	persistentServiceDirectoryNameFragment = "service-persistent-directory"
+
 	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
 	logsCollectorFragment                  = "kurtosis-logs-collector"
 	// The collector is per enclave so this is a suffix
@@ -48,6 +54,10 @@ type DockerEnclaveObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForSingleFilesArtifactExpansionVolume(
 		serviceUUID service.ServiceUUID,
+	) (DockerObjectAttributes, error)
+	ForSinglePersistentDirectoryVolume(
+		serviceUUID service.ServiceUUID,
+		persistentKey service_directory.DirectoryPersistentKey,
 	) (DockerObjectAttributes, error)
 	ForLogsCollector(tcpPortId string, tcpPortSpec *port_spec.PortSpec, httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error)
 	ForLogsCollectorVolume() (DockerObjectAttributes, error)
@@ -311,6 +321,56 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 	}
 	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
 	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue
+	// TODO Create a KurtosisResourceDockerLabelKey object, like Kubernetes, and apply the "user-service" label here?
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+// In Docker we get one volume per persistent directory
+// TODO: refactor with ForSingleFilesArtifactExpansionVolume maybe
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(
+	serviceUUID service.ServiceUUID,
+	persistentKey service_directory.DirectoryPersistentKey,
+) (
+	DockerObjectAttributes,
+	error,
+) {
+	serviceUuidStr := string(serviceUUID)
+
+	guidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the persistent directory volume for service '%v'", serviceUuidStr)
+	}
+
+	hasher := md5.New()
+	hasher.Write([]byte(serviceUUID))
+	hasher.Write([]byte(persistentKey))
+	persistentKeyHash := hex.EncodeToString(hasher.Sum(nil))
+
+	name, err := provider.getNameForEnclaveObject([]string{
+		persistentServiceDirectoryNameFragment,
+		persistentKeyHash,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object using GUID '%v' and service GUID '%v'", guidStr, serviceUuidStr)
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifact expansion volume with UUID '%v'", guidStr)
+	}
+
+	serviceUuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceUuidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceUuidStr)
+	}
+	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
+	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.PersistentDirectoryVolumeTypeDockerLabelValue
 	// TODO Create a KurtosisResourceDockerLabelKey object, like Kubernetes, and apply the "user-service" label here?
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

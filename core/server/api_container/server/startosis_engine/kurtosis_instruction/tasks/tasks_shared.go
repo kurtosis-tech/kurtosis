@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -229,7 +229,7 @@ func resultMapToString(resultMap map[string]starlark.Comparable, builtinNameForL
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
-func getServiceConfig(image string, filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion) *service.ServiceConfig {
+func getServiceConfig(image string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion) *service.ServiceConfig {
 	return service.NewServiceConfig(
 		image,
 		nil,
@@ -243,6 +243,7 @@ func getServiceConfig(image string, filesArtifactExpansion *files_artifacts_expa
 		nil,
 		nil,
 		filesArtifactExpansion,
+		nil,
 		0,
 		0,
 		service_config.DefaultPrivateIPAddrPlaceholder,
