@@ -6,14 +6,15 @@ import (
 	"path"
 )
 
-// We put all the command strings here so that when we need to give users remediation instructions, we can give them the
-//
-//	commands they need to run
+// We put all the command strings here so that when we need to give users remediation instructions,
+// we can give them the commands they need to run
 var KurtosisCmdStr = path.Base(os.Args[0])
 
 const (
 	Analytics               = "analytics"
 	CleanCmdStr             = "clean"
+	CloudCmdStr             = "cloud"
+	CloudLoadCmdStr         = "load"
 	ClusterCmdStr           = "cluster"
 	ClusterSetCmdStr        = "set"
 	ClusterGetCmdStr        = "get"
