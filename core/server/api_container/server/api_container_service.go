@@ -30,7 +30,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -118,7 +117,7 @@ func (apicService ApiContainerService) UploadStarlarkPackage(server kurtosis_cor
 			}
 			return dataChunk.GetData(), dataChunk.GetPreviousChunkHash(), nil
 		},
-		func(assembledContent []byte) (*emptypb.Empty, error) {
+		func(assembledContent io.Reader) (*emptypb.Empty, error) {
 			if packageId == "" {
 				return nil, stacktrace.NewError("The package being uploaded did not have any name attached. This is a Kurtosis bug")
 			}
@@ -325,7 +324,7 @@ func (apicService ApiContainerService) UploadFilesArtifact(server kurtosis_core_
 			}
 			return dataChunk.GetData(), dataChunk.GetPreviousChunkHash(), nil
 		},
-		func(assembledContent []byte) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
+		func(assembledContent io.Reader) (*kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse, error) {
 			if maybeArtifactName == "" {
 				maybeArtifactName = apicService.filesArtifactStore.GenerateUniqueNameForFileArtifact()
 			}
@@ -356,15 +355,31 @@ func (apicService ApiContainerService) DownloadFilesArtifact(args *kurtosis_core
 		return stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
 	}
 
-	fileBytes, err := os.ReadFile(filesArtifact.GetAbsoluteFilepath())
+	file, err := os.OpenFile(filesArtifact.GetAbsoluteFilepath(), os.O_RDONLY, 0700)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred reading files artifact file bytes")
+		return stacktrace.Propagate(err, "An error occurred reading files artifact file at '%s'",
+			filesArtifact.GetAbsoluteFilepath())
+	}
+	defer file.Close()
+	fileInfo, err := file.Stat()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred inspecting files artifact file at '%s'",
+			filesArtifact.GetAbsoluteFilepath())
+	}
+	var fileSize uint64
+	if fileInfo.Size() >= 0 {
+		fileSize = uint64(fileInfo.Size())
+	} else {
+		return stacktrace.Propagate(err, "An error occurred inspecting files artifact file at '%s'. The size of "+
+			"the file is a negative integer",
+			filesArtifact.GetAbsoluteFilepath())
 	}
 
 	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, []byte](server)
 	err = serverStream.SendData(
 		args.Identifier,
-		fileBytes,
+		file,
+		fileSize,
 		func(previousChunkHash string, contentChunk []byte) (*kurtosis_core_rpc_api_bindings.StreamedDataChunk, error) {
 			return &kurtosis_core_rpc_api_bindings.StreamedDataChunk{
 				Data:              contentChunk,
@@ -532,7 +547,7 @@ func (apicService ApiContainerService) waitForEndpointAvailability(
 		body := resp.Body
 		defer body.Close()
 
-		bodyBytes, err := ioutil.ReadAll(body)
+		bodyBytes, err := io.ReadAll(body)
 
 		if err != nil {
 			return stacktrace.Propagate(err,
@@ -629,7 +644,7 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 	} else if moduleContentIfLocal != nil {
 		// TODO: remove this once UploadStarlarkPackage is called prior to calling RunStarlarkPackage by all consumers
 		//  of this API
-		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StorePackageContents(packageId, moduleContentIfLocal, doOverwriteExistingModule)
+		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StorePackageContents(packageId, bytes.NewReader(moduleContentIfLocal), doOverwriteExistingModule)
 	} else {
 		// We just need to retrieve the absolute path, the content is will not be stored here since it has been uploaded
 		// prior to this call

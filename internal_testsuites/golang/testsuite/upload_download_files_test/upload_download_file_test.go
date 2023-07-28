@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/slices"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -119,10 +120,10 @@ func TestUploadAndDownloadLargeFilesCheckingConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	// Compute the hash of the initial file, compressed in the same way artifacts are compressed
-	initialFileCompressed, err := shared_utils.CompressPath(randomFilePath, enforceFileSizeLimit)
+	initialFileCompressed, _, err := shared_utils.CompressPath(randomFilePath, enforceFileSizeLimit)
 	require.NoError(t, err)
 	md5Hash := md5.New()
-	_, err = md5Hash.Write(initialFileCompressed)
+	_, err = io.Copy(md5Hash, initialFileCompressed)
 	require.NoError(t, err)
 	initialFileHash := md5Hash.Sum(nil)
 

@@ -7,14 +7,13 @@ package enclave_data_directory
 
 import (
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 )
 
 func TestEnsureDirectoryExists(t *testing.T) {
-	tempDir, err := ioutil.TempDir("", "")
+	tempDir, err := os.MkdirTemp("", "")
 	assert.Nil(t, err)
 
 	dirToCreate := path.Join(tempDir, "to-create")
