@@ -107,7 +107,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(chunk)
 					}
 				}
-				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(instructionResultSeparator)
+				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionResultSeparator)
 				// mark the instruction as executed and add it to the current instruction plan
 				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
 			}
