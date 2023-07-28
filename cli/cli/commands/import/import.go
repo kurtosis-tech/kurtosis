@@ -25,6 +25,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -40,6 +41,9 @@ const (
 	emptyPrivateIpPlaceholder = ""
 	defaultMainFunction       = ""
 	noStarlarkParams          = "{}"
+	cpuToMilliCpuConstant     = 1024
+	bytesToMegabytes          = 1024 * 1024
+	float64BitWidth           = 64
 	readWriteEveryone         = 0666
 
 	// Signifies that an enclave name should be auto-generated
@@ -221,6 +225,8 @@ func convertComposeProjectToStarlark(compose *types.Project) (string, map[string
 			}
 			envvarsPiecesStr = append(envvarsPiecesStr, fmt.Sprintf("%s=%s", envKey, envValueStr))
 		}
+		memMinLimit := getMemoryMegabytesReservation(serviceConfig.Deploy)
+		cpuMinLimit := getMilliCpusReservation(serviceConfig.Deploy)
 		starlarkConfig, err := add.GetServiceConfigStarlark(
 			serviceConfig.Image,
 			strings.Join(portPiecesStr, ","),
@@ -228,6 +234,10 @@ func convertComposeProjectToStarlark(compose *types.Project) (string, map[string
 			serviceConfig.Entrypoint,
 			strings.Join(envvarsPiecesStr, ","),
 			strings.Join(artifactsPiecesStr, ","),
+			0,
+			0,
+			cpuMinLimit,
+			memMinLimit,
 			emptyPrivateIpPlaceholder)
 		if err != nil {
 			return "", nil, stacktrace.Propagate(err, "Error getting service config starlark for '%v'", serviceConfig)
@@ -239,6 +249,36 @@ func convertComposeProjectToStarlark(compose *types.Project) (string, map[string
 		script += fmt.Sprintf("\tplan.add_service(name = '%s', config = %s)\n", serviceName, serviceConfig)
 	}
 	return script, requiredFileUploads, nil
+}
+
+func getMemoryMegabytesReservation(deployConfig *types.DeployConfig) int {
+	if deployConfig == nil {
+		return 0
+	}
+	reservation := 0
+	if deployConfig.Resources.Reservations != nil {
+		reservation = int(deployConfig.Resources.Reservations.MemoryBytes) / bytesToMegabytes
+		logrus.Debugf("Converted '%v' bytes to '%v' megabytes", deployConfig.Resources.Reservations.MemoryBytes, reservation)
+	}
+	return reservation
+}
+
+func getMilliCpusReservation(deployConfig *types.DeployConfig) int {
+	if deployConfig == nil {
+		return 0
+	}
+	reservation := 0
+	if deployConfig.Resources.Reservations != nil {
+		reservationParsed, err := strconv.ParseFloat(deployConfig.Resources.Reservations.NanoCPUs, float64BitWidth)
+		if err == nil {
+			// Despite being called 'nano CPUs', they actually refer to a float representing percentage of one CPU
+			reservation = int(reservationParsed * cpuToMilliCpuConstant)
+			logrus.Debugf("Converted '%v' CPUs to '%v' milli CPUs", deployConfig.Resources.Reservations.NanoCPUs, reservation)
+		} else {
+			logrus.Warnf("Could not convert CPU reservation '%v' to integer, limits reservation", deployConfig.Resources.Reservations.NanoCPUs)
+		}
+	}
+	return reservation
 }
 
 func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveName string) (*enclaves.EnclaveContext, error) {
