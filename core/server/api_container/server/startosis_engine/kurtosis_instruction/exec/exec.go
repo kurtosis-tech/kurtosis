@@ -176,7 +176,6 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 }
 
 func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
-	logrus.Debugf("ENTERING EXEC WITH STREAMED OUTPUT %d", 3)
 	execOutputChan, err := builtin.execRecipe.ExecuteWithStreamedOutput(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error executing exec recipe")

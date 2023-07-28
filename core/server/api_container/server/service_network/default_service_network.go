@@ -942,34 +942,28 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
-	logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 1)
 	execOutputStream := make(chan string)
 	go func() {
 		defer func() {
 			network.mutex.Unlock()
 			close(execOutputStream)
 		}()
-		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 3)
 		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 		if err != nil {
 			sendErrorAndFail(execOutputStream, err, "An error occurred while getting service registration for identifier")
 			return
 		}
-		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 4)
 		serviceUuid := serviceRegistration.GetUUID()
 		userServiceCommands := map[service.ServiceUUID][]string{
 			serviceUuid: userServiceCommand,
 		}
-		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 4)
 		kurtosisBackendExecOutputChan := network.kurtosisBackend.RunUserServiceExecCommandsWithStreamedOutput(
 			ctx,
 			network.enclaveUuid,
 			userServiceCommands)
-		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 5)
 		for execOutputLine := range kurtosisBackendExecOutputChan {
 			execOutputStream <- execOutputLine
 		}
-		logrus.Debugf("ENTERING DEFAULT SERVICE NETWORK %d TO EXEC STREAMED", 7)
 	}()
 	return execOutputStream
 }

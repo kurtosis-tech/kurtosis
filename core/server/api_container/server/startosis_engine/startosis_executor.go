@@ -92,14 +92,11 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
 				} else if instruction.String()[0:4] == "exec" {
-					logrus.Debugf("EXEC COMMAND AT STARTOSIS EXECUTOR LEVEL: %d", 1)
 					execOutputChan, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
-					logrus.Debugf("LEAVING EXEC COMMAND AT STARTOSIS EXECUTOR LEVEL: %d", 1)
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}
 				if err != nil {
-					logrus.Debugf("ERR IS NOT NIL: %d", 1)
 					sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred executing instruction (number %d) at %v:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
 					return
 				}
@@ -107,12 +104,9 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(*instructionOutput)
 				}
 				if execOutputChan != nil {
-					logrus.Debugf("EXEC OUTPUT CHANNEL IS NOT NIL: %d", 1)
 					for execOutputLine := range execOutputChan {
-						logrus.Debugf("EXEC OUTPUT AT STARTOSIS EXECUTOR LEVEL: %s", execOutputLine)
 						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(execOutputLine)
 					}
-					logrus.Debugf("SANITY CHECK %d", 1)
 				}
 
 				// mark the instruction as executed and add it to the current instruction plan

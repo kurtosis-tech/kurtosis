@@ -980,7 +980,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		defer attachResp.Close()
 
 		// Stream output from docker through channel
-		logrus.Debugf("ABOUT TO START STREAMING FROM DOCKER CONNECTION")
+		logrus.Debugf("DOCKER MANAGER STARTING STREAMING")
 		reader := bufio.NewReader(attachResp.Reader)
 		for {
 			execOutputLine, err := reader.ReadString(endOfLineDelimiter)

@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"reflect"
 )
 
@@ -25,7 +24,6 @@ func RunUserServiceExecCommands(
 	map[service.ServiceUUID]error,
 	error,
 ) {
-	logrus.Debugf("ENTERING DOCKER KURTOSIS BACKEND")
 	userServiceDockerResources := map[service.ServiceUUID]*shared_helpers.UserServiceDockerResources{}
 	userServiceUuids := map[service.ServiceUUID]bool{}
 	for userServiceUuid := range userServiceCommands {
