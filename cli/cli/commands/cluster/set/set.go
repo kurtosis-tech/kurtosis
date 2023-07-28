@@ -8,13 +8,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 
 const (
 	clusterNameArgKey = "cluster-name"
+	noClusterSetting  = ""
 )
 
 var SetCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -52,8 +52,6 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		logrus.Debugf("Unable to get current cluster set. If this is a fresh Kurtosis install, it's fine "+
 			"as the cluster config might not be set yet. Error was: %v", err.Error())
-		// if  there is no cluster file we fall back to docker
-		clusterPriorToUpdate = resolved_config.DefaultDockerClusterName
 	}
 
 	if clusterName == clusterPriorToUpdate {
@@ -66,6 +64,10 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	}
 	defer func() {
 		if clusterUpdateSuccessful {
+			return
+		}
+		if clusterPriorToUpdate == noClusterSetting {
+			logrus.Infof("Couldn't set clsuter to '%s' but as we didn't have a previous cluster setting we can't revert either")
 			return
 		}
 		if err = clusterSettingStore.SetClusterSetting(clusterPriorToUpdate); err != nil {
