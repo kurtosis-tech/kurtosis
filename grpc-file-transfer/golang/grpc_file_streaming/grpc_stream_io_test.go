@@ -1,6 +1,7 @@
 package grpc_file_streaming
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
@@ -92,7 +93,8 @@ func TestSendBytesStream_successOneChunk(t *testing.T) {
 		return NewTestDataChunk(contentChunk, previousChunkHash), nil
 	}
 
-	err = sendMessagesToStream[TestDataChunk](testFileName, fullContent, clientStream.SendMsg, dataChunkConstructor)
+	payloadSize := uint64(len(fullContent))
+	err = sendMessagesToStream[TestDataChunk](testFileName, bytes.NewReader(fullContent), payloadSize, clientStream.SendMsg, dataChunkConstructor)
 	require.NoError(t, err)
 	require.NoError(t, clientStream.CloseSend())
 	assembledContent, err := clientStream.GetAssembledContent()
@@ -110,7 +112,8 @@ func TestSendBytesStream_successMultipleChunks(t *testing.T) {
 		return NewTestDataChunk(contentChunk, previousChunkHash), nil
 	}
 
-	err = sendMessagesToStream[TestDataChunk](testFileName, fullContent, clientStream.SendMsg, dataChunkConstructor)
+	payloadSize := uint64(len(fullContent))
+	err = sendMessagesToStream[TestDataChunk](testFileName, bytes.NewReader(fullContent), payloadSize, clientStream.SendMsg, dataChunkConstructor)
 	require.NoError(t, err)
 	require.NoError(t, clientStream.CloseSend())
 	assembledContent, err := clientStream.GetAssembledContent()
