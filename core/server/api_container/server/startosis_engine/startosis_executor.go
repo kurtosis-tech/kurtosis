@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
@@ -15,6 +16,9 @@ import (
 const (
 	progressMsg      = "Execution in progress"
 	ParallelismParam = "PARALLELISM"
+	// we limit the output to 300 characters
+	outputSizeLimit          = 300
+	outputLimitReachedSuffix = "..."
 )
 
 var (
@@ -91,7 +95,11 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					return
 				}
 				if instructionOutput != nil {
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(*instructionOutput)
+					instructionOutputStr := *instructionOutput
+					if len(instructionOutputStr) > outputSizeLimit {
+						instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
+					}
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr)
 				}
 				// mark the instruction as executed and add it to the current instruction plan
 				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
