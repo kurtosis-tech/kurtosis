@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/live_engine_client_supplier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/port_utils"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/run/api_container_gateway"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/common"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -222,9 +223,20 @@ func (service *EngineGatewayServiceServer) GetEngineInfo(ctx context.Context, em
 
 func (service *EngineGatewayServiceServer) GetServiceLogs(
 	args *kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs,
-	stream kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsServer,
+	streamToWriteTo kurtosis_engine_rpc_api_bindings.EngineService_GetServiceLogsServer,
 ) error {
-	return stacktrace.NewError("Cannot return service logs because it is not supported by the Kurtosis engine's gateway")
+	remoteEngineClient, err := service.engineClientSupplier.GetEngineClient()
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected to be able to get a client for a live Kurtosis engine, instead a non nil error was returned")
+	}
+	streamToReadFrom, err := remoteEngineClient.GetServiceLogs(streamToWriteTo.Context(), args)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting service logs")
+	}
+	if err := common.ForwardKurtosisExecutionStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse](streamToReadFrom, streamToWriteTo); err != nil {
+		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis engine back to the user")
+	}
+	return nil
 }
 
 // Private functions for managing our running enclave api container gateways

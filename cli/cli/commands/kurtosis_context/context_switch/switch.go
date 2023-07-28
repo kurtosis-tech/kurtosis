@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/context_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -45,9 +44,16 @@ var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
 func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	contextIdentifier, err := args.GetNonGreedyArg(contextIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for context identifier arg '%v' but none was found; this is a bug with Kurtosis!", contextIdentifierArgKey)
+		return stacktrace.Propagate(err, "Expected a value for context identifier arg '%v' but none was found; this is a bug in the Kurtosis CLI!", contextIdentifierArgKey)
 	}
 
+	return SwitchContext(ctx, contextIdentifier)
+}
+
+func SwitchContext(
+	ctx context.Context,
+	contextIdentifier string,
+) error {
 	isContextSwitchSuccessful := false
 	logrus.Info("Switching context...")
 
@@ -55,6 +61,21 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	contextPriorToSwitch, err := contextsConfigStore.GetCurrentContext()
 	if err != nil {
 		return stacktrace.NewError("An error occurred retrieving current context prior to switching to the new one '%s'", contextIdentifier)
+	}
+
+	if !store.IsRemote(contextPriorToSwitch) {
+		engineManager, err := engine_manager.NewEngineManager(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
+		}
+		engineStatus, _, _, err := engineManager.GetEngineStatus(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred retrieving the engine status.")
+		}
+		if engineStatus == engine_manager.EngineStatus_Running {
+			logrus.Infof("Prior to switching context, stop the local engine by running kurtosis engine stop")
+			return nil
+		}
 	}
 
 	contextsMatchingIdentifiers, err := context_id_arg.GetContextUuidForContextIdentifier(contextsConfigStore, []string{contextIdentifier})
@@ -100,14 +121,6 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 			switchContextArg := constructors.NewSwitchContextArgs()
 			if _, err = portalDaemonClient.SwitchContext(ctx, switchContextArg); err != nil {
 				return stacktrace.Propagate(err, "Error switching Kurtosis portal context")
-			}
-			if store.IsRemote(currentContext) {
-				// Forward the remote engine port to the local machine
-				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &kurtosis_context.EnginePortTransportProtocol)
-				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
-					return stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
-				}
 			}
 		}
 	} else {
