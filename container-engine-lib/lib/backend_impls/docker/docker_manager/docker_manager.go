@@ -20,6 +20,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -27,14 +28,15 @@ import (
 	"math"
 	"net"
 	"strings"
+	"sync"
 	"time"
 )
 
 const (
+	dockerClientTimeout = 30 * time.Second
 	// We use a bridge network because, as of 2020-08-01, we're only running locally; however, this may need to change
 	//  at some point in the future
-	dockerNetworkDriver      = "bridge"
-	bridgeNetworkNetworkName = "bridge"
+	dockerNetworkDriver = "bridge"
 
 	// Per https://docs.docker.com/engine/reference/commandline/kill/ , this seems to mean "the default
 	//  kill signal"
@@ -121,6 +123,11 @@ const (
 	linuxAmd64              = "linux/amd64"
 	defaultPlatform         = ""
 	architectureErrorString = "no matching manifest for linux/arm64/v8"
+
+	onlyReturnContainerIds = true
+	coresToMilliCores      = 1000
+	bytesInMegaBytes       = 1000000
+	dontStreamStats        = false
 )
 
 /*
@@ -138,21 +145,40 @@ A handle to interacting with the Docker environment running a test.
 */
 type DockerManager struct {
 	// The underlying Docker client that will be used to modify the Docker environment
+	// This client has a timeout so that request that should return quickly do not end up hanging forever.
 	dockerClient *client.Client
+
+	// We need to use a specific docker client with no timeout for long-running requests on docker, such as tailing
+	// service logs for a long time, or even downloading large container images than can take longer than the timeout
+	dockerClientNoTimeout *client.Client
 }
 
 /*
-NewDockerManager
+CreateDockerManager
 Creates a new Docker manager for manipulating the Docker engine using the given client.
 
 Args:
 
 	dockerClient: The Docker client that will be used when interacting with the underlying Docker engine the Docker engine.
 */
-func NewDockerManager(dockerClient *client.Client) *DockerManager {
-	return &DockerManager{
-		dockerClient: dockerClient,
+func CreateDockerManager(dockerClientOpts []client.Opt) (*DockerManager, error) {
+	optsWithTimeout := []client.Opt{
+		client.WithTimeout(dockerClientTimeout),
 	}
+	optsWithTimeout = append(optsWithTimeout, dockerClientOpts...)
+	dockerClient, err := client.NewClientWithOpts(optsWithTimeout...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error creating docker client")
+	}
+	dockerClientNoTimeout, err := client.NewClientWithOpts(dockerClientOpts...)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Error creating docker client")
+	}
+
+	return &DockerManager{
+		dockerClient:          dockerClient,
+		dockerClientNoTimeout: dockerClientNoTimeout,
+	}, nil
 }
 
 /*
@@ -828,6 +854,12 @@ func (manager *DockerManager) GetContainerLogs(
 	containerId string,
 	shouldFollowLogs bool,
 ) (io.ReadCloser, error) {
+	// As we're using the docker client with no timeout to be able to follow the logs for a long time, we quickly check
+	// with the client that has  a timeout whether the docker engine is reachable.
+	if _, err := manager.dockerClient.Ping(ctx); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred communicating with docker engine")
+	}
+
 	containerLogOpts := types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
@@ -838,7 +870,7 @@ func (manager *DockerManager) GetContainerLogs(
 		Tail:       "",
 		Details:    false,
 	}
-	readCloser, err := manager.dockerClient.ContainerLogs(ctx, containerId, containerLogOpts)
+	readCloser, err := manager.dockerClientNoTimeout.ContainerLogs(ctx, containerId, containerLogOpts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting logs for container ID '%v'", containerId)
 	}
@@ -1065,6 +1097,16 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 	return tarStreamReadCloser, nil
 }
 
+// GetAvailableCPUAndMemory returns free memory in megabytes, free cpu in millicores, information on whether cpu information is complete
+func (manager *DockerManager) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, error) {
+	availableMemoryInBytes, availableCpuInMilliCores, err := getFreeMemoryAndCPU(ctx, manager.dockerClient)
+	if err != nil {
+		return 0, 0, stacktrace.Propagate(err, "an error occurred while getting available cpu and memory on docker")
+	}
+	// cpu isn't complete on windows but is complete on linux
+	return compute_resources.MemoryInMegaBytes(availableMemoryInBytes), compute_resources.CpuMilliCores(availableCpuInMilliCores), nil
+}
+
 // =================================================================================================================
 //
 //	INSTANCE HELPER FUNCTIONS
@@ -1072,12 +1114,12 @@ func (manager *DockerManager) CopyFromContainer(ctx context.Context, containerId
 // =================================================================================================================
 func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, imageName string) (bool, error) {
 	referenceArg := filters.Arg("reference", imageName)
-	filters := filters.NewArgs(referenceArg)
+	filterArgs := filters.NewArgs(referenceArg)
 	images, err := manager.dockerClient.ImageList(
 		ctx,
 		types.ImageListOptions{
 			All:     true,
-			Filters: filters,
+			Filters: filterArgs,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to list images.")
@@ -1095,9 +1137,14 @@ func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, image
 	return numMatchingImages > 0, nil
 }
 
-func (manager *DockerManager) pullImage(context context.Context, imageName string) (err error) {
+func (manager *DockerManager) pullImage(context context.Context, imageName string) error {
+	// As we're using the docker client with no timeout to pull the image, we quickly check with the client that has
+	// a timeout whether the docker engine is reachable.
+	if _, err := manager.dockerClient.Ping(context); err != nil {
+		return stacktrace.Propagate(err, "An error occurred communicating with docker engine")
+	}
 	logrus.Infof("Pulling image '%s'", imageName)
-	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClient, imageName, defaultPlatform)
+	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClientNoTimeout, imageName, defaultPlatform)
 	if err == nil {
 		return nil
 	}
@@ -1106,7 +1153,7 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 	}
 	// we retry with linux/amd64
 	logrus.Debugf("Retrying pulling image '%s' for '%s'", imageName, linuxAmd64)
-	err, _ = pullImage(context, manager.dockerClient, imageName, linuxAmd64)
+	err, _ = pullImage(context, manager.dockerClientNoTimeout, imageName, linuxAmd64)
 	if err != nil {
 		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
 	}
@@ -1117,7 +1164,7 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 func (manager *DockerManager) getNetworksByFilterArgs(ctx context.Context, args filters.Args) ([]types.NetworkResource, error) {
 	// NOTE: Even though this returns a `NetworkResource` object which has a Containers field on it, this is a lie!!
 	// For whatever insane reason, Docker doesn't fill this field out when NetworkList is used and there doesn't seem to
-	// be a way to get it to do so. Instead we'd have to do an InspectNetwork call.
+	// be a way to get it to do so. Instead, we'd have to do an InspectNetwork call.
 	networks, err := manager.dockerClient.NetworkList(
 		ctx,
 		types.NetworkListOptions{
@@ -1749,4 +1796,61 @@ func pullImage(ctx context.Context, dockerClient *client.Client, imageName strin
 	}
 	logrus.Tracef("No error pulling '%s' for platform '%s'. Returning", imageName, platform)
 	return nil, false
+}
+
+// getFreeMemoryAndCPU returns free memory in bytes and free cpu in MilliCores
+// this is a best effort calculation, it creates a list of containers and then adds up resources on that list
+// if a container dies during list creation this just ignores it
+func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, error) {
+	info, err := dockerClient.Info(ctx)
+	if err != nil {
+		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
+	}
+	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
+		// true - only show ids
+		Quiet:   onlyReturnContainerIds,
+		Size:    false,
+		All:     false,
+		Latest:  false,
+		Since:   "",
+		Before:  "",
+		Limit:   0,
+		Filters: filters.Args{},
+	})
+	if err != nil {
+		return 0, 0, stacktrace.Propagate(err, "an error occurred while getting a list of all containers")
+	}
+	totalFreeMemory := uint64(info.MemTotal)
+	totalUsedMemory := uint64(0)
+	cpuUsageAsFractionOfAvailableCpu := float64(0)
+	totalCPUs := info.NCPU
+
+	var wg sync.WaitGroup
+	resourceMutex := sync.Mutex{}
+
+	for _, maybeRunningContainer := range containers {
+		wg.Add(1)
+		go func(containerId string) {
+			defer wg.Done()
+			containerStatsResponse, err := dockerClient.ContainerStats(ctx, containerId, dontStreamStats)
+			if err != nil {
+				if strings.Contains(err.Error(), "No such container") {
+					logrus.Warnf("Container with '%v' was in the list of containers for which we wanted to calculate consumed resources but it vanished in the meantime.", containerId)
+				}
+				logrus.Errorf("An unexpected error occured while fetching information about container '%v':\n%v", containerId, err)
+				return
+			}
+			var containerStats types.Stats
+			if err = json.NewDecoder(containerStatsResponse.Body).Decode(&containerStats); err != nil {
+				logrus.Errorf("an error occurred while unmarshalling stats response for container with id '%v':\n%v", containerId, err)
+				return
+			}
+			resourceMutex.Lock()
+			totalUsedMemory += containerStats.MemoryStats.Usage
+			cpuUsageAsFractionOfAvailableCpu += float64(containerStats.CPUStats.CPUUsage.TotalUsage-containerStats.PreCPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemUsage-containerStats.PreCPUStats.SystemUsage)
+			resourceMutex.Unlock()
+		}(maybeRunningContainer.ID)
+	}
+	wg.Wait()
+	return compute_resources.MemoryInMegaBytes((totalFreeMemory - totalUsedMemory) / bytesInMegaBytes), compute_resources.CpuMilliCores(float64(totalCPUs*coresToMilliCores) * (1 - cpuUsageAsFractionOfAvailableCpu)), nil
 }

@@ -67,7 +67,7 @@ func run(
 ) error {
 	enclaveIdentifiers, err := args.GetGreedyArg(enclaveIdentifiersArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for greedy enclave identifier arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdentifiersArgKey)
+		return stacktrace.Propagate(err, "Expected a value for greedy enclave identifier arg '%v' but none was found; this is a bug in the Kurtosis CLI!", enclaveIdentifiersArgKey)
 	}
 
 	shouldForceRemove, err := flags.GetBool(shouldForceRemoveFlagKey)

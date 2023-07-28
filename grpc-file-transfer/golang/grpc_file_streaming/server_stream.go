@@ -1,8 +1,10 @@
 package grpc_file_streaming
 
 import (
+	"bytes"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
+	"io"
 )
 
 // ServerStream is a wrapper around a GRPC ServerStream object to be able to send and receive payloads bypassing the
@@ -22,13 +24,15 @@ func NewServerStream[DataChunkMessageType any, ServerResponseType any](
 // SendData sends some content via streaming by splitting it into fixed-sized chunks and streaming then to the client.
 func (serverStream *ServerStream[DataChunkMessageType, ServerResponseType]) SendData(
 	contentNameForLogging string,
-	contentToSend []byte,
+	contentToSend io.Reader,
+	contentSizeInBytes uint64,
 	grpcMsgConstructor func(previousChunkHash string, contentChunk []byte) (*DataChunkMessageType, error),
 ) error {
 	// Split the content into chunks and stream them to the client
 	err := sendMessagesToStream[DataChunkMessageType](
 		contentNameForLogging,
 		contentToSend,
+		contentSizeInBytes,
 		serverStream.grpcStream.SendMsg,
 		grpcMsgConstructor,
 	)
@@ -44,7 +48,7 @@ func (serverStream *ServerStream[DataChunkMessageType, ServerResponseType]) Send
 func (serverStream *ServerStream[DataChunkMessageType, ServerResponseType]) ReceiveData(
 	contentNameForLogging string,
 	grpcMsgExtractor func(dataChunk *DataChunkMessageType) ([]byte, string, error),
-	assembledContentConsumer func(assembledContent []byte) (*ServerResponseType, error),
+	assembledContentConsumer func(assembledContent io.Reader) (*ServerResponseType, error),
 ) error {
 	// Read all the chunks and assemble them into a single byte array assembledContent
 	assembledContent, err := readMessagesFromStream[DataChunkMessageType](
@@ -56,7 +60,7 @@ func (serverStream *ServerStream[DataChunkMessageType, ServerResponseType]) Rece
 	}
 
 	// Consume the fully assembled content and send the final response object through the stream if successful
-	response, err := assembledContentConsumer(assembledContent)
+	response, err := assembledContentConsumer(bytes.NewReader(assembledContent))
 	if err != nil {
 		return stacktrace.Propagate(err, "Error consuming the assembled content for '%s' after all chunks were "+
 			"received", contentNameForLogging)
