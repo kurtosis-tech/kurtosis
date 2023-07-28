@@ -119,9 +119,9 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Header:     http.Header{},
-		Request: &http.Request{
+		Request: &http.Request{ //nolint:exhaustruct
 			Method: TestGetRequestMethod,
-			URL:    &url.URL{},
+			URL:    &url.URL{}, //nolint:exhaustruct
 		},
 		Close:            true,
 		ContentLength:    -1,
@@ -149,7 +149,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		Header:     http.Header{},
 		Request: &http.Request{
 			Method: TestGetRequestMethod,
-			URL: &url.URL{
+			URL: &url.URL{ //nolint:exhaustruct
 				Path:        "",
 				Scheme:      "",
 				Opaque:      "",
