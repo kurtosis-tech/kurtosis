@@ -3,7 +3,6 @@ package enclaves
 import (
 	"github.com/go-yaml/yaml"
 	"github.com/kurtosis-tech/stacktrace"
-	"io/ioutil"
 	"os"
 )
 
@@ -17,7 +16,7 @@ type KurtosisYaml struct {
 }
 
 func ParseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
-	kurtosisYamlContents, err := ioutil.ReadFile(kurtosisYamlFilepath)
+	kurtosisYamlContents, err := os.ReadFile(kurtosisYamlFilepath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, stacktrace.NewError("Couldn't find a '%v' in the root of the package at '%v'. Packages are expected to have a '%v' at root; have a look at '%v' for more", kurtosisYamlFilename, kurtosisYamlFilepath, kurtosisYamlFilename, packagesUrl)
