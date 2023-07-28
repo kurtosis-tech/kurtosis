@@ -21,6 +21,7 @@ var AllConfigVersionEmptyStructs = map[config_version.ConfigVersion]interface{}{
 		ConfigVersion:     0,
 		ShouldSendMetrics: nil,
 		KurtosisClusters:  nil,
+		CloudConfig:       nil,
 	},
 	config_version.ConfigVersion_v1: &v1.KurtosisConfigV1{
 		ConfigVersion:     0,

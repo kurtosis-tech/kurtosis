@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/analytics"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/clean"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/cloud"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/cluster"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/discord"
@@ -43,7 +44,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -109,6 +109,7 @@ func init() {
 	RootCmd.AddCommand(clean.CleanCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(cluster.ClusterCmd)
 	RootCmd.AddCommand(kurtosis_context.ContextCmd)
+	RootCmd.AddCommand(cloud.CloudCmd)
 	RootCmd.AddCommand(kurtosisdump.KurtosisDump.MustGetCobraCommand())
 	RootCmd.AddCommand(config.ConfigCmd)
 	RootCmd.AddCommand(discord.DiscordCmd.MustGetCobraCommand())
@@ -301,7 +302,7 @@ func getLatestCLIReleaseVersionFromGitHub() (string, error) {
 		}
 	}()
 
-	bodyBytes, err := ioutil.ReadAll(response.Body)
+	bodyBytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred reading the HTTP response body")
 	}
@@ -326,7 +327,7 @@ func saveLatestCLIReleaseVersionInCacheFile(filepath, latestReleaseVersion strin
 	fileContent := []byte(content)
 
 	logrus.Debugf("Saving content '%v' in cache file...", content)
-	if err := ioutil.WriteFile(filepath, fileContent, getLatestCLIReleaseCacheFilePermissions); err != nil {
+	if err := os.WriteFile(filepath, fileContent, getLatestCLIReleaseCacheFilePermissions); err != nil {
 		return stacktrace.Propagate(err, "An error occurred saving content '%v' in latest release version cache file", content)
 	}
 	logrus.Debugf("Content successfully saved in cache file")
@@ -349,7 +350,7 @@ func getLatestCLIReleaseVersionFromCacheFile(filepath string) (string, error) {
 		}
 	}()
 
-	fileContentBytes, err := ioutil.ReadAll(cacheFile)
+	fileContentBytes, err := io.ReadAll(cacheFile)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred reading cache file")
 	}

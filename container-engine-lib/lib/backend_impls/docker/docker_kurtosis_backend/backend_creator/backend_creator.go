@@ -2,11 +2,6 @@ package backend_creator
 
 import (
 	"context"
-	"net"
-	"os"
-	"path"
-	"time"
-
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -20,11 +15,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
+	"os"
+	"path"
 )
 
 const (
-	dockerClientTimeout = 5 * time.Minute
-
 	noTempDirPrefix    = ""
 	tempDirNamePattern = "kurtosis_backend_tls_*"
 	caFileName         = "ca.pem"
@@ -73,12 +69,12 @@ func GetDockerKurtosisBackend(
 func getLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
-	localDockerClient, err := client.NewClientWithOpts(client.FromEnv, client.WithTimeout(dockerClientTimeout), client.WithAPIVersionNegotiation())
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker client connected to the local environment")
+	dockerClientOpts := []client.Opt{
+		client.FromEnv,
+		client.WithAPIVersionNegotiation(),
 	}
 
-	localDockerBackend, err := getDockerKurtosisBackend(localDockerClient, optionalApiContainerModeArgs)
+	localDockerBackend, err := getDockerKurtosisBackend(dockerClientOpts, optionalApiContainerModeArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to build local Kurtosis Docker backend")
 	}
@@ -90,18 +86,18 @@ func getRemoteDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 	remoteBackendConfig *configs.KurtosisRemoteBackendConfig,
 ) (backend_interface.KurtosisBackend, error) {
-	remoteDockerClient, err := buildRemoteDockerClient(remoteBackendConfig)
+	remoteDockerClientOpts, err := buildRemoteDockerClientOpts(remoteBackendConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building client configuration for Docker remote backend")
 	}
-	kurtosisRemoteBackend, err := getDockerKurtosisBackend(remoteDockerClient, optionalApiContainerModeArgs)
+	kurtosisRemoteBackend, err := getDockerKurtosisBackend(remoteDockerClientOpts, optionalApiContainerModeArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building Kurtosis remote Docker backend")
 	}
 	return kurtosisRemoteBackend, nil
 }
 
-func buildRemoteDockerClient(remoteBackendConfig *configs.KurtosisRemoteBackendConfig) (*client.Client, error) {
+func buildRemoteDockerClientOpts(remoteBackendConfig *configs.KurtosisRemoteBackendConfig) ([]client.Opt, error) {
 	var clientOptions []client.Opt
 
 	// host and port option
@@ -122,13 +118,8 @@ func buildRemoteDockerClient(remoteBackendConfig *configs.KurtosisRemoteBackendC
 	}
 
 	// Timeout and API version negotiation option
-	clientOptions = append(clientOptions, client.WithTimeout(dockerClientTimeout), client.WithAPIVersionNegotiation())
-
-	remoteDockerClient, err := client.NewClientWithOpts(clientOptions...)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error building Docker remote client")
-	}
-	return remoteDockerClient, nil
+	clientOptions = append(clientOptions, client.WithAPIVersionNegotiation())
+	return clientOptions, nil
 }
 
 // writeTlsConfigToTempDir writes the different TLS files to a directory, and returns the path to this directory.
@@ -160,10 +151,13 @@ func writeTlsConfigToTempDir(ca []byte, cert []byte, key []byte) (string, func()
 }
 
 func getDockerKurtosisBackend(
-	dockerClient *client.Client,
+	dockerClientOpts []client.Opt,
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
-	dockerManager := docker_manager.NewDockerManager(dockerClient)
+	dockerManager, err := docker_manager.CreateDockerManager(dockerClientOpts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred building docker manager")
+	}
 
 	// If running within the API container context, detect the network that the API container is running inside
 	// so, we can create the free IP address trackers

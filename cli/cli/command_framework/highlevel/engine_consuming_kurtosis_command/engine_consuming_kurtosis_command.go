@@ -21,10 +21,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type EngineContextKey string
+
 const (
-	engineClientCloseFuncCtxKey     = "engine-client-close-func"
-	metricsClientKey                = "metrics-client-key"
-	metricsClientClosingFunctionKey = "metrics-client-closing-func"
+	engineClientCloseFuncCtxKey     EngineContextKey = "engine-client-close-func"
+	metricsClientKey                EngineContextKey = "metrics-client-key"
+	metricsClientClosingFunctionKey EngineContextKey = "metrics-client-closing-func"
 )
 
 // This is a convenience KurtosisCommand for commands that interact with the engine
@@ -38,14 +40,14 @@ type EngineConsumingKurtosisCommand struct {
 	LongDescription string
 
 	// The name of the key that will be set during PreValidationAndRun where the KurtosisBackend can be found
-	KurtosisBackendContextKey string
+	KurtosisBackendContextKey EngineContextKey
 
 	// TODO Replace with KurtosisContext!!! This will:
 	//  1) be easier to work with and
 	//  2) force us to use the same SDK we give to users, so there's no "secret" or "private" API, which will force
 	//     us to improve the SDK
 	// The name of the key that will be set during PreValidationAndRun where the engine client will be made available
-	EngineClientContextKey string
+	EngineClientContextKey EngineContextKey
 
 	// Order isn't important here
 	Flags []*flags.FlagConfig

@@ -7,7 +7,6 @@ package enclave_data_directory
 
 import (
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -33,7 +32,7 @@ func TestFileStore_StoreFileSimpleCase(t *testing.T) {
 	expectedFilepath := filepath.Join(fileStore.fileCache.absoluteDirpath, expectedFilename)
 	_, dirErr := os.Stat(expectedFilepath)
 	require.Nil(t, dirErr)
-	file, readErr := ioutil.ReadFile(expectedFilepath)
+	file, readErr := os.ReadFile(expectedFilepath)
 	require.Nil(t, readErr)
 	require.Equal(t, []byte(testContent), file)
 }
@@ -66,7 +65,7 @@ func TestFileStore_GetFilepathByUUIDProperFilepath(t *testing.T) {
 
 	_, dirErr := os.Stat(enclaveDataFile.absoluteFilepath)
 	require.Nil(t, dirErr)
-	file, readErr := ioutil.ReadFile(enclaveDataFile.absoluteFilepath)
+	file, readErr := os.ReadFile(enclaveDataFile.absoluteFilepath)
 	require.Nil(t, readErr)
 	require.Equal(t, []byte(testContent), file)
 }
@@ -96,9 +95,9 @@ func TestFileStore_StoreFilesUniquely(t *testing.T) {
 	require.NotEqual(t, enclaveDataFile, anotherFilepath)
 
 	//Read and evaluate their content is different.
-	file, readErr := ioutil.ReadFile(enclaveDataFile.absoluteFilepath)
+	file, readErr := os.ReadFile(enclaveDataFile.absoluteFilepath)
 	require.Nil(t, readErr)
-	anotherFile, readErr := ioutil.ReadFile(anotherFilepath.absoluteFilepath)
+	anotherFile, readErr := os.ReadFile(anotherFilepath.absoluteFilepath)
 	require.Nil(t, readErr)
 	require.NotEqual(t, file, anotherFile)
 }
@@ -159,7 +158,7 @@ func TestFilesArtifactStore_GetFileNamesAndUuids(t *testing.T) {
 }
 
 func getTestFileStore(t *testing.T) *FilesArtifactStore {
-	absDirpath, err := ioutil.TempDir("", "")
+	absDirpath, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 	fileStore := newFilesArtifactStore(absDirpath, "")
 	require.Nil(t, err)

@@ -633,7 +633,7 @@ jobs:
           sudo apt update
           sudo apt install kurtosis-cli
       # We don't send metrics to avoid polluting our logs
-      - run: kurtosis config init dont-send-metrics
+      - run: kurtosis analytics disable
 
       # Start up an enclave with some services inside
       - run: kurtosis enclave add --name running-old-enclave
