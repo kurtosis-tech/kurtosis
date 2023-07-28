@@ -33,7 +33,7 @@ var ContextRmCmd = &lowlevel.LowlevelKurtosisCommand{
 func run(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	contextIdentifiers, err := args.GetGreedyArg(contextIdentifiersArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for greedy context identifiers arg '%v' but none was found; this is a bug with Kurtosis!", contextIdentifiersArgKey)
+		return stacktrace.Propagate(err, "Expected a value for greedy context identifiers arg '%v' but none was found; this is a bug in the Kurtosis CLI!", contextIdentifiersArgKey)
 	}
 
 	contextsConfigStore := store.GetContextsConfigStore()
