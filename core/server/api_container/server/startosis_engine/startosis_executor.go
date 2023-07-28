@@ -16,9 +16,9 @@ import (
 const (
 	progressMsg      = "Execution in progress"
 	ParallelismParam = "PARALLELISM"
-	// we limit the output to 600 characters
+	// we limit the output to 64k characters
 	// TODO(tedi) get rid of this in favor of streaming
-	outputSizeLimit          = 600
+	outputSizeLimit          = 64 * 1024
 	outputLimitReachedSuffix = "..."
 )
 
