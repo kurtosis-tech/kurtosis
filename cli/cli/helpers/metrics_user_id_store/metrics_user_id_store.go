@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 	"os"
 	"sync"
 )
@@ -97,7 +96,7 @@ func (store *MetricsUserIDStore) getMetricsUserIDFromFile() (string, error) {
 	}
 	logrus.Debugf("Metrics user id filepath: '%v'", filepath)
 
-	fileContentBytes, err := ioutil.ReadFile(filepath)
+	fileContentBytes, err := os.ReadFile(filepath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred reading metrics user id file")
 	}
@@ -118,7 +117,7 @@ func (store *MetricsUserIDStore) saveMetricsUserIdFile(metricsUserId string) err
 		return stacktrace.Propagate(err, "An error occurred getting the metrics user id filepath")
 	}
 
-	err = ioutil.WriteFile(filepath, fileContent, metricsUserIDFilePermissions)
+	err = os.WriteFile(filepath, fileContent, metricsUserIDFilePermissions)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred writing metrics user id file '%v'", filepath)
 	}

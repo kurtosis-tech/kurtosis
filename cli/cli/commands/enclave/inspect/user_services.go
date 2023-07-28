@@ -143,7 +143,7 @@ func getUserServicePortBindingStrings(userService *service.Service,
 	maybePublicPortMapFromAPIC map[string]*kurtosis_core_rpc_api_bindings.Port,
 	maybePublicIpAddrFromAPIC string) ([]string, error) {
 	privatePorts := userService.GetPrivatePorts()
-	if privatePorts == nil || len(privatePorts) == 0 {
+	if len(privatePorts) == 0 {
 		return []string{missingPortPlaceholder}, nil
 	}
 

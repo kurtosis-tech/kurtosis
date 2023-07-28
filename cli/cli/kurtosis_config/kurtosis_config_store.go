@@ -9,7 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
+	"io"
 	"os"
 	"sync"
 )
@@ -109,7 +109,7 @@ func (configStore *kurtosisConfigStore) saveKurtosisConfigYAMLFile(kurtosisConfi
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis config YAML filepath")
 	}
 
-	err = ioutil.WriteFile(kurtosisConfigYAMLFilepath, kurtosisConfigYAMLContent, kurtosisConfigFilePermissions)
+	err = os.WriteFile(kurtosisConfigYAMLFilepath, kurtosisConfigYAMLContent, kurtosisConfigFilePermissions)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred writing Kurtosis config YAML file '%v'", kurtosisConfigYAMLFilepath)
 	}
@@ -157,7 +157,7 @@ func (configStore *kurtosisConfigStore) readConfigFileBytes() ([]byte, error) {
 		}
 	}()
 
-	fileContentBytes, err := ioutil.ReadAll(kurtosisConfigYAMLFile)
+	fileContentBytes, err := io.ReadAll(kurtosisConfigYAMLFile)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred reading Kurtosis config YAML file")
 	}
