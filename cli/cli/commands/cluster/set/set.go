@@ -6,8 +6,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/stacktrace"
@@ -51,24 +49,12 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	clusterPriorToUpdate, err := clusterSettingStore.GetClusterSetting()
 	if err != nil {
-		logrus.Debugf("Unable to get current cluster set. If this is a fresh Kurtosis install, it's fine "+
-			"as the cluster config might not be set yet. Error was: %v", err.Error())
+		return stacktrace.Propagate(err, "Tried to fetch the current cluster before changing clusters but failed")
 	}
 
 	if clusterName == clusterPriorToUpdate {
 		logrus.Infof("Kurtosis cluster already set to '%s'", clusterName)
 		return nil
-	}
-
-	engineManagerOldCluster, err := engine_manager.NewEngineManager(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
-	}
-	if err = engineManagerOldCluster.StopEngineIdempotently(ctx); err != nil {
-		logrus.Warnf("Kurtosis was not able to stop a potentially running engine on the cluster '%s'. This is not "+
-			"critical, it might be that the current cluster is not reachable anymore. In the worst case scenario, the "+
-			"engine will continue running in cluster '%s' until Kurtosis is switched back to it.", clusterPriorToUpdate,
-			clusterPriorToUpdate)
 	}
 
 	if err = clusterSettingStore.SetClusterSetting(clusterName); err != nil {
@@ -85,25 +71,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 				command_str_consts.ClusterSetCmdStr, clusterPriorToUpdate)
 		}
 	}()
-	logrus.Infof("Cluster set to '%s', Kurtosis engine will now be started", clusterName)
-	engineManagerNewCluster, err := engine_manager.NewEngineManager(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
-	}
-	// Start the engine inside the new cluster
-	_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize)
-	if err != nil {
-		return stacktrace.Propagate(err, "Engine could not be started after cluster was updated. The cluster "+
-			"will be rolled back, but it is possible the engine will remain stopped. Its status can be retrieved "+
-			"running 'kurtosis %s %s' and it can potentially be started running 'kurtosis %s %s'",
-			command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,
-			command_str_consts.EngineStartCmdStr)
-	}
-	defer func() {
-		if err = engineClientCloseFunc(); err != nil {
-			logrus.Warnf("Error closing the engine client:\n'%v'", err)
-		}
-	}()
+	logrus.Infof("Cluster set to '%s', Please start a Kurtosis engine on the cluster if there isn't one already", clusterName)
 	clusterUpdateSuccessful = true
 	return nil
 }
