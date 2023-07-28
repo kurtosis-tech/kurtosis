@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.80.22](https://github.com/kurtosis-tech/kurtosis/compare/0.80.21...0.80.22) (2023-07-28)
+
+
+### Features
+
+* Add starlark converter to kurtosis import ([#1010](https://github.com/kurtosis-tech/kurtosis/issues/1010)) ([8554635](https://github.com/kurtosis-tech/kurtosis/commit/8554635af6990d1b152aa914ef2c595d5f8be802))
+* Support resource reservations on Docker compose import ([#1023](https://github.com/kurtosis-tech/kurtosis/issues/1023)) ([e7a5576](https://github.com/kurtosis-tech/kurtosis/commit/e7a5576e1a5dd96b4fdf0b9858caa9394b0572ef))
+
+
+### Bug Fixes
+
+* truncate output if greater than 64*1024 characters ([#1022](https://github.com/kurtosis-tech/kurtosis/issues/1022)) ([c3e8939](https://github.com/kurtosis-tech/kurtosis/commit/c3e8939811ea4ccafd559cfd9d3705350c6f9fac))
+
 ## [0.80.21](https://github.com/kurtosis-tech/kurtosis/compare/0.80.20...0.80.21) (2023-07-28)
 
 

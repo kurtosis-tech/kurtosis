@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const bufferedChannelSize = 2
+
 func ExecuteServiceAssertionWithRecipe(
 	ctx context.Context,
 	serviceNetwork service_network.ServiceNetwork,
@@ -30,7 +32,7 @@ func ExecuteServiceAssertionWithRecipe(
 		So we prepend an element to 'tickChan'
 	*/
 	tickChan := time.NewTicker(interval)
-	executionTickChan := make(chan time.Time, 2)
+	executionTickChan := make(chan time.Time, bufferedChannelSize)
 	executionTickChan <- time.Now()
 	go func() {
 		for tick := range tickChan.C {

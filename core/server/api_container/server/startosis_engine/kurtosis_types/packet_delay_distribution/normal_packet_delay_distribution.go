@@ -46,7 +46,7 @@ func NewNormalPacketDelayDistributionType() *kurtosis_type_constructor.KurtosisT
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Float],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 
-						return builtin_argument.FloatInRange(value, CorrelationAttr, 0, 100)
+						return builtin_argument.FloatInRange(value, CorrelationAttr, partition_topology.NoPacketLossPercentage, partition_topology.EntirePacketLossPercentage)
 					},
 				},
 			},
