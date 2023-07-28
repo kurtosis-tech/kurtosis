@@ -1464,7 +1464,7 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 	networkingSidecar, found := network.networkingSidecars[serviceName]
 	if found {
 		if err = network.networkingSidecarManager.Remove(ctx, networkingSidecar); err != nil {
-			return stacktrace.Propagate(err, "Service '%s' was successfully detroyed byt an error occurred cleaning up its sidecar. The sidecar must be deleted manually.", serviceName)
+			return stacktrace.Propagate(err, "Service '%s' was successfully destroyed but an error occurred cleaning up its sidecar. The sidecar must be deleted manually.", serviceName)
 		}
 		delete(network.networkingSidecars, serviceName)
 	}
