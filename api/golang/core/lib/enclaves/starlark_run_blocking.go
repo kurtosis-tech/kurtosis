@@ -45,7 +45,6 @@ func ReadStarlarkRunResponseLineBlocking(starlarkRunResponseLines <-chan *kurtos
 			instructions = append(instructions, responseLine.GetInstruction())
 		} else if responseLine.GetInstructionResult() != nil {
 			scriptOutput.WriteString(responseLine.GetInstructionResult().GetSerializedInstructionResult())
-			scriptOutput.WriteString(starlarkRunOutputLinesSplit)
 		} else if responseLine.GetError() != nil {
 			if responseLine.GetError().GetInterpretationError() != nil {
 				interpretationError = responseLine.GetError().GetInterpretationError()
