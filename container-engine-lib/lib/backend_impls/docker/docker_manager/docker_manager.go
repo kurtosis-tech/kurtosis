@@ -993,7 +993,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 					return
 				}
 			}
-			execOutputChan <- execOutputLine
+			execOutputChan <- strings.TrimSuffix(execOutputLine, "\n")
 			time.Sleep(1 * time.Second)
 		}
 
