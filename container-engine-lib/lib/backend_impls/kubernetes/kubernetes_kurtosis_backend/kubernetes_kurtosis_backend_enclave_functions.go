@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/operation_parallelizer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
 	apiv1 "k8s.io/api/core/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"strings"
@@ -549,109 +548,6 @@ func getEnclaveStatusFromEnclavePods(enclavePods []apiv1.Pod) (enclave.EnclaveSt
 	}
 
 	return resultEnclaveStatus, nil
-}
-
-func createDumpPodJob(
-	ctx context.Context,
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-	namespaceName string,
-	pod apiv1.Pod,
-	enclaveOutputDirpath string,
-	resultChan chan dumpPodResult,
-) func() {
-	return func() {
-		if err := dumpPodInfo(ctx, kubernetesManager, namespaceName, pod, enclaveOutputDirpath); err != nil {
-			result := dumpPodResult{
-				podName: pod.Name,
-				err:     err,
-			}
-			resultChan <- result
-		}
-	}
-}
-
-func dumpPodInfo(
-	ctx context.Context,
-	kubernetesManager *kubernetes_manager.KubernetesManager,
-	namespaceName string,
-	pod apiv1.Pod,
-	enclaveOutputDirpath string,
-) error {
-	podName := pod.Name
-
-	// Make pod output directory
-	podOutputDirpath := path.Join(enclaveOutputDirpath, podName)
-	if err := os.Mkdir(podOutputDirpath, createdDirPerms); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred creating directory '%v' to hold the output of pod with name '%v'",
-			podOutputDirpath,
-			podName,
-		)
-	}
-
-	jsonSerializedPodSpecBytes, err := json.MarshalIndent(pod.Spec, enclaveDumpJsonSerializationPrefix, enclaveDumpJsonSerializationIndent)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred serializing the spec of pod '%v' to JSON", podName)
-	}
-	podSpecOutputFilepath := path.Join(podOutputDirpath, podSpecFilename)
-	if err := os.WriteFile(podSpecOutputFilepath, jsonSerializedPodSpecBytes, createdFilePerms); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred writing the spec of pod '%v' to file '%v'",
-			podName,
-			podSpecOutputFilepath,
-		)
-	}
-
-	for _, container := range pod.Spec.Containers {
-		containerName := container.Name
-
-		// Make container output directory
-		containerLogsFilepath := path.Join(podOutputDirpath, containerName+containerLogsFilenameSuffix)
-		containerLogsOutputFp, err := os.Create(containerLogsFilepath)
-		if err != nil {
-			return stacktrace.Propagate(
-				err,
-				"An error occurred creating file '%v' to hold the logs of container with name '%v' in pod '%v'",
-				containerLogsFilepath,
-				containerName,
-				podName,
-			)
-		}
-		defer containerLogsOutputFp.Close()
-
-		containerLogReadCloser, err := kubernetesManager.GetContainerLogs(
-			ctx,
-			namespaceName,
-			podName,
-			containerName,
-			shouldFollowPodLogsWhenDumping,
-			shouldAddTimestampsWhenDumpingPodLogs,
-		)
-		if err != nil {
-			return stacktrace.Propagate(
-				err,
-				"An error occurred dumping logs of container '%v' in pod '%v' in namespace '%v'",
-				containerName,
-				podName,
-				namespaceName,
-			)
-		}
-		defer containerLogReadCloser.Close()
-
-		if _, err := io.Copy(containerLogsOutputFp, containerLogReadCloser); err != nil {
-			return stacktrace.Propagate(
-				err,
-				"An error occurred writing logs of container '%v' in pod '%v' to file '%v'",
-				containerName,
-				podName,
-				containerLogsFilepath,
-			)
-		}
-	}
-
-	return nil
 }
 
 func getEnclaveCreationTimeFromEnclaveNamespace(namespace *apiv1.Namespace) (*time.Time, error) {
