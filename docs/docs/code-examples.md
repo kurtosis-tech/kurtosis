@@ -1,5 +1,5 @@
 ---
-title: Code examples
+title: Code Examples
 sidebar_label: Code Examples
 slug: /code-examples
 ---
