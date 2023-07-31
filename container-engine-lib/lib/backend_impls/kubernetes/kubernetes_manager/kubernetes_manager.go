@@ -11,7 +11,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
@@ -1409,6 +1408,21 @@ func (manager *KubernetesManager) RunExecCommand(
 	return successExecCommandExitCode, nil
 }
 
+type LogStreamer struct {
+	b bytes.Buffer
+}
+
+func (l *LogStreamer) String() string {
+	return l.b.String()
+}
+
+func (l *LogStreamer) Write(p []byte) (n int, err error) {
+	a := strings.TrimSpace(string(p))
+	l.b.WriteString(a)
+	logrus.Debug(a)
+	return len(p), nil
+}
+
 func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	ctx context.Context,
 	namespaceName string,
@@ -1459,8 +1473,9 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 			return
 		}
 
+		l := &LogStreamer{}
 		outputBuffer := &bytes.Buffer{}
-		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
+		//concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
 		logrus.Debugf("STARTING GO ROUTINE TO STREAM INFO")
 		go func() {
 			defer func() {
@@ -1469,8 +1484,8 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 
 			if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 				Stdin:             os.Stdin,
-				Stdout:            concurrentBuffer,
-				Stderr:            concurrentBuffer,
+				Stdout:            l,
+				Stderr:            l,
 				Tty:               true,
 				TerminalSizeQueue: nil,
 			}); err != nil {
