@@ -28,7 +28,7 @@ func NewConnectionConfigType() *kurtosis_type_constructor.KurtosisTypeConstructo
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.Float],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.FloatInRange(value, PacketLossPercentageAttr, 0, 100)
+						return builtin_argument.FloatInRange(value, PacketLossPercentageAttr, partition_topology.NoPacketLossPercentage, partition_topology.EntirePacketLossPercentage)
 					},
 				},
 				{

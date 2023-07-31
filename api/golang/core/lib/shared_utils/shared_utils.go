@@ -14,6 +14,7 @@ const (
 	tempCompressionDirPattern = "upload-compression-cache-"
 	compressionExtension      = ".tgz"
 	defaultTmpDir             = ""
+	ownerAllPermissions       = 0700
 )
 
 // CompressPath compressed the entire content of the file or directory at pathToCompress and returns an io.ReadCloser
@@ -55,7 +56,7 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadC
 		return nil, 0, stacktrace.Propagate(err, "Failed to compress '%s'.", pathToCompress)
 	}
 
-	compressedFile, err := os.OpenFile(compressedFilePath, os.O_RDONLY, 0700)
+	compressedFile, err := os.OpenFile(compressedFilePath, os.O_RDONLY, ownerAllPermissions)
 	if err != nil {
 		return nil, 0, stacktrace.Propagate(err,
 			"Failed to create a temporary archive file at '%s' during files upload for '%s'.",

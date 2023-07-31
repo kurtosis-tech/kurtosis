@@ -57,6 +57,7 @@ const (
 
 	emptyFileArtifactIdentifier = ""
 	unlimitedLineCount          = math.MaxInt
+	allFilePermissionsForOwner  = 0700
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -355,7 +356,7 @@ func (apicService ApiContainerService) DownloadFilesArtifact(args *kurtosis_core
 		return stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
 	}
 
-	file, err := os.OpenFile(filesArtifact.GetAbsoluteFilepath(), os.O_RDONLY, 0700)
+	file, err := os.OpenFile(filesArtifact.GetAbsoluteFilepath(), os.O_RDONLY, allFilePermissionsForOwner)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred reading files artifact file at '%s'",
 			filesArtifact.GetAbsoluteFilepath())

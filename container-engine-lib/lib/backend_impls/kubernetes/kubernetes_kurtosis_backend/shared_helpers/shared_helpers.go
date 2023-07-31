@@ -27,7 +27,6 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"net"
@@ -835,7 +834,7 @@ func dumpPodInfo(
 		return stacktrace.Propagate(err, "An error occurred serializing the spec of pod '%v' to JSON", podName)
 	}
 	podSpecOutputFilepath := path.Join(podOutputDirpath, podSpecFilename)
-	if err := ioutil.WriteFile(podSpecOutputFilepath, jsonSerializedPodSpecBytes, createdFilePerms); err != nil {
+	if err := os.WriteFile(podSpecOutputFilepath, jsonSerializedPodSpecBytes, createdFilePerms); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred writing the spec of pod '%v' to file '%v'",

@@ -371,6 +371,8 @@ func destroyIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend) erro
 	return nil
 }
 
+const destroyEnclaveMaxRetries = 5
+
 // destroyIdleEnclavesFromPreviousRuns destroy idle enclaves created before the beforeTime with a retry strategy
 // We have seen the "context deadline exceeded" from Kubernetes in the past, and this usually happens
 // because the Kubernetes has just started, and it is a bit slow to retrieve the information and throws that error
@@ -378,19 +380,16 @@ func destroyIdleEnclavesFromPreviousRuns(kurtosisBackend backend_interface.Kurto
 	logrus.Debugf("Destroying idle enclaves created before '%s'...", beforeTime)
 	var err error
 	var idleEnclavesToRemove map[enclave.EnclaveUUID]bool
-	maxRetries := uint(5)
-
-	for i := uint(0); i < maxRetries; i++ {
+	numRetries := 0
+	for ; numRetries < destroyEnclaveMaxRetries; numRetries++ {
 		idleEnclavesToRemove, err = destroyOldIdleEnclaves(kurtosisBackend, beforeTime)
-		if err != nil {
-			maxRetries++
-			continue
+		if err == nil {
+			break
 		}
-		break
 	}
 
 	if err != nil {
-		logrus.Errorf("We tried to destroy idle enclaves from previous run but something failed, even after retrying %v times; we suggest to manually remove these idle enclave with UUIDs '%+v'. Last error was:\n %v", maxRetries, idleEnclavesToRemove, err)
+		logrus.Errorf("We tried to destroy idle enclaves from previous run but something failed, even after retrying %v times; we suggest to manually remove these idle enclave with UUIDs '%+v'. Last error was:\n %v", numRetries, idleEnclavesToRemove, err)
 		return
 	}
 
