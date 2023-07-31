@@ -1465,6 +1465,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 
 		outputBuffer := &bytes.Buffer{}
 		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
+		logrus.Debugf("STARTING GO ROUTINE TO STREAM INFO")
 		go func() {
 			if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 				Stdin:             nil,
@@ -1497,10 +1498,11 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 				}
 			}
 		}()
+		logrus.Debugf("ABOUT TO START EXEC OUTPUT IN K8s")
 		reader := bufio.NewReader(outputBuffer)
 		for {
 			execOutputLine, err := reader.ReadString('\n')
-			logrus.Debugf("DOCKER MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
+			logrus.Debugf("K8S MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
 			if err != nil {
 				if err == io.EOF {
 					break
