@@ -209,9 +209,9 @@ func (manager *KubernetesManager) UpdateService(
 	ctx context.Context,
 	namespaceName string,
 	serviceName string,
-	// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
-	// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
-	// would result in removing the object name)
+// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
+// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
+// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.ServiceApplyConfiguration),
 ) (*apiv1.Service, error) {
 	updatesToApply := applyconfigurationsv1.Service(serviceName, namespaceName)
@@ -439,9 +439,9 @@ func (manager *KubernetesManager) CreateNamespace(
 func (manager *KubernetesManager) UpdateNamespace(
 	ctx context.Context,
 	namespaceName string,
-	// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
-	// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
-	// would result in removing the object name)
+// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
+// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
+// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.NamespaceApplyConfiguration),
 ) (*apiv1.Namespace, error) {
 	updatesToApply := applyconfigurationsv1.Namespace(namespaceName)
@@ -1418,10 +1418,6 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 ) chan string {
 	execOutputChan := make(chan string)
 	go func() {
-		defer func() {
-			close(execOutputChan)
-		}()
-
 		execOptions := &apiv1.PodExecOptions{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "",
@@ -1467,6 +1463,10 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
 		logrus.Debugf("STARTING GO ROUTINE TO STREAM INFO")
 		go func() {
+			defer func() {
+				close(execOutputChan)
+			}()
+
 			if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 				Stdin:             nil,
 				Stdout:            concurrentBuffer,
@@ -1487,13 +1487,13 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 					return
 				}
 
-				exitCode, err := getExitCodeFromStatusMessage(statusError)
+				//exitCode, err := getExitCodeFromStatusMessage(statusError)
 				if err != nil {
 					sendErrorAndFail(
 						execOutputChan,
 						stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError),
 						"An error occurred while streaming from kubernetes with following exit code '%d'",
-						exitCode)
+						1)
 					return
 				}
 			}
