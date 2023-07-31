@@ -3,6 +3,8 @@ package kurtosis_context
 import (
 	"context"
 	"fmt"
+	"io"
+
 	"github.com/Masterminds/semver/v3"
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	portal_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
@@ -18,7 +20,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
 )
 
 const (
@@ -45,6 +46,10 @@ var (
 	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
 
 	EnginePortTransportProtocol = portal_api.TransportProtocol_TCP
+
+	ApicRemoteEndpointType   = portal_api.RemoteEndpointType_Apic
+	EngineRemoteEndpointType = portal_api.RemoteEndpointType_Engine
+	UserServiceEndpointType  = portal_api.RemoteEndpointType_UserService
 )
 
 // Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
@@ -349,7 +354,7 @@ func newEnclaveContextFromEnclaveInfo(
 	// for remote contexts, we need to tunnel the APIC port to the local machine
 	if portalClient != nil {
 		apicGrpcPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcPortOnHostMachine()
-		forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, &apicPortTransportProtocol)
+		forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, ApicRemoteEndpointType, &apicPortTransportProtocol)
 		if _, err := portalClient.ForwardPort(ctx, forwardApicPortArgs); err != nil {
 			return nil, stacktrace.Propagate(err, "Unable to forward remote API container port to the local machine")
 		}

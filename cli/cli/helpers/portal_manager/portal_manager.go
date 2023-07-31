@@ -2,6 +2,11 @@ package portal_manager
 
 import (
 	"context"
+	"os"
+	"os/exec"
+	"strconv"
+	"syscall"
+
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	portal_generated_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -9,10 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
-	"os/exec"
-	"strconv"
-	"syscall"
 )
 
 const (
@@ -92,7 +93,7 @@ func (portalManager *PortalManager) StartNew(ctx context.Context) (int, error) {
 	}
 	portalBinaryFile, err := host_machine_directories.GetPortalBinaryFilePath()
 	if err != nil {
-		return defaultPIDForStoppedProcess, stacktrace.Propagate(err, "Unable to get file path to PID file")
+		return defaultPIDForStoppedProcess, stacktrace.Propagate(err, "Unable to get file path to Portal binary")
 	}
 
 	// Start portal daemon
@@ -199,7 +200,7 @@ func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRem
 		} else {
 			logrus.Warnf("Mapping other than TCP or UDP port is not supported right now. Will skip port '%d' because protocal is '%v'", remotePort.GetNumber(), remotePort.GetTransportProtocol())
 		}
-		forwardPortsArgs := portal_constructors.NewForwardPortArgs(uint32(localPort), uint32(remotePort.GetNumber()), &transportProtocol)
+		forwardPortsArgs := portal_constructors.NewForwardPortArgs(uint32(localPort), uint32(remotePort.GetNumber()), kurtosis_context.UserServiceEndpointType, &transportProtocol)
 		if _, err := portalManager.portalClientMaybe.ForwardPort(ctx, forwardPortsArgs); err != nil {
 			failedPorts[localPort] = remotePort
 		} else {
