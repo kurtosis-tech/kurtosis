@@ -86,7 +86,10 @@ func getRemoteDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 	remoteBackendConfig *configs.KurtosisRemoteBackendConfig,
 ) (backend_interface.KurtosisBackend, error) {
-	remoteDockerClientOpts, err := buildRemoteDockerClientOpts(remoteBackendConfig)
+	remoteDockerClientOpts, cleanCertFilesFunc, err := buildRemoteDockerClientOpts(remoteBackendConfig)
+	if cleanCertFilesFunc != nil {
+		defer cleanCertFilesFunc()
+	}
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error building client configuration for Docker remote backend")
 	}
@@ -97,19 +100,21 @@ func getRemoteDockerKurtosisBackend(
 	return kurtosisRemoteBackend, nil
 }
 
-func buildRemoteDockerClientOpts(remoteBackendConfig *configs.KurtosisRemoteBackendConfig) ([]client.Opt, error) {
+func buildRemoteDockerClientOpts(remoteBackendConfig *configs.KurtosisRemoteBackendConfig) ([]client.Opt, func(), error) {
 	var clientOptions []client.Opt
 
 	// host and port option
 	clientOptions = append(clientOptions, client.WithHost(remoteBackendConfig.Endpoint))
 
 	// TLS option if config is present
+	var tlsFilesDir string
+	var cleanCertFilesFunc func()
+	var err error
 	if tlsConfig := remoteBackendConfig.Tls; tlsConfig != nil {
-		tlsFilesDir, cleanCertFilesFunc, err := writeTlsConfigToTempDir(tlsConfig.Ca, tlsConfig.ClientCert, tlsConfig.ClientKey)
+		tlsFilesDir, cleanCertFilesFunc, err = writeTlsConfigToTempDir(tlsConfig.Ca, tlsConfig.ClientCert, tlsConfig.ClientKey)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "Error building TLS configuration to connect to remote Docker backend")
+			return nil, cleanCertFilesFunc, stacktrace.Propagate(err, "Error building TLS configuration to connect to remote Docker backend")
 		}
-		defer cleanCertFilesFunc()
 		tlsOpt := client.WithTLSClientConfig(
 			path.Join(tlsFilesDir, caFileName),
 			path.Join(tlsFilesDir, certFileName),
@@ -119,7 +124,7 @@ func buildRemoteDockerClientOpts(remoteBackendConfig *configs.KurtosisRemoteBack
 
 	// Timeout and API version negotiation option
 	clientOptions = append(clientOptions, client.WithAPIVersionNegotiation())
-	return clientOptions, nil
+	return clientOptions, cleanCertFilesFunc, nil
 }
 
 // writeTlsConfigToTempDir writes the different TLS files to a directory, and returns the path to this directory.
