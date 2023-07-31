@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.80.23](https://github.com/kurtosis-tech/kurtosis/compare/0.80.22...0.80.23) (2023-07-31)
+
+
+### Features
+
+* add `cloud add` ([#1015](https://github.com/kurtosis-tech/kurtosis/issues/1015)) ([48aecd0](https://github.com/kurtosis-tech/kurtosis/commit/48aecd05381b9b89fb34da145f9651605ca446d2))
+
+
+### Bug Fixes
+
+* Fix error swallowing in DefaultServiceNetwork.destroyService ([#987](https://github.com/kurtosis-tech/kurtosis/issues/987)) ([828f366](https://github.com/kurtosis-tech/kurtosis/commit/828f3666d4c0cb27cd83f071204e75143da14348))
+
 ## [0.80.22](https://github.com/kurtosis-tech/kurtosis/compare/0.80.21...0.80.22) (2023-07-28)
 
 
