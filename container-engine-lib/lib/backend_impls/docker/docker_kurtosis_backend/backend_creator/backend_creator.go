@@ -107,10 +107,10 @@ func buildRemoteDockerClientOpts(remoteBackendConfig *configs.KurtosisRemoteBack
 	clientOptions = append(clientOptions, client.WithHost(remoteBackendConfig.Endpoint))
 
 	// TLS option if config is present
-	var tlsFilesDir string
 	var cleanCertFilesFunc func()
-	var err error
 	if tlsConfig := remoteBackendConfig.Tls; tlsConfig != nil {
+		var tlsFilesDir string
+		var err error
 		tlsFilesDir, cleanCertFilesFunc, err = writeTlsConfigToTempDir(tlsConfig.Ca, tlsConfig.ClientCert, tlsConfig.ClientKey)
 		if err != nil {
 			return nil, cleanCertFilesFunc, stacktrace.Propagate(err, "Error building TLS configuration to connect to remote Docker backend")
