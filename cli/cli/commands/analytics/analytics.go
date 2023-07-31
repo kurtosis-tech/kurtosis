@@ -77,7 +77,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 		metricsUserId, err := metricsUserIdStore.GetUserID()
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while getting the users metrics id")
+			return stacktrace.Propagate(err, "An error occurred while getting the user's metrics id")
 		}
 		out.PrintOutLn(metricsUserId)
 		return nil
