@@ -209,9 +209,9 @@ func (manager *KubernetesManager) UpdateService(
 	ctx context.Context,
 	namespaceName string,
 	serviceName string,
-// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
-// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
-// would result in removing the object name)
+	// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
+	// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.ServiceApplyConfiguration),
 ) (*apiv1.Service, error) {
 	updatesToApply := applyconfigurationsv1.Service(serviceName, namespaceName)
@@ -439,9 +439,9 @@ func (manager *KubernetesManager) CreateNamespace(
 func (manager *KubernetesManager) UpdateNamespace(
 	ctx context.Context,
 	namespaceName string,
-// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
-// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
-// would result in removing the object name)
+	// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
+	// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.NamespaceApplyConfiguration),
 ) (*apiv1.Namespace, error) {
 	updatesToApply := applyconfigurationsv1.Namespace(namespaceName)
@@ -1423,10 +1423,10 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 				Kind:       "",
 				APIVersion: "",
 			},
-			Stdin:     shouldAllocateStdinOnPodExec,
-			Stdout:    shouldAllocatedStdoutOnPodExec,
-			Stderr:    shouldAllocatedStderrOnPodExec,
-			TTY:       shouldAllocateTtyOnPodExec,
+			Stdin:     true,
+			Stdout:    true,
+			Stderr:    true,
+			TTY:       true,
 			Container: containerName,
 			Command:   command,
 		}
