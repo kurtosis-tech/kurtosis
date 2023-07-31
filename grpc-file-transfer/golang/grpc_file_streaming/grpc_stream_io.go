@@ -12,7 +12,8 @@ import (
 const (
 	// Files are streamed in chunk of 3MB. This is important to keep this below 4MB as GRPC has a hard limit of 4MB
 	// per message
-	chunkSize = 3 * 1024 * 1024
+	chunkSize       = 3 * 1024 * 1024
+	bytesInKilobyte = 1024
 )
 
 // sendMessagesToStream is a helper function that takes as input the payload to be sent, split it into fixed-size chunks
@@ -42,7 +43,7 @@ func sendMessagesToStream[DataChunkProtoMessage any](
 			break
 		}
 		chunkNumber += 1
-		logrus.Debugf("Sending content of %s. Progress: %d/%d kilobytes", payloadNameForLogging, chunkNumber*chunkSize/1024, payloadSizeInBytes)
+		logrus.Debugf("Sending content of %s. Progress: %d/%d kilobytes", payloadNameForLogging, chunkNumber*chunkSize/bytesInKilobyte, payloadSizeInBytes)
 
 		contentChunk := make([]byte, bytesRead)
 		copy(contentChunk, buf[:bytesRead])

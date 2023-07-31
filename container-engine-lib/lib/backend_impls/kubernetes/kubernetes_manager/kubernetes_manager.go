@@ -61,8 +61,9 @@ const (
 	shouldFollowContainerLogsWhenPrintingPodInfo = false
 	shouldAddTimestampsWhenPrintingPodInfo       = true
 
-	listOptionsTimeoutSeconds int64 = 10
-	contextDeadlineExceeded         = "context deadline exceeded"
+	listOptionsTimeoutSeconds      int64 = 10
+	contextDeadlineExceeded              = "context deadline exceeded"
+	expectedStatusMessageSliceSize       = 6
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -1934,7 +1935,7 @@ func renderContainerStatuses(containerStatuses []apiv1.ContainerStatus, prefixSt
 // so we have to parse it out of a status message
 func getExitCodeFromStatusMessage(statusMessage string) (int32, error) {
 	messageSlice := strings.Split(statusMessage, " ")
-	if len(messageSlice) != 6 {
+	if len(messageSlice) != expectedStatusMessageSliceSize {
 		return -1, stacktrace.NewError(
 			"Expected the status message to have 6 parts but it has '%v'. This is likely not an exit status message.\n'%s'",
 			len(messageSlice),

@@ -6,6 +6,11 @@ import (
 	"net"
 )
 
+const (
+	allOnesFourBytesMask = 0xffffffff
+	ipV6SuffixStart      = 12
+)
+
 /*
 GetFreeIpAddrFromSubnet
 Gets a free IP address from the subnet that the IP tracker was initialized with.
@@ -27,8 +32,8 @@ func GetFreeIpAddrFromSubnet(takenIps map[string]bool, subnet *net.IPNet) (net.I
 	// The IP can be either 4 bytes or 16 bytes long; we need to handle both!
 	// See https://gist.github.com/ammario/649d4c0da650162efd404af23e25b86b
 	var intIp uint32
-	if len(subnetIp) == 16 {
-		intIp = binary.BigEndian.Uint32(subnetIp[12:16])
+	if len(subnetIp) == net.IPv6len {
+		intIp = binary.BigEndian.Uint32(subnetIp[ipV6SuffixStart:net.IPv6len])
 	} else {
 		intIp = binary.BigEndian.Uint32(subnetIp)
 	}
@@ -37,11 +42,11 @@ func GetFreeIpAddrFromSubnet(takenIps map[string]bool, subnet *net.IPNet) (net.I
 	start := intIp + 1
 
 	// find the final address
-	finish := (start & mask) | (mask ^ 0xffffffff)
+	finish := (start & mask) | (mask ^ allOnesFourBytesMask)
 	// loop through addresses as uint32
 	for i := start; i <= finish; i++ {
 		// convert back to net.IP
-		ip := make(net.IP, 4)
+		ip := make(net.IP, net.IPv4len)
 		binary.BigEndian.PutUint32(ip, i)
 		ipStr := ip.String()
 		if !takenIps[ipStr] {

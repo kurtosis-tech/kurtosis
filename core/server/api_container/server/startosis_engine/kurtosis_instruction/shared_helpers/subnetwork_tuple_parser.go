@@ -7,6 +7,8 @@ import (
 	"go.starlark.net/starlark"
 )
 
+const expectedCountOfNetworkNames = 2
+
 func ParseSubnetworks(subnetworkArgName string, subnetworksTuple starlark.Tuple) (service_network_types.PartitionID, service_network_types.PartitionID, *startosis_errors.InterpretationError) {
 	subnetworksStr, interpretationErr := kurtosis_types.SafeCastToStringSlice(subnetworksTuple, subnetworkArgName)
 	if interpretationErr != nil {
@@ -14,9 +16,9 @@ func ParseSubnetworks(subnetworkArgName string, subnetworksTuple starlark.Tuple)
 	}
 
 	errorMsgTemplate := "Subnetworks tuple should contain exactly 2 subnetwork names. %d %s provided"
-	if len(subnetworksStr) < 2 {
+	if len(subnetworksStr) < expectedCountOfNetworkNames {
 		return "", "", startosis_errors.NewInterpretationError(errorMsgTemplate, len(subnetworksStr), "was")
-	} else if len(subnetworksStr) > 2 {
+	} else if len(subnetworksStr) > expectedCountOfNetworkNames {
 		return "", "", startosis_errors.NewInterpretationError(errorMsgTemplate, len(subnetworksStr), "were")
 	}
 	subnetwork1 := service_network_types.PartitionID(subnetworksStr[0])

@@ -8,9 +8,7 @@ import (
 	"sync"
 )
 
-var (
-	maxNumberOfConcurrentDownloads = int64(4)
-)
+const maxNumberOfConcurrentDownloads = int64(4)
 
 type DockerImagesValidator struct {
 	kurtosisBackend *backend_interface.KurtosisBackend
