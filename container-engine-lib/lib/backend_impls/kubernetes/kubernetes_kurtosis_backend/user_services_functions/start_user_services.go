@@ -372,15 +372,15 @@ func createStartServiceOperation(
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating pod '%v' using image '%v'", podName, containerImageName)
 		}
-		shouldDestroyPod := true
-		defer func() {
-			if shouldDestroyPod {
-				if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
-					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
-					logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
-				}
-			}
-		}()
+		//shouldDestroyPod := true
+		//defer func() {
+		//	if shouldDestroyPod {
+		//		if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
+		//			logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
+		//			logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
+		//		}
+		//	}
+		//}()
 
 		updatedService, undoServiceUpdateFunc, err := updateServiceWhenContainerStarted(ctx, namespaceName, kubernetesService, privatePorts, kubernetesManager)
 		if err != nil {
@@ -413,7 +413,7 @@ func createStartServiceOperation(
 			)
 		}
 
-		shouldDestroyPod = false
+		//shouldDestroyPod = false
 		shouldUndoServiceUpdate = false
 		return objectsAndResources.Service, nil
 	}
