@@ -1468,10 +1468,10 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 			}()
 
 			if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-				Stdin:             nil,
+				Stdin:             os.Stdin,
 				Stdout:            concurrentBuffer,
 				Stderr:            concurrentBuffer,
-				Tty:               false,
+				Tty:               true,
 				TerminalSizeQueue: nil,
 			}); err != nil {
 				// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
@@ -1498,7 +1498,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 				}
 			}
 		}()
-		logrus.Debugf("ABOUT TO START EXEC OUTPUT IN K8s")
+		logrus.Debugf("ABOUT TO START STREAMINGEXEC OUTPUT IN K8s")
 		reader := bufio.NewReader(outputBuffer)
 		for {
 			execOutputLine, err := reader.ReadString('\n')
@@ -1514,6 +1514,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 			execOutputChan <- strings.TrimSuffix(execOutputLine, "\n")
 			time.Sleep(1 * time.Second)
 		}
+		logrus.Debugf("K8S MANAGER TOTAL EXEC OUTPUT: %s", outputBuffer.String())
 	}()
 	return execOutputChan
 }
