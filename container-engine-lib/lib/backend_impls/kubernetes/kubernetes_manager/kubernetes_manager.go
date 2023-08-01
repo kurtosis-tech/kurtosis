@@ -1529,6 +1529,7 @@ func NewTestWriter(underlying io.Writer) *TestWriter {
 func (writer *TestWriter) Write(p []byte) (n int, err error) {
 	writer.mutex.Lock()
 	defer writer.mutex.Unlock()
+	logrus.Debugf("WRITING: %s\n", string(p))
 	return writer.underlying.Write(p)
 }
 
