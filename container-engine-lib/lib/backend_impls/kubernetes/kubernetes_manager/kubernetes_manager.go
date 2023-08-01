@@ -1432,7 +1432,32 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	command []string,
 ) chan string {
 	execOutputChan := make(chan string)
+	outputBuffer := &bytes.Buffer{}
+	concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
 	go func() {
+		logrus.Debug("ENTERING LOOP ROUTINE")
+		reader := bufio.NewReader(outputBuffer)
+		for {
+			execOutputLine, err := reader.ReadString('\n')
+			logrus.Debugf("K8S MANAGER OUTPUT BUFFER: %s", outputBuffer.String())
+			logrus.Debugf("AMOUNT OF BYTES CAN BE BUFFERED: %v", reader.Buffered())
+			logrus.Debugf("K8S MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
+			if err != nil {
+				logrus.Debugf("ERROR THAT STOPPED STREAMING LOOP: %v", err)
+				if err == io.EOF {
+					break
+				} else {
+					sendErrorAndFail(execOutputChan, err, "An error occurred while executing exec command")
+					return
+				}
+			}
+			execOutputChan <- strings.TrimSuffix(execOutputLine, "\n")
+			time.Sleep(1 * time.Second)
+		}
+		logrus.Debugf("K8S MANAGER TOTAL EXEC OUTPUT: %s", outputBuffer.String())
+	}()
+	go func() {
+		logrus.Debug("ENTERING K8S STREAM CALL ROUTINE")
 		defer func() {
 			close(execOutputChan)
 		}()
@@ -1477,29 +1502,6 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 			return
 		}
 
-		outputBuffer := &bytes.Buffer{}
-		go func() {
-			reader := bufio.NewReader(outputBuffer)
-			for {
-				execOutputLine, err := reader.ReadString('\n')
-				logrus.Debugf("K8S MANAGER OUTPUT BUFFER: %s", outputBuffer.String())
-				logrus.Debugf("AMOUNT OF BYTES CAN BE BUFFERED: %v", reader.Buffered())
-				logrus.Debugf("K8S MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
-				if err != nil {
-					logrus.Debugf("ERROR THAT STOPPED STREAMING LOOP: %v", err)
-					if err == io.EOF {
-						break
-					} else {
-						sendErrorAndFail(execOutputChan, err, "An error occurred while executing exec command")
-						return
-					}
-				}
-				execOutputChan <- strings.TrimSuffix(execOutputLine, "\n")
-				time.Sleep(1 * time.Second)
-			}
-			logrus.Debugf("K8S MANAGER TOTAL EXEC OUTPUT: %s", outputBuffer.String())
-		}()
-		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
 		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 			Stdin:             nil,
 			Stdout:            concurrentBuffer,
@@ -1532,8 +1534,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 
 			return
 		}
-		logrus.Debugf("OUTPUT BUFFER CONTENTS AFTER STREAMINF: %v", outputBuffer.String())
-
+		logrus.Debugf("OUTPUT BUFFER CONTENTS AFTER STREAMING: %v", outputBuffer.String())
 	}()
 	return execOutputChan
 }
