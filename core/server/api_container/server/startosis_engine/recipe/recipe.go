@@ -21,7 +21,7 @@ type Recipe interface {
 		serviceNetwork service_network.ServiceNetwork,
 		store *runtime_value_store.RuntimeValueStore,
 		serviceName service.ServiceName,
-	) (<-chan string, error)
+	) (<-chan string, chan map[string]starlark.Comparable, error)
 	CreateStarlarkReturnValue(resultUuid string) (*starlark.Dict, *startosis_errors.InterpretationError)
 	ResultMapToString(resultMap map[string]starlark.Comparable) string
 }

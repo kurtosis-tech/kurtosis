@@ -146,8 +146,8 @@ func (recipe *GetHttpRequestRecipe) ExecuteWithStreamedOutput(
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	serviceName service.ServiceName,
-) (<-chan string, error) {
-	return nil, nil
+) (<-chan string, chan map[string]starlark.Comparable, error) {
+	return nil, nil, nil
 }
 
 func (recipe *GetHttpRequestRecipe) ResultMapToString(resultMap map[string]starlark.Comparable) string {

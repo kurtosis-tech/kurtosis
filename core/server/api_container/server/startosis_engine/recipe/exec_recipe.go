@@ -151,30 +151,30 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 	serviceNetwork service_network.ServiceNetwork,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	serviceName service.ServiceName,
-) (<-chan string, error) {
+) (<-chan string, chan map[string]starlark.Comparable, error) {
 	// parse argument
 	commandStarlarkList, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.List](
 		recipe.KurtosisValueTypeDefault, CommandAttr)
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return nil, nil, interpretationErr
 	}
 	if !found {
-		return nil, startosis_errors.NewInterpretationError("Mandatory argument '%s' not found", CommandAttr)
+		return nil, nil, startosis_errors.NewInterpretationError("Mandatory argument '%s' not found", CommandAttr)
 	}
 	command, interpretationErr := convertStarlarkListToStringList(commandStarlarkList)
 	if interpretationErr != nil {
 		// that should never happen as it's being validated at interpretation time
-		return nil, stacktrace.NewError("Unexpected '%s' attribute for '%s'. Error was: \n%s",
+		return nil, nil, stacktrace.NewError("Unexpected '%s' attribute for '%s'. Error was: \n%s",
 			CommandAttr, ExecRecipeTypeName, interpretationErr.Error())
 	}
 	rawExtractors, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](
 		recipe.KurtosisValueTypeDefault, ExtractAttr)
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return nil, nil, interpretationErr
 	}
-	_, interpretationErr = convertExtractorsToDict(found, rawExtractors)
+	extractors, interpretationErr := convertExtractorsToDict(found, rawExtractors)
 	if interpretationErr != nil {
-		return nil, interpretationErr
+		return nil, nil, interpretationErr
 	}
 
 	// execute recipe
@@ -182,34 +182,44 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 	for _, subCommand := range command {
 		maybeSubCommandWithRuntimeValues, err := magic_string_helper.ReplaceRuntimeValueInString(subCommand, runtimeValueStore)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the command of the exec recipe")
+			return nil, nil, stacktrace.Propagate(err, "An error occurred while replacing runtime values in the command of the exec recipe")
 		}
 		commandWithRuntimeValue = append(commandWithRuntimeValue, maybeSubCommandWithRuntimeValues)
 	}
 
 	serviceNameStr := string(serviceName)
 	if serviceNameStr == "" {
-		return nil, stacktrace.NewError("The service name parameter can't be an empty string")
+		return nil, nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
-	execOutputChan := serviceNetwork.RunExecWithStreamedOutput(ctx, serviceNameStr, commandWithRuntimeValue)
+	execOutputChan, finalResultChan := serviceNetwork.RunExecWithStreamedOutput(ctx, serviceNameStr, commandWithRuntimeValue)
 	//if err != nil {
 	//	//return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceName)
-	//	return nil
+	//	return nil, nil, nil
 	//}
-	//commandOutput := execResult.GetOutput()
-	//resultDict := map[string]starlark.Comparable{
-	//	execOutputKey:   starlark.String(commandOutput),
-	//	execExitCodeKey: starlark.MakeInt(int(execResult.GetExitCode())),
-	//}
-	//extractDict, err := runExtractors([]byte(fmt.Sprintf("%q", commandOutput)), extractors)
-	//if err != nil {
-	//	//return nil, stacktrace.Propagate(err, "An error occurred while running extractors '%v' on command output '%v'", extractors, commandOutput)
-	//	return nil
-	//}
-
-	//maps.Copy(resultDict, extractDict)
-	return execOutputChan, nil
+	finalResultMapChan := make(chan map[string]starlark.Comparable)
+	if finalResultChan != nil {
+		go func() {
+			defer func() {
+				close(finalResultMapChan)
+			}()
+			for execResult := range finalResultChan {
+				commandOutput := execResult.GetOutput()
+				resultDict := map[string]starlark.Comparable{
+					execOutputKey:   starlark.String(commandOutput),
+					execExitCodeKey: starlark.MakeInt(int(execResult.GetExitCode())),
+				}
+				extractDict, err := runExtractors([]byte(fmt.Sprintf("%q", commandOutput)), extractors)
+				if err != nil {
+					//return nil,stacktrace.Propagate(err, "An error occurred while running extractors '%v' on command output '%v'", extractors, commandOutput)
+					return
+				}
+				maps.Copy(resultDict, extractDict)
+				finalResultMapChan <- resultDict
+			}
+		}()
+	}
+	return execOutputChan, finalResultMapChan, nil
 }
 
 func (recipe *ExecRecipe) ResultMapToString(resultMap map[string]starlark.Comparable) string {

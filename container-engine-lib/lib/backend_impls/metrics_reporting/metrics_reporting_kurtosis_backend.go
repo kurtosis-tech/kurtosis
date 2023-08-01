@@ -323,7 +323,7 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandsWithSt
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceUUID][]string,
-) chan string {
+) (chan string, chan *exec_result.ExecResult) {
 	logrus.Debug("ENTERING METRICS REPORTING DOCKER KURTOSIS BACKEND")
 	return backend.underlying.RunUserServiceExecCommandsWithStreamedOutput(ctx, enclaveUuid, userServiceCommands)
 }

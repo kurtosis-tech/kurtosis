@@ -938,15 +938,17 @@ func (network *DefaultServiceNetwork) RunExec(ctx context.Context, serviceIdenti
 		userServiceCommand, serviceIdentifier, serviceUuid)
 }
 
-func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Context, serviceIdentifier string, userServiceCommand []string) <-chan string {
+func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (<-chan string, <-chan *exec_result.ExecResult) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
 	execOutputStream := make(chan string)
+	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
 		defer func() {
 			network.mutex.Unlock()
 			close(execOutputStream)
+			close(finalExecResultChan)
 		}()
 		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
 		if err != nil {
@@ -957,15 +959,18 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 		userServiceCommands := map[service.ServiceUUID][]string{
 			serviceUuid: userServiceCommand,
 		}
-		kurtosisBackendExecOutputChan := network.kurtosisBackend.RunUserServiceExecCommandsWithStreamedOutput(
+		kurtosisBackendExecOutputChan, finalResultChan := network.kurtosisBackend.RunUserServiceExecCommandsWithStreamedOutput(
 			ctx,
 			network.enclaveUuid,
 			userServiceCommands)
 		for execOutputLine := range kurtosisBackendExecOutputChan {
 			execOutputStream <- execOutputLine
 		}
+		for execResult := range finalResultChan {
+			finalExecResultChan <- execResult
+		}
 	}()
-	return execOutputStream
+	return execOutputStream, finalExecResultChan
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

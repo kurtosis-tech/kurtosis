@@ -16,7 +16,7 @@ type KurtosisPlanInstructionCapabilities interface {
 
 	Execute(ctx context.Context, arguments *builtin_argument.ArgumentValuesSet) (string, error)
 
-	ExecuteWithStreamedOutput(ctx context.Context, arguments *builtin_argument.ArgumentValuesSet) (<-chan string, error)
+	ExecuteWithStreamedOutput(ctx context.Context, arguments *builtin_argument.ArgumentValuesSet) (<-chan string, chan string, error)
 
 	TryResolveWith(instructionsAreEqual bool, other KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
 }

@@ -130,8 +130,8 @@ func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builti
 	return instructionResult, nil
 }
 
-func (builtin *RenderTemplatesCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
-	return nil, nil
+func (builtin *RenderTemplatesCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, chan string, error) {
+	return nil, nil, nil
 }
 
 func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

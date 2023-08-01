@@ -156,11 +156,8 @@ func (backend *RemoteContextKurtosisBackend) RunUserServiceExecCommandsWithStrea
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceUUID][]string,
-) chan string {
-	execOutputChan := make(chan string)
-	///....
-
-	return execOutputChan
+) (chan string, chan *exec_result.ExecResult) {
+	return backend.remoteKurtosisBackend.RunUserServiceExecCommandsWithStreamedOutput(ctx, enclaveUuid, userServiceCommands)
 }
 
 func (backend *RemoteContextKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {

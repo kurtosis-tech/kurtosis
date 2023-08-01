@@ -136,8 +136,8 @@ func (builtin *UpdateServiceCapabilities) Execute(ctx context.Context, _ *builti
 	return instructionResult, nil
 }
 
-func (builtin *UpdateServiceCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
-	return nil, nil
+func (builtin *UpdateServiceCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, chan string, error) {
+	return nil, nil, nil
 }
 
 func (builtin *UpdateServiceCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

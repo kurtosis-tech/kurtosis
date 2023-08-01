@@ -273,8 +273,8 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	return instructionResult, nil
 }
 
-func (builtin *WaitCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
-	return nil, nil
+func (builtin *WaitCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, chan string, error) {
+	return nil, nil, nil
 }
 
 func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

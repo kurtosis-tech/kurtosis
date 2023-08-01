@@ -232,8 +232,8 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	return instructionResult, err
 }
 
-func (builtin *RunShCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
-	return nil, nil
+func (builtin *RunShCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, chan string, error) {
+	return nil, nil, nil
 }
 
 func (builtin *RunShCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

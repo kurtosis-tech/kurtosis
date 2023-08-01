@@ -85,8 +85,8 @@ func (builtin *StopServiceCapabilities) Execute(ctx context.Context, _ *builtin_
 	return instructionResult, nil
 }
 
-func (builtin *StopServiceCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
-	return nil, nil
+func (builtin *StopServiceCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, chan string, error) {
+	return nil, nil, nil
 }
 
 func (builtin *StopServiceCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {

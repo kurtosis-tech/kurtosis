@@ -173,19 +173,31 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	return instructionResult, err
 }
 
-func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, error) {
-	execOutputChan, err := builtin.execRecipe.ExecuteWithStreamedOutput(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
+func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (chan string, chan string, error) {
+	execOutputChan, finalResultMapChan, err := builtin.execRecipe.ExecuteWithStreamedOutput(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error executing exec recipe")
+		return nil, nil, stacktrace.Propagate(err, "Error executing exec recipe")
 	}
-	//if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
-	//	errorMessage := fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
-	//	return nil, stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String()))
-	//}
-	//
-	//builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
-	//instructionResult := builtin.execRecipe.ResultMapToString(result)
-	return execOutputChan, err
+	finalInstructionResultStringChan := make(chan string)
+	if finalResultMapChan != nil {
+		go func() {
+			defer func() {
+				close(finalInstructionResultStringChan)
+			}()
+			for result := range finalResultMapChan {
+				if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
+					_ = fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+					//sendErrorAndFail(execOutputChan, stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String())), "Error getting exit code")
+					return
+				}
+
+				builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
+				instructionResult := builtin.execRecipe.ResultMapToString(result)
+				finalInstructionResultStringChan <- instructionResult
+			}
+		}()
+	}
+	return execOutputChan, finalInstructionResultStringChan, err
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
