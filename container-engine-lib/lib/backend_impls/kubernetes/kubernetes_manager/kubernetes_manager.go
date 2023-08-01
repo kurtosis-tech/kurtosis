@@ -6,12 +6,10 @@
 package kubernetes_manager
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
@@ -1420,7 +1418,7 @@ func (l *LogStreamer) String() string {
 func (l *LogStreamer) Write(p []byte) (n int, err error) {
 	a := strings.TrimSpace(string(p))
 	l.b.WriteString(a)
-	logrus.Debug(a)
+	logrus.Debugf("LOGS FROM WITH LOG STREAMER: %v", a)
 	return len(p), nil
 }
 
@@ -1432,38 +1430,6 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	command []string,
 ) chan string {
 	execOutputChan := make(chan string)
-	outputBuffer := &bytes.Buffer{}
-	concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
-	reader := bufio.NewReader(outputBuffer)
-	go func() {
-		logrus.Debug("ENTERING LOOP ROUTINE")
-		for {
-			if reader.Buffered() != 0 {
-				logrus.Debug("DATA BREAKING")
-				break
-			}
-			logrus.Debug("NO DATA, WAITING")
-			time.Sleep(1 * time.Second)
-		}
-		for {
-			execOutputLine, err := reader.ReadString('\n')
-			logrus.Debugf("K8S MANAGER OUTPUT BUFFER: %s", outputBuffer.String())
-			logrus.Debugf("AMOUNT OF BYTES CAN BE BUFFERED: %v", reader.Buffered())
-			logrus.Debugf("K8S MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
-			if err != nil {
-				logrus.Debugf("ERROR THAT STOPPED STREAMING LOOP: %v", err)
-				if err == io.EOF {
-					break
-				} else {
-					sendErrorAndFail(execOutputChan, err, "An error occurred while executing exec command")
-					return
-				}
-			}
-			execOutputChan <- strings.TrimSuffix(execOutputLine, "\n")
-			time.Sleep(1 * time.Second)
-		}
-		logrus.Debugf("K8S MANAGER TOTAL EXEC OUTPUT: %s", outputBuffer.String())
-	}()
 	go func() {
 		logrus.Debug("ENTERING K8S STREAM CALL ROUTINE")
 		defer func() {
@@ -1474,10 +1440,10 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 				Kind:       "",
 				APIVersion: "",
 			},
-			Stdin:     shouldAllocateStdinOnPodExec,
-			Stdout:    shouldAllocatedStdoutOnPodExec,
-			Stderr:    shouldAllocatedStderrOnPodExec,
-			TTY:       shouldAllocateTtyOnPodExec,
+			Stdin:     true,
+			Stdout:    true,
+			Stderr:    false,
+			TTY:       true,
 			Container: containerName,
 			Command:   command,
 		}
@@ -1510,10 +1476,11 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 			return
 		}
 
+		l := &LogStreamer{}
 		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-			Stdin:             nil,
-			Stdout:            concurrentBuffer,
-			Stderr:            concurrentBuffer,
+			Stdin:             os.Stdin,
+			Stdout:            l,
+			Stderr:            nil,
 			Tty:               false,
 			TerminalSizeQueue: nil,
 		}); err != nil {
