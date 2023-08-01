@@ -1,4 +1,4 @@
-package files_artifacts_expansion
+package service_directory
 
 type FilesArtifactsExpansion struct {
 	// The image that will run before the user service starts, to expand files artifacts into volumes

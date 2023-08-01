@@ -2,9 +2,9 @@ package service_config
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -203,7 +203,7 @@ func (config *ServiceConfig) Copy() (builtin_argument.KurtosisValueType, error) 
 	}, nil
 }
 
-func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*files_artifacts_expansion.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
+func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*service_directory.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
 	filesArtifactsExpansions := []args.FilesArtifactExpansion{}
 	serviceDirpathsToArtifactIdentifiers := map[string]string{}
 	expanderDirpathToUserServiceDirpathMap := map[string]string{}
@@ -242,7 +242,7 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]strin
 		apiContainerInfo.GetVersion(),
 	)
 
-	return &files_artifacts_expansion.FilesArtifactsExpansion{
+	return &service_directory.FilesArtifactsExpansion{
 		ExpanderImage:                        expanderImageAndTag,
 		ExpanderEnvVars:                      expanderEnvVars,
 		ServiceDirpathsToArtifactIdentifiers: serviceDirpathsToArtifactIdentifiers,
@@ -292,7 +292,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		}
 	}
 
-	var filesArtifactExpansions *files_artifacts_expansion.FilesArtifactsExpansion
+	var filesArtifactExpansions *service_directory.FilesArtifactsExpansion
 	filesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, FilesAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -451,6 +451,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		cmdArgs,
 		envVars,
 		filesArtifactExpansions,
+		nil,
 		maxCpu,
 		maxMemory,
 		privateIpAddressPlaceholder,
