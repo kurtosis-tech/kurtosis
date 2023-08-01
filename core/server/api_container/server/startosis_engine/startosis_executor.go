@@ -88,11 +88,12 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				var err error
 				var instructionOutput *string
 				var execOutputChan <-chan string
+				var finalResultChan chan string
 				if scheduledInstruction.IsExecuted() {
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
 				} else if instruction.String()[0:4] == "exec" {
-					execOutputChan, _, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
+					execOutputChan, finalResultChan, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}
@@ -106,6 +107,11 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				if execOutputChan != nil {
 					for execOutputLine := range execOutputChan {
 						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(execOutputLine)
+					}
+				}
+				if finalResultChan != nil {
+					for range finalResultChan {
+						return
 					}
 				}
 
