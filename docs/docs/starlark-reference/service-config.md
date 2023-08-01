@@ -85,10 +85,6 @@ config = ServiceConfig(
     # OPTIONAL (Default: no limit)
     min_memory = 512,
 
-    # Defines the subnetwork in which the service will be started.
-    # OPTIONAL (Default: "default")
-    subnetwork = "service_subnetwork",
-
     # This field can be used to check the service's readiness after the service has started,
     # to confirm that it is ready to receive connections and traffic
     # OPTIONAL (Default: no ready conditions)
@@ -98,8 +94,6 @@ config = ServiceConfig(
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
 
 The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][upload-files-reference], [render_templates][render-templates-reference] and [store_service_files][store-service-reference] to learn more about on how to create file artifacts)
-
-For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
 
 You can view more information on [configuring the `ReadyCondition` type here][ready-condition].
 
@@ -114,5 +108,4 @@ set the `entrypoint` to `["/bin/sh", "-c"]` and then set the `cmd` to the comman
 [upload-files-reference]: ./plan.md#upload_files
 [render-templates-reference]: ./plan.md#render_templates
 [store-service-reference]: ./plan.md#store_service_files
-[subnetworks-reference]: ../concepts-reference/subnetworks.md
 [ready-condition]: ./ready-condition.md

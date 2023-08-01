@@ -10,8 +10,5 @@ Your distributed applications run in [enclaves][enclaves-reference]. They are is
 kurtosis enclave add
 ```
 
-To create enclaves that support [subnetworks][subnetworks] use the `--with-subnetworks` flag.
-
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [enclaves-reference]: ../concepts-reference/enclaves.md
-[subnetworks]: ../concepts-reference/subnetworks.md
