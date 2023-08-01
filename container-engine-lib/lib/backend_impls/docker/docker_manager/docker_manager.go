@@ -1001,6 +1001,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 			execOutputChan <- strings.TrimSuffix(execOutputLine, "\n")
 			time.Sleep(1 * time.Second)
 		}
+		logrus.Debug("DOCKER MANAGER FINISH STREAMING")
 
 		inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
 		if err != nil {
@@ -1017,6 +1018,8 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 			return
 		}
 		int32ExitCode := int32(unsizedExitCode)
+		result := exec_result.NewExecResult(int32ExitCode, finalOutputString)
+		logrus.Debugf("DOCKER MANAGER SEND EXEC RESULT: %v", result)
 		finalExecResultChan <- exec_result.NewExecResult(int32ExitCode, finalOutputString)
 	}()
 	return execOutputChan, finalExecResultChan

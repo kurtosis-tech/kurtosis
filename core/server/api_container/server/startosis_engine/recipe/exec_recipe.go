@@ -204,6 +204,7 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 				close(finalResultMapChan)
 			}()
 			for execResult := range finalResultChan {
+				logrus.Debug("EXEC RECIPE")
 				commandOutput := execResult.GetOutput()
 				resultDict := map[string]starlark.Comparable{
 					execOutputKey:   starlark.String(commandOutput),

@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 )
 
 func RunUserServiceExecCommandWithStreamedOutput(
@@ -75,12 +76,23 @@ func RunUserServiceExecCommandWithStreamedOutput(
 			ctx,
 			userServiceDockerContainer.GetId(),
 			commandArg)
-		for execOutputLine := range execOutputLinesChan {
-			execOutputChan <- execOutputLine
-		}
-		for execResult := range finalExecChan {
-			finalExecResultChan <- execResult
-		}
+		go func() {
+			defer func() {
+				close(execOutputChan)
+			}()
+			for execOutputLine := range execOutputLinesChan {
+				execOutputChan <- execOutputLine
+			}
+		}()
+		go func() {
+			defer func() {
+				close(finalExecResultChan)
+			}()
+			for execResult := range finalExecChan {
+				logrus.Debug("DOCKER KB")
+				finalExecResultChan <- execResult
+			}
+		}()
 	}()
 	return execOutputChan, finalExecResultChan
 }

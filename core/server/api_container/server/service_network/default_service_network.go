@@ -967,6 +967,7 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 			execOutputStream <- execOutputLine
 		}
 		for execResult := range finalResultChan {
+			logrus.Debug("SERVICE NETWORK")
 			finalExecResultChan <- execResult
 		}
 	}()

@@ -111,6 +111,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				}
 				if finalResultChan != nil {
 					for range finalResultChan {
+						logrus.Debug("STARTOSIS EXECUTOR")
 						return
 					}
 				}
