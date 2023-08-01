@@ -1518,6 +1518,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		for {
 			execOutputLine, err := reader.ReadString('\n')
 			logrus.Debugf("K8S MANAGER OUTPUT BUFFER: %s", outputBuffer.String())
+			logrus.Debugf("AMOUNT OF BYTES CAN BE BUFFERED: %v", reader.Buffered())
 			logrus.Debugf("K8S MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
 			if err != nil {
 				logrus.Debugf("ERROR THAT STOPPED STREAMING LOOP: %v", err)
