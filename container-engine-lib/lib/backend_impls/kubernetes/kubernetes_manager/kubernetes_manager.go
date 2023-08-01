@@ -1477,42 +1477,40 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		outputBuffer := &bytes.Buffer{}
 		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
 		logrus.Debugf("STARTING GO ROUTINE TO STREAM INFO")
-		go func() {
-			defer func() {
-				close(execOutputChan)
-			}()
-
-			if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-				Stdin:             nil,
-				Stdout:            concurrentBuffer,
-				Stderr:            concurrentBuffer,
-				Tty:               true,
-				TerminalSizeQueue: nil,
-			}); err != nil {
-				// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
-				statusError := err.Error()
-
-				// this means that context deadline has exceeded
-				if strings.Contains(statusError, contextDeadlineExceeded) {
-					sendErrorAndFail(
-						execOutputChan,
-						stacktrace.Propagate(err, "There was an error occurred while executing commands on the container"),
-						"An error occurred while streaming from kubernetes with following exit code '%d'",
-						1)
-					return
-				}
-
-				//exitCode, err := getExitCodeFromStatusMessage(statusError)
-				if err != nil {
-					sendErrorAndFail(
-						execOutputChan,
-						stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError),
-						"An error occurred while streaming from kubernetes with following exit code '%d'",
-						1)
-					return
-				}
-			}
+		defer func() {
+			close(execOutputChan)
 		}()
+
+		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+			Stdin:             nil,
+			Stdout:            concurrentBuffer,
+			Stderr:            concurrentBuffer,
+			Tty:               true,
+			TerminalSizeQueue: nil,
+		}); err != nil {
+			// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
+			statusError := err.Error()
+
+			// this means that context deadline has exceeded
+			if strings.Contains(statusError, contextDeadlineExceeded) {
+				sendErrorAndFail(
+					execOutputChan,
+					stacktrace.Propagate(err, "There was an error occurred while executing commands on the container"),
+					"An error occurred while streaming from kubernetes with following exit code '%d'",
+					1)
+				return
+			}
+
+			//exitCode, err := getExitCodeFromStatusMessage(statusError)
+			if err != nil {
+				sendErrorAndFail(
+					execOutputChan,
+					stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError),
+					"An error occurred while streaming from kubernetes with following exit code '%d'",
+					1)
+				return
+			}
+		}
 		logrus.Debugf("ABOUT TO START STREAMING EXEC OUTPUT IN K8s")
 		reader := bufio.NewReader(outputBuffer)
 		for {
