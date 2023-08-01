@@ -430,7 +430,7 @@ func createStartServiceOperation(
 		}
 		shouldUndoServiceUpdate := true
 		defer func() {
-			if !shouldUndoServiceUpdate {
+			if shouldUndoServiceUpdate {
 				undoServiceUpdateFunc()
 			}
 		}()
