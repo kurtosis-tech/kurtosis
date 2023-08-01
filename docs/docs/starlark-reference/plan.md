@@ -669,7 +669,6 @@ plan.print(recipe_result["code"])
 [extract]: #extract
 [exec]: #exec
 [request]: #request
-[set-connection]: #set_connection
 [start-service]: #start_service
 [stop-service]: #stop_service
 [wait]: #wait
