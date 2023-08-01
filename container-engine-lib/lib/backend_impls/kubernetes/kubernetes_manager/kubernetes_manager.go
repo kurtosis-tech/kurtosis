@@ -1532,7 +1532,8 @@ func (writer *TestWriter) Write(p []byte) (n int, err error) {
 	writer.mutex.Lock()
 	defer writer.mutex.Unlock()
 	logrus.Debugf("SENDING DATA ACROSS CHANNEL: %s\n", string(p))
-	writer.outputChannel <- string(p)
+	writer.outputChannel <- strings.TrimSuffix(string(p), "\n")
+	time.Sleep(2 * time.Second)
 	return writer.underlying.Write(p)
 }
 
