@@ -86,7 +86,7 @@ var (
 	volumeStorageClassName = "kurtosis-local-storage"
 	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
 	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
-	persistentVolumeDefaultSize = resource.NewQuantity(500*1024*1024, resource.BinarySI)
+	persistentVolumeDefaultSize int64 = 500 * 1024 * 1024
 
 	globalDeletePolicy  = metav1.DeletePropagationForeground
 	globalDeleteOptions = metav1.DeleteOptions{
@@ -254,7 +254,7 @@ func (manager *KubernetesManager) UpdateService(
 func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, namespace string, serviceLabels map[string]string) (*apiv1.ServiceList, error) {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
-	listOptions := metav1.ListOptions{ //nolint:exhaustruct
+	listOptions := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -268,6 +268,7 @@ func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, names
 		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
+		SendInitialEvents:    nil,
 	}
 
 	serviceResult, err := servicesClient.List(ctx, listOptions)
@@ -312,7 +313,7 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 	//  - If this use case is hit only in the cloud (which is quite likely since having a multi-nodes k8s cluster running
 	//  outside a cloud provider infra is quite rare), then maybe we should just use whatever the cloud provider has,
 	//  like EBS for AWS for example. Those support dynamic provisioning and everything via their respective CSI drivers
-	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{}) //nolint:exhaustruct
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An unexpected error occurred retrieving the list of Kubernetes nodes.")
 	} else if len(nodes.Items) > 1 {
@@ -328,14 +329,16 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 			APIVersion: "",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       volumeName,
-			GenerateName:               "",
-			Namespace:                  "",
-			SelfLink:                   "",
-			UID:                        "",
-			ResourceVersion:            "",
-			Generation:                 0,
-			CreationTimestamp:          metav1.Time{},
+			Name:            volumeName,
+			GenerateName:    "",
+			Namespace:       "",
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
 			DeletionTimestamp:          nil,
 			DeletionGracePeriodSeconds: nil,
 			Labels:                     labels,
@@ -346,7 +349,7 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 		},
 		Spec: apiv1.PersistentVolumeSpec{
 			Capacity: apiv1.ResourceList{
-				apiv1.ResourceStorage: *persistentVolumeDefaultSize,
+				apiv1.ResourceStorage: *resource.NewQuantity(persistentVolumeDefaultSize, resource.BinarySI),
 			},
 			PersistentVolumeSource: apiv1.PersistentVolumeSource{
 				GCEPersistentDisk:    nil,
@@ -439,6 +442,7 @@ func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Conte
 		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
+		SendInitialEvents:    nil,
 	}
 
 	persistentVolumesResult, err := persistentVolumesClient.List(ctx, listOptions)
@@ -477,14 +481,16 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 			APIVersion: "",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:                       volumeClaimName,
-			GenerateName:               "",
-			Namespace:                  namespace,
-			SelfLink:                   "",
-			UID:                        "",
-			ResourceVersion:            "",
-			Generation:                 0,
-			CreationTimestamp:          metav1.Time{},
+			Name:            volumeClaimName,
+			GenerateName:    "",
+			Namespace:       namespace,
+			SelfLink:        "",
+			UID:             "",
+			ResourceVersion: "",
+			Generation:      0,
+			CreationTimestamp: metav1.Time{
+				Time: time.Time{},
+			},
 			DeletionTimestamp:          nil,
 			DeletionGracePeriodSeconds: nil,
 			Labels:                     labels,
@@ -503,7 +509,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 				Requests: apiv1.ResourceList{
 					// we give each claim 100% of the corresponding volume. Since we have a 1:1 mapping between volumes
 					// and claims right now, it's the best we can do
-					apiv1.ResourceStorage: *persistentVolumeDefaultSize,
+					apiv1.ResourceStorage: *resource.NewQuantity(persistentVolumeDefaultSize, resource.BinarySI),
 				},
 				Claims: nil,
 			},
@@ -682,7 +688,7 @@ func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string)
 func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, namespaceLabels map[string]string) (*apiv1.NamespaceList, error) {
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
-	listOptions := metav1.ListOptions{ //nolint:exhaustruct
+	listOptions := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -696,6 +702,7 @@ func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, nam
 		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
+		SendInitialEvents:    nil,
 	}
 
 	namespaces, err := namespaceClient.List(ctx, listOptions)
@@ -767,7 +774,7 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 func (manager *KubernetesManager) GetServiceAccountsByLabels(ctx context.Context, namespace string, serviceAccountsLabels map[string]string) (*apiv1.ServiceAccountList, error) {
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
-	opts := metav1.ListOptions{ //nolint:exhaustruct
+	opts := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -781,6 +788,7 @@ func (manager *KubernetesManager) GetServiceAccountsByLabels(ctx context.Context
 		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
+		SendInitialEvents:    nil,
 	}
 
 	serviceAccounts, err := client.List(ctx, opts)
@@ -870,7 +878,7 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 func (manager *KubernetesManager) GetRolesByLabels(ctx context.Context, namespace string, rolesLabels map[string]string) (*rbacv1.RoleList, error) {
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
-	opts := metav1.ListOptions{ //nolint:exhaustruct
+	opts := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -884,6 +892,7 @@ func (manager *KubernetesManager) GetRolesByLabels(ctx context.Context, namespac
 		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
+		SendInitialEvents:    nil,
 	}
 
 	roles, err := client.List(ctx, opts)
@@ -974,7 +983,7 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, namespace string, roleBindingsLabels map[string]string) (*rbacv1.RoleBindingList, error) {
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
-	opts := metav1.ListOptions{ //nolint:exhaustruct
+	opts := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -988,6 +997,7 @@ func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, n
 		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
+		SendInitialEvents:    nil,
 	}
 
 	roleBindings, err := client.List(ctx, opts)
@@ -1078,7 +1088,7 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, clusterRoleLabels map[string]string) (*rbacv1.ClusterRoleList, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
-	opts := metav1.ListOptions{ //nolint:exhaustruct
+	opts := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -1092,6 +1102,7 @@ func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, c
 		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
+		SendInitialEvents:    nil,
 	}
 
 	clusterRoles, err := client.List(ctx, opts)
@@ -1181,7 +1192,7 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Context, clusterRoleBindingsLabels map[string]string) (*rbacv1.ClusterRoleBindingList, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
-	opts := metav1.ListOptions{ //nolint:exhaustruct
+	opts := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -1195,6 +1206,7 @@ func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Con
 		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
+		SendInitialEvents:    nil,
 	}
 
 	clusterRoleBindings, err := client.List(ctx, opts)
@@ -1274,7 +1286,7 @@ func (manager *KubernetesManager) CreatePod(
 		Finalizers:                 nil,
 		ManagedFields:              nil,
 	}
-	podSpec := apiv1.PodSpec{ //nolint:exhaustruct
+	podSpec := apiv1.PodSpec{
 		Volumes:             podVolumes,
 		InitContainers:      initContainers,
 		Containers:          podContainers,
@@ -1312,6 +1324,9 @@ func (manager *KubernetesManager) CreatePod(
 		TopologySpreadConstraints:     nil,
 		SetHostnameAsFQDN:             nil,
 		OS:                            nil,
+		HostUsers:                     nil,
+		SchedulingGates:               nil,
+		ResourceClaims:                nil,
 	}
 
 	podToCreate := &apiv1.Pod{
@@ -1321,7 +1336,7 @@ func (manager *KubernetesManager) CreatePod(
 		},
 		ObjectMeta: podMeta,
 		Spec:       podSpec,
-		Status: apiv1.PodStatus{ //nolint:exhaustruct
+		Status: apiv1.PodStatus{
 			Phase:                      "",
 			Conditions:                 nil,
 			Message:                    "",
@@ -1335,6 +1350,7 @@ func (manager *KubernetesManager) CreatePod(
 			ContainerStatuses:          nil,
 			QOSClass:                   "",
 			EphemeralContainerStatuses: nil,
+			Resize:                     "",
 		},
 	}
 
@@ -1678,7 +1694,7 @@ func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Con
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
 	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
-	opts := metav1.ListOptions{ //nolint:exhaustruct
+	opts := metav1.ListOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -1692,6 +1708,7 @@ func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace
 		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
 		Limit:                0,
 		Continue:             "",
+		SendInitialEvents:    nil,
 	}
 
 	pods, err := namespacePodClient.List(ctx, opts)
