@@ -332,7 +332,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 }
 
 // In Docker we get one volume per persistent directory
-// TODO: refactor with ForSingleFilesArtifactExpansionVolume maybe
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(
 	serviceUUID service.ServiceUUID,
 	persistentKey service_directory.DirectoryPersistentKey,

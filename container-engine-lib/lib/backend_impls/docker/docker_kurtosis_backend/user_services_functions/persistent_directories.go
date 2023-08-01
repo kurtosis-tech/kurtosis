@@ -18,9 +18,10 @@ func getOrCreatePersistentDirectories(
 	dockerManager *docker_manager.DockerManager,
 ) (map[string]string, error) {
 	shouldDeleteVolumes := true
-	result := map[string]string{}
+	volumeNamesToRemoveIfFailure := map[string]bool{}
+	persistentDirectories := map[string]string{}
 
-	for serviceDirpath, persistentKey := range serviceMountpointsToPersistentKey {
+	for serviceDirPath, persistentKey := range serviceMountpointsToPersistentKey {
 		volumeAttrs, err := objAttrsProvider.ForSinglePersistentDirectoryVolume(serviceUuid, persistentKey)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Error creating persistent directory labels for '%s'", persistentKey)
@@ -37,7 +38,8 @@ func getOrCreatePersistentDirectories(
 			return nil, stacktrace.Propagate(err, "An error occurred checking for persistent volume existence")
 		}
 		if len(potentiallyExistingVolumes) == 1 {
-			result[serviceDirpath] = volumeName
+			// volume already existed for this enclave, return it and continue to the next one
+			persistentDirectories[volumeName] = serviceDirPath
 			continue
 		} else if len(potentiallyExistingVolumes) > 1 {
 			return nil, stacktrace.NewError("More than one volume with name '%s' exists in docker. This is unexpected", volumeName)
@@ -51,14 +53,15 @@ func getOrCreatePersistentDirectories(
 				serviceUuid,
 			)
 		}
-		result[volumeName] = serviceDirpath
+		volumeNamesToRemoveIfFailure[volumeName] = true
+		persistentDirectories[volumeName] = serviceDirPath
 	}
 
 	defer func() {
 		if !shouldDeleteVolumes {
 			return
 		}
-		for _, volumeNameStr := range result {
+		for volumeNameStr := range volumeNamesToRemoveIfFailure {
 			// Background context so we still run this even if the input context was cancelled
 			if err := dockerManager.RemoveVolume(context.Background(), volumeNameStr); err != nil {
 				logrus.Warnf(
@@ -71,5 +74,5 @@ func getOrCreatePersistentDirectories(
 		}
 	}()
 	shouldDeleteVolumes = false
-	return result, nil
+	return persistentDirectories, nil
 }
