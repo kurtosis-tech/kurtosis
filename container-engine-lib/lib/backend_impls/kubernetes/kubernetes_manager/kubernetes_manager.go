@@ -1509,7 +1509,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 
 			return
 		}
-		logrus.Debugf("OUTPUT BUFFER CONTENTS AFTER STREAMING: %v", outputBuffer.String())
+		logrus.Debugf("OUTPUT BUFFER CONTENTS AFTER STREAMING: %v", l.String())
 	}()
 	return execOutputChan
 }
