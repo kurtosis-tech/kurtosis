@@ -9,6 +9,8 @@ import (
 )
 
 const (
+	testName = "destroy-enclave"
+
 	datastoreServiceName services.ServiceName = "datastore-service"
 )
 
