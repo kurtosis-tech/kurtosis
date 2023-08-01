@@ -352,9 +352,7 @@ function getApiServiceStarlarkServiceConfig(
     const files = `{"${CONFIG_MOUNTPATH_ON_API_CONTAINER}": "${artifactName}"}`
     const cmdOverride = `["./example-api-server.bin", "--config", "${path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME)}"]`
 
-    const subnetworkEmptyBecauseItIsDeprecated = ""
-
-    return `ServiceConfig(image="${API_SERVICE_IMAGE}", ports=${portSpec}, files=${files}, cmd=${cmdOverride}, subnetwork="${subnetworkEmptyBecauseItIsDeprecated}")`
+    return `ServiceConfig(image="${API_SERVICE_IMAGE}", ports=${portSpec}, files=${files}, cmd=${cmdOverride})`
 }
 
 async function createApiConfigFile(datastoreIP: string): Promise<Result<string, Error>> {
