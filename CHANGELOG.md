@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.80.24](https://github.com/kurtosis-tech/kurtosis/compare/0.80.23...0.80.24) (2023-08-01)
+
+
+### Features
+
+* Persistent directories for docker ([#1034](https://github.com/kurtosis-tech/kurtosis/issues/1034)) ([2f909c3](https://github.com/kurtosis-tech/kurtosis/commit/2f909c381c297c75558c9b17ce3974e1d6091b87))
+* Persistent directories for Kubernetes ([#1036](https://github.com/kurtosis-tech/kurtosis/issues/1036)) ([4488986](https://github.com/kurtosis-tech/kurtosis/commit/44889866922e728a633573414e5a9ae81310e7c1))
+
+
+### Bug Fixes
+
+* Remove the temp cert files only after the docker client is initialized ([#1030](https://github.com/kurtosis-tech/kurtosis/issues/1030)) ([1a6bb74](https://github.com/kurtosis-tech/kurtosis/commit/1a6bb747b99bd730cc7c214469d46fff3538fc5f))
+
 ## [0.80.23](https://github.com/kurtosis-tech/kurtosis/compare/0.80.22...0.80.23) (2023-07-31)
 
 
