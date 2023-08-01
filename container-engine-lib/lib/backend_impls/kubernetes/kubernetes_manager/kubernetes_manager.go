@@ -6,7 +6,6 @@
 package kubernetes_manager
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -209,9 +208,9 @@ func (manager *KubernetesManager) UpdateService(
 	ctx context.Context,
 	namespaceName string,
 	serviceName string,
-	// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
-	// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
-	// would result in removing the object name)
+// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
+// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
+// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.ServiceApplyConfiguration),
 ) (*apiv1.Service, error) {
 	updatesToApply := applyconfigurationsv1.Service(serviceName, namespaceName)
@@ -439,9 +438,9 @@ func (manager *KubernetesManager) CreateNamespace(
 func (manager *KubernetesManager) UpdateNamespace(
 	ctx context.Context,
 	namespaceName string,
-	// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
-	// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
-	// would result in removing the object name)
+// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
+// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
+// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.NamespaceApplyConfiguration),
 ) (*apiv1.Namespace, error) {
 	updatesToApply := applyconfigurationsv1.Namespace(namespaceName)
@@ -1476,16 +1475,11 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 
 		outputBuffer := &bytes.Buffer{}
 		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
-		logrus.Debugf("STARTING GO ROUTINE TO STREAM INFO")
-		defer func() {
-			close(execOutputChan)
-		}()
-
 		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 			Stdin:             nil,
 			Stdout:            concurrentBuffer,
 			Stderr:            concurrentBuffer,
-			Tty:               true,
+			Tty:               false,
 			TerminalSizeQueue: nil,
 		}); err != nil {
 			// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
@@ -1501,7 +1495,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 				return
 			}
 
-			//exitCode, err := getExitCodeFromStatusMessage(statusError)
+			//_, err := getExitCodeFromStatusMessage(statusError)
 			if err != nil {
 				sendErrorAndFail(
 					execOutputChan,
@@ -1510,30 +1504,125 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 					1)
 				return
 			}
+
+			return
 		}
-		logrus.Debugf("ABOUT TO START STREAMING EXEC OUTPUT IN K8s")
-		reader := bufio.NewReader(outputBuffer)
-		for {
-			execOutputLine, err := reader.ReadString('\n')
-			logrus.Debugf("K8S MANAGER OUTPUT BUFFER: %s", outputBuffer.String())
-			logrus.Debugf("AMOUNT OF BYTES CAN BE BUFFERED: %v", reader.Buffered())
-			logrus.Debugf("K8S MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
-			if err != nil {
-				logrus.Debugf("ERROR THAT STOPPED STREAMING LOOP: %v", err)
-				if err == io.EOF {
-					break
-				} else {
-					sendErrorAndFail(execOutputChan, err, "An error occurred while executing exec command")
-					return
-				}
-			}
-			execOutputChan <- strings.TrimSuffix(execOutputLine, "\n")
-			time.Sleep(1 * time.Second)
-		}
-		logrus.Debugf("K8S MANAGER TOTAL EXEC OUTPUT: %s", outputBuffer.String())
+		logrus.Debugf("OUTPUT BUFFER CONTENTS AFTER STREAMINF: %v", outputBuffer.String())
+
 	}()
 	return execOutputChan
 }
+
+//func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
+//	ctx context.Context,
+//	namespaceName string,
+//	podName string,
+//	containerName string,
+//	command []string,
+//) chan string {
+//	execOutputChan := make(chan string)
+//	go func() {
+//		execOptions := &apiv1.PodExecOptions{
+//			TypeMeta: metav1.TypeMeta{
+//				Kind:       "",
+//				APIVersion: "",
+//			},
+//			Stdin:     shouldAllocateStdinOnPodExec,
+//			Stdout:    shouldAllocatedStdoutOnPodExec,
+//			Stderr:    shouldAllocatedStderrOnPodExec,
+//			TTY:       shouldAllocateTtyOnPodExec,
+//			Container: containerName,
+//			Command:   command,
+//		}
+//
+//		//Create a RESTful command request.
+//		request := manager.kubernetesClientSet.CoreV1().RESTClient().
+//			Post().
+//			Namespace(namespaceName).
+//			Resource("pods").
+//			Name(podName).
+//			SubResource("exec").
+//			VersionedParams(execOptions, scheme.ParameterCodec)
+//		if request == nil {
+//			sendErrorAndFail(execOutputChan, stacktrace.NewError(
+//				"Failed to build a working RESTful request for the command '%s'.",
+//				execOptions.Command),
+//				"An error occurred while streaming from kubernetes with following exit code '%d'",
+//				-1)
+//			return
+//		}
+//
+//		exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
+//		if err != nil {
+//			sendErrorAndFail(
+//				execOutputChan,
+//				stacktrace.Propagate(err,
+//					"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.", execOptions.Command, request.URL().String()), ""+
+//					"An error occurred while streaming from kubernetes with following exit code '%d'",
+//				-1)
+//			return
+//		}
+//
+//		outputBuffer := &bytes.Buffer{}
+//		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
+//		logrus.Debugf("STARTING GO ROUTINE TO STREAM INFO")
+//		defer func() {
+//			close(execOutputChan)
+//		}()
+//
+//		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+//			Stdin:             nil,
+//			Stdout:            concurrentBuffer,
+//			Stderr:            concurrentBuffer,
+//			Tty:               true,
+//			TerminalSizeQueue: nil,
+//		}); err != nil {
+//			// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
+//			statusError := err.Error()
+//
+//			// this means that context deadline has exceeded
+//			if strings.Contains(statusError, contextDeadlineExceeded) {
+//				sendErrorAndFail(
+//					execOutputChan,
+//					stacktrace.Propagate(err, "There was an error occurred while executing commands on the container"),
+//					"An error occurred while streaming from kubernetes with following exit code '%d'",
+//					1)
+//				return
+//			}
+//
+//			//exitCode, err := getExitCodeFromStatusMessage(statusError)
+//			if err != nil {
+//				sendErrorAndFail(
+//					execOutputChan,
+//					stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError),
+//					"An error occurred while streaming from kubernetes with following exit code '%d'",
+//					1)
+//				return
+//			}
+//		}
+//		logrus.Debugf("ABOUT TO START STREAMING EXEC OUTPUT IN K8s")
+//		reader := bufio.NewReader(outputBuffer)
+//		for {
+//			execOutputLine, err := reader.ReadString('\n')
+//			logrus.Debugf("K8S MANAGER OUTPUT BUFFER: %s", outputBuffer.String())
+//			logrus.Debugf("AMOUNT OF BYTES CAN BE BUFFERED: %v", reader.Buffered())
+//			logrus.Debugf("K8S MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
+//			if err != nil {
+//				logrus.Debugf("ERROR THAT STOPPED STREAMING LOOP: %v", err)
+//				if err == io.EOF {
+//					break
+//				} else {
+//					sendErrorAndFail(execOutputChan, err, "An error occurred while executing exec command")
+//					return
+//				}
+//			}
+//			execOutputChan <- strings.TrimSuffix(execOutputLine, "\n")
+//			time.Sleep(1 * time.Second)
+//		}
+//		logrus.Debugf("K8S MANAGER TOTAL EXEC OUTPUT: %s", outputBuffer.String())
+//	}()
+//	return execOutputChan
+//}
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
 	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
