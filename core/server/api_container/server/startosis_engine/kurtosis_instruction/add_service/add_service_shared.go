@@ -174,6 +174,7 @@ func replaceMagicStrings(
 		cmdArgs,
 		envVars,
 		serviceConfig.GetFilesArtifactsExpansion(),
+		serviceConfig.GetPersistentDirectories(),
 		serviceConfig.GetCPUAllocationMillicpus(),
 		serviceConfig.GetMemoryAllocationMegabytes(),
 		serviceConfig.GetPrivateIPAddrPlaceholder(),

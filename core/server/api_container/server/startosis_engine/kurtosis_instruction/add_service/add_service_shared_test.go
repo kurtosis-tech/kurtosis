@@ -33,6 +33,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 		0,
 		0,
 		"",
@@ -64,6 +65,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		[]string{"bash", "-c", "sleep " + runtimeValue},
+		nil,
 		nil,
 		nil,
 		0,
@@ -101,6 +103,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 			"PORT": runtimeValue,
 		},
 		nil,
+		nil,
 		0,
 		0,
 		"",
@@ -131,6 +134,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 	serviceName := service.ServiceName(stringRuntimeValue)
 	serviceConfig := service.NewServiceConfig(
 		testContainerImageName,
+		nil,
 		nil,
 		nil,
 		nil,

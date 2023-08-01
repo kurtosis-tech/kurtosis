@@ -439,6 +439,7 @@ func createStartServiceOperation(
 
 	return func() (interface{}, error) {
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
+		persistentDirectories := serviceConfig.GetPersistentDirectories()
 		containerImageName := serviceConfig.GetContainerImageName()
 		privatePorts := serviceConfig.GetPrivatePorts()
 		publicPorts := serviceConfig.GetPublicPorts()
@@ -481,7 +482,7 @@ func createStartServiceOperation(
 			defer func() {
 				if shouldDeleteVolumes {
 					for volumeName := range candidateVolumeMounts {
-						// Use background context so we delete these even if input context was cancelled
+						// Use background context, so we delete these even if input context was cancelled
 						if err := dockerManager.RemoveVolume(context.Background(), volumeName); err != nil {
 							logrus.Errorf("Starting the service failed so we tried to delete files artifact expansion volume '%v' that we created, but doing so threw an error:\n%v", volumeName, err)
 							logrus.Errorf("You'll need to delete volume '%v' manually!", volumeName)
@@ -489,7 +490,43 @@ func createStartServiceOperation(
 					}
 				}
 			}()
-			volumeMounts = candidateVolumeMounts
+
+			for dirpath, volumeName := range candidateVolumeMounts {
+				if _, found := volumeMounts[dirpath]; found {
+					return nil, stacktrace.NewError("An error occurred doing files artifacts expansion. Multiple volumes were mounted on the same path.")
+				}
+				volumeMounts[dirpath] = volumeName
+			}
+		}
+
+		if persistentDirectories != nil {
+			candidateVolumeMounts, err := getOrCreatePersistentDirectories(
+				ctx,
+				serviceUUID,
+				enclaveObjAttrsProvider,
+				persistentDirectories.ServiceDirpathToDirectoryPersistentKey,
+				dockerManager,
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating persistent directory volumes")
+			}
+			defer func() {
+				if shouldDeleteVolumes {
+					for volumeName := range candidateVolumeMounts {
+						// Use background context, so we delete these even if input context was cancelled
+						if err := dockerManager.RemoveVolume(context.Background(), volumeName); err != nil {
+							logrus.Errorf("Starting the service failed so we tried to delete persistent directory volume '%v' that we created, but doing so threw an error:\n%v", volumeName, err)
+							logrus.Errorf("You'll need to delete volume '%v' manually!", volumeName)
+						}
+					}
+				}
+			}()
+			for dirpath, volumeName := range candidateVolumeMounts {
+				if _, found := volumeMounts[dirpath]; found {
+					return nil, stacktrace.NewError("An error occurred creating persistent directory volumes. Multiple volumes were mounted on the same path.")
+				}
+				volumeMounts[dirpath] = volumeName
+			}
 		}
 
 		containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
@@ -548,6 +585,8 @@ func createStartServiceOperation(
 			skipAddingUserServiceToBridgeNetwork,
 		).WithContainerInitEnabled(
 			true,
+		).WithVolumeMounts(
+			volumeMounts,
 		)
 
 		if entrypointArgs != nil {
@@ -555,9 +594,6 @@ func createStartServiceOperation(
 		}
 		if cmdArgs != nil {
 			createAndStartArgsBuilder.WithCmdArgs(cmdArgs)
-		}
-		if volumeMounts != nil {
-			createAndStartArgsBuilder.WithVolumeMounts(volumeMounts)
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
