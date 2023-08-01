@@ -1407,21 +1407,6 @@ func (manager *KubernetesManager) RunExecCommand(
 	return successExecCommandExitCode, nil
 }
 
-type LogStreamer struct {
-	b bytes.Buffer
-}
-
-func (l *LogStreamer) String() string {
-	return l.b.String()
-}
-
-func (l *LogStreamer) Write(p []byte) (n int, err error) {
-	a := strings.TrimSpace(string(p))
-	l.b.WriteString(a)
-	logrus.Debugf("LOGS FROM WITH LOG STREAMER: %v", a)
-	return len(p), nil
-}
-
 //func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 //	ctx context.Context,
 //	namespaceName string,
@@ -1515,6 +1500,38 @@ func (l *LogStreamer) Write(p []byte) (n int, err error) {
 //	return execOutputChan
 //}
 
+//type LogStreamer struct {
+//	b bytes.Buffer
+//}
+//
+//func (l *LogStreamer) String() string {
+//	return l.b.String()
+//}
+//
+//func (l *LogStreamer) Write(p []byte) (n int, err error) {
+//	a := strings.TrimSpace(string(p))
+//	l.b.WriteString(a)
+//	logrus.Debugf("LOGS WITH THE LGO STREAMER: %v", a)
+//	return len(p), nil
+//}
+
+type TestWriter struct {
+	underlying io.Writer
+	mutex      *sync.Mutex
+}
+
+func NewTestWriter(underlying io.Writer) *TestWriter {
+	return &TestWriter{
+		underlying: underlying,
+		mutex:      &sync.Mutex{},
+	}
+}
+func (writer *TestWriter) Write(p []byte) (n int, err error) {
+	writer.mutex.Lock()
+	defer writer.mutex.Unlock()
+	return writer.underlying.Write(p)
+}
+
 func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	ctx context.Context,
 	namespaceName string,
@@ -1532,9 +1549,9 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 				Kind:       "",
 				APIVersion: "",
 			},
-			Stdin:     true,
+			Stdin:     false,
 			Stdout:    true,
-			Stderr:    false,
+			Stderr:    true,
 			TTY:       true,
 			Container: containerName,
 			Command:   command,
@@ -1569,10 +1586,12 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		}
 
 		logrus.Debugf("STREAMING FROM K8S")
+		outputBuffer := &bytes.Buffer{}
+		testWriter := NewTestWriter(outputBuffer)
 		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-			Stdin:             os.Stdin,
-			Stdout:            os.Stdout,
-			Stderr:            nil,
+			Stdin:             nil,
+			Stdout:            testWriter,
+			Stderr:            testWriter,
 			Tty:               true,
 			TerminalSizeQueue: nil,
 		}); err != nil {
@@ -1599,6 +1618,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 				return
 			}
 		}
+		logrus.Debugf("FINAL OUTPUT: %s\n", outputBuffer.String())
 	}()
 	return execOutputChan
 }
