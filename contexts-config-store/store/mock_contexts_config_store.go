@@ -257,7 +257,7 @@ type mockConstructorTestingTNewMockContextsConfigStore interface {
 	Cleanup(func())
 }
 
-// NewMockContextsConfigStore creates a new instance of MockContextsConfigStore. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// NewMockContextsConfigStore creates a new instance of MockContextsConfigStore. It also registers a testing interface on the mock and a cleanup function to assert the mock_instruction expectations.
 func NewMockContextsConfigStore(t mockConstructorTestingTNewMockContextsConfigStore) *MockContextsConfigStore {
 	mock := &MockContextsConfigStore{}
 	mock.Mock.Test(t)

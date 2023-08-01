@@ -2365,7 +2365,7 @@ type mockConstructorTestingTNewMockKurtosisBackend interface {
 	Cleanup(func())
 }
 
-// NewMockKurtosisBackend creates a new instance of MockKurtosisBackend. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// NewMockKurtosisBackend creates a new instance of MockKurtosisBackend. It also registers a testing interface on the mock and a cleanup function to assert the mock_instruction expectations.
 func NewMockKurtosisBackend(t mockConstructorTestingTNewMockKurtosisBackend) *MockKurtosisBackend {
 	mock := &MockKurtosisBackend{}
 	mock.Mock.Test(t)

@@ -72,7 +72,7 @@ type mockConstructorTestingTNewMockHttpClient interface {
 	Cleanup(func())
 }
 
-// NewMockHttpClient creates a new instance of MockHttpClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// NewMockHttpClient creates a new instance of MockHttpClient. It also registers a testing interface on the mock and a cleanup function to assert the mock_instruction expectations.
 func NewMockHttpClient(t mockConstructorTestingTNewMockHttpClient) *MockHttpClient {
 	mock := &MockHttpClient{}
 	mock.Mock.Test(t)

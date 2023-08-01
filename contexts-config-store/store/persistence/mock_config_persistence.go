@@ -161,7 +161,7 @@ type mockConstructorTestingTNewMockConfigPersistence interface {
 	Cleanup(func())
 }
 
-// NewMockConfigPersistence creates a new instance of MockConfigPersistence. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// NewMockConfigPersistence creates a new instance of MockConfigPersistence. It also registers a testing interface on the mock and a cleanup function to assert the mock_instruction expectations.
 func NewMockConfigPersistence(t mockConstructorTestingTNewMockConfigPersistence) *MockConfigPersistence {
 	mock := &MockConfigPersistence{}
 	mock.Mock.Test(t)
