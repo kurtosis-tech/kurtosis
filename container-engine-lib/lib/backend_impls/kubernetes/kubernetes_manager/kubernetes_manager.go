@@ -6,6 +6,7 @@
 package kubernetes_manager
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -208,9 +209,9 @@ func (manager *KubernetesManager) UpdateService(
 	ctx context.Context,
 	namespaceName string,
 	serviceName string,
-// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
-// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
-// would result in removing the object name)
+	// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
+	// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.ServiceApplyConfiguration),
 ) (*apiv1.Service, error) {
 	updatesToApply := applyconfigurationsv1.Service(serviceName, namespaceName)
@@ -438,9 +439,9 @@ func (manager *KubernetesManager) CreateNamespace(
 func (manager *KubernetesManager) UpdateNamespace(
 	ctx context.Context,
 	namespaceName string,
-// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
-// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
-// would result in removing the object name)
+	// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
+	// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.NamespaceApplyConfiguration),
 ) (*apiv1.Namespace, error) {
 	updatesToApply := applyconfigurationsv1.Namespace(namespaceName)
@@ -1432,6 +1433,9 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 ) chan string {
 	execOutputChan := make(chan string)
 	go func() {
+		defer func() {
+			close(execOutputChan)
+		}()
 		execOptions := &apiv1.PodExecOptions{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "",
@@ -1474,6 +1478,27 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		}
 
 		outputBuffer := &bytes.Buffer{}
+		go func() {
+			reader := bufio.NewReader(outputBuffer)
+			for {
+				execOutputLine, err := reader.ReadString('\n')
+				logrus.Debugf("K8S MANAGER OUTPUT BUFFER: %s", outputBuffer.String())
+				logrus.Debugf("AMOUNT OF BYTES CAN BE BUFFERED: %v", reader.Buffered())
+				logrus.Debugf("K8S MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
+				if err != nil {
+					logrus.Debugf("ERROR THAT STOPPED STREAMING LOOP: %v", err)
+					if err == io.EOF {
+						break
+					} else {
+						sendErrorAndFail(execOutputChan, err, "An error occurred while executing exec command")
+						return
+					}
+				}
+				execOutputChan <- strings.TrimSuffix(execOutputLine, "\n")
+				time.Sleep(1 * time.Second)
+			}
+			logrus.Debugf("K8S MANAGER TOTAL EXEC OUTPUT: %s", outputBuffer.String())
+		}()
 		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
 		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 			Stdin:             nil,
