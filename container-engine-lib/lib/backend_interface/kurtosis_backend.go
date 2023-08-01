@@ -275,7 +275,7 @@ type KurtosisBackend interface {
 		ctx context.Context,
 		enclaveUuid enclave.EnclaveUUID,
 		userServiceCommands map[service.ServiceUUID][]string,
-	) (execOutputChan chan string)
+	) (execOutputChan chan string, finalExecResultChan chan *exec_result.ExecResult)
 
 	// Get a connection with user service to execute commands in
 	GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error)

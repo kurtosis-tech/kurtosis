@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -14,11 +15,13 @@ func RunUserServiceExecCommandWithStreamedOutput(
 	enclaveId enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceUUID][]string,
 	dockerManager *docker_manager.DockerManager,
-) chan string {
+) (chan string, chan *exec_result.ExecResult) {
 	execOutputChan := make(chan string)
+	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
 		defer func() {
 			close(execOutputChan)
+			close(finalExecResultChan)
 		}()
 
 		// only process 1 exec command for now
@@ -68,15 +71,18 @@ func RunUserServiceExecCommandWithStreamedOutput(
 
 		userServiceDockerContainer := userServiceDockerResource.ServiceContainer
 
-		execOutputLinesChan := dockerManager.RunExecCommandWithStreamedOutput(
+		execOutputLinesChan, finalExecChan := dockerManager.RunExecCommandWithStreamedOutput(
 			ctx,
 			userServiceDockerContainer.GetId(),
 			commandArg)
 		for execOutputLine := range execOutputLinesChan {
 			execOutputChan <- execOutputLine
 		}
+		for execResult := range finalExecChan {
+			finalExecResultChan <- execResult
+		}
 	}()
-	return execOutputChan
+	return execOutputChan, finalExecResultChan
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

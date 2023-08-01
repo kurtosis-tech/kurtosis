@@ -10,6 +10,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
@@ -1407,114 +1408,6 @@ func (manager *KubernetesManager) RunExecCommand(
 	return successExecCommandExitCode, nil
 }
 
-//func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
-//	ctx context.Context,
-//	namespaceName string,
-//	podName string,
-//	containerName string,
-//	command []string,
-//) chan string {
-//	var outputBuffer bytes.Buffer
-//	execOutputChan := make(chan string)
-//	go func() {
-//		logrus.Debug("ENTERING K8S STREAM CALL ROUTINE")
-//		defer func() {
-//			close(execOutputChan)
-//		}()
-//		execOptions := &apiv1.PodExecOptions{
-//			TypeMeta: metav1.TypeMeta{
-//				Kind:       "",
-//				APIVersion: "",
-//			},
-//			Stdin:     true,
-//			Stdout:    true,
-//			Stderr:    false,
-//			TTY:       true,
-//			Container: containerName,
-//			Command:   command,
-//		}
-//
-//		//Create a RESTful command request.
-//		request := manager.kubernetesClientSet.CoreV1().RESTClient().
-//			Post().
-//			Namespace(namespaceName).
-//			Resource("pods").
-//			Name(podName).
-//			SubResource("exec").
-//			VersionedParams(execOptions, scheme.ParameterCodec)
-//		if request == nil {
-//			sendErrorAndFail(execOutputChan, stacktrace.NewError(
-//				"Failed to build a working RESTful request for the command '%s'.",
-//				execOptions.Command),
-//				"An error occurred while streaming from kubernetes with following exit code '%d'",
-//				-1)
-//			return
-//		}
-//
-//		exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
-//		if err != nil {
-//			sendErrorAndFail(
-//				execOutputChan,
-//				stacktrace.Propagate(err,
-//					"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.", execOptions.Command, request.URL().String()), ""+
-//					"An error occurred while streaming from kubernetes with following exit code '%d'",
-//				-1)
-//			return
-//		}
-//
-//		l := &LogStreamer{}
-//		go func() {
-//			_ = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-//				Stdin:             os.Stdin,
-//				Stdout:            l,
-//				Stderr:            nil,
-//				Tty:               false,
-//				TerminalSizeQueue: nil,
-//			})
-//		}()
-//		// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
-//		statusError := err.Error()
-//
-//		// this means that context deadline has exceeded
-//		if strings.Contains(statusError, contextDeadlineExceeded) {
-//			sendErrorAndFail(
-//				execOutputChan,
-//				stacktrace.Propagate(err, "There was an error occurred while executing commands on the container"),
-//				"An error occurred while streaming from kubernetes with following exit code '%d'",
-//				1)
-//			return
-//		}
-//
-//		//_, err := getExitCodeFromStatusMessage(statusError)
-//		if err != nil {
-//			sendErrorAndFail(
-//				execOutputChan,
-//				stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError),
-//				"An error occurred while streaming from kubernetes with following exit code '%d'",
-//				1)
-//			return
-//		}
-//
-//		logrus.Debugf("OUTPUT BUFFER CONTENTS AFTER STREAMING: %v", l.String())
-//	}()
-//	return execOutputChan
-//}
-
-//type LogStreamer struct {
-//	b bytes.Buffer
-//}
-//
-//func (l *LogStreamer) String() string {
-//	return l.b.String()
-//}
-//
-//func (l *LogStreamer) Write(p []byte) (n int, err error) {
-//	a := strings.TrimSpace(string(p))
-//	l.b.WriteString(a)
-//	logrus.Debugf("LOGS WITH THE LGO STREAMER: %v", a)
-//	return len(p), nil
-//}
-
 type TestWriter struct {
 	underlying    io.Writer
 	mutex         *sync.Mutex
@@ -1543,11 +1436,13 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	podName string,
 	containerName string,
 	command []string,
-) chan string {
+) (chan string, chan *exec_result.ExecResult) {
 	execOutputChan := make(chan string)
+	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
 		defer func() {
 			close(execOutputChan)
+			close(finalExecResultChan)
 		}()
 		execOptions := &apiv1.PodExecOptions{
 			TypeMeta: metav1.TypeMeta{
@@ -1613,7 +1508,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 				return
 			}
 
-			//exitCode, err := getExitCodeFromStatusMessage(statusError)
+			exitCode, err := getExitCodeFromStatusMessage(statusError)
 			if err != nil {
 				sendErrorAndFail(
 					execOutputChan,
@@ -1622,10 +1517,11 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 					1)
 				return
 			}
+			finalExecResultChan <- exec_result.NewExecResult(exitCode, outputBuffer.String())
 		}
 		logrus.Debugf("FINAL OUTPUT: %s\n", outputBuffer.String())
 	}()
-	return execOutputChan
+	return execOutputChan, finalExecResultChan
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

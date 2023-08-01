@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -18,11 +19,13 @@ func RunUserServiceExecCommandWithStreamedOutput(
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-) chan string {
+) (chan string, chan *exec_result.ExecResult) {
 	execOutputChan := make(chan string)
+	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
 		defer func() {
 			close(execOutputChan)
+			close(finalExecResultChan)
 		}()
 
 		// only process 1 exec command for now
@@ -100,7 +103,7 @@ func RunUserServiceExecCommandWithStreamedOutput(
 
 		userServiceKubernetesPod := userServiceKubernetesResource.KubernetesResources.Pod
 
-		execOutputLinesChan := kubernetesManager.RunExecCommandWithStreamedOutput(
+		execOutputLinesChan, finalResultChan := kubernetesManager.RunExecCommandWithStreamedOutput(
 			ctx,
 			namespaceName,
 			userServiceKubernetesPod.Name,
@@ -109,8 +112,11 @@ func RunUserServiceExecCommandWithStreamedOutput(
 		for execOutputLine := range execOutputLinesChan {
 			execOutputChan <- execOutputLine
 		}
+		for execResult := range finalResultChan {
+			finalExecResultChan <- execResult
+		}
 	}()
-	return execOutputChan
+	return execOutputChan, finalExecResultChan
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

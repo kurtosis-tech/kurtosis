@@ -21,6 +21,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -926,12 +927,14 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	return int32ExitCode, nil
 }
 
-func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.Context, containerId string, command []string) chan string {
+func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.Context, containerId string, command []string) (chan string, chan *exec_result.ExecResult) {
 	logrus.Debugf("ENTERING DOCKER MANAGER")
 	execOutputChan := make(chan string)
+	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
 		defer func() {
 			close(execOutputChan)
+			close(finalExecResultChan)
 		}()
 
 		dockerClient := manager.dockerClient
@@ -982,9 +985,11 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		// Stream output from docker through channel
 		logrus.Debugf("DOCKER MANAGER STARTING STREAMING")
 		reader := bufio.NewReader(attachResp.Reader)
+		finalOutputString := ""
 		for {
 			execOutputLine, err := reader.ReadString(endOfLineDelimiter)
 			logrus.Debugf("DOCKER MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
+			finalOutputString = finalOutputString + execOutputLine
 			if err != nil {
 				if err == io.EOF {
 					break
@@ -1011,9 +1016,10 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 			sendErrorAndFail(execOutputChan, stacktrace.NewError("Could not cast unsized int '%v' to int32 because it does not fit", unsizedExitCode), "An error occurred while inspecting the exec command")
 			return
 		}
-		return
+		int32ExitCode := int32(unsizedExitCode)
+		finalExecResultChan <- exec_result.NewExecResult(int32ExitCode, finalOutputString)
 	}()
-	return execOutputChan
+	return execOutputChan, finalExecResultChan
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

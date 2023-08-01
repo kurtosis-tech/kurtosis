@@ -346,7 +346,7 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommandsWithStreamed
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceUUID][]string,
-) chan string {
+) (chan string, chan *exec_result.ExecResult) {
 	return user_services_functions.RunUserServiceExecCommandWithStreamedOutput(
 		ctx,
 		enclaveUuid,
