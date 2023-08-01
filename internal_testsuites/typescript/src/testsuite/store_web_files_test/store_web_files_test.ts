@@ -7,7 +7,6 @@ import { createEnclave } from "../../test_helpers/enclave_setup";
 import {startFileServer} from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "files-artifact-mounting"
-const IS_PARTITIONING_ENABLED = false
 
 const FILE_SERVER_SERVICE_NAME: ServiceName = "file-server"
 
@@ -26,7 +25,7 @@ jest.setTimeout(180000)
 
 test.skip("Test web file storing", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(TEST_NAME)
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
 

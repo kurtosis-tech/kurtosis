@@ -11,7 +11,6 @@ import (
 
 const (
 	testName               = "package"
-	isPartitioningEnabled  = false
 	defaultDryRun          = false
 	remotePackage          = "github.com/kurtosis-tech/datastore-army-package"
 	executeParams          = `{"num_datastores": 2}`
@@ -31,7 +30,7 @@ func TestStartosisRemotePackage(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()
