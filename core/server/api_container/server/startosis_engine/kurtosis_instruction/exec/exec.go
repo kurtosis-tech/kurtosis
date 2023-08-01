@@ -173,7 +173,7 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	return instructionResult, err
 }
 
-func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (chan string, chan string, error) {
+func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, chan string, error) {
 	execOutputChan, finalResultMapChan, err := builtin.execRecipe.ExecuteWithStreamedOutput(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error executing exec recipe")

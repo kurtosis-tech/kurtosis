@@ -4,10 +4,11 @@ package mock_instruction
 
 import (
 	context "context"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 
 	kurtosis_core_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	enclave_structure "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+
+	kurtosis_instruction "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
 
 	kurtosis_starlark_framework "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 
@@ -84,12 +85,13 @@ func (_c *MockKurtosisInstruction_Execute_Call) RunAndReturn(run func(context.Co
 }
 
 // ExecuteWithStreamedOutput provides a mock function with given fields: ctx
-func (_m *MockKurtosisInstruction) ExecuteWithStreamedOutput(ctx context.Context) (<-chan string, error) {
+func (_m *MockKurtosisInstruction) ExecuteWithStreamedOutput(ctx context.Context) (<-chan string, chan string, error) {
 	ret := _m.Called(ctx)
 
 	var r0 <-chan string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (<-chan string, error)); ok {
+	var r1 chan string
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context) (<-chan string, chan string, error)); ok {
 		return rf(ctx)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context) <-chan string); ok {
@@ -100,13 +102,21 @@ func (_m *MockKurtosisInstruction) ExecuteWithStreamedOutput(ctx context.Context
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context) chan string); ok {
 		r1 = rf(ctx)
 	} else {
-		r1 = ret.Error(1)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(chan string)
+		}
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context) error); ok {
+		r2 = rf(ctx)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // MockKurtosisInstruction_ExecuteWithStreamedOutput_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExecuteWithStreamedOutput'
@@ -127,12 +137,12 @@ func (_c *MockKurtosisInstruction_ExecuteWithStreamedOutput_Call) Run(run func(c
 	return _c
 }
 
-func (_c *MockKurtosisInstruction_ExecuteWithStreamedOutput_Call) Return(_a0 <-chan string, _a1 error) *MockKurtosisInstruction_ExecuteWithStreamedOutput_Call {
-	_c.Call.Return(_a0, _a1)
+func (_c *MockKurtosisInstruction_ExecuteWithStreamedOutput_Call) Return(_a0 <-chan string, _a1 chan string, _a2 error) *MockKurtosisInstruction_ExecuteWithStreamedOutput_Call {
+	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *MockKurtosisInstruction_ExecuteWithStreamedOutput_Call) RunAndReturn(run func(context.Context) (<-chan string, error)) *MockKurtosisInstruction_ExecuteWithStreamedOutput_Call {
+func (_c *MockKurtosisInstruction_ExecuteWithStreamedOutput_Call) RunAndReturn(run func(context.Context) (<-chan string, chan string, error)) *MockKurtosisInstruction_ExecuteWithStreamedOutput_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -285,7 +295,7 @@ type MockKurtosisInstruction_TryResolveWith_Call struct {
 }
 
 // TryResolveWith is a helper method to define mock.On call
-//   - other KurtosisInstruction
+//   - other kurtosis_instruction.KurtosisInstruction
 //   - enclaveComponents *enclave_structure.EnclaveComponents
 func (_e *MockKurtosisInstruction_Expecter) TryResolveWith(other interface{}, enclaveComponents interface{}) *MockKurtosisInstruction_TryResolveWith_Call {
 	return &MockKurtosisInstruction_TryResolveWith_Call{Call: _e.mock.On("TryResolveWith", other, enclaveComponents)}
@@ -355,7 +365,7 @@ type mockConstructorTestingTNewMockKurtosisInstruction interface {
 	Cleanup(func())
 }
 
-// NewMockKurtosisInstruction creates a new instance of MockKurtosisInstruction. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// NewMockKurtosisInstruction creates a new instance of MockKurtosisInstruction. It also registers a testing interface on the mock and a cleanup function to assert the mock_instruction expectations.
 func NewMockKurtosisInstruction(t mockConstructorTestingTNewMockKurtosisInstruction) *MockKurtosisInstruction {
 	mock := &MockKurtosisInstruction{}
 	mock.Mock.Test(t)

@@ -92,7 +92,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
 				} else if instruction.String()[0:4] == "exec" {
-					execOutputChan, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
+					execOutputChan, _, err = instruction.ExecuteWithStreamedOutput(ctxWithParallelism)
 				} else {
 					instructionOutput, err = instruction.Execute(ctxWithParallelism)
 				}

@@ -352,7 +352,7 @@ type mockConstructorTestingTNewMockPackageContentProvider interface {
 	Cleanup(func())
 }
 
-// NewMockPackageContentProvider creates a new instance of MockPackageContentProvider. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// NewMockPackageContentProvider creates a new instance of MockPackageContentProvider. It also registers a testing interface on the mock and a cleanup function to assert the mock_instruction expectations.
 func NewMockPackageContentProvider(t mockConstructorTestingTNewMockPackageContentProvider) *MockPackageContentProvider {
 	mock := &MockPackageContentProvider{}
 	mock.Mock.Test(t)

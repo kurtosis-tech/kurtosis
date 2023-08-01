@@ -765,10 +765,14 @@ func (_c *MockServiceNetwork_RunExec_Call) RunAndReturn(run func(context.Context
 }
 
 // RunExecWithStreamedOutput provides a mock function with given fields: ctx, serviceIdentifier, userServiceCommand
-func (_m *MockServiceNetwork) RunExecWithStreamedOutput(ctx context.Context, serviceIdentifier string, userServiceCommand []string) <-chan string {
+func (_m *MockServiceNetwork) RunExecWithStreamedOutput(ctx context.Context, serviceIdentifier string, userServiceCommand []string) (<-chan string, <-chan *exec_result.ExecResult) {
 	ret := _m.Called(ctx, serviceIdentifier, userServiceCommand)
 
 	var r0 <-chan string
+	var r1 <-chan *exec_result.ExecResult
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string) (<-chan string, <-chan *exec_result.ExecResult)); ok {
+		return rf(ctx, serviceIdentifier, userServiceCommand)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) <-chan string); ok {
 		r0 = rf(ctx, serviceIdentifier, userServiceCommand)
 	} else {
@@ -777,7 +781,15 @@ func (_m *MockServiceNetwork) RunExecWithStreamedOutput(ctx context.Context, ser
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string) <-chan *exec_result.ExecResult); ok {
+		r1 = rf(ctx, serviceIdentifier, userServiceCommand)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(<-chan *exec_result.ExecResult)
+		}
+	}
+
+	return r0, r1
 }
 
 // MockServiceNetwork_RunExecWithStreamedOutput_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RunExecWithStreamedOutput'
@@ -800,12 +812,12 @@ func (_c *MockServiceNetwork_RunExecWithStreamedOutput_Call) Run(run func(ctx co
 	return _c
 }
 
-func (_c *MockServiceNetwork_RunExecWithStreamedOutput_Call) Return(_a0 <-chan string) *MockServiceNetwork_RunExecWithStreamedOutput_Call {
-	_c.Call.Return(_a0)
+func (_c *MockServiceNetwork_RunExecWithStreamedOutput_Call) Return(_a0 <-chan string, _a1 <-chan *exec_result.ExecResult) *MockServiceNetwork_RunExecWithStreamedOutput_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockServiceNetwork_RunExecWithStreamedOutput_Call) RunAndReturn(run func(context.Context, string, []string) <-chan string) *MockServiceNetwork_RunExecWithStreamedOutput_Call {
+func (_c *MockServiceNetwork_RunExecWithStreamedOutput_Call) RunAndReturn(run func(context.Context, string, []string) (<-chan string, <-chan *exec_result.ExecResult)) *MockServiceNetwork_RunExecWithStreamedOutput_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1463,7 +1475,7 @@ type mockConstructorTestingTNewMockServiceNetwork interface {
 	Cleanup(func())
 }
 
-// NewMockServiceNetwork creates a new instance of MockServiceNetwork. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// NewMockServiceNetwork creates a new instance of MockServiceNetwork. It also registers a testing interface on the mock and a cleanup function to assert the mock_instruction expectations.
 func NewMockServiceNetwork(t mockConstructorTestingTNewMockServiceNetwork) *MockServiceNetwork {
 	mock := &MockServiceNetwork{}
 	mock.Mock.Test(t)

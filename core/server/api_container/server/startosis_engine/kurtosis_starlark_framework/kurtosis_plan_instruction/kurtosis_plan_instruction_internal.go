@@ -77,7 +77,7 @@ func (builtin *kurtosisPlanInstructionInternal) Execute(ctx context.Context) (*s
 	return &result, nil
 }
 
-func (builtin *kurtosisPlanInstructionInternal) ExecuteWithStreamedOutput(ctx context.Context) (<-chan string, error) {
+func (builtin *kurtosisPlanInstructionInternal) ExecuteWithStreamedOutput(ctx context.Context) (<-chan string, chan string, error) {
 	return builtin.capabilities.ExecuteWithStreamedOutput(ctx, builtin.GetArguments())
 }
 
