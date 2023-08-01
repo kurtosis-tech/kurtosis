@@ -10,13 +10,7 @@ Kurtosis is rapidly evolving alongside the needs of our users. As a result, plea
 The last updated date is **August 1, 2023**
 :::
 
-**TLDR: Over the next few months, we will be making investments in our product to enable workflows that involve long-lived environments. Get in touch if any of the below roadmap items interest you - we'd love to chat!**
-
-We have come a long way since we began and are very excited to share a bit about our plans for the future on this page. Kurtosis was born as a closed-source, testing framework but has now blossomed to become an open-source developer tool for building dev and test environments. Naturally, we started with supporting the ephemeral use case - short-lived environments that would be cheap to start up and trivial to tear down once they’ve served their purpose for ad-hoc testing.
-
-To enable more use cases and ensure that environments instantiated by Kurtosis are delivering continuous value to our users, we’re elated to share that we’re now going to build out our product to better support persistent or long-lived environments. Doing so cements the value proposition that we offer for both dev and test, and opens a new world when it comes to production use cases. Directionally, these effort represent a step closer to our goal of extending Kurtosis across the entire development lifecycle.
-
-Based on the feedback from our users, we're going to build out the prouduct to enable and support workflows that involve a persistent environment in the cloud. Our investments will be spread across various features and improvements but will generally fall into one of the below buckets:
+Over the next 1-3 months, we will be making investments in our product to enable workflows that involve long-lived environments. Doing so cements the value proposition that we offer for both dev and test, and opens a new world when it comes to production use cases. Directionally, these efforts represent a step closer to our goal of extending Kurtosis across the entire development lifecycle. Our investments will be spread across various features and improvements but will generally fall into one of the below buckets:
 
 - **More robust support for various workflows involving enclaves deployed on Kubernetes.** This includes support for graceful blue/green rollouts, support for replication controllers like ReplicaSet (RS), and cleaner ways to interact with the cluster from the outside.
 - **Idempotent runs** that enable a developer to make changes to the Starlark package & Kurtosis will apply those changes to a long-lived enclave deterministically.
