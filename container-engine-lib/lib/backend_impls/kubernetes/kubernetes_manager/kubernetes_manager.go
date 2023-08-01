@@ -27,6 +27,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"path"
 	"strconv"
 	"strings"
 	"sync"
@@ -66,9 +67,13 @@ const (
 	contextDeadlineExceeded              = "context deadline exceeded"
 	expectedStatusMessageSliceSize       = 6
 
-	waitForPersistentVolumeBoundTimeout                  = 30 * time.Second
-	waitForPersistentVolumeBoundInitialDelayMilliSeconds = 100
-	waitForPersistentVolumeBoundRetriesDelayMilliSeconds = 500
+	volumeHostPathRootDirectory = "/kurtosis-persistent-service-data"
+	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
+	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
+	persistentVolumeDefaultSize                          int64 = 500 * 1024 * 1024 // 500Mb
+	waitForPersistentVolumeBoundTimeout                        = 30 * time.Second
+	waitForPersistentVolumeBoundInitialDelayMilliSeconds       = 100
+	waitForPersistentVolumeBoundRetriesDelayMilliSeconds       = 500
 )
 
 // We'll try to use the nicer-to-use shells first before we drop down to the lower shells
@@ -84,12 +89,8 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 
 var (
 	volumeStorageClassName = "kurtosis-local-storage"
-	// TODO: Maybe pipe this to Starlark to let users choose the size of their persistent directories
-	//  The difficulty is that Docker doesn't have such a feature, so we would need somehow to hack it
-	persistentVolumeDefaultSize int64 = 500 * 1024 * 1024
-
-	globalDeletePolicy  = metav1.DeletePropagationForeground
-	globalDeleteOptions = metav1.DeleteOptions{
+	globalDeletePolicy     = metav1.DeletePropagationForeground
+	globalDeleteOptions    = metav1.DeleteOptions{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "",
 			APIVersion: "",
@@ -254,24 +255,8 @@ func (manager *KubernetesManager) UpdateService(
 func (manager *KubernetesManager) GetServicesByLabels(ctx context.Context, namespace string, serviceLabels map[string]string) (*apiv1.ServiceList, error) {
 	servicesClient := manager.kubernetesClientSet.CoreV1().Services(namespace)
 
-	listOptions := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		LabelSelector:        labels.SelectorFromSet(serviceLabels).String(),
-		FieldSelector:        "",
-		Watch:                false,
-		AllowWatchBookmarks:  false,
-		ResourceVersion:      "",
-		ResourceVersionMatch: "",
-		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
-		Limit:                0,
-		Continue:             "",
-		SendInitialEvents:    nil,
-	}
-
-	serviceResult, err := servicesClient.List(ctx, listOptions)
+	opts := buildListOptionsFromLabels(serviceLabels)
+	serviceResult, err := servicesClient.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list services with labels '%+v' in namespace '%s'", serviceLabels, namespace)
 	}
@@ -313,7 +298,8 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 	//  - If this use case is hit only in the cloud (which is quite likely since having a multi-nodes k8s cluster running
 	//  outside a cloud provider infra is quite rare), then maybe we should just use whatever the cloud provider has,
 	//  like EBS for AWS for example. Those support dynamic provisioning and everything via their respective CSI drivers
-	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{}) //nolint:exhaustruct
+	listOptions := buildListOptionsFromLabels(map[string]string{})
+	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, listOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An unexpected error occurred retrieving the list of Kubernetes nodes.")
 	} else if len(nodes.Items) > 1 {
@@ -321,7 +307,7 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 			"not supported. Reach out to Kurtosis if you need this feature.")
 	}
 
-	hostPathPath := "/kurtosis-persistent-service-data/" + namespace + "/" + volumeName
+	hostPathPath := path.Join(volumeHostPathRootDirectory, namespace, volumeName)
 	hostPathType := apiv1.HostPathDirectoryOrCreate
 	persistentVolumeDefinition := apiv1.PersistentVolume{
 		TypeMeta: metav1.TypeMeta{
@@ -428,23 +414,7 @@ func (manager *KubernetesManager) GetPersistentVolume(
 func (manager *KubernetesManager) GetPersistentVolumesByLabels(ctx context.Context, persistentVolumeLabels map[string]string) (*apiv1.PersistentVolumeList, error) {
 	persistentVolumesClient := manager.kubernetesClientSet.CoreV1().PersistentVolumes()
 
-	listOptions := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		LabelSelector:        labels.SelectorFromSet(persistentVolumeLabels).String(),
-		FieldSelector:        "",
-		Watch:                false,
-		AllowWatchBookmarks:  false,
-		ResourceVersion:      "",
-		ResourceVersionMatch: "",
-		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
-		Limit:                0,
-		Continue:             "",
-		SendInitialEvents:    nil,
-	}
-
+	listOptions := buildListOptionsFromLabels(persistentVolumeLabels)
 	persistentVolumesResult, err := persistentVolumesClient.List(ctx, listOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list persistent volumes with labels '%+v'", persistentVolumeLabels)
@@ -688,23 +658,7 @@ func (manager *KubernetesManager) GetNamespace(ctx context.Context, name string)
 func (manager *KubernetesManager) GetNamespacesByLabels(ctx context.Context, namespaceLabels map[string]string) (*apiv1.NamespaceList, error) {
 	namespaceClient := manager.kubernetesClientSet.CoreV1().Namespaces()
 
-	listOptions := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		LabelSelector:        labels.SelectorFromSet(namespaceLabels).String(),
-		FieldSelector:        "",
-		Watch:                false,
-		AllowWatchBookmarks:  false,
-		ResourceVersion:      "",
-		ResourceVersionMatch: "",
-		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
-		Limit:                0,
-		Continue:             "",
-		SendInitialEvents:    nil,
-	}
-
+	listOptions := buildListOptionsFromLabels(namespaceLabels)
 	namespaces, err := namespaceClient.List(ctx, listOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to list namespaces with labels '%+v'", namespaceLabels)
@@ -774,23 +728,7 @@ func (manager *KubernetesManager) CreateServiceAccount(ctx context.Context, name
 func (manager *KubernetesManager) GetServiceAccountsByLabels(ctx context.Context, namespace string, serviceAccountsLabels map[string]string) (*apiv1.ServiceAccountList, error) {
 	client := manager.kubernetesClientSet.CoreV1().ServiceAccounts(namespace)
 
-	opts := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		LabelSelector:        labels.SelectorFromSet(serviceAccountsLabels).String(),
-		FieldSelector:        "",
-		Watch:                false,
-		AllowWatchBookmarks:  false,
-		ResourceVersion:      "",
-		ResourceVersionMatch: "",
-		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
-		Limit:                0,
-		Continue:             "",
-		SendInitialEvents:    nil,
-	}
-
+	opts := buildListOptionsFromLabels(serviceAccountsLabels)
 	serviceAccounts, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get service accounts with labels '%+v', instead a non-nil error was returned", serviceAccountsLabels)
@@ -878,23 +816,7 @@ func (manager *KubernetesManager) CreateRole(ctx context.Context, name string, n
 func (manager *KubernetesManager) GetRolesByLabels(ctx context.Context, namespace string, rolesLabels map[string]string) (*rbacv1.RoleList, error) {
 	client := manager.kubernetesClientSet.RbacV1().Roles(namespace)
 
-	opts := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		LabelSelector:        labels.SelectorFromSet(rolesLabels).String(),
-		FieldSelector:        "",
-		Watch:                false,
-		AllowWatchBookmarks:  false,
-		ResourceVersion:      "",
-		ResourceVersionMatch: "",
-		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
-		Limit:                0,
-		Continue:             "",
-		SendInitialEvents:    nil,
-	}
-
+	opts := buildListOptionsFromLabels(rolesLabels)
 	roles, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get roles with labels '%+v', instead a non-nil error was returned", rolesLabels)
@@ -983,23 +905,7 @@ func (manager *KubernetesManager) CreateRoleBindings(ctx context.Context, name s
 func (manager *KubernetesManager) GetRoleBindingsByLabels(ctx context.Context, namespace string, roleBindingsLabels map[string]string) (*rbacv1.RoleBindingList, error) {
 	client := manager.kubernetesClientSet.RbacV1().RoleBindings(namespace)
 
-	opts := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		LabelSelector:        labels.SelectorFromSet(roleBindingsLabels).String(),
-		FieldSelector:        "",
-		Watch:                false,
-		AllowWatchBookmarks:  false,
-		ResourceVersion:      "",
-		ResourceVersionMatch: "",
-		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
-		Limit:                0,
-		Continue:             "",
-		SendInitialEvents:    nil,
-	}
-
+	opts := buildListOptionsFromLabels(roleBindingsLabels)
 	roleBindings, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get role bindings with labels '%+v', instead a non-nil error was returned", roleBindingsLabels)
@@ -1088,23 +994,7 @@ func (manager *KubernetesManager) CreateClusterRoles(ctx context.Context, name s
 func (manager *KubernetesManager) GetClusterRolesByLabels(ctx context.Context, clusterRoleLabels map[string]string) (*rbacv1.ClusterRoleList, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoles()
 
-	opts := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		LabelSelector:        labels.SelectorFromSet(clusterRoleLabels).String(),
-		FieldSelector:        "",
-		Watch:                false,
-		AllowWatchBookmarks:  false,
-		ResourceVersion:      "",
-		ResourceVersionMatch: "",
-		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
-		Limit:                0,
-		Continue:             "",
-		SendInitialEvents:    nil,
-	}
-
+	opts := buildListOptionsFromLabels(clusterRoleLabels)
 	clusterRoles, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get cluster roles with labels '%+v', instead a non-nil error was returned", clusterRoleLabels)
@@ -1192,23 +1082,7 @@ func (manager *KubernetesManager) CreateClusterRoleBindings(ctx context.Context,
 func (manager *KubernetesManager) GetClusterRoleBindingsByLabels(ctx context.Context, clusterRoleBindingsLabels map[string]string) (*rbacv1.ClusterRoleBindingList, error) {
 	client := manager.kubernetesClientSet.RbacV1().ClusterRoleBindings()
 
-	opts := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		LabelSelector:        labels.SelectorFromSet(clusterRoleBindingsLabels).String(),
-		FieldSelector:        "",
-		Watch:                false,
-		AllowWatchBookmarks:  false,
-		ResourceVersion:      "",
-		ResourceVersionMatch: "",
-		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
-		Limit:                0,
-		Continue:             "",
-		SendInitialEvents:    nil,
-	}
-
+	opts := buildListOptionsFromLabels(clusterRoleBindingsLabels)
 	clusterRoleBindings, err := client.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get cluster role bindings with labels '%+v', instead a non-nil error was returned", clusterRoleBindingsLabels)
@@ -1694,23 +1568,7 @@ func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Con
 func (manager *KubernetesManager) GetPodsByLabels(ctx context.Context, namespace string, podLabels map[string]string) (*apiv1.PodList, error) {
 	namespacePodClient := manager.kubernetesClientSet.CoreV1().Pods(namespace)
 
-	opts := metav1.ListOptions{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "",
-			APIVersion: "",
-		},
-		LabelSelector:        labels.SelectorFromSet(podLabels).String(),
-		FieldSelector:        "",
-		Watch:                false,
-		AllowWatchBookmarks:  false,
-		ResourceVersion:      "",
-		ResourceVersionMatch: "",
-		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
-		Limit:                0,
-		Continue:             "",
-		SendInitialEvents:    nil,
-	}
-
+	opts := buildListOptionsFromLabels(podLabels)
 	pods, err := namespacePodClient.List(ctx, opts)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to get pods with labels '%+v', instead a non-nil error was returned", podLabels)
@@ -2189,4 +2047,23 @@ func getExitCodeFromStatusMessage(statusMessage string) (int32, error) {
 	}
 	codeAsInt32 := int32(codeAsInt64)
 	return codeAsInt32, nil
+}
+
+func buildListOptionsFromLabels(labelsMap map[string]string) metav1.ListOptions {
+	return metav1.ListOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        labels.SelectorFromSet(labelsMap).String(),
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       int64Ptr(listOptionsTimeoutSeconds),
+		Limit:                0,
+		Continue:             "",
+		SendInitialEvents:    nil,
+	}
 }
