@@ -1434,9 +1434,17 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	execOutputChan := make(chan string)
 	outputBuffer := &bytes.Buffer{}
 	concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
+	reader := bufio.NewReader(outputBuffer)
 	go func() {
 		logrus.Debug("ENTERING LOOP ROUTINE")
-		reader := bufio.NewReader(outputBuffer)
+		for {
+			if reader.Buffered() != 0 {
+				logrus.Debug("DATA BREAKING")
+				break
+			}
+			logrus.Debug("NO DATA, WAITING")
+			time.Sleep(1 * time.Second)
+		}
 		for {
 			execOutputLine, err := reader.ReadString('\n')
 			logrus.Debugf("K8S MANAGER OUTPUT BUFFER: %s", outputBuffer.String())
