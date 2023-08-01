@@ -11,6 +11,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
@@ -208,9 +209,9 @@ func (manager *KubernetesManager) UpdateService(
 	ctx context.Context,
 	namespaceName string,
 	serviceName string,
-// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
-// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
-// would result in removing the object name)
+	// We use a configurator, rather than letting the user pass in their own ServiceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the namespace, object name, etc. which
+	// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.ServiceApplyConfiguration),
 ) (*apiv1.Service, error) {
 	updatesToApply := applyconfigurationsv1.Service(serviceName, namespaceName)
@@ -438,9 +439,9 @@ func (manager *KubernetesManager) CreateNamespace(
 func (manager *KubernetesManager) UpdateNamespace(
 	ctx context.Context,
 	namespaceName string,
-// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
-// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
-// would result in removing the object name)
+	// We use a configurator, rather than letting the user pass in their own NamespaceApplyConfiguration, so that we ensure
+	// they use the constructor (and don't do struct instantiation and forget to add the object name, etc. which
+	// would result in removing the object name)
 	updateConfigurator func(configuration *applyconfigurationsv1.NamespaceApplyConfiguration),
 ) (*apiv1.Namespace, error) {
 	updatesToApply := applyconfigurationsv1.Namespace(namespaceName)
@@ -1437,10 +1438,10 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 				Kind:       "",
 				APIVersion: "",
 			},
-			Stdin:     true,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       true,
+			Stdin:     shouldAllocateStdinOnPodExec,
+			Stdout:    shouldAllocatedStdoutOnPodExec,
+			Stderr:    shouldAllocatedStderrOnPodExec,
+			TTY:       shouldAllocateTtyOnPodExec,
 			Container: containerName,
 			Command:   command,
 		}
@@ -1474,7 +1475,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		}
 
 		outputBuffer := &bytes.Buffer{}
-		//concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
+		concurrentBuffer := concurrent_writer.NewConcurrentWriter(outputBuffer)
 		logrus.Debugf("STARTING GO ROUTINE TO STREAM INFO")
 		go func() {
 			defer func() {
@@ -1482,9 +1483,9 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 			}()
 
 			if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
-				Stdin:             os.Stdin,
-				Stdout:            outputBuffer,
-				Stderr:            outputBuffer,
+				Stdin:             nil,
+				Stdout:            concurrentBuffer,
+				Stderr:            concurrentBuffer,
 				Tty:               true,
 				TerminalSizeQueue: nil,
 			}); err != nil {
@@ -1516,8 +1517,10 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		reader := bufio.NewReader(outputBuffer)
 		for {
 			execOutputLine, err := reader.ReadString('\n')
+			logrus.Debugf("K8S MANAGER OUTPUT BUFFER: %s", outputBuffer.String())
 			logrus.Debugf("K8S MANAGER EXEC OUTPUT LINE: %s", execOutputLine)
 			if err != nil {
+				logrus.Debugf("ERROR THAT STOPPED STREAMING LOOP: %v", err)
 				if err == io.EOF {
 					break
 				} else {
