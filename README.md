@@ -26,6 +26,7 @@ Still curious?
 * Kurtosis Web3 use cases [here](https://web3.kurtosis.com).
 * Learn about "why Kurtosis?" [here](https://docs.kurtosis.com/#why-use-kurtosis).
 * To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
+* To get a peek at where we're going with the product, check out the roadmap [here](/docs/docs/roadmap.md).
 * For real examples, go [here](https://github.com/kurtosis-tech/awesome-kurtosis)
 
 Kurtosis Kloud Early Access
