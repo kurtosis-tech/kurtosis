@@ -1,5 +1,65 @@
 # Changelog
 
+## [0.80.23](https://github.com/kurtosis-tech/kurtosis/compare/0.80.22...0.80.23) (2023-07-31)
+
+
+### Features
+
+* add `cloud add` ([#1015](https://github.com/kurtosis-tech/kurtosis/issues/1015)) ([48aecd0](https://github.com/kurtosis-tech/kurtosis/commit/48aecd05381b9b89fb34da145f9651605ca446d2))
+
+
+### Bug Fixes
+
+* Fix error swallowing in DefaultServiceNetwork.destroyService ([#987](https://github.com/kurtosis-tech/kurtosis/issues/987)) ([828f366](https://github.com/kurtosis-tech/kurtosis/commit/828f3666d4c0cb27cd83f071204e75143da14348))
+
+## [0.80.22](https://github.com/kurtosis-tech/kurtosis/compare/0.80.21...0.80.22) (2023-07-28)
+
+
+### Features
+
+* Add starlark converter to kurtosis import ([#1010](https://github.com/kurtosis-tech/kurtosis/issues/1010)) ([8554635](https://github.com/kurtosis-tech/kurtosis/commit/8554635af6990d1b152aa914ef2c595d5f8be802))
+* Support resource reservations on Docker compose import ([#1023](https://github.com/kurtosis-tech/kurtosis/issues/1023)) ([e7a5576](https://github.com/kurtosis-tech/kurtosis/commit/e7a5576e1a5dd96b4fdf0b9858caa9394b0572ef))
+
+
+### Bug Fixes
+
+* truncate output if greater than 64*1024 characters ([#1022](https://github.com/kurtosis-tech/kurtosis/issues/1022)) ([c3e8939](https://github.com/kurtosis-tech/kurtosis/commit/c3e8939811ea4ccafd559cfd9d3705350c6f9fac))
+
+## [0.80.21](https://github.com/kurtosis-tech/kurtosis/compare/0.80.20...0.80.21) (2023-07-28)
+
+
+### Bug Fixes
+
+* Check if a local engine is running before switching to a remote context and let the user know what to do ([#1011](https://github.com/kurtosis-tech/kurtosis/issues/1011)) ([141247f](https://github.com/kurtosis-tech/kurtosis/commit/141247f46fc5ca11644a35f865c737e96dd3a343))
+* fix cpu calculation by getting pre cpu stat ([52a191e](https://github.com/kurtosis-tech/kurtosis/commit/52a191e9e4a1cfaf011ef3b7c0d3d6ea02822756))
+* Implement GetEngineLogs in Kubernete backend ([#1005](https://github.com/kurtosis-tech/kurtosis/issues/1005)) ([3d0a3e2](https://github.com/kurtosis-tech/kurtosis/commit/3d0a3e2153da6254f62e53b9f03d9106c57e45a0))
+* Log streaming was timing out on docker ([#999](https://github.com/kurtosis-tech/kurtosis/issues/999)) ([d3b6c43](https://github.com/kurtosis-tech/kurtosis/commit/d3b6c434ee3229ba6f433fda5374c0676d690db0))
+* make continuity test work ([#1016](https://github.com/kurtosis-tech/kurtosis/issues/1016)) ([c430db2](https://github.com/kurtosis-tech/kurtosis/commit/c430db22616b0684711a79e4326a49102437abe6))
+* make resource fetching a parallel operation ([#1012](https://github.com/kurtosis-tech/kurtosis/issues/1012)) ([52a191e](https://github.com/kurtosis-tech/kurtosis/commit/52a191e9e4a1cfaf011ef3b7c0d3d6ea02822756))
+* only ask for emails on interactive terminals ([#1018](https://github.com/kurtosis-tech/kurtosis/issues/1018)) ([1bdac73](https://github.com/kurtosis-tech/kurtosis/commit/1bdac73eb07611cb6bcfd987ed4282b7eb06c26e))
+
+## [0.80.20](https://github.com/kurtosis-tech/kurtosis/compare/0.80.19...0.80.20) (2023-07-27)
+
+
+### Features
+
+* add `kurtosis cloud load to CLI` ([#882](https://github.com/kurtosis-tech/kurtosis/issues/882)) ([b2db8c9](https://github.com/kurtosis-tech/kurtosis/commit/b2db8c98d7b17c96d53c28154739e624fe48a63d))
+* ask user for email on first run of Kurtosis ([#1001](https://github.com/kurtosis-tech/kurtosis/issues/1001)) ([0f33b5b](https://github.com/kurtosis-tech/kurtosis/commit/0f33b5b4a3286d9f3a973ad55f7479f17a1782a6))
+* Start engine remotely with remote backend config when the context is remote ([#963](https://github.com/kurtosis-tech/kurtosis/issues/963)) ([6816d1f](https://github.com/kurtosis-tech/kurtosis/commit/6816d1f01d99e80609f808b57d2250ebc0b1c8bd))
+* validate min cpu & min memory are well under whats available ([#988](https://github.com/kurtosis-tech/kurtosis/issues/988)) ([768e95d](https://github.com/kurtosis-tech/kurtosis/commit/768e95d2dbeb7a554a97cff8b6650e734dccd66a))
+
+
+### Bug Fixes
+
+* Normalize destroy enclave in all tests ([#976](https://github.com/kurtosis-tech/kurtosis/issues/976)) ([20b635a](https://github.com/kurtosis-tech/kurtosis/commit/20b635a2fc7efc958e7bd7e007b2db65762b8b1c))
+
+## [0.80.19](https://github.com/kurtosis-tech/kurtosis/compare/0.80.18...0.80.19) (2023-07-26)
+
+
+### Bug Fixes
+
+* Fix docker image pull hanging forever ([#994](https://github.com/kurtosis-tech/kurtosis/issues/994)) ([fd00d79](https://github.com/kurtosis-tech/kurtosis/commit/fd00d79efca2a7d8b3b04ce9d1f4d988dc1d956b))
+
 ## [0.80.18](https://github.com/kurtosis-tech/kurtosis/compare/0.80.17...0.80.18) (2023-07-26)
 
 
