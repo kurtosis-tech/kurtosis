@@ -1069,8 +1069,8 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) UploadFilesArtifact(data io.Reader, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
-	filesArtifactUuid, err := network.uploadFilesArtifactUnlocked(data, artifactName)
+func (network *DefaultServiceNetwork) UploadFilesArtifact(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+	filesArtifactUuid, err := network.uploadFilesArtifactUnlocked(data, contentMd5, artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in uploading the files")
 	}
@@ -1560,7 +1560,9 @@ func (network *DefaultServiceNetwork) copyFilesFromServiceUnlocked(ctx context.C
 		defer pipeReader.Close()
 
 		//And finally pass it the .tgz file to the artifact file store
-		filesArtifactUuid, storeFileErr := store.StoreFile(pipeReader, artifactName)
+		// It's hard to compute the content hash here. For files stored from services, hash will be empty and they will
+		// be re-stored everytime regardless of their content
+		filesArtifactUuid, storeFileErr := store.StoreFile(pipeReader, []byte{}, artifactName)
 		storeFilesArtifactResultChan <- storeFilesArtifactResult{
 			err:               storeFileErr,
 			filesArtifactUuid: filesArtifactUuid,
@@ -1713,7 +1715,7 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 		}
 	}
 
-	compressedFile, _, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
+	compressedFile, _, compressedFileMd5, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
 	}
@@ -1723,7 +1725,7 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
 	}
-	filesArtifactUuid, err := store.StoreFile(compressedFile, artifactName)
+	filesArtifactUuid, err := store.StoreFile(compressedFile, compressedFileMd5, artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
 	}
@@ -1741,13 +1743,13 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) uploadFilesArtifactUnlocked(data io.Reader, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+func (network *DefaultServiceNetwork) uploadFilesArtifactUnlocked(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
 	}
 
-	filesArtifactUuid, err := filesArtifactStore.StoreFile(data, artifactName)
+	filesArtifactUuid, err := filesArtifactStore.StoreFile(data, contentMd5, artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
 	}
