@@ -942,37 +942,19 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous
 	network.mutex.Lock()
-	execOutputStream := make(chan string)
-	finalExecResultChan := make(chan *exec_result.ExecResult)
-	var err error
-	go func() {
-		defer func() {
-			network.mutex.Unlock()
-			close(execOutputStream)
-			close(finalExecResultChan)
-		}()
-		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
-		if err != nil {
-			//sendErrorAndFail(execOutputStream, err, "An error occurred while getting service registration for identifier")
-			return
-		}
-		serviceUuid := serviceRegistration.GetUUID()
-		userServiceCommands := map[service.ServiceUUID][]string{
-			serviceUuid: userServiceCommand,
-		}
-		kurtosisBackendExecOutputChan, finalResultChan, err := network.kurtosisBackend.RunUserServiceExecCommandsWithStreamedOutput(
-			ctx,
-			network.enclaveUuid,
-			userServiceCommands)
-		for execOutputLine := range kurtosisBackendExecOutputChan {
-			execOutputStream <- execOutputLine
-		}
-		for execResult := range finalResultChan {
-			logrus.Debug("SERVICE NETWORK")
-			finalExecResultChan <- execResult
-		}
-	}()
-	return execOutputStream, finalExecResultChan, err
+	defer network.mutex.Unlock()
+	serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while getting service registration for identifier '%v'", serviceIdentifier)
+	}
+	serviceUuid := serviceRegistration.GetUUID()
+	userServiceCommands := map[service.ServiceUUID][]string{
+		serviceUuid: userServiceCommand,
+	}
+	return network.kurtosisBackend.RunUserServiceExecCommandsWithStreamedOutput(
+		ctx,
+		network.enclaveUuid,
+		userServiceCommands)
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

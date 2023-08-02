@@ -3,6 +3,7 @@ package recipe
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
@@ -197,27 +198,29 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 		return nil, nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceName)
 	}
 	finalResultMapChan := make(chan map[string]starlark.Comparable)
+	var execResult *exec_result.ExecResult
 	if finalResultChan != nil {
 		go func() {
 			defer func() {
 				close(finalResultMapChan)
 			}()
-			for execResult := range finalResultChan {
-				logrus.Debug("EXEC RECIPE")
-				commandOutput := execResult.GetOutput()
-				resultDict := map[string]starlark.Comparable{
-					execOutputKey:   starlark.String(commandOutput),
-					execExitCodeKey: starlark.MakeInt(int(execResult.GetExitCode())),
-				}
-				extractDict, err := runExtractors([]byte(fmt.Sprintf("%q", commandOutput)), extractors)
-				if err != nil {
-					//return nil,stacktrace.Propagate(err, "An error occurred while running extractors '%v' on command output '%v'", extractors, commandOutput)
-					return
-				}
-				maps.Copy(resultDict, extractDict)
-				logrus.Debugf("SENDING RESULT DICT OVER CHANNEL IN EXEC RECIPE: %v", resultDict)
-				finalResultMapChan <- resultDict
+			for execResult = range finalResultChan {
+				break
 			}
+			logrus.Debug("EXEC RECIPE")
+			commandOutput := execResult.GetOutput()
+			resultDict := map[string]starlark.Comparable{
+				execOutputKey:   starlark.String(commandOutput),
+				execExitCodeKey: starlark.MakeInt(int(execResult.GetExitCode())),
+			}
+			extractDict, err := runExtractors([]byte(fmt.Sprintf("%q", commandOutput)), extractors)
+			if err != nil {
+				//err = stacktrace.Propagate(err, "An error occurred while running extractors '%v' on command output '%v'", extractors, commandOutput)
+				return
+			}
+			maps.Copy(resultDict, extractDict)
+			logrus.Debugf("SENDING RESULT DICT OVER CHANNEL IN EXEC RECIPE: %v", resultDict)
+			finalResultMapChan <- resultDict
 		}()
 	}
 	return execOutputChan, finalResultMapChan, nil
