@@ -38,9 +38,13 @@ func RunUserServiceExecCommandWithStreamedOutput(
 
 	userServiceDockerContainer := userServiceDockerResource.ServiceContainer
 
-	execOutputLinesChan, finalExecChan := dockerManager.RunExecCommandWithStreamedOutput(
+	execOutputLinesChan, finalExecChan, err := dockerManager.RunExecCommandWithStreamedOutput(
 		ctx,
 		userServiceDockerContainer.GetId(),
 		cmd)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to stream exec output from docker.")
+	}
+
 	return execOutputLinesChan, finalExecChan, nil
 }

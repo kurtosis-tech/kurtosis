@@ -1490,7 +1490,40 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 	podName string,
 	containerName string,
 	command []string,
-) (chan string, chan *exec_result.ExecResult) {
+) (chan string, chan *exec_result.ExecResult, error) {
+	execOptions := &apiv1.PodExecOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       true,
+		Container: containerName,
+		Command:   command,
+	}
+
+	//Create a RESTful command request.
+	request := manager.kubernetesClientSet.CoreV1().RESTClient().
+		Post().
+		Namespace(namespaceName).
+		Resource("pods").
+		Name(podName).
+		SubResource("exec").
+		VersionedParams(execOptions, scheme.ParameterCodec)
+	if request == nil {
+		return nil, nil, stacktrace.NewError("Failed to build a working RESTful request for the command '%s'.", execOptions.Command)
+	}
+
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err,
+			"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.",
+			execOptions.Command,
+			request.URL().String())
+	}
+
 	execOutputChan := make(chan string)
 	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
@@ -1498,46 +1531,6 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 			close(execOutputChan)
 			close(finalExecResultChan)
 		}()
-		execOptions := &apiv1.PodExecOptions{
-			TypeMeta: metav1.TypeMeta{
-				Kind:       "",
-				APIVersion: "",
-			},
-			Stdin:     false,
-			Stdout:    true,
-			Stderr:    true,
-			TTY:       true,
-			Container: containerName,
-			Command:   command,
-		}
-
-		//Create a RESTful command request.
-		request := manager.kubernetesClientSet.CoreV1().RESTClient().
-			Post().
-			Namespace(namespaceName).
-			Resource("pods").
-			Name(podName).
-			SubResource("exec").
-			VersionedParams(execOptions, scheme.ParameterCodec)
-		if request == nil {
-			sendErrorAndFail(execOutputChan, stacktrace.NewError(
-				"Failed to build a working RESTful request for the command '%s'.",
-				execOptions.Command),
-				"An error occurred while streaming from kubernetes with following exit code '%d'",
-				-1)
-			return
-		}
-
-		exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
-		if err != nil {
-			sendErrorAndFail(
-				execOutputChan,
-				stacktrace.Propagate(err,
-					"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.", execOptions.Command, request.URL().String()), ""+
-					"An error occurred while streaming from kubernetes with following exit code '%d'",
-				-1)
-			return
-		}
 
 		// Stream output from k8s to output channel
 		outputBuffer := &bytes.Buffer{}
@@ -1575,7 +1568,7 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 			finalExecResultChan <- exec_result.NewExecResult(exitCode, outputBuffer.String())
 		}
 	}()
-	return execOutputChan, finalExecResultChan
+	return execOutputChan, finalExecResultChan, nil
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

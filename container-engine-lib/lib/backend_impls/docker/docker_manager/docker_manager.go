@@ -957,7 +957,38 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	return int32ExitCode, nil
 }
 
-func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.Context, containerId string, command []string) (chan string, chan *exec_result.ExecResult) {
+func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.Context, containerId string, command []string) (chan string, chan *exec_result.ExecResult, error) {
+	dockerClient := manager.dockerClient
+	execConfig := types.ExecConfig{
+		User:         "",
+		Privileged:   false,
+		Tty:          false,
+		AttachStdin:  false,
+		AttachStderr: true,
+		AttachStdout: true,
+		Detach:       false,
+		DetachKeys:   "",
+		Env:          nil,
+		WorkingDir:   "",
+		Cmd:          command,
+	}
+
+	createResp, err := dockerClient.ContainerExecCreate(context, containerId, execConfig)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the exec process")
+	}
+
+	execId := createResp.ID
+	if execId == "" {
+		return nil, nil, stacktrace.NewError("Got back an empty exec ID when running '%v' on container '%v'", command, containerId)
+	}
+
+	execStartConfig := types.ExecStartCheck{
+		// Because detach is false, we'll block until the command comes back
+		Detach: false,
+		Tty:    false,
+	}
+
 	execOutputChan := make(chan string)
 	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
@@ -965,39 +996,6 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 			close(execOutputChan)
 			close(finalExecResultChan)
 		}()
-
-		dockerClient := manager.dockerClient
-		execConfig := types.ExecConfig{
-			User:         "",
-			Privileged:   false,
-			Tty:          false,
-			AttachStdin:  false,
-			AttachStderr: true,
-			AttachStdout: true,
-			Detach:       false,
-			DetachKeys:   "",
-			Env:          nil,
-			WorkingDir:   "",
-			Cmd:          command,
-		}
-
-		createResp, err := dockerClient.ContainerExecCreate(context, containerId, execConfig)
-		if err != nil {
-			sendErrorAndFail(execOutputChan, err, "An error occurred creating the exec process.")
-			return
-		}
-
-		execId := createResp.ID
-		if execId == "" {
-			sendErrorAndFail(execOutputChan, stacktrace.NewError("Got back an empty exec ID when running '%v' on container '%v'", command, containerId), "An error occurred creating the exec process.")
-			return
-		}
-
-		execStartConfig := types.ExecStartCheck{
-			// Because detach is false, we'll block until the command comes back
-			Detach: false,
-			Tty:    false,
-		}
 
 		// IMPORTANT NOTE:
 		// You'd think that we'd need to call ContainerExecStart separately after this ContainerExecAttach....
@@ -1013,10 +1011,8 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 
 		// Stream output from docker through output channel
 		reader := bufio.NewReader(attachResp.Reader)
-		finalOutputString := ""
 		for {
 			execOutputLine, err := reader.ReadString(streamOutputDelimiter)
-			finalOutputString = finalOutputString + execOutputLine
 			if err != nil {
 				if err == io.EOF {
 					break
@@ -1045,10 +1041,10 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		}
 		int32ExitCode := int32(unsizedExitCode)
 
-		// Send final result over channel
-		finalExecResultChan <- exec_result.NewExecResult(int32ExitCode, finalOutputString)
+		// Don't send output in final result because it was alreay streamed
+		finalExecResultChan <- exec_result.NewExecResult(int32ExitCode, "")
 	}()
-	return execOutputChan, finalExecResultChan
+	return execOutputChan, finalExecResultChan, nil
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

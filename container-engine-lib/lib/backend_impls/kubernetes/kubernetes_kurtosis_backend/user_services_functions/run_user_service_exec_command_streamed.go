@@ -64,11 +64,14 @@ func RunUserServiceExecCommandWithStreamedOutput(
 
 	userServiceKubernetesPod := userServiceKubernetesResource.KubernetesResources.Pod
 
-	execOutputLinesChan, finalResultChan := kubernetesManager.RunExecCommandWithStreamedOutput(
+	execOutputLinesChan, finalResultChan, err := kubernetesManager.RunExecCommandWithStreamedOutput(
 		ctx,
 		namespaceName,
 		userServiceKubernetesPod.Name,
 		userServiceContainerName,
 		cmd)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred attempting to stream exec output from docker.")
+	}
 	return execOutputLinesChan, finalResultChan, nil
 }
