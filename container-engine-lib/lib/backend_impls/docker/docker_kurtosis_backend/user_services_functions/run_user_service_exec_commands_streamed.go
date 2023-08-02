@@ -16,7 +16,7 @@ func RunUserServiceExecCommandWithStreamedOutput(
 	enclaveId enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceUUID][]string,
 	dockerManager *docker_manager.DockerManager,
-) (chan string, chan *exec_result.ExecResult) {
+) (chan string, chan *exec_result.ExecResult, error) {
 	execOutputChan := make(chan string)
 	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
@@ -89,7 +89,7 @@ func RunUserServiceExecCommandWithStreamedOutput(
 			}
 		}()
 	}()
-	return execOutputChan, finalExecResultChan
+	return execOutputChan, finalExecResultChan, nil
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

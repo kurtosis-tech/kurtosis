@@ -291,7 +291,7 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommandsWithStreamedOutp
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	userServiceCommands map[service.ServiceUUID][]string,
-) (chan string, chan *exec_result.ExecResult) {
+) (chan string, chan *exec_result.ExecResult, error) {
 	return user_service_functions.RunUserServiceExecCommandWithStreamedOutput(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
 }
 

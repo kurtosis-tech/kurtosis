@@ -175,6 +175,7 @@ func (builtin *ExecCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 }
 
 func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, _ *builtin_argument.ArgumentValuesSet) (<-chan string, chan string, error) {
+	var err error
 	execOutputChan, finalResultMapChan, err := builtin.execRecipe.ExecuteWithStreamedOutput(ctx, builtin.serviceNetwork, builtin.runtimeValueStore, builtin.serviceName)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error executing exec recipe")
@@ -191,9 +192,7 @@ func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, 
 				break
 			}
 			if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
-				_ = fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
-				logrus.Debugf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
-				//sendErrorAndFail(execOutputChan, stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String())), "Error getting exit code")
+				err = stacktrace.NewError("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
 				return
 			}
 

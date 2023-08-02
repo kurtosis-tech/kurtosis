@@ -110,7 +110,8 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					}
 				}
 				if finalResultChan != nil {
-					for range finalResultChan {
+					for realInstructionOutput := range finalResultChan {
+						starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(realInstructionOutput)
 						logrus.Debug("STARTOSIS EXECUTOR")
 						break
 					}

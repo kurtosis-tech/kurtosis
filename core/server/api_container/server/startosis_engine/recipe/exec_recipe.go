@@ -192,11 +192,10 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 		return nil, nil, stacktrace.NewError("The service name parameter can't be an empty string")
 	}
 
-	execOutputChan, finalResultChan := serviceNetwork.RunExecWithStreamedOutput(ctx, serviceNameStr, commandWithRuntimeValue)
-	//if err != nil {
-	//	//return nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceName)
-	//	return nil, nil, nil
-	//}
+	execOutputChan, finalResultChan, err := serviceNetwork.RunExecWithStreamedOutput(ctx, serviceNameStr, commandWithRuntimeValue)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Failed to execute command '%v' on service '%s'", command, serviceName)
+	}
 	finalResultMapChan := make(chan map[string]starlark.Comparable)
 	if finalResultChan != nil {
 		go func() {

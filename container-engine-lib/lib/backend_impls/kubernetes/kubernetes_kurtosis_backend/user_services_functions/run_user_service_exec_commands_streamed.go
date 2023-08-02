@@ -19,7 +19,7 @@ func RunUserServiceExecCommandWithStreamedOutput(
 	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-) (chan string, chan *exec_result.ExecResult) {
+) (chan string, chan *exec_result.ExecResult, error) {
 	execOutputChan := make(chan string)
 	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
@@ -116,7 +116,7 @@ func RunUserServiceExecCommandWithStreamedOutput(
 			finalExecResultChan <- execResult
 		}
 	}()
-	return execOutputChan, finalExecResultChan
+	return execOutputChan, finalExecResultChan, nil
 }
 
 func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {

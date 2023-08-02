@@ -1807,12 +1807,13 @@ func (_c *MockKurtosisBackend_RunUserServiceExecCommands_Call) RunAndReturn(run 
 }
 
 // RunUserServiceExecCommandsWithStreamedOutput provides a mock function with given fields: ctx, enclaveUuid, userServiceCommands
-func (_m *MockKurtosisBackend) RunUserServiceExecCommandsWithStreamedOutput(ctx context.Context, enclaveUuid enclave.EnclaveUUID, userServiceCommands map[service.ServiceUUID][]string) (chan string, chan *exec_result.ExecResult) {
+func (_m *MockKurtosisBackend) RunUserServiceExecCommandsWithStreamedOutput(ctx context.Context, enclaveUuid enclave.EnclaveUUID, userServiceCommands map[service.ServiceUUID][]string) (chan string, chan *exec_result.ExecResult, error) {
 	ret := _m.Called(ctx, enclaveUuid, userServiceCommands)
 
 	var r0 chan string
 	var r1 chan *exec_result.ExecResult
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (chan string, chan *exec_result.ExecResult)); ok {
+	var r2 error
+	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (chan string, chan *exec_result.ExecResult, error)); ok {
 		return rf(ctx, enclaveUuid, userServiceCommands)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) chan string); ok {
@@ -1831,7 +1832,13 @@ func (_m *MockKurtosisBackend) RunUserServiceExecCommandsWithStreamedOutput(ctx 
 		}
 	}
 
-	return r0, r1
+	if rf, ok := ret.Get(2).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) error); ok {
+		r2 = rf(ctx, enclaveUuid, userServiceCommands)
+	} else {
+		r2 = ret.Error(2)
+	}
+
+	return r0, r1, r2
 }
 
 // MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RunUserServiceExecCommandsWithStreamedOutput'
@@ -1854,12 +1861,12 @@ func (_c *MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call)
 	return _c
 }
 
-func (_c *MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call) Return(execOutputChan chan string, finalExecResultChan chan *exec_result.ExecResult) *MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call {
-	_c.Call.Return(execOutputChan, finalExecResultChan)
+func (_c *MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call) Return(execOutputChan chan string, finalExecResultChan chan *exec_result.ExecResult, err error) *MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call {
+	_c.Call.Return(execOutputChan, finalExecResultChan, err)
 	return _c
 }
 
-func (_c *MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (chan string, chan *exec_result.ExecResult)) *MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call {
+func (_c *MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (chan string, chan *exec_result.ExecResult, error)) *MockKurtosisBackend_RunUserServiceExecCommandsWithStreamedOutput_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2365,7 +2372,7 @@ type mockConstructorTestingTNewMockKurtosisBackend interface {
 	Cleanup(func())
 }
 
-// NewMockKurtosisBackend creates a new instance of MockKurtosisBackend. It also registers a testing interface on the mock and a cleanup function to assert the mock_instruction expectations.
+// NewMockKurtosisBackend creates a new instance of MockKurtosisBackend. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 func NewMockKurtosisBackend(t mockConstructorTestingTNewMockKurtosisBackend) *MockKurtosisBackend {
 	mock := &MockKurtosisBackend{}
 	mock.Mock.Test(t)
