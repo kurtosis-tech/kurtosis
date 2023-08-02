@@ -1408,20 +1408,20 @@ func (manager *KubernetesManager) RunExecCommand(
 	return successExecCommandExitCode, nil
 }
 
-type TestWriter struct {
+type StreamWriter struct {
 	underlying    io.Writer
 	mutex         *sync.Mutex
 	outputChannel chan string
 }
 
-func NewTestWriter(underlying io.Writer, channel chan string) *TestWriter {
-	return &TestWriter{
+func NewStreamWriter(underlying io.Writer, channel chan string) *StreamWriter {
+	return &StreamWriter{
 		underlying:    underlying,
 		mutex:         &sync.Mutex{},
 		outputChannel: channel,
 	}
 }
-func (writer *TestWriter) Write(p []byte) (n int, err error) {
+func (writer *StreamWriter) Write(p []byte) (n int, err error) {
 	writer.mutex.Lock()
 	defer writer.mutex.Unlock()
 	logrus.Debugf("SENDING DATA ACROSS CHANNEL: %s\n", string(p))
@@ -1487,11 +1487,11 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 
 		logrus.Debugf("STREAMING FROM K8S")
 		outputBuffer := &bytes.Buffer{}
-		testWriter := NewTestWriter(outputBuffer, execOutputChan)
+		streamWriter := NewStreamWriter(outputBuffer, execOutputChan)
 		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 			Stdin:             nil,
-			Stdout:            testWriter,
-			Stderr:            testWriter,
+			Stdout:            streamWriter,
+			Stderr:            streamWriter,
 			Tty:               true,
 			TerminalSizeQueue: nil,
 		}); err != nil {
