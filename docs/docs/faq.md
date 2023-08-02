@@ -15,3 +15,7 @@ Therefore, Kurtosis provides:
 - [`plan.exec`](./starlark-reference/plan.md#exec) for running Bash on a service
 
 All of these let you customize the image to run on, so you can functionally call any code in any language using Kurtosis.
+
+What is Kurtosis building next?
+-------------------------------
+Great question, check out our [roadmap page](./roadmap.md) for the latest details on where we plan to take Kurtosis next.
