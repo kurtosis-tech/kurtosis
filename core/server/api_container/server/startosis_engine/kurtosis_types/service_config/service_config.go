@@ -436,7 +436,6 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		privateIpAddressPlaceholder,
 		minCpu,
 		minMemory,
-		"subnetwork-deprecated",
 	), nil
 }
 

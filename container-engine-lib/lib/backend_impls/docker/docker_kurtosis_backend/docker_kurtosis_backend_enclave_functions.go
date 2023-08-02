@@ -32,7 +32,7 @@ type matchingNetworkInformation struct {
 	containers    []*types.Container
 }
 
-func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error) {
+func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string) (*enclave.Enclave, error) {
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
 	searchNetworkLabels := map[string]string{
@@ -68,7 +68,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 
 	creationTime := time.Now()
 
-	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork(enclaveName, creationTime, isPartitioningEnabled)
+	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork(enclaveName, creationTime)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveUuid)
 	}

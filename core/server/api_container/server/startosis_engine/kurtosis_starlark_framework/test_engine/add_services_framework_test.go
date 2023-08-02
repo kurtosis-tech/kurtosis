@@ -71,7 +71,6 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
-				"subnetwork-deprecated",
 			)
 			actualServiceConfig1 := configs[TestServiceName]
 			assert.Equal(t, expectedServiceConfig1, actualServiceConfig1)
@@ -90,7 +89,6 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
-				"subnetwork-deprecated",
 			)
 			actualServiceConfig2 := configs[TestServiceName2]
 			assert.Equal(t, expectedServiceConfig2, actualServiceConfig2)

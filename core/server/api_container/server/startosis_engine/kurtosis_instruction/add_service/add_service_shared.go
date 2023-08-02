@@ -173,7 +173,6 @@ func replaceMagicStrings(
 		serviceConfig.GetPrivateIPAddrPlaceholder(),
 		serviceConfig.GetMinCPUAllocationMillicpus(),
 		serviceConfig.GetMinMemoryAllocationMegabytes(),
-		serviceConfig.GetSubnetwork(),
 	)
 	return service.ServiceName(serviceNameStr), renderedServiceConfig, nil
 }

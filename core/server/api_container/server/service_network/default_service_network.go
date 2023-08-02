@@ -104,7 +104,7 @@ func NewDefaultServiceNetwork(
 	}, nil
 }
 
-// AddService creates and starts the service in the given partition in their own container
+// AddService creates and starts the service in their own container
 func (network *DefaultServiceNetwork) AddService(
 	ctx context.Context,
 	serviceName service.ServiceName,
@@ -130,7 +130,7 @@ func (network *DefaultServiceNetwork) AddService(
 	return nil, stacktrace.NewError("Service '%s' could not be started properly, but its state is unknown. This is a Kurtosis internal bug", serviceName)
 }
 
-// AddServices creates and starts the services in the given partition in their own containers. It is a bulk operation, if a
+// AddServices creates and starts the services in their own containers. It is a bulk operation, if a
 // single service fails to start, the entire batch is rolled back.
 //
 // This is a bulk operation that follows a sequential approach with no parallelization yet.
@@ -830,7 +830,6 @@ func (network *DefaultServiceNetwork) unregisterService(ctx context.Context, ser
 }
 
 // startRegisteredService handles the logistic of starting a service in the relevant Kurtosis backend:
-// If network partitioning is enabled, it also takes care of starting the sidecar corresponding to this service
 func (network *DefaultServiceNetwork) startRegisteredService(
 	ctx context.Context,
 	serviceUuid service.ServiceUUID,

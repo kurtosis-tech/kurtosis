@@ -249,7 +249,6 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		service_config.DefaultPrivateIPAddrPlaceholder,
 		0,
 		0,
-		"subnetwork-deprecated",
 	)
 }
 

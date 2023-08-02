@@ -96,13 +96,10 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	enclaveName string,
 ) (*enclaves.EnclaveContext, error) {
 
-	// TODO we are deprecating subnetworks
-	isSubnetworkingEnabled := false
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveName:            enclaveName,
 		ApiContainerVersionTag: defaultApiContainerVersionTag,
 		ApiContainerLogLevel:   apiContainerLogLevel.String(),
-		IsPartitioningEnabled:  isSubnetworkingEnabled,
 	}
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)

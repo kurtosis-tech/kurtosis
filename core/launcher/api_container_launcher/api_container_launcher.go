@@ -36,7 +36,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	logLevel logrus.Level,
 	enclaveId enclave.EnclaveUUID,
 	grpcListenPort uint16,
-	isPartitioningEnabled bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
@@ -48,7 +47,6 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		logLevel,
 		enclaveId,
 		grpcListenPort,
-		isPartitioningEnabled,
 		backendConfigSupplier,
 	)
 	if err != nil {
@@ -63,7 +61,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	logLevel logrus.Level,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcPortNum uint16,
-	isPartitioningEnabled bool,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
 ) (
 	resultApiContainer *api_container.APIContainer,
@@ -75,7 +72,6 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		logLevel.String(),
 		grpcPortNum,
 		string(enclaveUuid),
-		isPartitioningEnabled,
 		enclaveDataVolumeDirpath,
 		kurtosisBackendType,
 		kurtosisBackendConfig,

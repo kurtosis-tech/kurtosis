@@ -30,10 +30,10 @@ func newEnclaveCreator(
 
 func (creator *EnclaveCreator) CreateEnclave(
 	setupCtx context.Context,
-// If blank, will use the default
+	// If blank, will use the default
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-//If blank, will use a random one
+	//If blank, will use a random one
 	enclaveName string,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
@@ -46,7 +46,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 	// Create Enclave with kurtosisBackend
 
-	newEnclave, err := creator.kurtosisBackend.CreateEnclave(setupCtx, enclaveUuid, enclaveName, false)
+	newEnclave, err := creator.kurtosisBackend.CreateEnclave(setupCtx, enclaveUuid, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with name `%v` and uuid '%v'", enclaveName, enclaveUuid)
 	}
@@ -153,7 +153,6 @@ func (creator *EnclaveCreator) launchApiContainer(
 			logLevel,
 			enclaveUuid,
 			grpcListenPort,
-			false,
 			creator.apiContainerKurtosisBackendConfigSupplier,
 		)
 		if err != nil {
@@ -166,7 +165,6 @@ func (creator *EnclaveCreator) launchApiContainer(
 		logLevel,
 		enclaveUuid,
 		grpcListenPort,
-		false,
 		creator.apiContainerKurtosisBackendConfigSupplier,
 	)
 	if err != nil {
