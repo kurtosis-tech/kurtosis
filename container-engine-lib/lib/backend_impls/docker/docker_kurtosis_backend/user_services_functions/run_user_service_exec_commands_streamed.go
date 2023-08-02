@@ -20,11 +20,6 @@ func RunUserServiceExecCommandWithStreamedOutput(
 	execOutputChan := make(chan string)
 	finalExecResultChan := make(chan *exec_result.ExecResult)
 	go func() {
-		defer func() {
-			close(execOutputChan)
-			close(finalExecResultChan)
-		}()
-
 		// only process 1 exec command for now
 		if len(userServiceCommands) > 1 {
 			sendErrorAndFail(execOutputChan, stacktrace.NewError("Can only stream one exec function at a time."), "An error occurred streaming exec output")
