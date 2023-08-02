@@ -32,7 +32,9 @@ type KubernetesApiContainerObjectAttributesProvider interface {
 		privateGrpcProxyPortSpec *port_spec.PortSpec) (KubernetesObjectAttributes, error)
 	ForApiContainerServiceAccount() (KubernetesObjectAttributes, error)
 	ForApiContainerRole() (KubernetesObjectAttributes, error)
+	ForApiContainerClusterRole() (KubernetesObjectAttributes, error)
 	ForApiContainerRoleBindings() (KubernetesObjectAttributes, error)
+	ForApiContainerClusterRoleBindings() (KubernetesObjectAttributes, error)
 }
 
 // Private so it can't be instantiated
@@ -152,6 +154,54 @@ func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContai
 			"'%s' and labels '%+v', and annotations '%+v'", apiContainerObjectName.GetString(), labels, annotations)
 	}
 
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerClusterRole() (KubernetesObjectAttributes, error) {
+	labels, err := provider.getLabelsForApiContainerObject()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get labels for API container cluster role object in enclave with ID '%v'", provider.enclaveId)
+	}
+
+	// No custom annotations for API container role
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	apiContainerClusterRoleName, err := getCompositeKubernetesObjectName([]string{
+		apiContainerObjectNameStr,
+		provider.enclaveId,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating name for APIC container cluster role")
+	}
+	objectAttributes, err := newKubernetesObjectAttributesImpl(apiContainerClusterRoleName, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+			"'%s' and labels '%+v', and annotations '%+v'", apiContainerClusterRoleName.GetString(), labels, annotations)
+	}
+	return objectAttributes, nil
+}
+
+func (provider *kubernetesApiContainerObjectAttributesProviderImpl) ForApiContainerClusterRoleBindings() (KubernetesObjectAttributes, error) {
+	labels, err := provider.getLabelsForApiContainerObject()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get labels for API container object in enclave with ID '%v'", provider.enclaveId)
+	}
+
+	// No custom annotations for API container role bindings
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	apiContainerClusterRoleBindingsName, err := getCompositeKubernetesObjectName([]string{
+		apiContainerObjectNameStr,
+		provider.enclaveId,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating name for APIC container cluster role binding")
+	}
+	objectAttributes, err := newKubernetesObjectAttributesImpl(apiContainerClusterRoleBindingsName, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the Kubernetes object attributes with the name "+
+			"'%s' and labels '%+v', and annotations '%+v'", apiContainerClusterRoleBindingsName.GetString(), labels, annotations)
+	}
 	return objectAttributes, nil
 }
 

@@ -287,6 +287,7 @@ func createStartServiceOperation(
 
 	return func() (interface{}, error) {
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
+		persistentDirectories := serviceConfig.GetPersistentDirectories()
 		containerImageName := serviceConfig.GetContainerImageName()
 		privatePorts := serviceConfig.GetPrivatePorts()
 		entrypointArgs := serviceConfig.GetEntrypointArgs()
@@ -320,19 +321,59 @@ func createStartServiceOperation(
 		serviceRegistrationObj := matchingObjectAndResources.ServiceRegistration
 		serviceName := serviceRegistrationObj.GetName()
 
+		objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+		enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveUuid)
+
 		var podInitContainers []apiv1.Container
 		var podVolumes []apiv1.Volume
+		var err error
 		var userServiceContainerVolumeMounts []apiv1.VolumeMount
 		if filesArtifactsExpansion != nil {
-			podVolumes, userServiceContainerVolumeMounts, podInitContainers, _ = prepareFilesArtifactsExpansionResources(
+			podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = prepareFilesArtifactsExpansionResources(
 				filesArtifactsExpansion.ExpanderImage,
 				filesArtifactsExpansion.ExpanderEnvVars,
 				filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
 			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating the volumes necessary to perform file artifact expansion for service '%s'", serviceName)
+			}
 		}
 
-		objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-		enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveUuid)
+		shouldDestroyPersistentVolumesAndClaims := true
+		createVolumesWithClaims := map[string]*kubernetesVolumeWithClaim{}
+		if persistentDirectories != nil {
+			createVolumesWithClaims, err = preparePersistentDirectoriesResources(
+				ctx,
+				namespaceName,
+				serviceUuid,
+				enclaveObjAttributesProvider,
+				persistentDirectories.ServiceDirpathToDirectoryPersistentKey,
+				kubernetesManager)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volumes and claims requested for service '%s'", serviceName)
+			}
+			for serviceMountDirPath, volumeAndClaim := range createVolumesWithClaims {
+				podVolumes = append(podVolumes, *volumeAndClaim.GetVolume())
+				userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, *volumeAndClaim.GetVolumeMount(serviceMountDirPath))
+			}
+		}
+		defer func() {
+			if !shouldDestroyPersistentVolumesAndClaims {
+				return
+			}
+			for _, volumeAndClaim := range createVolumesWithClaims {
+				volumeClaimName := volumeAndClaim.VolumeClaimName
+				volumeName := volumeAndClaim.VolumeName
+				if err := kubernetesManager.RemovePersistentVolumeClaim(ctx, namespaceName, volumeClaimName); err != nil {
+					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the persistent volume claim we created but doing so threw an error:\n%v", err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to remove persistent volume claim '%v' in '%v' manually!!!", volumeClaimName, namespaceName)
+				}
+				if err := kubernetesManager.RemovePersistentVolume(ctx, volumeAndClaim.VolumeName); err != nil {
+					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the persistent volume we created but doing so threw an error:\n%v", err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to remove persistent volume '%v' manually!!!", volumeName)
+				}
+			}
+		}()
 
 		// Create the pod
 		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceUuid, serviceName, privatePorts)
@@ -374,11 +415,12 @@ func createStartServiceOperation(
 		}
 		shouldDestroyPod := true
 		defer func() {
-			if shouldDestroyPod {
-				if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
-					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
-					logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
-				}
+			if !shouldDestroyPod {
+				return
+			}
+			if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
+				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
 			}
 		}()
 
@@ -415,6 +457,7 @@ func createStartServiceOperation(
 
 		shouldDestroyPod = false
 		shouldUndoServiceUpdate = false
+		shouldDestroyPersistentVolumesAndClaims = false
 		return objectsAndResources.Service, nil
 	}
 }

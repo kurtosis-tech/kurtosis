@@ -283,17 +283,34 @@ func createEngineClusterRole(
 				kubernetes_manager_consts.ListKubernetesVerb,
 				kubernetes_manager_consts.WatchKubernetesVerb,
 			},
-			APIGroups: []string{rbacv1.APIGroupAll},
+			APIGroups: []string{
+				rbacv1.APIGroupAll,
+			},
 			Resources: []string{
 				kubernetes_manager_consts.NamespacesKubernetesResource,
 				kubernetes_manager_consts.ServiceAccountsKubernetesResource,
+				kubernetes_manager_consts.ClusterRolesKubernetesResource,
+				kubernetes_manager_consts.ClusterRoleBindingsKubernetesResource,
 				kubernetes_manager_consts.RolesKubernetesResource,
 				kubernetes_manager_consts.RoleBindingsKubernetesResource,
 				kubernetes_manager_consts.PodsKubernetesResource,
 				kubernetes_manager_consts.PodExecsKubernetesResource,
 				kubernetes_manager_consts.PodLogsKubernetesResource,
 				kubernetes_manager_consts.ServicesKubernetesResource,
+				kubernetes_manager_consts.PersistentVolumesKubernetesResource,
+				kubernetes_manager_consts.PersistentVolumeClaimsKubernetesResource,
 				kubernetes_manager_consts.JobsKubernetesResource, // Necessary so that we can give the API container the permission
+			},
+		},
+		{
+			Verbs: []string{
+				kubernetes_manager_consts.ListKubernetesVerb,
+			},
+			APIGroups: []string{
+				rbacv1.APIGroupAll,
+			},
+			Resources: []string{
+				kubernetes_manager_consts.NodesKubernetesResource,
 			},
 		},
 	}
