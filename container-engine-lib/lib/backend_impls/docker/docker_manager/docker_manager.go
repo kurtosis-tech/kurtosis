@@ -6,6 +6,7 @@
 package docker_manager
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -21,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -116,7 +118,9 @@ const (
 
 	successfulExitCode = 0
 
-	emptyNetworkAlias = ""
+	emptyNetworkAlias      = ""
+	streamOutputDelimiter  = '\n'
+	streamOutputTrimSuffix = "\n"
 
 	isDockerNetworkAttachable = true
 
@@ -952,6 +956,106 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	}
 	int32ExitCode := int32(unsizedExitCode)
 	return int32ExitCode, nil
+}
+
+func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.Context, containerId string, command []string) (chan string, chan *exec_result.ExecResult) {
+	execOutputChan := make(chan string)
+	finalExecResultChan := make(chan *exec_result.ExecResult)
+	go func() {
+		defer func() {
+			close(execOutputChan)
+			close(finalExecResultChan)
+		}()
+
+		dockerClient := manager.dockerClient
+		execConfig := types.ExecConfig{
+			User:         "",
+			Privileged:   false,
+			Tty:          false,
+			AttachStdin:  false,
+			AttachStderr: true,
+			AttachStdout: true,
+			Detach:       false,
+			DetachKeys:   "",
+			Env:          nil,
+			WorkingDir:   "",
+			Cmd:          command,
+		}
+
+		createResp, err := dockerClient.ContainerExecCreate(context, containerId, execConfig)
+		if err != nil {
+			sendErrorAndFail(execOutputChan, err, "An error occurred creating the exec process.")
+			return
+		}
+
+		execId := createResp.ID
+		if execId == "" {
+			sendErrorAndFail(execOutputChan, stacktrace.NewError("Got back an empty exec ID when running '%v' on container '%v'", command, containerId), "An error occurred creating the exec process.")
+			return
+		}
+
+		execStartConfig := types.ExecStartCheck{
+			// Because detach is false, we'll block until the command comes back
+			Detach: false,
+			Tty:    false,
+		}
+
+		// IMPORTANT NOTE:
+		// You'd think that we'd need to call ContainerExecStart separately after this ContainerExecAttach....
+		//  ...but ContainerExecAttach **actually starts the exec command!!!!**
+		// We used to be doing them both, but then we were hitting this occasional race condition: https://github.com/moby/moby/issues/42408
+		// Therefore, we ONLY call Attach, without Start
+		attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
+		if err != nil {
+			sendErrorAndFail(execOutputChan, err, "An error occurred starting/attaching to the exec command")
+			return
+		}
+		defer attachResp.Close()
+
+		// Stream output from docker through output channel
+		reader := bufio.NewReader(attachResp.Reader)
+		finalOutputString := ""
+		for {
+			execOutputLine, err := reader.ReadString(streamOutputDelimiter)
+			finalOutputString = finalOutputString + execOutputLine
+			if err != nil {
+				if err == io.EOF {
+					break
+				} else {
+					sendErrorAndFail(execOutputChan, err, "An error occurred while executing exec command")
+					return
+				}
+			}
+			// Trim end of line
+			execOutputChan <- strings.TrimSuffix(execOutputLine, streamOutputTrimSuffix)
+			time.Sleep(500 * time.Millisecond)
+		}
+
+		inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
+		if err != nil {
+			sendErrorAndFail(execOutputChan, err, "An error occurred inspecting the exec to get the response code")
+			return
+		}
+		if inspectResponse.Running {
+			sendErrorAndFail(execOutputChan, stacktrace.NewError("Expected exec to have stopped, but it's still running!"), "An error occurred while running the exec command")
+			return
+		}
+		unsizedExitCode := inspectResponse.ExitCode
+		if unsizedExitCode > math.MaxInt32 || unsizedExitCode < math.MinInt32 {
+			sendErrorAndFail(execOutputChan, stacktrace.NewError("Could not cast unsized int '%v' to int32 because it does not fit", unsizedExitCode), "An error occurred while inspecting the exec command")
+			return
+		}
+		int32ExitCode := int32(unsizedExitCode)
+
+		// Send final result over channel
+		finalExecResultChan <- exec_result.NewExecResult(int32ExitCode, finalOutputString)
+	}()
+	return execOutputChan, finalExecResultChan
+}
+
+func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
+	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
+	destChan <- propagatedErr.Error()
 }
 
 /*

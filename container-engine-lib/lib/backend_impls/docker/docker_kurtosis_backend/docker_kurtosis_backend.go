@@ -297,7 +297,7 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommandWithStreamedOutpu
 	serviceUuid service.ServiceUUID,
 	cmd []string,
 ) (chan string, chan *exec_result.ExecResult, error) {
-	return nil, nil, nil
+	return user_service_functions.RunUserServiceExecCommandWithStreamedOutput(ctx, enclaveUuid, serviceUuid, cmd, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) error {
