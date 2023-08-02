@@ -100,9 +100,9 @@ func NewCLIModeKubernetesKurtosisBackend(
 
 func NewKubernetesKurtosisBackend(
 	kubernetesManager *kubernetes_manager.KubernetesManager,
-	// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple
-	//  backends per consumer, e.g. APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc.
-	//  This can only happen once the CLI no longer uses the same functionality as API container, engine, etc. though
+// TODO Remove the necessity for these different args by splitting the *KubernetesKurtosisBackend into multiple
+//  backends per consumer, e.g. APIContainerKurtosisBackend, CLIKurtosisBackend, EngineKurtosisBackend, etc.
+//  This can only happen once the CLI no longer uses the same functionality as API container, engine, etc. though
 	cliModeArgs *shared_helpers.CliModeArgs,
 	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
 	apiContainerModeargs *shared_helpers.ApiContainerModeArgs,
@@ -354,7 +354,15 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommandWithStreamedO
 	serviceUuid service.ServiceUUID,
 	cmd []string,
 ) (chan string, chan *exec_result.ExecResult, error) {
-	return nil, nil, nil
+	return user_services_functions.RunUserServiceExecCommandWithStreamedOutput(
+		ctx,
+		enclaveUuid,
+		serviceUuid,
+		cmd,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
 }
 
 func (backend *KubernetesKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {
