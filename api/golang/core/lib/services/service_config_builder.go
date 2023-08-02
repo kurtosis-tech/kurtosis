@@ -31,7 +31,6 @@ func GetServiceConfigStarlark(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	subnetwork string,
 	privateIpAddrPlaceholder string,
 	cpuAllocationMillicpus int,
 	memoryAllocationMegabytes int,
@@ -72,9 +71,6 @@ func GetServiceConfigStarlark(
 	}
 	starlarkFields = append(starlarkFields, fmt.Sprintf(`env_vars={%s}`, strings.Join(envVarStrings, ",")))
 
-	if subnetwork != "" {
-		starlarkFields = append(starlarkFields, fmt.Sprintf(`subnetwork=%q`, subnetwork))
-	}
 	if privateIpAddrPlaceholder != "" {
 		starlarkFields = append(starlarkFields, fmt.Sprintf(`private_ip_address_placeholder=%q`, privateIpAddrPlaceholder))
 	}

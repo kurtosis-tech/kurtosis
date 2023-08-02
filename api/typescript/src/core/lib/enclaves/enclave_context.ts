@@ -34,7 +34,6 @@ import {readStreamContentUntilClosed, StarlarkRunResult} from "./starlark_run_bl
 import {ServiceIdentifiers} from "../services/service_identifiers";
 
 export type EnclaveUUID = string;
-export type PartitionID = string;
 
 export const KURTOSIS_YAML_FILENAME = "kurtosis.yml";
 

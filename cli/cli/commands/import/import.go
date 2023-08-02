@@ -11,12 +11,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	enclave_consts "github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/enclave"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+
+	command_args_run "github.com/kurtosis-tech/kurtosis/cli/cli/command_args/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/file_system_path_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/enclave/inspect"
+	_run "github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/service/add"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/name_generator"
@@ -52,6 +55,8 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 	doNotShowFullUuids    = false
+	doNotDryRun           = false
+	noParallelism         = 1
 )
 
 var ImportCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -130,7 +135,7 @@ func run(
 		logrus.Debugf("No dotenv file was found: %v", err)
 		dotEnvMap = map[string]string{}
 	}
-	logrus.Infof("Enviroment loaded: %v", dotEnvMap)
+	logrus.Debugf("Enviroment loaded: %v", dotEnvMap)
 
 	script, artifacts, err := convertComposeFileToStarlark(path, dotEnvMap)
 	if err != nil {
@@ -282,7 +287,7 @@ func getMilliCpusReservation(deployConfig *types.DeployConfig) int {
 }
 
 func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveName string) (*enclaves.EnclaveContext, error) {
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName, false)
+	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", enclaveName)
 	}
@@ -291,11 +296,13 @@ func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisCo
 
 // TODO(victor.colombo): This should be part of the SDK, since we implement this over and over again
 func runStarlark(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, starlarkScript string) error {
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, defaultMainFunction, starlarkScript, noStarlarkParams, false, 1, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
+	responseLineChan, cancelFunc, err := enclaveCtx.RunStarlarkScript(ctx, defaultMainFunction, starlarkScript, noStarlarkParams, doNotDryRun, noParallelism, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
-	// TODO(victor.colombo): Make this as pretty as run is
-	logrus.Infof("Enclave was built with following output:\n%s", starlarkRunResult.RunOutput)
+	errRunningKurtosis := _run.ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, command_args_run.OutputOnly, doNotDryRun)
+	if errRunningKurtosis != nil {
+		return stacktrace.Propagate(errRunningKurtosis, "An error running starlark happaned")
+	}
 	return nil
 }
