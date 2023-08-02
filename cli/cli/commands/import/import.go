@@ -282,7 +282,7 @@ func getMilliCpusReservation(deployConfig *types.DeployConfig) int {
 }
 
 func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveName string) (*enclaves.EnclaveContext, error) {
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName, false)
+	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave '%v'", enclaveName)
 	}

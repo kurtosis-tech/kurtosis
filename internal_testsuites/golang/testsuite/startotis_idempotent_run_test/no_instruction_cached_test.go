@@ -12,7 +12,6 @@ import (
 
 const (
 	enclaveNameTemplate = "idempotent-run-test-%d"
-	subnetworksDisabled = false
 
 	skippedInstructionMessage = "SKIPPED - This instruction has already been run in this enclave"
 
@@ -29,7 +28,7 @@ var (
 func TestStartosisIdempotentRun_RunSameScriptTwice(t *testing.T) {
 	ctx := context.Background()
 	enclaveName := fmt.Sprintf(enclaveNameTemplate, 1)
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName, subnetworksDisabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName)
 	require.NoError(t, err)
 
 	// Run 1
@@ -53,7 +52,7 @@ func TestStartosisIdempotentRun_RunSameScriptTwice(t *testing.T) {
 func TestStartosisIdempotentRun_IterativelyBuildEnclave(t *testing.T) {
 	ctx := context.Background()
 	enclaveName := fmt.Sprintf(enclaveNameTemplate, 2)
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName, subnetworksDisabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName)
 	require.NoError(t, err)
 
 	// iteration 1
@@ -95,7 +94,7 @@ Third instruction
 func TestStartosisIdempotentRun_RunTwoDifferentScripts(t *testing.T) {
 	ctx := context.Background()
 	enclaveName := fmt.Sprintf(enclaveNameTemplate, 3)
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName, subnetworksDisabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName)
 	require.NoError(t, err)
 
 	// Run 1
@@ -122,7 +121,7 @@ func TestStartosisIdempotentRun_RunTwoDifferentScripts(t *testing.T) {
 func TestStartosisIdempotentRun_RunTwoOverlappingScripts(t *testing.T) {
 	ctx := context.Background()
 	enclaveName := fmt.Sprintf(enclaveNameTemplate, 4)
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName, subnetworksDisabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName)
 	require.NoError(t, err)
 
 	// Run 1
@@ -153,7 +152,7 @@ Script 2 specific instruction
 func TestStartosisIdempotentRun_DeactivateInstructionsCaching(t *testing.T) {
 	ctx := context.Background()
 	enclaveName := fmt.Sprintf(enclaveNameTemplate, 5)
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName, subnetworksDisabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveName)
 	require.NoError(t, err)
 
 	// Run 1

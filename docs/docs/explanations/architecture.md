@@ -14,7 +14,7 @@ One Layer Deeper
 ----------------
 To understand what Kurtosis itself does, we'll need to understand environments. Kurtosis' philosophy is that [the distributed nature of modern software means that modern software development now happens at the environment level][why-we-built-kurtosis]. To respond to this need, environments are a first-class concept in Kurtosis: easy to create, easy to inspect, easy to modify, and easy to destroy.
 
-Therefore, the job of Kurtosis is to receive requests from the user and translate them to instructions for the underlying container orchestration engine. These requests can be simple commands that map one-to-one to instructions to the underlying container orchestrator (e.g. "add service X to environment Y"), or they can be Kurtosis-only commands that require complex interaction with the container orchestrator (e.g. "create a simulated network partition in environment X").
+Therefore, the job of Kurtosis is to receive requests from the user and translate them to instructions for the underlying container orchestration engine. These requests can be simple commands that map one-to-one to instructions to the underlying container orchestrator (e.g. "add service X to environment Y"), or they can be Kurtosis-only commands that require complex interaction with the container orchestrator.
 
 Enclaves
 --------

@@ -203,21 +203,6 @@ plan.print("Any string here")
 ```
 
 
-remove_connection
------------------
-
-As opposed to `set_connection`, `remove_connection` removes a connection override between two [subnetworks][subnetworks-reference]. The default connection cannot be removed; it can only be updated using [set_connection][set-connection].
-
-```python
-remove_connection(
-    # The subnetwork connection that will be removed
-    # If any of those two subnetworks does not currently have services, this instruction will not do anything.
-    # MANDATORY
-    subnetworks = ("subnetwork_1", "subnetwork_2"),
-
-)
-```
-
 remove_service
 --------------
 
@@ -549,65 +534,6 @@ The instruction returns a `struct` with [future references][future-references-re
     ) # the path to the file will look like: /src/test.txt
 ```
 
-set_connection
---------------
-
-Kurtosis uses a *default connection* to configure networking for any created subnetwork.
-The `set_connection` can be used for two purposes:
-
-1. Used with the `subnetworks` argument, it will override the default connection between the two specified [subnetworks][subnetworks-reference].
-
-```python
-set_connection(
-    # The subnetwork connection that will be be overridden
-    # OPTIONAL: See 2. below
-    subnetworks = ("subnetwork_1", "subnetwork_2"),
-
-    # The configuration for this connection. See the 'ConnectionConfig' section of 'Starlark Types' from the sidecar for more information.
-    # MANDATORY
-    config = connection_config,
-)
-```
-
-2. Used with only the `config` argument, it will update the *default connection*.
-
-:::caution
-
-Doing so will _immediately_ affect all subnetwork connections that were not previously overridden.
-
-:::
-
-```python
-set_connection(
-    # The configuration for this connection. See the 'ConnectionConfig' section of 'Starlark Types' from the sidecar for more information.
-    # MANDATORY
-    config = connection_config,
-)
-```
-
-See [ConnectionConfig][starlark-types-connection-config] for more information on the mandatory `config` argument.
-
-:::important
-
-Say we are overriding a connection between two subnetworks, as shown below:
-
-```python
-
-connection_config = ConnectionConfig(
-    packet_delay_distribution = UniformPacketDelayDistribution(
-        ms = 500,
-    ),
-)
-
-set_connection(
-    subnetworks = ("subnetworkA", "subnetworkB"),
-    config = connection_config,
-)
-
-```
-If serviceA is in subnetworkA and serviceB is in subnetworkB, the effective latency for a TCP request between serviceA and serviceB will be 1000ms = 500ms x 2. This is because the latency is applied to both the request (serviceA -> serviceB) and the response (serviceB -> serviceA)
-:::
-
 start_service
 -------------
 
@@ -658,25 +584,6 @@ artifact_name = plan.store_service_files(
 
 The return value is a [future reference][future-references-reference] to the name of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
 
-update_service
---------------
-
-The `update_service` instruction updates an existing service without restarting it. For now, only the [service subnetwork][subnetworks-reference] can be updated live. In this case, the service will be moved to the corresponding subnetwork.
-
-```python
-update_service(
-    # A Service name designating a service that already exists inside the enclave
-    # If it does not, a validation error will be thrown
-    # MANDATORY
-    name = "example-datastore-server-1",
-
-    # The changes to apply to this service. See the 'UpdateServiceConfig' section of 'Starlark Types' from the sidecar for more information.
-    # MANDATORY
-    config = update_service_config,
-)
-```
-
-See [UpdateServiceConfig][starlark-types-update-service-config] for more information on the mandatory `config` argument.
 
 upload_files
 ------------
@@ -706,7 +613,7 @@ The `wait` instruction fails the Starlark script or package with an execution er
 
 If the assertion succeeds, `wait` returns the result of the given Recipe  - i.e. the same output as [`plan.request`][request] or [`plan.exec`][exec].
 
-This instruction is best used for asserting the system has reached a desired state, e.g. in testing. To wait until a service is ready, you are better off using automatic port availability waiting via [`PortSpec.wait`][starlark-types-port-spec] or [`ServiceConfig.ready_conditions`][starlark-types-update-service-config], as these will short-circuit a parallel [`add_services`][add-services] call if they fail.
+This instruction is best used for asserting the system has reached a desired state, e.g. in testing. To wait until a service is ready, you are better off using automatic port availability waiting via [`PortSpec.wait`][starlark-types-port-spec] or [`ServiceConfig.ready_conditions`][ready-condition], as these will short-circuit a parallel [`add_services`][add-services] call if they fail.
 
 To learn more about the accepted recipe types, please see [`ExecRecipe`][starlark-types-exec-recipe], [`GetHttpRequestRecipe`][starlark-types-get-http-recipe] or [`PostHttpRequestRecipe`][starlark-types-post-http-recipe].
 
@@ -762,7 +669,6 @@ plan.print(recipe_result["code"])
 [extract]: #extract
 [exec]: #exec
 [request]: #request
-[set-connection]: #set_connection
 [start-service]: #start_service
 [stop-service]: #stop_service
 [wait]: #wait
@@ -776,11 +682,8 @@ plan.print(recipe_result["code"])
 [multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
 [ready-condition]: ./ready-condition.md
 [service-config]: ./service-config.md
-[subnetworks-reference]: ../concepts-reference/subnetworks.md
 
-[starlark-types-connection-config]: ./connection-config.md
 [starlark-types-service-config]: ./service-config.md
-[starlark-types-update-service-config]: ./update-service-config.md
 [starlark-types-exec-recipe]: ./exec-recipe.md
 [starlark-types-post-http-recipe]: ./post-http-request-recipe.md
 [starlark-types-get-http-recipe]: ./get-http-request-recipe.md
