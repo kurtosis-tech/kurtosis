@@ -123,6 +123,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 
 		if !dryRun {
 			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
+			logrus.Debugf("EXECUTOR RUNTIME VALUE STORE CONTENS: %v", executor.runtimeValueStore)
 			if err != nil {
 				logrus.Debugf("SEND SCRIPT WITH VALUES REPLACED FAILED: %v", err)
 				sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred while replacing the runtime values in the output of the script")

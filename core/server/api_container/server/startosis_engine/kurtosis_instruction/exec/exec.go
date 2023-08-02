@@ -189,6 +189,7 @@ func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, 
 				logrus.Debug("EXEC")
 				if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
 					_ = fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+					logrus.Debugf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
 					//sendErrorAndFail(execOutputChan, stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String())), "Error getting exit code")
 					return
 				}
