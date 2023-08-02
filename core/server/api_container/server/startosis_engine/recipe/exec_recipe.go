@@ -216,6 +216,7 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 					return
 				}
 				maps.Copy(resultDict, extractDict)
+				logrus.Debugf("SENDING RESULT DICT OVER CHANNEL IN EXEC RECIPE: %v", resultDict)
 				finalResultMapChan <- resultDict
 			}
 		}()

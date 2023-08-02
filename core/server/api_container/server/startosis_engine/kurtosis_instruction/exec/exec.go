@@ -185,19 +185,22 @@ func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, 
 			defer func() {
 				close(finalInstructionResultStringChan)
 			}()
-			for result := range finalResultMapChan {
+			var result map[string]starlark.Comparable
+			for result = range finalResultMapChan {
 				logrus.Debug("EXEC")
-				if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
-					_ = fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
-					logrus.Debugf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
-					//sendErrorAndFail(execOutputChan, stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String())), "Error getting exit code")
-					return
-				}
-
-				builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
-				instructionResult := builtin.execRecipe.ResultMapToString(result)
-				finalInstructionResultStringChan <- instructionResult
+				break
 			}
+			if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
+				_ = fmt.Sprintf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+				logrus.Debugf("Exec returned exit code '%v' that is not part of the acceptable status codes '%v', with output:", result["code"], builtin.acceptableCodes)
+				//sendErrorAndFail(execOutputChan, stacktrace.NewError(formatErrorMessage(errorMessage, result["output"].String())), "Error getting exit code")
+				return
+			}
+
+			logrus.Debugf("WRITING RESULT TO RUNTIME VALUE STORE IN EXEC: %v", result)
+			builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
+			instructionResult := builtin.execRecipe.ResultMapToString(result)
+			finalInstructionResultStringChan <- instructionResult
 		}()
 	}
 	return execOutputChan, finalInstructionResultStringChan, err
