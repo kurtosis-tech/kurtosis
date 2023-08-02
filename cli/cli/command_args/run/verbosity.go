@@ -7,4 +7,5 @@ const (
 	Brief Verbosity = iota
 	Detailed
 	Executable
+	OutputOnly
 )
