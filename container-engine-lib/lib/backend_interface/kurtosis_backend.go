@@ -271,6 +271,14 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
+	// Executes a shell command inside an user service, where output and final response are streamed back to user
+	RunUserServiceExecCommandWithStreamedOutput(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		serviceUuid service.ServiceUUID,
+		cmd []string,
+	) (execOutputChan chan string, finalExecResultChan chan *exec_result.ExecResult, resultErr error)
+
 	// Get a connection with user service to execute commands in
 	GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error)
 

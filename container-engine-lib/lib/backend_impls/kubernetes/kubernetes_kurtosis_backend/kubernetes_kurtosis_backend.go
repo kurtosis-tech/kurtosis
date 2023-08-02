@@ -329,7 +329,6 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 		backend.kubernetesManager)
 }
 
-// TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
@@ -347,6 +346,15 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
 		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	serviceUuid service.ServiceUUID,
+	cmd []string,
+) (chan string, chan *exec_result.ExecResult, error) {
+	return nil, nil, nil
 }
 
 func (backend *KubernetesKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {

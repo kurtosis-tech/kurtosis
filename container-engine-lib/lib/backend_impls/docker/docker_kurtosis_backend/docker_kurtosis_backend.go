@@ -278,7 +278,6 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	return user_service_functions.GetUserServiceLogs(ctx, enclaveUuid, filters, shouldFollowLogs, backend.dockerManager)
 }
 
-// TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
 // NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
@@ -290,6 +289,15 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	error,
 ) {
 	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	serviceUuid service.ServiceUUID,
+	cmd []string,
+) (chan string, chan *exec_result.ExecResult, error) {
+	return nil, nil, nil
 }
 
 func (backend *DockerKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) error {
