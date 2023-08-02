@@ -913,7 +913,6 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	}
 
 	execStartConfig := types.ExecStartCheck{
-		// Because detach is false, we'll block until the command comes back
 		Detach: false,
 		Tty:    false,
 	}
