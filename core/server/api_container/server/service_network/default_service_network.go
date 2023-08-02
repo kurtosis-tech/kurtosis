@@ -957,11 +957,6 @@ func (network *DefaultServiceNetwork) RunExecWithStreamedOutput(ctx context.Cont
 		userServiceCommands)
 }
 
-func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
-	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
-	destChan <- propagatedErr.Error()
-}
-
 func (network *DefaultServiceNetwork) RunExecs(ctx context.Context, userServiceCommands map[string][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
 	// NOTE: This will block all other operations while this command is running!!!! We might need to change this so it's
 	// asynchronous

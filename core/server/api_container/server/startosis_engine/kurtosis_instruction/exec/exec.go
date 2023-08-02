@@ -205,11 +205,6 @@ func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, 
 	return execOutputChan, finalInstructionResultStringChan, nil
 }
 
-func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
-	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
-	destChan <- propagatedErr.Error()
-}
-
 func (builtin *ExecCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual && enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
 		return enclave_structure.InstructionIsUpdate
