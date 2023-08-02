@@ -225,8 +225,11 @@ func (recipe *ExecRecipe) ExecuteWithStreamedOutput(
 }
 
 func (recipe *ExecRecipe) ResultMapToString(resultMap map[string]starlark.Comparable) string {
+	logrus.Debug("RESULT MAP TO STRiNG ENTER")
 	exitCode := resultMap[execExitCodeKey]
+	logrus.Debugf("EXIT CODE TO STRiNG ENTER: %v", exitCode)
 	rawOutput := resultMap[execOutputKey]
+	logrus.Debugf("RAW OUTPUT RESULT MAP TO STRiNG ENTER: %v", rawOutput)
 	outputStarlarkStr, ok := rawOutput.(starlark.String)
 	if !ok {
 		logrus.Errorf("Result of an exec recipe was not a string (was: '%v' of type '%s'). This is not fatal but the object might be malformed in CLI output. It is very unexpected and hides a Kurtosis internal bug. This issue should be reported", rawOutput, reflect.TypeOf(rawOutput))

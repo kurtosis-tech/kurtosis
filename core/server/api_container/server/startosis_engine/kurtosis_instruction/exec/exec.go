@@ -200,6 +200,7 @@ func (builtin *ExecCapabilities) ExecuteWithStreamedOutput(ctx context.Context, 
 			logrus.Debugf("WRITING RESULT TO RUNTIME VALUE STORE IN EXEC: %v", result)
 			builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
 			instructionResult := builtin.execRecipe.ResultMapToString(result)
+			logrus.Debugf("INSTRUCTION RESULT STRING FROM RESULT MAP TO STRING %v", instructionResult)
 			finalInstructionResultStringChan <- instructionResult
 		}()
 	}
