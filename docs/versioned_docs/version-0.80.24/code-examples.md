@@ -1,7 +1,7 @@
 ---
-title: Package Index
-sidebar_label: Package Index
-slug: /package-index
+title: Code Examples
+sidebar_label: Code Examples
+slug: /code-examples
 ---
 
 This page lists where you can find many different types of Kurtosis [packages][packages-concepts-reference]:
