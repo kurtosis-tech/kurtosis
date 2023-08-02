@@ -124,9 +124,11 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		if !dryRun {
 			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
 			if err != nil {
+				logrus.Debugf("SEND SCRIPT WITH VALUES REPLACED FAILED: %v", err)
 				sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred while replacing the runtime values in the output of the script")
 				return
 			}
+			logrus.Debugf("SEND SCRIPT WITH VALUES REPLACED: %v", scriptWithValuesReplaced)
 			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunSuccessEvent(scriptWithValuesReplaced)
 			logrus.Debugf("Current enclave plan has been updated. It now contains %d instructions", executor.enclavePlan.Size())
 		} else {
