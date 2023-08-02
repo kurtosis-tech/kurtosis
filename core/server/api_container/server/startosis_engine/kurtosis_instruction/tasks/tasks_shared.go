@@ -249,10 +249,7 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		service_config.DefaultPrivateIPAddrPlaceholder,
 		0,
 		0,
-		// TODO: hardcoding subnetwork to default is what we do now but is incorrect as the run_sh might not be able to
-		//  reach some services outside of the default subnetwork. It should be re-worked if users want to use that in
-		//  conjunction with subnetworks
-		service_config.DefaultSubnetwork,
+		"subnetwork-deprecated",
 	)
 }
 

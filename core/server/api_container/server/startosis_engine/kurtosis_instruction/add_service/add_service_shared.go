@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
@@ -61,12 +60,6 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 }
 
 func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEnvironment, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
-	subnetwork := serviceConfig.GetSubnetwork()
-	if partition_topology.ParsePartitionId(&subnetwork) != partition_topology.DefaultPartitionId {
-		if !validatorEnvironment.IsNetworkPartitioningEnabled() {
-			return startosis_errors.NewValidationError("Service was about to be started inside subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark code with subnetwork enabled.", serviceConfig.GetSubnetwork())
-		}
-	}
 	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
 		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
 	}

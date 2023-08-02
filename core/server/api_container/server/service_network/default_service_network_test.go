@@ -19,8 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	lib_networking_sidecar "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -118,27 +116,6 @@ func TestAddService_Successful(t *testing.T) {
 		map[service.ServiceUUID]error{},
 		nil)
 
-	// CreateNetworkingSidecar will be called for this service
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, serviceUuid).Times(1).Return(
-		lib_networking_sidecar.NewNetworkingSidecar(serviceUuid, enclaveName, container_status.ContainerStatus_Running),
-		nil)
-
-	// RunNetworkingSidecarExecCommands will be called for this service
-	backend.EXPECT().RunNetworkingSidecarExecCommands(
-		ctx,
-		enclaveName,
-		mock.MatchedBy(func(commands map[service.ServiceUUID][]string) bool {
-			// Matcher function returning true iff the commands map arg contains exactly the following key:
-			// {serviceUuid}
-			_, foundService := commands[serviceUuid]
-			return len(commands) == 1 && foundService
-		})).Times(2).Return(
-		map[service.ServiceUUID]*exec_result.ExecResult{
-			serviceUuid: exec_result.NewExecResult(0, ""),
-		},
-		map[service.ServiceUUID]error{},
-		nil)
-
 	// DestroyUserServices is never being called as everything is successful for this test
 	backend.EXPECT().DestroyUserServices(
 		ctx,
@@ -214,15 +191,6 @@ func TestAddService_FailedToStart(t *testing.T) {
 			serviceUuid: stacktrace.NewError("Failed starting service"),
 		},
 		nil)
-
-	// CreateNetworkingSidecar will be called for this service
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, mock.Anything).Maybe().Times(0)
-
-	// RunNetworkingSidecarExecCommands will never be called
-	backend.EXPECT().RunNetworkingSidecarExecCommands(
-		ctx,
-		enclaveName,
-		mock.Anything).Maybe().Times(0)
 
 	// DestroyUserServices is never being called as the service fails to start for this test
 	backend.EXPECT().DestroyUserServices(
@@ -316,27 +284,6 @@ func TestAddServices_Success(t *testing.T) {
 		map[service.ServiceUUID]error{},
 		nil)
 
-	// CreateNetworkingSidecar will be called exactly twice with the 2 successfully started services
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, successfulServiceUuid).Times(1).Return(
-		lib_networking_sidecar.NewNetworkingSidecar(successfulServiceUuid, enclaveName, container_status.ContainerStatus_Running),
-		nil)
-
-	// RunNetworkingSidecarExecCommands will be called only once for the successfully started sidecar
-	backend.EXPECT().RunNetworkingSidecarExecCommands(
-		ctx,
-		enclaveName,
-		mock.MatchedBy(func(commands map[service.ServiceUUID][]string) bool {
-			// Matcher function returning true iff the commands map arg contains exactly the following key:
-			// {successfulServiceGuid}
-			_, foundSuccessfulService := commands[successfulServiceUuid]
-			return len(commands) == 1 && foundSuccessfulService
-		})).Times(2).Return(
-		map[service.ServiceUUID]*exec_result.ExecResult{
-			successfulServiceUuid: exec_result.NewExecResult(0, ""),
-		},
-		map[service.ServiceUUID]error{},
-		nil)
-
 	success, failure, err := network.AddServices(
 		ctx,
 		map[service.ServiceName]*service.ServiceConfig{
@@ -375,15 +322,6 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	failedServiceIp := testIpFromInt(failedServiceIndex)
 	failedServiceRegistration := service.NewServiceRegistration(failedServiceName, failedServiceUuid, enclaveName, failedServiceIp, string(failedServiceName))
 	failedServiceConfig := testServiceConfig(testContainerImageName)
-
-	// One service will be successfully started but its sidecar will fail to start
-	sidecarFailedServiceIndex := 3
-	sidecarFailedServiceName := testServiceNameFromInt(sidecarFailedServiceIndex)
-	sidecarFailedServiceUuid := testServiceUuidFromInt(sidecarFailedServiceIndex)
-	sidecarFailedServiceIp := testIpFromInt(sidecarFailedServiceIndex)
-	sidecarFailedServiceRegistration := service.NewServiceRegistration(sidecarFailedServiceName, sidecarFailedServiceUuid, enclaveName, sidecarFailedServiceIp, string(sidecarFailedServiceName))
-	sidecarFailedService := service.NewService(sidecarFailedServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, sidecarFailedServiceIp, map[string]*port_spec.PortSpec{})
-	sidecarFailedServiceConfig := testServiceConfig(testContainerImageName)
 
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -431,19 +369,6 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 		map[service.ServiceName]error{},
 		nil,
 	)
-	backend.EXPECT().RegisterUserServices(
-		ctx,
-		enclaveName,
-		map[service.ServiceName]bool{
-			sidecarFailedServiceName: true,
-		},
-	).Times(1).Return(
-		map[service.ServiceName]*service.ServiceRegistration{
-			sidecarFailedServiceName: sidecarFailedServiceRegistration,
-		},
-		map[service.ServiceName]error{},
-		nil,
-	)
 
 	// StartUserService will be called three times, with all the provided services
 	backend.EXPECT().StartRegisteredUserServices(
@@ -474,44 +399,6 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 			failedServiceUuid: stacktrace.NewError("Failed starting service"),
 		},
 		nil)
-	backend.EXPECT().StartRegisteredUserServices(
-		ctx,
-		enclaveName,
-		mock.MatchedBy(func(services map[service.ServiceUUID]*service.ServiceConfig) bool {
-			// Matcher function returning true iff the services map arg contains exactly the following key:
-			// {sidecarFailedServiceName}
-			_, foundSidecarFailedService := services[sidecarFailedServiceUuid]
-			return len(services) == 1 && foundSidecarFailedService
-		})).Times(1).Return(
-		map[service.ServiceUUID]*service.Service{
-			sidecarFailedServiceUuid: sidecarFailedService,
-		},
-		map[service.ServiceUUID]error{},
-		nil)
-
-	// CreateNetworkingSidecar will be called exactly twice with the 2 successfully started services
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, successfulServiceUuid).Times(1).Return(
-		lib_networking_sidecar.NewNetworkingSidecar(successfulServiceUuid, enclaveName, container_status.ContainerStatus_Running),
-		nil)
-	backend.EXPECT().CreateNetworkingSidecar(ctx, enclaveName, sidecarFailedServiceUuid).Times(1).Return(
-		nil,
-		stacktrace.NewError("Failed starting sidecar for service"))
-
-	// RunNetworkingSidecarExecCommands will be called only once for the successfully started sidecar
-	backend.EXPECT().RunNetworkingSidecarExecCommands(
-		ctx,
-		enclaveName,
-		mock.MatchedBy(func(commands map[service.ServiceUUID][]string) bool {
-			// Matcher function returning true iff the commands map arg contains exactly the following key:
-			// {successfulServiceUuid}
-			_, foundSuccessfulService := commands[successfulServiceUuid]
-			return len(commands) == 1 && foundSuccessfulService
-		})).Times(2).Return(
-		map[service.ServiceUUID]*exec_result.ExecResult{
-			successfulServiceUuid: exec_result.NewExecResult(0, ""),
-		},
-		map[service.ServiceUUID]error{},
-		nil)
 
 	// DestroyUserServices is being called for sidecarFailedService only because the sidecar failed to be started
 	backend.EXPECT().DestroyUserServices(
@@ -525,20 +412,6 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 		})).Times(1).Return(
 		map[service.ServiceUUID]bool{
 			successfulServiceUuid: true,
-		},
-		map[service.ServiceUUID]error{},
-		nil)
-	backend.EXPECT().DestroyUserServices(
-		ctx,
-		enclaveName,
-		mock.MatchedBy(func(filters *service.ServiceFilters) bool {
-			// Matcher function returning true iff the filters map arg contains exactly the following key:
-			// {sidecarFailedServiceGuid}
-			_, foundSidecarFailedService := filters.UUIDs[sidecarFailedServiceUuid]
-			return len(filters.Statuses) == 0 && len(filters.Names) == 0 && len(filters.UUIDs) == 1 && foundSidecarFailedService
-		})).Times(1).Return(
-		map[service.ServiceUUID]bool{
-			sidecarFailedServiceUuid: true,
 		},
 		map[service.ServiceUUID]error{},
 		nil)
@@ -570,51 +443,19 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 		map[service.ServiceUUID]error{},
 		nil,
 	)
-	backend.EXPECT().UnregisterUserServices(
-		ctx,
-		enclaveName,
-		map[service.ServiceUUID]bool{
-			sidecarFailedServiceUuid: true,
-		},
-	).Times(1).Return(
-		map[service.ServiceUUID]bool{
-			sidecarFailedServiceUuid: true,
-		},
-		map[service.ServiceUUID]error{},
-		nil,
-	)
-
-	backend.EXPECT().StopNetworkingSidecars(
-		ctx,
-		&lib_networking_sidecar.NetworkingSidecarFilters{
-			EnclaveUUIDs: nil,
-			UserServiceUUIDs: map[service.ServiceUUID]bool{
-				successfulServiceUuid: true,
-			},
-			Statuses: nil,
-		},
-	).Times(1).Return(
-		map[service.ServiceUUID]bool{
-			sidecarFailedServiceUuid: true,
-		},
-		map[service.ServiceUUID]error{},
-		nil,
-	)
 
 	success, failure, err := network.AddServices(
 		ctx,
 		map[service.ServiceName]*service.ServiceConfig{
-			successfulServiceName:    successfulServiceConfig,
-			failedServiceName:        failedServiceConfig,
-			sidecarFailedServiceName: sidecarFailedServiceConfig,
+			successfulServiceName: successfulServiceConfig,
+			failedServiceName:     failedServiceConfig,
 		},
 		2,
 	)
 	require.Nil(t, err)
 	require.Empty(t, success) // as the full batch failed, the successful service should have been destroyed
-	require.Len(t, failure, 2)
+	require.Len(t, failure, 1)
 	require.Contains(t, failure, failedServiceName)
-	require.Contains(t, failure, sidecarFailedServiceName)
 
 	require.Empty(t, network.registeredServiceInfo)
 	require.Empty(t, network.allExistingAndHistoricalIdentifiers)
@@ -1326,6 +1167,7 @@ func testServiceConfig(imageName string) *service.ServiceConfig {
 		"",
 		0,
 		0,
+		"subnetwork-deprecated",
 	)
 }
 

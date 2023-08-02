@@ -71,7 +71,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
-				string(TestSubnetwork),
+				"subnetwork-deprecated",
 			)
 			actualServiceConfig1 := configs[TestServiceName]
 			assert.Equal(t, expectedServiceConfig1, actualServiceConfig1)
@@ -90,7 +90,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
-				service_config.DefaultSubnetwork,
+				"subnetwork-deprecated",
 			)
 			actualServiceConfig2 := configs[TestServiceName2]
 			assert.Equal(t, expectedServiceConfig2, actualServiceConfig2)
@@ -207,7 +207,7 @@ func (t *addServicesTestCase) GetStarlarkCode() string {
 		TestReadyConditions2Interval,
 		TestReadyConditions2Timeout,
 	)
-	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, subnetwork=%q, ready_conditions=%s)", TestContainerImageName, TestSubnetwork, service1ReadyConditionsScriptPart)
+	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, ready_conditions=%s)", TestContainerImageName, service1ReadyConditionsScriptPart)
 	serviceConfig2 := fmt.Sprintf("ServiceConfig(image=%q, cpu_allocation=%d, memory_allocation=%d, ready_conditions=%s)", TestContainerImageName, TestCpuAllocation, TestMemoryAllocation, service2ReadyConditionsScriptPart)
 	return fmt.Sprintf(`%s(%s={%q: %s, %q: %s})`, add_service.AddServicesBuiltinName, add_service.ConfigsArgName, TestServiceName, serviceConfig1, TestServiceName2, serviceConfig2)
 }
