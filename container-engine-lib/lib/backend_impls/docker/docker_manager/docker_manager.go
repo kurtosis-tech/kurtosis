@@ -1025,9 +1025,8 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 					return
 				}
 			}
-			// Trim end of line
+
 			execOutputChan <- execOutputLine
-			time.Sleep(500 * time.Millisecond)
 		}
 
 		inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)

@@ -3,7 +3,6 @@ package stream_writer
 import (
 	"io"
 	"sync"
-	"time"
 )
 
 // Enables extracting output that is being written to an io.Writer via a channel
@@ -26,10 +25,5 @@ func (writer *StreamWriter) Write(p []byte) (n int, err error) {
 	defer writer.mutex.Unlock()
 
 	writer.outputChannel <- string(p)
-
-	// TODO: remove this time.Sleep
-	// This sleep is a hack to make the streamed output UI deliver steadily as its
-	// should be removed once UX of streaming is improved
-	time.Sleep(500 * time.Millisecond)
 	return writer.underlying.Write(p)
 }
