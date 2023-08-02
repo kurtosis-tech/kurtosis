@@ -118,9 +118,8 @@ const (
 
 	successfulExitCode = 0
 
-	emptyNetworkAlias      = ""
-	streamOutputDelimiter  = '\n'
-	streamOutputTrimSuffix = "\n"
+	emptyNetworkAlias     = ""
+	streamOutputDelimiter = '\n'
 
 	isDockerNetworkAttachable = true
 
@@ -1027,7 +1026,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 				}
 			}
 			// Trim end of line
-			execOutputChan <- strings.TrimSuffix(execOutputLine, streamOutputTrimSuffix)
+			execOutputChan <- execOutputLine
 			time.Sleep(500 * time.Millisecond)
 		}
 
