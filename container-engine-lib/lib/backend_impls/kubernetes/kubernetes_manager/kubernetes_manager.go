@@ -1547,33 +1547,25 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 
 			// this means that context deadline has exceeded
 			if strings.Contains(statusError, contextDeadlineExceeded) {
-				sendErrorAndFail(
-					execOutputChan,
-					stacktrace.Propagate(err, "There was an error occurred while executing commands on the container"),
-					"An error occurred while streaming from kubernetes with following exit code '%d'",
-					1)
+				sendErrorThroughChannel(execOutputChan, stacktrace.Propagate(err, "There was an error occurred while executing commands on the container"))
 				return
 			}
 
 			exitCode, err := getExitCodeFromStatusMessage(statusError)
 			if err != nil {
-				sendErrorAndFail(
-					execOutputChan,
-					stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError),
-					"An error occurred while streaming from kubernetes with following exit code '%d'",
-					1)
+				sendErrorThroughChannel(execOutputChan, stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError))
 				return
 			}
 
-			finalExecResultChan <- exec_result.NewExecResult(exitCode, outputBuffer.String())
+			// Don't send output in final result because it was already streamed
+			finalExecResultChan <- exec_result.NewExecResult(exitCode, "")
 		}
 	}()
 	return execOutputChan, finalExecResultChan, nil
 }
 
-func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
-	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
-	destChan <- propagatedErr.Error()
+func sendErrorThroughChannel(destChan chan<- string, err error) {
+	destChan <- err.Error()
 }
 
 func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *apiv1.PersistentVolumeList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {

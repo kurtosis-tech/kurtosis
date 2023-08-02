@@ -1004,7 +1004,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		// Therefore, we ONLY call Attach, without Start
 		attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
 		if err != nil {
-			sendErrorAndFail(execOutputChan, err, "An error occurred starting/attaching to the exec command")
+			sendErrorThroughChannel(execOutputChan, err)
 			return
 		}
 		defer attachResp.Close()
@@ -1017,7 +1017,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 				if err == io.EOF {
 					break
 				} else {
-					sendErrorAndFail(execOutputChan, err, "An error occurred while executing exec command")
+					sendErrorThroughChannel(execOutputChan, err)
 					return
 				}
 			}
@@ -1027,29 +1027,28 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 
 		inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
 		if err != nil {
-			sendErrorAndFail(execOutputChan, err, "An error occurred inspecting the exec to get the response code")
+			sendErrorThroughChannel(execOutputChan, err)
 			return
 		}
 		if inspectResponse.Running {
-			sendErrorAndFail(execOutputChan, stacktrace.NewError("Expected exec to have stopped, but it's still running!"), "An error occurred while running the exec command")
+			sendErrorThroughChannel(execOutputChan, stacktrace.NewError("Expected exec to have stopped, but it's still running!"))
 			return
 		}
 		unsizedExitCode := inspectResponse.ExitCode
 		if unsizedExitCode > math.MaxInt32 || unsizedExitCode < math.MinInt32 {
-			sendErrorAndFail(execOutputChan, stacktrace.NewError("Could not cast unsized int '%v' to int32 because it does not fit", unsizedExitCode), "An error occurred while inspecting the exec command")
+			sendErrorThroughChannel(execOutputChan, stacktrace.NewError("Could not cast unsized int '%v' to int32 because it does not fit", unsizedExitCode))
 			return
 		}
 		int32ExitCode := int32(unsizedExitCode)
 
-		// Don't send output in final result because it was alreay streamed
+		// Don't send output in final result because it was already streamed
 		finalExecResultChan <- exec_result.NewExecResult(int32ExitCode, "")
 	}()
 	return execOutputChan, finalExecResultChan, nil
 }
 
-func sendErrorAndFail(destChan chan<- string, err error, msg string, msgArgs ...interface{}) {
-	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)
-	destChan <- propagatedErr.Error()
+func sendErrorThroughChannel(destChan chan<- string, err error) {
+	destChan <- err.Error()
 }
 
 /*
