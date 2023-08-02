@@ -13,7 +13,6 @@ import log from "loglevel";
 import {addServicesWithLogLines, delay, getLogsResponseAndEvaluateResponse} from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "search-logs";
-const IS_PARTITIONING_ENABLED = false;
 
 const EXAMPLE_SERVICE_NAME_PREFIX = "search-logs-";
 
@@ -24,12 +23,12 @@ const SERVICE_1_SERVICE_NAME = EXAMPLE_SERVICE_NAME_PREFIX + "service-1";
 
 const FIRST_FILTER_TEXT = "The data have being loaded";
 const SECOND_FILTER_TEXT = "Starting feature";
-const THIRD_FILTER_TEXT = "network";
+const THIRD_FILTER_TEXT = "pool";
 const MATCH_REGEX_FILTER_STR = "Starting.*logs'";
 
 const LOG_LINE_1 = new ServiceLog("Starting feature 'centralized logs'");
-const LOG_LINE_2 = new ServiceLog("Starting feature 'network partitioning'");
-const LOG_LINE_3 = new ServiceLog("Starting feature 'network soft partitioning'");
+const LOG_LINE_2 = new ServiceLog("Starting feature 'enclave pool'");
+const LOG_LINE_3 = new ServiceLog("Starting feature 'enclave pool with size 2'");
 const LOG_LINE_4 = new ServiceLog("The data have being loaded");
 
 const EXPECTED_NON_EXISTENCE_SERVICE_UUIDS = new Set<ServiceUUID>();
@@ -91,7 +90,7 @@ test("Test Search Logs", TestSearchLogs);
 
 async function TestSearchLogs() {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED);
+    const createEnclaveResult = await createEnclave(TEST_NAME);
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error;

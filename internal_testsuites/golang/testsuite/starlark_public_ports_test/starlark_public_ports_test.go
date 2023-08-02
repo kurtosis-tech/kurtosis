@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	testName              = "starlark_public_ports_test"
-	isPartitioningEnabled = false
+	testName = "starlark_public_ports_test"
 
 	serviceName         = "example-datastore-server-1"
 	portId              = "grpc"
@@ -53,7 +52,7 @@ func TestStartosis(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()

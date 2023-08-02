@@ -4,7 +4,6 @@ import {KurtosisContext} from "kurtosis-sdk";
 import log from "loglevel";
 
 const TEST_NAME              = "identifiers-test"
-const IS_PARTITIONING_ENABLED = false
 
 const DATASTORE_SERVICE_NAME = "datastore"
 const SHORTENED_UUID_LENGTH  = 12
@@ -22,7 +21,7 @@ test("Test enclave & service identifiers", async() =>  {
     }
     const kurtosisCtx = kurtosisCtxResult.value
 
-    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(TEST_NAME)
 
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
 

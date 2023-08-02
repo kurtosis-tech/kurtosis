@@ -4,7 +4,6 @@ import {
     FilesArtifactUUID,
     KurtosisContext,
     LogLineFilter,
-    PartitionID,
     PortSpec,
     ServiceContext,
     ServiceUUID,
@@ -41,8 +40,6 @@ const DATASTORE_WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000;
 
 const API_WAIT_FOR_STARTUP_MAX_POLLS = 10;
 const API_WAIT_FOR_STARTUP_DELAY_MILLISECONDS = 1000;
-
-const DEFAULT_PARTITION_ID = "default";
 
 const DEFAULT_RUN_FUNCTION_NAME = "run"
 const STARLARK_SCRIPT_NO_PARAM = "{}"
@@ -157,30 +154,11 @@ export function createDatastoreClient(ipAddr: string, portNum: number): { client
     return {client, clientCloseFunction}
 }
 
-export async function addAPIService(serviceName: ServiceName, enclaveContext: EnclaveContext, datastoreIPInsideNetwork: string):
-    Promise<Result<{
-        serviceContext: ServiceContext;
-        client: serverApi.ExampleAPIServerServiceClientNode;
-        clientCloseFunction: () => void;
-    }, Error>> {
 
-    const addAPIServiceToPartitionResult = await addAPIServiceToPartition(
-        serviceName,
-        enclaveContext,
-        datastoreIPInsideNetwork,
-        DEFAULT_PARTITION_ID
-    );
-    if (addAPIServiceToPartitionResult.isErr()) return err(addAPIServiceToPartitionResult.error)
-    const {serviceContext, client, clientCloseFunction} = addAPIServiceToPartitionResult.value
-
-    return ok({serviceContext, client, clientCloseFunction})
-}
-
-export async function addAPIServiceToPartition(
+export async function addAPIService(
     serviceName: ServiceName,
     enclaveContext: EnclaveContext,
     datastorePrivateIp: string,
-    partitionId: PartitionID
 ): Promise<Result<{
     serviceContext: ServiceContext;
     client: serverApi.ExampleAPIServerServiceClientNode;
@@ -197,7 +175,7 @@ export async function addAPIServiceToPartition(
         return err(uploadConfigResult.error)
     }
 
-    const containerConfig = getApiServiceStarlarkServiceConfig(artifactName, partitionId)
+    const containerConfig = getApiServiceStarlarkServiceConfig(artifactName)
     const addServiceResult = await addServiceViaStarlark(enclaveContext, serviceName, containerConfig)
     if (addServiceResult.isErr()) {
         return err(addServiceResult.error)
@@ -369,12 +347,12 @@ function getDatastoreStarlarkServiceConfig(): string {
 
 function getApiServiceStarlarkServiceConfig(
     artifactName: string,
-    subnetwork: string,
 ): string {
     const portSpec = `{"${API_PORT_ID}": PortSpec(number=${API_PORT_NUMBER}, transport_protocol="${API_PORT_PROTOCOL}")}`
     const files = `{"${CONFIG_MOUNTPATH_ON_API_CONTAINER}": "${artifactName}"}`
     const cmdOverride = `["./example-api-server.bin", "--config", "${path.join(CONFIG_MOUNTPATH_ON_API_CONTAINER, CONFIG_FILENAME)}"]`
-    return `ServiceConfig(image="${API_SERVICE_IMAGE}", ports=${portSpec}, files=${files}, cmd=${cmdOverride}, subnetwork="${subnetwork}")`
+
+    return `ServiceConfig(image="${API_SERVICE_IMAGE}", ports=${portSpec}, files=${files}, cmd=${cmdOverride})`
 }
 
 async function createApiConfigFile(datastoreIP: string): Promise<Result<string, Error>> {

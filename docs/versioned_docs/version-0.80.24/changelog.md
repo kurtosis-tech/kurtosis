@@ -1,16 +1,5 @@
 # Changelog
 
-## [0.81.0](https://github.com/kurtosis-tech/kurtosis/compare/0.80.24...0.81.0) (2023-08-02)
-
-
-### ⚠ BREAKING CHANGES
-
-* subnetwork capabilities removed from Kurtosis. Users will have to update their Kurtosis package if they are using subnetwork capabilities ([#1038](https://github.com/kurtosis-tech/kurtosis/issues/1038))
-
-### Features
-
-* subnetwork capabilities removed from Kurtosis. Users will have to update their Kurtosis package if they are using subnetwork capabilities ([#1038](https://github.com/kurtosis-tech/kurtosis/issues/1038)) ([724f713](https://github.com/kurtosis-tech/kurtosis/commit/724f713bd7271dffc10c78dfdc8f5c6c4d42af0d))
-
 ## [0.80.24](https://github.com/kurtosis-tech/kurtosis/compare/0.80.23...0.80.24) (2023-08-01)
 
 
