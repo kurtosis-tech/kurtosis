@@ -26,9 +26,6 @@ const (
 	persistentDirectoryVolumeTypeLabelValueStr    = "persistent-directory"
 	logsDatabaseVolumeTypeLabelValueStr           = "logs-db"
 	logsCollectorVolumeTypeLabelValueStr          = "logs-collector-data"
-
-	trueValueStr  = "true"
-	falseValueStr = "false"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
