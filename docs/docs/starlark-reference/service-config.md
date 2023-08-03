@@ -30,14 +30,16 @@ config = ServiceConfig(
         ),
     },
 
-    # A mapping of path_on_container_where_contents_will_be_mounted -> files_artifact_id_to_mount
-    # For more info on what a files artifact is, see below
+    # A mapping of path_on_container_where_contents_will_be_mounted -> Directory object or file artifact name
+    # For more info on what a Directory object is, see below
+    # 
     # OPTIONAL (Default: {})
     files = {
-        "path/to/files/artifact/": Directory(
-            artifact_name=files_artifact_1,
+        "path/to/files/artifact_1/": files_artifact_1,
+        "path/to/files/artifact_2/": Directory(
+            artifact_name=files_artifact_2,
         ),
-        "path/to/persistent/directory": Directory(
+        "path/to/persistent/directory/": Directory(
             persistent_key="data-directory",
         ),
     },
@@ -97,12 +99,8 @@ config = ServiceConfig(
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
 
-The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [Directory][directory] object.
-
-:::warning
-The previous syntax for the `files` dictionary where the values were files artifact names is still supported but is now deprecated and will be removed soon. Migrating to using a
-[Directory][directory] object involves simply wrapping the files artifact name into a [Directory][directory] constructor using the `artifact_name` argument.
-:::
+The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [Directory][directory] object or files artifact name.
+Using a `Directory` object with `artifact_name` is strictly equivalent to directly using the files artifact name as the value of the dictionary. This is just to simplify usage.
 
 You can view more information on [configuring the `ReadyCondition` type here][ready-condition].
 
