@@ -13,7 +13,6 @@ const (
 
 	ArtifactNameAttr  = "artifact_name"
 	PersistentKeyAttr = "persistent_key"
-	DescriptionAttr   = "desc"
 )
 
 func NewDirectoryType() *kurtosis_type_constructor.KurtosisTypeConstructor {
