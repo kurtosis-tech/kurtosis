@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	testName              = "persist-data-test"
-	isPartitioningEnabled = false
+	testName = "persist-data-test"
 
 	addServiceWriteLineToFile = `
 IMAGE = "docker/getting-started"
@@ -52,7 +51,7 @@ def run(plan):
 func TestAddServiceAndPersistentFileToDirectory(t *testing.T) {
 	ctx := context.Background()
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()
