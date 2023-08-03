@@ -105,17 +105,16 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	Args: []*args.ArgConfig{
 		//TODO disabling enclaveID validation and serviceUUID validation for allowing consuming logs from removed or stopped enclaves
 		//TODO we should enable them when #879 is ready: https://github.com/kurtosis-tech/kurtosis/issues/879
-		enclave_id_arg.NewHistoricalEnclaveIdentifiersArgWithValidationDisabled(
+		enclave_id_arg.NewEnclaveIdentifierArg(
 			enclaveIdentifierArgKey,
+			engineClientCtxKey,
 			isEnclaveIdArgOptional,
 			isEnclaveIdArgGreedy,
 		),
-		// TODO use the `NewServiceIdentifierArg` instead when we start storing identifiers in DB
-		// TODO we should fix this after https://github.com/kurtosis-tech/kurtosis/issues/879
-		service_identifier_arg.NewHistoricalServiceIdentifierArgWithValidationDisabled(
+		service_identifier_arg.NewServiceIdentifierArg(
 			serviceIdentifierArgKey,
-			isServiceIdentifierArgOptional,
 			isServiceIdentifierArgGreedy,
+			isServiceIdentifierArgOptional,
 		),
 	},
 	RunFunc: run,
