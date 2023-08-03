@@ -118,6 +118,10 @@ func (manager *EnclaveManager) CreateEnclave(
 		err         error
 	)
 
+	if isPartitioningEnabled {
+		return nil, stacktrace.NewError("The Kurtosis subnetworks capabilities are not supported any more, we suggest you to pass this value in false in order to create the enclave without subnetwork capabilities")
+	}
+
 	allExistingAndHistoricalIdentifiers, err := manager.getExistingAndHistoricalEnclaveIdentifiersWithoutMutex()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical enclave identifiers")

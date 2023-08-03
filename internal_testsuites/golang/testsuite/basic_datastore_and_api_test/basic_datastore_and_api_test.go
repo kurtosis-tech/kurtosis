@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	testName              = "basic-datastore-and-api"
-	isPartitioningEnabled = false
+	testName = "basic-datastore-and-api"
 
 	datastoreServiceName services.ServiceName = "datastore"
 	apiServiceName       services.ServiceName = "api"
@@ -25,7 +24,7 @@ func TestBasicDatastoreAndAPITest(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()

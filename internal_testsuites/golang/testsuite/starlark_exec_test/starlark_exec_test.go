@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	testName              = "starlark_exec_test"
-	isPartitioningEnabled = false
+	testName = "starlark_exec_test"
 )
 
 const (
@@ -71,7 +70,7 @@ func TestStarlarkExec(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()

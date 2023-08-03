@@ -17,7 +17,7 @@ const (
 	millisInNanos = 1000
 )
 
-func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartitioningEnabled bool) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultDestroyEnclaveFunc func() error, resultErr error) {
+func CreateEnclave(t *testing.T, ctx context.Context, testName string) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultDestroyEnclaveFunc func() error, resultErr error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err, "An error occurred connecting to the Kurtosis engine for running test '%v'", testName)
 	enclaveName := fmt.Sprintf(
@@ -26,7 +26,7 @@ func CreateEnclave(t *testing.T, ctx context.Context, testName string, isPartiti
 		testName,
 		time.Now().UnixNano()/millisInNanos,
 	)
-	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName, isPartitioningEnabled)
+	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
 	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveName)
 	stopEnclaveFunc := func() {
 

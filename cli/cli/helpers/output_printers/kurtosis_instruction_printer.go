@@ -107,7 +107,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 	}
 
 	// process response payload
-	if responseLine.GetInstruction() != nil {
+	if responseLine.GetInstruction() != nil && verbosity != run.OutputOnly {
 		formattedInstruction := formatInstruction(responseLine.GetInstruction(), verbosity)
 		// we separate each tuple (instruction, result) with an additional newline
 		formattedInstructionWithNewline := fmt.Sprintf("\n%s", formattedInstruction)
