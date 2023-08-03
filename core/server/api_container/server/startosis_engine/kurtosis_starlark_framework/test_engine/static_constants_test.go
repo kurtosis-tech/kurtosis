@@ -40,10 +40,12 @@ var (
 	TestPublicPortProtocol        = port_spec.TransportProtocol_TCP
 	TestPublicApplicationProtocol = "https"
 
-	TestFilesArtifactPath1 = "path/to/file/1"
-	TestFilesArtifactName1 = "file_1"
-	TestFilesArtifactPath2 = "path/to/file/2"
-	TestFilesArtifactName2 = "file_2"
+	TestFilesArtifactPath1      = "path/to/file/1"
+	TestFilesArtifactName1      = "file_1"
+	TestFilesArtifactPath2      = "path/to/file/2"
+	TestFilesArtifactName2      = "file_2"
+	TestPersistentDirectoryPath = "path/to/persistent/dir"
+	TestPersistentDirectoryKey  = "persistent-dir-test"
 
 	TestEntryPointSlice = []string{
 		"127.0.0.0",
