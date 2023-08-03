@@ -332,10 +332,6 @@ type KurtosisBackend interface {
 	// Destroy the logs collector for enclave with UUID
 	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
 
-	// Destroy the centralized logs resources
-	// TODO(centralized-logs-resources-deprecation) remove this once we know people are on > 0.68.0
-	DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error
-
 	// GetAvailableCPUAndMemory - gets available memory in megabytes and cpu in millicores, the boolean indicates whether the information is complete
 	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error)
 }

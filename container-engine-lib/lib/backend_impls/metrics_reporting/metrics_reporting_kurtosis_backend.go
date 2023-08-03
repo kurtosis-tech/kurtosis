@@ -447,13 +447,6 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(c
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
-	if err := backend.underlying.DestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while destroying deprecated logs collector")
-	}
-	return nil
-}
-
 func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, isResourceInformationComplete, err := backend.underlying.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
