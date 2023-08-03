@@ -46,7 +46,6 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "'%s' is not a valid name for Kurtosis cluster", clusterName)
 	}
 
-	clusterUpdateSuccessful := false
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	clusterPriorToUpdate, err := clusterSettingStore.GetClusterSetting()
 	if err != nil {
@@ -62,23 +61,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err = clusterSettingStore.SetClusterSetting(clusterName); err != nil {
 		return stacktrace.Propagate(err, "Failed to set cluster name to '%v'.", clusterName)
 	}
-	defer func() {
-		if clusterUpdateSuccessful {
-			return
-		}
-		if clusterPriorToUpdate == noClusterSetting {
-			logrus.Infof("Couldn't set cluster to '%s' but as we didn't have a previous cluster setting we can't revert either", clusterName)
-			return
-		}
-		if err = clusterSettingStore.SetClusterSetting(clusterPriorToUpdate); err != nil {
-			logrus.Errorf("An error happened updating cluster to '%s'. Kurtosis tried to roll back to the "+
-				"previous value '%s' but the roll back failed. You have to roll back manually running "+
-				"'kurtosis %s %s %s'", clusterName, clusterPriorToUpdate, command_str_consts.ClusterCmdStr,
-				command_str_consts.ClusterSetCmdStr, clusterPriorToUpdate)
-		}
-	}()
 	logrus.Infof("Cluster set to '%s', Please start a Kurtosis engine on the cluster if there isn't one already", clusterName)
-	clusterUpdateSuccessful = true
 	return nil
 }
 
