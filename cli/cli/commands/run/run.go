@@ -28,7 +28,6 @@ import (
 	"os/signal"
 	"path"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -56,9 +55,6 @@ const (
 	enclaveIdentifierFlagKey = "enclave"
 	// Signifies that an enclave ID should be auto-generated
 	autogenerateEnclaveIdentifierKeyword = ""
-
-	isSubnetworkCapabilitiesEnabledFlagKey = "with-subnetworks"
-	defaultIsSubnetworkCapabilitiesEnabled = false
 
 	verbosityFlagKey = "verbosity"
 	defaultVerbosity = "brief"
@@ -120,13 +116,6 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 				"An enclave with this name will be created if it doesn't exist.",
 			Type:    flags.FlagType_String,
 			Default: autogenerateEnclaveIdentifierKeyword,
-		},
-		{
-			Key: isSubnetworkCapabilitiesEnabledFlagKey,
-			Usage: "If set to true, the enclave that the script or package runs in will have subnetwork capabilities" +
-				" enabled.",
-			Type:    flags.FlagType_Bool,
-			Default: strconv.FormatBool(defaultIsSubnetworkCapabilitiesEnabled),
 		},
 		{
 			Key:       parallelismFlagKey,
@@ -223,11 +212,6 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier using flag key '%s'", enclaveIdentifierFlagKey)
 	}
 
-	isPartitioningEnabled, err := flags.GetBool(isSubnetworkCapabilitiesEnabledFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the is-subnetwork-enabled setting using flag key '%v'", isSubnetworkCapabilitiesEnabledFlagKey)
-	}
-
 	starlarkScriptOrPackagePath, err := args.GetNonGreedyArg(scriptOrPackagePathKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error reading the Starlark script or package directory at '%s'. Does it exist?", starlarkScriptOrPackagePath)
@@ -284,7 +268,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, isPartitioningEnabled, metricsClient)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, metricsClient)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
@@ -345,7 +329,7 @@ func run(
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
 
-	errRunningKurtosis = readAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
+	errRunningKurtosis = ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
 	var runStatusForMetrics bool
 	if errRunningKurtosis != nil {
 		runStatusForMetrics = runFailed
@@ -468,7 +452,8 @@ func executeRemotePackage(
 	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures)
 }
 
-func readAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity, dryRun bool) error {
+// ReadAndPrintResponseLinesUntilClosed TODO(victor.colombo): Extract this to somewhere reasonable
+func ReadAndPrintResponseLinesUntilClosed(responseLineChan <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, cancelFunc context.CancelFunc, verbosity command_args_run.Verbosity, dryRun bool) error {
 	defer cancelFunc()
 
 	// This channel will receive a signal when the user presses an interrupt
@@ -513,7 +498,6 @@ func getOrCreateEnclaveContext(
 	ctx context.Context,
 	enclaveIdentifierOrName string,
 	kurtosisContext *kurtosis_context.KurtosisContext,
-	isPartitioningEnabled bool,
 	metricsClient metrics_client.MetricsClient,
 ) (*enclaves.EnclaveContext, bool, error) {
 
@@ -528,11 +512,12 @@ func getOrCreateEnclaveContext(
 		}
 	}
 	logrus.Infof("Creating a new enclave for Starlark to run inside...")
-	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName, isPartitioningEnabled)
+	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName)
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
 	}
-	if err = metricsClient.TrackCreateEnclave(enclaveIdentifierOrName, isPartitioningEnabled); err != nil {
+	subnetworkDisableBecauseItIsDeprecated := false
+	if err = metricsClient.TrackCreateEnclave(enclaveIdentifierOrName, subnetworkDisableBecauseItIsDeprecated); err != nil {
 		logrus.Error("An error occurred while logging the create enclave event")
 	}
 	logrus.Infof("Enclave '%v' created successfully", enclaveContext.GetEnclaveName())

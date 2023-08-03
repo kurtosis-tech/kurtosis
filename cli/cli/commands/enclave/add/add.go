@@ -23,10 +23,7 @@ import (
 const (
 	apiContainerVersionFlagKey  = "api-container-version"
 	apiContainerLogLevelFlagKey = "api-container-log-level"
-	isSubnetworksEnabledFlagKey = "with-subnetworks"
 	enclaveNameFlagKey          = "name"
-
-	defaultIsSubnetworksEnabled = "false"
 
 	// Signifies that an enclave name should be auto-generated
 	autogenerateEnclaveNameKeyword = ""
@@ -61,12 +58,6 @@ var EnclaveAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			Default:   defaults.DefaultAPIContainerVersion,
 			Usage:     "The version of the Kurtosis API container that should be started inside the enclave (blank tells the engine to use the default version)",
 		}, {
-			Key:       isSubnetworksEnabledFlagKey,
-			Shorthand: "p",
-			Type:      flags.FlagType_Bool,
-			Default:   defaultIsSubnetworksEnabled,
-			Usage:     "If set to true then the enclave that gets created will have subnetwork capabilities",
-		}, {
 			Key:       enclaveNameFlagKey,
 			Shorthand: "n",
 			Default:   autogenerateEnclaveNameKeyword,
@@ -92,11 +83,6 @@ func run(
 	apiContainerVersion, err := flags.GetString(apiContainerVersionFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the API Container Version using flag with key '%v'; this is a bug in Kurtosis", apiContainerVersionFlagKey)
-	}
-
-	isPartitioningEnabled, err := flags.GetBool(isSubnetworksEnabledFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the is-subnetwork-enabled setting using flag key '%v'; this is a bug in Kurtosis", isSubnetworksEnabledFlagKey)
 	}
 
 	kurtosisLogLevelStr, err := flags.GetString(apiContainerLogLevelFlagKey)
@@ -125,7 +111,8 @@ func run(
 
 	logrus.Info("Creating new enclave...")
 
-	if err = metricsClient.TrackCreateEnclave(enclaveName, isPartitioningEnabled); err != nil {
+	subnetworkDisableBecauseItIsDeprecated := false
+	if err = metricsClient.TrackCreateEnclave(enclaveName, subnetworkDisableBecauseItIsDeprecated); err != nil {
 		logrus.Warn("An error occurred while logging the create enclave event")
 	}
 
@@ -133,7 +120,7 @@ func run(
 		EnclaveName:            enclaveName,
 		ApiContainerVersionTag: apiContainerVersion,
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
-		IsPartitioningEnabled:  isPartitioningEnabled,
+		IsPartitioningEnabled:  subnetworkDisableBecauseItIsDeprecated,
 	}
 	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {

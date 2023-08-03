@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	testName              = "startosis_start_service_test"
-	isPartitioningEnabled = false
+	testName = "startosis_start_service_test"
 
 	serviceName = "example-datastore-start-test"
 	portId      = "grpc"
@@ -66,7 +65,7 @@ func TestStartosis(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		destroyErr := destroyEnclaveFunc()

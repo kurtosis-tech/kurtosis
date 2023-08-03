@@ -446,7 +446,7 @@ func GetServiceConfigStarlark(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes), nil
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes), nil
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings

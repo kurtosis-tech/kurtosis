@@ -35,8 +35,6 @@ import (
 
 type EnclaveUUID string
 
-type PartitionID string
-
 const (
 	kurtosisYamlFilename    = "kurtosis.yml"
 	enforceMaxFileSizeLimit = true

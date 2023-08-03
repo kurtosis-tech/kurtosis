@@ -17,7 +17,6 @@ const NUMBER_OF_TEMP_FILES_IN_SUBDIRECTORY      = 3
 const NUMBER_OF_TEMP_FILES_IN_ROOT_DIRECTORY    = 1
 
 const ENCLAVE_TEST_NAME         = "upload-files-test"
-const IS_PARTITIONING_ENABLED   = false
 
 //Keywords for mapping paths for file integrity checking.
 const DISK_DIR_KEYWORD                                  = "diskDir"
@@ -40,7 +39,7 @@ async function TestUploadAndDownloadFiles() {
     if (testFolderResults.isErr()) { throw testFolderResults.error }
     const filePathsMap = testFolderResults.value
 
-    const createEnclaveResult = await createEnclave(ENCLAVE_TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(ENCLAVE_TEST_NAME)
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
     const {enclaveContext, stopEnclaveFunction} = createEnclaveResult.value
     try {

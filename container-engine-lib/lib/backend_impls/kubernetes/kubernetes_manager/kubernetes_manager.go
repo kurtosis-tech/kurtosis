@@ -365,7 +365,7 @@ func (manager *KubernetesManager) CreatePersistentVolume(
 				CSI:                  nil,
 			},
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
-				apiv1.ReadWriteOncePod,
+				apiv1.ReadWriteOnce, // ReadWriteOncePod would be better, but it's a fairly recent feature
 			},
 			ClaimRef:                      nil,
 			PersistentVolumeReclaimPolicy: "",
@@ -471,7 +471,7 @@ func (manager *KubernetesManager) CreatePersistentVolumeClaim(
 		},
 		Spec: apiv1.PersistentVolumeClaimSpec{
 			AccessModes: []apiv1.PersistentVolumeAccessMode{
-				apiv1.ReadWriteOncePod,
+				apiv1.ReadWriteOnce, // ReadWriteOncePod would be better, but it's a fairly recent feature
 			},
 			Selector: nil,
 			Resources: apiv1.ResourceRequirements{
