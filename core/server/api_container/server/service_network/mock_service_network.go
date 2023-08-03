@@ -1361,23 +1361,23 @@ func (_c *MockServiceNetwork_UpdateServices_Call) RunAndReturn(run func(context.
 	return _c
 }
 
-// UploadFilesArtifact provides a mock function with given fields: data, artifactName
-func (_m *MockServiceNetwork) UploadFilesArtifact(data io.Reader, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
-	ret := _m.Called(data, artifactName)
+// UploadFilesArtifact provides a mock function with given fields: data, contentMd5, artifactName
+func (_m *MockServiceNetwork) UploadFilesArtifact(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+	ret := _m.Called(data, contentMd5, artifactName)
 
 	var r0 enclave_data_directory.FilesArtifactUUID
 	var r1 error
-	if rf, ok := ret.Get(0).(func(io.Reader, string) (enclave_data_directory.FilesArtifactUUID, error)); ok {
-		return rf(data, artifactName)
+	if rf, ok := ret.Get(0).(func(io.Reader, []byte, string) (enclave_data_directory.FilesArtifactUUID, error)); ok {
+		return rf(data, contentMd5, artifactName)
 	}
-	if rf, ok := ret.Get(0).(func(io.Reader, string) enclave_data_directory.FilesArtifactUUID); ok {
-		r0 = rf(data, artifactName)
+	if rf, ok := ret.Get(0).(func(io.Reader, []byte, string) enclave_data_directory.FilesArtifactUUID); ok {
+		r0 = rf(data, contentMd5, artifactName)
 	} else {
 		r0 = ret.Get(0).(enclave_data_directory.FilesArtifactUUID)
 	}
 
-	if rf, ok := ret.Get(1).(func(io.Reader, string) error); ok {
-		r1 = rf(data, artifactName)
+	if rf, ok := ret.Get(1).(func(io.Reader, []byte, string) error); ok {
+		r1 = rf(data, contentMd5, artifactName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -1392,14 +1392,15 @@ type MockServiceNetwork_UploadFilesArtifact_Call struct {
 
 // UploadFilesArtifact is a helper method to define mock.On call
 //   - data io.Reader
+//   - contentMd5 []byte
 //   - artifactName string
-func (_e *MockServiceNetwork_Expecter) UploadFilesArtifact(data interface{}, artifactName interface{}) *MockServiceNetwork_UploadFilesArtifact_Call {
-	return &MockServiceNetwork_UploadFilesArtifact_Call{Call: _e.mock.On("UploadFilesArtifact", data, artifactName)}
+func (_e *MockServiceNetwork_Expecter) UploadFilesArtifact(data interface{}, contentMd5 interface{}, artifactName interface{}) *MockServiceNetwork_UploadFilesArtifact_Call {
+	return &MockServiceNetwork_UploadFilesArtifact_Call{Call: _e.mock.On("UploadFilesArtifact", data, contentMd5, artifactName)}
 }
 
-func (_c *MockServiceNetwork_UploadFilesArtifact_Call) Run(run func(data io.Reader, artifactName string)) *MockServiceNetwork_UploadFilesArtifact_Call {
+func (_c *MockServiceNetwork_UploadFilesArtifact_Call) Run(run func(data io.Reader, contentMd5 []byte, artifactName string)) *MockServiceNetwork_UploadFilesArtifact_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(io.Reader), args[1].(string))
+		run(args[0].(io.Reader), args[1].([]byte), args[2].(string))
 	})
 	return _c
 }
@@ -1409,7 +1410,7 @@ func (_c *MockServiceNetwork_UploadFilesArtifact_Call) Return(_a0 enclave_data_d
 	return _c
 }
 
-func (_c *MockServiceNetwork_UploadFilesArtifact_Call) RunAndReturn(run func(io.Reader, string) (enclave_data_directory.FilesArtifactUUID, error)) *MockServiceNetwork_UploadFilesArtifact_Call {
+func (_c *MockServiceNetwork_UploadFilesArtifact_Call) RunAndReturn(run func(io.Reader, []byte, string) (enclave_data_directory.FilesArtifactUUID, error)) *MockServiceNetwork_UploadFilesArtifact_Call {
 	_c.Call.Return(run)
 	return _c
 }

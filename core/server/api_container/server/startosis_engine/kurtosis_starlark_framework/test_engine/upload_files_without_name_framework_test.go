@@ -38,6 +38,7 @@ func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruc
 
 	serviceNetwork.EXPECT().UploadFilesArtifact(
 		mock.Anything, // data gets written to disk and compressed to it's a bit tricky to replicate here.
+		mock.Anything, // and same for the hash
 		mockedFileArtifactName,
 	).Times(1).Return(
 		TestArtifactUuid,
