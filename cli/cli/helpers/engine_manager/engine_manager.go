@@ -29,9 +29,10 @@ const (
 	waitForEngineResponseTimeout = 5 * time.Second
 	defaultClusterName           = resolved_config.DefaultDockerClusterName
 
-	defaultEngineVersion          = ""
-	waitUntilEngineStoppedTries   = 5
-	waitUntilEngineStoppedCoolOff = 5 * time.Second
+	defaultEngineVersion           = ""
+	waitUntilEngineStoppedTries    = 5
+	waitUntilEngineStoppedCoolOff  = 5 * time.Second
+	defaultHttpLogsDatabasePortNum = uint16(9714)
 )
 
 type EngineManager struct {
@@ -280,6 +281,12 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 		)
 	}
 
+	clusterType := manager.clusterConfig.GetClusterType()
+	if clusterType == resolved_config.KurtosisClusterType_Docker {
+		if err = manager.destroyCentralizedLogsDatabaseIdempotently(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred destroying the centralized logs components")
+		}
+	}
 	logrus.Debugf("Destroyed signal sent to engines %v", successfulDestroyedEngineGuids)
 
 	return nil
@@ -373,6 +380,14 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	}
 
 	return engineClient, clientCloseFunc, nil
+}
+
+func (manager *EngineManager) destroyCentralizedLogsDatabaseIdempotently(ctx context.Context) error {
+	//DestroyLogsDatabase is idempotent does not return an error if nothing exists
+	if err := manager.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
+	}
+	return nil
 }
 
 func getEngineClientFromHostMachineIpAndPort(hostMachineIpAndPort *hostMachineIpAndPort) (kurtosis_engine_rpc_api_bindings.EngineServiceClient, func() error, error) {

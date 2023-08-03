@@ -68,10 +68,16 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave UUID '%v'", enclaveUuid)
 	}
 
+	enclaveLogsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector for enclave '%v; This is a bug in Kurtosis'", enclaveUuid)
+	}
+
 	networkCidr := enclaveNetwork.GetIpAndMask()
 	alreadyTakenIps := map[string]bool{
-		networkCidr.IP.String():       true,
-		enclaveNetwork.GetGatewayIp(): true,
+		networkCidr.IP.String():                                    true,
+		enclaveNetwork.GetGatewayIp():                              true,
+		enclaveLogsCollector.GetEnclaveNetworkIpAddress().String(): true,
 	}
 
 	ipAddr, err := network_helpers.GetFreeIpAddrFromSubnet(alreadyTakenIps, networkCidr)

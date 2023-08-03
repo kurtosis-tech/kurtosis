@@ -17,7 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/loki"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
@@ -134,8 +134,7 @@ func runMain() error {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
-	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
-
+	logsDatabaseClient := loki.NewLokiLogsDatabaseClientWithDefaultHttpClient("192.168.2.33:9714")
 	engineServerService := server.NewEngineServerService(
 		serverArgs.ImageVersionTag,
 		enclaveManager,
