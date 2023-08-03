@@ -705,8 +705,8 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) UploadFilesArtifact(data io.Reader, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
-	filesArtifactUuid, err := network.uploadFilesArtifactUnlocked(data, artifactName)
+func (network *DefaultServiceNetwork) UploadFilesArtifact(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+	filesArtifactUuid, err := network.uploadFilesArtifactUnlocked(data, contentMd5, artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error in uploading the files")
 	}
@@ -925,7 +925,7 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 	}
 	successfullyDestroyedUuids, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
 	if err != nil {
-		return stacktrace.Propagate(err, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
+		return stacktrace.Propagate(err, "Attempted to destroy the service with UUID '%v' but had no success. You must manually destroy the service as well as its sidecar if any", serviceUuid)
 	}
 	if _, found := successfullyDestroyedUuids[serviceUuid]; found {
 		if len(failedToDestroyUuids) != 0 {
@@ -933,7 +933,7 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 		}
 	} else {
 		if failedToDestroyErr, found := failedToDestroyUuids[serviceUuid]; found {
-			return stacktrace.Propagate(failedToDestroyErr, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
+			return stacktrace.Propagate(failedToDestroyErr, "Attempted to destroy the service with UUID '%v' but had no success. You must manually destroy the service as well as its sidecar if any", serviceUuid)
 		} else {
 			return stacktrace.NewError("Attempted to destroy service '%s' but it was neither marked as successfully destroyed nor errored in the result. This is a Kurtosis bug", serviceUuid)
 		}
@@ -1031,7 +1031,9 @@ func (network *DefaultServiceNetwork) copyFilesFromServiceUnlocked(ctx context.C
 		defer pipeReader.Close()
 
 		//And finally pass it the .tgz file to the artifact file store
-		filesArtifactUuid, storeFileErr := store.StoreFile(pipeReader, artifactName)
+		// It's hard to compute the content hash here. For files stored from services, hash will be empty and they will
+		// be re-stored everytime regardless of their content
+		filesArtifactUuid, storeFileErr := store.StoreFile(pipeReader, []byte{}, artifactName)
 		storeFilesArtifactResultChan <- storeFilesArtifactResult{
 			err:               storeFileErr,
 			filesArtifactUuid: filesArtifactUuid,
@@ -1089,7 +1091,7 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 		}
 	}
 
-	compressedFile, _, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
+	compressedFile, _, compressedFileMd5, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
 	}
@@ -1099,7 +1101,7 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
 	}
-	filesArtifactUuid, err := store.StoreFile(compressedFile, artifactName)
+	filesArtifactUuid, err := store.StoreFile(compressedFile, compressedFileMd5, artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
 	}
@@ -1117,13 +1119,13 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) uploadFilesArtifactUnlocked(data io.Reader, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+func (network *DefaultServiceNetwork) uploadFilesArtifactUnlocked(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
 	}
 
-	filesArtifactUuid, err := filesArtifactStore.StoreFile(data, artifactName)
+	filesArtifactUuid, err := filesArtifactStore.StoreFile(data, contentMd5, artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
 	}

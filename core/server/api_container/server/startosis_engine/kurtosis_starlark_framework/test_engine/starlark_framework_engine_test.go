@@ -49,6 +49,8 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
 
+	testKurtosisTypeConstructor(t, newDirectoryFileArtifactTestCase(t))
+	testKurtosisTypeConstructor(t, newDirectoryPersistnetDirectoryTestCase(t))
 	testKurtosisTypeConstructor(t, newExecRecipeTestCase(t))
 	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeNoExtractorTestCase(t))
 	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeTestCase(t))

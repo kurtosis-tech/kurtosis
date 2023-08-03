@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
 	starlark_port_spec "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -240,6 +241,14 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]strin
 	}, nil
 }
 
+func convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap map[string]string) *service_directory.PersistentDirectories {
+	persistentDirectoriesMap := map[string]service_directory.DirectoryPersistentKey{}
+	for dirPath, persistentKeyStr := range persistentDirectoriesDirpathsMap {
+		persistentDirectoriesMap[dirPath] = service_directory.DirectoryPersistentKey(persistentKeyStr)
+	}
+	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
+}
+
 func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.ServiceNetwork) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
 	var ok bool
 	image, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, ImageAttr)
@@ -283,13 +292,15 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 	}
 
 	var filesArtifactExpansions *service_directory.FilesArtifactsExpansion
+	var persistentDirectories *service_directory.PersistentDirectories
 	filesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, FilesAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found {
 		var filesArtifactsMountDirpathsMap map[string]string
-		filesArtifactsMountDirpathsMap, interpretationErr = kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesAttr)
+		var persistentDirectoriesDirpathsMap map[string]string
+		filesArtifactsMountDirpathsMap, persistentDirectoriesDirpathsMap, interpretationErr = convertFilesArguments(FilesAttr, filesStarlark)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -297,6 +308,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
+		persistentDirectories = convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap)
 	}
 
 	var entryPointArgs []string
@@ -430,7 +442,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		cmdArgs,
 		envVars,
 		filesArtifactExpansions,
-		nil,
+		persistentDirectories,
 		maxCpu,
 		maxMemory,
 		privateIpAddressPlaceholder,
@@ -465,4 +477,52 @@ func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value st
 		return "", nil, interpretationErr
 	}
 	return keyStr.GoString(), servicePortSpec, nil
+}
+
+func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) (map[string]string, map[string]string, *startosis_errors.InterpretationError) {
+	filesArtifacts := map[string]string{}
+	persistentDirectories := map[string]string{}
+	for _, fileItem := range filesDict.Items() {
+		rawDirPath := fileItem[0]
+		dirPath, ok := rawDirPath.(starlark.String)
+		if !ok {
+			return nil, nil, startosis_errors.NewInterpretationError("Unable to convert key of '%s' dictionary '%v' to string", attrNameForLogging, filesDict)
+		}
+
+		var interpretationErr *startosis_errors.InterpretationError
+		rawDirectoryObj := fileItem[1]
+		directoryObj, isDirectoryArg := rawDirectoryObj.(*directory.Directory)
+		if !isDirectoryArg {
+			// might be okay as we're supporting strings as well for backward compat
+			directoryObjAsStr, isSimpleStringArg := rawDirectoryObj.(starlark.String)
+			if !isSimpleStringArg {
+				return nil, nil, startosis_errors.NewInterpretationError("Unable to convert value of '%s' dictionary '%v' to a Directory object", attrNameForLogging, filesDict)
+			}
+			// TODO: add starlark_warning.PrintOnceAtTheEndOfExecutionf("%v %v", starlark_warning.WarningConstant, warningMessage) once it's in the doc
+			directoryObj, interpretationErr = directory.CreateDirectoryFromFilesArtifact(directoryObjAsStr.GoString())
+			if interpretationErr != nil {
+				return nil, nil, interpretationErr
+			}
+		}
+		artifactName, artifactNameSet, interpretationErr := directoryObj.GetArtifactNameIfSet()
+		if interpretationErr != nil {
+			return nil, nil, interpretationErr
+		}
+		persistentKey, persistentKeySet, interpretationErr := directoryObj.GetPersistentKeyIfSet()
+		if interpretationErr != nil {
+			return nil, nil, interpretationErr
+		}
+		if artifactNameSet == persistentKeySet {
+			// this condition is a XOR
+			return nil, nil, startosis_errors.NewInterpretationError("Parameter '%s' and '%s' cannot be set on the same '%s' object: '%s'",
+				directory.ArtifactNameAttr, directory.PersistentKeyAttr, directory.DirectoryTypeName, directoryObj.String())
+		}
+		if artifactNameSet {
+			filesArtifacts[dirPath.GoString()] = artifactName
+		} else {
+			// persistentKey is necessarily set since we checked the exclusivity above
+			persistentDirectories[dirPath.GoString()] = persistentKey
+		}
+	}
+	return filesArtifacts, persistentDirectories, nil
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/wait"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
@@ -79,6 +80,7 @@ func KurtosisHelpers(recursiveInterpret func(moduleId string, scriptContent stri
 // Example: ServiceConfig, PortSpec, etc.
 func KurtosisTypeConstructors() []*starlark.Builtin {
 	return []*starlark.Builtin{
+		starlark.NewBuiltin(directory.DirectoryTypeName, directory.NewDirectoryType().CreateBuiltin()),
 		starlark.NewBuiltin(recipe.ExecRecipeTypeName, recipe.NewExecRecipeType().CreateBuiltin()),
 		starlark.NewBuiltin(recipe.GetHttpRecipeTypeName, recipe.NewGetHttpRequestRecipeType().CreateBuiltin()),
 		starlark.NewBuiltin(recipe.PostHttpRecipeTypeName, recipe.NewPostHttpRequestRecipeType().CreateBuiltin()),

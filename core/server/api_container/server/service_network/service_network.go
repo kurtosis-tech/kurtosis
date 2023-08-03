@@ -103,7 +103,7 @@ type ServiceNetwork interface {
 
 	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
-	UploadFilesArtifact(data io.Reader, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
+	UploadFilesArtifact(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
 	GetUniqueNameForFileArtifact() (string, error)
 
