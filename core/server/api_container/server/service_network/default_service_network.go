@@ -1446,7 +1446,7 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 	}
 	successfullyDestroyedUuids, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
 	if err != nil {
-		return stacktrace.Propagate(err, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
+		return stacktrace.Propagate(err, "Attempted to destroy the service with UUID '%v' but had no success. You must manually destroy the service as well as its sidecar if any", serviceUuid)
 	}
 	if _, found := successfullyDestroyedUuids[serviceUuid]; found {
 		if len(failedToDestroyUuids) != 0 {
@@ -1454,7 +1454,7 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 		}
 	} else {
 		if failedToDestroyErr, found := failedToDestroyUuids[serviceUuid]; found {
-			return stacktrace.Propagate(failedToDestroyErr, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
+			return stacktrace.Propagate(failedToDestroyErr, "Attempted to destroy the service with UUID '%v' but had no success. You must manually destroy the service as well as its sidecar if any", serviceUuid)
 		} else {
 			return stacktrace.NewError("Attempted to destroy service '%s' but it was neither marked as successfully destroyed nor errored in the result. This is a Kurtosis bug", serviceUuid)
 		}
