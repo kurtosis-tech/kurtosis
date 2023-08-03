@@ -14,7 +14,6 @@ import (
 
 const (
 	clusterNameArgKey = "cluster-name"
-	noClusterSetting  = ""
 )
 
 var SetCmd = &lowlevel.LowlevelKurtosisCommand{
