@@ -433,11 +433,6 @@ func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context
 	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
-	logrus.Debugf("Destroy the deprecated centralized logs resources is not needed for Kubernetes")
-	return nil
-}
-
 func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 	// TODO IMPLEMENT
 	return stacktrace.NewError("Destroy the logs collector for enclave isn't yet implemented on Kubernetes")
