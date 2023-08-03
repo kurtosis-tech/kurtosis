@@ -495,48 +495,6 @@ func (_c *MockKurtosisBackend_DestroyAPIContainers_Call) RunAndReturn(run func(c
 	return _c
 }
 
-// DestroyDeprecatedCentralizedLogsResources provides a mock function with given fields: ctx
-func (_m *MockKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
-	ret := _m.Called(ctx)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyDeprecatedCentralizedLogsResources'
-type MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call struct {
-	*mock.Call
-}
-
-// DestroyDeprecatedCentralizedLogsResources is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockKurtosisBackend_Expecter) DestroyDeprecatedCentralizedLogsResources(ctx interface{}) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
-	return &MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call{Call: _e.mock.On("DestroyDeprecatedCentralizedLogsResources", ctx)}
-}
-
-func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call) Return(_a0 error) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call) RunAndReturn(run func(context.Context) error) *MockKurtosisBackend_DestroyDeprecatedCentralizedLogsResources_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // DestroyEnclaves provides a mock function with given fields: ctx, filters
 func (_m *MockKurtosisBackend) DestroyEnclaves(ctx context.Context, filters *enclave.EnclaveFilters) (map[enclave.EnclaveUUID]bool, map[enclave.EnclaveUUID]error, error) {
 	ret := _m.Called(ctx, filters)
