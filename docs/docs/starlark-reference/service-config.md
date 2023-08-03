@@ -34,8 +34,12 @@ config = ServiceConfig(
     # For more info on what a files artifact is, see below
     # OPTIONAL (Default: {})
     files = {
-        "path/to/file/1": files_artifact_1,
-        "path/to/file/2": files_artifact_2,
+        "path/to/files/artifact/": Directory(
+            artifact_name=files_artifact_1,
+        ),
+        "path/to/persistent/directory": Directory(
+            persistent_key="data-directory",
+        ),
     },
 
     # The ENTRYPOINT statement hardcoded in a container image's Dockerfile might not be suitable for your needs.
@@ -93,7 +97,12 @@ config = ServiceConfig(
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
 
-The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][upload-files-reference], [render_templates][render-templates-reference] and [store_service_files][store-service-reference] to learn more about on how to create file artifacts)
+The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [Directory][directory] object.
+
+:::warning
+The previous syntax for the `files` dictionary where the values were files artifact names is still supported but is now deprecated and will be removed soon. Migrating to using a
+[Directory][directory] object involves simply wrapping the files artifact name into a [Directory][directory] constructor using the `artifact_name` argument.
+:::
 
 You can view more information on [configuring the `ReadyCondition` type here][ready-condition].
 
@@ -104,8 +113,6 @@ set the `entrypoint` to `["/bin/sh", "-c"]` and then set the `cmd` to the comman
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
+[directory]: ./directory.md
 [port-spec]: ./port-spec.md
-[upload-files-reference]: ./plan.md#upload_files
-[render-templates-reference]: ./plan.md#render_templates
-[store-service-reference]: ./plan.md#store_service_files
 [ready-condition]: ./ready-condition.md

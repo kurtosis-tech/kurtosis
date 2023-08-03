@@ -48,6 +48,11 @@ const (
 	filesArtifactsExpanderImage string = "kurtosistech/files-artifacts-expander"
 
 	minimumMemoryAllocationMegabytes = 6
+
+	warningFilesArtifactDeprecatedMessage = "The package is using a deprecated feature that will be removed soon. " +
+		"`ServiceConfig` objects with `files` argument being a dictionary of `files_path->files_artifact_name` is " +
+		"deprecated and should be migrated to using a `Directory` object instead. See Kurtosis documentation at " +
+		"https://docs.kurtosis.com/starlark-reference/service-config for more details."
 )
 
 func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
@@ -520,7 +525,7 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 			if !isSimpleStringArg {
 				return nil, nil, startosis_errors.NewInterpretationError("Unable to convert value of '%s' dictionary '%v' to a Directory object", attrNameForLogging, filesDict)
 			}
-			// TODO: add starlark_warning.PrintOnceAtTheEndOfExecutionf("%v %v", starlark_warning.WarningConstant, warningMessage) once it's in the doc
+			starlark_warning.PrintOnceAtTheEndOfExecutionf("%v %v", starlark_warning.WarningConstant, warningFilesArtifactDeprecatedMessage)
 			directoryObj, interpretationErr = directory.CreateDirectoryFromFilesArtifact(directoryObjAsStr.GoString())
 			if interpretationErr != nil {
 				return nil, nil, interpretationErr
