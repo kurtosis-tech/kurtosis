@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.81.2](https://github.com/kurtosis-tech/kurtosis/compare/0.81.1...0.81.2) (2023-08-03)
+
+
+### Features
+
+* Compute content hash when compressing files artifact ([#1041](https://github.com/kurtosis-tech/kurtosis/issues/1041)) ([510ffe2](https://github.com/kurtosis-tech/kurtosis/commit/510ffe270fea663985b45228e45836fcb575932d))
+
+
+### Bug Fixes
+
+* Fix comment about sidecar ([#1053](https://github.com/kurtosis-tech/kurtosis/issues/1053)) ([d9b07ea](https://github.com/kurtosis-tech/kurtosis/commit/d9b07ea0a5d609c1191c7e7260a1928ddd1ebd4e))
+* Use the local grpc-file-transfer library version ([#1056](https://github.com/kurtosis-tech/kurtosis/issues/1056)) ([59fa980](https://github.com/kurtosis-tech/kurtosis/commit/59fa98013aee05a32a34aa2bef1a153a1a57a29b))
+
 ## [0.81.1](https://github.com/kurtosis-tech/kurtosis/compare/0.81.0...0.81.1) (2023-08-02)
 
 
