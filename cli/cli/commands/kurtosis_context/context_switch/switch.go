@@ -20,9 +20,6 @@ import (
 const (
 	contextIdentifierArgKey      = "context"
 	contextIdentifierArgIsGreedy = false
-
-	noEngineVersion                        = ""
-	restartEngineOnSameVersionIfAnyRunning = true
 )
 
 var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -68,13 +65,12 @@ func SwitchContext(
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 		}
-		engineStatus, _, _, err := engineManager.GetEngineStatus(ctx)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred retrieving the engine status.")
-		}
-		if engineStatus == engine_manager.EngineStatus_Running {
-			logrus.Infof("Prior to switching context, stop the local engine by running kurtosis engine stop")
-			return nil
+		if err := engineManager.StopEngineIdempotently(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping the local engine. The local engine"+
+				"needs to be stopped before the context can be switched. The engine status can be obtained running"+
+				"kurtosis %s %s and it can be stopped manually by running kurtosis %s %s.",
+				command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr,
+				command_str_consts.EngineCmdStr, command_str_consts.EngineStartCmdStr)
 		}
 	}
 
@@ -134,24 +130,23 @@ func SwitchContext(
 	// Instantiate the engine manager after storing the new context so the manager can read it.
 	engineManager, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
+		return stacktrace.Propagate(err, "An error occurred creating an engine manager for the new context.")
 	}
 
-	_, engineClientCloseFunc, restartEngineErr := engineManager.RestartEngineIdempotently(ctx, logrus.InfoLevel, noEngineVersion, restartEngineOnSameVersionIfAnyRunning, defaults.DefaultEngineEnclavePoolSize)
-	if restartEngineErr != nil {
-		return stacktrace.Propagate(restartEngineErr, "Engine could not be restarted after context was switched. The context"+
-			"will be rolled back, but it is possible the engine will remain stopped. Its status can be retrieved "+
-			"running 'kurtosis %s %s' and it can potentially be restarted running 'kurtosis %s %s'",
-			command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,
-			command_str_consts.EngineStartCmdStr)
+	_, engineClientCloseFunc, startEngineErr := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel, defaults.DefaultEngineEnclavePoolSize)
+	if startEngineErr != nil {
+		logrus.Warnf("The context was successfully switched to '%s' but Kurtosis failed to start an engine in "+
+			"this new context. An engine should be started manually with 'kurtosis %s %s'. The error was:\n%v",
+			contextIdentifier, command_str_consts.EngineCmdStr, command_str_consts.EngineStartCmdStr, startEngineErr)
+	} else {
+		defer func() {
+			if err = engineClientCloseFunc(); err != nil {
+				logrus.Warnf("Error closing connection to the engine running in context '%s':\n'%v'",
+					contextIdentifier, err)
+			}
+		}()
+		logrus.Info("Successfully switched context")
 	}
-	defer func() {
-		if err = engineClientCloseFunc(); err != nil {
-			logrus.Warnf("Error closing the engine client:\n'%v'", err)
-		}
-	}()
-
-	logrus.Info("Successfully switched context")
 	isContextSwitchSuccessful = true
 	return nil
 }

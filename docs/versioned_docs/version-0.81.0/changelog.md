@@ -1,17 +1,5 @@
 # Changelog
 
-## [0.81.1](https://github.com/kurtosis-tech/kurtosis/compare/0.81.0...0.81.1) (2023-08-02)
-
-
-### Features
-
-* Print execution steps for kurtosis import ([#1047](https://github.com/kurtosis-tech/kurtosis/issues/1047)) ([44d3b16](https://github.com/kurtosis-tech/kurtosis/commit/44d3b16528a8523f3c20842e373b3b51458fb267))
-
-
-### Bug Fixes
-
-* Stop local running engine when switching context ([#1040](https://github.com/kurtosis-tech/kurtosis/issues/1040)) ([a8b5606](https://github.com/kurtosis-tech/kurtosis/commit/a8b5606f445cb72126db2bca15efdb294c1d75a0))
-
 ## [0.81.0](https://github.com/kurtosis-tech/kurtosis/compare/0.80.24...0.81.0) (2023-08-02)
 
 
