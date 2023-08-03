@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.81.4](https://github.com/kurtosis-tech/kurtosis/compare/0.81.3...0.81.4) (2023-08-03)
+
+
+### Bug Fixes
+
+* Only forward APIC port on remote context. ([#1049](https://github.com/kurtosis-tech/kurtosis/issues/1049)) ([7072b7b](https://github.com/kurtosis-tech/kurtosis/commit/7072b7be2fa0f5a417a3e0ca28c4ca8cb4558a29)), closes [#1039](https://github.com/kurtosis-tech/kurtosis/issues/1039)
+* remove historical enclave names from auto complete ([#1059](https://github.com/kurtosis-tech/kurtosis/issues/1059)) ([e63fd88](https://github.com/kurtosis-tech/kurtosis/commit/e63fd88b8bc657f086b631400dd1c70b0f66d1ab))
+
 ## [0.81.3](https://github.com/kurtosis-tech/kurtosis/compare/0.81.2...0.81.3) (2023-08-03)
 
 
