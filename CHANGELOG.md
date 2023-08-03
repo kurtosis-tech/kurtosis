@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.81.3](https://github.com/kurtosis-tech/kurtosis/compare/0.81.2...0.81.3) (2023-08-03)
+
+
+### Bug Fixes
+
+* Pin grpc-file-transfer version on Go SDK ([#1058](https://github.com/kurtosis-tech/kurtosis/issues/1058)) ([36a16ac](https://github.com/kurtosis-tech/kurtosis/commit/36a16ac3b6db9914f3b0a6695535d8ee6ac8ae6b))
+
 ## [0.81.2](https://github.com/kurtosis-tech/kurtosis/compare/0.81.1...0.81.2) (2023-08-03)
 
 
