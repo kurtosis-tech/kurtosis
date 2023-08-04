@@ -27,7 +27,7 @@ content of the files artifact. In the above example, `files_artifact_1` is a fil
 A persistent directory, as its name indicates, persists over service updates and restarts. It is uniquely identified 
 by its `persistent_key` and the service ID on which it is being used (a persistent directory cannot be shared across
 multiple services). When it is first created, it will be empty. The service can write anything in it. When the service 
-gets updated, the data in it persists. It is particularly useful for services data directory, logs directory, etc.
+gets updated, the data in it persists. It is particularly useful for a service's data directory, logs directory, etc.
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [render-templates-reference]: ./plan.md#render_templates
