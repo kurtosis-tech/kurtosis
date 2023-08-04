@@ -61,6 +61,9 @@ export class ServiceInfo extends jspb.Message {
   getShortenedUuid(): string;
   setShortenedUuid(value: string): ServiceInfo;
 
+  getServiceStatus(): ServiceStatus;
+  setServiceStatus(value: ServiceStatus): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -78,6 +81,7 @@ export namespace ServiceInfo {
     maybePublicPortsMap: Array<[string, Port.AsObject]>,
     name: string,
     shortenedUuid: string,
+    serviceStatus: ServiceStatus,
   }
 }
 
@@ -1097,6 +1101,10 @@ export namespace FileArtifactContentsFileDescription {
   }
 }
 
+export enum ServiceStatus { 
+  STOPPED = 0,
+  RUNNING = 1,
+}
 export enum KurtosisFeatureFlag { 
   NO_INSTRUCTIONS_CACHING = 0,
 }

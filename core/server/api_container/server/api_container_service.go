@@ -12,11 +12,21 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"math"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
@@ -29,14 +39,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"math"
-	"net/http"
-	"os"
-	"path"
-	"strings"
-	"time"
-	"unicode"
 )
 
 const (
@@ -613,6 +615,7 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	maybePublicPorts := serviceObj.GetMaybePublicPorts()
 	serviceUuidStr := string(serviceObj.GetRegistration().GetUUID())
 	serviceNameStr := string(serviceObj.GetRegistration().GetName())
+	serviceStatus := convertServiceStatusToServiceInfoStatus(serviceObj.GetRegistration().GetStatus())
 
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
 	if err != nil {
@@ -638,6 +641,7 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 		privateApiPorts,
 		publicIpAddrStr,
 		publicApiPorts,
+		serviceStatus,
 	)
 	return serviceInfoResponse, nil
 }
@@ -773,4 +777,13 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 
 	text := textRepresentation.String()
 	return &text, nil
+}
+
+func convertServiceStatusToServiceInfoStatus(serviceStatus service.ServiceStatus) kurtosis_core_rpc_api_bindings.ServiceStatus {
+	switch serviceStatus {
+	case service.ServiceStatus_Started:
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING
+	default:
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED
+	}
 }

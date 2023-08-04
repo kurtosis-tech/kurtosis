@@ -47,12 +47,13 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	filesArtifactsHeader = "Files Artifacts"
+	userServicesArtifactsHeader = "User Services"
+	filesArtifactsHeader        = "Files Artifacts"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
-	"User Services":      printUserServices,
-	filesArtifactsHeader: printFilesArtifacts,
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
+	userServicesArtifactsHeader:  printUserServices,
+	filesArtifactsHeader: 		  printFilesArtifacts,
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -171,7 +172,7 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 
-		if err := printingFunc(ctx, kurtosisCtx, kurtosisBackend, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
+		if err := printingFunc(ctx, kurtosisCtx, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}
