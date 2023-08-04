@@ -486,21 +486,6 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 	return nil
 }
 
-// DestroyDeprecatedCentralizedLogsResources Destroy the deprecated centralized logs resources (containers and volumes)
-// It doesn't complain if it couldn't find the centralized logs resources
-// TODO(centralized-logs-resources-deprecation) remove this once we know people are on > 0.68.0
-func (backend *DockerKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
-
-	if err := logs_database_functions.DestroyDeprecatedCentralizedLogsDatabase(ctx, backend.dockerManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while destroying the deprecated centralized logs database")
-	}
-
-	if err := logs_collector_functions.DestroyDeprecatedCentralizedLogsCollectors(ctx, backend.dockerManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while destroying the deprecated centralized logs collector")
-	}
-	return nil
-}
-
 func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
