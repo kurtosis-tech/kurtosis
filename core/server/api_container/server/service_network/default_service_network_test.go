@@ -169,7 +169,9 @@ func TestAddService_Successful(t *testing.T) {
 
 	require.Len(t, network.registeredServiceInfo, 1)
 	require.Contains(t, network.registeredServiceInfo, serviceName)
-	require.Len(t, network.allExistingAndHistoricalIdentifiers, 1)
+	allExistingAndHistoricalIdentifiers, err := network.GetExistingAndHistoricalServiceIdentifiers()
+	require.NoError(t, err)
+	require.Len(t, allExistingAndHistoricalIdentifiers, 1)
 
 	require.Len(t, network.networkingSidecars, 1)
 	require.Contains(t, network.networkingSidecars, serviceName)
@@ -283,7 +285,9 @@ func TestAddService_FailedToStart(t *testing.T) {
 	require.Nil(t, startedService)
 
 	require.Empty(t, network.registeredServiceInfo)
-	require.Empty(t, network.allExistingAndHistoricalIdentifiers)
+	allExistingAndHistoricalIdentifiers, err := network.GetExistingAndHistoricalServiceIdentifiers()
+	require.NoError(t, err)
+	require.Empty(t, allExistingAndHistoricalIdentifiers)
 
 	require.Empty(t, network.networkingSidecars)
 
@@ -408,7 +412,9 @@ func TestAddService_SidecarFailedToStart(t *testing.T) {
 	require.Nil(t, startedService)
 
 	require.Empty(t, network.registeredServiceInfo)
-	require.Empty(t, network.allExistingAndHistoricalIdentifiers)
+	allExistingAndHistoricalIdentifiers, err := network.GetExistingAndHistoricalServiceIdentifiers()
+	require.NoError(t, err)
+	require.Empty(t, allExistingAndHistoricalIdentifiers)
 
 	require.Empty(t, network.networkingSidecars, 1)
 
@@ -522,7 +528,9 @@ func TestAddServices_Success(t *testing.T) {
 	require.Len(t, network.registeredServiceInfo, 1)
 	require.Contains(t, network.registeredServiceInfo, successfulServiceName)
 
-	require.Len(t, network.allExistingAndHistoricalIdentifiers, 1)
+	allExistingAndHistoricalIdentifiers, err := network.GetExistingAndHistoricalServiceIdentifiers()
+	require.NoError(t, err)
+	require.Len(t, allExistingAndHistoricalIdentifiers, 1)
 
 	require.Len(t, network.networkingSidecars, 1)
 	require.Contains(t, network.networkingSidecars, successfulServiceName)
@@ -805,7 +813,9 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	require.Contains(t, failure, sidecarFailedServiceName)
 
 	require.Empty(t, network.registeredServiceInfo)
-	require.Empty(t, network.allExistingAndHistoricalIdentifiers)
+	allExistingAndHistoricalIdentifiers, err := network.GetExistingAndHistoricalServiceIdentifiers()
+	require.NoError(t, err)
+	require.Empty(t, allExistingAndHistoricalIdentifiers)
 
 	require.Empty(t, network.networkingSidecars)
 

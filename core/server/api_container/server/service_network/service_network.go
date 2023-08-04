@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"io"
@@ -126,7 +127,7 @@ type ServiceNetwork interface {
 
 	GetServiceNames() map[service.ServiceName]bool
 
-	GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers
+	GetExistingAndHistoricalServiceIdentifiers() (service_identifiers.ServiceIdentifiers, error)
 
 	GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool)
 

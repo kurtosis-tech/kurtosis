@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
 	"io"
 	"net"
 	"net/http"
@@ -102,8 +103,8 @@ type DefaultServiceNetwork struct {
 	// this because the API container is the only client that modifies service state
 	registeredServiceInfo map[service.ServiceName]*service.ServiceRegistration
 
-	// This contains all service identifiers ever successfully created, this is append only
-	allExistingAndHistoricalIdentifiers []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers
+	// This contains all service identifiers ever successfully created
+	serviceIdentifiersRepository *service_identifiers.ServiceIdentifiersRepository
 }
 
 func NewDefaultServiceNetwork(
@@ -123,19 +124,23 @@ func NewDefaultServiceNetwork(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the partition topology")
 	}
+	serviceIdentifiersRepository, err := service_identifiers.GetOrCreateNewServiceIdentifiersRepository(enclaveDb)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the service identifiers repository")
+	}
 	return &DefaultServiceNetwork{
-		enclaveUuid:                         enclaveUuid,
-		apiContainerInfo:                    apiContainerInfo,
-		mutex:                               &sync.Mutex{},
-		isPartitioningEnabled:               isPartitioningEnabled,
-		kurtosisBackend:                     kurtosisBackend,
-		enclaveDataDir:                      enclaveDataDir,
-		topology:                            networkTopology,
-		networkingSidecars:                  map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper{},
-		networkSidecarsLock:                 &sync.Mutex{},
-		networkingSidecarManager:            networkingSidecarManager,
-		registeredServiceInfo:               map[service.ServiceName]*service.ServiceRegistration{},
-		allExistingAndHistoricalIdentifiers: []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers{},
+		enclaveUuid:                  enclaveUuid,
+		apiContainerInfo:             apiContainerInfo,
+		mutex:                        &sync.Mutex{},
+		isPartitioningEnabled:        isPartitioningEnabled,
+		kurtosisBackend:              kurtosisBackend,
+		enclaveDataDir:               enclaveDataDir,
+		topology:                     networkTopology,
+		networkingSidecars:           map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper{},
+		networkSidecarsLock:          &sync.Mutex{},
+		networkingSidecarManager:     networkingSidecarManager,
+		registeredServiceInfo:        map[service.ServiceName]*service.ServiceRegistration{},
+		serviceIdentifiersRepository: serviceIdentifiersRepository,
 	}, nil
 }
 
@@ -448,16 +453,10 @@ func (network *DefaultServiceNetwork) AddServices(
 
 	for _, startedService := range startedServices {
 		serviceRegistration := startedService.GetRegistration()
-		serviceName := serviceRegistration.GetName()
-		serviceNameStr := string(serviceName)
-		serviceUuidStr := string(serviceRegistration.GetUUID())
-		shortenedUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
-		network.allExistingAndHistoricalIdentifiers = append(network.allExistingAndHistoricalIdentifiers, &kurtosis_core_rpc_api_bindings.ServiceIdentifiers{
-			ServiceUuid:   serviceUuidStr,
-			Name:          serviceNameStr,
-			ShortenedUuid: shortenedUuidStr,
-		})
-		network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Started)
+		serviceIdentifier := service_identifiers.NewServiceIdentifier(serviceRegistration.GetUUID(), serviceRegistration.GetName())
+		if err := network.serviceIdentifiersRepository.AddServiceIdentifier(serviceIdentifier); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred adding a new service identifier '%+v' into the repository", serviceIdentifier)
+		}
 	}
 
 	batchSuccessfullyStarted = true
@@ -485,7 +484,7 @@ func (network *DefaultServiceNetwork) UpdateService(ctx context.Context, service
 // UpdateServices updates the service by removing the current container and re-creating it, keeping the registration
 // identical. Note this function does not handle any kind of rollback if it fails halfway. This is because we have no
 // way to do soft-delete for containers. Once it's deleted, it's gone, so if Kurtosis fails at re-creating it, it
-// doesn't rollback to the state previous to calling this function
+// doesn't roll back to the state previous to calling this function
 func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, updateServiceConfigs map[service.ServiceName]*service.ServiceConfig, batchSize int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
@@ -1081,8 +1080,12 @@ func (network *DefaultServiceNetwork) IsNetworkPartitioningEnabled() bool {
 	return network.isPartitioningEnabled
 }
 
-func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers {
-	return network.allExistingAndHistoricalIdentifiers
+func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers() (service_identifiers.ServiceIdentifiers, error) {
+	serviceIdentifiers, err := network.serviceIdentifiersRepository.GetServiceIdentifiers()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the service identifiers list from the repository")
+	}
+	return serviceIdentifiers, nil
 }
 
 // GetUniqueNameForFileArtifact : this will return unique artifact name after 5 retries, same as enclave id generator
