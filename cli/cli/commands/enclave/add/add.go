@@ -120,7 +120,6 @@ func run(
 		EnclaveName:            enclaveName,
 		ApiContainerVersionTag: apiContainerVersion,
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
-		IsPartitioningEnabled:  subnetworkDisableBecauseItIsDeprecated,
 	}
 	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {

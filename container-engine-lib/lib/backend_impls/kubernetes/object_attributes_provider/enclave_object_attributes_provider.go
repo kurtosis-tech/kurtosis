@@ -28,7 +28,7 @@ const (
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
-	ForEnclaveNamespace(isPartitioningEnabled bool, creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error)
+	ForEnclaveNamespace(creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error)
 	ForApiContainer() KubernetesApiContainerObjectAttributesProvider
 	ForUserServiceService(
 		uuid service.ServiceUUID,
@@ -63,7 +63,7 @@ func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveUUID)
 	return newKubernetesEnclaveObjectAttributesProviderImpl(enclaveId)
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(isPartitioningEnabled bool, creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error) {
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error) {
 	namespaceUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to generate UUID string for namespace name for enclave '%v'", provider.enclaveId)
@@ -83,13 +83,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave namespace using ID '%v'", provider.enclaveId)
 	}
-
-	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledKubernetesLabelValue
-	if isPartitioningEnabled {
-		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledKubernetesLabelValue
-	}
-
-	labels[label_key_consts.IsNetworkPartitioningEnabledKubernetesLabelKey] = isPartitioningEnabledLabelValue
 
 	creationTimeStr := creationTime.Format(time.RFC3339)
 
@@ -125,12 +118,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer() KubernetesApiContainerObjectAttributesProvider {
 	enclaveId := enclave.EnclaveUUID(provider.enclaveId)
 	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId)
-}
-
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(
-	serviceUUIDSidecarAttachedTo service.ServiceUUID,
-) (KubernetesObjectAttributes, error) {
-	panic("implement me")
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService(

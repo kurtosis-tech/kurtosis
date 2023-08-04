@@ -51,14 +51,10 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	enclaveName string,
-	isPartitioningEnabled bool,
 ) (
 	*enclave.Enclave,
 	error,
 ) {
-	if isPartitioningEnabled {
-		return nil, stacktrace.NewError("Partitioning not supported for Kubernetes-backed Kurtosis.")
-	}
 	teardownContext := context.Background()
 
 	searchNamespaceLabels := map[string]string{
@@ -77,7 +73,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 
 	// Make Enclave attributes provider
 	enclaveObjAttrsProvider := backend.objAttrsProvider.ForEnclave(enclaveUuid)
-	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled, creationTime, enclaveName)
+	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(creationTime, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveUuid)
 	}
