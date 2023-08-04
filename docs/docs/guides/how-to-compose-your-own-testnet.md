@@ -6,7 +6,9 @@ toc_max_heading_level: 2
 ---
 
 :::tip
-If you'd prefer to dive into the code example, visit the repository [here](https://github.com/kurtosis-tech/geth-lighthouse-package). 
+If you'd prefer to dive into the code example, visit the repository [here](https://github.com/kurtosis-tech/geth-lighthouse-package).
+
+If you'd prefer not to run it on your local machine, try it out on the [Kurtosis playground](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/geth-lighthouse-package)
 :::
 
 ## Introduction 
@@ -29,8 +31,8 @@ This guide will walk you through how to build your very own fully functioning, p
 
 **What you will need beforehand to get started:**
 
-- Install [Kurtosis](https://docs.kurtosis.com/install) (or [upgrade to latest](https://docs.kurtosis.com/upgrade) if you already have it)
-- Install [Docker & ensure its running](https://docs.kurtosis.com/install#i-install--start-docker)
+- Install [Docker & ensure its running](./installing-the-cli.md#i-install--start-docker)
+- Install [Kurtosis](./installing-the-cli.md) (or [upgrade to latest](./upgrading-the-cli.md) if you already have it)
 - A Github account to leverage the [template repository](https://github.com/kurtosis-tech/package-template-repo)
 
 ### 1. Set up a empty Kurtosis package
@@ -56,12 +58,12 @@ Finally, create a `kurtosis.yml` file in the same folder with the following cont
 name: github.com/$YOUR_GITHUB_USERNAME/my-testnet
 ```
 
-Awesome. You have just created your very own [Kurtosis package](https://docs.kurtosis.com/concepts-reference/packages/)! This package will form the backbone of the environment definition you will use to instantiate and deploy your private testnet. A Kurtosis package is completely reproducible, modular, and will work over Docker locally or in the cloud on Kubernetes. 
+Awesome. You have just created your very own [Kurtosis package](../concepts-reference/packages.md)! This package will form the backbone of the environment definition you will use to instantiate and deploy your private testnet. A Kurtosis package is completely reproducible, modular, and will work locally (Docker, Minikube, k3s, etc) or in the cloud, on backends like EC2 or Kubernetes. 
 
 ### 2. Import dependencies
 Now that you have a local project to house your definition and some parameters to start the network with, its time to actually build the network. First, create a Starlark file called `main.star` and add the following three lines:
 ```python
-// main.star
+# main.star
 
 geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
 lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
@@ -70,20 +72,19 @@ lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/ligh
 network_params = json.decode(read_file("github.com/$YOUR_GITHUB_USERNAME/my-testnet/network_params.json"))
 ``` 
 
-In the first two lines, you're using [Locators](https://docs.kurtosis.com/concepts-reference/locators) to import in `geth.star` and `lighthouse.star` files from Github, making them available to use in your testnet definition. These files themselves are environment definitions that can be used to bootstrap and start up a Geth execution layer client and a Lighthouse consensus layer client as part of your testnet - which is exactly what you will do next.
+In the first two lines, you're using [Locators](../concepts-reference/locators.md) to import in `geth.star` and `lighthouse.star` files from Github, making them available to use in your testnet definition. These files themselves are environment definitions that can be used to bootstrap and start up a Geth execution layer client and a Lighthouse consensus layer client as part of your testnet - which is exactly what you will do next.
 
 :::note
 Feel free to check out the [`geth.star`]((https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star) and ['lighthouse.star`](https://github.com/kurtosis-tech/lighthouse-package/blob/main/lib/lighthouse.star) to understand how they work. At a high level, the definition instructions Kurtosis to generate genesis data, set up pre-funded accounts, and then launches the client using the client container images.
 :::
 
-Finally, we are converting the `network_params.json` file into a format that can be used in your environment definition using [`json.decode()`](https://bazel.build/rules/lib/core/json#decode) and [`read_file()`](https://docs.kurtosis.com/starlark-reference/read-file/).
+Finally, we are converting the `network_params.json` file into a format that can be used in your environment definition using [`json.decode()`](https://bazel.build/rules/lib/core/json#decode) and [`read_file()`](../starlark-reference/read-file.md).
 
 ### 3. Define how your testnet gets built
 Now that you have all the necessary dependencies, you can start writing the function that will instantiate the network. Within your `main.star` file, write the following 3 lines:
 
 ```python
-
-// main.star
+# main.star
 
 geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
 lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
@@ -97,13 +98,13 @@ def run(plan):
     el_genesis_data = geth.generate_el_genesis_data(plan, final_genesis_timestamp, network_params)
 ```
 
-What you've just done here is define a function using `run(plan)` to house all of the methods you will use for instantiating the network. Within this method, you will call the [`generate_genesis_timestamp()` function](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star#L58), from the `geth.star` you imported earlier, to generate an abitrary timestamp for the genesis of your network. This is important for time-based forks that you may want to use later on. Next, you will generate some genesis data for the execution layer using [`generate_el_genesis_data`](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star#L43) which was imported from `geth.star` as well. Under the hood, the genesis data is being generated using the Ethereum Foundation's [eth2-testnet-genesis](https://github.com/protolambda/eth2-testnet-genesis) generator. 
+What you've just done here is define a function using `run(plan)` to house all of the methods you will use for instantiating the network. Within this method, you will call the [`generate_genesis_timestamp()` function](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star#L58), from the `geth.star` you imported earlier, to generate an abitrary timestamp for the genesis of your network. This is important for time-based forks that you may want to use later on. Next, you will generate some genesis data for the execution layer using [`generate_el_genesis_data`](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star#L43) which was imported from `geth.star` as well. Under the hood, the genesis data is being generated using the Ethereum Foundation's [`ethereum-genesis-generator`](https://github.com/ethpandaops/ethereum-genesis-generator).
 
 You can already see the benefit of composable environment definitions: you don't need to deal with nor understand how the genesis data is being generated. You can rely on the framework built and used by the Ethereum Foundation for your testnet's genesis data.
 
-With some execution layer genesis data in hand, you will now bootstrap the node! Add the next 3 lines to your `main.star` file inside the same `def run(plan)` function:
+With some execution layer genesis data in hand, you will now bootstrap the node! Add the next 3 lines to your `main.star` file inside the same `def run(plan)` function so that your final result looks like:
 ```python
-// main.star
+# main.star
 geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
 lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
 
@@ -114,6 +115,7 @@ def run(plan):
     final_genesis_timestamp = geth.generate_genesis_timestamp()
     el_genesis_data = geth.generate_el_genesis_data(plan, final_genesis_timestamp, network_params)
 
+    # NEW CODE TO ADD:
     # Run the nodes
     el_context = geth.run(plan, network_params, el_genesis_data)
     lighthouse.run(plan, network_params, el_genesis_data, final_genesis_timestamp, el_context)
@@ -132,7 +134,7 @@ Finally, time to give it a spin! Go back to your terminal & from within the `my-
 kurtosis run main.star
 ```
 
-Kurtosis will interpret the environment definition you just wrote, validate that everything will work, and then execute the instructions to instantiate your Ethereum node inside an [enclave](https://docs.kurtosis.com/concepts-reference/enclaves/), which is just a sandbox environment that will house your node. Kurtosis will handle the importing of the `lighthouse.star` and `geth.star` files from Github. The output you'll get at the end should look like this:
+Kurtosis will interpret the environment definition you just wrote, validate that everything will work, and then execute the instructions to instantiate your Ethereum node inside an [enclave](../concepts-reference/enclaves.md), which is just a sandbox environment that will house your node. Kurtosis will handle the importing of the `lighthouse.star` and `geth.star` files from Github. The output you'll get at the end should look like this:
 
 ```bash
 Starlark code successfully run. No output was returned.
@@ -188,7 +190,7 @@ Then proceed to push your files to that repository. To check that it worked, you
 kurtosis run github.com/$YOUR_GITHUB_USERNAME/my-testnet/main.star
 ```
 
-Everything should work the same way as it did before, but the beauty of this is that you can now run the above command anywhere and the node will be spun up in the exact same way.
+Everything should work the same way as it did before, but the beauty of this is that you can now run the above command anywhere and the node will be spun up in the exact same way. Additionally, this means your testnet can be shared with your teammates to bring up the *exact same* environment - making reproducing of bugs or functionalities painless.
 
 ### 6. Advanced Workflows
 You may already know what you want to do with the private testnet you've just spun up, and that's great! We hope this was helpful in getting you started and to show you just how easy it was to write your own testnet definition using Kurtosis.
@@ -210,6 +212,6 @@ To recap, in this guide you:
 
 You also saw first-hand how the composability aspect of Kurtosis environment definitions were used to abstract away a lot of the complexities that come with bootstrapping your own node. And because this is entirely reproducible, your team can use this as a private blockchain for validating and testing changes for your application.
 
-We hope this guide was helpful and we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using kurtosis feedback to file an issue in our [Github](https://github.com/kurtosis-tech/eth-kurtosis/issues) or post your question in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions).
+We hope this guide was helpful and we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using [`kurtosis feedback`](../cli-reference/feedback.md) from the CLI to file an issue in our [Github](https://github.com/kurtosis-tech/eth-kurtosis/issues) or post your question in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions).
 
 Thank you!
