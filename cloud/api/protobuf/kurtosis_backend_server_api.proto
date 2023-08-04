@@ -10,6 +10,15 @@ service KurtosisCloudBackendServer {
   rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {};
   rpc CreateCloudInstance(CreateCloudInstanceConfigArgs) returns (CreateCloudInstanceConfigResponse) {};
   rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
+  rpc CreateApiKey(CreateApiKeyRequest) returns (CreateApiKeyResponse) {};
+}
+
+message CreateApiKeyRequest {
+  string access_token = 1;
+}
+
+message CreateApiKeyResponse {
+  string api_key = 1;
 }
 
 message CreateCloudInstanceConfigArgs {
