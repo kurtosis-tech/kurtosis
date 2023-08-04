@@ -326,6 +326,7 @@ func (client *lokiLogsDatabaseClient) getUserServiceLogs(
 		Response:         nil,
 	}
 
+	logrus.Infof("YOLO: %+v", httpRequest)
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	defer cancelCtxFunc()
 

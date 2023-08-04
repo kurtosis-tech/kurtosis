@@ -11,9 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/engine_consuming_kurtosis_command"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/service_identifier_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
@@ -105,17 +103,18 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 	Args: []*args.ArgConfig{
 		//TODO disabling enclaveID validation and serviceUUID validation for allowing consuming logs from removed or stopped enclaves
 		//TODO we should enable them when #879 is ready: https://github.com/kurtosis-tech/kurtosis/issues/879
-		enclave_id_arg.NewEnclaveIdentifierArg(
-			enclaveIdentifierArgKey,
-			engineClientCtxKey,
-			isEnclaveIdArgOptional,
-			isEnclaveIdArgGreedy,
-		),
-		service_identifier_arg.NewServiceIdentifierArg(
-			serviceIdentifierArgKey,
-			isServiceIdentifierArgGreedy,
-			isServiceIdentifierArgOptional,
-		),
+		{
+			Key:          enclaveIdentifierArgKey,
+			IsOptional:   false,
+			DefaultValue: "",
+			IsGreedy:     false,
+		},
+		{
+			Key:          serviceIdentifierArgKey,
+			IsOptional:   false,
+			DefaultValue: "",
+			IsGreedy:     false,
+		},
 	},
 	RunFunc: run,
 }
