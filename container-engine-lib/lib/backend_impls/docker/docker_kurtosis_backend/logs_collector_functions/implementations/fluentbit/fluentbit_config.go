@@ -13,7 +13,7 @@ const (
 
 	renameModifyFilterRuleAction = "rename"
 
-	//This is the "record accesor" character used by Fluentbit to dinamically get content from
+	//This is the "record accessor" character used by Fluentbit to dynamically get content from
 	//a log stream in JSON format
 	labelsVarPrefix = "$"
 )
