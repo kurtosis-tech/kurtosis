@@ -6,327 +6,212 @@ toc_max_heading_level: 2
 sidebar_position: 6
 ---
 
-## Introduction
+# How to: build a composable & full-featured Ethereum private testnet
 
-This guide walks you through the process of instantiating a configurable local Ethereum testnet, deploying a smart contract to it, and using the testnet to run tests against your dApp. This guide is designed for dApp developers who want to develop and test their dApps locally against different network configurations before deploying to a live testnet or the mainnet.
-
-In this guide, you will:
-* Instantiate a local Ethereum testnet with the [`eth-network-package`](https://github.com/kurtosis-tech/eth-network-package) using [Kurtosis](https://www.kurtosis.com/),
-* Connect your Hardhat dApp development environment to the local testnet to compile, deploy, and test a dApp, and
-* Configure the local testnet, including parameters like number of nodes and specific EL/CL client pairings, to enable development and testing workflows against various network configurations.
-
-### What is Kurtosis?
-
-[Kurtosis](https://www.kurtosis.com/) is a composable build system designed for configuring multi-container test environments. It specifically enables developers to create reproducible environments that require dynamic setup logic, such as blockchain testnets.
-
-In this guide, the Kurtosis eth-network-package spins up a local Ethereum testnet with support for the [`geth`](https://geth.ethereum.org/) Execution Layer (EL) client, as well as [`teku`](https://consensys.net/knowledge-base/ethereum-2/teku/), [`lighthouse`](https://lighthouse.sigmaprime.io/), and [`lodestar`](https://lodestar.chainsafe.io/) Consensus Layer (CL) clients. This package serves as a configurable and composable alternative to networks in frameworks like Hardhat Network, Ganache, and Anvil. Kurtosis offers developers greater control and flexibility over the testnets they use, which is a major reason why the [Ethereum Foundation used Kurtosis to test the Merge](https://www.kurtosis.com/blog/testing-the-ethereum-merge) and continues to use it for testing network upgrades.
-
-## Setting up Kurtosis
-
-Before you proceed, make sure you have:
-* [Installed and started the Docker engine](https://docs.kurtosis.com/next/install#i-install--start-docker) on your local machine
-* [Installed the Kurtosis CLI](https://docs.kurtosis.com/next/install#ii-install-the-cli) (or upgraded it to the latest release, if you already have the CLI installed)
-* Installed [Node.js](https://nodejs.org/en), [yarn](https://classic.yarnpkg.com/lang/en/docs/install/#mac-stable), and [npx](https://www.npmjs.com/package/npx) (for your dApp environment)
-
-## Instantiating a local Ethereum testnet
-
-To spin up a local Ethereum testnet, run:
-```bash
-kurtosis --enclave local-eth-testnet run github.com/kurtosis-tech/eth-network-package
-```
-:::info
-This command names your network: "local-eth-testnet” using the `--enclave` flag.
+:::tip
+If you'd prefer to dive into the code example, visit the repository [here](https://github.com/kurtosis-tech/geth-lighthouse-package). 
 :::
 
-Kurtosis will print the steps its taking under the hood as it works to interpret, validate, and then execute the instructions. At the end, you should see an output that resembles the following: 
+## Introduction 
+A testnet is an incredibly valuable tool for any web3 developer, no matter if you’re building a dApp or working on protocol-level changes. It comes as no surprise then that Ethereum has multiple public testnets in addition to a plethora of tools for local development networks (e.g. Ganache, Hardhat, Foundry Anvil).
+
+However, there are cases where an engineer  may need to develop or test functionality that: modifies the protocol itself (execution or consensus layers), necessitates a certain scale, or interacts with another blockchain entirely (e.g. L2s/rollups, bridges, or multi-chain relayers). In these cases, a fully functioning private testnet is required - one where the user has full control over every aspect of the network and its ancillary services. 
+
+:::note
+We will review the details on when and how a full, private testnet can be useful in another article.
+:::
+
+This guide will walk you through how to build your very own fully functioning, private Ethereum testnet. In fact, the artifact you’ll end up with at the end of this tutorial will be a special type of environment definition that works at any scale you desire, is completely reproducible for CI workflows, and is modular - meaning you can add or remove other services to your network as you wish.
+
+**What you will do:**
+
+1 Create a local Kurtosis package
+2 Define how your private Ethereum testnet should look like. This example will leverage the Lighthouse CL client and Geth EL client to build a single, full staking node over Docker.
+3 Launch the private testnet locally over Docker
+4 Use hardhat to deploy a sample smart contract
+5 Push everything to Github as a new repository for others to use
+
+**What you will need beforehand to get started:**
+
+- Install [Kurtosis](https://docs.kurtosis.com/install) (or [upgrade to latest](https://docs.kurtosis.com/upgrade) if you already have it)
+- Install [Docker & ensure its running](https://docs.kurtosis.com/install#i-install--start-docker)
+- A Github account to leverage the [template repository](https://github.com/kurtosis-tech/package-template-repo)
+
+### 1. Set up a empty Kurtosis package
+To begin, create and `cd` into a directory to hold your files:
 ```bash
-INFO[2023-04-04T18:09:44-04:00] ======================================================
-INFO[2023-04-04T18:09:44-04:00] ||          Created enclave: local-eth-testnet      ||
-INFO[2023-04-04T18:09:44-04:00] ======================================================
-Name:            local-eth-testnet
-UUID:            39372d756ae8
-Status:          RUNNING
-Creation Time:   Tue, 04 Apr 2023 18:09:03 EDT
-
-========================================= Files Artifacts =========================================
-UUID           Name
-d4085a064230   cl-genesis-data
-1c62cb792e4c   el-genesis-data
-bd60489b73a7   genesis-generation-config-cl
-b2e593fe5228   genesis-generation-config-el
-d552a54acf78   geth-prefunded-keys
-5f7e661eb838   prysm-password
-054e7338bb59   validator-keystore-0
-
-========================================== User Services ==========================================
-UUID           Name                                           Ports                                         Status
-e20f129ee0c5   cl-client-0-beacon                             http: 4000/tcp -> <http://127.0.0.1:54261>    RUNNING
-                                                              metrics: 5054/tcp -> <http://127.0.0.1:54262>
-                                                              tcp-discovery: 9000/tcp -> 127.0.0.1:54263
-                                                              udp-discovery: 9000/udp -> 127.0.0.1:60470
-a8b6c926cdb4   cl-client-0-validator                          http: 5042/tcp -> 127.0.0.1:54267             RUNNING
-                                                              metrics: 5064/tcp -> <http://127.0.0.1:54268>
-d7b802f623e8   el-client-0                                    engine-rpc: 8551/tcp -> 127.0.0.1:54253       RUNNING
-                                                              rpc: 8545/tcp -> 127.0.0.1:54251
-                                                              tcp-discovery: 30303/tcp -> 127.0.0.1:54254
-                                                              udp-discovery: 30303/udp -> 127.0.0.1:53834
-                                                              ws: 8546/tcp -> 127.0.0.1:54252
-514a829c0a84   prelaunch-data-generator-1680646157905431468   <none>                                        STOPPED
-62bd62d0aa7a   prelaunch-data-generator-1680646157915424301   <none>                                        STOPPED
-05e9619e0e90   prelaunch-data-generator-1680646157922872635   <none>                                        STOPPED
-
+mkdir my-testnet && cd my-testnet 
 ```
-
-Congratulations! You used Kurtosis to instantiate a local Ethereum testnet, with a CL (`lighthouse`) and EL client (`geth`), over Docker.
-
-### Review
-
-In this section, you executed a command that directed Kurtosis to use the [`eth-network-package` hosted remotely on GitHub](https://github.com/kurtosis-tech/eth-network-package) to spin up a local Ethereum testnet within a Kurtosis [Enclave](https://docs.kurtosis.com/concepts-reference/enclaves/). Inside your enclave, you will find both "file artifacts" and "user services".
-
-The [File Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/) in your enclave include all the data generated and utilized to bootstrap the EL and CL clients. The data was created using the `prelaunch-data-generator` service built from this [Docker image](https://github.com/ethpandaops/ethereum-genesis-generator)
-
-User services display all the containerized services operating in your enclave. You will notice that a single node, featuring both an EL client and a CL client, has been created.
-
-## Connect your dApp development environment to the local Ethereum testnet
-
-### Setup the dApp development environment
-
-Now that you have a running local testnet, you can connect your dApp development environment to use your local testnet. The Hardhat framework will be used in this guide to deploy a blackjack dApp to your local testnet.
-
-To set up your dApp development environment, clone the repository that contains our sample dApp and install its dependencies, run:
-```bash
-git clone https://github.com/kurtosis-tech/awesome-kurtosis.git && cd awesome-kurtosis/smart-contract-example && yarn
-```
-
-The [smart-contract-example](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/smart-contract-example) folder used here contains the typical setup for a dApp developer using the [Hardhat](https://hardhat.org/) framework:
-* [`contracts/`](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/smart-contract-example/contracts) contains a few simple smart contracts for a Blackjack dApp
-* [`scripts/`](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/smart-contract-example/scripts) contains a script to deploy a token contract to your local Ethereum network
-* [`test/`](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/smart-contract-example/test) contains a simple .js test for your token contract to confirm each player in our Blackjack dApp has 1000 minted for them
-* [`hardhat.config.ts`](https://github.com/kurtosis-tech/awesome-kurtosis/blob/main/smart-contract-example/hardhat.config.ts) configures your Hardhat setup
-
-### Configure Hardhat to use the local testnet
-
-With your dApp development environment set up, you will now connect Hardhat to use the local Ethereum testnet generated using Kurtosis. To accomplish this, replace `<$YOUR_PORT>` in the `localnet` struct in your `hardhat.config.ts` config file with the port of the rpc uri output from any `el-client-<num>` service. In this sample case, the port would be `64248`. Your port will be different.
-
-Example in `hardhat.config.ts`:
-```typescript
-localnet: {
-url: 'http://127.0.0.1:<$YOUR_PORT>',// TODO: REPLACE $YOUR_PORT WITH THE PORT OF A NODE URI PRODUCED BY THE ETH NETWORK KURTOSIS PACKAGE
-
-// These are private keys associated with prefunded test accounts created by the eth-network-package
-// <https://github.com/kurtosis-tech/eth-network-package/blob/main/src/prelaunch_data_generator/genesis_constants/genesis_constants.star>
-accounts: [
-    "ef5177cd0b6b21c87db5a0bf35d4084a8a57a9d6a064f86d51ac85f2b873a4e2",
-    "48fcc39ae27a0e8bf0274021ae6ebd8fe4a0e12623d61464c498900b28feb567",
-    "7988b3a148716ff800414935b305436493e1f25237a2a03e5eebc343735e2f31",
-    "b3c409b6b0b3aa5e65ab2dc1930534608239a478106acf6f3d9178e9f9b00b35",
-    "df9bb6de5d3dc59595bcaa676397d837ff49441d211878c024eabda2cd067c9f",
-    "7da08f856b5956d40a72968f93396f6acff17193f013e8053f6fbb6c08c194d6",
-  ],
-},
-```
-Once you save your file, your Hardhat dApp development environment is now connected to your local Ethereum testnet! You can verify that your testnet is working by running:
-```bash
-npx hardhat balances --network localnet
-```
-The output should look something like this:
-```bash
-0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766 has balance 10000000000000000000000000
-0x4E9A3d9D1cd2A2b2371b8b3F489aE72259886f1A has balance 10000000000000000000000000
-0xdF8466f277964Bb7a0FFD819403302C34DCD530A has balance 10000000000000000000000000
-0x5c613e39Fc0Ad91AfDA24587e6f52192d75FBA50 has balance 10000000000000000000000000
-0x375ae6107f8cC4cF34842B71C6F746a362Ad8EAc has balance 10000000000000000000000000
-0x1F6298457C5d76270325B724Da5d1953923a6B88 has balance 10000000000000000000000000
-```
-
-This confirms that Hardhat is using your local testnet and detects the pre-funded accounts created by the `eth-network-package`. 
-
-### Deploy and test your dApp locally
-With the dApp development environment fully connected to the local Ethereum testnet, you can now run development and testing workflows against your dApp using the local testnet.
-
-To compile and deploy the `ChipToken.sol` smart contract for local prototyping and development, run:
-```bash
-npx hardhat compile
-npx hardhat run scripts/deploy.ts --network localnet
-```
-The output should look something like:
-```bash
-ChipToken deployed to: 0xAb2A01BC351770D09611Ac80f1DE076D56E0487d
-```
-
-Now try running the `simple.js` test against your local dApp to confirm each player in our Blackjack dApp has 1000 minted for them:
-
-The output should look something like this:
-
-```bash
-npx hardhat test --network localnet
-```
-The output should look something like this:
-```bash
-ChipToken
-    mint
-      ✔ should mint 1000 chips for PLAYER ONE
-
-  1 passing (654ms)
-```
-
-### Review
-At this point, you’ve now set up a dApp development environment, connected it to a local Ethereum network created by Kurtosis, and have compiled, deployed, and ran a simple test against your dApp.
-
-Now let’s explore how you can configure the underlying network for testing our dApps under varying network configurations.
-
-## Configuring the local Ethereum testnet
-
-### Changing the client configurations and number of nodes
-
-Your local Ethereum testnet can be configured to use different EL and CL client pairs, as well as a varying number of nodes, depending on the scenario and specific network configuration you want to develop or test. This means that, once set up, you can spin up a customized local testnet and use it to run the same workflows (deployment, tests, etc.) under various network configurations to ensure everything works as expected. To learn more about the other parameters you can modify, visit this link.
-
-Give it a try! You can pass various configuration options to the `eth-network-package` via a JSON file. This network params JSON file provides the specific configurations that Kurtosis will use to set up the local Ethereum network.
-
-Take the default configuration file and edit it to spin up two nodes with different EL/CL pairs:
-* Node 1 with `geth`/`lighthouse`
-* Node 2 with `geth`/`lodestar`
-* Node 3 with `geth`/`teku`
-
-This configuration creates a heterogeneous network of Ethereum node implementations for testing your dApp. Your configuration file should now look like:
-```
+Next, create a file called `network_params.json` in that folder with the following contents:
+```json
 {
-	"participants":[{
-        "el_client_type":         "geth",
-        "el_client_image":        "",
-        "el_client_log_level":    "",
-        "cl_client_type":         "lighthouse",
-        "cl_client_image":        "",
-        "cl_client_log_level":    "",
-        "beacon_extra_params":    [],
-        "el_extra_params":        [],
-        "validator_extra_params": [],
-        "builder_network_params": null
-	},
-  {
-        "el_client_type":         "geth",
-        "el_client_image":        "",
-        "el_client_log_level":    "",
-        "cl_client_type":         "lodestar",
-        "cl_client_image":        "",
-        "cl_client_log_level":    "",
-        "beacon_extra_params":    [],
-        "el_extra_params":        [],
-        "validator_extra_params": [],
-        "builder_network_params": null
-	},
-	{
-        "el_client_type":         "geth",
-        "el_client_image":        "",
-        "el_client_log_level":    "",
-        "cl_client_type":         "teku",
-        "cl_client_image":        "",
-        "cl_client_log_level":    "",
-        "beacon_extra_params":    [],
-        "el_extra_params":        [],
-        "validator_extra_params": [],
-        "builder_network_params": null
-	}],
-	"network_params":{
-		"preregistered_validator_keys_mnemonic": "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete",
-		"num_validator_keys_per_node": 64,
-		"network_id": "3151908",
-		"deposit_contract_address": "0x4242424242424242424242424242424242424242",
-		"seconds_per_slot": 12,
-		"genesis_delay": 120,
-		"capella_fork_epoch": 5
-	}
+  "preregistered_validator_keys_mnemonic": "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete",
+  "num_validator_keys_per_node": 64,
+  "network_id": "3151908",
+  "deposit_contract_address": "0x4242424242424242424242424242424242424242",
+  "seconds_per_slot": 12,
+  "genesis_delay": 10
 }
 ```
-Each `participants` struct maps to a node in the network, so 3 `participants` structs will tell Kurtosis to spin up 3 nodes in your network. Each `participants` struct will allow you to specify the EL and CL pair used for that specific node.
+The contents above will be used to define the specific parameters with which to start the network with. 
 
-The `network_params` struct configures the network settings that are used to create the genesis files for each node as well as other settings like the seconds per slot of the network.
-
-Save your edited params file in any directory you wish (in the example below, it is saved to the desktop) and then use it to run your Kurtosis package by running:
-
-```bash
-kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/kurtosis-tech/eth-network-package "$(cat ~/eth-network-params.json)"
+Finally, create a `kurtosis.yml` file in the same folder with the following contents, replacing `$YOUR_GITHUB_USERNAME` with your actual Github username.
+```yml
+name: github.com/$YOUR_GITHUB_USERNAME/my-testnet
 ```
-:::TIP
-Note that the `kurtosis clean -a` command is used here to instruct Kurtosis to destroy the old testnet and its contents before starting a new one up.
+
+Awesome. You have just created your very own [Kurtosis package](https://docs.kurtosis.com/concepts-reference/packages/)! This package will form the backbone of the environment definition you will use to instantiate and deploy your private testnet. A Kurtosis package is completely reproducible, modular, and will work over Docker locally or in the cloud on Kubernetes. 
+
+### 2. Import dependencies
+Now that you have a local project to house your definition and some parameters to start the network with, its time to actually build the network. First, create a Starlark file called `main.star` and add the following three lines:
+```python
+// main.star
+
+geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
+lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
+
+# Again, replacing $YOUR_GITHUB_USERNAME with your Github username
+network_params = json.decode(read_file("github.com/$YOUR_GITHUB_USERNAME/my-testnet/network_params.json"))
+``` 
+
+In the first two lines, you're using [Locators](https://docs.kurtosis.com/concepts-reference/locators) to import in `geth.star` and `lighthouse.star` files from Github, making them available to use in your testnet definition. These files themselves are environment definitions that can be used to bootstrap and start up a Geth execution layer client and a Lighthouse consensus layer client as part of your testnet - which is exactly what you will do next.
+
+:::note
+Feel free to check out the [`geth.star`]((https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star) and ['lighthouse.star`](https://github.com/kurtosis-tech/lighthouse-package/blob/main/lib/lighthouse.star) to understand how they work. At a high level, the definition instructions Kurtosis to generate genesis data, set up pre-funded accounts, and then launches the client using the client container images.
 :::
-Again, Kurtosis will work for a bit and print out the individual steps that are taking place. Eventually, the output should look something like:
+
+Finally, we are converting the `network_params.json` file into a format that can be used in your environment definition using [`json.decode()`](https://bazel.build/rules/lib/core/json#decode) and [`read_file()`](https://docs.kurtosis.com/starlark-reference/read-file/).
+
+### 3. Define how your testnet gets built
+Now that you have all the necessary dependencies, you can start writing the function that will instantiate the network. Within your `main.star` file, write the following 3 lines:
+
+```python
+
+// main.star
+
+geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
+lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
+
+# Again, replacing $YOUR_GITHUB_USERNAME with your Github username
+network_params = json.decode(read_file("github.com/$YOUR_GITHUB_USERNAME/my-testnet/network_params.json"))
+
+# NEW CODE BELOW:
+def run(plan):
+    final_genesis_timestamp = geth.generate_genesis_timestamp()
+    el_genesis_data = geth.generate_el_genesis_data(plan, final_genesis_timestamp, network_params)
+```
+
+What you've just done here is define a function using `run(plan)` to house all of the methods you will use for instantiating the network. Within this method, you will call the [`generate_genesis_timestamp()` function](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star#L58), from the `geth.star` you imported earlier, to generate an abitrary timestamp for the genesis of your network. This is important for time-based forks that you may want to use later on. Next, you will generate some genesis data for the execution layer using [`generate_el_genesis_data`](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star#L43) which was imported from `geth.star` as well. Under the hood, the genesis data is being generated using the Ethereum Foundation's [eth2-testnet-genesis](https://github.com/protolambda/eth2-testnet-genesis) generator. 
+
+You can already see the benefit of composable environment definitions: you don't need to deal with nor understand how the genesis data is being generated. You can rely on the framework built and used by the Ethereum Foundation for your testnet's genesis data.
+
+With some execution layer genesis data in hand, you will now bootstrap the node! Add the next 3 lines to your `main.star` file inside the same `def run(plan)` function:
+```python
+// main.star
+geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
+lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
+
+network_params = json.decode(read_file("github.com/kurtosis-tech/geth-lighthouse-package/network_params.json"))
+
+def run(plan):
+    # Generate genesis, note EL and the CL needs the same timestamp to ensure that timestamp based forking works
+    final_genesis_timestamp = geth.generate_genesis_timestamp()
+    el_genesis_data = geth.generate_el_genesis_data(plan, final_genesis_timestamp, network_params)
+
+    # Run the nodes
+    el_context = geth.run(plan, network_params, el_genesis_data)
+    lighthouse.run(plan, network_params, el_genesis_data, final_genesis_timestamp, el_context)
+
+    return
+```
+
+Here, the Geth client is launched  using the `run()` function in `geth.star` and then returns all the relevant information about the client to `el_context`, including the [Ethereum Node Record](https://github.com/sigp/enr). This information, alongside the network parameters, genesis data, and the genesis timestamp, are then passed in as arguments in the next command: `lighthouse.run()` which bootstraps the Lighthouse consensus layer client.
+
+
+And that is it! In these short few lines, you now have an environment definition that spins up a full stacking Ethereum node with Geth and Lighthouse over Docker on your local machine.
+
+### 4. Run your new testnet!
+Finally, time to give it a spin! Go back to your terminal & from within the `my-testnet` directory, run:
+```
+kurtosis run main.star
+```
+
+Kurtosis will interpret the environment definition you just wrote, validate that everything will work, and then execute the instructions to instantiate your Ethereum node inside an [enclave](https://docs.kurtosis.com/concepts-reference/enclaves/), which is just a sandbox environment that will house your node. Kurtosis will handle the importing of the `lighthouse.star` and `geth.star` files from Github. The output you'll get at the end should look like this:
+
 ```bash
 Starlark code successfully run. No output was returned.
-INFO[2023-04-07T11:43:16-04:00] ==========================================================
-INFO[2023-04-07T11:43:16-04:00] ||          Created enclave: local-eth-testnet          ||
-INFO[2023-04-07T11:43:16-04:00] ==========================================================
-Name:            local-eth-testnet
-UUID:            bef8c192008e
+INFO[2023-08-04T16:07:28+02:00] ==========================================================
+INFO[2023-08-04T16:07:28+02:00] ||          Created enclave: tranquil-woodland          ||
+INFO[2023-08-04T16:07:28+02:00] ==========================================================
+Name:            tranquil-woodland
+UUID:            ac3877184757
 Status:          RUNNING
-Creation Time:   Fri, 07 Apr 2023 11:41:58 EDT
+Creation Time:   Fri, 04 Aug 2023 16:06:57 CEST
 
 ========================================= Files Artifacts =========================================
 UUID           Name
-cc495a8e364a   cl-genesis-data
-7033fcdb5471   el-genesis-data
-a3aef43fc738   genesis-generation-config-cl
-8e968005fc9d   genesis-generation-config-el
-3182cca9d3cd   geth-prefunded-keys
-8421166e234f   prysm-password
-d9e6e8d44d99   validator-keystore-0
-23f5ba517394   validator-keystore-1
-4d28dea40b5c   validator-keystore-2
+8a1de99b7224   1-lighthouse-eth-0-63
+271f6e53a7e1   cl-genesis-data
+6c116cfcc7d1   el-genesis-data
+7549ddc4135a   genesis-generation-config-cl
+d266370395ef   genesis-generation-config-el
+d204de12687e   geth-prefunded-keys
+a069f55dc147   prysm-password
 
 ========================================== User Services ==========================================
-UUID           Name                                           Ports                                            Status
-485e6fde55ae   cl-client-0-beacon                             http: 4000/tcp -> http://127.0.0.1:65010         RUNNING
-                                                              metrics: 5054/tcp -> http://127.0.0.1:65011
-                                                              tcp-discovery: 9000/tcp -> 127.0.0.1:65012
-                                                              udp-discovery: 9000/udp -> 127.0.0.1:54455
-73739bd158b2   cl-client-0-validator                          http: 5042/tcp -> 127.0.0.1:65016                RUNNING
-                                                              metrics: 5064/tcp -> http://127.0.0.1:65017
-1b0a233cd011   cl-client-1-beacon                             http: 4000/tcp -> 127.0.0.1:65021                RUNNING
-                                                              metrics: 8008/tcp -> 127.0.0.1:65023
-                                                              tcp-discovery: 9000/tcp -> 127.0.0.1:65024
-                                                              udp-discovery: 9000/udp -> 127.0.0.1:56031
-                                                              validator-metrics: 5064/tcp -> 127.0.0.1:65022
-949b8220cd53   cl-client-1-validator                          http: 4000/tcp -> 127.0.0.1:65028                RUNNING
-                                                              metrics: 8008/tcp -> 127.0.0.1:65030
-                                                              tcp-discovery: 9000/tcp -> 127.0.0.1:65031
-                                                              udp-discovery: 9000/udp -> 127.0.0.1:60784
-                                                              validator-metrics: 5064/tcp -> 127.0.0.1:65029
-c34417bea5fa   cl-client-2                                    http: 4000/tcp -> 127.0.0.1:65037                RUNNING
-                                                              metrics: 8008/tcp -> 127.0.0.1:65035
-                                                              tcp-discovery: 9000/tcp -> 127.0.0.1:65036
-                                                              udp-discovery: 9000/udp -> 127.0.0.1:63581
-e19738e6329d   el-client-0                                    engine-rpc: 8551/tcp -> 127.0.0.1:64986          RUNNING
-                                                              rpc: 8545/tcp -> 127.0.0.1:64988
-                                                              tcp-discovery: 30303/tcp -> 127.0.0.1:64987
-                                                              udp-discovery: 30303/udp -> 127.0.0.1:55706
-                                                              ws: 8546/tcp -> 127.0.0.1:64989
-e904687449d9   el-client-1                                    engine-rpc: 8551/tcp -> 127.0.0.1:64993          RUNNING
-                                                              rpc: 8545/tcp -> 127.0.0.1:64995
-                                                              tcp-discovery: 30303/tcp -> 127.0.0.1:64994
-                                                              udp-discovery: 30303/udp -> 127.0.0.1:58096
-                                                              ws: 8546/tcp -> 127.0.0.1:64996
-ad6f401126fa   el-client-2                                    engine-rpc: 8551/tcp -> 127.0.0.1:65003          RUNNING
-                                                              rpc: 8545/tcp -> 127.0.0.1:65001
-                                                              tcp-discovery: 30303/tcp -> 127.0.0.1:65000
-                                                              udp-discovery: 30303/udp -> 127.0.0.1:57269
-                                                              ws: 8546/tcp -> 127.0.0.1:65002
-12d04a9dbb69   prelaunch-data-generator-1680882122181135513   <none>                                           STOPPED
-5b45f9c0504b   prelaunch-data-generator-1680882122192182847   <none>                                           STOPPED
-3d4aaa75e218   prelaunch-data-generator-1680882122201668972   <none>                                           STOPPED
+UUID           Name                                             Ports                                         Status
+cb04101e98fd   cl-client-0                                      http: 4000/tcp -> http://127.0.0.1:50646      RUNNING
+                                                                metrics: 5054/tcp -> http://127.0.0.1:50647
+                                                                tcp-discovery: 9000/tcp -> 127.0.0.1:50648
+                                                                udp-discovery: 9000/udp -> 127.0.0.1:59240
+f377be0f55f8   cl-client-0-validator                            http: 5042/tcp -> 127.0.0.1:50649             RUNNING
+                                                                metrics: 5064/tcp -> http://127.0.0.1:50650
+19b325f68893   el-client-0                                      engine-rpc: 8551/tcp -> 127.0.0.1:50639       RUNNING
+                                                                rpc: 8545/tcp -> 127.0.0.1:50641
+                                                                tcp-discovery: 30303/tcp -> 127.0.0.1:50640
+                                                                udp-discovery: 30303/udp -> 127.0.0.1:49442
+                                                                ws: 8546/tcp -> 127.0.0.1:50642
+a9608eaf4942   prelaunch-data-generator-cl-genesis-data         <none>                                        RUNNING
+a1e33f5b7141   prelaunch-data-generator-cl-validator-keystore   <none>                                        STOPPED
+971aaffb412d   prelaunch-data-generator-el-genesis-data         <none>                                        RUNNING
+``` 
+
+You'll now see in the `User Services` section all the ports that you will use to connect to and interact with your local node, including the RPC URL. Your port numbers may differ from the one above.
+
+Congratulations! You now have a full Ethereum staking node for all your private testnet needs.
+
+
+### 5. Push it to Github!
+One quick last step we'll want to do is push what we've written to Github. Simply create a new repository titled `my-testnet` and run the following from your command line:
 ```
-Congratulations! You’ve successfully configured your local testnet to have 3 nodes instead of 1. To run the same workflows you did before against your dApp (deploy & test), perform the same operations we did before by replacing the `<$YOUR_PORT>` in the `localnet` struct in your `hardhat.config.ts` config file with the port of the rpc uri output from any `el-client-<num>`  service in your new, 3-node local testnet.
+git clone git@github.com:$YOUR_GITHUB_USERNAME/my-testnet.git
+```
 
+Then proceed to push your files to that repository. To check that it worked, you can run:
+```bash
+kurtosis run github.com/$YOUR_GITHUB_USERNAME/my-testnet/main.star
+```
 
-## Conclusion
+Everything should work the same way as it did before, but the beauty of this is that you can now run the above command anywhere and the node will be spun up in the exact same way.
 
-And that's it! To recap this short guide, you:
-* Created a local Ethereum testnet over Docker using Kurtosis
-* Connected your local dApp development environment to the local Ethereum network
-* Deployed a dApp and ran a simple test against it on the local Ethereum network
-* Configured the underlying Ethereum network to have 3 nodes
+### 6. Advanced Workflows
+You may already know what you want to do with the private testnet you've just spun up, and that's great! We hope this was helpful in getting you started and to show you just how easy it was to write your own testnet definition using Kurtosis.
 
-We’d love to hear from you on what went well for you, what could be improved, or to answer any of your questions. Don’t hesitate to reach out via [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or [email us](mailto:feedback@kurtosistech.com)!
+Otherwise, we've got some neat ideas for what you can do next. If you need a hand with any of the below, feel free to let us know in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/new/choose) where we and members of our community can help!
+* Deploy your node in a Kubernetes cluster for collaborative work and scale it out to multiple nodes! Check out our docs for how to do so [here](https://docs.kurtosis.com/k8s/). 
+* Simulate MEV workflows using by importing the [MEV Package](https://github.com/kurtosis-tech/mev-package), which contains the Flashbots suite of products, including the MEV-Boost, MEV-Flood, and MEV-relay, alongside any dependencies (postgres & redis). Here's a full example of this set up [here](https://github.com/kurtosis-tech/geth-lighthouse-mev-package).
+* Connect other infrastructure (oracles, relayers, etc) to the network by adding more to your `main.star` file! Remember, this is an environment definition and you can import any pre-existing packages that you may find useful. Here are a [few examples](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main)
+* Deploy your dApp onto the local network! Hardhat can be used to do so by using the given RPC URL & the `network_id` defined in the `network_params.json` you wrote at the beginning. In your case, the `network_id` should be: `3151908`.
 
-### Other examples and guides
-We encourage you to check out our [quickstart](https://docs.kurtosis.com/quickstart) (where you’ll build a Postgres database and API on top) and our other examples in our [awesome-kurtosis repository](https://github.com/kurtosis-tech/awesome-kurtosis) where you’ll find some great examples, including packages for:
-* [Spinning up the same local Ethereum testnet](https://github.com/kurtosis-tech/eth2-package), but with additional services connected such as a transaction spammer (to simulate transactions), a fork monitor, and a connected Grafana and Prometheus instance
+### Conclusion
+
+To recap, in this guide you:
+* Created a working directory locally for your Kurtosis package
+* Wrote a very short environment definition, `main.star`, which simply imported the client implementations for your node, generated the necessary starting state, and then launched them!
+* Pushed your environment definition to Github, enabling it to be used time and again for the future with complete reproduciblity. 
+
+You also saw first-hand how the composability aspect of Kurtosis environment definitions were used to abstract away a lot of the complexities that come with bootstrapping your own node. And because this is entirely reproducible, your team can use this as a private blockchain for validating and testing changes for your application.
+
+We hope this guide was helpful and we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using kurtosis feedback to file an issue in our [Github](https://github.com/kurtosis-tech/eth-kurtosis/issues) or post your question in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions).
+
+Thank you!
