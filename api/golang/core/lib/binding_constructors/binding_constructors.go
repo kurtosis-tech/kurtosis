@@ -26,11 +26,6 @@ func NewPort(
 		MaybeWaitTimeout:         maybeWaitTimeout,
 	}
 }
-func NewUpdateServiceConfig(subnetwork string) *kurtosis_core_rpc_api_bindings.UpdateServiceConfig {
-	return &kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
-		Subnetwork: &subnetwork,
-	}
-}
 
 // ==============================================================================================
 //

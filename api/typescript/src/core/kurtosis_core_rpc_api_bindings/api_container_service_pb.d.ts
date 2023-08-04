@@ -85,31 +85,6 @@ export namespace ServiceInfo {
   }
 }
 
-export class UpdateServiceConfig extends jspb.Message {
-  getSubnetwork(): string;
-  setSubnetwork(value: string): UpdateServiceConfig;
-  hasSubnetwork(): boolean;
-  clearSubnetwork(): UpdateServiceConfig;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): UpdateServiceConfig.AsObject;
-  static toObject(includeInstance: boolean, msg: UpdateServiceConfig): UpdateServiceConfig.AsObject;
-  static serializeBinaryToWriter(message: UpdateServiceConfig, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): UpdateServiceConfig;
-  static deserializeBinaryFromReader(message: UpdateServiceConfig, reader: jspb.BinaryReader): UpdateServiceConfig;
-}
-
-export namespace UpdateServiceConfig {
-  export type AsObject = {
-    subnetwork?: string,
-  }
-
-  export enum SubnetworkCase { 
-    _SUBNETWORK_NOT_SET = 0,
-    SUBNETWORK = 1,
-  }
-}
-
 export class RunStarlarkScriptArgs extends jspb.Message {
   getSerializedScript(): string;
   setSerializedScript(value: string): RunStarlarkScriptArgs;

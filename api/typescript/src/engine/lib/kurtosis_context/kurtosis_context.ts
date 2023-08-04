@@ -93,7 +93,6 @@ export class KurtosisContext {
             enclaveName,
             DEFAULT_API_CONTAINER_VERSION_TAG,
             API_CONTAINER_LOG_LEVEL,
-            subnetworkDisableBecauseItIsDeprecated,
         );
 
         const getEnclaveResponseResult = await this.client.createEnclaveResponse(enclaveArgs)

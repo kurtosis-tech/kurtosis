@@ -92,16 +92,6 @@ pub struct ServiceInfo {
     #[prost(enumeration = "ServiceStatus", tag = "8")]
     pub service_status: i32,
 }
-/// Subset of ServiceConfig attributes containing only the fields that are "live-updatable"
-/// This will eventually get removed in favour of ServiceConfig when all attributes become "live-updatable"
-#[allow(clippy::derive_partial_eq_without_eq)]
-#[derive(Clone, PartialEq, ::prost::Message)]
-pub struct UpdateServiceConfig {
-    /// The name of the subnetwork the service will be moved to. If the subnetwork does not exist, it will be created.
-    /// If it is set to "" the service will be moved to the default subnetwork
-    #[prost(string, optional, tag = "1")]
-    pub subnetwork: ::core::option::Option<::prost::alloc::string::String>,
-}
 /// ==============================================================================================
 ///                                Execute Starlark Arguments
 /// ==============================================================================================
