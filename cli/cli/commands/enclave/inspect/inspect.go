@@ -52,8 +52,8 @@ const (
 )
 
 var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
-	userServicesArtifactsHeader:  printUserServices,
-	filesArtifactsHeader:         printFilesArtifacts,
+	userServicesArtifactsHeader: printUserServices,
+	filesArtifactsHeader:        printFilesArtifacts,
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
