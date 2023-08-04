@@ -3,6 +3,8 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions"
@@ -442,8 +444,21 @@ func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
 }
 
 func (backend *DockerKurtosisBackend) CreateLogsAggregator(ctx context.Context, logsAggregatorPortNum uint16) (*logs_aggregator.LogsAggregator, error) {
-	// TODO: Implement
-	return nil, nil
+
+	//Declaring the implementation
+	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer()
+
+	logsAggregator, err := logs_aggregator_functions.CreateLogsAggregator(
+		ctx,
+		9710, // change this later
+		logsAggregatorContainer,
+		backend.dockerManager,
+		backend.objAttrsProvider,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator using the logs aggregator container '%+v' and the port number '%v'", logsAggregatorContainer, 9710)
+	}
+	return logsAggregator, nil
 }
 
 func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(

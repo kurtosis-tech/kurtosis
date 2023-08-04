@@ -297,9 +297,15 @@ func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRun
 		isThereLogsDatabase = false
 	}
 
+	//if !isThereLogsDatabase {
+	//	if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx, defaultHttpLogsDatabasePortNum); err != nil {
+	//		return stacktrace.Propagate(err, "An error occurred creating the logs database with HTTP port number '%v'", defaultHttpLogsDatabasePortNum)
+	//	}
+	//}
+
 	if !isThereLogsDatabase {
-		if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx, defaultHttpLogsDatabasePortNum); err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating the logs database with HTTP port number '%v'", defaultHttpLogsDatabasePortNum)
+		if _, err := guarantor.kurtosisBackend.CreateLogsAggregator(ctx, defaultLogAggregatorPortNum); err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating the logs aggregator listening for logs at port number '%v'", defaultHttpLogsDatabasePortNum)
 		}
 	}
 
