@@ -21,17 +21,33 @@ const (
 	readonlyPermissions       = 0400
 )
 
-// CompressPath compressed the entire content of the file or directory at pathToCompress and returns an io.ReadCloser
-// of the TGZ archive created, alongside the size (in bytes) of the archive
-// The consumer should take care of closing the io.ReadClose returned
+// CompressPath is similar to CompressPathToFile but opens the archive and returns a ReadCloser to it.
+// It's the consumer's responsibility to make sure the result gets closed appropriately
 func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadCloser, uint64, []byte, error) {
+	compressedFilePath, compressedFileSize, compressedFileContentMd5, err := CompressPathToFile(pathToCompress, enforceMaxFileSizeLimit)
+	if err != nil {
+		return nil, 0, nil, stacktrace.Propagate(err,
+			"An error occurred creating the archive from the files at '%s'", pathToCompress)
+	}
+	compressedFile, err := os.OpenFile(compressedFilePath, os.O_RDONLY, ownerAllPermissions)
+	if err != nil {
+		return nil, 0, nil, stacktrace.Propagate(err,
+			"Failed to open the archive file at '%s' during files upload for '%s'.", compressedFilePath, pathToCompress)
+	}
+	return compressedFile, compressedFileSize, compressedFileContentMd5, nil
+}
+
+// CompressPathToFile compressed the entire content of the file or directory at pathToCompress and returns the path
+// to the TGZ archive created, alongside the size (in bytes) of the archive
+// The consumer should take care of closing the io.ReadClose returned
+func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (string, uint64, []byte, error) {
 	// First we compute the hash of the content about to be compressed
 	// Note that we're computing this "complex" hash here because the way tar.gz works, it writes files metadata to the
 	// archive, like last date of modification for each file. In our case, we just want to hash the content, regardless
 	// of those metadata.
 	filesInPathRecursive, err := listFilesInPathDeterministic(pathToCompress, true)
 	if err != nil {
-		return nil, 0, nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
+		return "", 0, nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
 	}
 	compressedFileContentMd5 := md5.New()
 	for _, filePath := range filesInPathRecursive {
@@ -40,36 +56,29 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadC
 		// of the archive change but the files remains the same, the hash will change as well
 		compressedFileContentMd5.Write([]byte(pathRelativeToRoot))
 		if err = writeFileContent(filePath, compressedFileContentMd5); err != nil {
-			return nil, 0, nil, stacktrace.Propagate(err, "An error occurred computing files artifact hash for '%s' in '%s'", filePath, pathToCompress)
+			return "", 0, nil, stacktrace.Propagate(err, "An error occurred computing files artifact hash for '%s' in '%s'", filePath, pathToCompress)
 		}
 	}
 
 	// Then we compress the content into an archive
 	filepathsToUpload, err := listFilesInPathDeterministic(pathToCompress, false)
 	if err != nil {
-		return nil, 0, nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
+		return "", 0, nil, stacktrace.Propagate(err, "There was an error in getting a list of files in the directory '%s' provided", pathToCompress)
 	}
 
 	tempDir, err := os.MkdirTemp(defaultTmpDir, tempCompressionDirPattern)
 	if err != nil {
-		return nil, 0, nil, stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
+		return "", 0, nil, stacktrace.Propagate(err, "Failed to create temporary directory '%s' for compression.", tempDir)
 	}
 
 	compressedFilePath := filepath.Join(tempDir, filepath.Base(pathToCompress)+compressionExtension)
 	if err = archiver.Archive(filepathsToUpload, compressedFilePath); err != nil {
-		return nil, 0, nil, stacktrace.Propagate(err, "Failed to compress '%s'.", pathToCompress)
+		return "", 0, nil, stacktrace.Propagate(err, "Failed to compress '%s'.", pathToCompress)
 	}
 
-	compressedFile, err := os.OpenFile(compressedFilePath, os.O_RDONLY, ownerAllPermissions)
+	compressedFileInfo, err := os.Stat(compressedFilePath)
 	if err != nil {
-		return nil, 0, nil, stacktrace.Propagate(err,
-			"Failed to create a temporary archive file at '%s' during files upload for '%s'.",
-			tempDir, pathToCompress)
-	}
-
-	compressedFileInfo, err := compressedFile.Stat()
-	if err != nil {
-		return nil, 0, nil, stacktrace.Propagate(err,
+		return "", 0, nil, stacktrace.Propagate(err,
 			"Failed to inspect temporary archive file at '%s' during files upload for '%s'.",
 			tempDir, pathToCompress)
 	}
@@ -78,18 +87,18 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadC
 	if compressedFileInfo.Size() >= 0 {
 		compressedFileSize = uint64(compressedFileInfo.Size())
 	} else {
-		return nil, 0, nil, stacktrace.Propagate(err,
+		return "", 0, nil, stacktrace.Propagate(err,
 			"Failed to compute archive size for temporary file '%s' obtained compressing path '%s'",
 			tempDir, pathToCompress)
 	}
 
 	if enforceMaxFileSizeLimit && compressedFileSize >= kurtosisDataTransferLimit {
-		return nil, 0, nil, stacktrace.NewError(
+		return "", 0, nil, stacktrace.NewError(
 			"The files you are trying to upload, which are now compressed, exceed or reach 100mb. " +
 				"Manipulation (i.e. uploads or downloads) of files larger than 100mb is currently disallowed in Kurtosis.")
 	}
 
-	return compressedFile, compressedFileSize, compressedFileContentMd5.Sum(nil), nil
+	return compressedFilePath, compressedFileSize, compressedFileContentMd5.Sum(nil), nil
 }
 
 // listFilesInPathDeterministic returns the list of file paths in the path passed as an argument.

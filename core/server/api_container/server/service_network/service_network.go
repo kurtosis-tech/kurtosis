@@ -134,6 +134,10 @@ type ServiceNetwork interface {
 
 	UploadFilesArtifact(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
+	GetFilesArtifactMd5(artifactName string) (enclave_data_directory.FilesArtifactUUID, []byte, bool, error)
+
+	UpdateFilesArtifact(fileArtifactUuid enclave_data_directory.FilesArtifactUUID, updatedContent io.Reader, contentMd5 []byte) error
+
 	IsNetworkPartitioningEnabled() bool
 
 	GetUniqueNameForFileArtifact() (string, error)

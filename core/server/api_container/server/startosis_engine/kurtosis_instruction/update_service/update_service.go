@@ -105,7 +105,7 @@ func (builtin *UpdateServiceCapabilities) Validate(_ *builtin_argument.ArgumentV
 			return startosis_errors.NewValidationError("Service was about to be moved to subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark script with subnetwork enabled.", *builtin.updateServiceConfig.Subnetwork)
 		}
 	}
-	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ServiceNotFound {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ComponentNotFound {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' does not exist", UpdateServiceBuiltinName, builtin.serviceName)
 	}
 	return nil
