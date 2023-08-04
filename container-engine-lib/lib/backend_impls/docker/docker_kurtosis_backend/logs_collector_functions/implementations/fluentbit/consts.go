@@ -7,12 +7,10 @@ import (
 const (
 	rootDirpath = "/fluent-bit"
 
-	////////////////////////--LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
+	////////////////////////--FLUENT BIT CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage        = "fluent/fluent-bit:1.9.7"
 	tcpTransportProtocol  = port_spec.TransportProtocol_TCP
 	httpTransportProtocol = port_spec.TransportProtocol_TCP
-
-	lokiOutputTypeName = "loki"
 
 	configDirpathInContainer  = rootDirpath + "/etc"
 	configFilepathInContainer = configDirpathInContainer + "/fluent-bit.conf"
@@ -50,7 +48,7 @@ const (
 `
 
 	healthCheckEndpointPath = "api/v1/health"
-	////////////////////////--FINISH LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
+	////////////////////////--FINISH FLUENT BIT CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
 	////////////////////////--FLUENTBIT CONFIGURATION SECTION--/////////////////////////////
 	logLevel               = "debug"
@@ -62,5 +60,10 @@ const (
 	matchAllRegex          = "*"
 	jsonLineFormat         = "json"
 	unlimitedOutputRetry   = "no_limits"
+	lokiOutputTypeName     = "loki"
+
+	// fluentbit doesn't have a dedicated vector outbit plugin but vector added a source input pluging for fluentbit
+	// with the ability to pick up logs over fluenbits forward output plugin, PR here: https://github.com/vectordotdev/vector/pull/7548
+	vectorOutputTypeName = "forward"
 	////////////////////////--FINISH FLUENTBIT CONFIGURATION SECTION--/////////////////////////////
 )

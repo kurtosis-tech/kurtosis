@@ -58,8 +58,8 @@ type Output struct {
 }
 
 func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
-	lokiHost string,
-	lokiPort uint16,
+	logAggregatorHost string,
+	logAggregatorPort uint16,
 	tcpPortNumber uint16,
 	httpPortNumber uint16,
 ) *FluentbitConfig {
@@ -83,10 +83,10 @@ func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 			Rules: getModifyFilterRulesKurtosisLabels(),
 		},
 		Output: &Output{
-			Name:        lokiOutputTypeName,
+			Name:        vectorOutputTypeName,
 			Match:       matchAllRegex,
-			Host:        lokiHost,
-			Port:        lokiPort,
+			Host:        logAggregatorHost,
+			Port:        logAggregatorPort,
 			Labels:      getOutputKurtosisLabelsForLogs(),
 			LineFormat:  jsonLineFormat,
 			TenantIDKey: docker_labels_for_logs.LogsDatabaseKurtosisTrackedDockerLabelUsedForIdentifyTenants.GetString(),

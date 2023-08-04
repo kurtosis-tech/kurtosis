@@ -8,8 +8,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -30,7 +30,7 @@ func CreateLogsCollectorForEnclave(
 	logsCollectorTcpPortNumber uint16,
 	logsCollectorHttpPortNumber uint16,
 	logsCollectorContainer LogsCollectorContainer,
-	logsDatabase *logs_database.LogsDatabase,
+	logsAggregator *logs_aggregator.LogsAggregator,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (
@@ -51,18 +51,18 @@ func CreateLogsCollectorForEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred while retrieving the network id for the enclave '%v'", enclaveUuid)
 	}
 
-	if logsDatabase.GetMaybePrivateIpAddr() == nil {
-		return nil, stacktrace.NewError("Expected the logs database has private IP address but this is nil")
+	if logsAggregator.GetMaybePrivateIpAddr() == nil {
+		return nil, stacktrace.NewError("Expected the logs aggregator has private IP address but this is nil")
 	}
 
-	logsDatabaseHost := logsDatabase.GetMaybePrivateIpAddr().String()
-	logsDatabasePort := logsDatabase.GetPrivateHttpPort().GetNumber()
+	logsAggregatorHost := logsAggregator.GetMaybePrivateIpAddr().String()
+	logsAggregatorPort := uint16(9714) // current default port
 
 	containerId, containerLabels, hostMachinePortBindings, removeLogsCollectorContainerFunc, err := logsCollectorContainer.CreateAndStart(
 		ctx,
 		enclaveUuid,
-		logsDatabaseHost,
-		logsDatabasePort,
+		logsAggregatorHost,
+		logsAggregatorPort,
 		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,
 		logsCollectorTcpPortId,
@@ -74,10 +74,10 @@ func CreateLogsCollectorForEnclave(
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred running the logs collector container with container ID '%v' with logs database host '%v', logs database port '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v' in Docker network with ID '%v'",
+			"An error occurred running the logs collector container with container ID '%v' with logs aggregator host '%v', logs aggregator port '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v' in Docker network with ID '%v'",
 			containerId,
-			logsDatabaseHost,
-			logsDatabasePort,
+			logsAggregatorHost,
+			logsAggregatorHost,
 			logsCollectorHttpPortNumber,
 			logsCollectorTcpPortId,
 			logsCollectorHttpPortId,
