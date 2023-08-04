@@ -21,15 +21,14 @@ However, there are cases where an engineer  may need to develop or test function
 We will review the details on when and how a full, private testnet can be useful in another article.
 :::
 
-This guide will walk you through how to build your very own fully functioning, private Ethereum testnet. In fact, the artifact you’ll end up with at the end of this tutorial will be a special type of environment definition that works at any scale you desire, is completely reproducible for CI workflows, and is modular - meaning you can add or remove other services to your network as you wish.
+This guide will walk you through how to build your very own fully functioning, private Ethereum testnet using [`eth-kurtosis`](https://github.com/kurtosis-tech/eth-kurtosis/tree/main). In fact, the artifact you’ll end up with at the end of this tutorial will be a special type of environment definition that works at any scale you desire, is completely reproducible for CI workflows, and is modular - meaning you can add or remove other services to your network as you wish.
 
 **What you will do:**
 
-1 Create a local Kurtosis package
-2 Define how your private Ethereum testnet should look like. This example will leverage the Lighthouse CL client and Geth EL client to build a single, full staking node over Docker.
-3 Launch the private testnet locally over Docker
-4 Use hardhat to deploy a sample smart contract
-5 Push everything to Github as a new repository for others to use
+1. Create a local Kurtosis package template
+2. Within the template, define how your private Ethereum testnet should look like. This example will leverage the Lighthouse CL client and Geth EL client to build a single, full staking node over Docker with [`eth-kurtosis`](https://github.com/kurtosis-tech/eth-kurtosis/tree/main).
+3. Launch the private testnet locally over Docker
+4. Push everything to Github as a new repository for others to use
 
 **What you will need beforehand to get started:**
 
@@ -202,6 +201,8 @@ Otherwise, we've got some neat ideas for what you can do next. If you need a han
 * Simulate MEV workflows using by importing the [MEV Package](https://github.com/kurtosis-tech/mev-package), which contains the Flashbots suite of products, including the MEV-Boost, MEV-Flood, and MEV-relay, alongside any dependencies (postgres & redis). Here's a full example of this set up [here](https://github.com/kurtosis-tech/geth-lighthouse-mev-package).
 * Connect other infrastructure (oracles, relayers, etc) to the network by adding more to your `main.star` file! Remember, this is an environment definition and you can import any pre-existing packages that you may find useful. Here are a [few examples](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main)
 * Deploy your dApp onto the local network! Hardhat can be used to do so by using the given RPC URL & the `network_id` defined in the `network_params.json` you wrote at the beginning. In your case, the `network_id` should be: `3151908`.
+
+We're currently building out more components of [`eth-kurtosis`](https://github.com/kurtosis-tech/eth-kurtosis/tree/main), which serves as an index of plug-and-play components for Ethereum private testnets. We're building support for more clients - so let us know if there's something you would love to see added to the index! 
 
 ### Conclusion
 
