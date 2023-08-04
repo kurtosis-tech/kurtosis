@@ -1,6 +1,9 @@
 package vector
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+)
 
 type VectorConfig struct {
 	Source *Source `yaml:"sources"`
@@ -19,12 +22,12 @@ type Sink struct {
 	Inputs []string `yaml:"inputs"`
 }
 
-func newDefaultVectorConfig() *VectorConfig {
+func newDefaultVectorConfig(listeningPortNumber uint16) *VectorConfig {
 	return &VectorConfig{
 		Source: &Source{
 			Id:      fluentBitSourceId,
 			Type:    fluentBitSourceType,
-			Address: fmt.Sprintf("%s:%s", fluentBitSourceIpAddress, fluentBitSourcePort),
+			Address: fmt.Sprintf("%s:%s", fluentBitSourceIpAddress, strconv.Itoa(int(listeningPortNumber))),
 		},
 		Sink: &Sink{
 			Id:     stdoutSinkID,

@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
@@ -282,20 +281,20 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 
 func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRunning(ctx context.Context, shouldForceContainerRestart bool) error {
 
-	logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs database")
-	}
-	isThereLogsDatabase := logsDatabase != nil
-	isThereNotRunningLogsDatabase := isThereLogsDatabase && logsDatabase.GetStatus() != container_status.ContainerStatus_Running
-
-	//Destroy the logs database if caller requested it or if the container is not running
-	if shouldForceContainerRestart || isThereNotRunningLogsDatabase {
-		if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
-			return stacktrace.Propagate(err, "An error occurred destroying the logs database")
-		}
-		isThereLogsDatabase = false
-	}
+	//logsDatabase, err := guarantor.kurtosisBackend.GetLogsDatabase(ctx)
+	//if err != nil {
+	//	return stacktrace.Propagate(err, "An error occurred getting the logs database")
+	//}
+	//isThereLogsDatabase := logsDatabase != nil
+	//isThereNotRunningLogsDatabase := isThereLogsDatabase && logsDatabase.GetStatus() != container_status.ContainerStatus_Running
+	//
+	////Destroy the logs database if caller requested it or if the container is not running
+	//if shouldForceContainerRestart || isThereNotRunningLogsDatabase {
+	//	if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
+	//		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
+	//	}
+	//	isThereLogsDatabase = false
+	//}
 
 	//if !isThereLogsDatabase {
 	//	if _, err := guarantor.kurtosisBackend.CreateLogsDatabase(ctx, defaultHttpLogsDatabasePortNum); err != nil {
@@ -303,9 +302,10 @@ func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRun
 	//	}
 	//}
 
-	if !isThereLogsDatabase {
+	isLogsAggregatorRunning := false
+	if !isLogsAggregatorRunning {
 		if _, err := guarantor.kurtosisBackend.CreateLogsAggregator(ctx, defaultLogAggregatorPortNum); err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating the logs aggregator listening for logs at port number '%v'", defaultHttpLogsDatabasePortNum)
+			return stacktrace.Propagate(err, "An error occurred creating the logs aggregator listening for logs at port number '%v'", defaultLogAggregatorPortNum)
 		}
 	}
 

@@ -1,6 +1,6 @@
 package vector
 
-func createVectorContainerConfigProvider() *vectorContainerConfigProvider {
-	config := newDefaultVectorConfig()
+func createVectorContainerConfigProvider(portNumber uint16) *vectorContainerConfigProvider {
+	config := newDefaultVectorConfig(portNumber)
 	return newVectorContainerConfigProvider(config)
 }
