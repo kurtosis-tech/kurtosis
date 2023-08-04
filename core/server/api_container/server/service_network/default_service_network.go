@@ -1023,6 +1023,8 @@ func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIde
 		return nil, stacktrace.NewError("Found exactly one service object, but it didn't match expected UUID '%v'", serviceUuid)
 	}
 
+	// The service status is managed at the service network layer so we copy it to the response
+	serviceObj.GetRegistration().SetStatus(serviceRegistration.GetStatus())
 	return serviceObj, nil
 }
 
