@@ -459,6 +459,18 @@ func (backend *DockerKurtosisBackend) CreateLogsAggregator(ctx context.Context, 
 	return logsAggregator, nil
 }
 
+func (backend *DockerKurtosisBackend) GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(
+		ctx,
+		backend.dockerManager,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
+	}
+
+	return maybeLogsAggregator, nil
+}
+
 func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
@@ -470,13 +482,13 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 ) {
 
 	//TODO we we'd have to replace this part if we ever wanted to send to an external source
-	logsDatabase, err := backend.GetLogsDatabase(ctx)
+	logsAggregator, err := backend.GetLogsAggregator(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database; the logs collector cannot be run without a logs database")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator; the logs collector cannot be run without a logs aggregator")
 	}
 
-	if logsDatabase == nil || logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
-		return nil, stacktrace.NewError("The logs database is not running; the logs collector cannot be run without a running logs database")
+	if logsAggregator == nil || logsAggregator.GetStatus() != container_status.ContainerStatus_Running {
+		return nil, stacktrace.NewError("The logs aggregator is not running; the logs collector cannot be run without a running logs aggregator")
 	}
 
 	//Declaring the implementation
@@ -488,7 +500,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,
 		logsCollectorContainer,
-		logsDatabase,
+		logsAggregator,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)

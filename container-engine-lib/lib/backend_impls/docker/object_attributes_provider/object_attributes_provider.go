@@ -17,10 +17,12 @@ import (
 const (
 	engineServerNamePrefix = "kurtosis-engine"
 	logsDatabaseName       = "kurtosis-logs-db"
+	logsAggregatorName     = "kurtosis-logs-aggregator"
 
 	//We always use the same name because we are going to have only one instance of this volume,
 	//so when the engine is restarted it mounts the same volume with the previous logs
-	logsDatabaseVolumeName = logsDatabaseName + "-vol"
+	logsDatabaseVolumeName   = logsDatabaseName + "-vol"
+	logsAggregatorVolumeName = logsAggregatorName + "-vol"
 )
 
 type DockerObjectAttributesProvider interface {

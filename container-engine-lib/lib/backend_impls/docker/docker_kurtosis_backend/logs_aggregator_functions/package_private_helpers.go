@@ -5,11 +5,66 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
 )
+
+const (
+	shouldShowStoppedLogsAggregatorContainers = true
+)
+
+func getLogsAggregatorObjectAndContainerId(
+	ctx context.Context,
+	dockerManager *docker_manager.DockerManager,
+) (
+	resultMaybeLogsAggregator *logs_aggregator.LogsAggregator,
+	resultMaybeContainerId string,
+	resultErr error,
+) {
+	allLogsAggregatorContainers, err := getAllLogsAggregatorContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs Aggregator containers")
+	}
+
+	if len(allLogsAggregatorContainers) == 0 {
+		return nil, "", nil
+	}
+	if len(allLogsAggregatorContainers) > 1 {
+		return nil, "", stacktrace.NewError("Found more than one logs Aggregator Docker container'; this is a bug in Kurtosis")
+	}
+
+	logsAggregatorContainer := allLogsAggregatorContainers[0]
+	logsAggregatorContainerID := logsAggregatorContainer.GetId()
+
+	logsAggregatorObject, err := getLogsAggregatorObjectFromContainerInfo(
+		ctx,
+		logsAggregatorContainerID,
+		logsAggregatorContainer.GetStatus(),
+		dockerManager,
+	)
+	if err != nil {
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting the logs Aggregator object using container ID '%v', labels '%+v' and the status '%v'", logsAggregatorContainer.GetId(), logsAggregatorContainer.GetLabels(), logsAggregatorContainer.GetStatus())
+	}
+
+	return logsAggregatorObject, logsAggregatorContainerID, nil
+}
+
+func getAllLogsAggregatorContainers(ctx context.Context, dockerManager *docker_manager.DockerManager) ([]*types.Container, error) {
+	logsAggregatorContainerSearchLabels := map[string]string{
+		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
+		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsAggregatorTypeDockerLabelValue.GetString(),
+	}
+
+	matchingLogsAggregatorContainers, err := dockerManager.GetContainersByLabels(ctx, logsAggregatorContainerSearchLabels, shouldShowStoppedLogsAggregatorContainers)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred fetching logs Aggregator containers using labels: %+v", logsAggregatorContainerSearchLabels)
+	}
+	return matchingLogsAggregatorContainers, nil
+}
 
 func getLogsAggregatorObjectFromContainerInfo(
 	ctx context.Context,
