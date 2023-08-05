@@ -12,18 +12,18 @@ const (
 	////////////////////////--FINISH VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
 	////////////////////////--VECTOR CONFIGURATION SECTION--/////////////////////////////
-	fluentBitSourceId        = "fluent_bit"
-	fluentBitSourceType      = "fluent"
+	fluentBitSourceId        = "\"fluent_bit\""
+	fluentBitSourceType      = "\"fluent\""
 	fluentBitSourceIpAddress = "0.0.0.0"
 
-	stdoutSinkID = "stdout"
-	stdoutTypeId = "console"
+	stdoutSinkID = "\"stdout\""
+	stdoutTypeId = "\"console\""
 
 	configFileTemplateName = "vectorConfigFileTemplate"
 	configFileTemplate     = `
 [sources.{{ .Source.Id }}]
 type = {{ .Source.Type }}
-address = {{ .Source.Address }}
+address = "{{ .Source.Address }}"
 
 [sinks.{{ .Sink.Id }}]
 type = {{ .Sink.Type }}

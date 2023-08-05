@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"text/template"
 )
 
 const (
 	shBinaryFilepath = "/bin/sh"
 	printfCmdName    = "printf"
+	shCmdFlag        = "-c"
 )
 
 type vectorContainerConfigProvider struct {
@@ -28,7 +28,6 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	logsAggregatorVolumeName string,
 	networkId string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
-
 	volumeMounts := map[string]string{
 		logsAggregatorVolumeName: configDirpath,
 	}
@@ -42,8 +41,9 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	// 1. create config file in appropriate location in logs aggregator container
 	// 2. start the logs aggregator with the config file
 	overrideCmd := []string{
+		shCmdFlag,
 		fmt.Sprintf(
-			"%v '%v' > %v && %v %v %v",
+			"%v '%v' > %v && %v %v=%v",
 			printfCmdName,
 			logsAggregatorConfigContentStr,
 			configFilepath,
@@ -52,16 +52,15 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 			configFilepath,
 		),
 	}
-	logrus.Debugf("OVERRIDE CMD LOG AGGREGATOR: %v", overrideCmd)
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
 		containerName,
 		networkId,
-	).WithLabels(
-		containerLabels,
 	).WithVolumeMounts(
 		volumeMounts,
+	).WithLabels(
+		containerLabels,
 	).WithEntrypointArgs(
 		[]string{
 			shBinaryFilepath,
@@ -86,7 +85,6 @@ func (vector *vectorContainerConfigProvider) getConfigFileContent() (string, err
 	}
 
 	templateStr := templateStrBuffer.String()
-	logrus.Debugf("VECTOR CONFIG FILE: %s", templateStr)
 
 	return templateStr, nil
 }
