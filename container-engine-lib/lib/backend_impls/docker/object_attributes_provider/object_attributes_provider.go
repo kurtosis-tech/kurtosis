@@ -37,6 +37,8 @@ type DockerObjectAttributesProvider interface {
 		httpApiPortSpec *port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
 	ForLogsDatabaseVolume() (DockerObjectAttributes, error)
+	ForLogsAggregator() (DockerObjectAttributes, error)
+	ForLogsAggregatorVolume() (DockerObjectAttributes, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -150,6 +152,41 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsDatabaseVolume() (Doc
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
 		label_key_consts.VolumeTypeDockerLabelKey: label_value_consts.LogsDatabaseVolumeTypeDockerLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregator() (DockerObjectAttributes, error) {
+	name, err := docker_object_name.CreateNewDockerObjectName(logsAggregatorName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", logsAggregatorName)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		label_key_consts.ContainerTypeDockerLabelKey: label_value_consts.LogsAggregatorTypeDockerLabelValue,
+	}
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+	return objectAttributes, nil
+}
+
+func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregatorVolume() (DockerObjectAttributes, error) {
+	name, err := docker_object_name.CreateNewDockerObjectName(logsAggregatorVolumeName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", logsAggregatorVolumeName)
+	}
+
+	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
+		label_key_consts.VolumeTypeDockerLabelKey: label_value_consts.LogsAggregatorTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

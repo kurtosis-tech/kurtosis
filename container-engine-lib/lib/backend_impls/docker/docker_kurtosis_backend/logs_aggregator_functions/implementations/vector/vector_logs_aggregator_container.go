@@ -28,13 +28,15 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 ) {
 	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(portNumber)
 
-	// TODO create the object attrs properly
-	volumeName := "log-aggregator-volume"
+	logsAggregatorVolumeAttrs, err := objAttrsProvider.ForLogsAggregatorVolume()
+	if err != nil {
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector volume attributes")
+	}
+	volumeName := logsAggregatorVolumeAttrs.GetName().GetString()
 	volumeLabelStrs := map[string]string{}
-	containerName := "log-aggregator"
-	containerLabelStrs := map[string]string{}
-
-	// create volume
+	for labelKey, labelValue := range logsAggregatorVolumeAttrs.GetLabels() {
+		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
 	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
 		return "", nil, nil, stacktrace.Propagate(
 			err,
@@ -44,7 +46,15 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 		)
 	}
 
-	// create container args
+	logsAggregatorAttrs, err := objAttrsProvider.ForLogsAggregator()
+	if err != nil {
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator container attributes.")
+	}
+	containerName := logsAggregatorAttrs.GetName().GetString()
+	containerLabelStrs := map[string]string{}
+	for labelKey, labelValue := range logsAggregatorAttrs.GetLabels() {
+		containerLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
 	createAndStartArgs, err := vectorContainerConfigProviderObj.GetContainerArgs(containerName, containerLabelStrs, volumeName, targetNetworkId)
 	if err != nil {
 		return "", nil, nil, err
@@ -74,7 +84,7 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 		}
 	}()
 
-	// TODO: wait for availability
+	// TODO: add a wait for availability
 
 	shouldRemoveLogsAggregatorContainer = false
 	return containerId, containerLabelStrs, removeContainerFunc, nil
