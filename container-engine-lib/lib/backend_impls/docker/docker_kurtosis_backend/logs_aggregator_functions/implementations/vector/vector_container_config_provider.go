@@ -10,10 +10,8 @@ import (
 )
 
 const (
-	shBinaryFilepath        = "/bin/sh"
-	shCmdFlag               = "-c"
-	printfCmdName           = "printf"
-	httpApplicationProtocol = "http"
+	shBinaryFilepath = "/bin/sh"
+	printfCmdName    = "printf"
 )
 
 type vectorContainerConfigProvider struct {
@@ -44,7 +42,6 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	// 1. create config file in appropriate location in logs aggregator container
 	// 2. start the logs aggregator with the config file
 	overrideCmd := []string{
-		shCmdFlag,
 		fmt.Sprintf(
 			"%v '%v' > %v && %v %v %v",
 			printfCmdName,
@@ -55,6 +52,7 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 			configFilepath,
 		),
 	}
+	logrus.Debugf("OVERRIDE CMD LOG AGGREGATOR: %v", overrideCmd)
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
