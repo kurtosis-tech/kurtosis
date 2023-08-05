@@ -62,8 +62,8 @@ const (
 	unlimitedOutputRetry   = "no_limits"
 	lokiOutputTypeName     = "loki"
 
-	// fluentbit doesn't have a dedicated vector outbit plugin but vector added a source input pluging for fluentbit
-	// with the ability to pick up logs over fluenbits forward output plugin, PR here: https://github.com/vectordotdev/vector/pull/7548
+	// fluentbit doesn't have a dedicated vector output plugin but vector added a source input plugin for fluentbit
+	// with the ability to pick up logs over fluentbit's forward output plugin, PR here: https://github.com/vectordotdev/vector/pull/7548
 	vectorOutputTypeName = "forward"
 	////////////////////////--FINISH FLUENTBIT CONFIGURATION SECTION--/////////////////////////////
 )

@@ -7,6 +7,6 @@ func createFluentbitConfigurationCreatorForKurtosis(
 	httpPortNumber uint16,
 ) *fluentbitConfigurationCreator {
 	config := newDefaultFluentbitConfigForKurtosisCentralizedLogs(logsDatabaseHost, logsDatabasePort, tcpPortNumber, httpPortNumber)
-	fluentbitContainerConfigProvider := newFluentbitConfigurationCreator(config)
-	return fluentbitContainerConfigProvider
+	fluentbitContainerConfigCreator := newFluentbitConfigurationCreator(config)
+	return fluentbitContainerConfigCreator
 }
