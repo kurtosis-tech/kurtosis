@@ -9,7 +9,6 @@ import (
 
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
-	isNetworkPartitioningEnabled  bool
 	requiredDockerImages          map[string]bool
 	serviceNames                  map[service.ServiceName]ServiceExistence
 	artifactNames                 map[string]bool
@@ -21,13 +20,12 @@ type ValidatorEnvironment struct {
 	minMemoryByServiceName        map[service.ServiceName]compute_resources.MemoryInMegaBytes
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool) *ValidatorEnvironment {
 	serviceNamesWithServiceExistence := map[service.ServiceName]ServiceExistence{}
 	for serviceName := range serviceNames {
 		serviceNamesWithServiceExistence[serviceName] = ServiceExistedBeforePackageRun
 	}
 	return &ValidatorEnvironment{
-		isNetworkPartitioningEnabled:  isNetworkPartitioningEnabled,
 		requiredDockerImages:          map[string]bool{},
 		serviceNames:                  serviceNamesWithServiceExistence,
 		artifactNames:                 artifactNames,
@@ -96,10 +94,6 @@ func (environment *ValidatorEnvironment) RemoveArtifactName(artifactName string)
 func (environment *ValidatorEnvironment) DoesArtifactNameExist(artifactName string) bool {
 	_, ok := environment.artifactNames[artifactName]
 	return ok
-}
-
-func (environment *ValidatorEnvironment) IsNetworkPartitioningEnabled() bool {
-	return environment.isNetworkPartitioningEnabled
 }
 
 func (environment *ValidatorEnvironment) FreeMemory(serviceName service.ServiceName) {

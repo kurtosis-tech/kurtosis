@@ -631,7 +631,6 @@ func getUserServicePodContainerSpecs(
 		Requests: resourceRequestsList,
 	}
 
-	// TODO create networking sidecars here
 	containers := []apiv1.Container{
 		{
 			Name:  userServiceContainerName,
