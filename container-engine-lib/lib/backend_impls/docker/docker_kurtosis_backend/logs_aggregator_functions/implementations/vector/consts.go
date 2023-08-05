@@ -1,16 +1,10 @@
 package vector
 
-import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
-)
-
 const (
 	configDirpath = "/etc/vector/"
 
 	////////////////////////--VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
-	containerImage        = "timberio/vector:0.31.0-debian"
-	httpTransportProtocol = port_spec.TransportProtocol_TCP
-	logLevel              = "info"
+	containerImage = "timberio/vector:0.31.0-debian"
 
 	configFilepath = configDirpath + "vector.toml"
 	binaryFilepath = "/usr/bin/vector"
@@ -21,9 +15,20 @@ const (
 	fluentBitSourceId        = "fluent_bit"
 	fluentBitSourceType      = "fluent"
 	fluentBitSourceIpAddress = "0.0.0.0"
-	fluentBitSourcePort      = "9000"
 
 	stdoutSinkID = "stdout"
 	stdoutTypeId = "console"
+
+	configFileTemplateName = "vectorConfigFileTemplate"
+	configFileTemplate     = `
+[sources.{{ .Source.Id }}]
+type = {{ .Source.Type }}
+address = {{ .Source.Address }}
+
+[sinks.{{ .Sink.Id }}]
+type = {{ .Sink.Type }}
+inputs = {{ .Sink.Inputs }}
+encoding.codec = "json"
+`
 	////////////////////////--FINISH--VECTOR CONFIGURATION SECTION--/////////////////////////////
 )

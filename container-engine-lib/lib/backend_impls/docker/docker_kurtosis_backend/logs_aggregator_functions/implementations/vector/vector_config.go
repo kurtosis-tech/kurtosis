@@ -6,20 +6,20 @@ import (
 )
 
 type VectorConfig struct {
-	Source *Source `yaml:"sources"`
-	Sink   *Sink   `yaml:"sinks"`
+	Source *Source
+	Sink   *Sink
 }
 
 type Source struct {
-	Id      string `yaml:"id"`
-	Type    string `yaml:"type"`
-	Address string `yaml:"address"`
+	Id      string
+	Type    string
+	Address string
 }
 
 type Sink struct {
-	Id     string   `yaml:"id"`
-	Type   string   `yaml:"type"`
-	Inputs []string `yaml:"inputs"`
+	Id     string
+	Type   string
+	Inputs []string
 }
 
 func newDefaultVectorConfig(listeningPortNumber uint16) *VectorConfig {
