@@ -1,9 +1,19 @@
 package vector
 
 import (
-	"github.com/go-yaml/yaml"
+	"bytes"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
+	"text/template"
+)
+
+const (
+	shBinaryFilepath        = "/bin/sh"
+	shCmdFlag               = "-c"
+	printfCmdName           = "printf"
+	httpApplicationProtocol = "http"
 )
 
 type vectorContainerConfigProvider struct {
@@ -21,12 +31,29 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	networkId string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
 
-	// ports? http? tcp?
-
-	// config?
-
 	volumeMounts := map[string]string{
 		logsAggregatorVolumeName: configDirpath,
+	}
+
+	logsAggregatorConfigContentStr, err := vector.getConfigFileContent()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki server's configuration content")
+	}
+
+	// Create cmd to
+	// 1. create config file in appropriate location in logs aggregator container
+	// 2. start the logs aggregator with the config file
+	overrideCmd := []string{
+		shCmdFlag,
+		fmt.Sprintf(
+			"%v '%v' > %v && %v %v %v",
+			printfCmdName,
+			logsAggregatorConfigContentStr,
+			configFilepath,
+			binaryFilepath,
+			configFileFlag,
+			configFilepath,
+		),
 	}
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
@@ -37,16 +64,31 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 		containerLabels,
 	).WithVolumeMounts(
 		volumeMounts,
+	).WithEntrypointArgs(
+		[]string{
+			shBinaryFilepath,
+		},
+	).WithCmdArgs(
+		overrideCmd,
 	).Build()
 
 	return createAndStartArgs, nil
 }
 
-func (vector *vectorContainerConfigProvider) getConfigContent() (string, error) {
-	vectorConfigYAMLContent, err := yaml.Marshal(vector.config)
+func (vector *vectorContainerConfigProvider) getConfigFileContent() (string, error) {
+	cngFileTemplate, err := template.New(configFileTemplateName).Parse(configFileTemplate)
 	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred marshalling Vector config '%+v'", vector.config)
+		return "", stacktrace.Propagate(err, "An error occurred parsing Vector config template '%v'", configFileTemplate)
 	}
-	vectorConfigYAMLContentStr := string(vectorConfigYAMLContent)
-	return vectorConfigYAMLContentStr, nil
+
+	templateStrBuffer := &bytes.Buffer{}
+
+	if err := cngFileTemplate.Execute(templateStrBuffer, vector.config); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred executing the Vector config file template")
+	}
+
+	templateStr := templateStrBuffer.String()
+	logrus.Debugf("VECTOR CONFIG FILE: %s", templateStr)
+
+	return templateStr, nil
 }

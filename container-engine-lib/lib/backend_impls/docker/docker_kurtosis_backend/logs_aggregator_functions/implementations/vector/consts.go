@@ -8,7 +8,7 @@ const (
 
 	configFilepath = configDirpath + "vector.toml"
 	binaryFilepath = "/usr/bin/vector"
-	configFileFlag = "--config"
+	configFileFlag = "-c"
 	////////////////////////--FINISH VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
 	////////////////////////--VECTOR CONFIGURATION SECTION--/////////////////////////////
