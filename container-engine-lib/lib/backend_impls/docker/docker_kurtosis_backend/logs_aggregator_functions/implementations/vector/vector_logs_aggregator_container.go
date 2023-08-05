@@ -40,7 +40,7 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	if err := dockerManager.CreateVolume(ctx, volumeName, volumeLabelStrs); err != nil {
 		return "", nil, nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating logs collector volume with name '%v' and labels '%+v'",
+			"An error occurred creating logs aggregator volume with name '%v' and labels '%+v'",
 			volumeName,
 			volumeLabelStrs,
 		)
