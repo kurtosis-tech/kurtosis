@@ -498,6 +498,9 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsDatabase(
 func (backend *MetricsReportingKurtosisBackend) CreateLogsAggregator(ctx context.Context, logsAggregatorPortNumber uint16) (*logs_aggregator.LogsAggregator, error) {
 	return backend.underlying.CreateLogsAggregator(ctx, logsAggregatorPortNumber)
 }
+func (backend *MetricsReportingKurtosisBackend) GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	return backend.underlying.GetLogsAggregator(ctx)
+}
 
 func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
 

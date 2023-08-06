@@ -417,6 +417,13 @@ func (backend *KubernetesKurtosisBackend) GetLogsDatabase(
 	return nil, stacktrace.NewError("Getting the logs database isn't yet implemented on Kubernetes")
 }
 
+func (backend *KubernetesKurtosisBackend) GetLogsAggregator(
+	ctx context.Context,
+) (*logs_aggregator.LogsAggregator, error) {
+	// TODO IMPLEMENT
+	return nil, stacktrace.NewError("Getting the logs aggregator isn't yet implemented on Kubernetes")
+}
+
 func (backend *KubernetesKurtosisBackend) DestroyLogsDatabase(
 	ctx context.Context,
 ) error {

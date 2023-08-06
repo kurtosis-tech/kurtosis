@@ -377,6 +377,8 @@ type KurtosisBackend interface {
 
 	CreateLogsAggregator(ctx context.Context, logsAggregatorPortNumber uint16) (*logs_aggregator.LogsAggregator, error)
 
+	GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error)
+
 	// Create a new Logs Collector for sending container's logs to the logs database server
 	//The logs collector requires that the logs database to be up before
 	CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error)
