@@ -11,7 +11,7 @@ service KurtosisCloudBackendServer {
   rpc CreateCloudInstance(CreateCloudInstanceConfigArgs) returns (CreateCloudInstanceConfigResponse) {};
   rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
   rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
-  rpc GetOrCreateEnclave(GetOrCreateEnclaveRequest) returns (GetOrCreateEnclaveResponse) {};
+  rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
 }
 
 message GetOrCreateApiKeyRequest {
@@ -22,11 +22,11 @@ message GetOrCreateApiKeyResponse {
   string api_key = 1;
 }
 
-message GetOrCreateEnclaveRequest {
+message GetOrCreateInstanceRequest {
   string api_key = 1;
 }
 
-message GetOrCreateEnclaveResponse {
+message GetOrCreateInstanceResponse {
   string instance_id = 1;
 }
 
