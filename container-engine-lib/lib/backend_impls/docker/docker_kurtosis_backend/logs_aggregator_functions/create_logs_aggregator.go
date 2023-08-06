@@ -24,18 +24,20 @@ func CreateLogsAggregator(
 	*logs_aggregator.LogsAggregator,
 	error,
 ) {
+	preExistingLogsAggregatorContainers, err := getAllLogsAggregatorContainers(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting all logs aggregator containers")
+	}
+	if len(preExistingLogsAggregatorContainers) > 0 {
+		return nil, stacktrace.NewError("Found existing logs database aggregator(s); cannot start a new one")
+	}
 
-	// check if aggregator already exists
-	// if so don't start another one
-
-	// get the network this aggregator should connect to
 	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database network")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator network")
 	}
 	targetNetworkId := logsAggregatorNetwork.GetId()
 
-	// start the aggregator container
 	containerId, _, removeLogsAggregatorContainerFunc, err := logsAggregatorContainer.CreateAndStart(
 		ctx,
 		portNumber,
@@ -57,14 +59,12 @@ func CreateLogsAggregator(
 		}
 	}()
 
-	// get the resulting object from container info
 	logsAggregator, err := getLogsAggregatorObjectFromContainerInfo(
 		ctx,
 		containerId,
 		defaultContainerStatusForNewLogsAggregatorContainer,
 		dockerManager)
 
-	// return the object
 	shouldRemoveLogsAggregatorContainer = false
 	return logsAggregator, nil
 }

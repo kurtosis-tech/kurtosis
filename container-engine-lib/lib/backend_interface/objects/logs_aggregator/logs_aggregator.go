@@ -9,7 +9,6 @@ type LogsAggregator struct {
 	status container_status.ContainerStatus
 
 	// This information will be nil if the logs aggregator container isn't running
-	// TOOD: consider changing these names, this information should specify ip and port log collectors should forward logs too
 	maybePrivateIpAddr net.IP
 }
 

@@ -286,15 +286,6 @@ func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRun
 		return stacktrace.Propagate(err, "An error occurred getting the logs database")
 	}
 	isThereLogAggregator := logsAggregator != nil
-	//isLogsAggregatorRunning := isThereLogAggregator && logsAggregator.GetStatus() == container_status.ContainerStatus_Running
-
-	////Destroy the logs database if caller requested it or if the container is not running
-	//if shouldForceContainerRestart || isThereNotRunningLogsDatabase {
-	//	if err = guarantor.kurtosisBackend.DestroyLogsDatabase(ctx); err != nil {
-	//		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
-	//	}
-	//	isThereLogsDatabase = false
-	//}
 
 	if !isThereLogAggregator {
 		if _, err := guarantor.kurtosisBackend.CreateLogsAggregator(ctx, defaultLogAggregatorPortNum); err != nil {

@@ -480,8 +480,6 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	*logs_collector.LogsCollector,
 	error,
 ) {
-
-	//TODO we we'd have to replace this part if we ever wanted to send to an external source
 	logsAggregator, err := backend.GetLogsAggregator(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator; the logs collector cannot be run without a logs aggregator")

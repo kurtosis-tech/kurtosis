@@ -60,7 +60,6 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 		return "", nil, nil, err
 	}
 
-	// create container
 	containerId, _, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return "", nil, nil, stacktrace.Propagate(err, "An error occurred starting the logs aggregator container with these args '%+v'", createAndStartArgs)
@@ -84,7 +83,7 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 		}
 	}()
 
-	// TODO: add a wait for availability
+	// TODO: add a wait for availability for logs aggregator
 
 	shouldRemoveLogsAggregatorContainer = false
 	return containerId, containerLabelStrs, removeContainerFunc, nil

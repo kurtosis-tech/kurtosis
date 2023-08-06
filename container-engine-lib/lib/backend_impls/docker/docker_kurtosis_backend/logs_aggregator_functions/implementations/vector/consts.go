@@ -16,6 +16,7 @@ const (
 	fluentBitSourceType      = "\"fluent\""
 	fluentBitSourceIpAddress = "0.0.0.0"
 
+	// TODO: change output when persistent volume is implemented
 	stdoutSinkID = "\"stdout\""
 	stdoutTypeId = "\"console\""
 
