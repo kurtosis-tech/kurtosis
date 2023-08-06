@@ -41,10 +41,6 @@ const (
 	match {{.Output.Match}}
 	host {{.Output.Host}}
 	port {{.Output.Port}}
-	labels {{.Output.GetLabelsStr}}
-	line_format {{.Output.LineFormat}}
-	tenant_id_key {{.Output.TenantIDKey}}
-	retry_limit {{.Output.RetryLimit}}
 `
 
 	healthCheckEndpointPath = "api/v1/health"

@@ -3,7 +3,6 @@ package fluentbit
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki/tags"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_labels_for_logs"
 	"strings"
 )
 
@@ -47,14 +46,10 @@ type Filter struct {
 }
 
 type Output struct {
-	Name        string
-	Match       string
-	Host        string
-	Port        uint16
-	Labels      []string
-	LineFormat  string
-	TenantIDKey string
-	RetryLimit  string
+	Name  string
+	Match string
+	Host  string
+	Port  uint16
 }
 
 func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
@@ -83,24 +78,16 @@ func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 			Rules: getModifyFilterRulesKurtosisLabels(),
 		},
 		Output: &Output{
-			Name:        vectorOutputTypeName,
-			Match:       matchAllRegex,
-			Host:        logAggregatorHost,
-			Port:        logAggregatorPort,
-			Labels:      getOutputKurtosisLabelsForLogs(),
-			LineFormat:  jsonLineFormat,
-			TenantIDKey: docker_labels_for_logs.LogsDatabaseKurtosisTrackedDockerLabelUsedForIdentifyTenants.GetString(),
-			RetryLimit:  unlimitedOutputRetry,
+			Name:  vectorOutputTypeName,
+			Match: matchAllRegex,
+			Host:  logAggregatorHost,
+			Port:  logAggregatorPort,
 		},
 	}
 }
 
 func (filter *Filter) GetRulesStr() string {
 	return strings.Join(filter.Rules, filterRulesSeparator)
-}
-
-func (output *Output) GetLabelsStr() string {
-	return strings.Join(output.Labels, outputLabelsSeparator)
 }
 
 func getModifyFilterRulesKurtosisLabels() []string {
