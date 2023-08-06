@@ -77,7 +77,7 @@ func CreateLogsCollectorForEnclave(
 			"An error occurred running the logs collector container with container ID '%v' with logs aggregator host '%v', logs aggregator port '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v' in Docker network with ID '%v'",
 			containerId,
 			logsAggregatorHost,
-			logsAggregatorHost,
+			logsAggregatorPort,
 			logsCollectorHttpPortNumber,
 			logsCollectorTcpPortId,
 			logsCollectorHttpPortId,
