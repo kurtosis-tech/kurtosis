@@ -23,7 +23,8 @@ const (
 	KurtosisCloudBackendServer_IsAvailable_FullMethodName            = "/kurtosis_cloud.KurtosisCloudBackendServer/IsAvailable"
 	KurtosisCloudBackendServer_CreateCloudInstance_FullMethodName    = "/kurtosis_cloud.KurtosisCloudBackendServer/CreateCloudInstance"
 	KurtosisCloudBackendServer_GetCloudInstanceConfig_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/GetCloudInstanceConfig"
-	KurtosisCloudBackendServer_CreateApiKey_FullMethodName           = "/kurtosis_cloud.KurtosisCloudBackendServer/CreateApiKey"
+	KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateApiKey"
+	KurtosisCloudBackendServer_GetOrCreateEnclave_FullMethodName     = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateEnclave"
 )
 
 // KurtosisCloudBackendServerClient is the client API for KurtosisCloudBackendServer service.
@@ -33,7 +34,8 @@ type KurtosisCloudBackendServerClient interface {
 	IsAvailable(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	CreateCloudInstance(ctx context.Context, in *CreateCloudInstanceConfigArgs, opts ...grpc.CallOption) (*CreateCloudInstanceConfigResponse, error)
 	GetCloudInstanceConfig(ctx context.Context, in *GetCloudInstanceConfigArgs, opts ...grpc.CallOption) (*GetCloudInstanceConfigResponse, error)
-	CreateApiKey(ctx context.Context, in *CreateApiKeyRequest, opts ...grpc.CallOption) (*CreateApiKeyResponse, error)
+	GetOrCreateApiKey(ctx context.Context, in *GetOrCreateApiKeyRequest, opts ...grpc.CallOption) (*GetOrCreateApiKeyResponse, error)
+	GetOrCreateEnclave(ctx context.Context, in *GetOrCreateEnclaveRequest, opts ...grpc.CallOption) (*GetOrCreateEnclaveResponse, error)
 }
 
 type kurtosisCloudBackendServerClient struct {
@@ -71,9 +73,18 @@ func (c *kurtosisCloudBackendServerClient) GetCloudInstanceConfig(ctx context.Co
 	return out, nil
 }
 
-func (c *kurtosisCloudBackendServerClient) CreateApiKey(ctx context.Context, in *CreateApiKeyRequest, opts ...grpc.CallOption) (*CreateApiKeyResponse, error) {
-	out := new(CreateApiKeyResponse)
-	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_CreateApiKey_FullMethodName, in, out, opts...)
+func (c *kurtosisCloudBackendServerClient) GetOrCreateApiKey(ctx context.Context, in *GetOrCreateApiKeyRequest, opts ...grpc.CallOption) (*GetOrCreateApiKeyResponse, error) {
+	out := new(GetOrCreateApiKeyResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kurtosisCloudBackendServerClient) GetOrCreateEnclave(ctx context.Context, in *GetOrCreateEnclaveRequest, opts ...grpc.CallOption) (*GetOrCreateEnclaveResponse, error) {
+	out := new(GetOrCreateEnclaveResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetOrCreateEnclave_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -87,7 +98,8 @@ type KurtosisCloudBackendServerServer interface {
 	IsAvailable(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	CreateCloudInstance(context.Context, *CreateCloudInstanceConfigArgs) (*CreateCloudInstanceConfigResponse, error)
 	GetCloudInstanceConfig(context.Context, *GetCloudInstanceConfigArgs) (*GetCloudInstanceConfigResponse, error)
-	CreateApiKey(context.Context, *CreateApiKeyRequest) (*CreateApiKeyResponse, error)
+	GetOrCreateApiKey(context.Context, *GetOrCreateApiKeyRequest) (*GetOrCreateApiKeyResponse, error)
+	GetOrCreateEnclave(context.Context, *GetOrCreateEnclaveRequest) (*GetOrCreateEnclaveResponse, error)
 }
 
 // UnimplementedKurtosisCloudBackendServerServer should be embedded to have forward compatible implementations.
@@ -103,8 +115,11 @@ func (UnimplementedKurtosisCloudBackendServerServer) CreateCloudInstance(context
 func (UnimplementedKurtosisCloudBackendServerServer) GetCloudInstanceConfig(context.Context, *GetCloudInstanceConfigArgs) (*GetCloudInstanceConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetCloudInstanceConfig not implemented")
 }
-func (UnimplementedKurtosisCloudBackendServerServer) CreateApiKey(context.Context, *CreateApiKeyRequest) (*CreateApiKeyResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateApiKey not implemented")
+func (UnimplementedKurtosisCloudBackendServerServer) GetOrCreateApiKey(context.Context, *GetOrCreateApiKeyRequest) (*GetOrCreateApiKeyResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrCreateApiKey not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) GetOrCreateEnclave(context.Context, *GetOrCreateEnclaveRequest) (*GetOrCreateEnclaveResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrCreateEnclave not implemented")
 }
 
 // UnsafeKurtosisCloudBackendServerServer may be embedded to opt out of forward compatibility for this service.
@@ -172,20 +187,38 @@ func _KurtosisCloudBackendServer_GetCloudInstanceConfig_Handler(srv interface{},
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KurtosisCloudBackendServer_CreateApiKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateApiKeyRequest)
+func _KurtosisCloudBackendServer_GetOrCreateApiKey_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrCreateApiKeyRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KurtosisCloudBackendServerServer).CreateApiKey(ctx, in)
+		return srv.(KurtosisCloudBackendServerServer).GetOrCreateApiKey(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: KurtosisCloudBackendServer_CreateApiKey_FullMethodName,
+		FullMethod: KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisCloudBackendServerServer).CreateApiKey(ctx, req.(*CreateApiKeyRequest))
+		return srv.(KurtosisCloudBackendServerServer).GetOrCreateApiKey(ctx, req.(*GetOrCreateApiKeyRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KurtosisCloudBackendServer_GetOrCreateEnclave_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrCreateEnclaveRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).GetOrCreateEnclave(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_GetOrCreateEnclave_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).GetOrCreateEnclave(ctx, req.(*GetOrCreateEnclaveRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -210,8 +243,12 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KurtosisCloudBackendServer_GetCloudInstanceConfig_Handler,
 		},
 		{
-			MethodName: "CreateApiKey",
-			Handler:    _KurtosisCloudBackendServer_CreateApiKey_Handler,
+			MethodName: "GetOrCreateApiKey",
+			Handler:    _KurtosisCloudBackendServer_GetOrCreateApiKey_Handler,
+		},
+		{
+			MethodName: "GetOrCreateEnclave",
+			Handler:    _KurtosisCloudBackendServer_GetOrCreateEnclave_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
