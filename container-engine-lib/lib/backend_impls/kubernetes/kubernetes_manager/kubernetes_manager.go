@@ -11,7 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/stream_writer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/channel_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	terminal "golang.org/x/term"
@@ -1533,12 +1533,11 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		}()
 
 		// Stream output from k8s to output channel
-		outputBuffer := &bytes.Buffer{}
-		streamWriter := stream_writer.NewStreamWriter(outputBuffer, execOutputChan)
+		channelWriter := channel_writer.NewChannelWriter(execOutputChan)
 		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
 			Stdin:             nil,
-			Stdout:            streamWriter,
-			Stderr:            streamWriter,
+			Stdout:            channelWriter,
+			Stderr:            channelWriter,
 			Tty:               true,
 			TerminalSizeQueue: nil,
 		}); err != nil {
