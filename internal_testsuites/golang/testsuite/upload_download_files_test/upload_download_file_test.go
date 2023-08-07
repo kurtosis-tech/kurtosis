@@ -119,7 +119,7 @@ func TestUploadAndDownloadLargeFilesCheckingConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	// Compute the hash of the initial file, compressed in the same way artifacts are compressed
-	initialFileCompressed, _, err := shared_utils.CompressPath(randomFilePath, enforceFileSizeLimit)
+	initialFileCompressed, _, _, err := shared_utils.CompressPath(randomFilePath, enforceFileSizeLimit)
 	require.NoError(t, err)
 	md5Hash := md5.New()
 	_, err = io.Copy(md5Hash, initialFileCompressed)

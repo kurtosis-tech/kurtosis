@@ -12,11 +12,21 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"math"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
@@ -29,14 +39,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"math"
-	"net/http"
-	"os"
-	"path"
-	"strings"
-	"time"
-	"unicode"
 )
 
 const (
@@ -150,9 +152,12 @@ func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Co
 		return nil, stacktrace.NewError("An error occurred because files artifact identifier is empty '%v'", artifactIdentifier)
 	}
 
-	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
+	_, filesArtifact, _, found, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
+	}
+	if !found {
+		return nil, stacktrace.NewError("An error occurred getting files artifact '%v', it doesn't exist in this enclave", artifactIdentifier)
 	}
 
 	fileDescriptions, err := getFileDescriptionsFromArtifact(filesArtifact.GetAbsoluteFilepath())
@@ -331,7 +336,9 @@ func (apicService ApiContainerService) UploadFilesArtifact(server kurtosis_core_
 			}
 
 			// finished receiving all the chunks and assembling them into a single byte array
-			filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(assembledContent, maybeArtifactName)
+			// TODO: pass in the md5 from the CLI (which currently drops it because APIC API doesn't accept it)
+			//  for now it's fine, it's just that file hash comparison for this file will always return false
+			filesArtifactUuid, err := apicService.serviceNetwork.UploadFilesArtifact(assembledContent, []byte{}, maybeArtifactName)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred while trying to upload the file")
 			}
@@ -351,9 +358,12 @@ func (apicService ApiContainerService) DownloadFilesArtifact(args *kurtosis_core
 		return stacktrace.NewError("Cannot download file with empty files artifact identifier")
 	}
 
-	filesArtifact, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
+	_, filesArtifact, _, found, err := apicService.filesArtifactStore.GetFile(artifactIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting files artifact '%v'", artifactIdentifier)
+	}
+	if !found {
+		return stacktrace.NewError("An error occurred getting files artifact '%v', it doesn't exist in this enclave", artifactIdentifier)
 	}
 
 	file, err := os.OpenFile(filesArtifact.GetAbsoluteFilepath(), os.O_RDONLY, allFilePermissionsForOwner)
@@ -408,7 +418,9 @@ func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context
 	defer resp.Body.Close()
 	body := bufio.NewReader(resp.Body)
 
-	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(body, artifactName)
+	// TODO: we should probably wrap the web file into a file artifact here, not sure how files look in the APIC since
+	//  it might not even be a TGZ.
+	filesArtifactUuId, err := apicService.filesArtifactStore.StoreFile(body, []byte{}, artifactName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred storing the file from URL '%v' in the files artifact store", url)
 	}
@@ -603,6 +615,10 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	maybePublicPorts := serviceObj.GetMaybePublicPorts()
 	serviceUuidStr := string(serviceObj.GetRegistration().GetUUID())
 	serviceNameStr := string(serviceObj.GetRegistration().GetName())
+	serviceStatus, err := convertServiceStatusToServiceInfoStatus(serviceObj.GetRegistration().GetStatus())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the service status to a service info status")
+	}
 
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
 	if err != nil {
@@ -628,6 +644,7 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 		privateApiPorts,
 		publicIpAddrStr,
 		publicApiPorts,
+		serviceStatus,
 	)
 	return serviceInfoResponse, nil
 }
@@ -763,4 +780,15 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 
 	text := textRepresentation.String()
 	return &text, nil
+}
+
+func convertServiceStatusToServiceInfoStatus(serviceStatus service.ServiceStatus) (kurtosis_core_rpc_api_bindings.ServiceStatus, error) {
+	switch serviceStatus {
+	case service.ServiceStatus_Started:
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING, nil
+	case service.ServiceStatus_Stopped:
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED, nil
+	default:
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN, stacktrace.NewError("Failed to convert service status %v", serviceStatus)
+	}
 }

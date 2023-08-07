@@ -118,12 +118,12 @@ func (builtin *UploadFilesCapabilities) Validate(_ *builtin_argument.ArgumentVal
 }
 
 func (builtin *UploadFilesCapabilities) Execute(_ context.Context, _ *builtin_argument.ArgumentValuesSet) (string, error) {
-	compressedData, _, err := shared_utils.CompressPath(builtin.pathOnDisk, enforceMaxFileSizeLimit)
+	compressedData, _, compressedDataMd5, err := shared_utils.CompressPath(builtin.pathOnDisk, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while compressing the files '%v'", builtin.pathOnDisk)
 	}
 	defer compressedData.Close()
-	filesArtifactUuid, err := builtin.serviceNetwork.UploadFilesArtifact(compressedData, builtin.artifactName)
+	filesArtifactUuid, err := builtin.serviceNetwork.UploadFilesArtifact(compressedData, compressedDataMd5, builtin.artifactName)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while uploading the compressed contents\n'%v'", compressedData)
 	}

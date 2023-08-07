@@ -35,7 +35,6 @@ func (creator *EnclaveCreator) CreateEnclave(
 	apiContainerLogLevel logrus.Level,
 	//If blank, will use a random one
 	enclaveName string,
-	isPartitioningEnabled bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
 	uuid, err := uuid_generator.GenerateUUIDString()
@@ -46,7 +45,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 	// Create Enclave with kurtosisBackend
-	newEnclave, err := creator.kurtosisBackend.CreateEnclave(setupCtx, enclaveUuid, enclaveName, isPartitioningEnabled)
+
+	newEnclave, err := creator.kurtosisBackend.CreateEnclave(setupCtx, enclaveUuid, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with name `%v` and uuid '%v'", enclaveName, enclaveUuid)
 	}
@@ -72,7 +72,6 @@ func (creator *EnclaveCreator) CreateEnclave(
 		apiContainerLogLevel,
 		enclaveUuid,
 		apiContainerListenGrpcPortNumInsideNetwork,
-		isPartitioningEnabled,
 	)
 
 	if err != nil {
@@ -140,7 +139,6 @@ func (creator *EnclaveCreator) launchApiContainer(
 	logLevel logrus.Level,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcListenPort uint16,
-	isPartitioningEnabled bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -155,7 +153,6 @@ func (creator *EnclaveCreator) launchApiContainer(
 			logLevel,
 			enclaveUuid,
 			grpcListenPort,
-			isPartitioningEnabled,
 			creator.apiContainerKurtosisBackendConfigSupplier,
 		)
 		if err != nil {
@@ -168,7 +165,6 @@ func (creator *EnclaveCreator) launchApiContainer(
 		logLevel,
 		enclaveUuid,
 		grpcListenPort,
-		isPartitioningEnabled,
 		creator.apiContainerKurtosisBackendConfigSupplier,
 	)
 	if err != nil {
