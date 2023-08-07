@@ -43,6 +43,7 @@ goog.exportSymbol('proto.api_container_api.RunStarlarkPackageArgs.StarlarkPackag
 goog.exportSymbol('proto.api_container_api.RunStarlarkScriptArgs', null, global);
 goog.exportSymbol('proto.api_container_api.ServiceIdentifiers', null, global);
 goog.exportSymbol('proto.api_container_api.ServiceInfo', null, global);
+goog.exportSymbol('proto.api_container_api.ServiceStatus', null, global);
 goog.exportSymbol('proto.api_container_api.StarlarkError', null, global);
 goog.exportSymbol('proto.api_container_api.StarlarkError.ErrorCase', null, global);
 goog.exportSymbol('proto.api_container_api.StarlarkExecutionError', null, global);
@@ -1109,7 +1110,8 @@ proto.api_container_api.ServiceInfo.toObject = function(includeInstance, msg) {
     maybePublicIpAddr: jspb.Message.getFieldWithDefault(msg, 4, ""),
     maybePublicPortsMap: (f = msg.getMaybePublicPortsMap()) ? f.toObject(includeInstance, proto.api_container_api.Port.toObject) : [],
     name: jspb.Message.getFieldWithDefault(msg, 6, ""),
-    shortenedUuid: jspb.Message.getFieldWithDefault(msg, 7, "")
+    shortenedUuid: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    serviceStatus: jspb.Message.getFieldWithDefault(msg, 8, 0)
   };
 
   if (includeInstance) {
@@ -1177,6 +1179,10 @@ proto.api_container_api.ServiceInfo.deserializeBinaryFromReader = function(msg, 
     case 7:
       var value = /** @type {string} */ (reader.readString());
       msg.setShortenedUuid(value);
+      break;
+    case 8:
+      var value = /** @type {!proto.api_container_api.ServiceStatus} */ (reader.readEnum());
+      msg.setServiceStatus(value);
       break;
     default:
       reader.skipField();
@@ -1247,6 +1253,13 @@ proto.api_container_api.ServiceInfo.serializeBinaryToWriter = function(message, 
   if (f.length > 0) {
     writer.writeString(
       7,
+      f
+    );
+  }
+  f = message.getServiceStatus();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      8,
       f
     );
   }
@@ -1384,6 +1397,24 @@ proto.api_container_api.ServiceInfo.prototype.getShortenedUuid = function() {
  */
 proto.api_container_api.ServiceInfo.prototype.setShortenedUuid = function(value) {
   return jspb.Message.setProto3StringField(this, 7, value);
+};
+
+
+/**
+ * optional ServiceStatus service_status = 8;
+ * @return {!proto.api_container_api.ServiceStatus}
+ */
+proto.api_container_api.ServiceInfo.prototype.getServiceStatus = function() {
+  return /** @type {!proto.api_container_api.ServiceStatus} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
+};
+
+
+/**
+ * @param {!proto.api_container_api.ServiceStatus} value
+ * @return {!proto.api_container_api.ServiceInfo} returns this
+ */
+proto.api_container_api.ServiceInfo.prototype.setServiceStatus = function(value) {
+  return jspb.Message.setProto3EnumField(this, 8, value);
 };
 
 
@@ -8473,6 +8504,15 @@ proto.api_container_api.FileArtifactContentsFileDescription.prototype.hasTextPre
   return jspb.Message.getField(this, 3) != null;
 };
 
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.ServiceStatus = {
+  STOPPED: 0,
+  RUNNING: 1,
+  UNKNOWN: 2
+};
 
 /**
  * @enum {number}
