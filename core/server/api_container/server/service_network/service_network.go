@@ -2,10 +2,10 @@ package service_network
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"io"
 	"net/http"
@@ -97,7 +97,7 @@ type ServiceNetwork interface {
 
 	GetServiceNames() map[service.ServiceName]bool
 
-	GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers
+	GetExistingAndHistoricalServiceIdentifiers() (service_identifiers.ServiceIdentifiers, error)
 
 	GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool)
 
