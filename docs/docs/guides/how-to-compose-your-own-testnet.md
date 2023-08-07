@@ -70,12 +70,12 @@ lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/ligh
 
 # Again, replacing $YOUR_GITHUB_USERNAME with your Github username
 network_params = json.decode(read_file("github.com/$YOUR_GITHUB_USERNAME/my-testnet/network_params.json"))
-``` 
+```
 
 In the first two lines, you're using [Locators](../concepts-reference/locators.md) to import in `geth.star` and `lighthouse.star` files from Github, making them available to use in your testnet definition. These files themselves are environment definitions that can be used to bootstrap and start up a Geth execution layer client and a Lighthouse consensus layer client as part of your testnet - which is exactly what you will do next.
 
 :::note
-Feel free to check out the [`geth.star`]((https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star) and ['lighthouse.star`](https://github.com/kurtosis-tech/lighthouse-package/blob/main/lib/lighthouse.star) to understand how they work. At a high level, the definition instructions Kurtosis to generate genesis data, set up pre-funded accounts, and then launches the client using the client container images.
+Feel free to check out the [`geth.star`](https://github.com/kurtosis-tech/geth-package/blob/main/lib/geth.star) and [`lighthouse.star`](https://github.com/kurtosis-tech/lighthouse-package/blob/main/lib/lighthouse.star) to understand how they work. At a high level, the definition instructs Kurtosis to generate genesis data, set up pre-funded accounts, and then launches the client using the client container images.
 :::
 
 Finally, we are converting the `network_params.json` file into a format that can be used in your environment definition using [`json.decode()`](https://bazel.build/rules/lib/core/json#decode) and [`read_file()`](../starlark-reference/read-file.md).
