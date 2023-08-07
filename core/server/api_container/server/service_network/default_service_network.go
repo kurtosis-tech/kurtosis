@@ -248,6 +248,7 @@ func (network *DefaultServiceNetwork) AddServices(
 		if err := network.serviceIdentifiersRepository.AddServiceIdentifier(serviceIdentifier); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred adding a new service identifier '%+v' into the repository", serviceIdentifier)
 		}
+		network.registeredServiceInfo[serviceRegistration.GetName()].SetStatus(service.ServiceStatus_Started)
 	}
 
 	batchSuccessfullyStarted = true
