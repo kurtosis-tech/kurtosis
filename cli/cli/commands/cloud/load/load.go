@@ -22,7 +22,6 @@ import (
 const (
 	instanceIdentifierArgKey      = "instance-id"
 	instanceIdentifierArgIsGreedy = false
-	kurtosisCloudApiKeyEnvVarArg  = "KURTOSIS_CLOUD_API_KEY"
 )
 
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -50,7 +49,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	apiKey, err := cloudhelper.LoadApiKey()
 	if err != nil {
 		return stacktrace.Propagate(err, "Could not load an API Key. Check that it's defined using the "+
-			"%s env var and it's a valid (active) key", kurtosisCloudApiKeyEnvVarArg)
+			"%s env var and it's a valid (active) key", cloudhelper.KurtosisCloudApiKeyEnvVarArg)
 	}
 
 	cloudConfig, err := cloudhelper.GetCloudConfig()
