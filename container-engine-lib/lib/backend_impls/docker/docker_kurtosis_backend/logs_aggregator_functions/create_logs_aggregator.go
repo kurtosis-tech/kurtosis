@@ -38,7 +38,7 @@ func CreateLogsAggregator(
 	}
 	targetNetworkId := logsAggregatorNetwork.GetId()
 
-	containerId, _, removeLogsAggregatorContainerFunc, err := logsAggregatorContainer.CreateAndStart(
+	containerId, containerLabels, removeLogsAggregatorContainerFunc, err := logsAggregatorContainer.CreateAndStart(
 		ctx,
 		portNumber,
 		targetNetworkId,
@@ -64,6 +64,9 @@ func CreateLogsAggregator(
 		containerId,
 		defaultContainerStatusForNewLogsAggregatorContainer,
 		dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator object using container ID '%v', labels '%+v', status '%v'.", containerId, containerLabels, defaultContainerStatusForNewLogsAggregatorContainer)
+	}
 
 	shouldRemoveLogsAggregatorContainer = false
 	return logsAggregator, nil

@@ -136,7 +136,7 @@ func runMain() error {
 
 	// TODO: replace with persistent client so that we can get logs even after enclave is stopped
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
-  
+
 	engineServerService := server.NewEngineServerService(
 		serverArgs.ImageVersionTag,
 		enclaveManager,

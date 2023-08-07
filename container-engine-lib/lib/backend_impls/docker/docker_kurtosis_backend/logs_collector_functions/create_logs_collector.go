@@ -18,6 +18,7 @@ import (
 const (
 	defaultContainerStatusForNewLogsCollectorContainer = types.ContainerStatus_Running
 	emptyAliasForLogsCollector                         = ""
+	defaultLogsAggregatorPort                          = uint16(9714)
 )
 
 var (
@@ -56,7 +57,7 @@ func CreateLogsCollectorForEnclave(
 	}
 
 	logsAggregatorHost := logsAggregator.GetMaybePrivateIpAddr().String()
-	logsAggregatorPort := uint16(9714) // current default port
+	logsAggregatorPort := defaultLogsAggregatorPort
 
 	containerId, containerLabels, hostMachinePortBindings, removeLogsCollectorContainerFunc, err := logsCollectorContainer.CreateAndStart(
 		ctx,
