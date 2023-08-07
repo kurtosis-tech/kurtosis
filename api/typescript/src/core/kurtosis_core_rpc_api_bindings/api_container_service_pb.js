@@ -8510,7 +8510,8 @@ proto.api_container_api.FileArtifactContentsFileDescription.prototype.hasTextPre
  */
 proto.api_container_api.ServiceStatus = {
   STOPPED: 0,
-  RUNNING: 1
+  RUNNING: 1,
+  UNKNOWN: 2
 };
 
 /**

@@ -558,6 +558,7 @@ pub struct FileArtifactContentsFileDescription {
 pub enum ServiceStatus {
     Stopped = 0,
     Running = 1,
+    Unknown = 2,
 }
 impl ServiceStatus {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -568,6 +569,7 @@ impl ServiceStatus {
         match self {
             ServiceStatus::Stopped => "STOPPED",
             ServiceStatus::Running => "RUNNING",
+            ServiceStatus::Unknown => "UNKNOWN",
         }
     }
     /// Creates an enum from field names used in the ProtoBuf definition.
@@ -575,6 +577,7 @@ impl ServiceStatus {
         match value {
             "STOPPED" => Some(Self::Stopped),
             "RUNNING" => Some(Self::Running),
+            "UNKNOWN" => Some(Self::Unknown),
             _ => None,
         }
     }

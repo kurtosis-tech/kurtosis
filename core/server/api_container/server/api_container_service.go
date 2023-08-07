@@ -615,7 +615,10 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	maybePublicPorts := serviceObj.GetMaybePublicPorts()
 	serviceUuidStr := string(serviceObj.GetRegistration().GetUUID())
 	serviceNameStr := string(serviceObj.GetRegistration().GetName())
-	serviceStatus := convertServiceStatusToServiceInfoStatus(serviceObj.GetRegistration().GetStatus())
+	serviceStatus, err := convertServiceStatusToServiceInfoStatus(serviceObj.GetRegistration().GetStatus())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the service status to a service info status")
+	}
 
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
 	if err != nil {
@@ -779,11 +782,13 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 	return &text, nil
 }
 
-func convertServiceStatusToServiceInfoStatus(serviceStatus service.ServiceStatus) kurtosis_core_rpc_api_bindings.ServiceStatus {
+func convertServiceStatusToServiceInfoStatus(serviceStatus service.ServiceStatus) (kurtosis_core_rpc_api_bindings.ServiceStatus, error) {
 	switch serviceStatus {
 	case service.ServiceStatus_Started:
-		return kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING, nil
+	case service.ServiceStatus_Stopped:
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED, nil
 	default:
-		return kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN, stacktrace.NewError("Failed to convert service status %v", serviceStatus)
 	}
 }

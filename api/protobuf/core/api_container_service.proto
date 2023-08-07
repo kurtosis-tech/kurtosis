@@ -71,6 +71,7 @@ message Port {
 enum ServiceStatus {
   STOPPED = 0;
   RUNNING = 1;
+  UNKNOWN = 2;
 }
 
 message ServiceInfo {

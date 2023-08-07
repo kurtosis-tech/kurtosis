@@ -1079,6 +1079,7 @@ export namespace FileArtifactContentsFileDescription {
 export enum ServiceStatus { 
   STOPPED = 0,
   RUNNING = 1,
+  UNKNOWN = 2,
 }
 export enum KurtosisFeatureFlag { 
   NO_INSTRUCTIONS_CACHING = 0,
