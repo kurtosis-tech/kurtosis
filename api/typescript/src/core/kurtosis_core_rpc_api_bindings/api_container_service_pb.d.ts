@@ -61,6 +61,9 @@ export class ServiceInfo extends jspb.Message {
   getShortenedUuid(): string;
   setShortenedUuid(value: string): ServiceInfo;
 
+  getServiceStatus(): ServiceStatus;
+  setServiceStatus(value: ServiceStatus): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -78,31 +81,7 @@ export namespace ServiceInfo {
     maybePublicPortsMap: Array<[string, Port.AsObject]>,
     name: string,
     shortenedUuid: string,
-  }
-}
-
-export class UpdateServiceConfig extends jspb.Message {
-  getSubnetwork(): string;
-  setSubnetwork(value: string): UpdateServiceConfig;
-  hasSubnetwork(): boolean;
-  clearSubnetwork(): UpdateServiceConfig;
-
-  serializeBinary(): Uint8Array;
-  toObject(includeInstance?: boolean): UpdateServiceConfig.AsObject;
-  static toObject(includeInstance: boolean, msg: UpdateServiceConfig): UpdateServiceConfig.AsObject;
-  static serializeBinaryToWriter(message: UpdateServiceConfig, writer: jspb.BinaryWriter): void;
-  static deserializeBinary(bytes: Uint8Array): UpdateServiceConfig;
-  static deserializeBinaryFromReader(message: UpdateServiceConfig, reader: jspb.BinaryReader): UpdateServiceConfig;
-}
-
-export namespace UpdateServiceConfig {
-  export type AsObject = {
-    subnetwork?: string,
-  }
-
-  export enum SubnetworkCase { 
-    _SUBNETWORK_NOT_SET = 0,
-    SUBNETWORK = 1,
+    serviceStatus: ServiceStatus,
   }
 }
 
@@ -1097,6 +1076,11 @@ export namespace FileArtifactContentsFileDescription {
   }
 }
 
+export enum ServiceStatus { 
+  STOPPED = 0,
+  RUNNING = 1,
+  UNKNOWN = 2,
+}
 export enum KurtosisFeatureFlag { 
   NO_INSTRUCTIONS_CACHING = 0,
 }

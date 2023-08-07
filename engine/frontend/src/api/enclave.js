@@ -50,7 +50,6 @@ export const createEnclave = async () => {
     const enclaveArgs = new CreateEnclaveArgs();
     enclaveArgs.setApiContainerVersionTag("")
     enclaveArgs.setApiContainerLogLevel("info");
-    enclaveArgs.setIsPartitioningEnabled(false);
     const enclaveGRPC = await engineClient.createEnclave(enclaveArgs, null)
     const enclave = enclaveGRPC.toObject().enclaveInfo;
     return {

@@ -24,9 +24,6 @@ pub struct CreateEnclaveArgs {
     /// The API container log level
     #[prost(string, tag = "3")]
     pub api_container_log_level: ::prost::alloc::string::String,
-    /// Whether network partitioning will be enabled or not on the new Kurtosis Enclave
-    #[prost(bool, tag = "4")]
-    pub is_partitioning_enabled: bool,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

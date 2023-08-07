@@ -1,6 +1,6 @@
 import { err, ok, Result } from 'neverthrow';
 import { newExecCommandArgs } from '../constructor_calls';
-import type { ExecCommandArgs } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
+import type { ExecCommandArgs, ServiceStatus } from '../../kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import type { PortSpec } from './port_spec';
 import type { ServiceName, ServiceUUID } from './service';
 import { GenericApiContainerClient } from '../enclaves/generic_api_container_client';
@@ -15,6 +15,7 @@ export class ServiceContext {
         private readonly privatePorts: Map<string, PortSpec>,
         private readonly publicIpAddress: string,
         private readonly publicPorts: Map<string, PortSpec>,
+        private readonly serviceStatus: ServiceStatus,
     ) {}
 
     // Docs available at https://docs.kurtosis.com/sdk/#getservicename---servicename
@@ -45,6 +46,11 @@ export class ServiceContext {
     // Docs available at https://docs.kurtosis.com/sdk/#getpublicports---mapportid-portspec
     public getPublicPorts(): Map<string, PortSpec> {
         return this.publicPorts
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk/#getservicestatus---servicestatus
+    public getServiceStatus(): ServiceStatus {
+        return this.serviceStatus
     }
 
     // Docs available at https://docs.kurtosis.com/sdk/#execcommandliststring-command---int-exitcode-string-logs
