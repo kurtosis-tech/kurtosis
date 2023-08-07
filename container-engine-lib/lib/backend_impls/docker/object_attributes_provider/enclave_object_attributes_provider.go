@@ -20,8 +20,7 @@ import (
 )
 
 const (
-	apiContainerNamePrefix                 = "kurtosis-api"
-	networkingSidecarContainerNameFragment = "networking-sidecar"
+	apiContainerNamePrefix = "kurtosis-api"
 
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
 	persistentServiceDirectoryNameFragment = "service-persistent-directory"
@@ -33,7 +32,7 @@ const (
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
-	ForEnclaveNetwork(enclaveName string, creationTime time.Time, isPartitioningEnabled bool) (DockerObjectAttributes, error)
+	ForEnclaveNetwork(enclaveName string, creationTime time.Time) (DockerObjectAttributes, error)
 	ForEnclaveDataVolume() (DockerObjectAttributes, error)
 	ForApiContainer(
 		ipAddr net.IP,
@@ -45,9 +44,6 @@ type DockerEnclaveObjectAttributesProvider interface {
 		serviceUuid service.ServiceUUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
-	) (DockerObjectAttributes, error)
-	ForNetworkingSidecarContainer(
-		serviceUUIDSidecarAttachedTo service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactsExpanderContainer(
 		serviceUUID service.ServiceUUID,
@@ -76,7 +72,7 @@ func newDockerEnclaveObjectAttributesProviderImpl(
 	}
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enclaveName string, creationTime time.Time, isPartitioningEnabled bool) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enclaveName string, creationTime time.Time) (DockerObjectAttributes, error) {
 	enclaveIdStr := provider.enclaveId.GetString()
 	name, err := docker_object_name.CreateNewDockerObjectName(enclaveIdStr)
 	if err != nil {
@@ -111,12 +107,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enc
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave network using ID '%v'", provider.enclaveId)
 	}
-
-	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledDockerLabelValue
-	if isPartitioningEnabled {
-		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledDockerLabelValue
-	}
-	labels[label_key_consts.IsNetworkPartitioningEnabledDockerLabelKey] = isPartitioningEnabledLabelValue
 
 	labels[label_key_consts.EnclaveCreationTimeLabelKey] = creationTimeLabelValue
 	labels[label_key_consts.EnclaveNameDockerLabelKey] = enclaveNameLabelValue
@@ -244,36 +234,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
 	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
 	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
-
-	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'",
-			name.GetString(),
-			getLabelKeyValuesAsStrings(labels),
-		)
-	}
-
-	return objectAttributes, nil
-}
-
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceUUIDSidecarAttachedTo service.ServiceUUID) (DockerObjectAttributes, error) {
-	name, err := provider.getNameForEnclaveObject(
-		[]string{
-			networkingSidecarContainerNameFragment,
-			string(serviceUUIDSidecarAttachedTo),
-		},
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar Docker container name object")
-	}
-
-	labels, err := provider.getLabelsForEnclaveObjectWithGUID(string(serviceUUIDSidecarAttachedTo))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with UUID '%v'", serviceUUIDSidecarAttachedTo)
-	}
-	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.NetworkingSidecarContainerTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {

@@ -108,7 +108,6 @@ func (manager *EnclaveManager) CreateEnclave(
 	apiContainerLogLevel logrus.Level,
 	//If blank, will use a random one
 	enclaveName string,
-	isPartitioningEnabled bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
@@ -117,10 +116,6 @@ func (manager *EnclaveManager) CreateEnclave(
 		enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo
 		err         error
 	)
-
-	if isPartitioningEnabled {
-		return nil, stacktrace.NewError("The Kurtosis subnetworks capabilities are not supported any more, we suggest you to pass this value in false in order to create the enclave without subnetwork capabilities")
-	}
 
 	allExistingAndHistoricalIdentifiers, err := manager.getExistingAndHistoricalEnclaveIdentifiersWithoutMutex()
 	if err != nil {
@@ -148,7 +143,6 @@ func (manager *EnclaveManager) CreateEnclave(
 			engineVersion,
 			apiContainerImageVersionTag,
 			apiContainerLogLevel,
-			isPartitioningEnabled,
 		)
 		if err != nil {
 			logrus.Errorf("An error occurred when trying to get an enclave from the enclave pool. Err:\n%v", err)
@@ -161,7 +155,6 @@ func (manager *EnclaveManager) CreateEnclave(
 			apiContainerImageVersionTag,
 			apiContainerLogLevel,
 			enclaveName,
-			isPartitioningEnabled,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(
