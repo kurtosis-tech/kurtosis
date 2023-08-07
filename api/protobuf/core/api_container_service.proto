@@ -68,6 +68,12 @@ message Port {
   string maybe_wait_timeout = 4;
 }
 
+enum ServiceStatus {
+  STOPPED = 0;
+  RUNNING = 1;
+  UNKNOWN = 2;
+}
+
 message ServiceInfo {
   // UUID of the service
   string service_uuid = 1;
@@ -93,6 +99,9 @@ message ServiceInfo {
 
   // Shortened uuid of the service
   string shortened_uuid = 7;
+
+  // Service status: stopped, running.
+  ServiceStatus service_status = 8;
 }
 
 // ==============================================================================================

@@ -88,6 +88,9 @@ pub struct ServiceInfo {
     /// Shortened uuid of the service
     #[prost(string, tag = "7")]
     pub shortened_uuid: ::prost::alloc::string::String,
+    /// Service status: stopped, running.
+    #[prost(enumeration = "ServiceStatus", tag = "8")]
+    pub service_status: i32,
 }
 /// ==============================================================================================
 ///                                Execute Starlark Arguments
@@ -549,6 +552,35 @@ pub struct FileArtifactContentsFileDescription {
     /// A bit of text content, if the file allows (similar to UNIX's 'head')
     #[prost(string, optional, tag = "3")]
     pub text_preview: ::core::option::Option<::prost::alloc::string::String>,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ServiceStatus {
+    Stopped = 0,
+    Running = 1,
+    Unknown = 2,
+}
+impl ServiceStatus {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            ServiceStatus::Stopped => "STOPPED",
+            ServiceStatus::Running => "RUNNING",
+            ServiceStatus::Unknown => "UNKNOWN",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "STOPPED" => Some(Self::Stopped),
+            "RUNNING" => Some(Self::Running),
+            "UNKNOWN" => Some(Self::Unknown),
+            _ => None,
+        }
+    }
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
