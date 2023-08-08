@@ -882,7 +882,7 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	}
 
 	execStartConfig := types.ExecStartCheck{
-		// Because detach is false, we'll block until the command comes back
+		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
 		Detach: false,
 		Tty:    false,
 	}
@@ -965,7 +965,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		}
 
 		execStartConfig := types.ExecStartCheck{
-			// Because detach is false, we'll block until the command comes back
+			// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
 			Detach: false,
 			Tty:    false,
 		}
