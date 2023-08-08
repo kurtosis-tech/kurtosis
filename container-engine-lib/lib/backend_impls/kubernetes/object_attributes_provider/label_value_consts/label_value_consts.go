@@ -15,16 +15,12 @@ const (
 	engineKurtosisResourceTypeLabelValueStr = "kurtosis-engine"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-	enclaveKurtosisResourceTypeLabelValueStr           = "enclave"
-	apiContainerKurtosisResourceTypeLabelValueStr      = "api-container"
-	userServiceKurtosisResourceTypeLabelValueStr       = "user-service"
-	networkingSidecarKurtosisResourceTypeLabelValueStr = "networking-sidecar"
+	enclaveKurtosisResourceTypeLabelValueStr      = "enclave"
+	apiContainerKurtosisResourceTypeLabelValueStr = "api-container"
+	userServiceKurtosisResourceTypeLabelValueStr  = "user-service"
 
 	enclaveDataVolumeTypeLabelValueStr             = "enclave-data"
 	filesArtifactsExpansionVolumeTypeLabelValueStr = "files-artifacts-expansion"
-
-	trueValueStr  = "true"
-	falseValueStr = "false"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -40,9 +36,6 @@ var EngineKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.Must
 var EnclaveKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveKurtosisResourceTypeLabelValueStr)
 var APIContainerKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(apiContainerKurtosisResourceTypeLabelValueStr)
 var UserServiceKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(userServiceKurtosisResourceTypeLabelValueStr)
-var NetworkingSidecarKurtosisResourceTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(networkingSidecarKurtosisResourceTypeLabelValueStr)
-var NetworkPartitioningEnabledKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(trueValueStr)
-var NetworkPartitioningDisabledKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(falseValueStr)
 
 var EnclaveDataVolumeTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(enclaveDataVolumeTypeLabelValueStr)
 var FilesArtifactsExpansionVolumeTypeKubernetesLabelValue = kubernetes_label_value.MustCreateNewKubernetesLabelValue(filesArtifactsExpansionVolumeTypeLabelValueStr)

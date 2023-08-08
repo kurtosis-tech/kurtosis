@@ -31,7 +31,6 @@ const (
 	CmdAttr                         = "cmd"
 	EnvVarsAttr                     = "env_vars"
 	PrivateIpAddressPlaceholderAttr = "private_ip_address_placeholder"
-	SubnetworkAttr                  = "subnetwork"
 	CpuAllocationAttr               = "cpu_allocation"
 	MemoryAllocationAttr            = "memory_allocation"
 	ReadyConditionsAttr             = "ready_conditions"
@@ -40,7 +39,6 @@ const (
 	MaxCpuMilliCoresAttr            = "max_cpu"
 	MaxMemoryMegaBytesAttr          = "max_memory"
 
-	DefaultSubnetwork               = "default"
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
@@ -106,14 +104,6 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, PrivateIpAddressPlaceholderAttr)
-					},
-				},
-				{
-					Name:              SubnetworkAttr,
-					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, SubnetworkAttr)
 					},
 				},
 				{
@@ -267,7 +257,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 	}
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			SubnetworkAttr, ServiceConfigTypeName)
+			ImageAttr, ServiceConfigTypeName)
 	}
 	imageName := image.GoString()
 
@@ -368,17 +358,6 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		privateIpAddressPlaceholder = DefaultPrivateIPAddrPlaceholder
 	}
 
-	var subnetwork string
-	subnetworkStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, SubnetworkAttr)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	if found && subnetworkStarlark.GoString() != "" {
-		subnetwork = subnetworkStarlark.GoString()
-	} else {
-		subnetwork = DefaultSubnetwork
-	}
-
 	var maxCpu uint64
 	maxCpuStarlark, foundMaxCpu, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MaxCpuMilliCoresAttr)
 	if interpretationErr != nil {
@@ -469,7 +448,6 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		privateIpAddressPlaceholder,
 		minCpu,
 		minMemory,
-		subnetwork,
 	), nil
 }
 

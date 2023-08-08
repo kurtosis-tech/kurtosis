@@ -309,7 +309,6 @@ func run(
 		)
 	}
 
-	// TODO Allow adding services to an already-repartitioned enclave
 	starlarkScript := fmt.Sprintf(`def run(plan):
 	plan.add_service(name = "%s", config = %s)
 	plan.print("%s") # we add this print of a random UUID to make sure the single add_service above won't get cached

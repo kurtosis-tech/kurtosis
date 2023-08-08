@@ -32,9 +32,6 @@ export class CreateEnclaveArgs extends jspb.Message {
   getApiContainerLogLevel(): string;
   setApiContainerLogLevel(value: string): CreateEnclaveArgs;
 
-  getIsPartitioningEnabled(): boolean;
-  setIsPartitioningEnabled(value: boolean): CreateEnclaveArgs;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateEnclaveArgs.AsObject;
   static toObject(includeInstance: boolean, msg: CreateEnclaveArgs): CreateEnclaveArgs.AsObject;
@@ -48,7 +45,6 @@ export namespace CreateEnclaveArgs {
     enclaveName: string,
     apiContainerVersionTag: string,
     apiContainerLogLevel: string,
-    isPartitioningEnabled: boolean,
   }
 }
 

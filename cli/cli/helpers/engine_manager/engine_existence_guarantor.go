@@ -19,8 +19,6 @@ import (
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
 	defaultEngineImageVersionTag = ""
-
-	removeDeprecatedCentralizedLogsDockerCommands = "docker container rm --force kurtosis-logs-db && docker volume rm kurtosis-logs-db-vol --force && docker rm --force $(docker ps --format '{{.Names}}' | grep kurtosis-logs-collector) && docker volume rm --force $(docker volume ls --format '{{.Name}}' | grep kurtosis-logs-collector-vol)"
 )
 
 var engineRestartCmd = fmt.Sprintf(
@@ -197,12 +195,6 @@ func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResp
 
 func (guarantor *engineExistenceGuarantor) VisitRunning() error {
 
-	//TODO(centralized-logs-infra-deprecation) remove this code in the future when people don't have centralized logs infra running
-	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
-		ctx := context.Background()
-		guarantor.ensureDestroyDeprecatedCentralizedLogsResources(ctx)
-	}
-
 	guarantor.postVisitingHostMachineIpAndPort = guarantor.preVisitingMaybeHostMachineIpAndPort
 	runningEngineSemver, cliEngineSemver, err := guarantor.getRunningAndCLIEngineVersions()
 	if err != nil {
@@ -268,15 +260,4 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	}
 
 	return runningEngineSemver, launcherEngineSemver, nil
-}
-
-// TODO(centralized-logs-infra-deprecation) remove this code in the future when people don't have centralized logs infra running
-func (guarantor *engineExistenceGuarantor) ensureDestroyDeprecatedCentralizedLogsResources(ctx context.Context) {
-
-	// TODO(centralized-logs-resources-deprecation) remove this code in the future when people don't have any centralized logs collector and logs database running
-	// we remove all centralized logs containers & volumes
-	if err := guarantor.kurtosisBackend.DestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
-		logrus.Errorf("Attempted to remove deprecated centralized logs resources but failed with error:\n%v", err)
-		logrus.Errorf("Users will have to remove the containers & volumes themselves using `%v`", removeDeprecatedCentralizedLogsDockerCommands)
-	}
 }

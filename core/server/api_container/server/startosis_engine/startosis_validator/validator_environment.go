@@ -9,7 +9,6 @@ import (
 
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
-	isNetworkPartitioningEnabled  bool
 	requiredDockerImages          map[string]bool
 	serviceNames                  map[service.ServiceName]ComponentExistence
 	artifactNames                 map[string]ComponentExistence
@@ -21,7 +20,7 @@ type ValidatorEnvironment struct {
 	minMemoryByServiceName        map[service.ServiceName]compute_resources.MemoryInMegaBytes
 }
 
-func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool) *ValidatorEnvironment {
+func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool) *ValidatorEnvironment {
 	serviceNamesWithComponentExistence := map[service.ServiceName]ComponentExistence{}
 	for serviceName := range serviceNames {
 		serviceNamesWithComponentExistence[serviceName] = ComponentExistedBeforePackageRun
@@ -31,7 +30,6 @@ func NewValidatorEnvironment(isNetworkPartitioningEnabled bool, serviceNames map
 		artifactNamesWithComponentExistence[artifactName] = ComponentExistedBeforePackageRun
 	}
 	return &ValidatorEnvironment{
-		isNetworkPartitioningEnabled:  isNetworkPartitioningEnabled,
 		requiredDockerImages:          map[string]bool{},
 		serviceNames:                  serviceNamesWithComponentExistence,
 		artifactNames:                 artifactNamesWithComponentExistence,
@@ -103,10 +101,6 @@ func (environment *ValidatorEnvironment) DoesArtifactNameExist(artifactName stri
 		return ComponentNotFound
 	}
 	return filesArtifactExistence
-}
-
-func (environment *ValidatorEnvironment) IsNetworkPartitioningEnabled() bool {
-	return environment.isNetworkPartitioningEnabled
 }
 
 func (environment *ValidatorEnvironment) FreeMemory(serviceName service.ServiceName) {
