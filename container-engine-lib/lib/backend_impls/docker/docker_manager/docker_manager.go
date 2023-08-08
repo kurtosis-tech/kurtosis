@@ -920,8 +920,10 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 
 	execStartConfig := types.ExecStartCheck{
 		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
-		Detach: false,
-		Tty:    false,
+		Detach:      false,
+		Tty:         false,
+		ConsoleSize: nil,
+	}
 
 	// IMPORTANT NOTE:
 	// You'd think that we'd need to call ContainerExecStart separately after this ContainerExecAttach....
@@ -930,9 +932,7 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	// Therefore, we ONLY call Attach, without Start
 	attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
 	if err != nil {
-		return 0, stacktrace.Propagate(
-			err,
-			"An error occurred starting/attaching to the exec command")
+		return 0, stacktrace.Propagate(err, "An error occurred starting/attaching to the exec command")
 	}
 	defer attachResp.Close()
 
@@ -940,16 +940,12 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	// This will keep reading until it receives EOF
 	concurrentWriter := concurrent_writer.NewConcurrentWriter(logOutput)
 	if _, err := stdcopy.StdCopy(concurrentWriter, concurrentWriter, attachResp.Reader); err != nil {
-		return 0, stacktrace.Propagate(
-			err,
-			"An error occurred copying the exec command output to the given output writer")
+		return 0, stacktrace.Propagate(err, "An error occurred copying the exec command output to the given output writer")
 	}
 
 	inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
 	if err != nil {
-		return 0, stacktrace.Propagate(
-			err,
-			"An error occurred inspecting the exec to get the response code")
+		return 0, stacktrace.Propagate(err, "An error occurred inspecting the exec to get the response code")
 	}
 	if inspectResponse.Running {
 		return 0, stacktrace.NewError("Expected exec to have stopped, but it's still running!")
@@ -968,6 +964,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		User:         "",
 		Privileged:   false,
 		Tty:          false,
+		ConsoleSize:  nil,
 		AttachStdin:  false,
 		AttachStderr: true,
 		AttachStdout: true,
@@ -990,8 +987,9 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 
 	execStartConfig := types.ExecStartCheck{
 		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
-		Detach: false,
-		Tty:    false,
+		Detach:      false,
+		Tty:         false,
+		ConsoleSize: nil,
 	}
 
 	execOutputChan := make(chan string)
