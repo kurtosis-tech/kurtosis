@@ -10,6 +10,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/channel_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	terminal "golang.org/x/term"
@@ -1489,6 +1491,85 @@ func (manager *KubernetesManager) RunExecCommand(
 	}
 
 	return successExecCommandExitCode, nil
+}
+
+func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
+	ctx context.Context,
+	namespaceName string,
+	podName string,
+	containerName string,
+	command []string,
+) (chan string, chan *exec_result.ExecResult, error) {
+	execOptions := &apiv1.PodExecOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       true,
+		Container: containerName,
+		Command:   command,
+	}
+
+	//Create a RESTful command request.
+	request := manager.kubernetesClientSet.CoreV1().RESTClient().
+		Post().
+		Namespace(namespaceName).
+		Resource("pods").
+		Name(podName).
+		SubResource("exec").
+		VersionedParams(execOptions, scheme.ParameterCodec)
+	if request == nil {
+		return nil, nil, stacktrace.NewError("Failed to build a working RESTful request for the command '%s'.", execOptions.Command)
+	}
+
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err,
+			"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.",
+			execOptions.Command,
+			request.URL().String())
+	}
+
+	execOutputChan := make(chan string)
+	finalExecResultChan := make(chan *exec_result.ExecResult)
+	go func() {
+		defer func() {
+			close(execOutputChan)
+			close(finalExecResultChan)
+		}()
+
+		// Stream output from k8s to output channel
+		channelWriter := channel_writer.NewChannelWriter(execOutputChan)
+		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+			Stdin:             nil,
+			Stdout:            channelWriter,
+			Stderr:            channelWriter,
+			Tty:               true,
+			TerminalSizeQueue: nil,
+		}); err != nil {
+			// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
+			statusError := err.Error()
+
+			// this means that context deadline has exceeded
+			if strings.Contains(statusError, contextDeadlineExceeded) {
+				execOutputChan <- stacktrace.Propagate(err, "There was an error occurred while executing commands on the container").Error()
+				return
+			}
+
+			exitCode, err := getExitCodeFromStatusMessage(statusError)
+			if err != nil {
+				execOutputChan <- stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError).Error()
+				return
+			}
+
+			// Don't send output in final result because it was already streamed
+			finalExecResultChan <- exec_result.NewExecResult(exitCode, "")
+		}
+	}()
+	return execOutputChan, finalExecResultChan, nil
 }
 
 func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *apiv1.PersistentVolumeList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {
