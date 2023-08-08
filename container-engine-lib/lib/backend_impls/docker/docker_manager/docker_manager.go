@@ -334,10 +334,11 @@ Args:
 */
 func (manager *DockerManager) CreateVolume(context context.Context, volumeName string, labels map[string]string) error {
 	volumeConfig := volume.CreateOptions{
-		Driver:     "",
-		DriverOpts: nil,
-		Labels:     labels,
-		Name:       volumeName,
+		ClusterVolumeSpec: nil,
+		Driver:            "",
+		DriverOpts:        nil,
+		Labels:            labels,
+		Name:              volumeName,
 	}
 
 	/*
@@ -755,7 +756,7 @@ Args:
 */
 func (manager *DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
 	timeoutSeconds := int(timeout.Seconds())
-	stopOpts := container.StopOptions{Timeout: &timeoutSeconds}
+	stopOpts := container.StopOptions{Signal: "", Timeout: &timeoutSeconds}
 	err := manager.dockerClient.ContainerStop(context, containerId, stopOpts)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
@@ -891,6 +892,7 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 		User:         "",
 		Privileged:   false,
 		Tty:          false,
+		ConsoleSize:  nil,
 		AttachStdin:  false,
 		AttachStderr: true,
 		AttachStdout: true,
@@ -915,8 +917,9 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 
 	execStartConfig := types.ExecStartCheck{
 		// Because detach is false, we'll block until the command comes back
-		Detach: false,
-		Tty:    false,
+		Detach:      false,
+		Tty:         false,
+		ConsoleSize: nil,
 	}
 
 	// IMPORTANT NOTE:
@@ -1053,6 +1056,7 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 		User:         "",
 		Privileged:   false,
 		Tty:          shouldAttachStandardStreamsToTtyWhenCreatingContainerExec,
+		ConsoleSize:  nil,
 		AttachStdin:  shouldAttachStdinWhenCreatingContainerExec,
 		AttachStderr: shouldAttachStderrWhenCreatingContainerExec,
 		AttachStdout: shouldAttachStdoutWhenCreatingContainerExec,
@@ -1074,8 +1078,9 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 	}
 
 	execStartCheck := types.ExecStartCheck{
-		Detach: false,
-		Tty:    true,
+		Detach:      false,
+		Tty:         true,
+		ConsoleSize: nil,
 	}
 
 	hijackedResponse, err := manager.dockerClient.ContainerExecAttach(context, execID, execStartCheck)
@@ -1122,8 +1127,10 @@ func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, image
 	images, err := manager.dockerClient.ImageList(
 		ctx,
 		types.ImageListOptions{
-			All:     true,
-			Filters: filterArgs,
+			All:            true,
+			Filters:        filterArgs,
+			SharedSize:     false,
+			ContainerCount: false,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to list images.")
@@ -1342,6 +1349,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		AutoRemove:      false,
 		VolumeDriver:    "",
 		VolumesFrom:     nil,
+		Annotations:     map[string]string{},
 		CapAdd:          addedCapabilitiesSlice,
 		CapDrop:         nil,
 		CgroupnsMode:    "",
