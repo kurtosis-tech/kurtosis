@@ -7,8 +7,8 @@ package enclave_data_directory
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/test_helpers"
 	"github.com/stretchr/testify/require"
-	bolt "go.etcd.io/bbolt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -179,7 +179,8 @@ func TestFilesArtifactStore_GetFileNamesAndUuids(t *testing.T) {
 func getTestFileStore(t *testing.T) *FilesArtifactStore {
 	absDirpath, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
-	db, closer := getNewDbAndCloserFunc(t)
+	db, closer, err := test_helpers.CreateEnclaveDbForTesting()
+	require.Nil(t, err)
 	defer closer()
 	fileArtifactDb, err := file_artifacts_db.GetFileArtifactsDbForTesting(db, map[string]string{})
 	require.Nil(t, err)
@@ -205,7 +206,8 @@ func Test_generateUniqueNameForFileArtifact_MaxRetriesOver(t *testing.T) {
 		"last-noun-1":    "b",
 	}
 
-	db, closer := getNewDbAndCloserFunc(t)
+	db, closer, err := test_helpers.CreateEnclaveDbForTesting()
+	require.Nil(t, err)
 	defer closer()
 	fileArtifactDb, err := file_artifacts_db.GetFileArtifactsDbForTesting(db, artifactIdToUUIDMap)
 	require.Nil(t, err)
@@ -213,17 +215,6 @@ func Test_generateUniqueNameForFileArtifact_MaxRetriesOver(t *testing.T) {
 	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", fileArtifactDb, 3, mockedGenerateNameMethod)
 	actual := fileArtifactStoreUnderTest.GenerateUniqueNameForFileArtifact()
 	require.Equal(t, "last-noun-2", actual)
-}
-
-func getNewDbAndCloserFunc(t *testing.T) (*bolt.DB, func()) {
-	dbFile, err := os.CreateTemp("", "*.db")
-	require.Nil(t, err)
-	db, err := bolt.Open(dbFile.Name(), 0600, nil)
-	require.Nil(t, err)
-	return db, func() {
-		db.Close()
-		dbFile.Close()
-	}
 }
 
 func Test_generateUniqueNameForFileArtifact_Found(t *testing.T) {
@@ -240,7 +231,8 @@ func Test_generateUniqueNameForFileArtifact_Found(t *testing.T) {
 		"non-unique-name": "a",
 	}
 
-	db, closer := getNewDbAndCloserFunc(t)
+	db, closer, err := test_helpers.CreateEnclaveDbForTesting()
+	require.Nil(t, err)
 	defer closer()
 	fileArtifactDb, err := file_artifacts_db.GetFileArtifactsDbForTesting(db, artifactIdToUUIDMap)
 	require.Nil(t, err)

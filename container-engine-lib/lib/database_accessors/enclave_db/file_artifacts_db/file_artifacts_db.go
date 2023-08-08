@@ -113,7 +113,15 @@ func GetOrCreateNewFileArtifactsDb() (*FileArtifactPersisted, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get enclave database")
 	}
-	err = db.Update(func(tx *bolt.Tx) error {
+	fileArtifactPersisted, err := GetFileArtifactsDbFromEnclaveDb(db, &data)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to hydrate pre-existing file artifacts")
+	}
+	return fileArtifactPersisted, nil
+}
+
+func GetFileArtifactsDbFromEnclaveDb(db *enclave_db.EnclaveDB, data *fileArtifactData) (*FileArtifactPersisted, error) {
+	err := db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucket(takenIpAddressBucketName)
 		if err != nil && err != bolt.ErrBucketExists {
 			return stacktrace.Propagate(err, "An error occurred while creating file artifact bucket")
@@ -124,8 +132,8 @@ func GetOrCreateNewFileArtifactsDb() (*FileArtifactPersisted, error) {
 			}
 			return nil
 		}
-		content := bucket.Get(simpleKey)
-		if err := json.Unmarshal(content, &data); err != nil {
+		content := tx.Bucket(takenIpAddressBucketName).Get(simpleKey)
+		if err := json.Unmarshal(content, data); err != nil {
 			return stacktrace.Propagate(err, "An error occurred restoring previous file artifact db state from '%v'", content)
 		}
 		return nil
@@ -141,17 +149,18 @@ func GetOrCreateNewFileArtifactsDb() (*FileArtifactPersisted, error) {
 	}
 	return &FileArtifactPersisted{
 		db,
-		&data,
+		data,
 	}, nil
 }
 
-func GetFileArtifactsDbForTesting(db *bolt.DB, nameToUuid map[string]string) (*FileArtifactPersisted, error) {
-	return &FileArtifactPersisted{
-		&enclave_db.EnclaveDB{DB: db},
-		&fileArtifactData{
-			nameToUuid,
-			map[string][]string{},
-			map[string][]byte{},
-		},
-	}, nil
+func GetFileArtifactsDbForTesting(db *enclave_db.EnclaveDB, nameToUuid map[string]string) (*FileArtifactPersisted, error) {
+	fileArtifactPersisted, err := GetFileArtifactsDbFromEnclaveDb(db, &fileArtifactData{
+		nameToUuid,
+		map[string][]string{},
+		map[string][]byte{},
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to hydrate pre-existing file artifacts")
+	}
+	return fileArtifactPersisted, nil
 }
