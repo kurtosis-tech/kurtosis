@@ -22,32 +22,12 @@ var PortalStartCmd = &lowlevel.LowlevelKurtosisCommand{
 	PostValidationAndRunFunc: nil,
 }
 
-func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
+func run(ctx context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 	logrus.Infof("Starting Kurtosis Portal")
 	portalManager := portal_manager.NewPortalManager()
-
-	// Checking if new version is available and potentially downloading it
-	if _, err := portal_manager.DownloadLatestKurtosisPortalBinary(ctx); err != nil {
-		return stacktrace.Propagate(err, "An unexpected error occurred trying to download the latest version of Kurtosis Portal")
-	}
-
-	currentPortalPid, process, isPortalReachable, err := portalManager.CurrentStatus(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "Unable to determine current state of Kurtosis Portal process")
-	}
-	if isPortalReachable {
-		logrus.Infof("Portal is currently running on PID '%d' and healthy.", currentPortalPid)
-		return nil
-	}
-	if process != nil {
-		logrus.Warnf("A non-healthy Portal process is currently running on PID '%d'. Stop it first before starting a new one", currentPortalPid)
-		return nil
-	}
-
-	startedPortalPid, err := portalManager.StartNew(ctx)
+	err := portalManager.DownloadAndStart(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error starting portal")
 	}
-	logrus.Infof("Kurtosis Portal started successfully on PID %d", startedPortalPid)
 	return nil
 }

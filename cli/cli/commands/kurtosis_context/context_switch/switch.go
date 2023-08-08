@@ -111,7 +111,10 @@ func SwitchContext(
 	}
 
 	portalManager := portal_manager.NewPortalManager()
-	if portalManager.IsReachable() {
+	if store.IsRemote(currentContext) {
+		if err := portalManager.DownloadAndStart(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred starting the portal")
+		}
 		portalDaemonClient := portalManager.GetClient()
 		if portalDaemonClient != nil {
 			switchContextArg := constructors.NewSwitchContextArgs()
@@ -120,11 +123,11 @@ func SwitchContext(
 			}
 		}
 	} else {
-		if store.IsRemote(currentContext) {
-			return stacktrace.NewError("New context is remote but Kurtosis Portal is not reachable locally. " +
-				"Make sure Kurtosis Portal is running before switching to a remote context again.")
+		if err := portalManager.StopExisting(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred stopping Kurtosis Portal")
 		}
 	}
+
 	logrus.Infof("Context switched to '%s', Kurtosis engine will now be restarted", contextIdentifier)
 
 	// Instantiate the engine manager after storing the new context so the manager can read it.
@@ -147,6 +150,7 @@ func SwitchContext(
 		}()
 		logrus.Info("Successfully switched context")
 	}
+
 	isContextSwitchSuccessful = true
 	return nil
 }

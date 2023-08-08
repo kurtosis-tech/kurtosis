@@ -213,6 +213,35 @@ func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRem
 	return successfullyMappedPorts, failedPorts, nil
 }
 
+// DownloadAndStart downloads the required version and starts the portal if the required version
+// is not already running.
+func (portalManager *PortalManager) DownloadAndStart(ctx context.Context) error {
+	// Checking if new version is available and potentially downloading it
+	currentPortalPid, process, isPortalReachable, err := portalManager.CurrentStatus(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Unable to determine current state of Kurtosis Portal process")
+	}
+	if isPortalReachable {
+		logrus.Infof("Portal is currently running on PID '%d' and healthy.", currentPortalPid)
+		return nil
+	}
+	if process != nil {
+		logrus.Warnf("A non-healthy Portal process is currently running on PID '%d'. Stop it first before starting a new one", currentPortalPid)
+		return nil
+	}
+
+	if _, err := DownloadRequiredKurtosisPortalBinary(ctx); err != nil {
+		return stacktrace.Propagate(err, "An unexpected error occurred trying to download the required version of Kurtosis Portal")
+	}
+
+	startedPortalPid, err := portalManager.StartNew(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error starting portal")
+	}
+	logrus.Infof("Kurtosis Portal started successfully on PID %d", startedPortalPid)
+	return nil
+}
+
 func (portalManager *PortalManager) instantiateClientIfUnset() error {
 	portalDaemonClientMaybe, err := kurtosis_context.CreatePortalDaemonClient(true)
 	if err != nil {
