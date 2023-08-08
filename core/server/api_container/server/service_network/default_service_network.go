@@ -81,6 +81,8 @@ type DefaultServiceNetwork struct {
 	// this because the API container is the only client that modifies service state
 	registeredServiceInfo map[service.ServiceName]*service.ServiceRegistration
 
+	//registeredServiceInfoRepository //TODO
+
 	// This contains all service identifiers ever successfully created
 	serviceIdentifiersRepository *service_identifiers.ServiceIdentifiersRepository
 }
