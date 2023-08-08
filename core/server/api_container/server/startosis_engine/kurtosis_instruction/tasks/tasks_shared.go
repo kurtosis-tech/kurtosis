@@ -129,7 +129,7 @@ func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvi
 	}
 
 	for _, artifactName := range serviceDirpathsToArtifactIdentifiers {
-		if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
+		if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
 			return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunPythonBuiltinName, artifactName)
 		}
 	}
