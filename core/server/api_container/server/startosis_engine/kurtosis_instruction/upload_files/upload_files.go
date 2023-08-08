@@ -145,7 +145,7 @@ func (builtin *UploadFilesCapabilities) Execute(_ context.Context, _ *builtin_ar
 	} else if found {
 		err = builtin.serviceNetwork.UpdateFilesArtifact(currentlyStoredFileArtifactUuid, filesArtifactContentReader, builtin.filesArtifactMd5)
 		if err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred while uploading the compressed contents with md5 '%s' to artifact '%s' (UUID: '%s')",
+			return "", stacktrace.Propagate(err, "An error occurred while updating the compressed contents with md5 '%s' to artifact '%s' (UUID: '%s')",
 				builtin.filesArtifactMd5, builtin.artifactName, currentlyStoredFileArtifactUuid)
 		}
 		instructionResult = fmt.Sprintf("Files with artifact name '%s' with artifact UUID '%s' updated", builtin.artifactName, currentlyStoredFileArtifactUuid)

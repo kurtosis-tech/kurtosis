@@ -37,9 +37,9 @@ func CompressPath(pathToCompress string, enforceMaxFileSizeLimit bool) (io.ReadC
 	return compressedFile, compressedFileSize, compressedFileContentMd5, nil
 }
 
-// CompressPathToFile compressed the entire content of the file or directory at pathToCompress and returns the path
-// to the TGZ archive created, alongside the size (in bytes) of the archive
-// The consumer should take care of closing the io.ReadClose returned
+// CompressPathToFile compresses the entire content of the file or directory at pathToCompress and returns the path
+// to the TGZ archive created, alongside the size (in bytes) of the archive and the md5 of its content
+// Note: the MD5 is NOT the MD% of the archive file itself. See inline comments below for more info on this MD5 hash
 func CompressPathToFile(pathToCompress string, enforceMaxFileSizeLimit bool) (string, uint64, []byte, error) {
 	// First we compute the hash of the content about to be compressed
 	// Note that we're computing this "complex" hash here because the way tar.gz works, it writes files metadata to the

@@ -37,6 +37,8 @@ import (
 const (
 	podWaitForAvailabilityTimeout          = 15 * time.Minute
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
+	podWaitForDeletionTimeout              = 5 * time.Minute
+	podWaitForDeletionTimeBetweenPolls     = 500 * time.Millisecond
 	podWaitForTerminationTimeout           = 5 * time.Minute
 	podWaitForTerminationTimeBetweenPolls  = 500 * time.Millisecond
 
@@ -1236,7 +1238,7 @@ func (manager *KubernetesManager) CreatePod(
 	// deletion", and so we wait for it to be deleted before creating it again. There's probably a way to optimize this
 	// a bit more using native k8s pod update operation
 	if err := manager.waitForPodDeletion(ctx, namespaceName, podName); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred waiting for pod '%v' to become available", podName)
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for pod '%v' to be completely removed", podName)
 	}
 
 	createdPod, err := podClient.Create(ctx, podToCreate, globalCreateOptions)
@@ -1887,7 +1889,7 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 // waitForPodDeletion waits for the pod to be fully deleted if it has been marked for deletion
 func (manager *KubernetesManager) waitForPodDeletion(ctx context.Context, namespaceName string, podName string) error {
 	// Wait for the pod to start running
-	deadline := time.Now().Add(podWaitForAvailabilityTimeout)
+	deadline := time.Now().Add(podWaitForDeletionTimeout)
 	var latestPodStatus *apiv1.PodStatus
 	for time.Now().Before(deadline) {
 		pod, err := manager.GetPod(ctx, namespaceName, podName)
@@ -1899,7 +1901,7 @@ func (manager *KubernetesManager) waitForPodDeletion(ctx context.Context, namesp
 			return stacktrace.NewError("The pod '%s' currently exists in namespace '%s' and is not scheduled for deletion",
 				podName, namespaceName)
 		}
-		time.Sleep(podWaitForAvailabilityTimeBetweenPolls)
+		time.Sleep(podWaitForDeletionTimeBetweenPolls)
 	}
 
 	containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)

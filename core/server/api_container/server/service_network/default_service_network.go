@@ -1059,7 +1059,6 @@ func (network *DefaultServiceNetwork) copyFilesFromServiceUnlocked(ctx context.C
 	}
 
 	pipeReader, pipeWriter := io.Pipe()
-	defer pipeReader.Close()
 	defer pipeWriter.Close()
 
 	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
@@ -1156,6 +1155,8 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 	var filesArtifactUuid enclave_data_directory.FilesArtifactUUID
 	if found {
 		filesArtifactUuid = existingFilesArtifactUuid
+		// If one of the md5 is empty, we can't really assume the files are equal so we fallback to updating them
+		// Otherwise we check the equality of their MD5 and if they are different we update them
 		if len(existingFilesArtifactMd5) == 0 || len(compressedFileMd5) == 0 || !bytes.Equal(existingFilesArtifactMd5, compressedFileMd5) {
 			storeOrUpdateErr = store.UpdateFile(existingFilesArtifactUuid, compressedFile, compressedFileMd5)
 		}
