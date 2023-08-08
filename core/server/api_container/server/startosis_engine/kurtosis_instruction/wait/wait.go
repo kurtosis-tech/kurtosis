@@ -222,7 +222,7 @@ func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument
 }
 
 func (builtin *WaitCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ServiceNotFound {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ComponentNotFound {
 		return startosis_errors.NewValidationError("Tried creating a wait for service '%s' which doesn't exist", builtin.serviceName)
 	}
 
