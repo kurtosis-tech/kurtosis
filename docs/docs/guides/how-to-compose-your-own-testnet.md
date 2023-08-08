@@ -108,7 +108,8 @@ With some execution layer genesis data in hand, you will now bootstrap the node!
 geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
 lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
 
-network_params = json.decode(read_file("github.com/kurtosis-tech/geth-lighthouse-package/network_params.json"))
+# Again, replacing $YOUR_GITHUB_USERNAME with your Github username
+network_params = json.decode(read_file("github.com/$YOUR_GITHUB_USERNAME/my-testnet/network_params.json"))
 
 def run(plan):
     # Generate genesis, note EL and the CL needs the same timestamp to ensure that timestamp based forking works
@@ -197,7 +198,7 @@ You may already know what you want to do with the private testnet you've just sp
 
 Otherwise, we've got some neat ideas for what you can do next. If you need a hand with any of the below, feel free to let us know in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/new/choose) where we and members of our community can help!
 * Deploy your node in a Kubernetes cluster for collaborative work and scale it out to multiple nodes! Check out our docs for how to do so [here](https://docs.kurtosis.com/k8s/). 
-* Simulate MEV workflows using by importing the [MEV Package](https://github.com/kurtosis-tech/mev-package), which contains the Flashbots suite of products, including the MEV-Boost, MEV-Flood, and MEV-relay, alongside any dependencies (postgres & redis). Here's a full example of this set up [here](https://github.com/kurtosis-tech/geth-lighthouse-mev-package).
+* Simulate MEV workflows by importing the [MEV Package](https://github.com/kurtosis-tech/mev-package) into your testnet definition. The MEV package deploys and configures the Flashbots suite of products to your local Ethereum testnet and includes: MEV-Boost, MEV-Flood, and MEV-relay, and any required dependencies (postgres & redis). Here's a full example of this set up [here](https://github.com/kurtosis-tech/geth-lighthouse-mev-package).
 * Connect other infrastructure (oracles, relayers, etc) to the network by adding more to your `main.star` file! Remember, this is an environment definition and you can import any pre-existing packages that you may find useful. Here are a [few examples](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main)
 * Deploy your dApp onto the local network! Hardhat can be used to do so by using the given RPC URL & the `network_id` defined in the `network_params.json` you wrote at the beginning. In your case, the `network_id` should be: `3151908`. A more thorough example of this workflow can also be found [here](./how-to-local-eth-testnet.md).
 
