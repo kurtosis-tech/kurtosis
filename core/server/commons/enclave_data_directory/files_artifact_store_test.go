@@ -6,7 +6,9 @@
 package enclave_data_directory
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
 	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -22,10 +24,10 @@ func TestFileStore_StoreFileSimpleCase(t *testing.T) {
 	filesArtifactUuid, err := fileStore.StoreFile(reader, fakeMd5, targetArtifactName)
 	require.Equal(t, 32, len(filesArtifactUuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
 	require.Nil(t, err)
-	require.Len(t, fileStore.artifactNameToArtifactUuid, 1)
-	require.Contains(t, fileStore.artifactNameToArtifactUuid, targetArtifactName)
-	require.Len(t, fileStore.artifactContentMd5, 1)
-	require.Contains(t, fileStore.artifactContentMd5, filesArtifactUuid)
+	require.Len(t, fileStore.fileArtifactDb.GetArtifactUuidMap(), 1)
+	require.Contains(t, fileStore.fileArtifactDb.GetArtifactUuidMap(), targetArtifactName)
+	require.Len(t, fileStore.fileArtifactDb.GetContentMd5Map(), 1)
+	require.Contains(t, fileStore.fileArtifactDb.GetContentMd5Map(), string(filesArtifactUuid))
 
 	//Test that it saved where it said it would.
 	expectedFilename := strings.Join(
@@ -122,8 +124,8 @@ func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
 	fakeMd5 := []byte("blah")
 	uuid, err := fileStore.StoreFile(reader, fakeMd5, testArtifactName)
 	require.Nil(t, err)
-	require.Len(t, fileStore.shortenedUuidToFullUuid, 1)
-	require.Len(t, fileStore.artifactNameToArtifactUuid, 1)
+	require.Len(t, fileStore.fileArtifactDb.GetFullUuidMap(), 1)
+	require.Len(t, fileStore.fileArtifactDb.GetArtifactUuidMap(), 1)
 
 	_, enclaveDataFile, _, found, err := fileStore.GetFile(string(uuid))
 	require.Nil(t, err)
@@ -131,9 +133,9 @@ func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
 
 	err = fileStore.RemoveFile(string(uuid))
 	require.Nil(t, err)
-	require.Len(t, fileStore.shortenedUuidToFullUuid, 0)
-	require.Len(t, fileStore.artifactNameToArtifactUuid, 0)
-	require.Len(t, fileStore.artifactContentMd5, 0)
+	require.Len(t, fileStore.fileArtifactDb.GetFullUuidMap(), 0)
+	require.Len(t, fileStore.fileArtifactDb.GetArtifactUuidMap(), 0)
+	require.Len(t, fileStore.fileArtifactDb.GetContentMd5Map(), 0)
 
 	_, err = os.Stat(enclaveDataFile.absoluteFilepath)
 	require.NotNil(t, err)
@@ -177,7 +179,11 @@ func TestFilesArtifactStore_GetFileNamesAndUuids(t *testing.T) {
 func getTestFileStore(t *testing.T) *FilesArtifactStore {
 	absDirpath, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
-	fileStore := newFilesArtifactStore(absDirpath, "")
+	db, closer := getNewDbAndCloserFunc(t)
+	defer closer()
+	fileArtifactDb, err := file_artifacts_db.GetFileArtifactsDbForTesting(db, map[string]string{})
+	require.Nil(t, err)
+	fileStore := newFilesArtifactStoreFromDb(absDirpath, "", fileArtifactDb)
 	require.Nil(t, err)
 	return fileStore
 }
@@ -193,15 +199,31 @@ func Test_generateUniqueNameForFileArtifact_MaxRetriesOver(t *testing.T) {
 		return "adjective-noun"
 	}
 
-	artifactIdToUUIDMap := map[string]FilesArtifactUUID{
-		"adjective-noun": FilesArtifactUUID("a"),
-		"last-noun":      FilesArtifactUUID("b"),
-		"last-noun-1":    FilesArtifactUUID("b"),
+	artifactIdToUUIDMap := map[string]string{
+		"adjective-noun": "a",
+		"last-noun":      "b",
+		"last-noun-1":    "b",
 	}
 
-	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil, nil, 3, mockedGenerateNameMethod)
+	db, closer := getNewDbAndCloserFunc(t)
+	defer closer()
+	fileArtifactDb, err := file_artifacts_db.GetFileArtifactsDbForTesting(db, artifactIdToUUIDMap)
+	require.Nil(t, err)
+
+	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", fileArtifactDb, 3, mockedGenerateNameMethod)
 	actual := fileArtifactStoreUnderTest.GenerateUniqueNameForFileArtifact()
 	require.Equal(t, "last-noun-2", actual)
+}
+
+func getNewDbAndCloserFunc(t *testing.T) (*bolt.DB, func()) {
+	dbFile, err := os.CreateTemp("", "*.db")
+	require.Nil(t, err)
+	db, err := bolt.Open(dbFile.Name(), 0600, nil)
+	require.Nil(t, err)
+	return db, func() {
+		db.Close()
+		dbFile.Close()
+	}
 }
 
 func Test_generateUniqueNameForFileArtifact_Found(t *testing.T) {
@@ -214,11 +236,16 @@ func Test_generateUniqueNameForFileArtifact_Found(t *testing.T) {
 		return "non-unique-name"
 	}
 
-	artifactIdToUUIDMap := map[string]FilesArtifactUUID{
-		"non-unique-name": FilesArtifactUUID("a"),
+	artifactIdToUUIDMap := map[string]string{
+		"non-unique-name": "a",
 	}
 
-	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil, nil, 3, mockedGenerateNameMethod)
+	db, closer := getNewDbAndCloserFunc(t)
+	defer closer()
+	fileArtifactDb, err := file_artifacts_db.GetFileArtifactsDbForTesting(db, artifactIdToUUIDMap)
+	require.Nil(t, err)
+
+	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", fileArtifactDb, 3, mockedGenerateNameMethod)
 	actual := fileArtifactStoreUnderTest.GenerateUniqueNameForFileArtifact()
 	require.Equal(t, "unique-name", actual)
 }
