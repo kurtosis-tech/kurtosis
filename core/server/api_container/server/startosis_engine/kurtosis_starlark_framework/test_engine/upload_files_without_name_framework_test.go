@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -36,6 +37,14 @@ func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruc
 		nil,
 	)
 
+	serviceNetwork.EXPECT().GetFilesArtifactMd5(
+		mockedFileArtifactName,
+	).Times(1).Return(
+		enclave_data_directory.FilesArtifactUUID(""),
+		nil,
+		false,
+		nil,
+	)
 	serviceNetwork.EXPECT().UploadFilesArtifact(
 		mock.Anything, // data gets written to disk and compressed to it's a bit tricky to replicate here.
 		mock.Anything, // and same for the hash
