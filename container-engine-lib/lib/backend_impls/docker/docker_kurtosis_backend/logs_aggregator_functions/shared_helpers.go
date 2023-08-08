@@ -20,11 +20,7 @@ const (
 func getLogsAggregatorObjectAndContainerId(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) (
-	resultMaybeLogsAggregator *logs_aggregator.LogsAggregator,
-	resultMaybeContainerId string,
-	resultErr error,
-) {
+) (*logs_aggregator.LogsAggregator, string, error) {
 	allLogsAggregatorContainers, err := getAllLogsAggregatorContainers(ctx, dockerManager)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs Aggregator containers")

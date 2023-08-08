@@ -21,11 +21,7 @@ const (
 	shouldShowStoppedLogsCollectorContainers = true
 )
 
-func getLogsCollectorPrivatePorts(containerLabels map[string]string) (
-	resultTcpPortSpec *port_spec.PortSpec,
-	resultHttpPortSpec *port_spec.PortSpec,
-	resultErr error,
-) {
+func getLogsCollectorPrivatePorts(containerLabels map[string]string) (*port_spec.PortSpec, *port_spec.PortSpec, error) {
 
 	serializedPortSpecs, found := containerLabels[label_key_consts.PortSpecsDockerLabelKey.GetString()]
 	if !found {
@@ -134,11 +130,7 @@ func getLogsCollectorObjectAndContainerId(
 	enclaveUuid enclave.EnclaveUUID,
 	enclaveNetworkId *types.Network,
 	dockerManager *docker_manager.DockerManager,
-) (
-	resultMaybeLogsCollector *logs_collector.LogsCollector,
-	resultMaybeContainerId string,
-	resultErr error,
-) {
+) (*logs_collector.LogsCollector, string, error) {
 	allLogsCollectorContainers, err := getLogsCollectorForTheGivenEnclave(ctx, enclaveUuid, dockerManager)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs collector containers")
