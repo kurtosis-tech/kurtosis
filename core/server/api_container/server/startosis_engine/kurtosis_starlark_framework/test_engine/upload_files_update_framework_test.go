@@ -6,28 +6,27 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
-	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
 )
 
-type uploadFilesTestCase struct {
+type uploadFilesUpdateTestCase struct {
 	*testing.T
 }
 
-func newUploadFilesTestCase(t *testing.T) *uploadFilesTestCase {
-	return &uploadFilesTestCase{
+func newUploadFilesUpdateTestCase(t *testing.T) *uploadFilesUpdateTestCase {
+	return &uploadFilesUpdateTestCase{
 		T: t,
 	}
 }
 
-func (t *uploadFilesTestCase) GetId() string {
+func (t *uploadFilesUpdateTestCase) GetId() string {
 	return upload_files.UploadFilesBuiltinName
 }
 
-func (t *uploadFilesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func (t *uploadFilesUpdateTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
 	require.Nil(t, packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
@@ -35,34 +34,33 @@ func (t *uploadFilesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 	serviceNetwork.EXPECT().GetFilesArtifactMd5(
 		TestArtifactName,
 	).Times(1).Return(
-		enclave_data_directory.FilesArtifactUUID(""),
-		nil,
-		false,
+		TestArtifactUuid,
+		[]byte{},
+		true,
 		nil,
 	)
-	serviceNetwork.EXPECT().UploadFilesArtifact(
+	serviceNetwork.EXPECT().UpdateFilesArtifact(
+		TestArtifactUuid,
 		mock.Anything, // data gets written to disk and compressed to it's a bit tricky to replicate here.
 		mock.Anything, // and same for the hash
-		TestArtifactName,
 	).Times(1).Return(
-		TestArtifactUuid,
 		nil,
 	)
 
 	return upload_files.NewUploadFiles(serviceNetwork, packageContentProvider)
 }
 
-func (t uploadFilesTestCase) GetStarlarkCode() string {
+func (t uploadFilesUpdateTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName, upload_files.ArtifactNameArgName, TestArtifactName)
 }
 
-func (t *uploadFilesTestCase) GetStarlarkCodeForAssertion() string {
+func (t *uploadFilesUpdateTestCase) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-func (t *uploadFilesTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *uploadFilesUpdateTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(TestArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", TestArtifactName, TestArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' with artifact UUID '%s' updated", TestArtifactName, TestArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 }

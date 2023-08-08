@@ -162,7 +162,7 @@ func (builtin *RequestCapabilities) Interpret(_ string, arguments *builtin_argum
 }
 
 func (builtin *RequestCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ServiceNotFound {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ComponentNotFound {
 		return startosis_errors.NewValidationError("Tried creating a request for service '%s' which doesn't exist", builtin.serviceName)
 	}
 	if validationErr := recipe.ValidateHttpRequestRecipe(builtin.httpRequestRecipe, builtin.serviceName, validatorEnvironment); validationErr != nil {

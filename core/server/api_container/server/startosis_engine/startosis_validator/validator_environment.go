@@ -10,8 +10,8 @@ import (
 // ValidatorEnvironment fields are not exported so that only validators can access its fields
 type ValidatorEnvironment struct {
 	requiredDockerImages          map[string]bool
-	serviceNames                  map[service.ServiceName]ServiceExistence
-	artifactNames                 map[string]bool
+	serviceNames                  map[service.ServiceName]ComponentExistence
+	artifactNames                 map[string]ComponentExistence
 	serviceNameToPrivatePortIDs   map[service.ServiceName][]string
 	availableCpuInMilliCores      compute_resources.CpuMilliCores
 	availableMemoryInMegaBytes    compute_resources.MemoryInMegaBytes
@@ -21,14 +21,18 @@ type ValidatorEnvironment struct {
 }
 
 func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool) *ValidatorEnvironment {
-	serviceNamesWithServiceExistence := map[service.ServiceName]ServiceExistence{}
+	serviceNamesWithComponentExistence := map[service.ServiceName]ComponentExistence{}
 	for serviceName := range serviceNames {
-		serviceNamesWithServiceExistence[serviceName] = ServiceExistedBeforePackageRun
+		serviceNamesWithComponentExistence[serviceName] = ComponentExistedBeforePackageRun
+	}
+	artifactNamesWithComponentExistence := map[string]ComponentExistence{}
+	for artifactName := range artifactNames {
+		artifactNamesWithComponentExistence[artifactName] = ComponentExistedBeforePackageRun
 	}
 	return &ValidatorEnvironment{
 		requiredDockerImages:          map[string]bool{},
-		serviceNames:                  serviceNamesWithServiceExistence,
-		artifactNames:                 artifactNames,
+		serviceNames:                  serviceNamesWithComponentExistence,
+		artifactNames:                 artifactNamesWithComponentExistence,
 		serviceNameToPrivatePortIDs:   serviceNameToPrivatePortIds,
 		availableCpuInMilliCores:      availableCpuInMilliCores,
 		availableMemoryInMegaBytes:    availableMemoryInMegaBytes,
@@ -47,17 +51,17 @@ func (environment *ValidatorEnvironment) GetNumberOfContainerImages() uint32 {
 }
 
 func (environment *ValidatorEnvironment) AddServiceName(serviceName service.ServiceName) {
-	environment.serviceNames[serviceName] = ServiceCreatedOrUpdatedDuringPackageRun
+	environment.serviceNames[serviceName] = ComponentCreatedOrUpdatedDuringPackageRun
 }
 
 func (environment *ValidatorEnvironment) RemoveServiceName(serviceName service.ServiceName) {
 	delete(environment.serviceNames, serviceName)
 }
 
-func (environment *ValidatorEnvironment) DoesServiceNameExist(serviceName service.ServiceName) ServiceExistence {
+func (environment *ValidatorEnvironment) DoesServiceNameExist(serviceName service.ServiceName) ComponentExistence {
 	serviceExistence, found := environment.serviceNames[serviceName]
 	if !found {
-		return ServiceNotFound
+		return ComponentNotFound
 	}
 	return serviceExistence
 }
@@ -84,16 +88,19 @@ func (environment *ValidatorEnvironment) RemoveServiceFromPrivatePortIDMapping(s
 }
 
 func (environment *ValidatorEnvironment) AddArtifactName(artifactName string) {
-	environment.artifactNames[artifactName] = true
+	environment.artifactNames[artifactName] = ComponentCreatedOrUpdatedDuringPackageRun
 }
 
 func (environment *ValidatorEnvironment) RemoveArtifactName(artifactName string) {
 	delete(environment.artifactNames, artifactName)
 }
 
-func (environment *ValidatorEnvironment) DoesArtifactNameExist(artifactName string) bool {
-	_, ok := environment.artifactNames[artifactName]
-	return ok
+func (environment *ValidatorEnvironment) DoesArtifactNameExist(artifactName string) ComponentExistence {
+	filesArtifactExistence, found := environment.artifactNames[artifactName]
+	if !found {
+		return ComponentNotFound
+	}
+	return filesArtifactExistence
 }
 
 func (environment *ValidatorEnvironment) FreeMemory(serviceName service.ServiceName) {
