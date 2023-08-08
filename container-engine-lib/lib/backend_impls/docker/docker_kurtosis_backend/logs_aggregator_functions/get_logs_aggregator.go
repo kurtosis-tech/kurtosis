@@ -10,10 +10,7 @@ import (
 func GetLogsAggregator(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
-) (
-	resultMaybeLogsAggregator *logs_aggregator.LogsAggregator,
-	resultErr error,
-) {
+) (*logs_aggregator.LogsAggregator, error) {
 
 	maybeLogsAggregatorObject, _, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
 	if err != nil {

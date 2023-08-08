@@ -20,12 +20,7 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
-) (
-	resultContainerId string,
-	resultContainerLabels map[string]string,
-	resultRemoveLogsAggregatorContainerFunc func(),
-	resultErr error,
-) {
+) (string, map[string]string, func(), error) {
 	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(portNumber)
 
 	logsAggregatorVolumeAttrs, err := objAttrsProvider.ForLogsAggregatorVolume()
