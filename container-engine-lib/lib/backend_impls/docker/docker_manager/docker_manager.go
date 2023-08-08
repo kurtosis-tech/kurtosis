@@ -336,11 +336,12 @@ Args:
 	labels: Labels to attach to the volume object
 */
 func (manager *DockerManager) CreateVolume(context context.Context, volumeName string, labels map[string]string) error {
-	volumeConfig := volume.VolumeCreateBody{
-		Driver:     "",
-		DriverOpts: nil,
-		Labels:     labels,
-		Name:       volumeName,
+	volumeConfig := volume.CreateOptions{
+		ClusterVolumeSpec: nil,
+		Driver:            "",
+		DriverOpts:        nil,
+		Labels:            labels,
+		Name:              volumeName,
 	}
 
 	/*
@@ -376,7 +377,8 @@ func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName s
 		Value: volumeName,
 	}
 	filterArgs := filters.NewArgs(nameFilter)
-	resp, err := manager.dockerClient.VolumeList(ctx, filterArgs)
+	listOptions := volume.ListOptions{Filters: filterArgs}
+	resp, err := manager.dockerClient.VolumeList(ctx, listOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with name matching '%v'", volumeName)
 	}
@@ -392,14 +394,15 @@ func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName s
 GetVolumesByLabels
 Gets the volumes matching the given labels
 */
-func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]*types.Volume, error) {
+func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]*volume.Volume, error) {
 	labelsFilterArgs := getLabelsFilterArgs(volumeLabelSearchFilterKey, labels)
-	resp, err := manager.dockerClient.VolumeList(ctx, labelsFilterArgs)
+	listOptions := volume.ListOptions{Filters: labelsFilterArgs}
+	resp, err := manager.dockerClient.VolumeList(ctx, listOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with labels '%+v'", labels)
 	}
 
-	result := []*types.Volume{}
+	result := []*volume.Volume{}
 	if resp.Volumes != nil {
 		result = resp.Volumes
 	}
@@ -755,7 +758,9 @@ Args:
 	timeout: How long to wait for container stoppage before throwing an error
 */
 func (manager *DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
-	err := manager.dockerClient.ContainerStop(context, containerId, &timeout)
+	timeoutSeconds := int(timeout.Seconds())
+	stopOpts := container.StopOptions{Signal: "", Timeout: &timeoutSeconds}
+	err := manager.dockerClient.ContainerStop(context, containerId, stopOpts)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
 	}
@@ -890,6 +895,7 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 		User:         "",
 		Privileged:   false,
 		Tty:          false,
+		ConsoleSize:  nil,
 		AttachStdin:  false,
 		AttachStderr: true,
 		AttachStdout: true,
@@ -916,7 +922,6 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
 		Detach: false,
 		Tty:    false,
-	}
 
 	// IMPORTANT NOTE:
 	// You'd think that we'd need to call ContainerExecStart separately after this ContainerExecAttach....
@@ -1141,6 +1146,7 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 		User:         "",
 		Privileged:   false,
 		Tty:          shouldAttachStandardStreamsToTtyWhenCreatingContainerExec,
+		ConsoleSize:  nil,
 		AttachStdin:  shouldAttachStdinWhenCreatingContainerExec,
 		AttachStderr: shouldAttachStderrWhenCreatingContainerExec,
 		AttachStdout: shouldAttachStdoutWhenCreatingContainerExec,
@@ -1162,8 +1168,9 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 	}
 
 	execStartCheck := types.ExecStartCheck{
-		Detach: false,
-		Tty:    true,
+		Detach:      false,
+		Tty:         true,
+		ConsoleSize: nil,
 	}
 
 	hijackedResponse, err := manager.dockerClient.ContainerExecAttach(context, execID, execStartCheck)
@@ -1210,8 +1217,10 @@ func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, image
 	images, err := manager.dockerClient.ImageList(
 		ctx,
 		types.ImageListOptions{
-			All:     true,
-			Filters: filterArgs,
+			All:            true,
+			Filters:        filterArgs,
+			SharedSize:     false,
+			ContainerCount: false,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to list images.")
@@ -1430,6 +1439,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		AutoRemove:      false,
 		VolumeDriver:    "",
 		VolumesFrom:     nil,
+		Annotations:     map[string]string{},
 		CapAdd:          addedCapabilitiesSlice,
 		CapDrop:         nil,
 		CgroupnsMode:    "",
@@ -1599,7 +1609,6 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 
 func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	opts := types.ContainerListOptions{
-		Quiet:   false,
 		Size:    false,
 		All:     shouldShowStoppedContainers,
 		Latest:  false,
@@ -1899,8 +1908,6 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
 	}
 	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
-		// true - only show ids
-		Quiet:   onlyReturnContainerIds,
 		Size:    false,
 		All:     false,
 		Latest:  false,
