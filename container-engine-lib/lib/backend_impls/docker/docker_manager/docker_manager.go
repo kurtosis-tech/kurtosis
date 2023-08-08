@@ -913,6 +913,7 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	}
 
 	execStartConfig := types.ExecStartCheck{
+		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
 		Detach: false,
 		Tty:    false,
 	}
@@ -983,7 +984,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 	}
 
 	execStartConfig := types.ExecStartCheck{
-		// Because detach is false, we'll block until the command comes back
+		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
 		Detach: false,
 		Tty:    false,
 	}
@@ -1003,7 +1004,7 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		// Therefore, we ONLY call Attach, without Start
 		attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
 		if err != nil {
-			sendErrorThroughChannel(execOutputChan, err)
+			execOutputChan <- err.Error()
 			return
 		}
 		defer attachResp.Close()
@@ -1016,7 +1017,6 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 				if err == io.EOF {
 					break
 				} else {
-					sendErrorThroughChannel(execOutputChan, err)
 					return
 				}
 			}
@@ -1026,16 +1026,16 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 
 		inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
 		if err != nil {
-			sendErrorThroughChannel(execOutputChan, err)
+			execOutputChan <- err.Error()
 			return
 		}
 		if inspectResponse.Running {
-			sendErrorThroughChannel(execOutputChan, stacktrace.NewError("Expected exec to have stopped, but it's still running!"))
+			execOutputChan <- stacktrace.NewError("Expected exec to have stopped, but it's still running!").Error()
 			return
 		}
 		unsizedExitCode := inspectResponse.ExitCode
 		if unsizedExitCode > math.MaxInt32 || unsizedExitCode < math.MinInt32 {
-			sendErrorThroughChannel(execOutputChan, stacktrace.NewError("Could not cast unsized int '%v' to int32 because it does not fit", unsizedExitCode))
+			execOutputChan <- stacktrace.NewError("Could not cast unsized int '%v' to int32 because it does not fit", unsizedExitCode).Error()
 			return
 		}
 		int32ExitCode := int32(unsizedExitCode)
@@ -1044,10 +1044,6 @@ func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.C
 		finalExecResultChan <- exec_result.NewExecResult(int32ExitCode, "")
 	}()
 	return execOutputChan, finalExecResultChan, nil
-}
-
-func sendErrorThroughChannel(destChan chan<- string, err error) {
-	destChan <- err.Error()
 }
 
 /*

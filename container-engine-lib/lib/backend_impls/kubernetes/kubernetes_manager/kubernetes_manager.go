@@ -1546,13 +1546,13 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 
 			// this means that context deadline has exceeded
 			if strings.Contains(statusError, contextDeadlineExceeded) {
-				sendErrorThroughChannel(execOutputChan, stacktrace.Propagate(err, "There was an error occurred while executing commands on the container"))
+				execOutputChan <- stacktrace.Propagate(err, "There was an error occurred while executing commands on the container").Error()
 				return
 			}
 
 			exitCode, err := getExitCodeFromStatusMessage(statusError)
 			if err != nil {
-				sendErrorThroughChannel(execOutputChan, stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError))
+				execOutputChan <- stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError).Error()
 				return
 			}
 
@@ -1561,10 +1561,6 @@ func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
 		}
 	}()
 	return execOutputChan, finalExecResultChan, nil
-}
-
-func sendErrorThroughChannel(destChan chan<- string, err error) {
-	destChan <- err.Error()
 }
 
 func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *apiv1.PersistentVolumeList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {
