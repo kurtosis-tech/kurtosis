@@ -318,6 +318,15 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	return succesfulUserServiceExecResults, erroredUserServiceUuids, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	serviceUuid service.ServiceUUID,
+	cmd []string,
+) (chan string, chan *exec_result.ExecResult, error) {
+	return backend.underlying.RunUserServiceExecCommandWithStreamedOutput(ctx, enclaveUuid, serviceUuid, cmd)
+}
+
 func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {
 	err := backend.underlying.GetShellOnUserService(ctx, enclaveUuid, serviceUuid)
 	if err != nil {

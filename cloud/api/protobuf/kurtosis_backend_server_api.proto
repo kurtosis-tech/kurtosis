@@ -59,4 +59,10 @@ message GetCloudInstanceConfigResponse {
   string status = 5;
   string created = 6;
   string updated = 7;
+  optional AwsKey user_key = 8; // TODO: remove the optional once the cloud BE/FE are upgraded and released
+}
+
+message AwsKey {
+  string id = 1;
+  string secret = 2;
 }
