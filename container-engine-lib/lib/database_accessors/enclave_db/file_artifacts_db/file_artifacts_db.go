@@ -104,7 +104,11 @@ func (fileArtifactDb *FileArtifactPersisted) DeleteContentMd5(artifactName strin
 }
 
 func GetOrCreateNewFileArtifactsDb() (*FileArtifactPersisted, error) {
-	var data fileArtifactData
+	data := fileArtifactData{
+		map[string]string{},
+		map[string][]string{},
+		map[string][]byte{},
+	}
 	db, err := enclave_db.GetOrCreateEnclaveDatabase()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get enclave database")

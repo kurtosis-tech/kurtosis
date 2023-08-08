@@ -64,7 +64,9 @@ func NewFilesArtifactStoreForTesting(
 func (store FilesArtifactStore) StoreFile(reader io.Reader, contentMd5 []byte, artifactName string) (FilesArtifactUUID, error) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
-	defer store.fileArtifactDb.Persist()
+	defer func(fileArtifactDb *file_artifacts_db.FileArtifactPersisted) {
+		_ = fileArtifactDb.Persist()
+	}(store.fileArtifactDb)
 
 	filesArtifactUuid, err := NewFilesArtifactUUID()
 	if err != nil {
@@ -86,7 +88,9 @@ func (store FilesArtifactStore) StoreFile(reader io.Reader, contentMd5 []byte, a
 func (store FilesArtifactStore) GetFile(artifactIdentifier string) (FilesArtifactUUID, *EnclaveDataDirFile, []byte, bool, error) {
 	store.mutex.RLock()
 	defer store.mutex.RUnlock()
-	defer store.fileArtifactDb.Persist()
+	defer func(fileArtifactDb *file_artifacts_db.FileArtifactPersisted) {
+		_ = fileArtifactDb.Persist()
+	}(store.fileArtifactDb)
 
 	filesArtifactUuid := FilesArtifactUUID(artifactIdentifier)
 	fileArtifactUuid, file, contentMd5, found, err := store.getFileUnlocked(filesArtifactUuid)
@@ -115,7 +119,9 @@ func (store FilesArtifactStore) GetFile(artifactIdentifier string) (FilesArtifac
 func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) error {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
-	defer store.fileArtifactDb.Persist()
+	defer func(fileArtifactDb *file_artifacts_db.FileArtifactPersisted) {
+		_ = fileArtifactDb.Persist()
+	}(store.fileArtifactDb)
 	var filesArtifactUuid FilesArtifactUUID
 
 	filesArtifactUuid = FilesArtifactUUID(artifactIdentifier)
@@ -150,7 +156,6 @@ func (store FilesArtifactStore) ListFiles() map[string]bool {
 func (store FilesArtifactStore) GetFileNamesAndUuids() []FileNameAndUuid {
 	store.mutex.RLock()
 	defer store.mutex.RUnlock()
-	defer store.fileArtifactDb.Persist()
 	var nameAndUuids []FileNameAndUuid
 	for artifactName, artifactUuid := range store.fileArtifactDb.GetArtifactUuidMap() {
 		nameAndUuid := FileNameAndUuid{
