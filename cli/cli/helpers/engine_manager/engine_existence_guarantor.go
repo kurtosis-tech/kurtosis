@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
@@ -280,12 +281,20 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 }
 
 func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRunning(ctx context.Context, shouldForceContainerRestart bool) error {
-
 	logsAggregator, err := guarantor.kurtosisBackend.GetLogsAggregator(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
 	}
+
 	isThereLogAggregator := logsAggregator != nil
+	isLogAggregatorRunning := logsAggregator.GetStatus() == container_status.ContainerStatus_Running
+
+	if shouldForceContainerRestart || (isThereLogAggregator && !isLogAggregatorRunning) {
+		if err = guarantor.kurtosisBackend.DestroyLogsAggregator(ctx); err != nil {
+			return stacktrace.Propagate(err, "An error occurred destroying the logs aggregator")
+		}
+		isThereLogAggregator = false
+	}
 
 	if !isThereLogAggregator {
 		if _, err := guarantor.kurtosisBackend.CreateLogsAggregator(ctx, defaultLogAggregatorPortNum); err != nil {
