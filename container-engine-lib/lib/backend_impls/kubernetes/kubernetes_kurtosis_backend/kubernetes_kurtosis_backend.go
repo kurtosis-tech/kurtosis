@@ -416,6 +416,11 @@ func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Conte
 	return nil, stacktrace.NewError("Creating the logs aggregator isn't yet implemented on Kubernetes")
 }
 
+func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
+	// TODO IMPLEMENT
+	return stacktrace.NewError("Destroying the logs aggregator isn't yet implemented on Kubernetes")
+}
+
 func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Creating the logs collector isn't yet implemented on Kubernetes")

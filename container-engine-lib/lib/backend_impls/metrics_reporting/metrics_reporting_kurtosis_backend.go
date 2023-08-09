@@ -461,6 +461,10 @@ func (backend *MetricsReportingKurtosisBackend) GetLogsAggregator(ctx context.Co
 	return backend.underlying.GetLogsAggregator(ctx)
 }
 
+func (backend *MetricsReportingKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
+	return backend.underlying.DestroyLogsAggregator(ctx)
+}
+
 func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
 
 	logsCollector, err := backend.underlying.CreateLogsCollectorForEnclave(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber)

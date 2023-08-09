@@ -412,6 +412,14 @@ func (backend *DockerKurtosisBackend) GetLogsAggregator(ctx context.Context) (*l
 	return maybeLogsAggregator, nil
 }
 
+func (backend *DockerKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
+	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, backend.dockerManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs aggregator")
+	}
+
+	return nil
+}
+
 func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,

@@ -623,6 +623,48 @@ func (_c *MockKurtosisBackend_DestroyEngines_Call) RunAndReturn(run func(context
 	return _c
 }
 
+// DestroyLogsAggregator provides a mock function with given fields: ctx
+func (_m *MockKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockKurtosisBackend_DestroyLogsAggregator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyLogsAggregator'
+type MockKurtosisBackend_DestroyLogsAggregator_Call struct {
+	*mock.Call
+}
+
+// DestroyLogsAggregator is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) DestroyLogsAggregator(ctx interface{}) *MockKurtosisBackend_DestroyLogsAggregator_Call {
+	return &MockKurtosisBackend_DestroyLogsAggregator_Call{Call: _e.mock.On("DestroyLogsAggregator", ctx)}
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsAggregator_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyLogsAggregator_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsAggregator_Call) Return(_a0 error) *MockKurtosisBackend_DestroyLogsAggregator_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsAggregator_Call) RunAndReturn(run func(context.Context) error) *MockKurtosisBackend_DestroyLogsAggregator_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DestroyLogsCollectorForEnclave provides a mock function with given fields: ctx, enclaveUuid
 func (_m *MockKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 	ret := _m.Called(ctx, enclaveUuid)

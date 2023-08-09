@@ -358,7 +358,10 @@ type KurtosisBackend interface {
 
 	CreateLogsAggregator(ctx context.Context, logsAggregatorPortNumber uint16) (*logs_aggregator.LogsAggregator, error)
 
+	// Returns nil if logs aggregator was not found
 	GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error)
+
+	DestroyLogsAggregator(ctx context.Context) error
 
 	// Create a new Logs Collector for sending container's logs to the logs aggregator server
 	CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error)
