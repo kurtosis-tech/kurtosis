@@ -54,9 +54,6 @@ const (
 	inputListenIP          = "0.0.0.0"
 	modifyFilterName       = "modify"
 	matchAllRegex          = "*"
-	jsonLineFormat         = "json"
-	unlimitedOutputRetry   = "no_limits"
-	lokiOutputTypeName     = "loki"
 
 	// fluentbit doesn't have a dedicated vector output plugin but vector added a source input plugin for fluentbit
 	// with the ability to pick up logs over fluentbit's forward output plugin, PR here: https://github.com/vectordotdev/vector/pull/7548

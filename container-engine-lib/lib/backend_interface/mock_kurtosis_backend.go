@@ -20,8 +20,6 @@ import (
 
 	logs_collector "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 
-	logs_database "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
-
 	mock "github.com/stretchr/testify/mock"
 
 	networking_sidecar "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
@@ -377,61 +375,6 @@ func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) RunAndReturn(r
 	return _c
 }
 
-// CreateLogsDatabase provides a mock function with given fields: ctx, logsDatabaseHttpPortNumber
-func (_m *MockKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {
-	ret := _m.Called(ctx, logsDatabaseHttpPortNumber)
-
-	var r0 *logs_database.LogsDatabase
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint16) (*logs_database.LogsDatabase, error)); ok {
-		return rf(ctx, logsDatabaseHttpPortNumber)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint16) *logs_database.LogsDatabase); ok {
-		r0 = rf(ctx, logsDatabaseHttpPortNumber)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*logs_database.LogsDatabase)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, uint16) error); ok {
-		r1 = rf(ctx, logsDatabaseHttpPortNumber)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockKurtosisBackend_CreateLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLogsDatabase'
-type MockKurtosisBackend_CreateLogsDatabase_Call struct {
-	*mock.Call
-}
-
-// CreateLogsDatabase is a helper method to define mock.On call
-//   - ctx context.Context
-//   - logsDatabaseHttpPortNumber uint16
-func (_e *MockKurtosisBackend_Expecter) CreateLogsDatabase(ctx interface{}, logsDatabaseHttpPortNumber interface{}) *MockKurtosisBackend_CreateLogsDatabase_Call {
-	return &MockKurtosisBackend_CreateLogsDatabase_Call{Call: _e.mock.On("CreateLogsDatabase", ctx, logsDatabaseHttpPortNumber)}
-}
-
-func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) Run(run func(ctx context.Context, logsDatabaseHttpPortNumber uint16)) *MockKurtosisBackend_CreateLogsDatabase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint16))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) Return(_a0 *logs_database.LogsDatabase, _a1 error) *MockKurtosisBackend_CreateLogsDatabase_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) RunAndReturn(run func(context.Context, uint16) (*logs_database.LogsDatabase, error)) *MockKurtosisBackend_CreateLogsDatabase_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // CreateNetworkingSidecar provides a mock function with given fields: ctx, enclaveUuid, serviceUuid
 func (_m *MockKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (*networking_sidecar.NetworkingSidecar, error) {
 	ret := _m.Called(ctx, enclaveUuid, serviceUuid)
@@ -719,48 +662,6 @@ func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) Return(_a0 er
 }
 
 func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID) error) *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DestroyLogsDatabase provides a mock function with given fields: ctx
-func (_m *MockKurtosisBackend) DestroyLogsDatabase(ctx context.Context) error {
-	ret := _m.Called(ctx)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockKurtosisBackend_DestroyLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyLogsDatabase'
-type MockKurtosisBackend_DestroyLogsDatabase_Call struct {
-	*mock.Call
-}
-
-// DestroyLogsDatabase is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockKurtosisBackend_Expecter) DestroyLogsDatabase(ctx interface{}) *MockKurtosisBackend_DestroyLogsDatabase_Call {
-	return &MockKurtosisBackend_DestroyLogsDatabase_Call{Call: _e.mock.On("DestroyLogsDatabase", ctx)}
-}
-
-func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyLogsDatabase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) Return(_a0 error) *MockKurtosisBackend_DestroyLogsDatabase_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) RunAndReturn(run func(context.Context) error) *MockKurtosisBackend_DestroyLogsDatabase_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1403,60 +1304,6 @@ func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) Return(_a0 *logs_
 }
 
 func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)) *MockKurtosisBackend_GetLogsCollectorForEnclave_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetLogsDatabase provides a mock function with given fields: ctx
-func (_m *MockKurtosisBackend) GetLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error) {
-	ret := _m.Called(ctx)
-
-	var r0 *logs_database.LogsDatabase
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*logs_database.LogsDatabase, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) *logs_database.LogsDatabase); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*logs_database.LogsDatabase)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockKurtosisBackend_GetLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLogsDatabase'
-type MockKurtosisBackend_GetLogsDatabase_Call struct {
-	*mock.Call
-}
-
-// GetLogsDatabase is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockKurtosisBackend_Expecter) GetLogsDatabase(ctx interface{}) *MockKurtosisBackend_GetLogsDatabase_Call {
-	return &MockKurtosisBackend_GetLogsDatabase_Call{Call: _e.mock.On("GetLogsDatabase", ctx)}
-}
-
-func (_c *MockKurtosisBackend_GetLogsDatabase_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_GetLogsDatabase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_GetLogsDatabase_Call) Return(_a0 *logs_database.LogsDatabase, _a1 error) *MockKurtosisBackend_GetLogsDatabase_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_GetLogsDatabase_Call) RunAndReturn(run func(context.Context) (*logs_database.LogsDatabase, error)) *MockKurtosisBackend_GetLogsDatabase_Call {
 	_c.Call.Return(run)
 	return _c
 }

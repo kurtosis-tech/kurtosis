@@ -13,7 +13,6 @@ const (
 	//
 	appIdLabelValueStr                       = "kurtosis"
 	engineContainerTypeLabelValueStr         = "kurtosis-engine"
-	logsDatabaseContainerTypeLabelValueStr   = "kurtosis-logs-db"
 	logsAggregatorContainerTypeLabelValueStr = "kurtosis-logs-aggregator"
 	logsCollectorContainerTypeLabelValueStr  = "kurtosis-logs-collector"
 	// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -41,7 +40,6 @@ const (
 //	 If you add new immutable values to this section, MAKE SURE TO UPDATE THE UNIT TEST!
 var AppIDDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(appIdLabelValueStr)
 var EngineContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(engineContainerTypeLabelValueStr)
-var LogsDatabaseTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsDatabaseContainerTypeLabelValueStr)
 var LogsAggregatorTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsAggregatorContainerTypeLabelValueStr)
 var LogsCollectorTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(logsCollectorContainerTypeLabelValueStr)
 

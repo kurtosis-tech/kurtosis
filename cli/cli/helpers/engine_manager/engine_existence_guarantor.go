@@ -283,7 +283,7 @@ func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRun
 
 	logsAggregator, err := guarantor.kurtosisBackend.GetLogsAggregator(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs database")
+		return stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
 	}
 	isThereLogAggregator := logsAggregator != nil
 

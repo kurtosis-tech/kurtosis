@@ -7,8 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -23,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
@@ -385,62 +382,6 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error destroying services in enclave '%s'", enclaveUuid)
 	}
 	return successfullyDestroyedServices, failedServices, nil
-}
-
-func (backend *DockerKurtosisBackend) CreateLogsDatabase(
-	ctx context.Context,
-	logsDatabaseHttpPortNumber uint16,
-) (
-	*logs_database.LogsDatabase,
-	error,
-) {
-
-	//Declaring the implementation
-	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
-
-	logsDatabase, err := logs_database_functions.CreateLogsDatabase(
-		ctx,
-		logsDatabaseHttpPortNumber,
-		logsDatabaseContainer,
-		backend.dockerManager,
-		backend.objAttrsProvider,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database using the logs database container '%+v' and the HTTP port number '%v'", logsDatabaseContainer, logsDatabaseHttpPortNumber)
-	}
-	return logsDatabase, nil
-}
-
-// If nothing is found returns nil
-func (backend *DockerKurtosisBackend) GetLogsDatabase(
-	ctx context.Context,
-) (
-	resultMaybeLogsDatabase *logs_database.LogsDatabase,
-	resultErr error,
-) {
-	maybeLogsDatabase, err := logs_database_functions.GetLogsDatabase(
-		ctx,
-		backend.dockerManager,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
-	}
-
-	return maybeLogsDatabase, nil
-}
-
-func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
-	ctx context.Context,
-) error {
-
-	if err := logs_database_functions.DestroyLogsDatabase(
-		ctx,
-		backend.dockerManager,
-	); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
-	}
-
-	return nil
 }
 
 func (backend *DockerKurtosisBackend) CreateLogsAggregator(ctx context.Context, logsAggregatorPortNum uint16) (*logs_aggregator.LogsAggregator, error) {

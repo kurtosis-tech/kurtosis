@@ -9,7 +9,6 @@ import (
 var labelValueStrsToEnsure = map[string]string{
 	appIdLabelValueStr:                       "kurtosis",
 	engineContainerTypeLabelValueStr:         "kurtosis-engine",
-	logsDatabaseContainerTypeLabelValueStr:   "kurtosis-logs-db",
 	logsCollectorContainerTypeLabelValueStr:  "kurtosis-logs-collector",
 	logsAggregatorContainerTypeLabelValueStr: "kurtosis-logs-aggregator",
 }
@@ -17,7 +16,6 @@ var labelValueStrsToEnsure = map[string]string{
 var labelValuesToEnsure = map[*docker_label_value.DockerLabelValue]string{
 	AppIDDockerLabelValue:               "kurtosis",
 	EngineContainerTypeDockerLabelValue: "kurtosis-engine",
-	LogsDatabaseTypeDockerLabelValue:    "kurtosis-logs-db",
 	LogsAggregatorTypeDockerLabelValue:  "kurtosis-logs-aggregator",
 	LogsCollectorTypeDockerLabelValue:   "kurtosis-logs-collector",
 }

@@ -14,6 +14,9 @@ const (
 
 type LogsCollectorAddress string
 
+// This component is responsible for:
+// 1. collecting logs from all services within an enclave
+// 2. forwarding these lgos to the logs aggregator
 type LogsCollector struct {
 	status container_status.ContainerStatus
 

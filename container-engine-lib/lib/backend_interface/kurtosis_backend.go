@@ -9,7 +9,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
@@ -357,30 +356,11 @@ type KurtosisBackend interface {
 		resultErr error,
 	)
 
-	// Create a new Logs Database for storing and requesting the container's logs
-	CreateLogsDatabase(
-		ctx context.Context,
-		//TODO now the httpPortNumber is configured from the client, because this will be published to the host machine until
-		//TODO we productize logs search, tracked by this issue: https://github.com/kurtosis-tech/kurtosis/issues/340
-		//TODO remove this parameter when we do not publish the port again
-		logsDatabaseHttpPortNumber uint16,
-	) (
-		*logs_database.LogsDatabase,
-		error,
-	)
-
-	// Gets the logs database, if nothing is found returns nil
-	GetLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error)
-
-	// Destroy the logs database
-	DestroyLogsDatabase(ctx context.Context) error
-
 	CreateLogsAggregator(ctx context.Context, logsAggregatorPortNumber uint16) (*logs_aggregator.LogsAggregator, error)
 
 	GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error)
 
-	// Create a new Logs Collector for sending container's logs to the logs database server
-	//The logs collector requires that the logs database to be up before
+	// Create a new Logs Collector for sending container's logs to the logs aggregator server
 	CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error)
 
 	// Gets the logs collector, if nothing is found returns nil

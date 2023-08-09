@@ -5,6 +5,9 @@ import (
 	"net"
 )
 
+// This component is responsible for:
+// 1. aggregating logs from all enclaves (by listening for logs from each enclaves logs collector)
+// 2. persistening logs to persistent storage so they can be retrieved, filtered, etc.
 type LogsAggregator struct {
 	status container_status.ContainerStatus
 
