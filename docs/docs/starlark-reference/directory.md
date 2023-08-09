@@ -18,11 +18,10 @@ persistent_directory = Directory(
 )
 ```
 
-A directory composed of a files artifact will be automatically provisioned with the given files artifact content and 
-will be immutable. The service on which the directory is mounted will not be able to modify the
-content of the files artifact. In the above example, `files_artifact_1` is a files artifact name. (see 
-[upload_files][upload-files-reference], [render_templates][render-templates-reference] and 
-[store_service_files][store-service-reference] to learn more about on how to create file artifacts).
+A directory composed of a files artifact will be automatically provisioned with the given files artifact content. In 
+the above example, `files_artifact_1` is a files artifact name. (see [upload_files][upload-files-reference], 
+[render_templates][render-templates-reference] and [store_service_files][store-service-reference] to learn more about 
+on how to create file artifacts). 
 
 A persistent directory, as its name indicates, persists over service updates and restarts. It is uniquely identified 
 by its `persistent_key` and the service ID on which it is being used (a persistent directory cannot be shared across
