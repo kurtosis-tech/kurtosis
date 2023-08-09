@@ -24,12 +24,12 @@ func CreateLogsAggregator(
 	*logs_aggregator.LogsAggregator,
 	error,
 ) {
-	preExistingLogsAggregatorContainers, err := getAllLogsAggregatorContainers(ctx, dockerManager)
+	preExistingLogsAggregatorContainer, err := getLogsAggregatorContainer(ctx, dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting all logs aggregator containers")
+		return nil, stacktrace.Propagate(err, "An error occurred getting logs aggregator container")
 	}
-	if len(preExistingLogsAggregatorContainers) > 0 {
-		return nil, stacktrace.NewError("Found existing logs database aggregator(s); cannot start a new one")
+	if preExistingLogsAggregatorContainer != nil {
+		return nil, stacktrace.NewError("Found existing logs aggregator; cannot start a new one.")
 	}
 
 	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
