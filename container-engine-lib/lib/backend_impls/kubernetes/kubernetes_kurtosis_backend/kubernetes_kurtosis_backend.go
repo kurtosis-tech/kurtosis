@@ -329,7 +329,6 @@ func (backend *KubernetesKurtosisBackend) GetUserServiceLogs(
 		backend.kubernetesManager)
 }
 
-// TODO Switch these to streaming methods, so that huge command outputs don't blow up the memory of the API container
 func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
@@ -343,6 +342,23 @@ func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommands(
 		ctx,
 		enclaveUuid,
 		userServiceCommands,
+		backend.cliModeArgs,
+		backend.apiContainerModeArgs,
+		backend.engineServerModeArgs,
+		backend.kubernetesManager)
+}
+
+func (backend *KubernetesKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	serviceUuid service.ServiceUUID,
+	cmd []string,
+) (chan string, chan *exec_result.ExecResult, error) {
+	return user_services_functions.RunUserServiceExecCommandWithStreamedOutput(
+		ctx,
+		enclaveUuid,
+		serviceUuid,
+		cmd,
 		backend.cliModeArgs,
 		backend.apiContainerModeArgs,
 		backend.engineServerModeArgs,
@@ -434,11 +450,6 @@ func (backend *KubernetesKurtosisBackend) GetLogsCollectorForEnclave(ctx context
 func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 	// TODO IMPLEMENT
 	return stacktrace.NewError("Destroy the logs collector for enclave isn't yet implemented on Kubernetes")
-}
-
-func (backend *KubernetesKurtosisBackend) DestroyLogsCollector(ctx context.Context) error {
-	// TODO IMPLEMENT
-	return stacktrace.NewError("Destroying the logs collector isn't yet implemented on Kubernetes")
 }
 
 // ====================================================================================================

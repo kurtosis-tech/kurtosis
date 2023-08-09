@@ -31,7 +31,6 @@ const (
 	CmdAttr                         = "cmd"
 	EnvVarsAttr                     = "env_vars"
 	PrivateIpAddressPlaceholderAttr = "private_ip_address_placeholder"
-	SubnetworkAttr                  = "subnetwork"
 	CpuAllocationAttr               = "cpu_allocation"
 	MemoryAllocationAttr            = "memory_allocation"
 	ReadyConditionsAttr             = "ready_conditions"
@@ -40,7 +39,6 @@ const (
 	MaxCpuMilliCoresAttr            = "max_cpu"
 	MaxMemoryMegaBytesAttr          = "max_memory"
 
-	DefaultSubnetwork               = "default"
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
@@ -106,14 +104,6 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, PrivateIpAddressPlaceholderAttr)
-					},
-				},
-				{
-					Name:              SubnetworkAttr,
-					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, SubnetworkAttr)
 					},
 				},
 				{
@@ -267,7 +257,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 	}
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			SubnetworkAttr, ServiceConfigTypeName)
+			ImageAttr, ServiceConfigTypeName)
 	}
 	imageName := image.GoString()
 
@@ -368,17 +358,6 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		privateIpAddressPlaceholder = DefaultPrivateIPAddrPlaceholder
 	}
 
-	var subnetwork string
-	subnetworkStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, SubnetworkAttr)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	if found && subnetworkStarlark.GoString() != "" {
-		subnetwork = subnetworkStarlark.GoString()
-	} else {
-		subnetwork = DefaultSubnetwork
-	}
-
 	var maxCpu uint64
 	maxCpuStarlark, foundMaxCpu, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.Int](config.KurtosisValueTypeDefault, MaxCpuMilliCoresAttr)
 	if interpretationErr != nil {
@@ -469,7 +448,6 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		privateIpAddressPlaceholder,
 		minCpu,
 		minMemory,
-		subnetwork,
 	), nil
 }
 
@@ -515,12 +493,11 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 		rawDirectoryObj := fileItem[1]
 		directoryObj, isDirectoryArg := rawDirectoryObj.(*directory.Directory)
 		if !isDirectoryArg {
-			// might be okay as we're supporting strings as well for backward compat
+			// we're also supporting raw strings as well and transform them into files artifact name.
 			directoryObjAsStr, isSimpleStringArg := rawDirectoryObj.(starlark.String)
 			if !isSimpleStringArg {
 				return nil, nil, startosis_errors.NewInterpretationError("Unable to convert value of '%s' dictionary '%v' to a Directory object", attrNameForLogging, filesDict)
 			}
-			// TODO: add starlark_warning.PrintOnceAtTheEndOfExecutionf("%v %v", starlark_warning.WarningConstant, warningMessage) once it's in the doc
 			directoryObj, interpretationErr = directory.CreateDirectoryFromFilesArtifact(directoryObjAsStr.GoString())
 			if interpretationErr != nil {
 				return nil, nil, interpretationErr

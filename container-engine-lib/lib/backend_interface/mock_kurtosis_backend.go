@@ -22,8 +22,6 @@ import (
 
 	mock "github.com/stretchr/testify/mock"
 
-	networking_sidecar "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
-
 	service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 
 	time "time"
@@ -148,25 +146,25 @@ func (_c *MockKurtosisBackend_CreateAPIContainer_Call) RunAndReturn(run func(con
 	return _c
 }
 
-// CreateEnclave provides a mock function with given fields: ctx, enclaveUuid, enclaveName, isPartitioningEnabled
-func (_m *MockKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error) {
-	ret := _m.Called(ctx, enclaveUuid, enclaveName, isPartitioningEnabled)
+// CreateEnclave provides a mock function with given fields: ctx, enclaveUuid, enclaveName
+func (_m *MockKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string) (*enclave.Enclave, error) {
+	ret := _m.Called(ctx, enclaveUuid, enclaveName)
 
 	var r0 *enclave.Enclave
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, string, bool) (*enclave.Enclave, error)); ok {
-		return rf(ctx, enclaveUuid, enclaveName, isPartitioningEnabled)
+	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, string) (*enclave.Enclave, error)); ok {
+		return rf(ctx, enclaveUuid, enclaveName)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, string, bool) *enclave.Enclave); ok {
-		r0 = rf(ctx, enclaveUuid, enclaveName, isPartitioningEnabled)
+	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, string) *enclave.Enclave); ok {
+		r0 = rf(ctx, enclaveUuid, enclaveName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*enclave.Enclave)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveUUID, string, bool) error); ok {
-		r1 = rf(ctx, enclaveUuid, enclaveName, isPartitioningEnabled)
+	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveUUID, string) error); ok {
+		r1 = rf(ctx, enclaveUuid, enclaveName)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -183,14 +181,13 @@ type MockKurtosisBackend_CreateEnclave_Call struct {
 //   - ctx context.Context
 //   - enclaveUuid enclave.EnclaveUUID
 //   - enclaveName string
-//   - isPartitioningEnabled bool
-func (_e *MockKurtosisBackend_Expecter) CreateEnclave(ctx interface{}, enclaveUuid interface{}, enclaveName interface{}, isPartitioningEnabled interface{}) *MockKurtosisBackend_CreateEnclave_Call {
-	return &MockKurtosisBackend_CreateEnclave_Call{Call: _e.mock.On("CreateEnclave", ctx, enclaveUuid, enclaveName, isPartitioningEnabled)}
+func (_e *MockKurtosisBackend_Expecter) CreateEnclave(ctx interface{}, enclaveUuid interface{}, enclaveName interface{}) *MockKurtosisBackend_CreateEnclave_Call {
+	return &MockKurtosisBackend_CreateEnclave_Call{Call: _e.mock.On("CreateEnclave", ctx, enclaveUuid, enclaveName)}
 }
 
-func (_c *MockKurtosisBackend_CreateEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool)) *MockKurtosisBackend_CreateEnclave_Call {
+func (_c *MockKurtosisBackend_CreateEnclave_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string)) *MockKurtosisBackend_CreateEnclave_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(string), args[3].(bool))
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(string))
 	})
 	return _c
 }
@@ -200,7 +197,7 @@ func (_c *MockKurtosisBackend_CreateEnclave_Call) Return(_a0 *enclave.Enclave, _
 	return _c
 }
 
-func (_c *MockKurtosisBackend_CreateEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, string, bool) (*enclave.Enclave, error)) *MockKurtosisBackend_CreateEnclave_Call {
+func (_c *MockKurtosisBackend_CreateEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, string) (*enclave.Enclave, error)) *MockKurtosisBackend_CreateEnclave_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -371,62 +368,6 @@ func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) Return(_a0 *lo
 }
 
 func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, uint16, uint16) (*logs_collector.LogsCollector, error)) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CreateNetworkingSidecar provides a mock function with given fields: ctx, enclaveUuid, serviceUuid
-func (_m *MockKurtosisBackend) CreateNetworkingSidecar(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (*networking_sidecar.NetworkingSidecar, error) {
-	ret := _m.Called(ctx, enclaveUuid, serviceUuid)
-
-	var r0 *networking_sidecar.NetworkingSidecar
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID) (*networking_sidecar.NetworkingSidecar, error)); ok {
-		return rf(ctx, enclaveUuid, serviceUuid)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID) *networking_sidecar.NetworkingSidecar); ok {
-		r0 = rf(ctx, enclaveUuid, serviceUuid)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*networking_sidecar.NetworkingSidecar)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID) error); ok {
-		r1 = rf(ctx, enclaveUuid, serviceUuid)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockKurtosisBackend_CreateNetworkingSidecar_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateNetworkingSidecar'
-type MockKurtosisBackend_CreateNetworkingSidecar_Call struct {
-	*mock.Call
-}
-
-// CreateNetworkingSidecar is a helper method to define mock.On call
-//   - ctx context.Context
-//   - enclaveUuid enclave.EnclaveUUID
-//   - serviceUuid service.ServiceUUID
-func (_e *MockKurtosisBackend_Expecter) CreateNetworkingSidecar(ctx interface{}, enclaveUuid interface{}, serviceUuid interface{}) *MockKurtosisBackend_CreateNetworkingSidecar_Call {
-	return &MockKurtosisBackend_CreateNetworkingSidecar_Call{Call: _e.mock.On("CreateNetworkingSidecar", ctx, enclaveUuid, serviceUuid)}
-}
-
-func (_c *MockKurtosisBackend_CreateNetworkingSidecar_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID)) *MockKurtosisBackend_CreateNetworkingSidecar_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(service.ServiceUUID))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_CreateNetworkingSidecar_Call) Return(_a0 *networking_sidecar.NetworkingSidecar, _a1 error) *MockKurtosisBackend_CreateNetworkingSidecar_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_CreateNetworkingSidecar_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, service.ServiceUUID) (*networking_sidecar.NetworkingSidecar, error)) *MockKurtosisBackend_CreateNetworkingSidecar_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -704,70 +645,6 @@ func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) Return(_a0 er
 }
 
 func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID) error) *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DestroyNetworkingSidecars provides a mock function with given fields: ctx, filters
-func (_m *MockKurtosisBackend) DestroyNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
-	ret := _m.Called(ctx, filters)
-
-	var r0 map[service.ServiceUUID]bool
-	var r1 map[service.ServiceUUID]error
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)); ok {
-		return rf(ctx, filters)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) map[service.ServiceUUID]bool); ok {
-		r0 = rf(ctx, filters)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[service.ServiceUUID]bool)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) map[service.ServiceUUID]error); ok {
-		r1 = rf(ctx, filters)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(map[service.ServiceUUID]error)
-		}
-	}
-
-	if rf, ok := ret.Get(2).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) error); ok {
-		r2 = rf(ctx, filters)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockKurtosisBackend_DestroyNetworkingSidecars_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyNetworkingSidecars'
-type MockKurtosisBackend_DestroyNetworkingSidecars_Call struct {
-	*mock.Call
-}
-
-// DestroyNetworkingSidecars is a helper method to define mock.On call
-//   - ctx context.Context
-//   - filters *networking_sidecar.NetworkingSidecarFilters
-func (_e *MockKurtosisBackend_Expecter) DestroyNetworkingSidecars(ctx interface{}, filters interface{}) *MockKurtosisBackend_DestroyNetworkingSidecars_Call {
-	return &MockKurtosisBackend_DestroyNetworkingSidecars_Call{Call: _e.mock.On("DestroyNetworkingSidecars", ctx, filters)}
-}
-
-func (_c *MockKurtosisBackend_DestroyNetworkingSidecars_Call) Run(run func(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters)) *MockKurtosisBackend_DestroyNetworkingSidecars_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*networking_sidecar.NetworkingSidecarFilters))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_DestroyNetworkingSidecars_Call) Return(successfulUserServiceUuids map[service.ServiceUUID]bool, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_DestroyNetworkingSidecars_Call {
-	_c.Call.Return(successfulUserServiceUuids, erroredUserServiceUuids, resultErr)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_DestroyNetworkingSidecars_Call) RunAndReturn(run func(context.Context, *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_DestroyNetworkingSidecars_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1350,61 +1227,6 @@ func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) RunAndReturn(run 
 	return _c
 }
 
-// GetNetworkingSidecars provides a mock function with given fields: ctx, filters
-func (_m *MockKurtosisBackend) GetNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar, error) {
-	ret := _m.Called(ctx, filters)
-
-	var r0 map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar, error)); ok {
-		return rf(ctx, filters)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar); ok {
-		r0 = rf(ctx, filters)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) error); ok {
-		r1 = rf(ctx, filters)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockKurtosisBackend_GetNetworkingSidecars_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetNetworkingSidecars'
-type MockKurtosisBackend_GetNetworkingSidecars_Call struct {
-	*mock.Call
-}
-
-// GetNetworkingSidecars is a helper method to define mock.On call
-//   - ctx context.Context
-//   - filters *networking_sidecar.NetworkingSidecarFilters
-func (_e *MockKurtosisBackend_Expecter) GetNetworkingSidecars(ctx interface{}, filters interface{}) *MockKurtosisBackend_GetNetworkingSidecars_Call {
-	return &MockKurtosisBackend_GetNetworkingSidecars_Call{Call: _e.mock.On("GetNetworkingSidecars", ctx, filters)}
-}
-
-func (_c *MockKurtosisBackend_GetNetworkingSidecars_Call) Run(run func(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters)) *MockKurtosisBackend_GetNetworkingSidecars_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*networking_sidecar.NetworkingSidecarFilters))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_GetNetworkingSidecars_Call) Return(_a0 map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar, _a1 error) *MockKurtosisBackend_GetNetworkingSidecars_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_GetNetworkingSidecars_Call) RunAndReturn(run func(context.Context, *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar, error)) *MockKurtosisBackend_GetNetworkingSidecars_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetShellOnUserService provides a mock function with given fields: ctx, enclaveUuid, serviceUuid
 func (_m *MockKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) error {
 	ret := _m.Called(ctx, enclaveUuid, serviceUuid)
@@ -1701,34 +1523,34 @@ func (_c *MockKurtosisBackend_RemoveRegisteredUserServiceProcesses_Call) RunAndR
 	return _c
 }
 
-// RunNetworkingSidecarExecCommands provides a mock function with given fields: ctx, enclaveUuid, networkingSidecarsCommands
-func (_m *MockKurtosisBackend) RunNetworkingSidecarExecCommands(ctx context.Context, enclaveUuid enclave.EnclaveUUID, networkingSidecarsCommands map[service.ServiceUUID][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
-	ret := _m.Called(ctx, enclaveUuid, networkingSidecarsCommands)
+// RunUserServiceExecCommandWithStreamedOutput provides a mock function with given fields: ctx, enclaveUuid, serviceUuid, cmd
+func (_m *MockKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, cmd []string) (chan string, chan *exec_result.ExecResult, error) {
+	ret := _m.Called(ctx, enclaveUuid, serviceUuid, cmd)
 
-	var r0 map[service.ServiceUUID]*exec_result.ExecResult
-	var r1 map[service.ServiceUUID]error
+	var r0 chan string
+	var r1 chan *exec_result.ExecResult
 	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error)); ok {
-		return rf(ctx, enclaveUuid, networkingSidecarsCommands)
+	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, []string) (chan string, chan *exec_result.ExecResult, error)); ok {
+		return rf(ctx, enclaveUuid, serviceUuid, cmd)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) map[service.ServiceUUID]*exec_result.ExecResult); ok {
-		r0 = rf(ctx, enclaveUuid, networkingSidecarsCommands)
+	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, []string) chan string); ok {
+		r0 = rf(ctx, enclaveUuid, serviceUuid, cmd)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[service.ServiceUUID]*exec_result.ExecResult)
+			r0 = ret.Get(0).(chan string)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) map[service.ServiceUUID]error); ok {
-		r1 = rf(ctx, enclaveUuid, networkingSidecarsCommands)
+	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, []string) chan *exec_result.ExecResult); ok {
+		r1 = rf(ctx, enclaveUuid, serviceUuid, cmd)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(map[service.ServiceUUID]error)
+			r1 = ret.Get(1).(chan *exec_result.ExecResult)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) error); ok {
-		r2 = rf(ctx, enclaveUuid, networkingSidecarsCommands)
+	if rf, ok := ret.Get(2).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, []string) error); ok {
+		r2 = rf(ctx, enclaveUuid, serviceUuid, cmd)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -1736,32 +1558,33 @@ func (_m *MockKurtosisBackend) RunNetworkingSidecarExecCommands(ctx context.Cont
 	return r0, r1, r2
 }
 
-// MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RunNetworkingSidecarExecCommands'
-type MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call struct {
+// MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RunUserServiceExecCommandWithStreamedOutput'
+type MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call struct {
 	*mock.Call
 }
 
-// RunNetworkingSidecarExecCommands is a helper method to define mock.On call
+// RunUserServiceExecCommandWithStreamedOutput is a helper method to define mock.On call
 //   - ctx context.Context
 //   - enclaveUuid enclave.EnclaveUUID
-//   - networkingSidecarsCommands map[service.ServiceUUID][]string
-func (_e *MockKurtosisBackend_Expecter) RunNetworkingSidecarExecCommands(ctx interface{}, enclaveUuid interface{}, networkingSidecarsCommands interface{}) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
-	return &MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call{Call: _e.mock.On("RunNetworkingSidecarExecCommands", ctx, enclaveUuid, networkingSidecarsCommands)}
+//   - serviceUuid service.ServiceUUID
+//   - cmd []string
+func (_e *MockKurtosisBackend_Expecter) RunUserServiceExecCommandWithStreamedOutput(ctx interface{}, enclaveUuid interface{}, serviceUuid interface{}, cmd interface{}) *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call {
+	return &MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call{Call: _e.mock.On("RunUserServiceExecCommandWithStreamedOutput", ctx, enclaveUuid, serviceUuid, cmd)}
 }
 
-func (_c *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, networkingSidecarsCommands map[service.ServiceUUID][]string)) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
+func (_c *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, cmd []string)) *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(map[service.ServiceUUID][]string))
+		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(service.ServiceUUID), args[3].([]string))
 	})
 	return _c
 }
 
-func (_c *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call) Return(successfulNetworkingSidecarExecResults map[service.ServiceUUID]*exec_result.ExecResult, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
-	_c.Call.Return(successfulNetworkingSidecarExecResults, erroredUserServiceUuids, resultErr)
+func (_c *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call) Return(execOutputChan chan string, finalExecResultChan chan *exec_result.ExecResult, resultErr error) *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call {
+	_c.Call.Return(execOutputChan, finalExecResultChan, resultErr)
 	return _c
 }
 
-func (_c *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
+func (_c *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, []string) (chan string, chan *exec_result.ExecResult, error)) *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2084,70 +1907,6 @@ func (_c *MockKurtosisBackend_StopEngines_Call) Return(successfulEngineGuids map
 }
 
 func (_c *MockKurtosisBackend_StopEngines_Call) RunAndReturn(run func(context.Context, *engine.EngineFilters) (map[engine.EngineGUID]bool, map[engine.EngineGUID]error, error)) *MockKurtosisBackend_StopEngines_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// StopNetworkingSidecars provides a mock function with given fields: ctx, filters
-func (_m *MockKurtosisBackend) StopNetworkingSidecars(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
-	ret := _m.Called(ctx, filters)
-
-	var r0 map[service.ServiceUUID]bool
-	var r1 map[service.ServiceUUID]error
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)); ok {
-		return rf(ctx, filters)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) map[service.ServiceUUID]bool); ok {
-		r0 = rf(ctx, filters)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[service.ServiceUUID]bool)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) map[service.ServiceUUID]error); ok {
-		r1 = rf(ctx, filters)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(map[service.ServiceUUID]error)
-		}
-	}
-
-	if rf, ok := ret.Get(2).(func(context.Context, *networking_sidecar.NetworkingSidecarFilters) error); ok {
-		r2 = rf(ctx, filters)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockKurtosisBackend_StopNetworkingSidecars_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'StopNetworkingSidecars'
-type MockKurtosisBackend_StopNetworkingSidecars_Call struct {
-	*mock.Call
-}
-
-// StopNetworkingSidecars is a helper method to define mock.On call
-//   - ctx context.Context
-//   - filters *networking_sidecar.NetworkingSidecarFilters
-func (_e *MockKurtosisBackend_Expecter) StopNetworkingSidecars(ctx interface{}, filters interface{}) *MockKurtosisBackend_StopNetworkingSidecars_Call {
-	return &MockKurtosisBackend_StopNetworkingSidecars_Call{Call: _e.mock.On("StopNetworkingSidecars", ctx, filters)}
-}
-
-func (_c *MockKurtosisBackend_StopNetworkingSidecars_Call) Run(run func(ctx context.Context, filters *networking_sidecar.NetworkingSidecarFilters)) *MockKurtosisBackend_StopNetworkingSidecars_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*networking_sidecar.NetworkingSidecarFilters))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_StopNetworkingSidecars_Call) Return(successfulUserServiceUuids map[service.ServiceUUID]bool, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_StopNetworkingSidecars_Call {
-	_c.Call.Return(successfulUserServiceUuids, erroredUserServiceUuids, resultErr)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_StopNetworkingSidecars_Call) RunAndReturn(run func(context.Context, *networking_sidecar.NetworkingSidecarFilters) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_StopNetworkingSidecars_Call {
 	_c.Call.Return(run)
 	return _c
 }

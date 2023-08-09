@@ -10,10 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/enclave_liveness_validator"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -31,9 +27,6 @@ const (
 	missingPortPlaceholder        = "<none>"
 	linkDelimeter                 = "://"
 	defaultEmptyIPAddrForAPIC     = ""
-
-	statusRunning = "RUNNING"
-	statusStopped = "STOPPED"
 )
 
 var (
@@ -41,24 +34,11 @@ var (
 	colorizeStopped = color.New(color.FgYellow).SprintFunc()
 )
 
-func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool, isAPIContainerRunning bool) error {
-	enclaveUuidStr := enclaveInfo.GetEnclaveUuid()
-	enclaveId := enclave.EnclaveUUID(enclaveUuidStr)
-	userServiceFilters := &service.ServiceFilters{
-		Names:    nil,
-		UUIDs:    nil,
-		Statuses: nil,
-	}
-
-	userServices, err := kurtosisBackend.GetUserServices(ctx, enclaveId, userServiceFilters)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting user services in enclave '%v' using filters '%+v'", enclaveId, userServiceFilters)
-	}
-
-	// Pull service info from API container if it is running
-	serviceInfoMapFromAPIC := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
+func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool, isAPIContainerRunning bool) error {
+	userServices := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	if isAPIContainerRunning {
-		serviceInfoMapFromAPIC, err = getUserServiceInfoMapFromAPIContainer(ctx, enclaveInfo)
+		var err error
+		userServices, err = getUserServiceInfoMapFromAPIContainer(ctx, enclaveInfo)
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to get service info from API container in enclave '%v'", enclaveInfo.GetEnclaveUuid())
 		}
@@ -72,27 +52,17 @@ func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext,
 	)
 	sortedUserServices := getSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
-		serviceIdStr := string(userService.GetRegistration().GetName())
-		uuidStr := string(userService.GetRegistration().GetUUID())
-		uuidToPrint := uuid_generator.ShortenedUUIDString(uuidStr)
+		serviceIdStr := userService.GetName()
+		uuidStr := userService.GetServiceUuid()
+		uuidToPrint := userService.GetShortenedUuid()
 		if showFullUuids {
 			uuidToPrint = uuidStr
 		}
 
-		serviceStatusStr := colorizeServiceStatus(userService.GetStatus().String())
+		serviceStatus := userService.GetServiceStatus()
+		serviceStatusStr := colorizeServiceStatus(serviceStatus)
 
-		// Look for public port and IP information in API container map
-		maybePublicPortMapFromAPIC := map[string]*kurtosis_core_rpc_api_bindings.Port{}
-		maybePublicIpAddrFromAPIC := defaultEmptyIPAddrForAPIC
-		serviceInfoFromAPIC, found := serviceInfoMapFromAPIC[serviceIdStr]
-		if found {
-			// Set public port from API container information
-			maybePublicPortMapFromAPIC = serviceInfoFromAPIC.GetMaybePublicPorts()
-			// Set public IP address from API container information
-			maybePublicIpAddrFromAPIC = serviceInfoFromAPIC.GetMaybePublicIpAddr()
-		}
-
-		portBindingLines, err := getUserServicePortBindingStrings(userService, maybePublicPortMapFromAPIC, maybePublicIpAddrFromAPIC)
+		portBindingLines, err := getUserServicePortBindingStrings(userService)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting the port binding strings")
 		}
@@ -123,8 +93,8 @@ func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext,
 	return nil
 }
 
-func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.ServiceUUID]*service.Service) []*service.Service {
-	userServicesResult := make([]*service.Service, 0, len(userServices))
+func getSortedUserServiceSliceFromUserServiceMap(userServices map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo) []*kurtosis_core_rpc_api_bindings.ServiceInfo {
+	userServicesResult := make([]*kurtosis_core_rpc_api_bindings.ServiceInfo, 0, len(userServices))
 	for _, userService := range userServices {
 		userServicesResult = append(userServicesResult, userService)
 	}
@@ -132,16 +102,14 @@ func getSortedUserServiceSliceFromUserServiceMap(userServices map[service.Servic
 	sort.Slice(userServicesResult, func(i, j int) bool {
 		firstService := userServicesResult[i]
 		secondService := userServicesResult[j]
-		return firstService.GetRegistration().GetName() < secondService.GetRegistration().GetName()
+		return firstService.GetName() < secondService.GetName()
 	})
 
 	return userServicesResult
 }
 
 // Guaranteed to have at least one entry
-func getUserServicePortBindingStrings(userService *service.Service,
-	maybePublicPortMapFromAPIC map[string]*kurtosis_core_rpc_api_bindings.Port,
-	maybePublicIpAddrFromAPIC string) ([]string, error) {
+func getUserServicePortBindingStrings(userService *kurtosis_core_rpc_api_bindings.ServiceInfo) ([]string, error) {
 	privatePorts := userService.GetPrivatePorts()
 	if len(privatePorts) == 0 {
 		return []string{missingPortPlaceholder}, nil
@@ -160,10 +128,13 @@ func getUserServicePortBindingStrings(userService *service.Service,
 		resultLines[portId] = line
 	}
 
+	maybePublicIpAddr := userService.GetMaybePublicIpAddr()
+	maybePublicPortMap := userService.GetMaybePublicPorts()
+
 	// If the container is running, add host machine port binding information
-	if maybePublicIpAddrFromAPIC != defaultEmptyIPAddrForServices && len(maybePublicPortMapFromAPIC) > 0 {
-		publicIpAddr := maybePublicIpAddrFromAPIC
-		publicPorts := maybePublicPortMapFromAPIC
+	if maybePublicIpAddr != defaultEmptyIPAddrForServices && len(maybePublicPortMap) > 0 {
+		publicIpAddr := maybePublicIpAddr
+		publicPorts := maybePublicPortMap
 		for portId := range privatePorts {
 			publicPortSpec, found := publicPorts[portId]
 			// With Kubernetes, it's now possible for a private port to not have a corresponding public port
@@ -178,8 +149,8 @@ func getUserServicePortBindingStrings(userService *service.Service,
 			if !found {
 				return nil, stacktrace.NewError("port spec associated with %v is not found", portId)
 			}
-			if privatePortSpec.GetMaybeApplicationProtocol() != nil {
-				applicationProtocol = fmt.Sprintf("%v%v", *privatePorts[portId].GetMaybeApplicationProtocol(), linkDelimeter)
+			if privatePortSpec.GetMaybeApplicationProtocol() != "" {
+				applicationProtocol = fmt.Sprintf("%v%v", privatePorts[portId].GetMaybeApplicationProtocol(), linkDelimeter)
 			}
 			resultLines[portId] = currentPortLine + fmt.Sprintf(" -> %v%v:%v", applicationProtocol, publicIpAddr, publicPortSpec.GetNumber())
 		}
@@ -230,13 +201,14 @@ func getUserServiceInfoMapFromAPIContainer(ctx context.Context, enclaveInfo *kur
 	return serviceInfoMapFromAPIC, nil
 }
 
-func colorizeServiceStatus(serviceStatus string) string {
+func colorizeServiceStatus(serviceStatus kurtosis_core_rpc_api_bindings.ServiceStatus) string {
+	serviceStatusStr := kurtosis_core_rpc_api_bindings.ServiceStatus_name[int32(serviceStatus)]
 	switch serviceStatus {
-	case statusRunning:
-		return colorizeRunning(serviceStatus)
-	case statusStopped:
-		return colorizeStopped(serviceStatus)
+	case kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED:
+		return colorizeStopped(serviceStatusStr)
+	case kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING:
+		return colorizeRunning(serviceStatusStr)
 	default:
-		return serviceStatus
+		return serviceStatusStr
 	}
 }

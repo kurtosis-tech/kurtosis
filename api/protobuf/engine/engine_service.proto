@@ -49,8 +49,6 @@ message CreateEnclaveArgs {
   string api_container_version_tag = 2;
   // The API container log level
   string api_container_log_level = 3;
-  // Whether network partitioning will be enabled or not on the new Kurtosis Enclave
-  bool is_partitioning_enabled = 4;
 }
 
 message CreateEnclaveResponse {

@@ -6,6 +6,7 @@
 package docker_manager
 
 import (
+	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -21,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -116,7 +118,8 @@ const (
 
 	successfulExitCode = 0
 
-	emptyNetworkAlias = ""
+	emptyNetworkAlias     = ""
+	streamOutputDelimiter = '\n'
 
 	isDockerNetworkAttachable = true
 
@@ -333,11 +336,12 @@ Args:
 	labels: Labels to attach to the volume object
 */
 func (manager *DockerManager) CreateVolume(context context.Context, volumeName string, labels map[string]string) error {
-	volumeConfig := volume.VolumeCreateBody{
-		Driver:     "",
-		DriverOpts: nil,
-		Labels:     labels,
-		Name:       volumeName,
+	volumeConfig := volume.CreateOptions{
+		ClusterVolumeSpec: nil,
+		Driver:            "",
+		DriverOpts:        nil,
+		Labels:            labels,
+		Name:              volumeName,
 	}
 
 	/*
@@ -373,7 +377,8 @@ func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName s
 		Value: volumeName,
 	}
 	filterArgs := filters.NewArgs(nameFilter)
-	resp, err := manager.dockerClient.VolumeList(ctx, filterArgs)
+	listOptions := volume.ListOptions{Filters: filterArgs}
+	resp, err := manager.dockerClient.VolumeList(ctx, listOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with name matching '%v'", volumeName)
 	}
@@ -389,14 +394,15 @@ func (manager *DockerManager) GetVolumesByName(ctx context.Context, volumeName s
 GetVolumesByLabels
 Gets the volumes matching the given labels
 */
-func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]*types.Volume, error) {
+func (manager *DockerManager) GetVolumesByLabels(ctx context.Context, labels map[string]string) ([]*volume.Volume, error) {
 	labelsFilterArgs := getLabelsFilterArgs(volumeLabelSearchFilterKey, labels)
-	resp, err := manager.dockerClient.VolumeList(ctx, labelsFilterArgs)
+	listOptions := volume.ListOptions{Filters: labelsFilterArgs}
+	resp, err := manager.dockerClient.VolumeList(ctx, listOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred finding volumes with labels '%+v'", labels)
 	}
 
-	result := []*types.Volume{}
+	result := []*volume.Volume{}
 	if resp.Volumes != nil {
 		result = resp.Volumes
 	}
@@ -752,7 +758,9 @@ Args:
 	timeout: How long to wait for container stoppage before throwing an error
 */
 func (manager *DockerManager) StopContainer(context context.Context, containerId string, timeout time.Duration) error {
-	err := manager.dockerClient.ContainerStop(context, containerId, &timeout)
+	timeoutSeconds := int(timeout.Seconds())
+	stopOpts := container.StopOptions{Signal: "", Timeout: &timeoutSeconds}
+	err := manager.dockerClient.ContainerStop(context, containerId, stopOpts)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred stopping container with ID '%v'", containerId)
 	}
@@ -887,6 +895,7 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 		User:         "",
 		Privileged:   false,
 		Tty:          false,
+		ConsoleSize:  nil,
 		AttachStdin:  false,
 		AttachStderr: true,
 		AttachStdout: true,
@@ -910,9 +919,10 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	}
 
 	execStartConfig := types.ExecStartCheck{
-		// Because detach is false, we'll block until the command comes back
-		Detach: false,
-		Tty:    false,
+		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
+		Detach:      false,
+		Tty:         false,
+		ConsoleSize: nil,
 	}
 
 	// IMPORTANT NOTE:
@@ -922,9 +932,7 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	// Therefore, we ONLY call Attach, without Start
 	attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
 	if err != nil {
-		return 0, stacktrace.Propagate(
-			err,
-			"An error occurred starting/attaching to the exec command")
+		return 0, stacktrace.Propagate(err, "An error occurred starting/attaching to the exec command")
 	}
 	defer attachResp.Close()
 
@@ -932,16 +940,12 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	// This will keep reading until it receives EOF
 	concurrentWriter := concurrent_writer.NewConcurrentWriter(logOutput)
 	if _, err := stdcopy.StdCopy(concurrentWriter, concurrentWriter, attachResp.Reader); err != nil {
-		return 0, stacktrace.Propagate(
-			err,
-			"An error occurred copying the exec command output to the given output writer")
+		return 0, stacktrace.Propagate(err, "An error occurred copying the exec command output to the given output writer")
 	}
 
 	inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
 	if err != nil {
-		return 0, stacktrace.Propagate(
-			err,
-			"An error occurred inspecting the exec to get the response code")
+		return 0, stacktrace.Propagate(err, "An error occurred inspecting the exec to get the response code")
 	}
 	if inspectResponse.Running {
 		return 0, stacktrace.NewError("Expected exec to have stopped, but it's still running!")
@@ -952,6 +956,97 @@ func (manager *DockerManager) RunExecCommand(context context.Context, containerI
 	}
 	int32ExitCode := int32(unsizedExitCode)
 	return int32ExitCode, nil
+}
+
+func (manager *DockerManager) RunExecCommandWithStreamedOutput(context context.Context, containerId string, command []string) (chan string, chan *exec_result.ExecResult, error) {
+	dockerClient := manager.dockerClient
+	execConfig := types.ExecConfig{
+		User:         "",
+		Privileged:   false,
+		Tty:          false,
+		ConsoleSize:  nil,
+		AttachStdin:  false,
+		AttachStderr: true,
+		AttachStdout: true,
+		Detach:       false,
+		DetachKeys:   "",
+		Env:          nil,
+		WorkingDir:   "",
+		Cmd:          command,
+	}
+
+	createResp, err := dockerClient.ContainerExecCreate(context, containerId, execConfig)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the exec process")
+	}
+
+	execId := createResp.ID
+	if execId == "" {
+		return nil, nil, stacktrace.NewError("Got back an empty exec ID when running '%v' on container '%v'", command, containerId)
+	}
+
+	execStartConfig := types.ExecStartCheck{
+		// Can not be run in detached mode or else response from ContainerExecAttach doesn't return output
+		Detach:      false,
+		Tty:         false,
+		ConsoleSize: nil,
+	}
+
+	execOutputChan := make(chan string)
+	finalExecResultChan := make(chan *exec_result.ExecResult)
+	go func() {
+		defer func() {
+			close(execOutputChan)
+			close(finalExecResultChan)
+		}()
+
+		// IMPORTANT NOTE:
+		// You'd think that we'd need to call ContainerExecStart separately after this ContainerExecAttach....
+		//  ...but ContainerExecAttach **actually starts the exec command!!!!**
+		// We used to be doing them both, but then we were hitting this occasional race condition: https://github.com/moby/moby/issues/42408
+		// Therefore, we ONLY call Attach, without Start
+		attachResp, err := dockerClient.ContainerExecAttach(context, execId, execStartConfig)
+		if err != nil {
+			execOutputChan <- err.Error()
+			return
+		}
+		defer attachResp.Close()
+
+		// Stream output from docker through output channel
+		reader := bufio.NewReader(attachResp.Reader)
+		for {
+			execOutputLine, err := reader.ReadString(streamOutputDelimiter)
+			if err != nil {
+				if err == io.EOF {
+					break
+				} else {
+					return
+				}
+			}
+
+			execOutputChan <- execOutputLine
+		}
+
+		inspectResponse, err := dockerClient.ContainerExecInspect(context, execId)
+		if err != nil {
+			execOutputChan <- err.Error()
+			return
+		}
+		if inspectResponse.Running {
+			execOutputChan <- stacktrace.NewError("Expected exec to have stopped, but it's still running!").Error()
+			return
+		}
+		unsizedExitCode := inspectResponse.ExitCode
+		if unsizedExitCode > math.MaxInt32 || unsizedExitCode < math.MinInt32 {
+			execOutputChan <- stacktrace.NewError("Could not cast unsized int '%v' to int32 because it does not fit", unsizedExitCode).Error()
+			return
+		}
+		int32ExitCode := int32(unsizedExitCode)
+
+		// Don't send output in final result because it was already streamed
+		finalExecResultChan <- exec_result.NewExecResult(int32ExitCode, "")
+	}()
+	return execOutputChan, finalExecResultChan, nil
 }
 
 /*
@@ -1049,6 +1144,7 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 		User:         "",
 		Privileged:   false,
 		Tty:          shouldAttachStandardStreamsToTtyWhenCreatingContainerExec,
+		ConsoleSize:  nil,
 		AttachStdin:  shouldAttachStdinWhenCreatingContainerExec,
 		AttachStderr: shouldAttachStderrWhenCreatingContainerExec,
 		AttachStdout: shouldAttachStdoutWhenCreatingContainerExec,
@@ -1070,8 +1166,9 @@ func (manager *DockerManager) CreateContainerExec(context context.Context, conta
 	}
 
 	execStartCheck := types.ExecStartCheck{
-		Detach: false,
-		Tty:    true,
+		Detach:      false,
+		Tty:         true,
+		ConsoleSize: nil,
 	}
 
 	hijackedResponse, err := manager.dockerClient.ContainerExecAttach(context, execID, execStartCheck)
@@ -1118,8 +1215,10 @@ func (manager *DockerManager) isImageAvailableLocally(ctx context.Context, image
 	images, err := manager.dockerClient.ImageList(
 		ctx,
 		types.ImageListOptions{
-			All:     true,
-			Filters: filterArgs,
+			All:            true,
+			Filters:        filterArgs,
+			SharedSize:     false,
+			ContainerCount: false,
 		})
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to list images.")
@@ -1338,6 +1437,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		AutoRemove:      false,
 		VolumeDriver:    "",
 		VolumesFrom:     nil,
+		Annotations:     map[string]string{},
 		CapAdd:          addedCapabilitiesSlice,
 		CapDrop:         nil,
 		CgroupnsMode:    "",
@@ -1507,7 +1607,6 @@ func getHostPortBindingsOnExpectedInterface(hostPortBindingsOnAllInterfaces nat.
 
 func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, filterArgs filters.Args, shouldShowStoppedContainers bool) ([]*docker_manager_types.Container, error) {
 	opts := types.ContainerListOptions{
-		Quiet:   false,
 		Size:    false,
 		All:     shouldShowStoppedContainers,
 		Latest:  false,
@@ -1807,8 +1906,6 @@ func getFreeMemoryAndCPU(ctx context.Context, dockerClient *client.Client) (comp
 		return 0, 0, stacktrace.Propagate(err, "An error occurred while running info on docker")
 	}
 	containers, err := dockerClient.ContainerList(ctx, types.ContainerListOptions{
-		// true - only show ids
-		Quiet:   onlyReturnContainerIds,
 		Size:    false,
 		All:     false,
 		Latest:  false,

@@ -39,7 +39,7 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 	fileArtifact1 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNameAttr, TestFilesArtifactName1)
 	fileArtifact2 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNameAttr, TestFilesArtifactName2)
 	persistentDirectory := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.PersistentKeyAttr, TestPersistentDirectoryKey)
-	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s)",
+	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, TestContainerImageName,
 		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol, TestWaitConfiguration),
@@ -49,7 +49,6 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 		service_config.CmdAttr, fmt.Sprintf("[%q, %q, %q]", TestCmdSlice[0], TestCmdSlice[1], TestCmdSlice[2]),
 		service_config.EnvVarsAttr, fmt.Sprintf("{%q: %q, %q: %q}", TestEnvVarName1, TestEnvVarValue1, TestEnvVarName2, TestEnvVarValue2),
 		service_config.PrivateIpAddressPlaceholderAttr, TestPrivateIPAddressPlaceholder,
-		service_config.SubnetworkAttr, TestSubnetwork,
 		service_config.MaxCpuMilliCoresAttr, TestCpuAllocation,
 		service_config.MinCpuMilliCoresAttr, TestMinCpuMilliCores,
 		service_config.MaxMemoryMegaBytesAttr, TestMemoryAllocation,
@@ -109,7 +108,6 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	require.Equal(t, expectedEnvVars, serviceConfig.GetEnvVars())
 
 	require.Equal(t, TestPrivateIPAddressPlaceholder, serviceConfig.GetPrivateIPAddrPlaceholder())
-	require.Equal(t, string(TestSubnetwork), serviceConfig.GetSubnetwork())
 	require.Equal(t, TestMemoryAllocation, serviceConfig.GetMemoryAllocationMegabytes())
 	require.Equal(t, TestCpuAllocation, serviceConfig.GetCPUAllocationMillicpus())
 	require.Equal(t, TestMinMemoryMegabytes, serviceConfig.GetMinMemoryAllocationMegabytes())

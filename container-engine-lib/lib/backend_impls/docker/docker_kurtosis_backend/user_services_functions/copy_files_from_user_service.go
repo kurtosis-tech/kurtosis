@@ -3,7 +3,6 @@ package user_service_functions
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -36,7 +35,7 @@ func CopyFilesFromUserService(
 	}
 
 	logrus.Debugf("Copying contents from the src path: %v and base %v", srcPath, srcPathBase)
-	_, serviceDockerResources, err := shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceUuid, dockerManager)
+	_, serviceDockerResources, err := getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceUuid, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service with UUID '%v' in enclave with ID '%v'", serviceUuid, enclaveId)
 	}

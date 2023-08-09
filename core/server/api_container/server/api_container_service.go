@@ -12,11 +12,21 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"io"
+	"math"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+	"time"
+	"unicode"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
@@ -29,14 +39,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"math"
-	"net/http"
-	"os"
-	"path"
-	"strings"
-	"time"
-	"unicode"
 )
 
 const (
@@ -310,8 +312,25 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 }
 
 func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifiers(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse, error) {
-	allIdentifiers := apicService.serviceNetwork.GetExistingAndHistoricalServiceIdentifiers()
-	return &kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse{AllIdentifiers: allIdentifiers}, nil
+	allIdentifiers, err := apicService.serviceNetwork.GetExistingAndHistoricalServiceIdentifiers()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical service identifiers")
+	}
+	serviceIdentifiersGrpc := []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers{}
+
+	for _, serviceIdentifier := range allIdentifiers {
+		serviceIdentifierGrpc := &kurtosis_core_rpc_api_bindings.ServiceIdentifiers{
+			ServiceUuid:   string(serviceIdentifier.GetUuid()),
+			ShortenedUuid: serviceIdentifier.GetShortenedUUIDStr(),
+			Name:          string(serviceIdentifier.GetName()),
+		}
+		serviceIdentifiersGrpc = append(serviceIdentifiersGrpc, serviceIdentifierGrpc)
+	}
+
+	existingAndHistoricalServiceIdentifiersResponse := &kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse{
+		AllIdentifiers: serviceIdentifiersGrpc,
+	}
+	return existingAndHistoricalServiceIdentifiersResponse, nil
 }
 
 func (apicService ApiContainerService) UploadFilesArtifact(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactServer) error {
@@ -613,6 +632,10 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	maybePublicPorts := serviceObj.GetMaybePublicPorts()
 	serviceUuidStr := string(serviceObj.GetRegistration().GetUUID())
 	serviceNameStr := string(serviceObj.GetRegistration().GetName())
+	serviceStatus, err := convertServiceStatusToServiceInfoStatus(serviceObj.GetRegistration().GetStatus())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the service status to a service info status")
+	}
 
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
 	if err != nil {
@@ -638,6 +661,7 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 		privateApiPorts,
 		publicIpAddrStr,
 		publicApiPorts,
+		serviceStatus,
 	)
 	return serviceInfoResponse, nil
 }
@@ -773,4 +797,15 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 
 	text := textRepresentation.String()
 	return &text, nil
+}
+
+func convertServiceStatusToServiceInfoStatus(serviceStatus service.ServiceStatus) (kurtosis_core_rpc_api_bindings.ServiceStatus, error) {
+	switch serviceStatus {
+	case service.ServiceStatus_Started:
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_RUNNING, nil
+	case service.ServiceStatus_Stopped:
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED, nil
+	default:
+		return kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN, stacktrace.NewError("Failed to convert service status %v", serviceStatus)
+	}
 }

@@ -19,7 +19,6 @@ const (
 
 	apiContainerContainerTypeLabelValueStr           = "api-container"
 	userServiceContainerTypeLabelValueStr            = "user-service"
-	networkingSidecarContainerTypeLabelValueStr      = "networking-sidecar"
 	filesArtifactsExpanderContainerTypeLabelValueStr = "files-artifacts-expander"
 
 	enclaveDataVolumeTypeLabelValueStr            = "enclave-data"
@@ -27,9 +26,6 @@ const (
 	persistentDirectoryVolumeTypeLabelValueStr    = "persistent-directory"
 	logsDatabaseVolumeTypeLabelValueStr           = "logs-db"
 	logsCollectorVolumeTypeLabelValueStr          = "logs-collector-data"
-
-	trueValueStr  = "true"
-	falseValueStr = "false"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -47,9 +43,6 @@ var LogsCollectorTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLa
 
 var APIContainerContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(apiContainerContainerTypeLabelValueStr)
 var UserServiceContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(userServiceContainerTypeLabelValueStr)
-var NetworkingSidecarContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(networkingSidecarContainerTypeLabelValueStr)
-var NetworkPartitioningEnabledDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(trueValueStr)
-var NetworkPartitioningDisabledDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(falseValueStr)
 var FilesArtifactExpanderContainerTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(filesArtifactsExpanderContainerTypeLabelValueStr)
 
 var EnclaveDataVolumeTypeDockerLabelValue = docker_label_value.MustCreateNewDockerLabelValue(enclaveDataVolumeTypeLabelValueStr)
