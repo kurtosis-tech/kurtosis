@@ -53,7 +53,7 @@ func EraseDatabase() error {
 	}
 	err = os.Remove(path)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to erase database file erase process '%v'", path)
+		return stacktrace.Propagate(err, "Failed to erase database file during erase process '%v'", path)
 	}
 	return nil
 }
