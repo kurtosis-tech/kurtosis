@@ -129,7 +129,11 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		return "", stacktrace.Propagate(err, "An error occurred replace a magic string in '%s' instruction arguments for service '%s'. Execution cannot proceed", AddServiceBuiltinName, builtin.serviceName)
 	}
 	var startedService *service.Service
-	if _, found := builtin.serviceNetwork.GetServiceRegistration(builtin.serviceName); found {
+	_, found, err := builtin.serviceNetwork.GetServiceRegistration(builtin.serviceName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting service registration for service '%s'", builtin.serviceName)
+	}
+	if found {
 		startedService, err = builtin.serviceNetwork.UpdateService(ctx, replacedServiceName, replacedServiceConfig)
 	} else {
 		startedService, err = builtin.serviceNetwork.AddService(ctx, replacedServiceName, replacedServiceConfig)

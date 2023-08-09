@@ -127,7 +127,11 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	serviceToUpdate := map[service.ServiceName]*service.ServiceConfig{}
 	serviceToCreate := map[service.ServiceName]*service.ServiceConfig{}
 	for serviceName, serviceConfig := range renderedServiceConfigs {
-		if _, found := builtin.serviceNetwork.GetServiceRegistration(serviceName); found {
+		_, found, err := builtin.serviceNetwork.GetServiceRegistration(serviceName)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred getting service registration for service '%s'", serviceName)
+		}
+		if found {
 			serviceToUpdate[serviceName] = serviceConfig
 		} else {
 			serviceToCreate[serviceName] = serviceConfig

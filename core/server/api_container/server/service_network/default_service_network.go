@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
 	"io"
@@ -81,7 +82,7 @@ type DefaultServiceNetwork struct {
 	// this because the API container is the only client that modifies service state
 	registeredServiceInfo map[service.ServiceName]*service.ServiceRegistration
 
-	//registeredServiceInfoRepository //TODO
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
 
 	// This contains all service identifiers ever successfully created
 	serviceIdentifiersRepository *service_identifiers.ServiceIdentifiersRepository
@@ -98,6 +99,11 @@ func NewDefaultServiceNetwork(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the service identifiers repository")
 	}
+	serviceRegistrationRepository, err := service_registration.GetOrCreateNewServiceRegistrationRepository(enclaveDb)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the service registration repository")
+	}
+
 	return &DefaultServiceNetwork{
 		enclaveUuid:      enclaveUuid,
 		apiContainerInfo: apiContainerInfo,
@@ -106,8 +112,9 @@ func NewDefaultServiceNetwork(
 		kurtosisBackend: kurtosisBackend,
 		enclaveDataDir:  enclaveDataDir,
 
-		registeredServiceInfo:        map[service.ServiceName]*service.ServiceRegistration{},
-		serviceIdentifiersRepository: serviceIdentifiersRepository,
+		registeredServiceInfo:         map[service.ServiceName]*service.ServiceRegistration{},
+		serviceRegistrationRepository: serviceRegistrationRepository,
+		serviceIdentifiersRepository:  serviceIdentifiersRepository,
 	}, nil
 }
 
@@ -168,7 +175,11 @@ func (network *DefaultServiceNetwork) AddServices(
 
 	// Save the services currently running in enclave for later
 	currentlyRunningServicesInEnclave := map[service.ServiceName]bool{}
-	for serviceName := range network.registeredServiceInfo {
+	allServiceNamesFromServiceRegistrations, err := network.serviceRegistrationRepository.GetAllServiceNames()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all service names from service registration repository")
+	}
+	for serviceName := range allServiceNamesFromServiceRegistrations {
 		currentlyRunningServicesInEnclave[serviceName] = true
 	}
 
@@ -250,7 +261,11 @@ func (network *DefaultServiceNetwork) AddServices(
 		if err := network.serviceIdentifiersRepository.AddServiceIdentifier(serviceIdentifier); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred adding a new service identifier '%+v' into the repository", serviceIdentifier)
 		}
-		network.registeredServiceInfo[serviceRegistration.GetName()].SetStatus(service.ServiceStatus_Started)
+		serviceName := serviceRegistration.GetName()
+		serviceStatus := service.ServiceStatus_Started
+		if err := network.serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s' after the service was started", serviceStatus, serviceName)
+		}
 	}
 
 	batchSuccessfullyStarted = true
@@ -293,9 +308,9 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 	serviceUuidToNameMap := map[service.ServiceUUID]service.ServiceName{}
 	serviceUuidsToRemove := map[service.ServiceUUID]bool{}
 	for serviceName := range updateServiceConfigs {
-		serviceRegistration, found := network.registeredServiceInfo[serviceName]
-		if !found {
-			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
+		serviceRegistration, err := network.serviceRegistrationRepository.Get(serviceName)
+		if err != nil {
+			failedServicesPool[serviceName] = stacktrace.Propagate(err, "Unable to update service that is not registered "+
 				"inside this enclave: '%s'", serviceName)
 		} else {
 			serviceUuid := serviceRegistration.GetUUID()
@@ -319,9 +334,12 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 	successfullyRemovedServicesIncludingSidecars := map[service.ServiceUUID]bool{}
 	for serviceUuid := range successfullyRemovedServices {
 		if serviceName, found := serviceUuidToNameMap[serviceUuid]; found {
+			serviceStatus := service.ServiceStatus_Registered
+			if err := network.serviceRegistrationRepository.UpdateStatusAndConfig(serviceName, serviceStatus, nil); err != nil {
+				failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred while cleaning the configuration and updating service status to '%s' into service registration fro service '%s' after this service was removed successfully", serviceStatus)
+				continue
+			}
 			successfullyRemovedServicesIncludingSidecars[serviceUuid] = true
-			network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Registered)
-			network.registeredServiceInfo[serviceName].SetConfig(nil)
 		} else {
 			return nil, nil, stacktrace.NewError("Error mapping service UUID to service name. This is a bug in Kurtosis")
 		}
@@ -362,7 +380,8 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 			continue
 		}
 		successfullyUpdatedService[serviceName] = newServiceObj
-		network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Started)
+		network.serviceRegistrationRepository.UpdateStatus(serviceName, service.ServiceStatus_Started)
+
 	}
 	return successfullyUpdatedService, failedServicesPool, nil
 }
@@ -379,13 +398,16 @@ func (network *DefaultServiceNetwork) RemoveService(
 		return "", stacktrace.Propagate(err, "An error occurred while fetching name for service identifier '%v'", serviceIdentifier)
 	}
 
-	serviceToRemove, found := network.registeredServiceInfo[serviceName]
-	if !found {
-		return "", stacktrace.NewError("No service found with ID '%v'", serviceName)
+	serviceToRemove, err := network.serviceRegistrationRepository.Get(serviceName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting the service registration for service '%s'", serviceName)
 	}
+
 	serviceUuid := serviceToRemove.GetUUID()
 
-	network.cleanupInternalMapsUnlocked(serviceName)
+	if err := network.serviceRegistrationRepository.Delete(serviceName); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred deleting the service registration for service '%v' from the repository", serviceName)
+	}
 
 	// We stop the service, rather than destroying it, so that we can keep logs around
 	stopServiceFilters := &service.ServiceFilters{
@@ -666,16 +688,14 @@ func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIde
 	return serviceObj, nil
 }
 
-func (network *DefaultServiceNetwork) GetServiceNames() map[service.ServiceName]bool {
+func (network *DefaultServiceNetwork) GetServiceNames() (map[service.ServiceName]bool, error) {
 
-	serviceNames := make(map[service.ServiceName]bool, len(network.registeredServiceInfo))
-
-	for serviceName := range network.registeredServiceInfo {
-		if _, ok := serviceNames[serviceName]; !ok {
-			serviceNames[serviceName] = true
-		}
+	serviceNames, err := network.serviceRegistrationRepository.GetAllServiceNames()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting all service names from service registration repository")
 	}
-	return serviceNames
+
+	return serviceNames, nil
 }
 
 func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, serviceIdentifier string, srcPath string, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
@@ -691,14 +711,16 @@ func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, 
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool) {
+func (network *DefaultServiceNetwork) GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
-	registration, found := network.registeredServiceInfo[serviceName]
-	if !found {
-		return nil, false
+
+	registration, err := network.serviceRegistrationRepository.Get(serviceName)
+	if err != nil {
+		return nil, false, stacktrace.Propagate(err, "An error occurred getting service registration for service '%s'", serviceName)
 	}
-	return registration, true
+
+	return registration, true, nil
 }
 
 func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
@@ -824,13 +846,17 @@ func (network *DefaultServiceNetwork) registerService(
 		}
 	}()
 
-	network.registeredServiceInfo[serviceName] = serviceRegistration
-	// remove service from the registered service map is something fails downstream
+	if err := network.serviceRegistrationRepository.Save(serviceName, serviceRegistration); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred saving service registration '%+v' for service '%s'", serviceRegistration, serviceName)
+	}
+	// remove service from the registered service repository is something fails downstream
 	defer func() {
 		if serviceSuccessfullyRegistered {
 			return
 		}
-		network.cleanupInternalMapsUnlocked(serviceName)
+		if err := network.serviceRegistrationRepository.Delete(serviceName); err != nil {
+			logrus.Errorf("We tried to delete the service registration for service  '%s' we had stored but failed:\n%v", serviceName, err)
+		}
 	}()
 
 	serviceSuccessfullyRegistered = true
@@ -843,12 +869,14 @@ func (network *DefaultServiceNetwork) registerService(
 // half-registered, but it's worth calling out that this method with throw if called with such a service
 func (network *DefaultServiceNetwork) unregisterService(ctx context.Context, serviceName service.ServiceName) error {
 
-	serviceRegistration, registrationFound := network.registeredServiceInfo[serviceName]
-	if !registrationFound {
-		return stacktrace.NewError("Unregistering a service that has not been properly registered should not happen: '%s'. This is a Kurtosis internal bug", serviceName)
+	serviceRegistration, err := network.serviceRegistrationRepository.Get(serviceName)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting service registration for service '%s'", serviceName)
 	}
 
-	network.cleanupInternalMapsUnlocked(serviceName)
+	if err := network.serviceRegistrationRepository.Delete(serviceName); err != nil {
+		return stacktrace.Propagate(err, "An error occurred deleting the service registration for service '%v' from the repository", serviceName)
+	}
 	serviceUuid := serviceRegistration.GetUUID()
 	serviceToUnregister := map[service.ServiceUUID]bool{
 		serviceUuid: true,
@@ -942,7 +970,11 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 	}
 
 	serviceStartedSuccessfully = true
-	network.registeredServiceInfo[startedService.GetRegistration().GetName()].SetConfig(serviceConfig)
+	serviceName := startedService.GetRegistration().GetName()
+	if err := network.serviceRegistrationRepository.UpdateConfig(serviceName, serviceConfig); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while updating service config to '%+v' in service registration for service '%s' after the service was started", serviceConfig, serviceName)
+	}
+
 	return startedService, nil
 }
 
@@ -1048,11 +1080,12 @@ func (network *DefaultServiceNetwork) startRegisteredServices(
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
 func (network *DefaultServiceNetwork) copyFilesFromServiceUnlocked(ctx context.Context, serviceName service.ServiceName, srcPath string, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
-	serviceObj, found := network.registeredServiceInfo[serviceName]
-	if !found {
-		return "", stacktrace.NewError("Cannot copy files from service '%v' because it does not exist in the network", serviceName)
+
+	serviceRegistrationObj, err := network.serviceRegistrationRepository.Get(serviceName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Cannot copy files from service '%v' because it does not exist in the network", serviceName)
 	}
-	serviceUuid := serviceObj.GetUUID()
+	serviceUuid := serviceRegistrationObj.GetUUID()
 
 	store, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
@@ -1183,15 +1216,6 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 
 	shouldDeleteFilesArtifact = false
 	return filesArtifactUuid, nil
-}
-
-// This isn't thread safe and must be called from a thread safe context
-func (network *DefaultServiceNetwork) cleanupInternalMapsUnlocked(serviceName service.ServiceName) {
-	_, found := network.registeredServiceInfo[serviceName]
-	if !found {
-		return
-	}
-	delete(network.registeredServiceInfo, serviceName)
 }
 
 // This isn't thread safe and must be called from a thread safe context
