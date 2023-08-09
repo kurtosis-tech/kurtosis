@@ -67,14 +67,14 @@ func getLogsAggregatorObjectFromContainerInfo(
 	containerStatus types.ContainerStatus,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_aggregator.LogsAggregator, error) {
-
-	privateIpAddr := net.IP{}
+	var privateIpAddr net.IP
 
 	isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 	if !found {
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for logs aggregator container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
 	}
+
 	var logsAggregatorStatus container_status.ContainerStatus
 	if isContainerRunning {
 		logsAggregatorStatus = container_status.ContainerStatus_Running

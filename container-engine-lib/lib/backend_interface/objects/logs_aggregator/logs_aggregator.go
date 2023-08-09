@@ -11,7 +11,7 @@ import (
 type LogsAggregator struct {
 	status container_status.ContainerStatus
 
-	// This information will be nil if the logs aggregator container isn't running
+	// This will be nil if the container is not running
 	maybePrivateIpAddr net.IP
 }
 
