@@ -66,7 +66,6 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 		}
 
 		environment := startosis_validator.NewValidatorEnvironment(
-			validator.serviceNetwork.IsNetworkPartitioningEnabled(),
 			serviceNames,
 			validator.fileArtifactStore.ListFiles(),
 			serviceNamePortIdMapping,

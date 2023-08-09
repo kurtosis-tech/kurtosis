@@ -19,7 +19,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -209,12 +208,6 @@ func createServiceNetwork(
 	enclaveIdStr := args.EnclaveUUID
 	enclaveUuid := enclave.EnclaveUUID(enclaveIdStr)
 
-	isPartitioningEnabled := args.IsPartitioningEnabled
-
-	networkingSidecarManager := networking_sidecar.NewStandardNetworkingSidecarManager(
-		kurtosisBackend,
-		enclaveUuid)
-
 	apiContainerInfo := service_network.NewApiContainerInfo(
 		ownIpAddress,
 		args.GrpcListenPortNum,
@@ -224,10 +217,8 @@ func createServiceNetwork(
 	serviceNetwork, err := service_network.NewDefaultServiceNetwork(
 		enclaveUuid,
 		apiContainerInfo,
-		isPartitioningEnabled,
 		kurtosisBackend,
 		enclaveDataDir,
-		networkingSidecarManager,
 		enclaveDb,
 	)
 

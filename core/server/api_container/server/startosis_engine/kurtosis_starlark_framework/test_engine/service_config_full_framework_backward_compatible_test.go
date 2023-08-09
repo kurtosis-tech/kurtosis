@@ -34,7 +34,7 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) GetId() string {
 }
 
 func (t *serviceConfigFullTestCaseBackwardCompatible) GetStarlarkCode() string {
-	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%q, %s=%d, %s=%d, %s=%s)",
+	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%s)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, TestContainerImageName,
 		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", TestPrivatePortId, TestPrivatePortNumber, TestPrivatePortProtocolStr, TestPrivateApplicationProtocol, TestWaitConfiguration),
@@ -44,7 +44,6 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) GetStarlarkCode() string {
 		service_config.CmdAttr, fmt.Sprintf("[%q, %q, %q]", TestCmdSlice[0], TestCmdSlice[1], TestCmdSlice[2]),
 		service_config.EnvVarsAttr, fmt.Sprintf("{%q: %q, %q: %q}", TestEnvVarName1, TestEnvVarValue1, TestEnvVarName2, TestEnvVarValue2),
 		service_config.PrivateIpAddressPlaceholderAttr, TestPrivateIPAddressPlaceholder,
-		service_config.SubnetworkAttr, TestSubnetwork,
 		service_config.CpuAllocationAttr, TestCpuAllocation,
 		service_config.MemoryAllocationAttr, TestMemoryAllocation,
 		service_config.ReadyConditionsAttr,
@@ -96,7 +95,6 @@ func (t *serviceConfigFullTestCaseBackwardCompatible) Assert(typeValue builtin_a
 	require.Equal(t, expectedEnvVars, serviceConfig.GetEnvVars())
 
 	require.Equal(t, TestPrivateIPAddressPlaceholder, serviceConfig.GetPrivateIPAddrPlaceholder())
-	require.Equal(t, string(TestSubnetwork), serviceConfig.GetSubnetwork())
 	require.Equal(t, TestMemoryAllocation, serviceConfig.GetMemoryAllocationMegabytes())
 	require.Equal(t, TestCpuAllocation, serviceConfig.GetCPUAllocationMillicpus())
 	require.Equal(t, uint64(0), serviceConfig.GetMinMemoryAllocationMegabytes())

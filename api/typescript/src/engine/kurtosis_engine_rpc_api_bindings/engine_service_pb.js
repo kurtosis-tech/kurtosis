@@ -588,8 +588,7 @@ proto.engine_api.CreateEnclaveArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     enclaveName: jspb.Message.getFieldWithDefault(msg, 1, ""),
     apiContainerVersionTag: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    apiContainerLogLevel: jspb.Message.getFieldWithDefault(msg, 3, ""),
-    isPartitioningEnabled: jspb.Message.getBooleanFieldWithDefault(msg, 4, false)
+    apiContainerLogLevel: jspb.Message.getFieldWithDefault(msg, 3, "")
   };
 
   if (includeInstance) {
@@ -638,10 +637,6 @@ proto.engine_api.CreateEnclaveArgs.deserializeBinaryFromReader = function(msg, r
       var value = /** @type {string} */ (reader.readString());
       msg.setApiContainerLogLevel(value);
       break;
-    case 4:
-      var value = /** @type {boolean} */ (reader.readBool());
-      msg.setIsPartitioningEnabled(value);
-      break;
     default:
       reader.skipField();
       break;
@@ -689,13 +684,6 @@ proto.engine_api.CreateEnclaveArgs.serializeBinaryToWriter = function(message, w
   if (f.length > 0) {
     writer.writeString(
       3,
-      f
-    );
-  }
-  f = message.getIsPartitioningEnabled();
-  if (f) {
-    writer.writeBool(
-      4,
       f
     );
   }
@@ -753,24 +741,6 @@ proto.engine_api.CreateEnclaveArgs.prototype.getApiContainerLogLevel = function(
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setApiContainerLogLevel = function(value) {
   return jspb.Message.setProto3StringField(this, 3, value);
-};
-
-
-/**
- * optional bool is_partitioning_enabled = 4;
- * @return {boolean}
- */
-proto.engine_api.CreateEnclaveArgs.prototype.getIsPartitioningEnabled = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 4, false));
-};
-
-
-/**
- * @param {boolean} value
- * @return {!proto.engine_api.CreateEnclaveArgs} returns this
- */
-proto.engine_api.CreateEnclaveArgs.prototype.setIsPartitioningEnabled = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 4, value);
 };
 
 

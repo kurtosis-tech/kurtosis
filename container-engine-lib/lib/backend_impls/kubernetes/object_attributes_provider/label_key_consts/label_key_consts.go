@@ -28,8 +28,6 @@ const (
 	// TODO deprecate this in favor of storing in DB
 	enclaveNameLabelKeyStr = labelKeyPrefixStr + "enclave-name"
 
-	isNetworkPartitioningEnabledKeyStr = labelKeyPrefixStr + "is-network-partitioning-enabled"
-
 	// As of 2022-05-17, these get attached to files artifact expansion volumes
 	userServiceGuidKeyStr = labelKeyPrefixStr + "user-service-guid"
 )
@@ -50,5 +48,4 @@ var IDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(
 var GUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(guidLabelKeyStr)
 var EnclaveUUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveIdLabelKeyStr)
 var EnclaveNameKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(enclaveNameLabelKeyStr)
-var IsNetworkPartitioningEnabledKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(isNetworkPartitioningEnabledKeyStr)
 var UserServiceGUIDKubernetesLabelKey = kubernetes_label_key.MustCreateNewKubernetesLabelKey(userServiceGuidKeyStr)
