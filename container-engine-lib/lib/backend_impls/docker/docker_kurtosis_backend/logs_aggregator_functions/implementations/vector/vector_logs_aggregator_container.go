@@ -2,10 +2,12 @@ package vector
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"net"
 )
 
 type vectorLogsAggregatorContainer struct{}
@@ -78,8 +80,27 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 		}
 	}()
 
-	// TODO: add a wait for availability for logs aggregator
+	aggregatorIPAddr, err := getLogsAggregatorIPAddr(ctx, containerId, dockerManager)
+	if err != nil {
+		return "", nil, nil, err
+	}
+	availabilityChecker := NewVectorAvailabilityChecker(aggregatorIPAddr)
+	if err = availabilityChecker.WaitForAvailability(); err != nil {
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the logs aggregator container to become available")
+	}
 
 	shouldRemoveLogsAggregatorContainer = false
 	return containerId, containerLabelStrs, removeContainerFunc, nil
+}
+
+func getLogsAggregatorIPAddr(ctx context.Context, containerId string, manager *docker_manager.DockerManager) (net.IP, error) {
+	privateIpAddrStr, err := manager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the private IP address of logs aggregator container '%v' in network '%v'", containerId, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn)
+	}
+	privateIpAddr := net.ParseIP(privateIpAddrStr)
+	if privateIpAddr == nil {
+		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
+	}
+	return privateIpAddr, nil
 }

@@ -1,7 +1,8 @@
 package vector
 
 const (
-	configDirpath = "/etc/vector/"
+	configDirpath       = "/etc/vector/"
+	healthCheckEndpoint = "health"
 
 	////////////////////////--VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage = "timberio/vector:0.31.0-debian"
@@ -22,6 +23,10 @@ const (
 
 	configFileTemplateName = "vectorConfigFileTemplate"
 	configFileTemplate     = `
+[api]
+enabled = true
+address = "0.0.0.0:8686"
+
 [sources.{{ .Source.Id }}]
 type = {{ .Source.Type }}
 address = "{{ .Source.Address }}"

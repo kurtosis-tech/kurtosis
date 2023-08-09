@@ -15,10 +15,7 @@ type LogsAggregator struct {
 	maybePrivateIpAddr net.IP
 }
 
-func NewLogsAggregator(
-	status container_status.ContainerStatus,
-	maybePrivateIpAddr net.IP,
-) *LogsAggregator {
+func NewLogsAggregator(status container_status.ContainerStatus, maybePrivateIpAddr net.IP) *LogsAggregator {
 	return &LogsAggregator{status: status, maybePrivateIpAddr: maybePrivateIpAddr}
 }
 
