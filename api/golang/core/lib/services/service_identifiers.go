@@ -18,6 +18,10 @@ type ServiceIdentifiers struct {
 	enclaveNameForLogging       string
 }
 
+func (identifiers *ServiceIdentifiers) GetServiceNameToUuids() map[ServiceName][]ServiceUUID {
+	return identifiers.serviceNameToUuids
+}
+
 func NewServiceIdentifiers(enclaveNameForLogging string, allIdentifiers []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers) *ServiceIdentifiers {
 	serviceNames := map[ServiceName][]ServiceUUID{}
 	serviceUuids := map[ServiceUUID]bool{}
