@@ -55,7 +55,7 @@ Next, create a file called `network_params.json` in that folder with the followi
   "deneb_fork_epoch": 500
 }
 ```
-The contents above will be used to define the specific parameters with which to start the network with. 
+The contents above will be used to define the specific parameters with which to start the network with.
 
 Now, create a `kurtosis.yml` file in the same folder with the following contents, replacing `$YOUR_GITHUB_USERNAME` with your actual Github username.
 ```yml
