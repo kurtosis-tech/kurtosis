@@ -2,7 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	docker_types "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -488,9 +488,9 @@ func getAllEnclaveVolumes(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	enclaveUuid enclave.EnclaveUUID,
-) ([]*docker_types.Volume, error) {
+) ([]*volume.Volume, error) {
 
-	var volumes []*docker_types.Volume
+	var volumes []*volume.Volume
 
 	searchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),

@@ -10,6 +10,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/channel_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	terminal "golang.org/x/term"
@@ -37,6 +39,8 @@ import (
 const (
 	podWaitForAvailabilityTimeout          = 15 * time.Minute
 	podWaitForAvailabilityTimeBetweenPolls = 500 * time.Millisecond
+	podWaitForDeletionTimeout              = 5 * time.Minute
+	podWaitForDeletionTimeBetweenPolls     = 500 * time.Millisecond
 	podWaitForTerminationTimeout           = 5 * time.Minute
 	podWaitForTerminationTimeBetweenPolls  = 500 * time.Millisecond
 
@@ -1232,6 +1236,13 @@ func (manager *KubernetesManager) CreatePod(
 		logrus.Debugf("Going to start pod using the following JSON: %v", string(podDefinitionBytes))
 	}
 
+	// In case of a service update, it's possible the pod has not been fully deleted yet. It's still "scheduled for
+	// deletion", and so we wait for it to be deleted before creating it again. There's probably a way to optimize this
+	// a bit more using native k8s pod update operation
+	if err := manager.waitForPodDeletion(ctx, namespaceName, podName); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred waiting for pod '%v' to be completely removed", podName)
+	}
+
 	createdPod, err := podClient.Create(ctx, podToCreate, globalCreateOptions)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to create pod with name '%v' and labels '%+v', instead a non-nil error was returned", podName, podLabels)
@@ -1480,6 +1491,85 @@ func (manager *KubernetesManager) RunExecCommand(
 	}
 
 	return successExecCommandExitCode, nil
+}
+
+func (manager *KubernetesManager) RunExecCommandWithStreamedOutput(
+	ctx context.Context,
+	namespaceName string,
+	podName string,
+	containerName string,
+	command []string,
+) (chan string, chan *exec_result.ExecResult, error) {
+	execOptions := &apiv1.PodExecOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		Stdin:     false,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       true,
+		Container: containerName,
+		Command:   command,
+	}
+
+	//Create a RESTful command request.
+	request := manager.kubernetesClientSet.CoreV1().RESTClient().
+		Post().
+		Namespace(namespaceName).
+		Resource("pods").
+		Name(podName).
+		SubResource("exec").
+		VersionedParams(execOptions, scheme.ParameterCodec)
+	if request == nil {
+		return nil, nil, stacktrace.NewError("Failed to build a working RESTful request for the command '%s'.", execOptions.Command)
+	}
+
+	exec, err := remotecommand.NewSPDYExecutor(manager.kuberneteRestConfig, http.MethodPost, request.URL())
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err,
+			"Failed to build an executor for the command '%s' with the RESTful endpoint '%s'.",
+			execOptions.Command,
+			request.URL().String())
+	}
+
+	execOutputChan := make(chan string)
+	finalExecResultChan := make(chan *exec_result.ExecResult)
+	go func() {
+		defer func() {
+			close(execOutputChan)
+			close(finalExecResultChan)
+		}()
+
+		// Stream output from k8s to output channel
+		channelWriter := channel_writer.NewChannelWriter(execOutputChan)
+		if err = exec.StreamWithContext(ctx, remotecommand.StreamOptions{
+			Stdin:             nil,
+			Stdout:            channelWriter,
+			Stderr:            channelWriter,
+			Tty:               true,
+			TerminalSizeQueue: nil,
+		}); err != nil {
+			// Kubernetes returns the exit code of the command via a string in the error message, so we have to extract it
+			statusError := err.Error()
+
+			// this means that context deadline has exceeded
+			if strings.Contains(statusError, contextDeadlineExceeded) {
+				execOutputChan <- stacktrace.Propagate(err, "There was an error occurred while executing commands on the container").Error()
+				return
+			}
+
+			exitCode, err := getExitCodeFromStatusMessage(statusError)
+			if err != nil {
+				execOutputChan <- stacktrace.Propagate(err, "There was an error trying to parse the message '%s' to an exit code.", statusError).Error()
+				return
+			}
+
+			// Don't send output in final result because it was already streamed
+			finalExecResultChan <- exec_result.NewExecResult(exitCode, "")
+		}
+	}()
+	return execOutputChan, finalExecResultChan, nil
 }
 
 func (manager *KubernetesManager) GetAllEnclaveResourcesByLabels(ctx context.Context, namespace string, labels map[string]string) (*apiv1.PodList, *apiv1.ServiceList, *apiv1.PersistentVolumeList, *rbacv1.ClusterRoleList, *rbacv1.ClusterRoleBindingList, error) {
@@ -1868,6 +1958,36 @@ func (manager *KubernetesManager) waitForPodAvailability(ctx context.Context, na
 	containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
 	return stacktrace.NewError(
 		"Pod '%v' did not become available after %v; its latest state is '%v' and status message is: %v\n"+
+			"The pod's container states are as follows:\n%v",
+		podName,
+		podWaitForAvailabilityTimeout,
+		latestPodStatus.Phase,
+		latestPodStatus.Message,
+		strings.Join(containerStatusStrs, "\n"),
+	)
+}
+
+// waitForPodDeletion waits for the pod to be fully deleted if it has been marked for deletion
+func (manager *KubernetesManager) waitForPodDeletion(ctx context.Context, namespaceName string, podName string) error {
+	// Wait for the pod to start running
+	deadline := time.Now().Add(podWaitForDeletionTimeout)
+	var latestPodStatus *apiv1.PodStatus
+	for time.Now().Before(deadline) {
+		pod, err := manager.GetPod(ctx, namespaceName, podName)
+		if err != nil {
+			// If an error has been returned, it's likely the pod does not exist. Continue
+			return nil
+		}
+		if pod.DeletionTimestamp == nil {
+			return stacktrace.NewError("The pod '%s' currently exists in namespace '%s' and is not scheduled for deletion",
+				podName, namespaceName)
+		}
+		time.Sleep(podWaitForDeletionTimeBetweenPolls)
+	}
+
+	containerStatusStrs := renderContainerStatuses(latestPodStatus.ContainerStatuses, containerStatusLineBulletPoint)
+	return stacktrace.NewError(
+		"Pod '%v' wasn't deleted after %v; its latest state is '%v' and status message is: %v\n"+
 			"The pod's container states are as follows:\n%v",
 		podName,
 		podWaitForAvailabilityTimeout,

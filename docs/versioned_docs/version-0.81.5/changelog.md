@@ -1,5 +1,57 @@
 # Changelog
 
+## [0.81.5](https://github.com/kurtosis-tech/kurtosis/compare/0.81.4...0.81.5) (2023-08-07)
+
+
+### Features
+
+* Enclave inspect relying on the API container service only ([#1070](https://github.com/kurtosis-tech/kurtosis/issues/1070)) ([da171ea](https://github.com/kurtosis-tech/kurtosis/commit/da171ea6a9350992ec282265ecfa07882dc47c65))
+
+
+### Bug Fixes
+
+* Fix broken link in docs causing CI build to fail ([#1079](https://github.com/kurtosis-tech/kurtosis/issues/1079)) ([77d8a13](https://github.com/kurtosis-tech/kurtosis/commit/77d8a13e1104eb7b7556a2c3796a2ad5e51f23ec))
+
+## [0.81.4](https://github.com/kurtosis-tech/kurtosis/compare/0.81.3...0.81.4) (2023-08-03)
+
+
+### Bug Fixes
+
+* Only forward APIC port on remote context. ([#1049](https://github.com/kurtosis-tech/kurtosis/issues/1049)) ([7072b7b](https://github.com/kurtosis-tech/kurtosis/commit/7072b7be2fa0f5a417a3e0ca28c4ca8cb4558a29)), closes [#1039](https://github.com/kurtosis-tech/kurtosis/issues/1039)
+* remove historical enclave names from auto complete ([#1059](https://github.com/kurtosis-tech/kurtosis/issues/1059)) ([e63fd88](https://github.com/kurtosis-tech/kurtosis/commit/e63fd88b8bc657f086b631400dd1c70b0f66d1ab))
+
+## [0.81.3](https://github.com/kurtosis-tech/kurtosis/compare/0.81.2...0.81.3) (2023-08-03)
+
+
+### Bug Fixes
+
+* Pin grpc-file-transfer version on Go SDK ([#1058](https://github.com/kurtosis-tech/kurtosis/issues/1058)) ([36a16ac](https://github.com/kurtosis-tech/kurtosis/commit/36a16ac3b6db9914f3b0a6695535d8ee6ac8ae6b))
+
+## [0.81.2](https://github.com/kurtosis-tech/kurtosis/compare/0.81.1...0.81.2) (2023-08-03)
+
+
+### Features
+
+* Compute content hash when compressing files artifact ([#1041](https://github.com/kurtosis-tech/kurtosis/issues/1041)) ([510ffe2](https://github.com/kurtosis-tech/kurtosis/commit/510ffe270fea663985b45228e45836fcb575932d))
+
+
+### Bug Fixes
+
+* Fix comment about sidecar ([#1053](https://github.com/kurtosis-tech/kurtosis/issues/1053)) ([d9b07ea](https://github.com/kurtosis-tech/kurtosis/commit/d9b07ea0a5d609c1191c7e7260a1928ddd1ebd4e))
+* Use the local grpc-file-transfer library version ([#1056](https://github.com/kurtosis-tech/kurtosis/issues/1056)) ([59fa980](https://github.com/kurtosis-tech/kurtosis/commit/59fa98013aee05a32a34aa2bef1a153a1a57a29b))
+
+## [0.81.1](https://github.com/kurtosis-tech/kurtosis/compare/0.81.0...0.81.1) (2023-08-02)
+
+
+### Features
+
+* Print execution steps for kurtosis import ([#1047](https://github.com/kurtosis-tech/kurtosis/issues/1047)) ([44d3b16](https://github.com/kurtosis-tech/kurtosis/commit/44d3b16528a8523f3c20842e373b3b51458fb267))
+
+
+### Bug Fixes
+
+* Stop local running engine when switching context ([#1040](https://github.com/kurtosis-tech/kurtosis/issues/1040)) ([a8b5606](https://github.com/kurtosis-tech/kurtosis/commit/a8b5606f445cb72126db2bca15efdb294c1d75a0))
+
 ## [0.81.0](https://github.com/kurtosis-tech/kurtosis/compare/0.80.24...0.81.0) (2023-08-02)
 
 

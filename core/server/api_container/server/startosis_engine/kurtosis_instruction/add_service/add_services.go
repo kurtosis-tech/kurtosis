@@ -204,6 +204,13 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		}
 		return enclave_structure.InstructionIsEqual
 	}
+	// if other instruction is nil or other instruction is not an add_services instruction, status is unknown
+	if other == nil {
+		for serviceName := range builtin.serviceConfigs {
+			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsNew)
+		}
+		return enclave_structure.InstructionIsUnknown
+	}
 	otherAddServicesCapabilities, ok := other.(*AddServicesCapabilities)
 	if !ok {
 		for serviceName := range builtin.serviceConfigs {
@@ -212,14 +219,26 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		return enclave_structure.InstructionIsUnknown
 	}
 
-	// The instruction can be re-run only if the set of added services is a subset of what was added by the instruction it's being compared to
+	// The instruction can be re-run only if the set of added services is a superset of what was added by the
+	// instruction it's being compared to, so we check that first
+	atLeastOneFilehasBeenUpdated := false
 	previouslyAddedService := map[service.ServiceName]bool{}
 	for serviceName := range otherAddServicesCapabilities.serviceConfigs {
 		previouslyAddedService[serviceName] = false
 	}
-	for serviceName := range builtin.serviceConfigs {
+	for serviceName, serviceConfig := range builtin.serviceConfigs {
 		if _, found := previouslyAddedService[serviceName]; found {
 			previouslyAddedService[serviceName] = true // toggle the boolean to true
+		}
+
+		// Check whether one file as been updated - if yes the instruction will need to be rerun
+		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
+		if filesArtifactsExpansion != nil {
+			for _, filesArtifactName := range filesArtifactsExpansion.ServiceDirpathsToArtifactIdentifiers {
+				if enclaveComponents.HasFilesArtifactBeenUpdated(filesArtifactName) {
+					atLeastOneFilehasBeenUpdated = true
+				}
+			}
 		}
 	}
 	for _, servicePresentInCurrentInstruction := range previouslyAddedService {
@@ -232,14 +251,22 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		}
 	}
 
-	for serviceName := range builtin.serviceConfigs {
-		if _, found := previouslyAddedService[serviceName]; found {
-			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsUpdated)
-		} else {
-			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsNew)
+	if !instructionsAreEqual || atLeastOneFilehasBeenUpdated {
+		for serviceName := range builtin.serviceConfigs {
+			if _, found := previouslyAddedService[serviceName]; found {
+				enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsUpdated)
+			} else {
+				enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsNew)
+			}
 		}
+		return enclave_structure.InstructionIsUpdate
 	}
-	return enclave_structure.InstructionIsUpdate
+
+	// the instruction is equal AND no file have been updated. No need to rerun the instruction
+	for serviceName := range builtin.serviceConfigs {
+		enclaveComponents.AddService(serviceName, enclave_structure.ComponentWasLeftIntact)
+	}
+	return enclave_structure.InstructionIsEqual
 }
 
 func (builtin *AddServicesCapabilities) removeAllStartedServices(
@@ -247,10 +274,10 @@ func (builtin *AddServicesCapabilities) removeAllStartedServices(
 	startedServices map[service.ServiceName]*service.Service,
 ) {
 	//this is not executed with concurrency because the remove service method locks on every call
-	for serviceName, service := range startedServices {
-		serviceIdentifier := string(service.GetRegistration().GetUUID())
+	for startedServiceName, startedService := range startedServices {
+		serviceIdentifier := string(startedService.GetRegistration().GetUUID())
 		if _, err := builtin.serviceNetwork.RemoveService(ctx, serviceIdentifier); err != nil {
-			logrus.Debugf("Something fails while started all services and we tried to remove all the  created services to rollback the process, but this one '%s' fails throwing this error: '%v', we suggest you to manually remove it", serviceName, err)
+			logrus.Debugf("Something fails while started all services and we tried to remove all the  created services to rollback the process, but this one '%s' fails throwing this error: '%v', we suggest you to manually remove it", startedServiceName, err)
 		}
 	}
 }

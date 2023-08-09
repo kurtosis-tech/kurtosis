@@ -710,11 +710,40 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 }
 
 func (network *DefaultServiceNetwork) UploadFilesArtifact(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
-	filesArtifactUuid, err := network.uploadFilesArtifactUnlocked(data, contentMd5, artifactName)
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error in uploading the files")
+		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+
+	filesArtifactUuid, err := filesArtifactStore.StoreFile(data, contentMd5, artifactName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
 	}
 	return filesArtifactUuid, nil
+}
+
+func (network *DefaultServiceNetwork) GetFilesArtifactMd5(artifactName string) (enclave_data_directory.FilesArtifactUUID, []byte, bool, error) {
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return "", nil, false, stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+	filesArtifactUuid, _, currentlyStoredFileContentHash, found, err := filesArtifactStore.GetFile(artifactName)
+	if err != nil {
+		return "", nil, false, stacktrace.Propagate(err, "An error occurred retrieving the files artifact from the store")
+	}
+	return filesArtifactUuid, currentlyStoredFileContentHash, found, nil
+}
+
+func (network *DefaultServiceNetwork) UpdateFilesArtifact(fileArtifactUuid enclave_data_directory.FilesArtifactUUID, updatedContent io.Reader, contentMd5 []byte) error {
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+
+	if err = filesArtifactStore.UpdateFile(fileArtifactUuid, updatedContent, contentMd5); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to update a files artifact.")
+	}
+	return nil
 }
 
 func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers() (service_identifiers.ServiceIdentifiers, error) {
@@ -1030,20 +1059,34 @@ func (network *DefaultServiceNetwork) copyFilesFromServiceUnlocked(ctx context.C
 		return "", stacktrace.Propagate(err, "An error occurred getting the files artifact store")
 	}
 
+	existingFilesArtifactUuid, _, _, filesArtifactAlreadyExists, err := store.GetFile(artifactName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An unexpected error occurred checking for file artifact '%s' existence in the store", artifactName)
+	}
+
 	pipeReader, pipeWriter := io.Pipe()
-	defer pipeReader.Close()
 	defer pipeWriter.Close()
 
 	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
 	go func() {
 		defer pipeReader.Close()
-
+		defer close(storeFilesArtifactResultChan)
 		//And finally pass it the .tgz file to the artifact file store
 		// It's hard to compute the content hash here. For files stored from services, hash will be empty and they will
 		// be re-stored everytime regardless of their content
-		filesArtifactUuid, storeFileErr := store.StoreFile(pipeReader, []byte{}, artifactName)
+
+		var storeOrUpdateErr error
+		var filesArtifactUuid enclave_data_directory.FilesArtifactUUID
+		if filesArtifactAlreadyExists {
+			filesArtifactUuid = existingFilesArtifactUuid
+			// we're not able to check file hash here b/c we don't get it from the CompressPath helper method
+			// TODO: Maybe compute the hash ad-hoc here, but it would require us to consume the reader
+			storeOrUpdateErr = store.UpdateFile(filesArtifactUuid, pipeReader, []byte{})
+		} else {
+			filesArtifactUuid, storeOrUpdateErr = store.StoreFile(pipeReader, []byte{}, artifactName)
+		}
 		storeFilesArtifactResultChan <- storeFilesArtifactResult{
-			err:               storeFileErr,
+			err:               storeOrUpdateErr,
 			filesArtifactUuid: filesArtifactUuid,
 		}
 	}()
@@ -1109,8 +1152,24 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
 	}
-	filesArtifactUuid, err := store.StoreFile(compressedFile, compressedFileMd5, artifactName)
+	existingFilesArtifactUuid, _, existingFilesArtifactMd5, found, err := store.GetFile(artifactName)
 	if err != nil {
+		return "", stacktrace.Propagate(err, "An unexpected error occurred checking for file artifact '%s' existence in the store", artifactName)
+	}
+
+	var storeOrUpdateErr error
+	var filesArtifactUuid enclave_data_directory.FilesArtifactUUID
+	if found {
+		filesArtifactUuid = existingFilesArtifactUuid
+		// If one of the md5 is empty, we can't really assume the files are equal so we fallback to updating them
+		// Otherwise we check the equality of their MD5 and if they are different we update them
+		if len(existingFilesArtifactMd5) == 0 || len(compressedFileMd5) == 0 || !bytes.Equal(existingFilesArtifactMd5, compressedFileMd5) {
+			storeOrUpdateErr = store.UpdateFile(existingFilesArtifactUuid, compressedFile, compressedFileMd5)
+		}
+	} else {
+		filesArtifactUuid, storeOrUpdateErr = store.StoreFile(compressedFile, compressedFileMd5, artifactName)
+	}
+	if storeOrUpdateErr != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
 	}
 	shouldDeleteFilesArtifact := true
@@ -1123,21 +1182,6 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 	}()
 
 	shouldDeleteFilesArtifact = false
-	return filesArtifactUuid, nil
-}
-
-// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) uploadFilesArtifactUnlocked(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
-	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
-	}
-
-	filesArtifactUuid, err := filesArtifactStore.StoreFile(data, contentMd5, artifactName)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
-	}
-
 	return filesArtifactUuid, nil
 }
 

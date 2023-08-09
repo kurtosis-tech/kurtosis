@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.81.5](https://github.com/kurtosis-tech/kurtosis/compare/0.81.4...0.81.5) (2023-08-07)
+
+
+### Features
+
+* Enclave inspect relying on the API container service only ([#1070](https://github.com/kurtosis-tech/kurtosis/issues/1070)) ([da171ea](https://github.com/kurtosis-tech/kurtosis/commit/da171ea6a9350992ec282265ecfa07882dc47c65))
+
+
+### Bug Fixes
+
+* Fix broken link in docs causing CI build to fail ([#1079](https://github.com/kurtosis-tech/kurtosis/issues/1079)) ([77d8a13](https://github.com/kurtosis-tech/kurtosis/commit/77d8a13e1104eb7b7556a2c3796a2ad5e51f23ec))
+
 ## [0.81.4](https://github.com/kurtosis-tech/kurtosis/compare/0.81.3...0.81.4) (2023-08-03)
 
 
