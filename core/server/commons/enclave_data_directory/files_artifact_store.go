@@ -84,6 +84,20 @@ func (store FilesArtifactStore) StoreFile(reader io.Reader, contentMd5 []byte, a
 	return filesArtifactUuid, nil
 }
 
+func (store FilesArtifactStore) UpdateFile(filesArtifactUuid FilesArtifactUUID, reader io.Reader, contentMd5 []byte) error {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+
+	artifactName, err := store.removeFileUnlocked(filesArtifactUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error removing the files artifact '%s' prior to persisting its new content", filesArtifactUuid)
+	}
+	if err = store.storeFilesToArtifactUuidUnlocked(artifactName, filesArtifactUuid, reader, contentMd5); err != nil {
+		return stacktrace.Propagate(err, "Error persisting updated content for files artifact '%s'", filesArtifactUuid)
+	}
+	return nil
+}
+
 // GetFile Get the file by uuid, then by shortened uuid and finally by name
 func (store FilesArtifactStore) GetFile(artifactIdentifier string) (FilesArtifactUUID, *EnclaveDataDirFile, []byte, bool, error) {
 	store.mutex.RLock()
@@ -112,7 +126,7 @@ func (store FilesArtifactStore) GetFile(artifactIdentifier string) (FilesArtifac
 		return store.getFileUnlocked(FilesArtifactUUID(filesArtifactUuidGet))
 	}
 
-	return "", nil, nil, false, stacktrace.NewError("Couldn't find file for identifier '%v' tried, tried looking up UUID, shortened UUID and by name", artifactIdentifier)
+	return "", nil, nil, false, nil
 }
 
 // RemoveFile Remove the file by uuid, then by shortened uuid and then by name
@@ -125,7 +139,7 @@ func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) error {
 	var filesArtifactUuid FilesArtifactUUID
 
 	filesArtifactUuid = FilesArtifactUUID(artifactIdentifier)
-	err := store.removeFileUnlocked(filesArtifactUuid)
+	_, err := store.removeFileUnlocked(filesArtifactUuid)
 	if err == nil {
 		return nil
 	}
@@ -136,15 +150,23 @@ func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) error {
 			return stacktrace.NewError("Tried using the shortened uuid '%v' to remove file but found multiple matches '%v'. Use a complete uuid to be specific about what to delete.", artifactIdentifier, filesArtifactUuids)
 		}
 		filesArtifactUuid = FilesArtifactUUID(filesArtifactUuids[0])
-		return store.removeFileUnlocked(filesArtifactUuid)
+		_, err = store.removeFileUnlocked(filesArtifactUuid)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing files artifact with UUID '%s'", filesArtifactUuid)
+		}
+		return nil
 	}
 
 	filesArtifactUuidGet, found := store.fileArtifactDb.GetArtifactUuid(artifactIdentifier)
 	if found {
-		return store.removeFileUnlocked(FilesArtifactUUID(filesArtifactUuidGet))
+		_, err = store.removeFileUnlocked(FilesArtifactUUID(filesArtifactUuidGet))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing files artifact with UUID '%s'", filesArtifactUuid)
+		}
+		return nil
 	}
 
-	return stacktrace.NewError("Couldn't find file for identifier '%v' tried, tried looking up UUID, shortened UUID and by name", artifactIdentifier)
+	return stacktrace.NewError("Couldn't find file for identifier '%v', tried looking up UUID, shortened UUID and by name", artifactIdentifier)
 }
 
 func (store FilesArtifactStore) ListFiles() map[string]bool {
@@ -239,17 +261,19 @@ func (store FilesArtifactStore) getFileUnlocked(filesArtifactUuid FilesArtifactU
 }
 
 // removeFileUnlocked this is not thread safe, must be used from a thread safe context
-func (store FilesArtifactStore) removeFileUnlocked(filesArtifactUuid FilesArtifactUUID) error {
+func (store FilesArtifactStore) removeFileUnlocked(filesArtifactUuid FilesArtifactUUID) (string, error) {
 	filename := strings.Join(
 		[]string{string(filesArtifactUuid), artifactExtension},
 		".",
 	)
 
+	var artifactName string
 	if err := store.fileCache.RemoveFile(filename); err != nil {
-		return stacktrace.Propagate(err, "There was an error in removing '%v' from the file store", filename)
+		return "", stacktrace.Propagate(err, "There was an error in removing '%v' from the file store", filename)
 	}
 	for name, artifactUuid := range store.fileArtifactDb.GetArtifactUuidMap() {
 		if artifactUuid == string(filesArtifactUuid) {
+			artifactName = name
 			store.fileArtifactDb.DeleteArtifactUuid(name)
 			store.fileArtifactDb.DeleteContentMd5(artifactUuid)
 		}
@@ -266,11 +290,11 @@ func (store FilesArtifactStore) removeFileUnlocked(filesArtifactUuid FilesArtifa
 		// if there's only one matching uuid we delete the shortened uuid
 		if len(artifactUuids) == 1 {
 			store.fileArtifactDb.DeleteFullUuid(shortenedUuid)
-			return nil
+			return artifactName, nil
 		}
 		// otherwise we just delete the target artifact uuid
 		store.fileArtifactDb.DeleteFullUuidIndex(shortenedUuid, targetArtifactIdx)
 	}
 
-	return nil
+	return artifactName, nil
 }

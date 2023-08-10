@@ -10,6 +10,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"net"
 	"testing"
 )
 
@@ -27,6 +28,9 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	serviceNetwork := service_network.NewMockServiceNetwork(suite.T())
+	serviceNetwork.EXPECT().GetApiContainerInfo().Maybe().Return(
+		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0"),
+	)
 	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore)
 }
 
@@ -211,66 +215,6 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 	require.False(suite.T(), scheduledInstruction3.IsExecuted())
 }
 
-// This is a bit of an edge case here, we run only part of the instruction that are identical to what was already run
-// Current plan ->     [`print("instruction1")`  `print("instruction2")`  `print("instruction3")`]
-// Package to run ->   [`print("instruction1")`  `print("instruction2")`                         ]
-// Check that instruction 1 and 2 are part of the new plan, already executed, and instruction3 is ALSO part of the
-// plan, but marked as imported from a previous plan
-func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_ReplacePartOfInstructionWithIdenticalInstruction() {
-	initialScript := `def run(plan, args):
-	plan.print(msg="instruction1")
-	plan.print(msg="instruction2")
-	plan.print(msg="instruction3")
-`
-	// Interpretation of the initial script to generate the current enclave plan
-	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
-		context.Background(),
-		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		useDefaultMainFunctionName,
-		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		initialScript,
-		noInputParams,
-		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
-	require.Nil(suite.T(), interpretationApiErr)
-	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
-
-	updatedScript := `def run(plan, args):
-	plan.print(msg="instruction1")
-	plan.print(msg="instruction2")
-`
-	// Interpret the updated script against the current enclave plan
-	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
-		context.Background(),
-		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		useDefaultMainFunctionName,
-		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		updatedScript,
-		noInputParams,
-		currentEnclavePlan,
-	)
-	require.Nil(suite.T(), interpretationError)
-
-	instructionSequence, err := instructionsPlan.GeneratePlan()
-	require.Nil(suite.T(), err)
-	require.Equal(suite.T(), 3, len(instructionSequence))
-
-	scheduledInstruction1 := instructionSequence[0]
-	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction1.IsExecuted())
-
-	scheduledInstruction2 := instructionSequence[1]
-	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction2.IsExecuted())
-
-	scheduledInstruction3 := instructionSequence[2]
-	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
-	require.True(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction3.IsExecuted())
-}
-
 // Submit a package with a update on an instruction located "in the middle" of the package
 // Current plan ->     [`print("instruction1")`  `print("instruction2")`      `print("instruction3")`]
 // Package to run ->   [`print("instruction1")`  `print("instruction2_NEW")`  `print("instruction3")`]
@@ -348,9 +292,9 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 	require.False(suite.T(), scheduledInstruction6.IsExecuted())
 }
 
-// Submit a package with an update to an add_service instruction. add_service instructions is the only one right now
-// support being run twice in an enclave, updating "live" the service underneath. Check that the add_service and its
-// direct dependencies are scheduled for a re-run but other instructions remains "SKIPPED"
+// Submit a package with an update to an add_service instruction. add_service instructions is supports being run twice
+// in an enclave, updating "live" the service underneath. Check that the add_service and its direct dependencies are
+// scheduled for a re-run but other instructions remains "SKIPPED"
 func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_AddServiceIdempotency() {
 	initialScript := `def run(plan):
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3"))
@@ -412,4 +356,80 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 	require.Regexp(suite.T(), `assert\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
 	require.False(suite.T(), scheduledInstruction4.IsImportedFromCurrentEnclavePlan())
 	require.True(suite.T(), scheduledInstruction4.IsExecuted())
+}
+
+// Submit a package with an update to an upload_files instruction. upload_files instructions support being run twice
+// in an enclave, updating "live" the file underneath if it has changed. Check that the add_service and its direct
+// dependencies are scheduled for a re-run but other instructions remains "SKIPPED"
+func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_UploadFilesIdempotency() {
+	initialScript := `def run(plan):
+	files_artifact = plan.render_templates(
+        name="files_artifact",
+        config={
+            "/output.txt": struct(template="Hello {{.World}}", data={"World" : "World!"}),
+        }
+    )
+	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3", files={"/path/": files_artifact}))
+	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))
+	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip")
+`
+	// Interpretation of the initial script to generate the current enclave plan
+	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		initialScript,
+		noInputParams,
+		enclave_structure.NewEnclaveComponents(),
+		resolver.NewInstructionsPlanMask(0))
+	require.Nil(suite.T(), interpretationApiErr)
+	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
+
+	updatedScript := `def run(plan):
+	files_artifact = plan.render_templates(
+        name="files_artifact",
+        config={
+            "/output.txt": struct(template="Bonjour {{.World}}", data={"World" : "World!"}), # updated template!!
+        }
+    )
+	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3", files={"/path/": files_artifact}))
+	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))
+	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip")
+`
+	// Interpret the updated script against the current enclave plan
+	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
+		context.Background(),
+		startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		useDefaultMainFunctionName,
+		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		updatedScript,
+		noInputParams,
+		currentEnclavePlan,
+	)
+	require.Nil(suite.T(), interpretationError)
+
+	instructionSequence, err := instructionsPlan.GeneratePlan()
+	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 4, len(instructionSequence))
+
+	scheduledInstruction1 := instructionSequence[0]
+	require.Equal(suite.T(), `render_templates(config={"/output.txt": struct(data={"World": "World!"}, template="Bonjour {{.World}}")}, name="files_artifact")`, scheduledInstruction1.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction1.IsExecuted())
+
+	scheduledInstruction2 := instructionSequence[1]
+	require.Equal(suite.T(), `add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3", files={"/path/": "files_artifact"}))`, scheduledInstruction2.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction2.IsExecuted()) // since the files artifact has been updated, the service will be updated as well
+
+	scheduledInstruction3 := instructionSequence[2]
+	require.Equal(suite.T(), `exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))`, scheduledInstruction3.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
+	require.False(suite.T(), scheduledInstruction3.IsExecuted()) // since the service has been updated, the exec will be re-run
+
+	scheduledInstruction4 := instructionSequence[3]
+	require.Regexp(suite.T(), `assert\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
+	require.False(suite.T(), scheduledInstruction4.IsImportedFromCurrentEnclavePlan())
+	require.True(suite.T(), scheduledInstruction4.IsExecuted()) // this instruction is not affected, i.e. it won't be re-run
 }

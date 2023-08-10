@@ -5,11 +5,13 @@ import (
 	bolt "go.etcd.io/bbolt"
 	"os"
 	"sync"
+	"time"
 )
 
 const (
 	readWritePermissionToDatabase = 0666
 	enclaveDbFilePath             = "enclave.db"
+	timeOut                       = 10 * time.Second
 )
 
 var (
@@ -25,7 +27,7 @@ type EnclaveDB struct {
 func GetOrCreateEnclaveDatabase() (*EnclaveDB, error) {
 	openDatabaseOnce.Do(func() {
 		databaseInstance, databaseOpenError = bolt.Open(enclaveDbFilePath, readWritePermissionToDatabase, &bolt.Options{
-			Timeout:         0,
+			Timeout:         timeOut, //to fail if any other process is locking the file
 			NoGrowSync:      false,
 			NoFreelistSync:  false,
 			FreelistType:    "",

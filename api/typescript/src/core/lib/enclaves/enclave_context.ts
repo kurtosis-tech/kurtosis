@@ -254,6 +254,7 @@ export class EnclaveContext {
             serviceCtxPrivatePorts,
             serviceInfo.getMaybePublicIpAddr(),
             serviceCtxPublicPorts,
+            serviceInfo.getServiceStatus(),
         );
 
         return ok(serviceContext);

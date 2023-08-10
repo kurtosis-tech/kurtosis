@@ -3,7 +3,6 @@ package user_service_functions
 import (
 	"bufio"
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -25,7 +24,7 @@ var commandToRunWhenCreatingUserServiceShell = []string{
 }
 
 func GetShellOnUserService(ctx context.Context, enclaveId enclave.EnclaveUUID, serviceUuid service.ServiceUUID, dockerManager *docker_manager.DockerManager) error {
-	_, serviceDockerResources, err := shared_helpers.GetSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceUuid, dockerManager)
+	_, serviceDockerResources, err := getSingleUserServiceObjAndResourcesNoMutex(ctx, enclaveId, serviceUuid, dockerManager)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting service object and Docker resources for service '%v' in enclave '%v'", serviceUuid, enclaveId)
 	}

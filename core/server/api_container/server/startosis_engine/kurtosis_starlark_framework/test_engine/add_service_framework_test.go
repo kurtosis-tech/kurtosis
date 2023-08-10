@@ -55,7 +55,6 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
-				service_config.DefaultSubnetwork,
 			)
 
 			actualServiceConfig := serviceConfig
