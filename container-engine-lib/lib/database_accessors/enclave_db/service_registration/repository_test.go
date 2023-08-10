@@ -46,7 +46,7 @@ func TestSaveAndGetServiceRegistration_Success(t *testing.T) {
 	require.Equal(t, originalServiceRegistration, serviceRegistrationFromRepository)
 }
 
-func TestSaveAndGetAll_Success(t *testing.T) {
+func TestGetAll_Success(t *testing.T) {
 	repository := getRepositoryForTest(t)
 
 	amountOfRegistrations := 5
@@ -68,7 +68,7 @@ func TestSaveAndGetAll_Success(t *testing.T) {
 	require.EqualValues(t, originalServiceRegistrations, serviceRegistrationsFromRepository)
 }
 
-func TestSaveAndExist_Success(t *testing.T) {
+func TestExist_Success(t *testing.T) {
 	repository := getRepositoryForTest(t)
 
 	originalServiceRegistration := saveAndGetOneServiceRegistrationForTest(t, repository)
@@ -78,7 +78,7 @@ func TestSaveAndExist_Success(t *testing.T) {
 	require.True(t, exist)
 }
 
-func TestSaveAndExist_DoesNotExist(t *testing.T) {
+func TestDoesNotExist(t *testing.T) {
 	repository := getRepositoryForTest(t)
 
 	saveAndGetOneServiceRegistrationForTest(t, repository)
@@ -90,7 +90,7 @@ func TestSaveAndExist_DoesNotExist(t *testing.T) {
 	require.False(t, exist)
 }
 
-func TestSaveAndGetAllServiceNames_Success(t *testing.T) {
+func TestGetAllServiceNames_Success(t *testing.T) {
 	repository := getRepositoryForTest(t)
 
 	amountOfRegistrations := 5
@@ -112,7 +112,7 @@ func TestSaveAndGetAllServiceNames_Success(t *testing.T) {
 	require.EqualValues(t, originalServiceNames, allServiceNamesFromRepository)
 }
 
-func TestSaveAndUpdateStatus_Success(t *testing.T) {
+func TestUpdateStatus_Success(t *testing.T) {
 	repository := getRepositoryForTest(t)
 
 	originalServiceRegistration := saveAndGetOneServiceRegistrationForTest(t, repository)
@@ -131,7 +131,7 @@ func TestSaveAndUpdateStatus_Success(t *testing.T) {
 	require.Equal(t, newStatus, serviceRegistrationFromRepository.GetStatus())
 }
 
-func TestSaveAndUpdateConfig_Success(t *testing.T) {
+func TestUpdateConfig_Success(t *testing.T) {
 	repository := getRepositoryForTest(t)
 
 	originalServiceRegistration := saveAndGetOneServiceRegistrationForTest(t, repository)
@@ -154,7 +154,7 @@ func TestSaveAndUpdateConfig_Success(t *testing.T) {
 	require.Equal(t, newConfig, serviceRegistrationFromRepository.GetConfig())
 }
 
-func TestSaveAndUpdateStatusAndConfig_Success(t *testing.T) {
+func TestUpdateStatusAndConfig_Success(t *testing.T) {
 	repository := getRepositoryForTest(t)
 
 	originalServiceRegistration := saveAndGetOneServiceRegistrationForTest(t, repository)
@@ -169,6 +169,19 @@ func TestSaveAndUpdateStatusAndConfig_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	require.Equal(t, newConfig, serviceRegistrationFromRepository.GetConfig())
+}
+
+func TestDelete_Success(t *testing.T) {
+	repository := getRepositoryForTest(t)
+
+	originalServiceRegistration := saveAndGetOneServiceRegistrationForTest(t, repository)
+
+	err := repository.Delete(originalServiceRegistration.GetName())
+	require.NoError(t, err)
+
+	exist, err := repository.Exist(originalServiceRegistration.GetName())
+	require.NoError(t, err)
+	require.False(t, exist)
 }
 
 func saveAndGetOneServiceRegistrationForTest(
