@@ -78,10 +78,6 @@ type DefaultServiceNetwork struct {
 
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
 
-	// Technically we SHOULD query the backend rather than ever storing any of this information, but we're able to get away with
-	// this because the API container is the only client that modifies service state
-	registeredServiceInfo map[service.ServiceName]*service.ServiceRegistration
-
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
 
 	// This contains all service identifiers ever successfully created
@@ -112,7 +108,6 @@ func NewDefaultServiceNetwork(
 		kurtosisBackend: kurtosisBackend,
 		enclaveDataDir:  enclaveDataDir,
 
-		registeredServiceInfo:         map[service.ServiceName]*service.ServiceRegistration{},
 		serviceRegistrationRepository: serviceRegistrationRepository,
 		serviceIdentifiersRepository:  serviceIdentifiersRepository,
 	}, nil
@@ -336,7 +331,7 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 		if serviceName, found := serviceUuidToNameMap[serviceUuid]; found {
 			serviceStatus := service.ServiceStatus_Registered
 			if err := network.serviceRegistrationRepository.UpdateStatusAndConfig(serviceName, serviceStatus, nil); err != nil {
-				failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred while cleaning the configuration and updating service status to '%s' into service registration fro service '%s' after this service was removed successfully", serviceStatus)
+				failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred while cleaning the configuration and updating service status to '%s' into service registration fro service '%s' after this service was removed successfully", serviceStatus, serviceName)
 				continue
 			}
 			successfullyRemovedServicesIncludingSidecars[serviceUuid] = true
@@ -482,7 +477,12 @@ func (network *DefaultServiceNetwork) StartServices(
 	}
 
 	for successfulUuid, successfulService := range successfulServices {
-		serviceRegistrations[successfulService.GetRegistration().GetUUID()].SetStatus(service.ServiceStatus_Started)
+		serviceName := successfulService.GetRegistration().GetName()
+		serviceStatus := service.ServiceStatus_Started
+		if err := network.serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
+			failedServices[successfulUuid] = stacktrace.Propagate(err, "An error occurred while updating status to '%v' for service '%v' after it was successfully started", serviceStatus, serviceName)
+			continue
+		}
 		successfulUuids[successfulUuid] = true
 	}
 
@@ -522,7 +522,7 @@ func (network *DefaultServiceNetwork) StopServices(
 	defer network.mutex.Unlock()
 
 	serviceUuids := map[service.ServiceUUID]bool{}
-	serviceRegistrations := map[service.ServiceUUID]*service.ServiceRegistration{}
+	serviceNamesByUuid := map[service.ServiceUUID]service.ServiceName{}
 
 	for _, serviceIdentifier := range serviceIdentifiers {
 		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(serviceIdentifier)
@@ -533,7 +533,7 @@ func (network *DefaultServiceNetwork) StopServices(
 			return nil, nil, stacktrace.NewError("Service '%v' is already stopped", serviceRegistration.GetName())
 		}
 		serviceUuids[serviceRegistration.GetUUID()] = true
-		serviceRegistrations[serviceRegistration.GetUUID()] = serviceRegistration
+		serviceNamesByUuid[serviceRegistration.GetUUID()] = serviceRegistration.GetName()
 	}
 
 	stopServiceFilters := &service.ServiceFilters{
@@ -547,7 +547,18 @@ func (network *DefaultServiceNetwork) StopServices(
 	}
 
 	for successfulUuid := range successfulUuids {
-		serviceRegistrations[successfulUuid].SetStatus(service.ServiceStatus_Stopped)
+		serviceName, found := serviceNamesByUuid[successfulUuid]
+		if !found {
+			erroredUuids[successfulUuid] = stacktrace.NewError("Expected to find service UUID '%v' in map '%+v' after the service was successfully stopped, but it was not found; this is a bug in Kurtosis", successfulUuid, serviceNamesByUuid)
+			delete(successfulUuids, successfulUuid)
+			continue
+		}
+		serviceStatus := service.ServiceStatus_Stopped
+		if err := network.serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
+			erroredUuids[successfulUuid] = stacktrace.Propagate(err, "An error occurred while updating status to '%v' for service '%v' after it was successfully stopped", serviceStatus, serviceName)
+			delete(successfulUuids, successfulUuid)
+			continue
+		}
 	}
 
 	return successfulUuids, erroredUuids, nil
@@ -1224,7 +1235,12 @@ func (network *DefaultServiceNetwork) getServiceNameForIdentifierUnlocked(servic
 	serviceUuidToServiceName := map[service.ServiceUUID]service.ServiceName{}
 	serviceShortenedUuidToServiceName := map[string][]service.ServiceName{}
 
-	for serviceName, registration := range network.registeredServiceInfo {
+	allServiceRegistrationsByServiceName, err := network.serviceRegistrationRepository.GetAll()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred getting all service registrations from the repository")
+	}
+
+	for serviceName, registration := range allServiceRegistrationsByServiceName {
 		serviceUuid := registration.GetUUID()
 		serviceShortenedUuid := uuid_generator.ShortenedUUIDString(string(serviceUuid))
 		serviceUuidToServiceName[serviceUuid] = serviceName
@@ -1245,7 +1261,12 @@ func (network *DefaultServiceNetwork) getServiceNameForIdentifierUnlocked(servic
 	}
 
 	maybeServiceName := service.ServiceName(serviceIdentifier)
-	if _, found := network.registeredServiceInfo[maybeServiceName]; found {
+
+	maybeServiceNameExist, err := network.serviceRegistrationRepository.Exist(maybeServiceName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred checking if service name '%s' exist in the service registration repository", maybeServiceName)
+	}
+	if maybeServiceNameExist {
 		return maybeServiceName, nil
 	}
 
@@ -1430,9 +1451,9 @@ func (network *DefaultServiceNetwork) getServiceRegistrationForIdentifierUnlocke
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching name for service identifier '%v'", serviceIdentifier)
 	}
 
-	serviceRegistration, found := network.registeredServiceInfo[serviceName]
-	if !found {
-		return nil, stacktrace.NewError("No service found with ID '%v'", serviceName)
+	serviceRegistration, err := network.serviceRegistrationRepository.Get(serviceName)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the service registration for service '%s'", serviceName)
 	}
 
 	return serviceRegistration, nil

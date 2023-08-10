@@ -128,8 +128,11 @@ func TestAddService_Successful(t *testing.T) {
 
 	require.Equal(t, serviceRegistration, startedService.GetRegistration())
 
-	require.Len(t, network.registeredServiceInfo, 1)
-	require.Contains(t, network.registeredServiceInfo, serviceName)
+	allServiceRegistration, err := network.serviceRegistrationRepository.GetAll()
+	require.NoError(t, err)
+
+	require.Len(t, allServiceRegistration, 1)
+	require.Contains(t, allServiceRegistration, serviceName)
 	allExistingAndHistoricalIdentifiers, err := network.GetExistingAndHistoricalServiceIdentifiers()
 	require.NoError(t, err)
 	require.Len(t, allExistingAndHistoricalIdentifiers, 1)
@@ -219,7 +222,9 @@ func TestAddService_FailedToStart(t *testing.T) {
 	require.NotNil(t, err)
 	require.Nil(t, startedService)
 
-	require.Empty(t, network.registeredServiceInfo)
+	allServiceRegistration, err := network.serviceRegistrationRepository.GetAll()
+	require.NoError(t, err)
+	require.Empty(t, allServiceRegistration)
 	allExistingAndHistoricalIdentifiers, err := network.GetExistingAndHistoricalServiceIdentifiers()
 	require.NoError(t, err)
 	require.Empty(t, allExistingAndHistoricalIdentifiers)
@@ -300,8 +305,10 @@ func TestAddServices_Success(t *testing.T) {
 	require.Contains(t, success, successfulServiceName)
 	require.Empty(t, failure)
 
-	require.Len(t, network.registeredServiceInfo, 1)
-	require.Contains(t, network.registeredServiceInfo, successfulServiceName)
+	allServiceRegistration, err := network.serviceRegistrationRepository.GetAll()
+	require.NoError(t, err)
+	require.Len(t, allServiceRegistration, 1)
+	require.Contains(t, allServiceRegistration, successfulServiceName)
 
 	allExistingAndHistoricalIdentifiers, err := network.GetExistingAndHistoricalServiceIdentifiers()
 	require.NoError(t, err)
@@ -463,7 +470,9 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	require.Len(t, failure, 1)
 	require.Contains(t, failure, failedServiceName)
 
-	require.Empty(t, network.registeredServiceInfo)
+	allServiceRegistration, err := network.serviceRegistrationRepository.GetAll()
+	require.NoError(t, err)
+	require.Empty(t, allServiceRegistration)
 	allExistingAndHistoricalIdentifiers, err := network.GetExistingAndHistoricalServiceIdentifiers()
 	require.NoError(t, err)
 	require.Empty(t, allExistingAndHistoricalIdentifiers)
@@ -548,7 +557,9 @@ func TestStopService_Successful(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	network.registeredServiceInfo[serviceName] = serviceRegistration
+
+	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	require.NoError(t, err)
 
 	// The service is registered before being started
 	backend.EXPECT().StopUserServices(
@@ -571,7 +582,10 @@ func TestStopService_Successful(t *testing.T) {
 
 	err = network.StopService(ctx, string(serviceName))
 	require.Nil(t, err)
-	require.Equal(t, serviceRegistration.GetStatus(), service.ServiceStatus_Stopped)
+
+	serviceRegistrationAfterBeingStopped, err := network.serviceRegistrationRepository.Get(serviceName)
+	require.NoError(t, err)
+	require.Equal(t, serviceRegistrationAfterBeingStopped.GetStatus(), service.ServiceStatus_Stopped)
 }
 
 func TestStopService_StopUserServicesFailed(t *testing.T) {
@@ -601,7 +615,8 @@ func TestStopService_StopUserServicesFailed(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	network.registeredServiceInfo[serviceName] = serviceRegistration
+	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	require.NoError(t, err)
 
 	// The service is registered before being started
 	backend.EXPECT().StopUserServices(
@@ -655,7 +670,8 @@ func TestStopService_ServiceAlreadyStopped(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	network.registeredServiceInfo[serviceName] = serviceRegistration
+	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	require.NoError(t, err)
 
 	// The service is registered before being started
 	backend.EXPECT().StopUserServices(
@@ -707,7 +723,8 @@ func TestStartService_Successful(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	network.registeredServiceInfo[serviceName] = serviceRegistration
+	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	require.NoError(t, err)
 
 	// The service is registered before being started
 	backend.EXPECT().StartRegisteredUserServices(
@@ -726,7 +743,9 @@ func TestStartService_Successful(t *testing.T) {
 
 	err = network.StartService(ctx, string(serviceName))
 	require.Nil(t, err)
-	require.Equal(t, serviceRegistration.GetStatus(), service.ServiceStatus_Started)
+	serviceRegistrationAfterBeingStarted, err := network.serviceRegistrationRepository.Get(serviceName)
+	require.NoError(t, err)
+	require.Equal(t, serviceRegistrationAfterBeingStarted.GetStatus(), service.ServiceStatus_Started)
 }
 
 func TestStartService_StartRegisteredUserServicesFailed(t *testing.T) {
@@ -758,7 +777,8 @@ func TestStartService_StartRegisteredUserServicesFailed(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	network.registeredServiceInfo[serviceName] = serviceRegistration
+	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	require.NoError(t, err)
 
 	// The service is registered before being started
 	backend.EXPECT().StartRegisteredUserServices(
@@ -810,7 +830,8 @@ func TestStartService_ServiceAlreadyStarted(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	network.registeredServiceInfo[serviceName] = serviceRegistration
+	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	require.NoError(t, err)
 
 	// The service is registered before being started
 	backend.EXPECT().StartRegisteredUserServices(
@@ -863,7 +884,8 @@ func TestUpdateService(t *testing.T) {
 		testServiceHostnameFromInt(existingServiceIndex))
 	existingServiceRegistration.SetConfig(initialServiceConfig)
 	existingServiceRegistration.SetStatus(service.ServiceStatus_Started)
-	network.registeredServiceInfo[existingServiceRegistration.GetName()] = existingServiceRegistration
+	err = network.serviceRegistrationRepository.Save(existingServiceRegistration.GetName(), existingServiceRegistration)
+	require.NoError(t, err)
 
 	// service that will fail because it's not registered in the enclave prior to update
 	unknownServiceIndex := 2
@@ -886,7 +908,8 @@ func TestUpdateService(t *testing.T) {
 		testServiceHostnameFromInt(failedToBeRemovedServiceIndex))
 	failedToBeRemovedServiceRegistration.SetConfig(initialServiceConfig)
 	failedToBeRemovedServiceRegistration.SetStatus(service.ServiceStatus_Started)
-	network.registeredServiceInfo[failedToBeRemovedServiceRegistration.GetName()] = failedToBeRemovedServiceRegistration
+	err = network.serviceRegistrationRepository.Save(failedToBeRemovedServiceRegistration.GetName(), failedToBeRemovedServiceRegistration)
+	require.NoError(t, err)
 
 	// service that will fail to be re-created once it has been removed
 	failedToBeRecreatedServiceIndex := 4
@@ -899,7 +922,8 @@ func TestUpdateService(t *testing.T) {
 		testServiceHostnameFromInt(failedToBeRecreatedServiceIndex))
 	failedToBeRecreatedServiceRegistration.SetConfig(initialServiceConfig)
 	failedToBeRecreatedServiceRegistration.SetStatus(service.ServiceStatus_Started)
-	network.registeredServiceInfo[failedToBeRecreatedServiceRegistration.GetName()] = failedToBeRecreatedServiceRegistration
+	err = network.serviceRegistrationRepository.Save(failedToBeRecreatedServiceRegistration.GetName(), failedToBeRecreatedServiceRegistration)
+	require.NoError(t, err)
 
 	// The service will be removed first
 	backend.EXPECT().RemoveRegisteredUserServiceProcesses(
@@ -965,21 +989,26 @@ func TestUpdateService(t *testing.T) {
 	require.Contains(t, failure, failedToBeRemovedServiceRegistration.GetName())
 	require.Contains(t, failure, failedToBeRecreatedServiceRegistration.GetName())
 
-	newExistingServiceRegistration, found := network.registeredServiceInfo[existingServiceRegistration.GetName()]
-	require.True(t, found)
+	newExistingServiceRegistration, err := network.serviceRegistrationRepository.Get(existingServiceRegistration.GetName())
+	require.NoError(t, err)
+	require.NotNil(t, newExistingServiceRegistration)
+
 	require.Equal(t, newExistingServiceRegistration.GetStatus(), service.ServiceStatus_Started)
 	require.Equal(t, newExistingServiceRegistration.GetConfig(), updatedServiceConfig)
 
-	_, found = network.registeredServiceInfo[unknownServiceRegistration.GetName()]
-	require.False(t, found)
+	exist, err := network.serviceRegistrationRepository.Exist(unknownServiceRegistration.GetName())
+	require.NoError(t, err)
+	require.False(t, exist)
 
-	newFailedToBeRemovedServiceRegistration, found := network.registeredServiceInfo[failedToBeRemovedServiceRegistration.GetName()]
-	require.True(t, found)
+	newFailedToBeRemovedServiceRegistration, err := network.serviceRegistrationRepository.Get(failedToBeRemovedServiceRegistration.GetName())
+	require.NoError(t, err)
+	require.NotNil(t, newFailedToBeRemovedServiceRegistration)
 	require.Equal(t, newFailedToBeRemovedServiceRegistration.GetStatus(), service.ServiceStatus_Started)
 	require.Equal(t, newFailedToBeRemovedServiceRegistration.GetConfig(), initialServiceConfig)
 
-	newFailedToBeRecreatedServiceRegistration, found := network.registeredServiceInfo[failedToBeRecreatedServiceRegistration.GetName()]
-	require.True(t, found)
+	newFailedToBeRecreatedServiceRegistration, err := network.serviceRegistrationRepository.Get(failedToBeRecreatedServiceRegistration.GetName())
+	require.NoError(t, err)
+	require.NotNil(t, newFailedToBeRecreatedServiceRegistration)
 	require.Equal(t, newFailedToBeRecreatedServiceRegistration.GetStatus(), service.ServiceStatus_Registered)
 	require.Nil(t, newFailedToBeRecreatedServiceRegistration.GetConfig())
 }
