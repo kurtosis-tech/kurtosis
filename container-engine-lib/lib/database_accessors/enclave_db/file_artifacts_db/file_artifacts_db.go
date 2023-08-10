@@ -21,13 +21,13 @@ type fileArtifactData struct {
 }
 
 var (
-	takenIpAddressBucketName = []byte("file-artifact")
-	simpleKey                = []byte("my-key")
+	fileArtifactBucketName    = []byte("file-artifact")
+	fileArtifactDataStructKey = []byte("file-artifact-data-struct")
 )
 
-func (store *FileArtifactPersisted) ListFiles() map[string]bool {
+func (fileArtifactDb *FileArtifactPersisted) ListFiles() map[string]bool {
 	artifactNameSet := make(map[string]bool)
-	for artifactName := range store.data.ArtifactNameToArtifactUuid {
+	for artifactName := range fileArtifactDb.data.ArtifactNameToArtifactUuid {
 		artifactNameSet[artifactName] = true
 	}
 	return artifactNameSet
@@ -39,7 +39,7 @@ func (fileArtifactDb *FileArtifactPersisted) Persist() error {
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred marshalling data '%v'", fileArtifactDb.data)
 		}
-		return tx.Bucket(takenIpAddressBucketName).Put(simpleKey, jsonData)
+		return tx.Bucket(fileArtifactBucketName).Put(fileArtifactDataStructKey, jsonData)
 	})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred during file artifact db update")
@@ -122,17 +122,17 @@ func GetOrCreateNewFileArtifactsDb() (*FileArtifactPersisted, error) {
 
 func GetFileArtifactsDbFromEnclaveDb(db *enclave_db.EnclaveDB, data *fileArtifactData) (*FileArtifactPersisted, error) {
 	err := db.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucket(takenIpAddressBucketName)
+		bucket, err := tx.CreateBucket(fileArtifactBucketName)
 		if err != nil && err != bolt.ErrBucketExists {
 			return stacktrace.Propagate(err, "An error occurred while creating file artifact bucket")
 		}
 		if err != bolt.ErrBucketExists {
-			if err = bucket.Put(simpleKey, consts.EmptyValueForJsonSet); err != nil {
+			if err = bucket.Put(fileArtifactDataStructKey, consts.EmptyValueForJsonSet); err != nil {
 				return stacktrace.Propagate(err, "An error occurred while creating updating artifact bucket o '%v'", consts.EmptyValueForJsonSet)
 			}
 			return nil
 		}
-		content := tx.Bucket(takenIpAddressBucketName).Get(simpleKey)
+		content := tx.Bucket(fileArtifactBucketName).Get(fileArtifactDataStructKey)
 		if err := json.Unmarshal(content, data); err != nil {
 			return stacktrace.Propagate(err, "An error occurred restoring previous file artifact db state from '%v'", content)
 		}
