@@ -33,7 +33,7 @@ func CreateLogsAggregator(
 
 	logsAggregatorNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator network")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator network.")
 	}
 	targetNetworkId := logsAggregatorNetwork.GetId()
 

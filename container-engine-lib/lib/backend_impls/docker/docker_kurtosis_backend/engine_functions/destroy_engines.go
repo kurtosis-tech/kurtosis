@@ -61,5 +61,7 @@ func DestroyEngines(
 		)
 	}
 
+	// destroy log aggregator components
+
 	return successfulGuids, erroredGuids, nil
 }
