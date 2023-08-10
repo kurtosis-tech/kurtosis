@@ -17,13 +17,17 @@ const (
 	shouldShowStoppedLogsAggregatorContainers = true
 )
 
+// Returns nil [LogsAggregator] object if no container is found
 func getLogsAggregatorObjectAndContainerId(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_aggregator.LogsAggregator, string, error) {
 	logsAggregatorContainer, err := getLogsAggregatorContainer(ctx, dockerManager)
 	if err != nil {
-		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs Aggregator containers")
+		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs aggregator containers")
+	}
+	if logsAggregatorContainer == nil {
+		return nil, "", nil
 	}
 
 	logsAggregatorContainerID := logsAggregatorContainer.GetId()
@@ -41,6 +45,7 @@ func getLogsAggregatorObjectAndContainerId(
 	return logsAggregatorObject, logsAggregatorContainerID, nil
 }
 
+// Returns nil [Container] object if no logs aggregator container is found
 func getLogsAggregatorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
 	logsAggregatorContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
@@ -56,7 +61,7 @@ func getLogsAggregatorContainer(ctx context.Context, dockerManager *docker_manag
 		return nil, nil
 	}
 	if len(matchingLogsAggregatorContainers) > 1 {
-		return nil, stacktrace.NewError("Found more than one logs Aggregator Docker container'; this is a bug in Kurtosis")
+		return nil, stacktrace.NewError("Found more than one logs aggregator Docker container'; this is a bug in Kurtosis")
 	}
 	return matchingLogsAggregatorContainers[0], nil
 }
