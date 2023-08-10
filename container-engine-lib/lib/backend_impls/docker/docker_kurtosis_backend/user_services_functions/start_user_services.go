@@ -178,20 +178,15 @@ func StartRegisteredUserServices(
 	// The least we can do is check if the collector server is healthy before starting the user service, if in case it gets shut down later we can't do much about it anyway.
 	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
 		return nil, nil,
-			stacktrace.Propagate(err, "An error occurred while waiting for the log container to become available")
+			stacktrace.Propagate(err, "An error occurred while waiting to see if the logs collector was available.")
 	}
 
-	//We use the public TCP address because the logging driver connection link is from the Docker demon to the logs collector container
-	//so the direction is from the host machine to the container inside the Docker cluster
-	logsCollectorServiceAddress, err := logsCollector.GetEnclaveNetworkTcpAddress()
+	logsCollectorEnclaveAddr, err := logsCollector.GetEnclaveNetworkAddressString()
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the private TCP address")
 	}
 
-	//The following docker labels will be added into the logs stream which is necessary for creating new tags
-	//in the logs database and then use it for querying them to get the specific user service's logs
-	//even the 'enclaveUuid' value is used for Fluentbit to send it to Loki as the "X-Scope-OrgID" request's header
-	//due Loki is now configured to use multi tenancy, and we established this relation: enclaveUuid = tenantID
+	// The following docker labels will be added into the logs stream which is necessary for filtering, retrieving persisted logs
 	logsCollectorLabels := logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels()
 
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
@@ -202,7 +197,7 @@ func StartRegisteredUserServices(
 		enclaveObjAttrsProvider,
 		freeIpProviderForEnclave,
 		dockerManager,
-		logsCollectorServiceAddress,
+		logsCollectorEnclaveAddr,
 		logsCollectorLabels,
 	)
 	if err != nil {
@@ -403,7 +398,7 @@ func runStartServiceOperationsInParallel(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
-	logsCollectorAddress logs_collector.LogsCollectorAddress,
+	logsCollectorAddress string,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) (
 	map[service.ServiceUUID]*service.Service,
@@ -464,7 +459,7 @@ func createStartServiceOperation(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
-	logsCollectorAddress logs_collector.LogsCollectorAddress,
+	logsCollectorAddress string,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) operation_parallelizer.Operation {
 	id := serviceRegistration.GetName()
@@ -600,10 +595,9 @@ func createStartServiceOperation(
 			return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
 		}
 
-		logsCollectorAddressStr := string(logsCollectorAddress)
-		//The container will be configured to send the logs to the Fluentbit logs collector server
+		// The container will be configured to send the logs to the Fluentbit logs collector server
 		fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
-			logsCollectorAddressStr,
+			logsCollectorAddress,
 			logsCollectorLabels,
 		)
 

@@ -223,12 +223,12 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
 	}
 	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
-		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for sending the logs to")
+		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for it to send logs to.")
 	}
 
 	logsCollectorIpAddressInEnclaveNetwork := logsCollector.GetEnclaveNetworkIpAddress()
 	if logsCollectorIpAddressInEnclaveNetwork == nil {
-		return nil, nil, stacktrace.NewError("Expected the logs collector has ip address in enclave network but this is nil")
+		return nil, nil, stacktrace.NewError("Expected the logs collector to have an ip address in the enclave network but it does not.")
 	}
 
 	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorIpAddressInEnclaveNetwork, logsCollector.GetPrivateHttpPort().GetNumber())

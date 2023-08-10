@@ -32,7 +32,6 @@ const (
 	defaultEngineVersion          = ""
 	waitUntilEngineStoppedTries   = 5
 	waitUntilEngineStoppedCoolOff = 5 * time.Second
-	defaultLogAggregatorPortNum   = uint16(9714)
 )
 
 type EngineManager struct {

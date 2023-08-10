@@ -260,7 +260,6 @@ func newLogsResponse(
 	notFoundServiceUuids map[string]bool,
 ) *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
 	serviceLogLinesByUuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(serviceLogsByServiceUuid))
-	logrus.Infof("YOLOL HEHEH")
 	for serviceUuid := range requestedServiceUuids {
 		serviceUuidStr := string(serviceUuid)
 		_, isInNotFoundUuidList := notFoundServiceUuids[serviceUuidStr]

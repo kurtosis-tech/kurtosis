@@ -12,15 +12,13 @@ const (
 	ipAndPortSeparator = ":"
 )
 
-type LogsCollectorAddress string
-
 // This component is responsible for:
 // 1. collecting logs from all services within an enclave
 // 2. forwarding these lgos to the logs aggregator
 type LogsCollector struct {
 	status container_status.ContainerStatus
 
-	// This information will be nil if the logs database container isn't running
+	// This information will be nil if the logs collector container isn't running
 	privateTcpPort  *port_spec.PortSpec
 	privateHttpPort *port_spec.PortSpec
 
@@ -65,7 +63,9 @@ func (logsCollector *LogsCollector) GetPrivateHttpPort() *port_spec.PortSpec {
 	return logsCollector.privateHttpPort
 }
 
-func (logsCollector *LogsCollector) GetEnclaveNetworkTcpAddress() (LogsCollectorAddress, error) {
+// Returns an address string with format <ip address>:<port> of the logs collector's address within the enclave network
+// This address can by containers in the enclave to forward logs to the logs collector
+func (logsCollector *LogsCollector) GetEnclaveNetworkAddressString() (string, error) {
 	if logsCollector.maybeEnclaveNetworkIpAddress == nil {
 		return "", stacktrace.NewError("It is impossible to return the logs collector private TCP address because the value of its private IP address is nil")
 	}
@@ -75,7 +75,5 @@ func (logsCollector *LogsCollector) GetEnclaveNetworkTcpAddress() (LogsCollector
 	}
 
 	logsCollectorAddressStr := fmt.Sprintf("%v%v%v", logsCollector.maybeEnclaveNetworkIpAddress, ipAndPortSeparator, logsCollector.privateTcpPort.GetNumber())
-	logsCollectorAddress := LogsCollectorAddress(logsCollectorAddressStr)
-
-	return logsCollectorAddress, nil
+	return logsCollectorAddressStr, nil
 }
