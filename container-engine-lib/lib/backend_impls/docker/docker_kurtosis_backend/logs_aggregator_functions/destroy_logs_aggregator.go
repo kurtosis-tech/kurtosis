@@ -12,7 +12,7 @@ const (
 	stopLogsAggregatorContainerTimeout = 1 * time.Minute
 )
 
-// Returns nil if logs aggregator container is successfully destroyed or no logs aggregator container was found
+// Destroys logs aggregator idempotently, returns nil if no logs aggregator logs aggregator container was found
 func DestroyLogsAggregator(ctx context.Context, dockerManager *docker_manager.DockerManager) error {
 	_, maybeLogsAggregatorContainerId, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
 	if err != nil {

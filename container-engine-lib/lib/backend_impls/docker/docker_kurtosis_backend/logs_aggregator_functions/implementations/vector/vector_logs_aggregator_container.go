@@ -80,14 +80,15 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 		}
 	}()
 
-	aggregatorIPAddr, err := getLogsAggregatorIPAddr(ctx, containerId, dockerManager)
+	_, err = getLogsAggregatorIPAddr(ctx, containerId, dockerManager)
 	if err != nil {
 		return "", nil, nil, err
 	}
-	availabilityChecker := NewVectorAvailabilityChecker(aggregatorIPAddr)
-	if err = availabilityChecker.WaitForAvailability(); err != nil {
-		return "", nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the logs aggregator container to become available")
-	}
+
+	//availabilityChecker := NewVectorAvailabilityChecker(aggregatorIPAddr)
+	//if err = availabilityChecker.WaitForAvailability(); err != nil {
+	//	return "", nil, nil, stacktrace.Propagate(err, "An error occurred while waiting for the logs aggregator container to become available")
+	//}
 
 	shouldRemoveLogsAggregatorContainer = false
 	return containerId, containerLabelStrs, removeContainerFunc, nil

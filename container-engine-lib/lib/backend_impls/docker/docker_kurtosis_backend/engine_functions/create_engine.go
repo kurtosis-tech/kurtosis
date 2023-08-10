@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -73,9 +74,8 @@ func CreateEngine(
 	logrus.Infof("Starting the centralized logs components...")
 	removeCentralizedLogsComponentsFunc, err := createCentralizedLogsComponents(
 		ctx,
-		targetNetworkId,
-		objAttrsProvider,
 		dockerManager,
+		objAttrsProvider,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
@@ -217,33 +217,20 @@ func CreateEngine(
 // ====================================================================================================
 func createCentralizedLogsComponents(
 	ctx context.Context,
-	targetNetworkId string,
-	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
+	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 ) (func(), error) {
-	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer()
+	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() // Declaring implementation
 
-	_, _, removeLogsAggregatorContainerFunc, err := logsAggregatorContainer.CreateAndStart(
+	_, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
-		uint16(9714),
-		targetNetworkId,
-		objAttrsProvider,
+		logsAggregatorContainer,
 		dockerManager,
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator container.")
-	}
-	shouldRemoveLogsAggregatorContainer := true
-	defer func() {
-		if shouldRemoveLogsAggregatorContainer {
-			removeLogsAggregatorContainerFunc()
-		}
-	}()
+		objAttrsProvider)
 
 	removeCentralizedLogsComponentsFunc := func() {
-		removeLogsAggregatorContainerFunc()
+		removeLogsAggregatorFunc()
 	}
 
-	shouldRemoveLogsAggregatorContainer = false
-	return removeCentralizedLogsComponentsFunc, nil
+	return removeCentralizedLogsComponentsFunc, err
 }
