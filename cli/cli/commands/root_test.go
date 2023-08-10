@@ -8,7 +8,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	"os"
 	"testing"
 )
@@ -88,7 +87,7 @@ func TestParseVersionStrToSemVer_CanParseValidVersions(t *testing.T) {
 
 func createNewTempFileAndGetFilepath() (string, func() error, error) {
 
-	tempFile, err := ioutil.TempFile("", temporaryTestFileFilename)
+	tempFile, err := os.CreateTemp("", temporaryTestFileFilename)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred creating temporary file for test purpose with name '%v'", temporaryTestFileFilename)
 	}

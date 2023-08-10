@@ -35,6 +35,7 @@ const (
 	allowedNetworkSecondOctet = 16
 	enclaveSubrangeStart      = 0
 	enclaveSubrangeEnd        = 1 << enclaveWidthBits
+	numBitsInByte             = 8
 )
 
 var (
@@ -153,7 +154,7 @@ func (provider *DockerNetworkAllocator) CreateNewNetwork(
 // 170.16.nnnnnn00.0/16 where nnnnnn are 6 bits to address the network, and the other 10 bits address the services
 func findRandomFreeNetwork(networks []*net.IPNet) (*net.IPNet, error) {
 	for enclaveSubrange := enclaveSubrangeStart; enclaveSubrange < enclaveSubrangeEnd; enclaveSubrange++ {
-		thirdOctet := enclaveSubrange << (8 - enclaveWidthBits)
+		thirdOctet := enclaveSubrange << (numBitsInByte - enclaveWidthBits)
 		ipAddressString := fmt.Sprintf("%v.%v.%v.0", allowedNetworkFirstOctet, allowedNetworkSecondOctet, thirdOctet)
 		resultNetworkIp := net.ParseIP(ipAddressString)
 		resultNetwork := &net.IPNet{

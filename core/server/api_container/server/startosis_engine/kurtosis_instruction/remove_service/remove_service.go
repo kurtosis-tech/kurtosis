@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -69,11 +70,13 @@ func (builtin *RemoveServiceCapabilities) Interpret(_ string, arguments *builtin
 }
 
 func (builtin *RemoveServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if !validatorEnvironment.DoesServiceNameExist(builtin.serviceName) {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ComponentNotFound {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' doesn't exist", RemoveServiceBuiltinName, builtin.serviceName)
 	}
 	validatorEnvironment.RemoveServiceName(builtin.serviceName)
 	validatorEnvironment.RemoveServiceFromPrivatePortIDMapping(builtin.serviceName)
+	validatorEnvironment.FreeMemory(builtin.serviceName)
+	validatorEnvironment.FreeCPU(builtin.serviceName)
 	return nil
 }
 
@@ -84,4 +87,8 @@ func (builtin *RemoveServiceCapabilities) Execute(ctx context.Context, _ *builti
 	}
 	instructionResult := fmt.Sprintf("Service '%s' with service UUID '%s' removed", builtin.serviceName, serviceUUID)
 	return instructionResult, nil
+}
+
+func (builtin *RemoveServiceCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	return enclave_structure.InstructionIsNotResolvableAbort
 }

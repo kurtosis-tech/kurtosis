@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -69,7 +70,7 @@ func (builtin *StartServiceCapabilities) Interpret(_ string, arguments *builtin_
 }
 
 func (builtin *StartServiceCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if !validatorEnvironment.DoesServiceNameExist(builtin.serviceName) {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ComponentNotFound {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as service name '%v' doesn't exist", StartServiceBuiltinName, builtin.serviceName)
 	}
 	return nil
@@ -82,4 +83,8 @@ func (builtin *StartServiceCapabilities) Execute(ctx context.Context, _ *builtin
 	}
 	instructionResult := fmt.Sprintf("Service '%s' started", builtin.serviceName)
 	return instructionResult, nil
+}
+
+func (builtin *StartServiceCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	return enclave_structure.InstructionIsNotResolvableAbort
 }

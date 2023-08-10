@@ -47,12 +47,13 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 
-	filesArtifactsHeader = "Files Artifacts"
+	userServicesArtifactsHeader = "User Services"
+	filesArtifactsHeader        = "Files Artifacts"
 )
 
-var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, kurtosisBackend backend_interface.KurtosisBackend, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
-	"User Services":      printUserServices,
-	filesArtifactsHeader: printFilesArtifacts,
+var enclaveObjectPrintingFuncs = map[string]func(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuid bool, isAPIContainerRunning bool) error{
+	userServicesArtifactsHeader: printUserServices,
+	filesArtifactsHeader:        printFilesArtifacts,
 }
 
 var EnclaveInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -90,7 +91,7 @@ func run(
 ) error {
 	enclaveIdentifier, err := args.GetNonGreedyArg(enclaveIdentifierArgKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave identifier arg '%v' but none was found; this is a bug with Kurtosis!", enclaveIdentifierArgKey)
+		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave identifier arg '%v' but none was found; this is a bug in the Kurtosis CLI!", enclaveIdentifierArgKey)
 	}
 
 	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
@@ -166,12 +167,12 @@ func PrintEnclaveInspect(ctx context.Context, kurtosisBackend backend_interface.
 			return stacktrace.NewError("No printing function found for enclave object '%v'; this is a bug in Kurtosis!", header)
 		}
 
-		numRunesInHeader := utf8.RuneCountInString(header) + 2 // 2 because there will be a space before and after the header
-		numPadChars := (headerWidthChars - numRunesInHeader) / 2
+		numRunesInHeader := utf8.RuneLen(' ') + utf8.RuneCountInString(header) + utf8.RuneLen(' ') // there will be a space before and after the header
+		numPadChars := (headerWidthChars - numRunesInHeader) / 2                                   //nolint:gomnd
 		padStr := strings.Repeat(headerPadChar, numPadChars)
 		fmt.Printf("%v %v %v\n", padStr, header, padStr)
 
-		if err := printingFunc(ctx, kurtosisCtx, kurtosisBackend, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
+		if err := printingFunc(ctx, kurtosisCtx, enclaveInfo, showFullUuids, isApiContainerRunning); err != nil {
 			logrus.Error(err)
 			headersWithPrintErrs = append(headersWithPrintErrs, header)
 		}

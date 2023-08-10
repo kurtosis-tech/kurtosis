@@ -196,6 +196,88 @@ func StartRegisteredUserServices(
 	return successfulServicesPool, failedServicesPool, nil
 }
 
+func RemoveRegisteredUserServiceProcesses(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	services map[service.ServiceUUID]bool,
+	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
+	dockerManager *docker_manager.DockerManager,
+) (
+	map[service.ServiceUUID]bool,
+	map[service.ServiceUUID]error,
+	error,
+) {
+	successfullyRemovedService := map[service.ServiceUUID]bool{}
+	failedServicesPool := map[service.ServiceUUID]error{}
+
+	serviceUuidsToUpdate := map[service.ServiceUUID]bool{}
+	for serviceUuid := range services {
+		if _, found := serviceRegistrations[serviceUuid]; found {
+			serviceUuidsToUpdate[serviceUuid] = true
+		} else {
+			failedServicesPool[serviceUuid] = stacktrace.NewError("Unable to update service '%s' that is not "+
+				"registered inside this enclave", serviceUuid)
+		}
+	}
+
+	removeServiceFilters := &service.ServiceFilters{
+		Names:    nil,
+		UUIDs:    serviceUuidsToUpdate,
+		Statuses: nil,
+	}
+
+	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveUuid, removeServiceFilters, dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", removeServiceFilters)
+	}
+
+	servicesToStartByContainerId := map[string]*service.Service{}
+	for uuid, serviceResources := range allDockerResources {
+		serviceObj, found := allServiceObjs[uuid]
+		if !found {
+			// Should never happen; there should be a 1:1 mapping between service_objects:docker_resources by GUID
+			return nil, nil, stacktrace.NewError("No service object found for service '%v' that had Docker resources; this is a bug in Kurtosis", uuid)
+		}
+		servicesToStartByContainerId[serviceResources.ServiceContainer.GetId()] = serviceObj
+	}
+
+	var dockerOperation docker_operation_parallelizer.DockerOperation = func(
+		ctx context.Context,
+		dockerManager *docker_manager.DockerManager,
+		dockerObjectId string,
+	) error {
+		if err := dockerManager.RemoveContainer(ctx, dockerObjectId); err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing user service processes container with ID '%v'", dockerObjectId)
+		}
+		return nil
+	}
+
+	successfulUuidStrs, erroredUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
+		ctx,
+		servicesToStartByContainerId,
+		dockerManager,
+		extractServiceUUIDFromService,
+		dockerOperation,
+	)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing user service processes containers matching filters '%+v'", removeServiceFilters)
+	}
+
+	for failedServiceUuid, failedServiceErr := range erroredUuidStrs {
+		failedServicesPool[service.ServiceUUID(failedServiceUuid)] = failedServiceErr
+	}
+
+	for serviceUuidStr := range successfulUuidStrs {
+		serviceUuid := service.ServiceUUID(serviceUuidStr)
+		serviceConfig, found := services[serviceUuid]
+		if !found {
+			failedServicesPool[serviceUuid] = stacktrace.NewError("An error occurred removing user service processes for service with UUID '%s'", serviceUuid)
+		}
+		successfullyRemovedService[serviceUuid] = serviceConfig
+	}
+	return successfullyRemovedService, failedServicesPool, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper functions
@@ -357,6 +439,7 @@ func createStartServiceOperation(
 
 	return func() (interface{}, error) {
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
+		persistentDirectories := serviceConfig.GetPersistentDirectories()
 		containerImageName := serviceConfig.GetContainerImageName()
 		privatePorts := serviceConfig.GetPrivatePorts()
 		publicPorts := serviceConfig.GetPublicPorts()
@@ -399,7 +482,7 @@ func createStartServiceOperation(
 			defer func() {
 				if shouldDeleteVolumes {
 					for volumeName := range candidateVolumeMounts {
-						// Use background context so we delete these even if input context was cancelled
+						// Use background context, so we delete these even if input context was cancelled
 						if err := dockerManager.RemoveVolume(context.Background(), volumeName); err != nil {
 							logrus.Errorf("Starting the service failed so we tried to delete files artifact expansion volume '%v' that we created, but doing so threw an error:\n%v", volumeName, err)
 							logrus.Errorf("You'll need to delete volume '%v' manually!", volumeName)
@@ -407,7 +490,43 @@ func createStartServiceOperation(
 					}
 				}
 			}()
-			volumeMounts = candidateVolumeMounts
+
+			for dirpath, volumeName := range candidateVolumeMounts {
+				if _, found := volumeMounts[dirpath]; found {
+					return nil, stacktrace.NewError("An error occurred doing files artifacts expansion. Multiple volumes were mounted on the same path.")
+				}
+				volumeMounts[dirpath] = volumeName
+			}
+		}
+
+		if persistentDirectories != nil {
+			candidateVolumeMounts, err := getOrCreatePersistentDirectories(
+				ctx,
+				serviceUUID,
+				enclaveObjAttrsProvider,
+				persistentDirectories.ServiceDirpathToDirectoryPersistentKey,
+				dockerManager,
+			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating persistent directory volumes")
+			}
+			defer func() {
+				if shouldDeleteVolumes {
+					for volumeName := range candidateVolumeMounts {
+						// Use background context, so we delete these even if input context was cancelled
+						if err := dockerManager.RemoveVolume(context.Background(), volumeName); err != nil {
+							logrus.Errorf("Starting the service failed so we tried to delete persistent directory volume '%v' that we created, but doing so threw an error:\n%v", volumeName, err)
+							logrus.Errorf("You'll need to delete volume '%v' manually!", volumeName)
+						}
+					}
+				}
+			}()
+			for dirpath, volumeName := range candidateVolumeMounts {
+				if _, found := volumeMounts[dirpath]; found {
+					return nil, stacktrace.NewError("An error occurred creating persistent directory volumes. Multiple volumes were mounted on the same path.")
+				}
+				volumeMounts[dirpath] = volumeName
+			}
 		}
 
 		containerAttrs, err := enclaveObjAttrsProvider.ForUserServiceContainer(
@@ -464,6 +583,10 @@ func createStartServiceOperation(
 			memoryAllocationMegabytes,
 		).WithSkipAddingToBridgeNetworkIfStaticIpIsSet(
 			skipAddingUserServiceToBridgeNetwork,
+		).WithContainerInitEnabled(
+			true,
+		).WithVolumeMounts(
+			volumeMounts,
 		)
 
 		if entrypointArgs != nil {
@@ -471,9 +594,6 @@ func createStartServiceOperation(
 		}
 		if cmdArgs != nil {
 			createAndStartArgsBuilder.WithCmdArgs(cmdArgs)
-		}
-		if volumeMounts != nil {
-			createAndStartArgsBuilder.WithVolumeMounts(volumeMounts)
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()

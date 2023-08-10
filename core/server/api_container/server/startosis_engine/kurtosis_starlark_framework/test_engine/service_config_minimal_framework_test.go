@@ -49,12 +49,12 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 		nil,
 		map[string]string{},
 		nil,
+		nil,
 		0,
 		0,
 		service_config.DefaultPrivateIPAddrPlaceholder,
 		0,
 		0,
-		service_config.DefaultSubnetwork,
 	)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
 }

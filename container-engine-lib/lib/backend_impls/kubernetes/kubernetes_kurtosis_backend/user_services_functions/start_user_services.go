@@ -133,7 +133,7 @@ func StartRegisteredUserServices(
 	//TODO this is a huge hack to temporarily enable static ports for NEAR until we have a more productized solution
 	for _, config := range services {
 		publicPorts := config.GetPublicPorts()
-		if publicPorts != nil && len(publicPorts) > 0 {
+		if len(publicPorts) > 0 {
 			logrus.Warn("The Kubernetes Kurtosis backend doesn't support defining static ports for services; the public ports will be ignored.")
 		}
 	}
@@ -191,6 +191,39 @@ func StartRegisteredUserServices(
 
 	logrus.Debugf("Started services '%v' successfully while '%v' failed", successfulServicesPool, failedServicesPool)
 	return successfulServicesPool, failedServicesPool, nil
+}
+
+func RemoveRegisteredUserServiceProcesses(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	services map[service.ServiceUUID]bool,
+	cliModeArgs *shared_helpers.CliModeArgs,
+	apiContainerModeArgs *shared_helpers.ApiContainerModeArgs,
+	engineServerModeArgs *shared_helpers.EngineServerModeArgs,
+	kubernetesManager *kubernetes_manager.KubernetesManager,
+) (
+	map[service.ServiceUUID]bool,
+	map[service.ServiceUUID]error,
+	error,
+) {
+	// in Kubernetes, removing service process is equivalent to stopping it. It sets its number of pod to zero
+	removeServiceProcessesFilters := &service.ServiceFilters{
+		Names:    nil,
+		UUIDs:    services,
+		Statuses: nil,
+	}
+	successfullyRemovedService, failedRemovedService, err := StopUserServices(
+		ctx,
+		enclaveUuid,
+		removeServiceProcessesFilters,
+		cliModeArgs,
+		apiContainerModeArgs,
+		engineServerModeArgs,
+		kubernetesManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error removing service processes")
+	}
+	return successfullyRemovedService, failedRemovedService, nil
 }
 
 // ====================================================================================================
@@ -254,6 +287,7 @@ func createStartServiceOperation(
 
 	return func() (interface{}, error) {
 		filesArtifactsExpansion := serviceConfig.GetFilesArtifactsExpansion()
+		persistentDirectories := serviceConfig.GetPersistentDirectories()
 		containerImageName := serviceConfig.GetContainerImageName()
 		privatePorts := serviceConfig.GetPrivatePorts()
 		entrypointArgs := serviceConfig.GetEntrypointArgs()
@@ -287,19 +321,59 @@ func createStartServiceOperation(
 		serviceRegistrationObj := matchingObjectAndResources.ServiceRegistration
 		serviceName := serviceRegistrationObj.GetName()
 
+		objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
+		enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveUuid)
+
 		var podInitContainers []apiv1.Container
 		var podVolumes []apiv1.Volume
+		var err error
 		var userServiceContainerVolumeMounts []apiv1.VolumeMount
 		if filesArtifactsExpansion != nil {
-			podVolumes, userServiceContainerVolumeMounts, podInitContainers, _ = prepareFilesArtifactsExpansionResources(
+			podVolumes, userServiceContainerVolumeMounts, podInitContainers, err = prepareFilesArtifactsExpansionResources(
 				filesArtifactsExpansion.ExpanderImage,
 				filesArtifactsExpansion.ExpanderEnvVars,
 				filesArtifactsExpansion.ExpanderDirpathsToServiceDirpaths,
 			)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating the volumes necessary to perform file artifact expansion for service '%s'", serviceName)
+			}
 		}
 
-		objectAttributesProvider := object_attributes_provider.GetKubernetesObjectAttributesProvider()
-		enclaveObjAttributesProvider := objectAttributesProvider.ForEnclave(enclaveUuid)
+		shouldDestroyPersistentVolumesAndClaims := true
+		createVolumesWithClaims := map[string]*kubernetesVolumeWithClaim{}
+		if persistentDirectories != nil {
+			createVolumesWithClaims, err = preparePersistentDirectoriesResources(
+				ctx,
+				namespaceName,
+				serviceUuid,
+				enclaveObjAttributesProvider,
+				persistentDirectories.ServiceDirpathToDirectoryPersistentKey,
+				kubernetesManager)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred creating the persistent volumes and claims requested for service '%s'", serviceName)
+			}
+			for serviceMountDirPath, volumeAndClaim := range createVolumesWithClaims {
+				podVolumes = append(podVolumes, *volumeAndClaim.GetVolume())
+				userServiceContainerVolumeMounts = append(userServiceContainerVolumeMounts, *volumeAndClaim.GetVolumeMount(serviceMountDirPath))
+			}
+		}
+		defer func() {
+			if !shouldDestroyPersistentVolumesAndClaims {
+				return
+			}
+			for _, volumeAndClaim := range createVolumesWithClaims {
+				volumeClaimName := volumeAndClaim.VolumeClaimName
+				volumeName := volumeAndClaim.VolumeName
+				if err := kubernetesManager.RemovePersistentVolumeClaim(ctx, namespaceName, volumeClaimName); err != nil {
+					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the persistent volume claim we created but doing so threw an error:\n%v", err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to remove persistent volume claim '%v' in '%v' manually!!!", volumeClaimName, namespaceName)
+				}
+				if err := kubernetesManager.RemovePersistentVolume(ctx, volumeAndClaim.VolumeName); err != nil {
+					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the persistent volume we created but doing so threw an error:\n%v", err)
+					logrus.Errorf("ACTION REQUIRED: You'll need to remove persistent volume '%v' manually!!!", volumeName)
+				}
+			}
+		}()
 
 		// Create the pod
 		podAttributes, err := enclaveObjAttributesProvider.ForUserServicePod(serviceUuid, serviceName, privatePorts)
@@ -341,11 +415,12 @@ func createStartServiceOperation(
 		}
 		shouldDestroyPod := true
 		defer func() {
-			if shouldDestroyPod {
-				if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
-					logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
-					logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
-				}
+			if !shouldDestroyPod {
+				return
+			}
+			if err := kubernetesManager.RemovePod(ctx, createdPod); err != nil {
+				logrus.Errorf("Starting service didn't complete successfully so we tried to remove the pod we created but doing so threw an error:\n%v", err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to remove pod '%v' in '%v' manually!!!", podName, namespaceName)
 			}
 		}()
 
@@ -382,6 +457,7 @@ func createStartServiceOperation(
 
 		shouldDestroyPod = false
 		shouldUndoServiceUpdate = false
+		shouldDestroyPersistentVolumesAndClaims = false
 		return objectsAndResources.Service, nil
 	}
 }
@@ -555,7 +631,6 @@ func getUserServicePodContainerSpecs(
 		Requests: resourceRequestsList,
 	}
 
-	// TODO create networking sidecars here
 	containers := []apiv1.Container{
 		{
 			Name:  userServiceContainerName,

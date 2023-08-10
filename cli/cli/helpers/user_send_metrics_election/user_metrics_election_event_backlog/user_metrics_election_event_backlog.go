@@ -4,7 +4,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"sync"
@@ -48,7 +47,7 @@ func (eventBacklog *userMetricsElectionEventBacklog) Set(shouldSendMetrics bool)
 		logrus.Debugf("An error occurred getting the user-send-metrics-election filepath\n%v", err)
 	}
 
-	if err := ioutil.WriteFile(filepath, fileContent, filePermissions); err != nil {
+	if err := os.WriteFile(filepath, fileContent, filePermissions); err != nil {
 		return stacktrace.Propagate(err, "An error occurred writing file '%v'", filepath)
 	}
 
@@ -65,7 +64,7 @@ func (eventBacklog *userMetricsElectionEventBacklog) Get() (shouldSendMetrics bo
 		logrus.Debugf("An error occurred getting the user-send-metrics-election filepath\n%v", err)
 	}
 
-	fileContent, err := ioutil.ReadFile(filepath)
+	fileContent, err := os.ReadFile(filepath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return false, false, nil

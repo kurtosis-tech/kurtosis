@@ -3,7 +3,6 @@ package add
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -59,6 +58,7 @@ const (
 	filesFlagKey                     = "files"
 	filesArtifactMountsDelimiter     = ","
 	filesArtifactMountpointDelimiter = ":"
+	defaultLimits                    = 0
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -67,12 +67,11 @@ const (
 	privateIPAddressPlaceholderDefault = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	// Each envvar should be KEY1=VALUE1, which means we should have two components to each envvar declaration
-	expectedNumberKeyValueComponentsInEnvvarDeclaration  = 2
-	portNumberIndex                                      = 0
-	transportProtocolIndex                               = 1
-	applicationProtocolIndex                             = 0
-	remainingPortSpecIndex                               = 1
-	maybePortSpecComponentsLengthWithApplicationProtocol = 2
+	expectedNumberKeyValueComponentsInEnvvarDeclaration = 2
+	portNumberIndex                                     = 0
+	transportProtocolIndex                              = 1
+	expectedPortIdSpecComponentsCount                   = 2
+	expectedMountFragmentsCount                         = 2
 
 	minRemainingPortSpecComponents = 1
 	maxRemainingPortSpecComponents = 2
@@ -289,7 +288,11 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
-	serviceConfigStarlark, err := getServiceConfigStarlark(image, portsStr, cmdArgs, entrypointStr, envvarsStr, filesArtifactMountsStr, privateIPAddressPlaceholder)
+	entrypoint := []string{}
+	if entrypointStr != "" {
+		entrypoint = append(entrypoint, entrypointStr)
+	}
+	serviceConfigStarlark, err := GetServiceConfigStarlark(image, portsStr, cmdArgs, entrypoint, envvarsStr, filesArtifactMountsStr, defaultLimits, defaultLimits, defaultLimits, defaultLimits, privateIPAddressPlaceholder)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -302,11 +305,9 @@ func run(
 		)
 	}
 
-	// TODO Allow adding services to an already-repartitioned enclave
 	starlarkScript := fmt.Sprintf(`def run(plan):
 	plan.add_service(name = "%s", config = %s)
-	plan.print("%s") # we add this print of a random UUID to make sure the single add_service above won't get cached
-`, serviceName, serviceConfigStarlark, uuid.New().String())
+`, serviceName, serviceConfigStarlark)
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
@@ -411,13 +412,18 @@ func run(
 	return nil
 }
 
-func getServiceConfigStarlark(
+// GetServiceConfigStarlark TODO(victor.colombo): Extract this to a more reasonable place
+func GetServiceConfigStarlark(
 	image string,
 	portsStr string,
 	cmdArgs []string,
-	entrypoint string,
+	entrypoint []string,
 	envvarsStr string,
 	filesArtifactMountsStr string,
+	cpuAllocationMillicpus int,
+	memoryAllocationMegabytes int,
+	minCpuMilliCores int,
+	minMemoryMegaBytes int,
 	privateIPAddressPlaceholder string,
 ) (string, error) {
 	envvarsMap, err := parseEnvVarsStr(envvarsStr)
@@ -434,11 +440,7 @@ func getServiceConfigStarlark(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
-	entryPointArgs := []string{}
-	if entrypoint != "" {
-		entryPointArgs = []string{entrypoint}
-	}
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entryPointArgs, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, 0, 0, 0, 0), nil
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes), nil
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings
@@ -495,7 +497,7 @@ func parsePortsStr(portsStr string) (map[string]*kurtosis_core_rpc_api_bindings.
 		}
 
 		portIdSpecComponents := strings.Split(portDeclarationStr, portIdSpecDelimiter)
-		if len(portIdSpecComponents) != 2 {
+		if len(portIdSpecComponents) != expectedPortIdSpecComponentsCount {
 			return nil, stacktrace.NewError("Port declaration string '%v' must be of the form PORTID%vSPEC", portDeclarationStr, portIdSpecDelimiter)
 		}
 		portId := portIdSpecComponents[0]
@@ -572,21 +574,18 @@ of array is 2 then application protocol exists, otherwise it does not. This is b
 strings.Cut() does. // TODO: use that instead once we update go version
 */
 func getMaybeApplicationProtocolFromPortSpecString(portProtocolStr string) (string, string, error) {
-	remainingPortSpec := portProtocolStr
 
-	splitSpecArray := strings.SplitN(portProtocolStr, portApplicationProtocolDelimiter, 2)
+	beforeDelimiter, afterDelimiter, foundDelimiter := strings.Cut(portProtocolStr, portApplicationProtocolDelimiter)
 
-	if splitSpecArray[applicationProtocolIndex] == emptyApplicationProtocol {
+	if !foundDelimiter {
+		return emptyApplicationProtocol, beforeDelimiter, nil
+	}
+
+	if foundDelimiter && beforeDelimiter == emptyApplicationProtocol {
 		return emptyApplicationProtocol, "", stacktrace.NewError("optional application protocol argument cannot be empty")
 	}
 
-	maybeApplicationProtocol := emptyApplicationProtocol
-	if len(splitSpecArray) == maybePortSpecComponentsLengthWithApplicationProtocol {
-		maybeApplicationProtocol = splitSpecArray[applicationProtocolIndex]
-		remainingPortSpec = splitSpecArray[remainingPortSpecIndex]
-	}
-
-	return maybeApplicationProtocol, remainingPortSpec, nil
+	return beforeDelimiter, afterDelimiter, nil
 }
 
 func getPortNumberFromPortSpecString(portNumberStr string) (uint32, error) {
@@ -627,7 +626,7 @@ func parseFilesArtifactMountsStr(filesArtifactMountsStr string) (map[string]stri
 		}
 
 		mountFragments := strings.Split(trimmedMountStr, filesArtifactMountpointDelimiter)
-		if len(mountFragments) != 2 {
+		if len(mountFragments) != expectedMountFragmentsCount {
 			return nil, stacktrace.NewError(
 				"Files artifact mountpoint string %v was '%v' but should be in the form 'mountpoint%sfiles_artifact_name'",
 				idx,

@@ -41,8 +41,8 @@ const (
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
 	emptyFileStr          = ""
-
-	byteGroup = 1024
+	rootLevelFileStr      = ""
+	byteGroup             = 1024
 )
 
 var sizeSuffix = []byte{'K', 'M', 'G', 'T', 'P'}
@@ -72,7 +72,7 @@ var FilesInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 			IsOptional:            isFilePathArgOptional,
 			IsGreedy:              isFilePathArgGreedy,
 			DefaultValue:          emptyFilePath,
-			ArgCompletionProvider: nil,
+			ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletionFunc(enclaveIdentifierArgKey, artifactIdentifierArgKey)),
 		},
 	},
 	RunFunc: run,
@@ -118,7 +118,7 @@ func run(
 	fileDescriptions := filesInspectResponse.GetFileDescriptions()
 
 	if filePath == "" {
-		logrus.Infof("Artifact '%v' contents:\n%v", artifactIdentifierName, buildTree(artifactIdentifierName, fileDescriptions))
+		logrus.Infof("Artifact '%v' contents:%v", artifactIdentifierName, buildTree(fileDescriptions))
 		return nil
 	}
 	index := slices.IndexFunc(fileDescriptions, func(desc *kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) bool {
@@ -160,15 +160,17 @@ func (nm *treeMap) addNodeIfNotPresent(s string) *treeMap {
 }
 
 // Assembles a file tree string
-func buildTree(artifactIdentifierName string, fileDescritions []*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) string {
-	tree := treeprint.NewWithRoot(color.BlueString(artifactIdentifierName))
+func buildTree(fileDescritions []*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription) string {
+	tree := treeprint.NewWithRoot("")
 	tMap := &treeMap{map[string]*treeMap{}, tree}
 	for _, fileDescription := range fileDescritions {
 		dir, file := filepath.Split(fileDescription.GetPath())
-		subdirs := strings.Split(filepath.Clean(dir), string(filepath.Separator))
 		curTree := tMap
-		for _, subdir := range subdirs {
-			curTree = curTree.addBranchIfNotPresent(color.GreenString(subdir))
+		if dir != rootLevelFileStr {
+			subdirs := strings.Split(filepath.Clean(dir), string(filepath.Separator))
+			for _, subdir := range subdirs {
+				curTree = curTree.addBranchIfNotPresent(color.CyanString(subdir))
+			}
 		}
 		if file != emptyFileStr {
 			curTree.addNodeIfNotPresent(fmt.Sprintf("%v [%s]", file, humanReadableSize(fileDescription.GetSize())))
@@ -187,4 +189,49 @@ func humanReadableSize(size uint64) string {
 		fSize /= byteGroup
 	}
 	return fmt.Sprintf("%3.1f%c", fSize, sizeSuffix[suffixIdx])
+}
+
+func getCompletionFunc(enclaveArgKey string, artifactArgKey string) func(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+	return func(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+		kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred connecting to the Kurtosis engine for retrieving the names for tab completion",
+			)
+		}
+
+		enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveArgKey)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the enclave ID using key '%v'", enclaveArgKey)
+		}
+		enclave, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred getting the enclave identifiers",
+			)
+		}
+
+		artifactIdentifier, err := previousArgs.GetNonGreedyArg(artifactArgKey)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the artifact ID using key '%v'", artifactArgKey)
+		}
+		fileArtifactContents, err := enclave.InspectFilesArtifact(ctx, services.FileArtifactName(artifactIdentifier))
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred getting the file artifacts",
+			)
+		}
+		fileArtifactContentPaths := []string{}
+		for _, fileArtifactDescription := range fileArtifactContents.GetFileDescriptions() {
+			fileArtifactContentPath := fileArtifactDescription.GetPath()
+			if fileArtifactDescription.TextPreview != nil {
+				fileArtifactContentPaths = append(fileArtifactContentPaths, fileArtifactContentPath)
+			}
+		}
+
+		return fileArtifactContentPaths, nil
+	}
 }

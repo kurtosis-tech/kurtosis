@@ -11,7 +11,9 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
 	"io"
 	"net"
 	"net/http"
@@ -21,17 +23,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/networking_sidecar"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -46,7 +43,6 @@ const (
 
 	enforceMaxFileSizeLimit = false
 
-	emptyCollectionLength        = 0
 	exactlyOneShortenedUuidMatch = 1
 
 	singleServiceStartupBatch = 1
@@ -63,10 +59,6 @@ const (
 	scanPortTimeout = 200 * time.Millisecond
 )
 
-var (
-	emptyServiceNamesSetToUpdateAllConnections = map[service.ServiceName]bool{}
-)
-
 type storeFilesArtifactResult struct {
 	err               error
 	filesArtifactUuid enclave_data_directory.FilesArtifactUUID
@@ -81,223 +73,43 @@ type DefaultServiceNetwork struct {
 
 	mutex *sync.Mutex // VERY IMPORTANT TO CHECK AT THE START OF EVERY METHOD!
 
-	// Whether partitioning has been enabled for this particular test
-	isPartitioningEnabled bool
-
 	kurtosisBackend backend_interface.KurtosisBackend
 
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory
-
-	topology *partition_topology.PartitionTopology
-
-	// This is access in sub routine to start service in parallel. Hence, the lock right below
-	// TODO: refactor this into its own class, or even better merge it with network topology into a super class
-	//  that holds the complete description of the network in memory
-	networkingSidecars  map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper
-	networkSidecarsLock *sync.Mutex
-
-	networkingSidecarManager networking_sidecar.NetworkingSidecarManager
 
 	// Technically we SHOULD query the backend rather than ever storing any of this information, but we're able to get away with
 	// this because the API container is the only client that modifies service state
 	registeredServiceInfo map[service.ServiceName]*service.ServiceRegistration
 
-	// This contains all service identifiers ever successfully created, this is append only
-	allExistingAndHistoricalIdentifiers []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers
+	// This contains all service identifiers ever successfully created
+	serviceIdentifiersRepository *service_identifiers.ServiceIdentifiersRepository
 }
 
 func NewDefaultServiceNetwork(
 	enclaveUuid enclave.EnclaveUUID,
 	apiContainerInfo *ApiContainerInfo,
-	isPartitioningEnabled bool,
 	kurtosisBackend backend_interface.KurtosisBackend,
 	enclaveDataDir *enclave_data_directory.EnclaveDataDirectory,
-	networkingSidecarManager networking_sidecar.NetworkingSidecarManager,
 	enclaveDb *enclave_db.EnclaveDB,
 ) (*DefaultServiceNetwork, error) {
-	networkTopology, err := partition_topology.NewPartitionTopology(
-		partition_topology.DefaultPartitionId,
-		partition_topology.ConnectionAllowed,
-		enclaveDb,
-	)
+	serviceIdentifiersRepository, err := service_identifiers.GetOrCreateNewServiceIdentifiersRepository(enclaveDb)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the partition topology")
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the service identifiers repository")
 	}
 	return &DefaultServiceNetwork{
-		enclaveUuid:                         enclaveUuid,
-		apiContainerInfo:                    apiContainerInfo,
-		mutex:                               &sync.Mutex{},
-		isPartitioningEnabled:               isPartitioningEnabled,
-		kurtosisBackend:                     kurtosisBackend,
-		enclaveDataDir:                      enclaveDataDir,
-		topology:                            networkTopology,
-		networkingSidecars:                  map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper{},
-		networkSidecarsLock:                 &sync.Mutex{},
-		networkingSidecarManager:            networkingSidecarManager,
-		registeredServiceInfo:               map[service.ServiceName]*service.ServiceRegistration{},
-		allExistingAndHistoricalIdentifiers: []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers{},
+		enclaveUuid:      enclaveUuid,
+		apiContainerInfo: apiContainerInfo,
+		mutex:            &sync.Mutex{},
+
+		kurtosisBackend: kurtosisBackend,
+		enclaveDataDir:  enclaveDataDir,
+
+		registeredServiceInfo:        map[service.ServiceName]*service.ServiceRegistration{},
+		serviceIdentifiersRepository: serviceIdentifiersRepository,
 	}, nil
 }
 
-func (network *DefaultServiceNetwork) SetConnection(
-	ctx context.Context,
-	partition1 service_network_types.PartitionID,
-	partition2 service_network_types.PartitionID,
-	connection partition_topology.PartitionConnection,
-) error {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	isOperationSuccessful := false
-
-	if !network.isPartitioningEnabled {
-		return stacktrace.NewError("Cannot set connection; partitioning is not enabled")
-	}
-
-	currentPartitions, err := network.topology.GetPartitionServices()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting all partitions")
-	}
-	createdPartitionToRemoveIfFailure := map[service_network_types.PartitionID]bool{}
-	for _, partition := range []service_network_types.PartitionID{partition1, partition2} {
-		if _, found := currentPartitions[partition]; !found {
-			logrus.Debugf("Setting connection between '%s' and '%s' but '%s' isn't registered as a partition yet. Creating it",
-				partition1, partition2, partition)
-			if err := network.topology.CreateEmptyPartitionWithDefaultConnection(partition); err != nil {
-				return stacktrace.Propagate(err, "Partition '%v' creation failed", partition)
-			}
-			createdPartitionToRemoveIfFailure[partition] = true
-		}
-	}
-	defer func() {
-		if isOperationSuccessful {
-			return
-		}
-		for partition := range createdPartitionToRemoveIfFailure {
-			if err := network.topology.RemovePartition(partition); err != nil {
-				logrus.Errorf("Partition '%s' was created as part of a SetConnection call, but due to a failure"+
-					"it should be removed. Unfortunately, the removal failed for the following reason so the "+
-					"partition will remain in place:\n%v", partition, err.Error())
-			}
-		}
-	}()
-
-	wasConnectionDefault, previousConnection, err := network.topology.GetPartitionConnection(partition1, partition2)
-	if err != nil {
-		return stacktrace.Propagate(err, "Unable to fetch current connection between '%s' and '%s'", partition1, partition2)
-	}
-
-	err = network.topology.SetConnection(partition1, partition2, connection)
-	if err != nil {
-		return stacktrace.Propagate(err, "Error setting the connection between '%s' and '%s'", partition1, partition2)
-	}
-	defer func() {
-		if isOperationSuccessful {
-			return
-		}
-		var resetConnectionErr error
-		if wasConnectionDefault {
-			resetConnectionErr = network.topology.UnsetConnection(partition1, partition2)
-		} else {
-			resetConnectionErr = network.topology.SetConnection(partition1, partition2, previousConnection)
-		}
-		if resetConnectionErr != nil {
-			logrus.Errorf("A failure happened after setting the connection between '%s' and '%s', so it should "+
-				"be reset to its previous value. Unfortunately, an error happened trying to set it back to its "+
-				"previous value:\n%v", partition1, partition2, err.Error())
-		}
-	}()
-
-	if err = network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
-		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
-	}
-	isOperationSuccessful = true
-	return nil
-}
-
-func (network *DefaultServiceNetwork) UnsetConnection(
-	ctx context.Context,
-	partition1 service_network_types.PartitionID,
-	partition2 service_network_types.PartitionID,
-) error {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	isOperationSuccessful := false
-
-	if !network.isPartitioningEnabled {
-		return stacktrace.NewError("Cannot unset connection; partitioning is not enabled")
-	}
-
-	currentPartitions, err := network.topology.GetPartitionServices()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting all partitions")
-	}
-	for _, partition := range []service_network_types.PartitionID{partition1, partition2} {
-		if _, found := currentPartitions[partition]; !found {
-			logrus.Warnf("Unsetting connection between '%s' and '%s' but '%s' isn't registered as a partition yet. This will no-op",
-				partition1, partition2, partition)
-			return nil
-		}
-	}
-
-	wasDefaultConnection, previousConnection, err := network.topology.GetPartitionConnection(partition1, partition2)
-	if err != nil {
-		return stacktrace.Propagate(err, "Unable to retrieve current connection between '%s' and '%s'", partition1, partition2)
-	}
-	if wasDefaultConnection {
-		logrus.Debugf("Unsetting connection between '%s' and '%s' but connection was already the default. This will no-op",
-			partition1, partition2)
-		return nil
-	}
-
-	if err = network.topology.UnsetConnection(partition1, partition2); err != nil {
-		return stacktrace.Propagate(err, "Unsetting connection between '%s' and '%s' failed", partition1, partition2)
-	}
-	defer func() {
-		if isOperationSuccessful {
-			return
-		}
-		if resetConnectionErr := network.topology.SetConnection(partition1, partition2, previousConnection); resetConnectionErr != nil {
-			logrus.Errorf("An error happened resetting the connection between '%s' and '%s' and Kurtosis could not roll back the operation. Error was:\n%v", partition1, partition2, resetConnectionErr)
-		}
-	}()
-
-	if err = network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
-		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
-	}
-	isOperationSuccessful = true
-	return nil
-}
-
-func (network *DefaultServiceNetwork) SetDefaultConnection(
-	ctx context.Context,
-	connection partition_topology.PartitionConnection,
-) error {
-	network.mutex.Lock()
-	defer network.mutex.Unlock()
-	isOperationSuccessful := false
-
-	if !network.isPartitioningEnabled {
-		return stacktrace.NewError("Cannot set default connection; partitioning is not enabled")
-	}
-
-	previousDefaultConnection := network.topology.GetDefaultConnection()
-
-	network.topology.SetDefaultConnection(connection)
-	defer func() {
-		if isOperationSuccessful {
-			return
-		}
-		network.topology.SetDefaultConnection(previousDefaultConnection)
-	}()
-
-	if err := network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
-		return stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
-	}
-	isOperationSuccessful = true
-	return nil
-}
-
-// AddService creates and starts the service in the given partition in their own container
+// AddService creates and starts the service in their own container
 func (network *DefaultServiceNetwork) AddService(
 	ctx context.Context,
 	serviceName service.ServiceName,
@@ -323,7 +135,7 @@ func (network *DefaultServiceNetwork) AddService(
 	return nil, stacktrace.NewError("Service '%s' could not be started properly, but its state is unknown. This is a Kurtosis internal bug", serviceName)
 }
 
-// AddServices creates and starts the services in the given partition in their own containers. It is a bulk operation, if a
+// AddServices creates and starts the services in their own containers. It is a bulk operation, if a
 // single service fails to start, the entire batch is rolled back.
 //
 // This is a bulk operation that follows a sequential approach with no parallelization yet.
@@ -348,6 +160,10 @@ func (network *DefaultServiceNetwork) AddServices(
 	startedServices := map[service.ServiceName]*service.Service{}
 	failedServices := map[service.ServiceName]error{}
 
+	if len(serviceConfigs) == 0 {
+		return startedServices, failedServices, nil
+	}
+
 	// Save the services currently running in enclave for later
 	currentlyRunningServicesInEnclave := map[service.ServiceName]bool{}
 	for serviceName := range network.registeredServiceInfo {
@@ -358,14 +174,8 @@ func (network *DefaultServiceNetwork) AddServices(
 	serviceSuccessfullyRegistered := map[service.ServiceName]*service.ServiceRegistration{}
 	servicesToStart := map[service.ServiceUUID]*service.ServiceConfig{}
 	for serviceName, serviceConfig := range serviceConfigs {
-		var servicePartitionId service_network_types.PartitionID
-		if serviceConfig.GetSubnetwork() == "" {
-			servicePartitionId = partition_topology.ParsePartitionId(nil)
-		} else {
-			subnetwork := serviceConfig.GetSubnetwork()
-			servicePartitionId = partition_topology.ParsePartitionId(&subnetwork)
-		}
-		serviceRegistration, err := network.registerService(ctx, serviceName, servicePartitionId)
+
+		serviceRegistration, err := network.registerService(ctx, serviceName)
 		if err != nil {
 			failedServices[serviceName] = stacktrace.Propagate(err, "Failed registering service with name: '%s'", serviceName)
 			continue
@@ -385,16 +195,6 @@ func (network *DefaultServiceNetwork) AddServices(
 	}()
 	if len(failedServices) > 0 {
 		return map[service.ServiceName]*service.Service{}, failedServices, nil
-	}
-
-	// We update the networking setup of the currently running services such that services starting won't be able
-	// to communicate to services they should not communicate with.
-	if network.isPartitioningEnabled && len(currentlyRunningServicesInEnclave) > 0 {
-		if err := network.updateConnectionsFromTopology(ctx, currentlyRunningServicesInEnclave); err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Failure updating the network connections of the existing "+
-				"services prior to starting the new services. Starting the following services will be aborted: %v. "+
-				"Existing services in enclave: '%v'", serviceConfigs, currentlyRunningServicesInEnclave)
-		}
 	}
 
 	startedServicesPerUuid, failedServicePerUuid := network.startRegisteredServices(ctx, servicesToStart, batchSize)
@@ -444,142 +244,123 @@ func (network *DefaultServiceNetwork) AddServices(
 
 	for _, startedService := range startedServices {
 		serviceRegistration := startedService.GetRegistration()
-		serviceName := serviceRegistration.GetName()
-		serviceNameStr := string(serviceName)
-		serviceUuidStr := string(serviceRegistration.GetUUID())
-		shortenedUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
-		network.allExistingAndHistoricalIdentifiers = append(network.allExistingAndHistoricalIdentifiers, &kurtosis_core_rpc_api_bindings.ServiceIdentifiers{
-			ServiceUuid:   serviceUuidStr,
-			Name:          serviceNameStr,
-			ShortenedUuid: shortenedUuidStr,
-		})
-		network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Started)
+		serviceIdentifier := service_identifiers.NewServiceIdentifier(serviceRegistration.GetUUID(), serviceRegistration.GetName())
+		if err := network.serviceIdentifiersRepository.AddServiceIdentifier(serviceIdentifier); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred adding a new service identifier '%+v' into the repository", serviceIdentifier)
+		}
+		network.registeredServiceInfo[serviceRegistration.GetName()].SetStatus(service.ServiceStatus_Started)
 	}
 
 	batchSuccessfullyStarted = true
 	return startedServices, map[service.ServiceName]error{}, nil
 }
 
-// UpdateService This is purely called from a Starlark context so this only works with Names
-func (network *DefaultServiceNetwork) UpdateService(
-	ctx context.Context,
-	updateServiceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig,
-) (
-	map[service.ServiceName]bool,
-	map[service.ServiceName]error,
-	error,
-) {
+func (network *DefaultServiceNetwork) UpdateService(ctx context.Context, serviceName service.ServiceName, updateServiceConfig *service.ServiceConfig) (*service.Service, error) {
+	serviceConfigMap := map[service.ServiceName]*service.ServiceConfig{
+		serviceName: updateServiceConfig,
+	}
+
+	startedServices, serviceFailed, err := network.UpdateServices(ctx, serviceConfigMap, singleServiceStartupBatch)
+	if err != nil {
+		return nil, err
+	}
+	if failure, found := serviceFailed[serviceName]; found {
+		return nil, failure
+	}
+	if startedService, found := startedServices[serviceName]; found {
+		return startedService, nil
+	}
+	return nil, stacktrace.NewError("Service '%s' could not be updated properly, and its state is unknown. This is a Kurtosis internal bug", serviceName)
+}
+
+// UpdateServices updates the service by removing the current container and re-creating it, keeping the registration
+// identical. Note this function does not handle any kind of rollback if it fails halfway. This is because we have no
+// way to do soft-delete for containers. Once it's deleted, it's gone, so if Kurtosis fails at re-creating it, it
+// doesn't roll back to the state previous to calling this function
+func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, updateServiceConfigs map[service.ServiceName]*service.ServiceConfig, batchSize int) (map[service.ServiceName]*service.Service, map[service.ServiceName]error, error) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
 	failedServicesPool := map[service.ServiceName]error{}
-	successfullyUpdatedService := map[service.ServiceName]bool{}
+	successfullyUpdatedService := map[service.ServiceName]*service.Service{}
 
-	previousServicePartitions := map[service.ServiceName]service_network_types.PartitionID{}
-	partitionCreatedDuringThisOperation := map[service_network_types.PartitionID]bool{}
-	for serviceName, updateServiceConfig := range updateServiceConfigs {
-		if updateServiceConfig.Subnetwork == nil {
-			// nothing to do for this service
-			continue
-		}
-
-		servicePartitions, err := network.topology.GetServicePartitions()
-		if err != nil {
-			failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred while fetching service partitions mapping for service '%v'", serviceName)
-			continue
-		}
-		previousServicePartition, found := servicePartitions[serviceName]
-		if !found {
-			failedServicesPool[serviceName] = stacktrace.NewError("Error updating service '%s' as this service does not exist", serviceName)
-			continue
-		}
-		previousServicePartitions[serviceName] = previousServicePartition
-
-		newServicePartition := partition_topology.ParsePartitionId(updateServiceConfig.Subnetwork)
-		if newServicePartition == previousServicePartition {
-			// nothing to do for this service
-			continue
-		}
-
-		partitionServices, err := network.topology.GetPartitionServices()
-		if err != nil {
-			failedServicesPool[serviceName] = stacktrace.Propagate(
-				err,
-				"Cannot update service '%v' as we tried to fetch existing partitions and failed",
-				serviceName,
-			)
-			continue
-		}
-
-		if _, found = partitionServices[newServicePartition]; !found {
-			logrus.Debugf("Partition with ID '%s' does not exist in current topology. Creating it to be able to "+
-				"add service '%s' to it when it's created", newServicePartition, serviceName)
-			if err := network.topology.CreateEmptyPartitionWithDefaultConnection(newServicePartition); err != nil {
-				failedServicesPool[serviceName] = stacktrace.Propagate(
-					err,
-					"Cannot update service '%v' its new partition '%s' needed to be created and it failed",
-					serviceName,
-					newServicePartition,
-				)
-				continue
-			}
-			partitionCreatedDuringThisOperation[newServicePartition] = true
-		}
-
-		if err := network.moveServiceToPartitionInTopology(serviceName, newServicePartition); err != nil {
-			failedServicesPool[serviceName] = stacktrace.Propagate(err, "Error updating service '%s' adding it to the new partition '%s'", serviceName, newServicePartition)
-			continue
-		}
-	}
-	defer func() {
-		for serviceName, partitionIDToRollbackTo := range previousServicePartitions {
-			if _, found := successfullyUpdatedService[serviceName]; found {
-				continue
-			}
-
-			servicePartitions, err := network.topology.GetServicePartitions()
-			if err != nil {
-				logrus.Errorf("An error happened updating service '%s' and it needed to be moved back to partition '%s', but an error happened during this operation. Error was:\n%v", serviceName, partitionIDToRollbackTo, err)
-				return
-			}
-
-			currentPartitionId, found := servicePartitions[serviceName]
-			if !found {
-				// service does not exist, nothing to roll back
-				continue
-			}
-			if currentPartitionId == partitionIDToRollbackTo {
-				// service is still in the partition it was before the call to UpdateService, nothing to roll back
-				continue
-			}
-			// if service exists and is not in successfullyUpdatedService, roll it back to its previous partition
-			if err := network.moveServiceToPartitionInTopology(serviceName, partitionIDToRollbackTo); err != nil {
-				logrus.Errorf("An error happened updating service '%s' and it needed to be moved back to partition '%s', but an error happened during this operation. The service will be left in '%s'. Error was:\n%v", serviceName, partitionIDToRollbackTo, currentPartitionId, err)
-			}
-		}
-		// finally, after all updates and roll-back have been performed, check for potentially empty partitions and remove them to keep the topology clean
-		partitionServices, err := network.topology.GetPartitionServices()
-		if err != nil {
-			logrus.Errorf("Tried getting partition services to cleanup any empty partitions but failed.")
-			return
-		}
-		for partitionID := range partitionCreatedDuringThisOperation {
-			servicesInPartition, found := partitionServices[partitionID]
-			if found && len(servicesInPartition) == 0 {
-				if err := network.topology.RemovePartition(partitionID); err != nil {
-					logrus.Errorf("Partition '%s' was left empty after a service update. It failed to be removes", partitionID)
-				}
-			}
-		}
-	}()
-
-	if err := network.updateConnectionsFromTopology(ctx, emptyServiceNamesSetToUpdateAllConnections); err != nil {
-		// successfullyUpdatedService is still empty here, so all services will be rolled back to their previous partition
-		return nil, nil, stacktrace.Propagate(err, "Unable to update connections between the different partitions of the topology")
+	if len(updateServiceConfigs) == 0 {
+		return successfullyUpdatedService, failedServicesPool, nil
 	}
 
+	// First, remove the service
+	serviceUuidToNameMap := map[service.ServiceUUID]service.ServiceName{}
+	serviceUuidsToRemove := map[service.ServiceUUID]bool{}
 	for serviceName := range updateServiceConfigs {
-		if _, found := failedServicesPool[serviceName]; found {
+		serviceRegistration, found := network.registeredServiceInfo[serviceName]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
+				"inside this enclave: '%s'", serviceName)
+		} else {
+			serviceUuid := serviceRegistration.GetUUID()
+			serviceUuidsToRemove[serviceUuid] = true
+			serviceUuidToNameMap[serviceUuid] = serviceName
+		}
+	}
+	successfullyRemovedServices, failedRemovedServices, err := network.kurtosisBackend.RemoveRegisteredUserServiceProcesses(ctx, network.enclaveUuid, serviceUuidsToRemove)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error happened updating services")
+	}
+	for serviceUuid, serviceErr := range failedRemovedServices {
+		if serviceName, found := serviceUuidToNameMap[serviceUuid]; found {
+			failedServicesPool[serviceName] = serviceErr
+		} else {
+			return nil, nil, stacktrace.NewError("Error mapping service UUID to service name. This is a bug in Kurtosis.\nserviceUuidsToRemove=%v\nfailedRemovedServices=%v\nsuccessfullyRemovedServices=%v\nserviceUuidToNameMap=%v", serviceUuidsToRemove, failedRemovedServices, successfullyRemovedServices, serviceUuidToNameMap)
+		}
+	}
+
+	// Set service status back to registered and remove its currently saved service config
+	successfullyRemovedServicesIncludingSidecars := map[service.ServiceUUID]bool{}
+	for serviceUuid := range successfullyRemovedServices {
+		if serviceName, found := serviceUuidToNameMap[serviceUuid]; found {
+			successfullyRemovedServicesIncludingSidecars[serviceUuid] = true
+			network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Registered)
+			network.registeredServiceInfo[serviceName].SetConfig(nil)
+		} else {
+			return nil, nil, stacktrace.NewError("Error mapping service UUID to service name. This is a bug in Kurtosis")
+		}
+	}
+
+	// Re-create service with the new service config
+	serviceToRecreate := map[service.ServiceUUID]*service.ServiceConfig{}
+	for serviceUuid := range successfullyRemovedServicesIncludingSidecars {
+		serviceName, found := serviceUuidToNameMap[serviceUuid]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
+				"inside this enclave: '%s'", serviceName)
 			continue
 		}
-		successfullyUpdatedService[serviceName] = true
+		newServiceConfig, found := updateServiceConfigs[serviceName]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service '%s' because no new "+
+				"service config could be found. This is a bug in Kurtosis", serviceName)
+			continue
+		}
+		serviceToRecreate[serviceUuid] = newServiceConfig
+	}
+	recreatedService, failedToRecreateService := network.startRegisteredServices(ctx, serviceToRecreate, batchSize)
+	for serviceUuid, failedToRecreateServiceErr := range failedToRecreateService {
+		serviceName, found := serviceUuidToNameMap[serviceUuid]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
+				"inside this enclave: '%s'", serviceName)
+			continue
+		}
+		failedServicesPool[serviceName] = failedToRecreateServiceErr
+	}
+	for serviceUuid, newServiceObj := range recreatedService {
+		serviceName, found := serviceUuidToNameMap[serviceUuid]
+		if !found {
+			failedServicesPool[serviceName] = stacktrace.NewError("Unable to update service that is not registered "+
+				"inside this enclave: '%s'", serviceName)
+			continue
+		}
+		successfullyUpdatedService[serviceName] = newServiceObj
+		network.registeredServiceInfo[serviceName].SetStatus(service.ServiceStatus_Started)
 	}
 	return successfullyUpdatedService, failedServicesPool, nil
 }
@@ -602,11 +383,6 @@ func (network *DefaultServiceNetwork) RemoveService(
 	}
 	serviceUuid := serviceToRemove.GetUUID()
 
-	err = network.topology.RemoveService(serviceName)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while removing service '%v' from the network topology", serviceName)
-	}
-
 	network.cleanupInternalMapsUnlocked(serviceName)
 
 	// We stop the service, rather than destroying it, so that we can keep logs around
@@ -623,20 +399,6 @@ func (network *DefaultServiceNetwork) RemoveService(
 	}
 	if err, found := erroredUuids[serviceUuid]; found {
 		return "", stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceUuid)
-	}
-
-	sidecar, foundSidecar := network.networkingSidecars[serviceName]
-	if network.isPartitioningEnabled && foundSidecar {
-		// NOTE: As of 2020-12-31, we don't need to update the iptables of the other services in the network to
-		//  clear the now-removed service's IP because:
-		// 	 a) nothing is using it so it doesn't do anything and
-		//	 b) all service's iptables get overwritten on the next Add/Repartition call
-		// If we ever do incremental iptables though, we'll need to fix all the other service's iptables here!
-		if err := network.networkingSidecarManager.Remove(ctx, sidecar); err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred destroying the sidecar for service with name '%v'", serviceName)
-		}
-		delete(network.networkingSidecars, serviceName)
-		logrus.Debugf("Successfully removed sidecar attached to service with name '%v'", serviceName)
 	}
 
 	return serviceUuid, nil
@@ -897,6 +659,8 @@ func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIde
 		return nil, stacktrace.NewError("Found exactly one service object, but it didn't match expected UUID '%v'", serviceUuid)
 	}
 
+	// The service status is managed at the service network layer so we copy it to the response
+	serviceObj.GetRegistration().SetStatus(serviceRegistration.GetStatus())
 	return serviceObj, nil
 }
 
@@ -943,20 +707,49 @@ func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinat
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) UploadFilesArtifact(data []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
-	filesArtifactUuid, err := network.uploadFilesArtifactUnlocked(data, artifactName)
+func (network *DefaultServiceNetwork) UploadFilesArtifact(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
-		return "", stacktrace.Propagate(err, "There was an error in uploading the files")
+		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+
+	filesArtifactUuid, err := filesArtifactStore.StoreFile(data, contentMd5, artifactName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
 	}
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) IsNetworkPartitioningEnabled() bool {
-	return network.isPartitioningEnabled
+func (network *DefaultServiceNetwork) GetFilesArtifactMd5(artifactName string) (enclave_data_directory.FilesArtifactUUID, []byte, bool, error) {
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return "", nil, false, stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+	filesArtifactUuid, _, currentlyStoredFileContentHash, found, err := filesArtifactStore.GetFile(artifactName)
+	if err != nil {
+		return "", nil, false, stacktrace.Propagate(err, "An error occurred retrieving the files artifact from the store")
+	}
+	return filesArtifactUuid, currentlyStoredFileContentHash, found, nil
 }
 
-func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers {
-	return network.allExistingAndHistoricalIdentifiers
+func (network *DefaultServiceNetwork) UpdateFilesArtifact(fileArtifactUuid enclave_data_directory.FilesArtifactUUID, updatedContent io.Reader, contentMd5 []byte) error {
+	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting files artifact store")
+	}
+
+	if err = filesArtifactStore.UpdateFile(fileArtifactUuid, updatedContent, contentMd5); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to update a files artifact.")
+	}
+	return nil
+}
+
+func (network *DefaultServiceNetwork) GetExistingAndHistoricalServiceIdentifiers() (service_identifiers.ServiceIdentifiers, error) {
+	serviceIdentifiers, err := network.serviceIdentifiersRepository.GetServiceIdentifiers()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the service identifiers list from the repository")
+	}
+	return serviceIdentifiers, nil
 }
 
 // GetUniqueNameForFileArtifact : this will return unique artifact name after 5 retries, same as enclave id generator
@@ -973,82 +766,10 @@ func (network *DefaultServiceNetwork) GetApiContainerInfo() *ApiContainerInfo {
 }
 
 // ====================================================================================================
-// 									   Private helper methods
+//
+//	Private helper methods
+//
 // ====================================================================================================
-
-// updateConnectionsFromTopology reads the current topology and updates the connections for the provided service names
-// according to it.
-// if serviceNames is empty, it updates the connection for all the services within the enclave
-func (network *DefaultServiceNetwork) updateConnectionsFromTopology(ctx context.Context, serviceNames map[service.ServiceName]bool) error {
-	availablePartitionConnectionConfigsPerServiceNames, err := network.topology.GetServicePartitionConnectionConfigByServiceName()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the packet loss configuration by service ID "+
-			" to know what packet loss updates to apply")
-	}
-
-	var serviceNamesToUpdate map[service.ServiceName]bool
-	if len(serviceNames) == emptyCollectionLength {
-		// we add all the services currently stored in the topology to update everything
-		serviceNamesToUpdate = map[service.ServiceName]bool{}
-		for serviceName := range availablePartitionConnectionConfigsPerServiceNames {
-			serviceNamesToUpdate[serviceName] = true
-		}
-	} else {
-		serviceNamesToUpdate = serviceNames
-	}
-
-	// TODO: probably worth running those updates in parallel for enclave with a lot of services
-	for serviceName := range serviceNamesToUpdate {
-		otherServiceConnectionConfig, found := availablePartitionConnectionConfigsPerServiceNames[serviceName]
-		if !found {
-			return stacktrace.NewError("A service about to be updated could not be found in the connection config service map: '%s' (connection config service map was: '%v')", serviceName, availablePartitionConnectionConfigsPerServiceNames)
-		}
-		if err = updateTrafficControlConfiguration(ctx, serviceName, otherServiceConnectionConfig, network.registeredServiceInfo, network.networkingSidecars); err != nil {
-			return stacktrace.Propagate(err, "An error occurred applying the traffic control configuration to partition off new nodes.")
-		}
-	}
-	return nil
-}
-
-// Updates the traffic control configuration of the services with the given Names to match the target services packet loss configuration
-// NOTE: This is not thread-safe, so it must be within a function that locks mutex!
-func updateTrafficControlConfiguration(
-	ctx context.Context,
-	serviceName service.ServiceName,
-	otherServiceConnectionConfigs map[service.ServiceName]*partition_topology.PartitionConnection,
-	registeredServices map[service.ServiceName]*service.ServiceRegistration,
-	networkingSidecars map[service.ServiceName]networking_sidecar.NetworkingSidecarWrapper,
-) error {
-	partitionConnectionConfigPerIpAddress := map[string]*partition_topology.PartitionConnection{}
-	for connectedServiceName, partitionConnectionConfig := range otherServiceConnectionConfigs {
-		connectedService, found := registeredServices[connectedServiceName]
-		if !found {
-			return stacktrace.NewError(
-				"Service with name '%s' needs to update its connection configuration for service with name '%s', "+
-					"but the latter doesn't have service registration info (i.e. an IP) associated with it",
-				serviceName,
-				connectedServiceName)
-		}
-
-		partitionConnectionConfigPerIpAddress[connectedService.GetPrivateIP().String()] = partitionConnectionConfig
-	}
-
-	sidecar, found := networkingSidecars[serviceName]
-	if !found {
-		return stacktrace.NewError(
-			"Need to update qdisc configuration of service with name '%v', but the service doesn't have a sidecar",
-			serviceName)
-	}
-
-	if err := sidecar.UpdateTrafficControl(ctx, partitionConnectionConfigPerIpAddress); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred updating the qdisc configuration for service '%v'",
-			serviceName)
-	}
-	return nil
-}
-
 // registerService handles all the operations necessary to register a service before is can be started with
 // startRegisteredService. If something fails along the way, the function takes care of rolling back the previous
 // changes such that the enclave remains in the state before the call
@@ -1059,40 +780,11 @@ func updateTrafficControlConfiguration(
 func (network *DefaultServiceNetwork) registerService(
 	ctx context.Context,
 	serviceName service.ServiceName,
-	partitionId service_network_types.PartitionID,
 ) (
 	*service.ServiceRegistration,
 	error,
 ) {
 	serviceSuccessfullyRegistered := false
-
-	partitionServices, err := network.topology.GetPartitionServices()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting partition services")
-	}
-
-	if _, found := partitionServices[partitionId]; !found {
-		logrus.Debugf("Paritition with ID '%s' does not exist in current topology. Creating it to be able to "+
-			"add service '%s' to it when it's created", partitionId, serviceName)
-
-		if err := network.topology.CreateEmptyPartitionWithDefaultConnection(partitionId); err != nil {
-			return nil, stacktrace.Propagate(
-				err,
-				"Cannot register service '%s' because its partition '%s' failed to be created",
-				serviceName,
-				partitionId,
-			)
-		}
-		// undo partition creation if starting the something fails downstream
-		defer func() {
-			if serviceSuccessfullyRegistered || partitionId == partition_topology.DefaultPartitionId {
-				return
-			}
-			if err := network.topology.RemovePartition(partitionId); err != nil {
-				logrus.Errorf("Paritition '%s' needs to be removed as it is empty, but its deletion failed with an unexpected error. Partition will remain in the topology. This is not critical but might be a sign of another more critical failure", partitionId)
-			}
-		}()
-	}
 
 	serviceToRegister := map[service.ServiceName]bool{
 		serviceName: true,
@@ -1139,21 +831,6 @@ func (network *DefaultServiceNetwork) registerService(
 		network.cleanupInternalMapsUnlocked(serviceName)
 	}()
 
-	err = network.addServiceToTopology(serviceName, partitionId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error adding service '%s' to partition '%s' in network topology", serviceName, partitionId)
-	}
-	logrus.Debugf("Successfully added service with name '%v' to topology", serviceName)
-	// remove service from topology is something fails downstream
-	defer func() {
-		if serviceSuccessfullyRegistered {
-			return
-		}
-		err = network.topology.RemoveService(serviceName)
-		if err != nil {
-			logrus.Errorf("An error occurred while removing service '%v' from the partition toplogy", serviceName)
-		}
-	}()
 	serviceSuccessfullyRegistered = true
 	return serviceRegistration, nil
 }
@@ -1163,27 +840,6 @@ func (network *DefaultServiceNetwork) registerService(
 // As registerService rolls back things if a failure happens halfway, we should never end up with a service
 // half-registered, but it's worth calling out that this method with throw if called with such a service
 func (network *DefaultServiceNetwork) unregisterService(ctx context.Context, serviceName service.ServiceName) error {
-	servicePartitions, err := network.topology.GetServicePartitions()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while fetching service partitions mapping")
-	}
-	partitionId, partitionFound := servicePartitions[serviceName]
-	err = network.topology.RemoveService(serviceName)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from the network topology", serviceName)
-	}
-	partitionServices, err := network.topology.GetPartitionServices()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while getting partition services")
-	}
-	if partitionFound && partitionId != partition_topology.DefaultPartitionId {
-		if len(partitionServices[partitionId]) == 0 {
-			if err := network.topology.RemovePartition(partitionId); err != nil {
-				logrus.Warnf("Error removing partition '%s' as it was empty after removing service '%s'. "+
-					"This is not critical but is unexpected. Error was: '%v'", partitionId, serviceName, err)
-			}
-		}
-	}
 
 	serviceRegistration, registrationFound := network.registeredServiceInfo[serviceName]
 	if !registrationFound {
@@ -1209,7 +865,6 @@ func (network *DefaultServiceNetwork) unregisterService(ctx context.Context, ser
 }
 
 // startRegisteredService handles the logistic of starting a service in the relevant Kurtosis backend:
-// If network partitioning is enabled, it also takes care of starting the sidecar corresponding to this service
 func (network *DefaultServiceNetwork) startRegisteredService(
 	ctx context.Context,
 	serviceUuid service.ServiceUUID,
@@ -1276,27 +931,12 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 		}
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred waiting for all TCP and UDP ports being open for service '%v' with private IP '%v'; "+
-				"as the most common error is a wrong service configuration, here you can find the service logs:\n%s",
+			"An error occurred waiting for all TCP and UDP ports to be open for service '%v' with private IP '%v'; "+
+				"this is usually due to a misconfiguration in the service itself, so here are the logs:\n%s",
 			startedService.GetRegistration().GetName(),
 			startedService.GetRegistration().GetPrivateIP(),
 			serviceLogs,
 		)
-	}
-
-	// if partition is enabled, create a sidecar associated with this service
-	if network.isPartitioningEnabled {
-		if err := network.createSidecarAndAddToMap(ctx, startedService); err != nil {
-			return nil, stacktrace.Propagate(err, "Error creating sidecar for service '%s'", serviceUuid)
-		}
-		serviceNameSet := map[service.ServiceName]bool{
-			startedService.GetRegistration().GetName(): true,
-		}
-		// update the connection for this service only
-		if err := network.updateConnectionsFromTopology(ctx, serviceNameSet); err != nil {
-			return nil, stacktrace.Propagate(err, "Error updating the networking rules for this service '%s' (UUID: '%s')", startedService.GetRegistration().GetName(), serviceUuid)
-		}
-		logrus.Debugf("Successfully created sidecars for service with ID '%v'", serviceUuid)
 	}
 
 	serviceStartedSuccessfully = true
@@ -1310,7 +950,6 @@ func (network *DefaultServiceNetwork) startRegisteredService(
 // the function might fail if the service is half-started
 // Note: the function also takes care of destroying any networking sidecar associated with the service
 func (network *DefaultServiceNetwork) destroyService(ctx context.Context, serviceName service.ServiceName, serviceUuid service.ServiceUUID) error {
-	var errorResult error
 	// deleting the service first
 	userServiceFilters := &service.ServiceFilters{
 		Names: nil,
@@ -1319,24 +958,23 @@ func (network *DefaultServiceNetwork) destroyService(ctx context.Context, servic
 		},
 		Statuses: nil,
 	}
-	_, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
+	successfullyDestroyedUuids, failedToDestroyUuids, err := network.kurtosisBackend.DestroyUserServices(context.Background(), network.enclaveUuid, userServiceFilters)
 	if err != nil {
-		errorResult = stacktrace.Propagate(err, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
+		return stacktrace.Propagate(err, "Attempted to destroy the service with UUID '%v' but had no success. You must manually destroy the service as well as its sidecar if any", serviceUuid)
 	}
-	if failedToDestroyErr, found := failedToDestroyUuids[serviceUuid]; found {
-		errorResult = stacktrace.Propagate(failedToDestroyErr, "Attempted to destroy the services with UUID '%v' but had no success. You must manually destroy the services. Kurtosis will now try to remove its sidecar if it exists but might it fail as well.", serviceUuid)
-	}
-
-	// deleting the sidecar
-	networkingSidecar, found := network.networkingSidecars[serviceName]
-	if found {
-		delete(network.networkingSidecars, serviceName)
-		err = network.networkingSidecarManager.Remove(ctx, networkingSidecar)
-		if errorResult == nil && err != nil {
-			errorResult = stacktrace.Propagate(err, "Attempted to clean up the sidecar for service with name '%s' but an error occurred.", serviceName)
+	if _, found := successfullyDestroyedUuids[serviceUuid]; found {
+		if len(failedToDestroyUuids) != 0 {
+			return stacktrace.NewError("Service '%s' was successfully destroyed but unexpected error were returned by Kurtosis backend. This is unexpected and should be investigated. Here are the errors:\n%v", serviceUuid, failedToDestroyUuids)
+		}
+	} else {
+		if failedToDestroyErr, found := failedToDestroyUuids[serviceUuid]; found {
+			return stacktrace.Propagate(failedToDestroyErr, "Attempted to destroy the service with UUID '%v' but had no success. You must manually destroy the service as well as its sidecar if any", serviceUuid)
+		} else {
+			return stacktrace.NewError("Attempted to destroy service '%s' but it was neither marked as successfully destroyed nor errored in the result. This is a Kurtosis bug", serviceUuid)
 		}
 	}
-	return errorResult
+
+	return nil
 }
 
 // startRegisteredServices starts multiple services in parallel
@@ -1419,18 +1057,34 @@ func (network *DefaultServiceNetwork) copyFilesFromServiceUnlocked(ctx context.C
 		return "", stacktrace.Propagate(err, "An error occurred getting the files artifact store")
 	}
 
+	existingFilesArtifactUuid, _, _, filesArtifactAlreadyExists, err := store.GetFile(artifactName)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An unexpected error occurred checking for file artifact '%s' existence in the store", artifactName)
+	}
+
 	pipeReader, pipeWriter := io.Pipe()
-	defer pipeReader.Close()
 	defer pipeWriter.Close()
 
 	storeFilesArtifactResultChan := make(chan storeFilesArtifactResult)
 	go func() {
 		defer pipeReader.Close()
-
+		defer close(storeFilesArtifactResultChan)
 		//And finally pass it the .tgz file to the artifact file store
-		filesArtifactUuid, storeFileErr := store.StoreFile(pipeReader, artifactName)
+		// It's hard to compute the content hash here. For files stored from services, hash will be empty and they will
+		// be re-stored everytime regardless of their content
+
+		var storeOrUpdateErr error
+		var filesArtifactUuid enclave_data_directory.FilesArtifactUUID
+		if filesArtifactAlreadyExists {
+			filesArtifactUuid = existingFilesArtifactUuid
+			// we're not able to check file hash here b/c we don't get it from the CompressPath helper method
+			// TODO: Maybe compute the hash ad-hoc here, but it would require us to consume the reader
+			storeOrUpdateErr = store.UpdateFile(filesArtifactUuid, pipeReader, []byte{})
+		} else {
+			filesArtifactUuid, storeOrUpdateErr = store.StoreFile(pipeReader, []byte{}, artifactName)
+		}
 		storeFilesArtifactResultChan <- storeFilesArtifactResult{
-			err:               storeFileErr,
+			err:               storeOrUpdateErr,
 			filesArtifactUuid: filesArtifactUuid,
 		}
 	}()
@@ -1472,101 +1126,6 @@ func (network *DefaultServiceNetwork) gzipAndPushTarredFileBytesToOutput(
 }
 
 // This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) addServiceToTopology(serviceName service.ServiceName, partitionID service_network_types.PartitionID) error {
-	if err := network.topology.AddService(serviceName, partitionID); err != nil {
-		return stacktrace.Propagate(
-			err,
-			"An error occurred adding service with name '%v' to partition '%v' in the topology",
-			serviceName,
-			partitionID,
-		)
-	}
-	shouldRemoveFromTopology := true
-	defer func() {
-		if shouldRemoveFromTopology {
-			err := network.topology.RemoveService(serviceName)
-			if err != nil {
-				logrus.Errorf("An error occurred while removing service '%v' from the partition toplogy", serviceName)
-			}
-		}
-	}()
-
-	shouldRemoveFromTopology = false
-	return nil
-}
-
-func (network *DefaultServiceNetwork) moveServiceToPartitionInTopology(serviceName service.ServiceName, partitionID service_network_types.PartitionID) error {
-	isOperationSuccessful := false
-	servicePartitions, err := network.topology.GetServicePartitions()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while fetching service partitions mapping")
-	}
-	serviceCurrentPartition, found := servicePartitions[serviceName]
-	if !found {
-		return stacktrace.NewError("Service with name '%s' not found in the topology", serviceName)
-	}
-	err = network.topology.RemoveService(serviceName)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while removing service '%v' from the network topology", serviceName)
-	}
-	defer func() {
-		if isOperationSuccessful {
-			return
-		}
-		if err := network.topology.AddService(serviceName, serviceCurrentPartition); err != nil {
-			logrus.Errorf("Service '%s' could not be moved to partition '%s'. It should have been rolled back to its previous partition '%s' but this operation failed", serviceName, partitionID, serviceCurrentPartition)
-			return
-		}
-	}()
-	if err := network.topology.AddService(serviceName, partitionID); err != nil {
-		return stacktrace.Propagate(err, "Error moving service '%s' to its new partition '%s'", serviceName, partitionID)
-	}
-	isOperationSuccessful = true
-	return nil
-}
-
-// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) createSidecarAndAddToMap(ctx context.Context, service *service.Service) error {
-	serviceRegistration := service.GetRegistration()
-	serviceUUID := serviceRegistration.GetUUID()
-	serviceName := serviceRegistration.GetName()
-
-	sidecar, err := network.networkingSidecarManager.Add(ctx, serviceUUID)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred adding the networking sidecar for service `%v`", serviceName)
-	}
-	shouldRemoveSidecarFromManager := true
-	defer func() {
-		if shouldRemoveSidecarFromManager {
-			err = network.networkingSidecarManager.Remove(ctx, sidecar)
-			if err != nil {
-				logrus.Errorf("Attempted to remove network sidecar during cleanup for service '%v' but failed", serviceName)
-			}
-		}
-	}()
-
-	network.networkSidecarsLock.Lock()
-	network.networkingSidecars[serviceName] = sidecar
-	shouldRemoveSidecarFromMap := true
-	network.networkSidecarsLock.Unlock()
-	defer func() {
-		network.networkSidecarsLock.Lock()
-		defer network.networkSidecarsLock.Unlock()
-		if shouldRemoveSidecarFromMap {
-			delete(network.networkingSidecars, serviceName)
-		}
-	}()
-
-	if err := sidecar.InitializeTrafficControl(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred initializing the newly-created networking-sidecar-traffic-control-qdisc-configuration for service `%v`", serviceName)
-	}
-
-	shouldRemoveSidecarFromMap = false
-	shouldRemoveSidecarFromManager = false
-	return nil
-}
-
-// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
 func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
 	tempDirForRenderedTemplates, err := os.MkdirTemp("", tempDirForRenderedTemplatesPrefix)
 	if err != nil {
@@ -1581,17 +1140,34 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 		}
 	}
 
-	compressedFile, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
+	compressedFile, _, compressedFileMd5, err := shared_utils.CompressPath(tempDirForRenderedTemplates, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "There was an error compressing dir '%v'", tempDirForRenderedTemplates)
 	}
+	defer compressedFile.Close()
 
 	store, err := network.enclaveDataDir.GetFilesArtifactStore()
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
 	}
-	filesArtifactUuid, err := store.StoreFile(bytes.NewReader(compressedFile), artifactName)
+	existingFilesArtifactUuid, _, existingFilesArtifactMd5, found, err := store.GetFile(artifactName)
 	if err != nil {
+		return "", stacktrace.Propagate(err, "An unexpected error occurred checking for file artifact '%s' existence in the store", artifactName)
+	}
+
+	var storeOrUpdateErr error
+	var filesArtifactUuid enclave_data_directory.FilesArtifactUUID
+	if found {
+		filesArtifactUuid = existingFilesArtifactUuid
+		// If one of the md5 is empty, we can't really assume the files are equal so we fallback to updating them
+		// Otherwise we check the equality of their MD5 and if they are different we update them
+		if len(existingFilesArtifactMd5) == 0 || len(compressedFileMd5) == 0 || !bytes.Equal(existingFilesArtifactMd5, compressedFileMd5) {
+			storeOrUpdateErr = store.UpdateFile(existingFilesArtifactUuid, compressedFile, compressedFileMd5)
+		}
+	} else {
+		filesArtifactUuid, storeOrUpdateErr = store.StoreFile(compressedFile, compressedFileMd5, artifactName)
+	}
+	if storeOrUpdateErr != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while storing the file '%v' in the files artifact store", compressedFile)
 	}
 	shouldDeleteFilesArtifact := true
@@ -1604,23 +1180,6 @@ func (network *DefaultServiceNetwork) renderTemplatesUnlocked(templatesAndDataBy
 	}()
 
 	shouldDeleteFilesArtifact = false
-	return filesArtifactUuid, nil
-}
-
-// This method is not thread safe. Only call this from a method where there is a mutex lock on the network.
-func (network *DefaultServiceNetwork) uploadFilesArtifactUnlocked(data []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
-	reader := bytes.NewReader(data)
-
-	filesArtifactStore, err := network.enclaveDataDir.GetFilesArtifactStore()
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while getting files artifact store")
-	}
-
-	filesArtifactUuid, err := filesArtifactStore.StoreFile(reader, artifactName)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while trying to store files.")
-	}
-
 	return filesArtifactUuid, nil
 }
 

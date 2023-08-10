@@ -68,6 +68,7 @@ func migrateFromV1(uncastedConfig interface{}) (interface{}, error) {
 		ConfigVersion:     config_version.ConfigVersion_v2,
 		ShouldSendMetrics: castedOldConfig.ShouldSendMetrics,
 		KurtosisClusters:  newClusters,
+		CloudConfig:       nil,
 	}
 
 	return newConfig, nil

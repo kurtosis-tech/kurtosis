@@ -50,14 +50,18 @@ export const createEnclave = async () => {
     const enclaveArgs = new CreateEnclaveArgs();
     enclaveArgs.setApiContainerVersionTag("")
     enclaveArgs.setApiContainerLogLevel("info");
-    enclaveArgs.setIsPartitioningEnabled(false);
     const enclaveGRPC = await engineClient.createEnclave(enclaveArgs, null)
     const enclave = enclaveGRPC.toObject().enclaveInfo;
-    const apiClient = createApiPromiseClient(enclave.apiContainerHostMachineInfo);
-    return {enclave, apiClient}
+    return {
+        uuid: enclave.uuid,
+        name: enclave.name,
+        created: enclave.creationTime.seconds,
+        status: enclave.apiContainerStatus,
+        apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo) 
+    }
 }
 
-export const runStarlark = async(apiClient, packageId) => {
-    const stream = await runStarlarkPackage(apiClient, packageId)
+export const runStarlark = async(apiClient, packageId, args) => {
+    const stream = await runStarlarkPackage(apiClient, packageId, args)
     return stream;
 }

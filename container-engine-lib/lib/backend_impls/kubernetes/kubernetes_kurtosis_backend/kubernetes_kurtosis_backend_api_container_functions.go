@@ -211,6 +211,104 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		}
 	}()
 
+	//Create the cluster role
+	clusterRolesAttributes, err := apiContainerAttributesProvider.ForApiContainerClusterRole()
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Expected to be able to get API container attributes for a Kubernetes cluster role, "+
+				"instead got a non-nil error",
+		)
+	}
+
+	clusterRoleName := clusterRolesAttributes.GetName().GetString()
+	clusterRoleLabels := shared_helpers.GetStringMapFromLabelMap(clusterRolesAttributes.GetLabels())
+	clusterRolePolicyRules := []rbacv1.PolicyRule{
+		{
+			Verbs: []string{
+				kubernetes_manager_consts.CreateKubernetesVerb,
+				kubernetes_manager_consts.DeleteKubernetesVerb,
+				kubernetes_manager_consts.GetKubernetesVerb,
+			},
+			APIGroups: []string{
+				rbacv1.APIGroupAll,
+			},
+			Resources: []string{
+				kubernetes_manager_consts.PersistentVolumesKubernetesResource,
+			},
+		},
+		{
+			// Necessary for the API container to list all nodes
+			// Temporarily adding perms to list nodes here to check for mono-node deployment for persistent volumes.
+			// TODO: remove once we support multi nodes deployments with persistent volumes
+			Verbs: []string{
+				kubernetes_manager_consts.ListKubernetesVerb,
+			},
+			APIGroups: []string{
+				rbacv1.APIGroupAll,
+			},
+			Resources: []string{
+				kubernetes_manager_consts.NodesKubernetesResource,
+			},
+		},
+	}
+
+	apiContainerClusterRole, err := backend.kubernetesManager.CreateClusterRoles(ctx, clusterRoleName, clusterRolePolicyRules, clusterRoleLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role '%v' with policy rules '%+v' "+
+			"and labels '%+v' in namespace '%v'", clusterRoleName, clusterRolePolicyRules, clusterRoleLabels, enclaveNamespaceName)
+	}
+	shouldRemoveClusterRole := true
+	defer func() {
+		if shouldRemoveClusterRole {
+			if err := backend.kubernetesManager.RemoveClusterRole(ctx, apiContainerClusterRole); err != nil {
+				logrus.Errorf("Creating the API container didn't complete successfully, so we tried to delete cluster role '%v' that we created but an error was thrown:\n%v", clusterRoleName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove cluster role with name '%v'!!!!!!!", clusterRoleName)
+			}
+		}
+	}()
+
+	//Create the cluster role binding to join the service account with the cluster role
+	clusterRoleBindingsAttributes, err := apiContainerAttributesProvider.ForApiContainerClusterRoleBindings()
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Expected to be able to get API container attributes for a Kubernetes cluster role bindings, "+
+				"instead got a non-nil error",
+		)
+	}
+
+	clusterRoleBindingName := clusterRoleBindingsAttributes.GetName().GetString()
+	clusterRoleBindingsLabels := shared_helpers.GetStringMapFromLabelMap(clusterRoleBindingsAttributes.GetLabels())
+	clusterRoleBindingsSubjects := []rbacv1.Subject{
+		{
+			Kind:      rbacv1.ServiceAccountKind,
+			Name:      serviceAccountName,
+			Namespace: enclaveNamespaceName,
+		},
+	}
+
+	clusterRoleBindingsRoleRef := rbacv1.RoleRef{
+		APIGroup: kubernetes_manager_consts.RbacAuthorizationApiGroup,
+		Kind:     kubernetes_manager_consts.ClusterRoleKubernetesResourceType,
+		Name:     clusterRoleName,
+	}
+
+	apiContainerClusterRoleBinding, err := backend.kubernetesManager.CreateClusterRoleBindings(ctx, clusterRoleBindingName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, clusterRoleBindingsLabels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating cluster role bindings '%v' with subjects "+
+			"'%+v' and role ref '%+v' in namespace '%v'", clusterRoleBindingName, clusterRoleBindingsSubjects, clusterRoleBindingsRoleRef, enclaveNamespaceName)
+	}
+	shouldRemoveClusterRoleBinding := true
+	defer func() {
+		if shouldRemoveClusterRoleBinding {
+			if err := backend.kubernetesManager.RemoveClusterRoleBindings(ctx, apiContainerClusterRoleBinding); err != nil {
+				logrus.Errorf("Creating the API container didn't complete successfully, so we tried to delete cluster role binding '%v' that we created but an error was thrown:\n%v", clusterRoleBindingName, err)
+				logrus.Errorf("ACTION REQUIRED: You'll need to manually remove cluster role binding with name '%v'!!!!!!!", clusterRoleBindingName)
+			}
+		}
+	}()
+
 	//Create the role
 	rolesAttributes, err := apiContainerAttributesProvider.ForApiContainerRole()
 	if err != nil {
@@ -241,6 +339,7 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 				kubernetes_manager_consts.PodLogsKubernetesResource,
 				kubernetes_manager_consts.ServicesKubernetesResource,
 				kubernetes_manager_consts.JobsKubernetesResource,
+				kubernetes_manager_consts.PersistentVolumeClaimsKubernetesResource,
 			},
 		},
 		{
@@ -374,6 +473,8 @@ func (backend *KubernetesKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container grpc port '%v/%v' to become available", privateGrpcPortSpec.GetTransportProtocol(), privateGrpcPortSpec.GetNumber())
 	}
 
+	shouldRemoveClusterRole = false
+	shouldRemoveClusterRoleBinding = false
 	shouldRemoveRoleBinding = false
 	shouldRemoveRole = false
 	shouldRemoveServiceAccount = false

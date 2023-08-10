@@ -2,15 +2,19 @@ package engine_manager
 
 import (
 	"context"
+	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/portal_manager"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -34,8 +38,8 @@ type EngineManager struct {
 	kurtosisBackend                           backend_interface.KurtosisBackend
 	shouldSendMetrics                         bool
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
-	remoteBackendConfigSupplier               *engine_server_launcher.KurtosisRemoteBackendConfigSupplier
 	clusterConfig                             *resolved_config.KurtosisClusterConfig
+	onBastionHost                             bool
 	// Make engine IP, port, and protocol configurable in the future
 }
 
@@ -77,14 +81,21 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for cluster '%v'", clusterName)
 	}
 	engineBackendConfigSupplier := clusterConfig.GetEngineBackendConfigSupplier()
-	remoteBackendConfigSupplier := clusterConfig.GetKurtosisRemoteBackendConfigSupplier()
+
+	onBastionHost := false
+	currentContext, _ := store.GetContextsConfigStore().GetCurrentContext()
+	if currentContext != nil {
+		if store.IsRemote(currentContext) {
+			onBastionHost = true
+		}
+	}
 
 	return &EngineManager{
 		kurtosisBackend:   kurtosisBackend,
 		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
 		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
-		remoteBackendConfigSupplier:               remoteBackendConfigSupplier,
-		clusterConfig:                             clusterConfig,
+		clusterConfig: clusterConfig,
+		onBastionHost: onBastionHost,
 	}, nil
 }
 
@@ -152,10 +163,10 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		manager.kurtosisBackend,
 		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
-		manager.remoteBackendConfigSupplier,
 		logLevel,
 		engineVersion,
 		clusterType,
+		manager.onBastionHost,
 		poolSize,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
@@ -181,11 +192,11 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		manager.kurtosisBackend,
 		manager.shouldSendMetrics,
 		manager.engineServerKurtosisBackendConfigSupplier,
-		manager.remoteBackendConfigSupplier,
 		engineImageVersionTag,
 		logLevel,
 		engineVersion,
 		clusterType,
+		manager.onBastionHost,
 		poolSize,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
@@ -328,6 +339,23 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(hostMachinePortBinding)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the running engine; this is very strange and likely indicates a bug in the engine itself")
+	}
+
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err == nil {
+		if store.IsRemote(currentContext) {
+			portalManager := portal_manager.NewPortalManager()
+			if portalManager.IsReachable() {
+				// Forward the remote engine port to the local machine
+				portalClient := portalManager.GetClient()
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(hostMachinePortBinding.portNum), uint32(hostMachinePortBinding.portNum), &kurtosis_context.EnginePortTransportProtocol)
+				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
+					return nil, nil, stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine.")
+				}
+			}
+		}
+	} else {
+		logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
 	}
 
 	clusterType := manager.clusterConfig.GetClusterType()

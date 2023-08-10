@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -14,8 +15,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"reflect"
 )
@@ -107,7 +108,7 @@ func (builtin *RenderTemplatesCapabilities) Interpret(_ string, arguments *built
 }
 
 func (builtin *RenderTemplatesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
+	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as artifact name '%v' already exists", RenderTemplatesBuiltinName, builtin.artifactName)
 	}
 	validatorEnvironment.AddArtifactName(builtin.artifactName)
@@ -127,6 +128,33 @@ func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builti
 	}
 	instructionResult := fmt.Sprintf("Templates artifact name '%s' rendered with artifact UUID '%s'", builtin.artifactName, artifactUUID)
 	return instructionResult, nil
+}
+
+func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	// if other instruction is nil or other instruction is not an add_service instruction, status is unknown
+	if other == nil {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
+	}
+	otherRenderTemplateCapabilities, ok := other.(*RenderTemplatesCapabilities)
+	if !ok {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	// if artifact names don't match, status is unknown, instructions can't be resolved together
+	if otherRenderTemplateCapabilities.artifactName != builtin.artifactName {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	// just check for instruction equality. If it's not equal it needs to be rerun
+	if !instructionsAreEqual {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsUpdated)
+		return enclave_structure.InstructionIsUpdate
+	}
+	enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentWasLeftIntact)
+	return enclave_structure.InstructionIsEqual
 }
 
 func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*render_templates.TemplateData, *startosis_errors.InterpretationError) {

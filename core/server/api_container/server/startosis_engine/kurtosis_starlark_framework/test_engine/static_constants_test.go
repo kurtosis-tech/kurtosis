@@ -4,7 +4,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 )
 
@@ -40,10 +39,12 @@ var (
 	TestPublicPortProtocol        = port_spec.TransportProtocol_TCP
 	TestPublicApplicationProtocol = "https"
 
-	TestFilesArtifactPath1 = "path/to/file/1"
-	TestFilesArtifactName1 = "file_1"
-	TestFilesArtifactPath2 = "path/to/file/2"
-	TestFilesArtifactName2 = "file_2"
+	TestFilesArtifactPath1      = "path/to/file/1"
+	TestFilesArtifactName1      = "file_1"
+	TestFilesArtifactPath2      = "path/to/file/2"
+	TestFilesArtifactName2      = "file_2"
+	TestPersistentDirectoryPath = "path/to/persistent/dir"
+	TestPersistentDirectoryKey  = "persistent-dir-test"
 
 	TestEntryPointSlice = []string{
 		"127.0.0.0",
@@ -62,9 +63,6 @@ var (
 	TestEnvVarValue2 = "VALUE_2"
 
 	TestPrivateIPAddressPlaceholder = "<IP_ADDRESS>"
-
-	TestSubnetwork  = service_network_types.PartitionID("test-subnetwork")
-	TestSubnetwork2 = service_network_types.PartitionID("test-subnetwork-2")
 
 	TestCpuAllocation    = uint64(2000)
 	TestMemoryAllocation = uint64(1024)

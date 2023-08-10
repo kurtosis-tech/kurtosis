@@ -19,8 +19,6 @@ import (
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
 	defaultEngineImageVersionTag = ""
-
-	removeDeprecatedCentralizedLogsDockerCommands = "docker container rm --force kurtosis-logs-db && docker volume rm kurtosis-logs-db-vol --force && docker rm --force $(docker ps --format '{{.Names}}' | grep kurtosis-logs-collector) && docker volume rm --force $(docker volume ls --format '{{.Name}}' | grep kurtosis-logs-collector-vol)"
 )
 
 var engineRestartCmd = fmt.Sprintf(
@@ -46,8 +44,6 @@ type engineExistenceGuarantor struct {
 
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 
-	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier
-
 	engineServerLauncher *engine_server_launcher.EngineServerLauncher
 
 	imageVersionTag string
@@ -65,6 +61,9 @@ type engineExistenceGuarantor struct {
 	//TODO This is a temporary hack we should remove it when centralized logs be implemented in the KubernetesBackend
 	kurtosisClusterType resolved_config.KurtosisClusterType
 
+	// Engine on bastion?
+	onBastionHost bool
+
 	poolSize uint8
 }
 
@@ -74,10 +73,10 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
-	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 	kurtosisClusterType resolved_config.KurtosisClusterType,
+	onBastionHost bool,
 	poolSize uint8,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
@@ -86,11 +85,11 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		kurtosisBackend,
 		shouldSendMetrics,
 		engineServerKurtosisBackendConfigSupplier,
-		kurtosisRemoteBackendConfigSupplier,
 		defaultEngineImageVersionTag,
 		logLevel,
 		maybeCurrentlyRunningEngineVersionTag,
 		kurtosisClusterType,
+		onBastionHost,
 		poolSize,
 	)
 }
@@ -101,11 +100,11 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	shouldSendMetrics bool,
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier,
-	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	imageVersionTag string,
 	logLevel logrus.Level,
 	maybeCurrentlyRunningEngineVersionTag string,
 	kurtosisClusterType resolved_config.KurtosisClusterType,
+	onBastionHost bool,
 	poolSize uint8,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
@@ -113,7 +112,6 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		preVisitingMaybeHostMachineIpAndPort: preVisitingMaybeHostMachineIpAndPort,
 		kurtosisBackend:                      kurtosisBackend,
 		engineServerKurtosisBackendConfigSupplier: engineServerKurtosisBackendConfigSupplier,
-		kurtosisRemoteBackendConfigSupplier:       kurtosisRemoteBackendConfigSupplier,
 		engineServerLauncher:                      engine_server_launcher.NewEngineServerLauncher(kurtosisBackend),
 		imageVersionTag:                           imageVersionTag,
 		logLevel:                                  logLevel,
@@ -121,6 +119,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		postVisitingHostMachineIpAndPort:          nil, // Will be filled in upon successful visitation
 		shouldSendMetrics:                         shouldSendMetrics,
 		kurtosisClusterType:                       kurtosisClusterType,
+		onBastionHost:                             onBastionHost,
 		poolSize:                                  poolSize,
 	}
 }
@@ -148,7 +147,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
-			guarantor.kurtosisRemoteBackendConfigSupplier,
+			guarantor.onBastionHost,
 			guarantor.poolSize,
 		)
 	} else {
@@ -160,7 +159,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			metricsUserId,
 			guarantor.shouldSendMetrics,
 			guarantor.engineServerKurtosisBackendConfigSupplier,
-			guarantor.kurtosisRemoteBackendConfigSupplier,
+			guarantor.onBastionHost,
 			guarantor.poolSize,
 		)
 	}
@@ -195,12 +194,6 @@ func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResp
 }
 
 func (guarantor *engineExistenceGuarantor) VisitRunning() error {
-
-	//TODO(centralized-logs-infra-deprecation) remove this code in the future when people don't have centralized logs infra running
-	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
-		ctx := context.Background()
-		guarantor.ensureDestroyDeprecatedCentralizedLogsResources(ctx)
-	}
 
 	guarantor.postVisitingHostMachineIpAndPort = guarantor.preVisitingMaybeHostMachineIpAndPort
 	runningEngineSemver, cliEngineSemver, err := guarantor.getRunningAndCLIEngineVersions()
@@ -267,15 +260,4 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	}
 
 	return runningEngineSemver, launcherEngineSemver, nil
-}
-
-// TODO(centralized-logs-infra-deprecation) remove this code in the future when people don't have centralized logs infra running
-func (guarantor *engineExistenceGuarantor) ensureDestroyDeprecatedCentralizedLogsResources(ctx context.Context) {
-
-	// TODO(centralized-logs-resources-deprecation) remove this code in the future when people don't have any centralized logs collector and logs database running
-	// we remove all centralized logs containers & volumes
-	if err := guarantor.kurtosisBackend.DestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
-		logrus.Errorf("Attempted to remove deprecated centralized logs resources but failed with error:\n%v", err)
-		logrus.Errorf("Users will have to remove the containers & volumes themselves using `%v`", removeDeprecatedCentralizedLogsDockerCommands)
-	}
 }

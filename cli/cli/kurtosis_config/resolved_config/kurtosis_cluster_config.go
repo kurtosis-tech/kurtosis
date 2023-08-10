@@ -3,30 +3,27 @@ package resolved_config
 import (
 	"context"
 	v2 "github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/overrides_objects/v2"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/remote_context_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/stacktrace"
-	"strings"
 )
 
 const (
 	defaultKubernetesEnclaveDataVolumeSizeInMegabytes = uint(1024)
 )
 
-// Nil because the CLI will never operate in API container mode
-var dockerBackendApiContainerModeArgs *backend_creator.APIContainerModeArgs = nil
-
 type kurtosisBackendSupplier func(ctx context.Context) (backend_interface.KurtosisBackend, error)
 
 type KurtosisClusterConfig struct {
-	kurtosisBackendSupplier             kurtosisBackendSupplier
-	engineBackendConfigSupplier         engine_server_launcher.KurtosisBackendConfigSupplier
-	kurtosisRemoteBackendConfigSupplier *engine_server_launcher.KurtosisRemoteBackendConfigSupplier
-	clusterType                         KurtosisClusterType
+	kurtosisBackendSupplier     kurtosisBackendSupplier
+	engineBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
+	clusterType                 KurtosisClusterType
 }
 
 func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.KurtosisClusterConfigV2) (*KurtosisClusterConfig, error) {
@@ -45,16 +42,15 @@ func NewKurtosisClusterConfigFromOverrides(clusterId string, overrides *v2.Kurto
 		)
 	}
 
-	backendSupplier, engineBackendConfigSupplier, kurtosisRemoteBackendConfigSupplier, err := getSuppliers(clusterId, clusterType, overrides.Config)
+	backendSupplier, engineBackendConfigSupplier, err := getSuppliers(clusterId, clusterType, overrides.Config)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the suppliers that cluster '%v' will use", clusterId)
 	}
 
 	return &KurtosisClusterConfig{
-		kurtosisBackendSupplier:             backendSupplier,
-		engineBackendConfigSupplier:         engineBackendConfigSupplier,
-		kurtosisRemoteBackendConfigSupplier: kurtosisRemoteBackendConfigSupplier,
-		clusterType:                         clusterType,
+		kurtosisBackendSupplier:     backendSupplier,
+		engineBackendConfigSupplier: engineBackendConfigSupplier,
+		clusterType:                 clusterType,
 	}, nil
 }
 
@@ -70,10 +66,6 @@ func (clusterConfig *KurtosisClusterConfig) GetEngineBackendConfigSupplier() eng
 	return clusterConfig.engineBackendConfigSupplier
 }
 
-func (clusterConfig *KurtosisClusterConfig) GetKurtosisRemoteBackendConfigSupplier() *engine_server_launcher.KurtosisRemoteBackendConfigSupplier {
-	return clusterConfig.kurtosisRemoteBackendConfigSupplier
-}
-
 func (clusterConfig *KurtosisClusterConfig) GetClusterType() KurtosisClusterType {
 	return clusterConfig.clusterType
 }
@@ -86,17 +78,14 @@ func (clusterConfig *KurtosisClusterConfig) GetClusterType() KurtosisClusterType
 func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesConfig *v2.KubernetesClusterConfigV2) (
 	kurtosisBackendSupplier,
 	engine_server_launcher.KurtosisBackendConfigSupplier,
-	*engine_server_launcher.KurtosisRemoteBackendConfigSupplier,
 	error,
 ) {
-	kurtosisRemoteBackendConfigSupplier := engine_server_launcher.NewKurtosisRemoteBackendConfigSupplier(store.GetContextsConfigStore().GetCurrentContext)
-
 	var backendSupplier kurtosisBackendSupplier
 	var engineConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	switch clusterType {
 	case KurtosisClusterType_Docker:
 		if kubernetesConfig != nil {
-			return nil, nil, nil, stacktrace.NewError(
+			return nil, nil, stacktrace.NewError(
 				"Cluster '%v' defines cluster config, but config must not be provided when cluster type is '%v'",
 				clusterId,
 				clusterType.String(),
@@ -104,11 +93,17 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		}
 
 		backendSupplier = func(_ context.Context) (backend_interface.KurtosisBackend, error) {
-			kurtosisRemoteBackendConfigMaybe, err := kurtosisRemoteBackendConfigSupplier.GetOptionalRemoteConfig()
+			var remoteBackendConfigMaybe *configs.KurtosisRemoteBackendConfig
+			currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
 			if err != nil {
-				return nil, stacktrace.Propagate(err, "Error building optional remote Kurtosis backend config")
+				return nil, stacktrace.Propagate(err, "An error occurred retrieving the current context")
 			}
-			backend, err := remote_context_backend.GetContextAwareKurtosisBackend(kurtosisRemoteBackendConfigMaybe, dockerBackendApiContainerModeArgs)
+			if store.IsRemote(currentContext) {
+				remoteBackendConfigMaybe = configs.NewRemoteBackendConfigFromRemoteContext(currentContext.GetRemoteContextV0())
+			}
+			// Get a local or remote docker backend based on the existence of the remote backend config.
+			// We do not pass APIC mode args since we are dealing with the engine here.
+			backend, err := backend_creator.GetDockerKurtosisBackend(backend_creator.NoAPIContainerModeArgs, remoteBackendConfigMaybe)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "An error occurred creating the Docker Kurtosis backend")
 			}
@@ -118,14 +113,14 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		engineConfigSupplier = engine_server_launcher.NewDockerKurtosisBackendConfigSupplier()
 	case KurtosisClusterType_Kubernetes:
 		if kubernetesConfig == nil {
-			return nil, nil, nil, stacktrace.NewError(
+			return nil, nil, stacktrace.NewError(
 				"Cluster '%v' doesn't define cluster config, but config must be provided when cluster type is '%v'",
 				clusterId,
 				clusterType.String(),
 			)
 		}
 		if kubernetesConfig.KubernetesClusterName == nil {
-			return nil, nil, nil, stacktrace.NewError(
+			return nil, nil, stacktrace.NewError(
 				"Type of cluster '%v' is '%v' but has no Kubernetes cluster name in its config map",
 				clusterId,
 				clusterType,
@@ -136,7 +131,7 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		_ = *kubernetesConfig.KubernetesClusterName
 
 		if kubernetesConfig.StorageClass == nil {
-			return nil, nil, nil, stacktrace.NewError(
+			return nil, nil, stacktrace.NewError(
 				"Type of cluster '%v' is '%v' but no storage class was defined in the config",
 				clusterId,
 				clusterType,
@@ -150,15 +145,6 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		}
 
 		backendSupplier = func(ctx context.Context) (backend_interface.KurtosisBackend, error) {
-			kurtosisRemoteBackendConfigMaybe, err := kurtosisRemoteBackendConfigSupplier.GetOptionalRemoteConfig()
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "Error building optional remote Kurtosis backend config")
-			}
-			if kurtosisRemoteBackendConfigMaybe != nil {
-				return nil, stacktrace.NewError("Using a Remote Kurtosis Backend isn't allowed with Kubernetes. " +
-					"Either switch to a local only context to use Kubernetes or switch the cluster to Docker to " +
-					"connect to a remote Kurtosis backend")
-			}
 			backend, err := kubernetes_kurtosis_backend.GetCLIBackend(ctx)
 			if err != nil {
 				return nil, stacktrace.Propagate(
@@ -175,11 +161,11 @@ func getSuppliers(clusterId string, clusterType KurtosisClusterType, kubernetesC
 		engineConfigSupplier = engine_server_launcher.NewKubernetesKurtosisBackendConfigSupplier(storageClass, enclaveDataVolumeSizeInMb)
 	default:
 		// This should never happen because we enforce this via unit tests
-		return nil, nil, nil, stacktrace.NewError(
+		return nil, nil, stacktrace.NewError(
 			"Cluster '%v' has unrecognized type '%v'; this is a bug in Kurtosis",
 			clusterId,
 			clusterType.String(),
 		)
 	}
-	return backendSupplier, engineConfigSupplier, kurtosisRemoteBackendConfigSupplier, nil
+	return backendSupplier, engineConfigSupplier, nil
 }

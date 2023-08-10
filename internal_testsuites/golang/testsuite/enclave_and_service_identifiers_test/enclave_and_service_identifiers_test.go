@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	testName              = "identifiers-test"
-	isPartitioningEnabled = false
+	testName = "identifiers-test"
 
 	datastoreServiceName = "datastore"
 	shortenedUuidLength  = 12
@@ -32,7 +31,7 @@ func TestIdentifiers(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	shouldDestroyEnclave := true
 	defer func() {

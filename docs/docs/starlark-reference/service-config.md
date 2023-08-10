@@ -30,12 +30,18 @@ config = ServiceConfig(
         ),
     },
 
-    # A mapping of path_on_container_where_contents_will_be_mounted -> files_artifact_id_to_mount
-    # For more info on what a files artifact is, see below
+    # A mapping of path_on_container_where_contents_will_be_mounted -> Directory object or file artifact name
+    # For more info on what a Directory object is, see below
+    # 
     # OPTIONAL (Default: {})
     files = {
-        "path/to/file/1": files_artifact_1,
-        "path/to/file/2": files_artifact_2,
+        "path/to/files/artifact_1/": files_artifact_1,
+        "path/to/files/artifact_2/": Directory(
+            artifact_name=files_artifact_2,
+        ),
+        "path/to/persistent/directory/": Directory(
+            persistent_key="data-directory",
+        ),
     },
 
     # The ENTRYPOINT statement hardcoded in a container image's Dockerfile might not be suitable for your needs.
@@ -85,10 +91,6 @@ config = ServiceConfig(
     # OPTIONAL (Default: no limit)
     min_memory = 512,
 
-    # Defines the subnetwork in which the service will be started.
-    # OPTIONAL (Default: "default")
-    subnetwork = "service_subnetwork",
-
     # This field can be used to check the service's readiness after the service has started,
     # to confirm that it is ready to receive connections and traffic
     # OPTIONAL (Default: no ready conditions)
@@ -97,9 +99,8 @@ config = ServiceConfig(
 ```
 The `ports` dictionary argument accepts a key value pair, where `key` is a user defined unique port identifier and `value` is a [PortSpec][port-spec] object.
 
-The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a file artifact name. (see [upload_files][upload-files-reference], [render_templates][render-templates-reference] and [store_service_files][store-service-reference] to learn more about on how to create file artifacts)
-
-For more info about the `subnetwork` argument, see [Kurtosis subnetworks][subnetworks-reference].
+The `files` dictionary argument accepts a key value pair, where `key` is the path where the contents of the artifact will be mounted to and `value` is a [Directory][directory] object or files artifact name.
+Using a `Directory` object with `artifact_name` is strictly equivalent to directly using the files artifact name as the value of the dictionary. This is just to simplify usage.
 
 You can view more information on [configuring the `ReadyCondition` type here][ready-condition].
 
@@ -110,9 +111,6 @@ set the `entrypoint` to `["/bin/sh", "-c"]` and then set the `cmd` to the comman
 
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service-reference]: ./plan.md#add_service
+[directory]: ./directory.md
 [port-spec]: ./port-spec.md
-[upload-files-reference]: ./plan.md#upload_files
-[render-templates-reference]: ./plan.md#render_templates
-[store-service-reference]: ./plan.md#store_service_files
-[subnetworks-reference]: ../concepts-reference/subnetworks.md
 [ready-condition]: ./ready-condition.md

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
@@ -61,31 +60,38 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 }
 
 func validateSingleService(validatorEnvironment *startosis_validator.ValidatorEnvironment, serviceName service.ServiceName, serviceConfig *service.ServiceConfig) *startosis_errors.ValidationError {
-	subnetwork := serviceConfig.GetSubnetwork()
-	if partition_topology.ParsePartitionId(&subnetwork) != partition_topology.DefaultPartitionId {
-		if !validatorEnvironment.IsNetworkPartitioningEnabled() {
-			return startosis_errors.NewValidationError("Service was about to be started inside subnetwork '%s' but the Kurtosis enclave was started with subnetwork capabilities disabled. Make sure to run the Starlark code with subnetwork enabled.", serviceConfig.GetSubnetwork())
-		}
-	}
 	if isValidServiceName := service.IsServiceNameValid(serviceName); !isValidServiceName {
 		return startosis_errors.NewValidationError(invalidServiceNameErrorText(serviceName))
 	}
 
-	if validatorEnvironment.DoesServiceNameExist(serviceName) {
-		return startosis_errors.NewValidationError("There was an error validating '%s' as service '%s' already exists", AddServiceBuiltinName, serviceName)
+	if validatorEnvironment.DoesServiceNameExist(serviceName) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
+		return startosis_errors.NewValidationError("There was an error validating '%s' as service '%s' was created inside this package. Adding the same service twice in the same package is not allowed", AddServiceBuiltinName, serviceName)
 	}
 	if serviceConfig.GetFilesArtifactsExpansion() != nil {
 		for _, artifactName := range serviceConfig.GetFilesArtifactsExpansion().ServiceDirpathsToArtifactIdentifiers {
-			if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
+			if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
 				return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", AddServiceBuiltinName, artifactName)
 			}
 		}
 	}
+
+	if validationErr := validatorEnvironment.HasEnoughCPU(serviceConfig.GetMinCPUAllocationMillicpus(), serviceName); validationErr != nil {
+		return validationErr
+	}
+
+	if validationErr := validatorEnvironment.HasEnoughMemory(serviceConfig.GetMinMemoryAllocationMegabytes(), serviceName); validationErr != nil {
+		return validationErr
+	}
+
 	validatorEnvironment.AddServiceName(serviceName)
 	validatorEnvironment.AppendRequiredContainerImage(serviceConfig.GetContainerImageName())
+	var portIds []string
 	for portId := range serviceConfig.GetPrivatePorts() {
-		validatorEnvironment.AddPrivatePortIDForService(portId, serviceName)
+		portIds = append(portIds, portId)
 	}
+	validatorEnvironment.AddPrivatePortIDForService(portIds, serviceName)
+	validatorEnvironment.ConsumeMemory(serviceConfig.GetMinMemoryAllocationMegabytes(), serviceName)
+	validatorEnvironment.ConsumeCPU(serviceConfig.GetMinCPUAllocationMillicpus(), serviceName)
 	return nil
 }
 
@@ -161,12 +167,12 @@ func replaceMagicStrings(
 		cmdArgs,
 		envVars,
 		serviceConfig.GetFilesArtifactsExpansion(),
+		serviceConfig.GetPersistentDirectories(),
 		serviceConfig.GetCPUAllocationMillicpus(),
 		serviceConfig.GetMemoryAllocationMegabytes(),
 		serviceConfig.GetPrivateIPAddrPlaceholder(),
 		serviceConfig.GetMinCPUAllocationMillicpus(),
 		serviceConfig.GetMinMemoryAllocationMegabytes(),
-		serviceConfig.GetSubnetwork(),
 	)
 	return service.ServiceName(serviceNameStr), renderedServiceConfig, nil
 }

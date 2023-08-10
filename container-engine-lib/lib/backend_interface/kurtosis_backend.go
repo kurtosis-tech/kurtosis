@@ -3,12 +3,12 @@ package backend_interface
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"io"
 	"time"
@@ -69,7 +69,7 @@ type KurtosisBackend interface {
 	DumpKurtosis(ctx context.Context, outputDirpath string) error
 
 	// Creates an enclave with the given enclave UUID
-	CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error)
+	CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string) (*enclave.Enclave, error)
 
 	// Update an enclave by UUID, it's only possible to udpate the name and creation time so far
 	// The newCreationTime param is optional, it won't be updated if the value is nil
@@ -223,6 +223,19 @@ type KurtosisBackend interface {
 		error, // represents an error with the function itself, rather than the user services
 	)
 
+	// RemoveRegisteredUserServiceProcesses removes the running user service process but keeps the service registration
+	// TODO: As we don't persist user service logs anywhere, removing the container/pod will also remove all its
+	//  logs. We need a persistent log storage to address this issue.
+	RemoveRegisteredUserServiceProcesses(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		services map[service.ServiceUUID]bool,
+	) (
+		map[service.ServiceUUID]bool, // user service UUIDs that were successfully removed
+		map[service.ServiceUUID]error, // user service UUIDs that failed to be removed, with the error
+		error, // represents an error with the function itself, rather than the user services
+	)
+
 	// Gets user services using the given filters, returning a map of matched user services identified by their UUID
 	GetUserServices(
 		ctx context.Context,
@@ -256,6 +269,14 @@ type KurtosisBackend interface {
 		erroredUserServiceUuids map[service.ServiceUUID]error,
 		resultErr error,
 	)
+
+	// Executes a shell command inside an user service, where output and final response are streamed back to user
+	RunUserServiceExecCommandWithStreamedOutput(
+		ctx context.Context,
+		enclaveUuid enclave.EnclaveUUID,
+		serviceUuid service.ServiceUUID,
+		cmd []string,
+	) (execOutputChan chan string, finalExecResultChan chan *exec_result.ExecResult, resultErr error)
 
 	// Get a connection with user service to execute commands in
 	GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error)
@@ -291,57 +312,6 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
-	// TODO Move this logic inside the user service, so that we have tighter controls on what can happen and what can't
-	//Create a user service's  networking sidecar inside enclave
-	CreateNetworkingSidecar(
-		ctx context.Context,
-		enclaveUuid enclave.EnclaveUUID,
-		serviceUuid service.ServiceUUID,
-	) (
-		*networking_sidecar.NetworkingSidecar,
-		error,
-	)
-
-	// Gets networking sidecars using the given filters, returning a map of matched networking sidecars identified by their GUID
-	GetNetworkingSidecars(
-		ctx context.Context,
-		filters *networking_sidecar.NetworkingSidecarFilters,
-	) (
-		map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar,
-		error,
-	)
-
-	//Executes many shell commands inside multiple networking sidecar instances indenfified by User Service UUIDs
-	RunNetworkingSidecarExecCommands(
-		ctx context.Context,
-		enclaveUuid enclave.EnclaveUUID,
-		networkingSidecarsCommands map[service.ServiceUUID][]string,
-	) (
-		successfulNetworkingSidecarExecResults map[service.ServiceUUID]*exec_result.ExecResult,
-		erroredUserServiceUuids map[service.ServiceUUID]error,
-		resultErr error,
-	)
-
-	// Stop networking sidecars using the given filters,
-	StopNetworkingSidecars(
-		ctx context.Context,
-		filters *networking_sidecar.NetworkingSidecarFilters,
-	) (
-		successfulUserServiceUuids map[service.ServiceUUID]bool,
-		erroredUserServiceUuids map[service.ServiceUUID]error,
-		resultErr error,
-	)
-
-	// Destroy networking sidecars using the given filters,
-	DestroyNetworkingSidecars(
-		ctx context.Context,
-		filters *networking_sidecar.NetworkingSidecarFilters,
-	) (
-		successfulUserServiceUuids map[service.ServiceUUID]bool,
-		erroredUserServiceUuids map[service.ServiceUUID]error,
-		resultErr error,
-	)
-
 	// Create a new Logs Database for storing and requesting the container's logs
 	CreateLogsDatabase(
 		ctx context.Context,
@@ -370,7 +340,6 @@ type KurtosisBackend interface {
 	// Destroy the logs collector for enclave with UUID
 	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
 
-	// Destroy the centralized logs resources
-	// TODO(centralized-logs-resources-deprecation) remove this once we know people are on > 0.68.0
-	DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error
+	// GetAvailableCPUAndMemory - gets available memory in megabytes and cpu in millicores, the boolean indicates whether the information is complete
+	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error)
 }

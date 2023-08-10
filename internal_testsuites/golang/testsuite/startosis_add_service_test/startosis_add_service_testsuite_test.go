@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	name                  = "startosis-add-service"
-	isPartitioningEnabled = false
+	name = "startosis-add-service"
 )
 
 type StartosisAddServiceTestSuite struct {
@@ -25,16 +24,16 @@ func TestStartosisAddServiceTestSuite(t *testing.T) {
 	suite.Run(t, new(StartosisAddServiceTestSuite))
 }
 
-func (suite *StartosisAddServiceTestSuite) SetupSuite() {
+func (suite *StartosisAddServiceTestSuite) SetupTest() {
 	ctx := context.Background()
 	t := suite.T()
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	suite.enclaveCtx = enclaveCtx
 	suite.destroyEnclaveFunc = destroyEnclaveFunc
 }
 
-func (suite *StartosisAddServiceTestSuite) TearDownSuite() {
+func (suite *StartosisAddServiceTestSuite) TearDownTest() {
 	err := suite.destroyEnclaveFunc()
 	require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
 }

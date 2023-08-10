@@ -2,19 +2,24 @@ package startosis_engine
 
 import (
 	"context"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"sync"
 )
 
 const (
-	progressMsg      = "Execution in progress"
-	ParallelismParam = "PARALLELISM"
+	// we limit the output to 64k characters
+	// TODO(tedi) get rid of this in favor of streaming
+	outputSizeLimit          = 64 * 1024
+	outputLimitReachedSuffix = "..."
+	progressMsg              = "Execution in progress"
 )
 
 var (
@@ -49,7 +54,7 @@ func NewStartosisExecutor(runtimeValueStore *runtime_value_store.RuntimeValueSto
 func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	ctxWithParallelism := context.WithValue(ctx, ParallelismParam, parallelism)
+	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
 	go func() {
 		defer func() {
 			executor.mutex.Unlock()
@@ -91,7 +96,11 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					return
 				}
 				if instructionOutput != nil {
-					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(*instructionOutput)
+					instructionOutputStr := *instructionOutput
+					if len(instructionOutputStr) > outputSizeLimit {
+						instructionOutputStr = fmt.Sprintf("%s%s", instructionOutputStr[0:outputSizeLimit], outputLimitReachedSuffix)
+					}
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr)
 				}
 				// mark the instruction as executed and add it to the current instruction plan
 				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)

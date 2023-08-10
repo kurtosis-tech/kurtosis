@@ -21,7 +21,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -257,7 +256,7 @@ func GetIpAndPortInfoFromContainer(
 
 	var containerPublicIp net.IP
 	var publicPortSpecs map[string]*port_spec.PortSpec
-	if hostMachinePortBindings == nil || len(hostMachinePortBindings) == 0 {
+	if len(hostMachinePortBindings) == 0 {
 		return privateIp, privatePortSpecs, containerPublicIp, publicPortSpecs, nil
 	}
 
@@ -355,47 +354,6 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 		resultDockerResources[uuid] = dockerResources
 	}
 	return resultServiceObjs, resultDockerResources, nil
-}
-
-// TODO Make private when networking sidecars are pushed down to the service level
-func GetSingleUserServiceObjAndResourcesNoMutex(
-	ctx context.Context,
-	enclaveId enclave.EnclaveUUID,
-	userServiceUuid service.ServiceUUID,
-	dockerManager *docker_manager.DockerManager,
-) (
-	*service.Service,
-	*UserServiceDockerResources,
-	error,
-) {
-	filters := &service.ServiceFilters{
-		Names: nil,
-		UUIDs: map[service.ServiceUUID]bool{
-			userServiceUuid: true,
-		},
-		Statuses: nil,
-	}
-	userServices, dockerResources, err := GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services using filters '%v'", filters)
-	}
-	numOfUserServices := len(userServices)
-	if numOfUserServices == 0 {
-		return nil, nil, stacktrace.NewError("No user service with UUID '%v' in enclave with ID '%v' was found", userServiceUuid, enclaveId)
-	}
-	if numOfUserServices > 1 {
-		return nil, nil, stacktrace.NewError("Expected to find only one user service with UUID '%v' in enclave with ID '%v', but '%v' was found", userServiceUuid, enclaveId, numOfUserServices)
-	}
-
-	var resultService *service.Service
-	for _, resultService = range userServices {
-	}
-
-	var resultDockerResources *UserServiceDockerResources
-	for _, resultDockerResources = range dockerResources {
-	}
-
-	return resultService, resultDockerResources, nil
 }
 
 func WaitForPortAvailabilityUsingNetstat(
@@ -570,7 +528,7 @@ func getMatchingUserServiceDockerResources(
 		}
 		serviceUuid := service.ServiceUUID(serviceUuidStr)
 
-		if maybeUuidsToMatch != nil && len(maybeUuidsToMatch) > 0 {
+		if len(maybeUuidsToMatch) > 0 {
 			if _, found := maybeUuidsToMatch[serviceUuid]; !found {
 				continue
 			}
@@ -605,7 +563,7 @@ func getMatchingUserServiceDockerResources(
 		}
 		serviceUuid := service.ServiceUUID(serviceUuidStr)
 
-		if maybeUuidsToMatch != nil && len(maybeUuidsToMatch) > 0 {
+		if len(maybeUuidsToMatch) > 0 {
 			if _, found := maybeUuidsToMatch[serviceUuid]; !found {
 				continue
 			}
@@ -743,7 +701,7 @@ func dumpContainerInfo(
 		return stacktrace.Propagate(err, "An error occurred serializing the results of inspecting container with ID '%v' to JSON", containerId)
 	}
 	specOutputFilepath := path.Join(containerOutputDirpath, containerInspectResultFilename)
-	if err := ioutil.WriteFile(specOutputFilepath, jsonSerializedInspectResultBytes, createdFilePerms); err != nil {
+	if err := os.WriteFile(specOutputFilepath, jsonSerializedInspectResultBytes, createdFilePerms); err != nil {
 		return stacktrace.Propagate(
 			err,
 			"An error occurred writing the inspect output of container with name '%v' and ID '%v' to file '%v'",

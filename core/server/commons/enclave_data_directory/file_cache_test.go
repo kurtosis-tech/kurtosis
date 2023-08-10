@@ -8,7 +8,7 @@ package enclave_data_directory
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/assert"
-	"io/ioutil"
+	"io"
 	"os"
 	"path"
 	"strings"
@@ -34,7 +34,7 @@ func TestFileCache_AddAndGetAndRemoveArtifact(t *testing.T) {
 	// Check that the contents are what we expect
 	fp, err := os.Open(addedFileObj.GetAbsoluteFilepath())
 	assert.Nil(t, err)
-	testFileBytes, err := ioutil.ReadAll(fp)
+	testFileBytes, err := io.ReadAll(fp)
 	assert.Nil(t, err)
 	assert.Equal(t, testContents, string(testFileBytes))
 
@@ -82,7 +82,7 @@ func TestFileCache_FileDeletedOnReaderError(t *testing.T) {
 	assert.NotNil(t, err)
 
 	// Make sure the file cache directory is still empty
-	files, err := ioutil.ReadDir(fileCache.absoluteDirpath)
+	files, err := os.ReadDir(fileCache.absoluteDirpath)
 	assert.Nil(t, err)
 	assert.Equal(t, 0, len(files))
 }
@@ -96,7 +96,7 @@ func TestFileCache_RemoveFileFailsForNonExistingKeys(t *testing.T) {
 }
 
 func getTestFileCache(t *testing.T) *FileCache {
-	absDirpath, err := ioutil.TempDir("", "")
+	absDirpath, err := os.MkdirTemp("", "")
 	assert.Nil(t, err)
 	return newFileCache(absDirpath, "")
 }

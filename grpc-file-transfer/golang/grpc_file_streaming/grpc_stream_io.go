@@ -3,19 +3,17 @@ package grpc_file_streaming
 import (
 	"crypto/sha1"
 	"encoding/hex"
+	"errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"math"
 )
 
 const (
-	// Kurtosis imposes maximum file size of 100MB
-	kurtosisMaximumFileSizeLimit = 100 * 1024 * 1024
-
-	// Files are streamed in chunk of 3MB. This is important to keep this below 4MB as GRPC has hard limit of 4MB
+	// Files are streamed in chunk of 3MB. This is important to keep this below 4MB as GRPC has a hard limit of 4MB
 	// per message
-	chunkSize = 3 * 1024 * 1024
+	chunkSize       = 3 * 1024 * 1024
+	bytesInKilobyte = 1024
 )
 
 // sendMessagesToStream is a helper function that takes as input the payload to be sent, split it into fixed-size chunks
@@ -24,37 +22,31 @@ const (
 // from the previousChunkHash and the byte array for this chunk.
 func sendMessagesToStream[DataChunkProtoMessage any](
 	payloadNameForLogging string,
-	payload []byte,
+	payload io.Reader,
+	payloadSizeInBytes uint64,
 	sendViaStreamFunc func(msg any) error,
 	grpcMsgConstructor func(previousChunkHash string, contentChunk []byte) (*DataChunkProtoMessage, error),
 ) error {
-	if len(payload) > kurtosisMaximumFileSizeLimit {
-		return stacktrace.NewError("The files you are trying to send, which are now compressed, exceed or reach " +
-			"100mb. Please reduce the total file size.")
-	}
-
 	var previousChunkHash string
 	hasher := sha1.New()
 	chunkNumber := 0
-	totalChunksNumber := int(math.Ceil(float64(len(payload)) / chunkSize))
-	lastChunkIndex := totalChunksNumber - 1
 
-	for chunkIdx := 0; chunkIdx <= lastChunkIndex; chunkIdx++ {
-		logrus.Debugf("Sending content for %s. Block number %d/%d", payloadNameForLogging, chunkNumber, totalChunksNumber-1)
-
-		var contentChunk []byte
-		payloadFirstByteIdx := chunkIdx * chunkSize
-		if chunkIdx == lastChunkIndex {
-			// last chunk - copy everything that's left in the payload array
-			contentChunk = make([]byte, len(payload[payloadFirstByteIdx:]))
-			copy(contentChunk, payload[payloadFirstByteIdx:])
-		} else {
-			// copy chunkSize bytes from the content array to the contentChunk
-			contentChunk = make([]byte, chunkSize)
-			nextPayloadChunkFirstByteIdx := (chunkIdx + 1) * chunkSize
-			copy(contentChunk, payload[payloadFirstByteIdx:nextPayloadChunkFirstByteIdx])
+	buf := make([]byte, chunkSize)
+	for {
+		bytesRead, err := payload.Read(buf)
+		if err != nil && !errors.Is(err, io.EOF) {
+			return stacktrace.Propagate(err, "Unexpected error reading payload content")
 		}
 
+		if bytesRead == 0 && errors.Is(err, io.EOF) {
+			// reached the end of the payload, exit the loop
+			break
+		}
+		chunkNumber += 1
+		logrus.Debugf("Sending content of %s. Progress: %d/%d kilobytes", payloadNameForLogging, chunkNumber*chunkSize/bytesInKilobyte, payloadSizeInBytes)
+
+		contentChunk := make([]byte, bytesRead)
+		copy(contentChunk, buf[:bytesRead])
 		message, err := grpcMsgConstructor(previousChunkHash, contentChunk)
 		if err != nil {
 			return stacktrace.Propagate(err, "An unexpected error occurred assembling GRPC message from data chunk"+
@@ -77,6 +69,9 @@ func sendMessagesToStream[DataChunkProtoMessage any](
 // It extracts the valuable information (i.e. the byte array and the previous chunk hash) form the generic proto message
 // using the provided grpcMsgExtractor function.
 // It returns a simple byte array corresponding to the assembled payload (concatenation of all chunks)
+// TODO: We should convert the result into a io.ReadCloser here to save memory and fully benefit from streaming.
+//
+//	Otherwise we end up storing the entire payload in memory, for large files it may cause issues.
 func readMessagesFromStream[DataChunkMessageType any](
 	payloadNameForLogging string,
 	readMsgFromStream func(msg any) error,

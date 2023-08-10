@@ -2,35 +2,20 @@ package service_network
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/partition_topology"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_network_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/service_identifiers"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"io"
 	"net/http"
 )
 
+// ServiceNetwork handles the state of the enclave
+//
+// Regenerate mock with the following command from core/server directory:
+// mockery -r --name=ServiceNetwork --filename=mock_service_network.go --structname=MockServiceNetwork --with-expecter --inpackage
 type ServiceNetwork interface {
-	SetConnection(
-		ctx context.Context,
-		partition1 service_network_types.PartitionID,
-		partition2 service_network_types.PartitionID,
-		connection partition_topology.PartitionConnection,
-	) error
-
-	UnsetConnection(
-		ctx context.Context,
-		partition1 service_network_types.PartitionID,
-		partition2 service_network_types.PartitionID,
-	) error
-
-	SetDefaultConnection(
-		ctx context.Context,
-		connection partition_topology.PartitionConnection,
-	) error
-
 	AddService(
 		ctx context.Context,
 		serviceName service.ServiceName,
@@ -52,9 +37,19 @@ type ServiceNetwork interface {
 
 	UpdateService(
 		ctx context.Context,
-		updateServiceConfigs map[service.ServiceName]*kurtosis_core_rpc_api_bindings.UpdateServiceConfig,
+		serviceName service.ServiceName,
+		updateServiceConfig *service.ServiceConfig,
 	) (
-		map[service.ServiceName]bool,
+		*service.Service,
+		error,
+	)
+
+	UpdateServices(
+		ctx context.Context,
+		updateServiceConfigs map[service.ServiceName]*service.ServiceConfig,
+		batchSize int,
+	) (
+		map[service.ServiceName]*service.Service,
 		map[service.ServiceName]error,
 		error,
 	)
@@ -102,15 +97,17 @@ type ServiceNetwork interface {
 
 	GetServiceNames() map[service.ServiceName]bool
 
-	GetExistingAndHistoricalServiceIdentifiers() []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers
+	GetExistingAndHistoricalServiceIdentifiers() (service_identifiers.ServiceIdentifiers, error)
 
 	GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool)
 
 	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
-	UploadFilesArtifact(data []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
+	UploadFilesArtifact(data io.Reader, contentMd5 []byte, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
-	IsNetworkPartitioningEnabled() bool
+	GetFilesArtifactMd5(artifactName string) (enclave_data_directory.FilesArtifactUUID, []byte, bool, error)
+
+	UpdateFilesArtifact(fileArtifactUuid enclave_data_directory.FilesArtifactUUID, updatedContent io.Reader, contentMd5 []byte) error
 
 	GetUniqueNameForFileArtifact() (string, error)
 

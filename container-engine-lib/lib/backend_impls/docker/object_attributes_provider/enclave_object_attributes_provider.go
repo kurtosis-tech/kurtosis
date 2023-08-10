@@ -1,6 +1,8 @@
 package object_attributes_provider
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_object_name"
@@ -9,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"net"
@@ -17,9 +20,11 @@ import (
 )
 
 const (
-	apiContainerNamePrefix                 = "kurtosis-api"
-	networkingSidecarContainerNameFragment = "networking-sidecar"
+	apiContainerNamePrefix = "kurtosis-api"
+
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
+	persistentServiceDirectoryNameFragment = "service-persistent-directory"
+
 	artifactsExpanderContainerNameFragment = "files-artifacts-expander"
 	logsCollectorFragment                  = "kurtosis-logs-collector"
 	// The collector is per enclave so this is a suffix
@@ -27,7 +32,7 @@ const (
 )
 
 type DockerEnclaveObjectAttributesProvider interface {
-	ForEnclaveNetwork(enclaveName string, creationTime time.Time, isPartitioningEnabled bool) (DockerObjectAttributes, error)
+	ForEnclaveNetwork(enclaveName string, creationTime time.Time) (DockerObjectAttributes, error)
 	ForEnclaveDataVolume() (DockerObjectAttributes, error)
 	ForApiContainer(
 		ipAddr net.IP,
@@ -40,14 +45,15 @@ type DockerEnclaveObjectAttributesProvider interface {
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
 	) (DockerObjectAttributes, error)
-	ForNetworkingSidecarContainer(
-		serviceUUIDSidecarAttachedTo service.ServiceUUID,
-	) (DockerObjectAttributes, error)
 	ForFilesArtifactsExpanderContainer(
 		serviceUUID service.ServiceUUID,
 	) (DockerObjectAttributes, error)
 	ForSingleFilesArtifactExpansionVolume(
 		serviceUUID service.ServiceUUID,
+	) (DockerObjectAttributes, error)
+	ForSinglePersistentDirectoryVolume(
+		serviceUUID service.ServiceUUID,
+		persistentKey service_directory.DirectoryPersistentKey,
 	) (DockerObjectAttributes, error)
 	ForLogsCollector(tcpPortId string, tcpPortSpec *port_spec.PortSpec, httpPortId string, httpPortSpec *port_spec.PortSpec) (DockerObjectAttributes, error)
 	ForLogsCollectorVolume() (DockerObjectAttributes, error)
@@ -66,7 +72,7 @@ func newDockerEnclaveObjectAttributesProviderImpl(
 	}
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enclaveName string, creationTime time.Time, isPartitioningEnabled bool) (DockerObjectAttributes, error) {
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enclaveName string, creationTime time.Time) (DockerObjectAttributes, error) {
 	enclaveIdStr := provider.enclaveId.GetString()
 	name, err := docker_object_name.CreateNewDockerObjectName(enclaveIdStr)
 	if err != nil {
@@ -101,12 +107,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enc
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave network using ID '%v'", provider.enclaveId)
 	}
-
-	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledDockerLabelValue
-	if isPartitioningEnabled {
-		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledDockerLabelValue
-	}
-	labels[label_key_consts.IsNetworkPartitioningEnabledDockerLabelKey] = isPartitioningEnabledLabelValue
 
 	labels[label_key_consts.EnclaveCreationTimeLabelKey] = creationTimeLabelValue
 	labels[label_key_consts.EnclaveNameDockerLabelKey] = enclaveNameLabelValue
@@ -248,36 +248,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	return objectAttributes, nil
 }
 
-func (provider *dockerEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(serviceUUIDSidecarAttachedTo service.ServiceUUID) (DockerObjectAttributes, error) {
-	name, err := provider.getNameForEnclaveObject(
-		[]string{
-			networkingSidecarContainerNameFragment,
-			string(serviceUUIDSidecarAttachedTo),
-		},
-	)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the networking sidecar Docker container name object")
-	}
-
-	labels, err := provider.getLabelsForEnclaveObjectWithGUID(string(serviceUUIDSidecarAttachedTo))
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with UUID '%v'", serviceUUIDSidecarAttachedTo)
-	}
-	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.NetworkingSidecarContainerTypeDockerLabelValue
-
-	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'",
-			name.GetString(),
-			getLabelKeyValuesAsStrings(labels),
-		)
-	}
-
-	return objectAttributes, nil
-}
-
 // In Docker we get one volume per artifact being expanded
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifactExpansionVolume(
 	serviceUUID service.ServiceUUID,
@@ -311,6 +281,55 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 	}
 	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
 	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue
+	// TODO Create a KurtosisResourceDockerLabelKey object, like Kubernetes, and apply the "user-service" label here?
+
+	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
+	}
+
+	return objectAttributes, nil
+}
+
+// In Docker we get one volume per persistent directory
+func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(
+	serviceUUID service.ServiceUUID,
+	persistentKey service_directory.DirectoryPersistentKey,
+) (
+	DockerObjectAttributes,
+	error,
+) {
+	serviceUuidStr := string(serviceUUID)
+
+	guidStr, err := uuid_generator.GenerateUUIDString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID for the persistent directory volume for service '%v'", serviceUuidStr)
+	}
+
+	hasher := md5.New()
+	hasher.Write([]byte(serviceUUID))
+	hasher.Write([]byte(persistentKey))
+	persistentKeyHash := hex.EncodeToString(hasher.Sum(nil))
+
+	name, err := provider.getNameForEnclaveObject([]string{
+		persistentServiceDirectoryNameFragment,
+		persistentKeyHash,
+	})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the files artifact expansion volume name object using GUID '%v' and service GUID '%v'", guidStr, serviceUuidStr)
+	}
+
+	labels, err := provider.getLabelsForEnclaveObjectWithGUID(guidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting labels for files artifact expansion volume with UUID '%v'", guidStr)
+	}
+
+	serviceUuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(serviceUuidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceUuidStr)
+	}
+	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
+	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.PersistentDirectoryVolumeTypeDockerLabelValue
 	// TODO Create a KurtosisResourceDockerLabelKey object, like Kubernetes, and apply the "user-service" label here?
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

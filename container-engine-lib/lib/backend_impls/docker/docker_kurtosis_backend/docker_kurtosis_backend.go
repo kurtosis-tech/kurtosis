@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
@@ -25,6 +26,10 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"sync"
+)
+
+const (
+	isResourceInformationComplete = true
 )
 
 type DockerKurtosisBackend struct {
@@ -227,6 +232,28 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 	return successfullyStartedService, failedService, nil
 }
 
+func (backend *DockerKurtosisBackend) RemoveRegisteredUserServiceProcesses(ctx context.Context, enclaveUuid enclave.EnclaveUUID, services map[service.ServiceUUID]bool) (map[service.ServiceUUID]bool, map[service.ServiceUUID]error, error) {
+	serviceRegistrationsForEnclave, found := backend.serviceRegistrations[enclaveUuid]
+	if !found {
+		return nil, nil, stacktrace.NewError(
+			"No service registrations are being tracked for enclave '%v'; this likely means that the registration "+
+				"request is being called where it shouldn't be (i.e. outside the API container)",
+			enclaveUuid,
+		)
+	}
+
+	successfullyStartedService, failedService, err := user_service_functions.RemoveRegisteredUserServiceProcesses(
+		ctx,
+		enclaveUuid,
+		services,
+		serviceRegistrationsForEnclave,
+		backend.dockerManager)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "Unexpected error while updating user services")
+	}
+	return successfullyStartedService, failedService, nil
+}
+
 func (backend *DockerKurtosisBackend) GetUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
@@ -251,7 +278,6 @@ func (backend *DockerKurtosisBackend) GetUserServiceLogs(
 	return user_service_functions.GetUserServiceLogs(ctx, enclaveUuid, filters, shouldFollowLogs, backend.dockerManager)
 }
 
-// TODO Switch these to streaming so that huge command outputs don't blow up the API container memory
 // NOTE: This function will block while the exec is ongoing; if we need more perf we can make it async
 func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	ctx context.Context,
@@ -263,6 +289,15 @@ func (backend *DockerKurtosisBackend) RunUserServiceExecCommands(
 	error,
 ) {
 	return user_service_functions.RunUserServiceExecCommands(ctx, enclaveUuid, userServiceCommands, backend.dockerManager)
+}
+
+func (backend *DockerKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	serviceUuid service.ServiceUUID,
+	cmd []string,
+) (chan string, chan *exec_result.ExecResult, error) {
+	return user_service_functions.RunUserServiceExecCommandWithStreamedOutput(ctx, enclaveUuid, serviceUuid, cmd, backend.dockerManager)
 }
 
 func (backend *DockerKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) error {
@@ -459,19 +494,12 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 	return nil
 }
 
-// DestroyDeprecatedCentralizedLogsResources Destroy the deprecated centralized logs resources (containers and volumes)
-// It doesn't complain if it couldn't find the centralized logs resources
-// TODO(centralized-logs-resources-deprecation) remove this once we know people are on > 0.68.0
-func (backend *DockerKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
-
-	if err := logs_database_functions.DestroyDeprecatedCentralizedLogsDatabase(ctx, backend.dockerManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while destroying the deprecated centralized logs database")
+func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
+	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
+	if err != nil {
+		return 0, 0, false, stacktrace.Propagate(err, "an error occurred fetching resource information from the docker backend")
 	}
-
-	if err := logs_collector_functions.DestroyDeprecatedCentralizedLogsCollectors(ctx, backend.dockerManager); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while destroying the deprecated centralized logs collector")
-	}
-	return nil
+	return availableMemory, availableCpu, isResourceInformationComplete, nil
 }
 
 // ====================================================================================================

@@ -1,5 +1,5 @@
-//go:build !minikube
-// +build !minikube
+//go:build !kubernetes
+// +build !kubernetes
 
 // We don't run this test in Kubernetes because public ports aren't supported in Kubernetes backend
 // TODO remove this test once we have the Kurtosis Portal, and public_ports isn't a thing
@@ -15,8 +15,7 @@ import (
 )
 
 const (
-	testName              = "starlark_public_ports_test"
-	isPartitioningEnabled = false
+	testName = "starlark_public_ports_test"
 
 	serviceName         = "example-datastore-server-1"
 	portId              = "grpc"
@@ -53,9 +52,12 @@ func TestStartosis(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFunc()
+	defer func() {
+		err = destroyEnclaveFunc()
+		require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
+	}()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Startosis script...")

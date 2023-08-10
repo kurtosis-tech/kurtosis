@@ -3,7 +3,6 @@ package rm
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -35,7 +34,6 @@ const (
 	starlarkScript = `
 def run(plan, args):
 	plan.remove_service(name=args["service_name"])
-	plan.print(args["uuid"]) # we add this print of a random UUID to make sure the single remove_service above won't get cached
 `
 	doNotDryRun        = false
 	defaultParallelism = 4
@@ -112,7 +110,7 @@ func run(
 }
 
 func removeServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
-	params := fmt.Sprintf(`{"service_name": "%s", "uuid": "%s"}`, serviceName, uuid.New().String())
+	params := fmt.Sprintf(`{"service_name": "%s"}`, serviceName)
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, params, doNotDryRun, defaultParallelism, noExperimentalFeature)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for rendering template")

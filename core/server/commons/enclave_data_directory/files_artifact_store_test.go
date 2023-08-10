@@ -7,7 +7,6 @@ package enclave_data_directory
 
 import (
 	"github.com/stretchr/testify/require"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,11 +18,14 @@ func TestFileStore_StoreFileSimpleCase(t *testing.T) {
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
 	targetArtifactName := "test-artifact-name"
-	filesArtifactUuid, err := fileStore.StoreFile(reader, targetArtifactName)
+	fakeMd5 := []byte("blah")
+	filesArtifactUuid, err := fileStore.StoreFile(reader, fakeMd5, targetArtifactName)
 	require.Equal(t, 32, len(filesArtifactUuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
 	require.Nil(t, err)
 	require.Len(t, fileStore.artifactNameToArtifactUuid, 1)
 	require.Contains(t, fileStore.artifactNameToArtifactUuid, targetArtifactName)
+	require.Len(t, fileStore.artifactContentMd5, 1)
+	require.Contains(t, fileStore.artifactContentMd5, filesArtifactUuid)
 
 	//Test that it saved where it said it would.
 	expectedFilename := strings.Join(
@@ -33,7 +35,7 @@ func TestFileStore_StoreFileSimpleCase(t *testing.T) {
 	expectedFilepath := filepath.Join(fileStore.fileCache.absoluteDirpath, expectedFilename)
 	_, dirErr := os.Stat(expectedFilepath)
 	require.Nil(t, dirErr)
-	file, readErr := ioutil.ReadFile(expectedFilepath)
+	file, readErr := os.ReadFile(expectedFilepath)
 	require.Nil(t, readErr)
 	require.Equal(t, []byte(testContent), file)
 }
@@ -43,13 +45,14 @@ func TestFileStore_StoringToExistingUUIDFails(t *testing.T) {
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
 	testArtifactName := "test-artifact-name"
-	filesArtifactUuid, err := fileStore.StoreFile(reader, testArtifactName)
+	fakeMd5 := []byte("blah")
+	filesArtifactUuid, err := fileStore.StoreFile(reader, fakeMd5, testArtifactName)
 	require.Nil(t, err)
 	require.Equal(t, 32, len(filesArtifactUuid)) //UUID is 128 bits but in string it is hex represented chars so 32 chars
 
 	anotherTestContent := "This one should fail"
 	anotherReader := strings.NewReader(anotherTestContent)
-	_, err = fileStore.StoreFile(anotherReader, testArtifactName)
+	_, err = fileStore.StoreFile(anotherReader, fakeMd5, testArtifactName)
 	require.NotNil(t, err)
 }
 
@@ -58,15 +61,19 @@ func TestFileStore_GetFilepathByUUIDProperFilepath(t *testing.T) {
 	testContent := "Long Live Kurtosis!"
 	testArtifactName := "test-artifact"
 	reader := strings.NewReader(testContent)
-	uuid, err := fileStore.StoreFile(reader, testArtifactName)
+	fakeMd5 := []byte("blah")
+	uuid, err := fileStore.StoreFile(reader, fakeMd5, testArtifactName)
 	require.Nil(t, err)
 
-	enclaveDataFile, err := fileStore.GetFile(string(uuid))
+	returnedUuid, enclaveDataFile, returnedMd5, found, err := fileStore.GetFile(string(uuid))
 	require.Nil(t, err)
+	require.True(t, found)
+	require.Equal(t, uuid, returnedUuid)
+	require.Equal(t, fakeMd5, returnedMd5)
 
 	_, dirErr := os.Stat(enclaveDataFile.absoluteFilepath)
 	require.Nil(t, dirErr)
-	file, readErr := ioutil.ReadFile(enclaveDataFile.absoluteFilepath)
+	file, readErr := os.ReadFile(enclaveDataFile.absoluteFilepath)
 	require.Nil(t, readErr)
 	require.Equal(t, []byte(testContent), file)
 }
@@ -79,26 +86,30 @@ func TestFileStore_StoreFilesUniquely(t *testing.T) {
 	//Write Both Files
 	reader := strings.NewReader(testContent)
 	testArtifact1 := "test-artifact-1"
-	uuid, err := fileStore.StoreFile(reader, testArtifact1)
+	fakeMd5 := []byte("blah")
+	uuid, err := fileStore.StoreFile(reader, fakeMd5, testArtifact1)
 	require.Nil(t, err)
 
 	reader = strings.NewReader(otherTestContent)
 	testArtifact2 := "test-artifact-2"
-	anotherUUID, err := fileStore.StoreFile(reader, testArtifact2)
+	fakeMd52 := []byte("blah2")
+	anotherUUID, err := fileStore.StoreFile(reader, fakeMd52, testArtifact2)
 	require.Nil(t, err)
 	require.NotEqual(t, uuid, anotherUUID)
 
 	//Get their paths.
-	enclaveDataFile, err := fileStore.GetFile(string(uuid))
+	_, enclaveDataFile, _, found, err := fileStore.GetFile(string(uuid))
 	require.Nil(t, err)
-	anotherFilepath, err := fileStore.GetFile(string(anotherUUID))
+	require.True(t, found)
+	_, anotherFilepath, _, anotherFound, err := fileStore.GetFile(string(anotherUUID))
 	require.Nil(t, err)
+	require.True(t, anotherFound)
 	require.NotEqual(t, enclaveDataFile, anotherFilepath)
 
 	//Read and evaluate their content is different.
-	file, readErr := ioutil.ReadFile(enclaveDataFile.absoluteFilepath)
+	file, readErr := os.ReadFile(enclaveDataFile.absoluteFilepath)
 	require.Nil(t, readErr)
-	anotherFile, readErr := ioutil.ReadFile(anotherFilepath.absoluteFilepath)
+	anotherFile, readErr := os.ReadFile(anotherFilepath.absoluteFilepath)
 	require.Nil(t, readErr)
 	require.NotEqual(t, file, anotherFile)
 }
@@ -108,18 +119,21 @@ func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
 	testArtifactName := "test-artifact"
-	uuid, err := fileStore.StoreFile(reader, testArtifactName)
+	fakeMd5 := []byte("blah")
+	uuid, err := fileStore.StoreFile(reader, fakeMd5, testArtifactName)
 	require.Nil(t, err)
 	require.Len(t, fileStore.shortenedUuidToFullUuid, 1)
 	require.Len(t, fileStore.artifactNameToArtifactUuid, 1)
 
-	enclaveDataFile, err := fileStore.GetFile(string(uuid))
+	_, enclaveDataFile, _, found, err := fileStore.GetFile(string(uuid))
 	require.Nil(t, err)
+	require.True(t, found)
 
 	err = fileStore.RemoveFile(string(uuid))
 	require.Nil(t, err)
 	require.Len(t, fileStore.shortenedUuidToFullUuid, 0)
 	require.Len(t, fileStore.artifactNameToArtifactUuid, 0)
+	require.Len(t, fileStore.artifactContentMd5, 0)
 
 	_, err = os.Stat(enclaveDataFile.absoluteFilepath)
 	require.NotNil(t, err)
@@ -143,12 +157,14 @@ func TestFilesArtifactStore_GetFileNamesAndUuids(t *testing.T) {
 	//Write Both Files
 	reader := strings.NewReader(testContent)
 	testArtifact1 := "test-artifact-1"
-	uuid, err := fileStore.StoreFile(reader, testArtifact1)
+	fakeMd5 := []byte("blah")
+	uuid, err := fileStore.StoreFile(reader, fakeMd5, testArtifact1)
 	require.Nil(t, err)
 
 	reader = strings.NewReader(otherTestContent)
 	testArtifact2 := "test-artifact-2"
-	anotherUUID, err := fileStore.StoreFile(reader, testArtifact2)
+	fakeMd52 := []byte("blah")
+	anotherUUID, err := fileStore.StoreFile(reader, fakeMd52, testArtifact2)
 	require.Nil(t, err)
 	require.NotEqual(t, uuid, anotherUUID)
 
@@ -159,7 +175,7 @@ func TestFilesArtifactStore_GetFileNamesAndUuids(t *testing.T) {
 }
 
 func getTestFileStore(t *testing.T) *FilesArtifactStore {
-	absDirpath, err := ioutil.TempDir("", "")
+	absDirpath, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 	fileStore := newFilesArtifactStore(absDirpath, "")
 	require.Nil(t, err)
@@ -183,7 +199,7 @@ func Test_generateUniqueNameForFileArtifact_MaxRetriesOver(t *testing.T) {
 		"last-noun-1":    FilesArtifactUUID("b"),
 	}
 
-	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil, 3, mockedGenerateNameMethod)
+	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil, nil, 3, mockedGenerateNameMethod)
 	actual := fileArtifactStoreUnderTest.GenerateUniqueNameForFileArtifact()
 	require.Equal(t, "last-noun-2", actual)
 }
@@ -202,7 +218,7 @@ func Test_generateUniqueNameForFileArtifact_Found(t *testing.T) {
 		"non-unique-name": FilesArtifactUUID("a"),
 	}
 
-	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil, 3, mockedGenerateNameMethod)
+	fileArtifactStoreUnderTest := NewFilesArtifactStoreForTesting("/", "/", artifactIdToUUIDMap, nil, nil, 3, mockedGenerateNameMethod)
 	actual := fileArtifactStoreUnderTest.GenerateUniqueNameForFileArtifact()
 	require.Equal(t, "unique-name", actual)
 }

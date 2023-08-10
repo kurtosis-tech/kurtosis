@@ -5,6 +5,7 @@ import (
 	"fmt"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -106,10 +107,10 @@ func (builtin *StoreServiceFilesCapabilities) Interpret(_ string, arguments *bui
 }
 
 func (builtin *StoreServiceFilesCapabilities) Validate(_ *builtin_argument.ArgumentValuesSet, validatorEnvironment *startosis_validator.ValidatorEnvironment) *startosis_errors.ValidationError {
-	if !validatorEnvironment.DoesServiceNameExist(builtin.serviceName) {
+	if validatorEnvironment.DoesServiceNameExist(builtin.serviceName) == startosis_validator.ComponentNotFound {
 		return startosis_errors.NewValidationError("There was an error validating '%v' with service name '%v' that does not exist", StoreServiceFilesBuiltinName, builtin.serviceName)
 	}
-	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) {
+	if validatorEnvironment.DoesArtifactNameExist(builtin.artifactName) == startosis_validator.ComponentCreatedOrUpdatedDuringPackageRun {
 		return startosis_errors.NewValidationError("There was an error validating '%v' as artifact name '%v' already exists", StoreServiceFilesBuiltinName, builtin.artifactName)
 	}
 	validatorEnvironment.AddArtifactName(builtin.artifactName)
@@ -123,4 +124,39 @@ func (builtin *StoreServiceFilesCapabilities) Execute(ctx context.Context, _ *bu
 	}
 	instructionResult := fmt.Sprintf("Files with artifact name '%s' uploaded with artifact UUID '%s'", builtin.artifactName, artifactUuid)
 	return instructionResult, nil
+}
+
+func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	// if other instruction is nil or other instruction is not an add_service instruction, status is unknown
+	if other == nil {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
+	}
+	otherStoreServiceFilesCapabilities, ok := other.(*StoreServiceFilesCapabilities)
+	if !ok {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	// if artifact names don't match, status is unknown, instructions can't be resolved together
+	if otherStoreServiceFilesCapabilities.artifactName != builtin.artifactName {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
+		return enclave_structure.InstructionIsUnknown
+	}
+
+	// If artifact names are the same but instructions are not equal, it needs to be re-run anyway
+	if !instructionsAreEqual {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsUpdated)
+		return enclave_structure.InstructionIsUpdate
+	}
+
+	// From here the instructions are equal
+	// If the service has been updated, the instruction needs to be re-run since the file content might have changed
+	if enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
+		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsUpdated)
+		return enclave_structure.InstructionIsUpdate
+	}
+
+	enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentWasLeftIntact)
+	return enclave_structure.InstructionIsEqual
 }

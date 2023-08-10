@@ -9,8 +9,7 @@ import (
 )
 
 const (
-	testName              = "startosis_remove_service_test"
-	isPartitioningEnabled = false
+	testName = "startosis_remove_service_test"
 
 	serviceName = "example-datastore-server-1"
 	portId      = "grpc"
@@ -47,9 +46,12 @@ func TestStartosis(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, destroyEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer destroyEnclaveFunc()
+	defer func() {
+		err = destroyEnclaveFunc()
+		require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
+	}()
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Infof("Executing Starlark script to first add the datastore service...")

@@ -3,6 +3,8 @@ package kurtosis_context
 import (
 	"context"
 	"fmt"
+	"io"
+
 	"github.com/Masterminds/semver/v3"
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	portal_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
@@ -11,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -18,7 +21,6 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
 )
 
 const (
@@ -43,6 +45,8 @@ var (
 	apiContainerLogLevel = logrus.DebugLevel
 
 	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
+
+	EnginePortTransportProtocol = portal_api.TransportProtocol_TCP
 )
 
 // Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
@@ -72,7 +76,7 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
-	// portal is still optional as it is incubating. For local context, everything will run fine if poral is not
+	// portal is still optional as it is incubating. For local context, everything will run fine if portal is not
 	// present. For remote context, is it expected that the caller checks that the portal is present before or after
 	// the Kurtosis Context is built, to avoid unexpected failures downstream
 	portalClient, err := CreatePortalDaemonClient(portalIsRequired)
@@ -92,14 +96,12 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	ctx context.Context,
 	enclaveName string,
-	isSubnetworkingEnabled bool,
 ) (*enclaves.EnclaveContext, error) {
 
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveName:            enclaveName,
 		ApiContainerVersionTag: defaultApiContainerVersionTag,
 		ApiContainerLogLevel:   apiContainerLogLevel.String(),
-		IsPartitioningEnabled:  isSubnetworkingEnabled,
 	}
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
@@ -344,13 +346,18 @@ func newEnclaveContextFromEnclaveInfo(
 	portalClient portal_api.KurtosisPortalClientClient,
 	enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) (*enclaves.EnclaveContext, error) {
-	// for remote contexts, we need to tunnel the APIC port to the local machine
-	if portalClient != nil {
-		apicGrpcPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcPortOnHostMachine()
-		forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, &apicPortTransportProtocol)
-		if _, err := portalClient.ForwardPort(ctx, forwardApicPortArgs); err != nil {
-			return nil, stacktrace.Propagate(err, "Unable to forward remote API container port to the local machine")
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err == nil {
+		// for remote contexts, we need to tunnel the APIC port to the local machine
+		if store.IsRemote(currentContext) && portalClient != nil {
+			apicGrpcPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcPortOnHostMachine()
+			forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, &apicPortTransportProtocol)
+			if _, err := portalClient.ForwardPort(ctx, forwardApicPortArgs); err != nil {
+				return nil, stacktrace.Propagate(err, "Unable to forward remote API container port to the local machine")
+			}
 		}
+	} else {
+		logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
 	}
 
 	enclaveContainersStatus := enclaveInfo.GetContainersStatus()

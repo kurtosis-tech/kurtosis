@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
@@ -16,10 +17,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/sirupsen/logrus"
+	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/lib/time"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
 	"path"
@@ -91,8 +92,9 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
+	enclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyPlanInstructionsMask := resolver.NewInstructionsPlanMask(0)
-	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, relativePathtoMainFile, serializedStarlark, serializedJsonParams, emptyPlanInstructionsMask)
+	naiveInstructionsPlanSerializedScriptOutput, naiveInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, relativePathtoMainFile, serializedStarlark, serializedJsonParams, enclaveComponents, emptyPlanInstructionsMask)
 	if interpretationErrorApi != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErrorApi
 	}
@@ -120,7 +122,11 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	// 4. Run the interpretation with the mask.
 	//     - If it's successful, then we've found the optimized plan
 	//     - if it's not successful, then the mask is not compatible with the package. Go back to step 1
-	firstPossibleIndexForMatchingInstruction := 0
+	var firstPossibleIndexForMatchingInstruction int
+	if currentEnclavePlan.Size() > naiveInstructionsPlan.Size() {
+
+		firstPossibleIndexForMatchingInstruction = currentEnclavePlan.Size() - naiveInstructionsPlan.Size()
+	}
 	for {
 		// initialize an empty optimized plan and an empty the mask
 		potentialMask := resolver.NewInstructionsPlanMask(len(naiveInstructionsPlanSequence))
@@ -162,7 +168,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 		}
 
 		// Now that we have a potential plan mask, try running interpretation again using this plan mask
-		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, relativePathtoMainFile, serializedStarlark, serializedJsonParams, potentialMask)
+		attemptSerializedScriptOutput, attemptInstructionsPlan, interpretationErrorApi := interpreter.Interpret(ctx, packageId, mainFunctionName, relativePathtoMainFile, serializedStarlark, serializedJsonParams, enclaveComponents, potentialMask)
 		if interpretationErrorApi != nil {
 			// Note: there's no real reason why this interpretation would fail with an error, given that the package
 			// has been interpreted once already (right above). But to be on the safe side, check the error
@@ -191,28 +197,6 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			optimizedPlan.AddScheduledInstruction(scheduledInstruction)
 		}
 
-		// there might be still be instructions in the current enclave plan that have not been imported to the
-		// optimized plan
-		// for now, we support this only if no new instructions will be executed for this run. If that's not the case
-		// continue the loop in the hope of finding another mask
-		if len(currentEnclavePlanSequence) > matchingInstructionIdx+optimizedPlan.Size() {
-			logrus.Debugf("There are %d instructions remaining in the current state that have not been transferred to the new plan. Transferring them now", len(currentEnclavePlanSequence)-matchingInstructionIdx+optimizedPlan.Size())
-			atLeastOneInstructionWillBeExecuted := false
-			for _, instructionThatWillPotentiallyBeRun := range attemptInstructionsPlanSequence {
-				if !instructionThatWillPotentiallyBeRun.IsExecuted() {
-					atLeastOneInstructionWillBeExecuted = true
-				}
-			}
-			if atLeastOneInstructionWillBeExecuted {
-				logrus.Debugf("The remaining instructions in the current enclave plan cannot be transferred to the new plan because this plan contains instructions that will be executed." +
-					"The remaining instructions might depend on those and Kurtosis cannot re-run them (this is unsupported for now)")
-				continue
-			}
-			// recopy all remaining instructions into the optimized plan
-			for _, remainingInstructionFromCurrentEnclaveState := range currentEnclavePlanSequence[matchingInstructionIdx+optimizedPlan.Size():] {
-				optimizedPlan.AddScheduledInstruction(remainingInstructionFromCurrentEnclaveState).ImportedFromCurrentEnclavePlan(true).Executed(true)
-			}
-		}
 		// finally we can return the optimized plan as well as the serialized script output returned by the last
 		// interpretation attempt
 		return attemptSerializedScriptOutput, optimizedPlan, nil
@@ -231,6 +215,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	relativePathtoMainFile string,
 	serializedStarlark string,
 	serializedJsonParams string,
+	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionsPlanMask *resolver.InstructionsPlanMask,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 	interpreter.mutex.Lock()
@@ -278,7 +263,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
 			kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
-			planModule := plan_module.PlanModule(newInstructionsPlan, instructionsPlanMask, kurtosisPlanInstructions)
+			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}
 
@@ -387,7 +372,10 @@ func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*instru
 		return -1 // no result as the naiveInstructionsList is empty
 	}
 	for i := minIndex; i < len(currentEnclaveInstructionsList); i++ {
-		if currentEnclaveInstructionsList[i].GetInstruction().String() == naiveInstructionsList[0].GetInstruction().String() {
+		// We just need to compare instructions to see if they match, without needing any enclave specific context here
+		fakeEnclaveComponent := enclave_structure.NewEnclaveComponents()
+		instructionResolutionResult := naiveInstructionsList[0].GetInstruction().TryResolveWith(currentEnclaveInstructionsList[i].GetInstruction(), fakeEnclaveComponent)
+		if instructionResolutionResult == enclave_structure.InstructionIsEqual || instructionResolutionResult == enclave_structure.InstructionIsUpdate {
 			return i
 		}
 	}

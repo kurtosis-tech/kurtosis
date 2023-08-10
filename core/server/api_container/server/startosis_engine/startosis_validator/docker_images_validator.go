@@ -8,9 +8,7 @@ import (
 	"sync"
 )
 
-var (
-	maxNumberOfConcurrentDownloads = int64(4)
-)
+const maxNumberOfConcurrentDownloads = int64(4)
 
 type DockerImagesValidator struct {
 	kurtosisBackend *backend_interface.KurtosisBackend
@@ -45,15 +43,14 @@ func (validator *DockerImagesValidator) Validate(ctx context.Context, environmen
 	wg := &sync.WaitGroup{}
 	for image := range environment.requiredDockerImages {
 		wg.Add(1)
-		logrus.Debugf("Starting the download of image: '%s'", image)
 		go fetchImageFromBackend(ctx, wg, imageCurrentlyDownloading, validator.kurtosisBackend, image, pullErrors, imageDownloadStarted, imageDownloadFinished)
 	}
 	wg.Wait()
-
 	logrus.Debug("All image validation submitted, currently in progress.")
 }
 
 func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrentlyDownloading chan bool, backend *backend_interface.KurtosisBackend, image string, pullErrors chan<- error, imageDownloadStarted chan<- string, imageDownloadFinished chan<- string) {
+	logrus.Debugf("Requesting the download of image: '%s'", image)
 	defer wg.Done()
 	imageCurrentlyDownloading <- true
 	imageDownloadStarted <- image
@@ -62,8 +59,10 @@ func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrent
 		imageDownloadFinished <- image
 	}()
 
+	logrus.Debugf("Starting the download of image: '%s'", image)
 	err := (*backend).FetchImage(ctx, image)
 	if err != nil {
+		logrus.Warnf("Container image '%s' download failed. Error was: '%s'", image, err.Error())
 		pullErrors <- startosis_errors.NewValidationError("Failed fetching the required image '%v', make sure that the image exists and is public", image)
 	}
 	logrus.Debugf("Container image '%s' successfully downloaded", image)

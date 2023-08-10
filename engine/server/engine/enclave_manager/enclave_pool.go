@@ -17,10 +17,6 @@ const (
 	// This is the same default value used in the `kurtosis enclave add` CLI command
 	defaultApiContainerLogLevel = logrus.DebugLevel
 
-	// The partitioning feature is disabled by default because the Enclave Pool
-	// is enabled only for K8s and the network partitioning feature is not implemented yet
-	defaultIsPartitioningEnabled = false
-
 	fill = true
 )
 
@@ -102,15 +98,13 @@ func (pool *EnclavePool) GetEnclave(
 	engineVersion string,
 	apiContainerVersion string,
 	apiContainerLogLevel logrus.Level,
-	isPartitioningEnabled bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
 	logrus.Debugf(
-		"Requesting enclave from pool using params: engine version '%s', api container version '%s', api container log level '%s' and is partitioning enabled '%v'...",
+		"Requesting enclave from pool using params: engine version '%s', api container version '%s' and api container log level '%s'...",
 		engineVersion,
 		apiContainerVersion,
 		apiContainerLogLevel,
-		isPartitioningEnabled,
 	)
 
 	// TODO change the logLevel value ?? it's pending to check if it's possible
@@ -121,7 +115,6 @@ func (pool *EnclavePool) GetEnclave(
 		engineVersion,
 		apiContainerVersion,
 		apiContainerLogLevel,
-		isPartitioningEnabled,
 	) {
 		logrus.Debugf("The requested enclave params are different from the enclave in the pool params")
 		return nil, nil
@@ -267,7 +260,6 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_en
 		apiContainerVersion,
 		defaultApiContainerLogLevel,
 		enclaveName,
-		defaultIsPartitioningEnabled,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
@@ -325,7 +317,6 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	engineVersion string,
 	apiContainerVersion string,
 	apiContainerLogLevel logrus.Level,
-	isPartitioningEnabled bool,
 ) bool {
 
 	// if the api container version is empty string means that will be executed with the default version
@@ -335,8 +326,7 @@ func areRequestedEnclaveParamsEqualToEnclaveInThePoolParams(
 	}
 
 	if engineVersion == apiContainerVersion &&
-		apiContainerLogLevel == defaultApiContainerLogLevel &&
-		!isPartitioningEnabled {
+		apiContainerLogLevel == defaultApiContainerLogLevel {
 		return true
 	}
 
@@ -371,6 +361,8 @@ func destroyIdleEnclaves(kurtosisBackend backend_interface.KurtosisBackend) erro
 	return nil
 }
 
+const destroyEnclaveMaxRetries = 5
+
 // destroyIdleEnclavesFromPreviousRuns destroy idle enclaves created before the beforeTime with a retry strategy
 // We have seen the "context deadline exceeded" from Kubernetes in the past, and this usually happens
 // because the Kubernetes has just started, and it is a bit slow to retrieve the information and throws that error
@@ -378,19 +370,16 @@ func destroyIdleEnclavesFromPreviousRuns(kurtosisBackend backend_interface.Kurto
 	logrus.Debugf("Destroying idle enclaves created before '%s'...", beforeTime)
 	var err error
 	var idleEnclavesToRemove map[enclave.EnclaveUUID]bool
-	maxRetries := uint(5)
-
-	for i := uint(0); i < maxRetries; i++ {
+	numRetries := 0
+	for ; numRetries < destroyEnclaveMaxRetries; numRetries++ {
 		idleEnclavesToRemove, err = destroyOldIdleEnclaves(kurtosisBackend, beforeTime)
-		if err != nil {
-			maxRetries++
-			continue
+		if err == nil {
+			break
 		}
-		break
 	}
 
 	if err != nil {
-		logrus.Errorf("We tried to destroy idle enclaves from previous run but something failed, even after retrying %v times; we suggest to manually remove these idle enclave with UUIDs '%+v'. Last error was:\n %v", maxRetries, idleEnclavesToRemove, err)
+		logrus.Errorf("We tried to destroy idle enclaves from previous run but something failed, even after retrying %v times; we suggest to manually remove these idle enclave with UUIDs '%+v'. Last error was:\n %v", numRetries, idleEnclavesToRemove, err)
 		return
 	}
 

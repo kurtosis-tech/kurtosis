@@ -1,5 +1,5 @@
-//go:build !minikube
-// +build !minikube
+//go:build !kubernetes
+// +build !kubernetes
 
 // We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
 
@@ -16,8 +16,7 @@ import (
 )
 
 const (
-	testName              = "stream-logs"
-	isPartitioningEnabled = false
+	testName = "stream-logs"
 
 	exampleServiceName services.ServiceName = "stream-logs"
 
@@ -63,9 +62,12 @@ func TestStreamLogs(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, stopEnclaveFunc, _, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer stopEnclaveFunc()
+	defer func() {
+		err = destroyEnclaveFunc()
+		require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
+	}()
 
 	// ------------------------------------- TEST SETUP ----------------------------------------------
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()

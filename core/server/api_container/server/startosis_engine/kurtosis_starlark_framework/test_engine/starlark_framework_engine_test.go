@@ -5,15 +5,16 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
+	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 	"reflect"
 	"testing"
@@ -30,10 +31,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newAssertTestCase(t))
 	testKurtosisPlanInstruction(t, newExecTestCase1(t))
 	testKurtosisPlanInstruction(t, newExecTestCase2(t))
-	testKurtosisPlanInstruction(t, newSetConnectionTestCase(t))
-	testKurtosisPlanInstruction(t, newSetConnectionDefaultTestCase(t))
 	testKurtosisPlanInstruction(t, newPrintTestCase(t))
-	testKurtosisPlanInstruction(t, newRemoveConnectionTestCase(t))
 	testKurtosisPlanInstruction(t, newRemoveServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newStartServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newStopServiceTestCase(t))
@@ -43,8 +41,8 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisPlanInstruction(t, newRequestTestCase2(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesTestCase(t))
 	testKurtosisPlanInstruction(t, newStoreServiceFilesWithoutNameTestCase(t))
-	testKurtosisPlanInstruction(t, newUpdateServiceTestCase(t))
 	testKurtosisPlanInstruction(t, newUploadFilesTestCase(t))
+	testKurtosisPlanInstruction(t, newUploadFilesUpdateTestCase(t))
 	testKurtosisPlanInstruction(t, newUploadFilesWithoutNameTestCase(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase1(t))
 	testKurtosisPlanInstruction(t, newWaitTestCase2(t))
@@ -52,14 +50,11 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisHelper(t, newReadFileTestCase(t))
 	testKurtosisHelper(t, newImportModuleTestCase(t))
 
-	testKurtosisTypeConstructor(t, newConnectionConfigFullTestCase(t))
-	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketDelayTestCase(t))
-	testKurtosisTypeConstructor(t, newConnectionConfigWithPacketLossTestCase(t))
+	testKurtosisTypeConstructor(t, newDirectoryFileArtifactTestCase(t))
+	testKurtosisTypeConstructor(t, newDirectoryPersistnetDirectoryTestCase(t))
 	testKurtosisTypeConstructor(t, newExecRecipeTestCase(t))
 	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeNoExtractorTestCase(t))
 	testKurtosisTypeConstructor(t, newGetHttpRequestRecipeTestCase(t))
-	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionFullTestCase(t))
-	testKurtosisTypeConstructor(t, newNormalPacketDelayDistributionMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newPortSpecFullTestCase(t))
 	testKurtosisTypeConstructor(t, newPortSpecMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newPostHttpRequestRecipeTestCase(t))
@@ -67,8 +62,6 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCaseBackwardCompatible(t))
-	testKurtosisTypeConstructor(t, newUniformPacketDelayDistributionTestCase(t))
-	testKurtosisTypeConstructor(t, newUpdateServiceConfigTestCase(t))
 	testKurtosisTypeConstructor(t, newReadyConditionsHttpRecipeTestCase(t))
 	testKurtosisTypeConstructor(t, newReadyConditionsExecRecipeTestCase(t))
 }
@@ -81,8 +74,9 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	predeclared := getBasePredeclaredDict(t)
 	// Add the KurtosisPlanInstruction that is being tested
 	instructionFromBuiltin := builtin.GetInstruction()
+	emptyEnclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyInstructionsPlanMask := resolver.NewInstructionsPlanMask(0)
-	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, emptyInstructionsPlanMask, instructionsPlan)
+	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, emptyEnclaveComponents, emptyInstructionsPlanMask, instructionsPlan)
 	predeclared[instructionWrapper.GetName()] = starlark.NewBuiltin(instructionWrapper.GetName(), instructionWrapper.CreateBuiltin())
 
 	starlarkCode := builtin.GetStarlarkCode()
@@ -96,7 +90,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	instructionToExecute := instructionsSequence[0].GetInstruction()
 
 	// execute the instruction and run custom builtin assertions
-	executionResult, err := instructionToExecute.Execute(context.WithValue(context.Background(), "PARALLELISM", 1))
+	executionResult, err := instructionToExecute.Execute(context.WithValue(context.Background(), startosis_constants.ParallelismParam, 1))
 	require.Nil(t, err, "Builtin execution threw an error: \n%v", err)
 	builtin.Assert(interpretationResult, executionResult)
 

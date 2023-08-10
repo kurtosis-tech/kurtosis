@@ -2,7 +2,9 @@ package engine_consuming_kurtosis_command
 
 import (
 	"context"
+	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -19,10 +21,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type EngineContextKey string
+
 const (
-	engineClientCloseFuncCtxKey     = "engine-client-close-func"
-	metricsClientKey                = "metrics-client-key"
-	metricsClientClosingFunctionKey = "metrics-client-closing-func"
+	engineClientCloseFuncCtxKey     EngineContextKey = "engine-client-close-func"
+	metricsClientKey                EngineContextKey = "metrics-client-key"
+	metricsClientClosingFunctionKey EngineContextKey = "metrics-client-closing-func"
 )
 
 // This is a convenience KurtosisCommand for commands that interact with the engine
@@ -36,14 +40,14 @@ type EngineConsumingKurtosisCommand struct {
 	LongDescription string
 
 	// The name of the key that will be set during PreValidationAndRun where the KurtosisBackend can be found
-	KurtosisBackendContextKey string
+	KurtosisBackendContextKey EngineContextKey
 
 	// TODO Replace with KurtosisContext!!! This will:
 	//  1) be easier to work with and
 	//  2) force us to use the same SDK we give to users, so there's no "secret" or "private" API, which will force
 	//     us to improve the SDK
 	// The name of the key that will be set during PreValidationAndRun where the engine client will be made available
-	EngineClientContextKey string
+	EngineClientContextKey EngineContextKey
 
 	// Order isn't important here
 	Flags []*flags.FlagConfig
@@ -147,12 +151,21 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 
 		currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
 		if err == nil {
-			if store.IsRemote(currentContext) && !portal_manager.NewPortalManager().IsReachable() {
-				return nil, stacktrace.NewError("Kurtosis is setup to use the remote context '%s' but Kurtosis "+
-					"Portal is unreachable for this context. Make sure Kurtosis Portal is running locally with 'kurtosis "+
-					"%s %s' and potentially 'kurtosis %s %s'. If it is, make sure the remote server is running and healthy",
-					currentContext.GetName(), command_str_consts.PortalCmdStr, command_str_consts.PortalStatusCmdStr,
-					command_str_consts.PortalCmdStr, command_str_consts.PortalStartCmdStr)
+			if store.IsRemote(currentContext) {
+				portalManager := portal_manager.NewPortalManager()
+				if !portalManager.IsReachable() {
+					return nil, stacktrace.NewError("Kurtosis is setup to use the remote context '%s' but Kurtosis "+
+						"Portal is unreachable for this context. Make sure Kurtosis Portal is running locally with 'kurtosis "+
+						"%s %s' and potentially 'kurtosis %s %s'. If it is, make sure the remote server is running and healthy",
+						currentContext.GetName(), command_str_consts.PortalCmdStr, command_str_consts.PortalStatusCmdStr,
+						command_str_consts.PortalCmdStr, command_str_consts.PortalStartCmdStr)
+				}
+				// Forward the remote engine port to the local machine
+				portalClient := portalManager.GetClient()
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), &kurtosis_context.EnginePortTransportProtocol)
+				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
+					return nil, stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
+				}
 			}
 		} else {
 			logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -129,7 +129,7 @@ func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvi
 	}
 
 	for _, artifactName := range serviceDirpathsToArtifactIdentifiers {
-		if !validatorEnvironment.DoesArtifactNameExist(artifactName) {
+		if validatorEnvironment.DoesArtifactNameExist(artifactName) == startosis_validator.ComponentNotFound {
 			return startosis_errors.NewValidationError("There was an error validating '%s' as artifact name '%s' does not exist", RunPythonBuiltinName, artifactName)
 		}
 	}
@@ -229,7 +229,7 @@ func resultMapToString(resultMap map[string]starlark.Comparable, builtinNameForL
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
-func getServiceConfig(image string, filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion) *service.ServiceConfig {
+func getServiceConfig(image string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion) *service.ServiceConfig {
 	return service.NewServiceConfig(
 		image,
 		nil,
@@ -243,15 +243,12 @@ func getServiceConfig(image string, filesArtifactExpansion *files_artifacts_expa
 		nil,
 		nil,
 		filesArtifactExpansion,
+		nil,
 		0,
 		0,
 		service_config.DefaultPrivateIPAddrPlaceholder,
 		0,
 		0,
-		// TODO: hardcoding subnetwork to default is what we do now but is incorrect as the run_sh might not be able to
-		//  reach some services outside of the default subnetwork. It should be re-worked if users want to use that in
-		//  conjunction with subnetworks
-		service_config.DefaultSubnetwork,
 	)
 }
 

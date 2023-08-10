@@ -39,6 +39,17 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 
+	serviceNetwork.EXPECT().GetServiceRegistration(TestServiceName).Times(1).Return(nil, false)
+	serviceNetwork.EXPECT().GetServiceRegistration(TestServiceName2).Times(1).Return(nil, false)
+	serviceNetwork.EXPECT().UpdateServices(
+		mock.Anything,
+		map[service.ServiceName]*service.ServiceConfig{},
+		mock.Anything,
+	).Times(1).Return(
+		map[service.ServiceName]*service.Service{},
+		map[service.ServiceName]error{},
+		nil,
+	)
 	serviceNetwork.EXPECT().AddServices(
 		mock.Anything,
 		mock.MatchedBy(func(configs map[service.ServiceName]*service.ServiceConfig) bool {
@@ -54,12 +65,12 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 				nil,
 				map[string]string{},
 				nil,
+				nil,
 				0,
 				0,
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
-				string(TestSubnetwork),
 			)
 			actualServiceConfig1 := configs[TestServiceName]
 			assert.Equal(t, expectedServiceConfig1, actualServiceConfig1)
@@ -72,12 +83,12 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 				nil,
 				map[string]string{},
 				nil,
+				nil,
 				TestCpuAllocation,
 				TestMemoryAllocation,
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
-				service_config.DefaultSubnetwork,
 			)
 			actualServiceConfig2 := configs[TestServiceName2]
 			assert.Equal(t, expectedServiceConfig2, actualServiceConfig2)
@@ -108,9 +119,9 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Header:     http.Header{},
-		Request: &http.Request{
+		Request: &http.Request{ //nolint:exhaustruct
 			Method: TestGetRequestMethod,
-			URL:    &url.URL{},
+			URL:    &url.URL{}, //nolint:exhaustruct
 		},
 		Close:            true,
 		ContentLength:    -1,
@@ -138,7 +149,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		Header:     http.Header{},
 		Request: &http.Request{
 			Method: TestGetRequestMethod,
-			URL: &url.URL{
+			URL: &url.URL{ //nolint:exhaustruct
 				Path:        "",
 				Scheme:      "",
 				Opaque:      "",
@@ -194,7 +205,7 @@ func (t *addServicesTestCase) GetStarlarkCode() string {
 		TestReadyConditions2Interval,
 		TestReadyConditions2Timeout,
 	)
-	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, subnetwork=%q, ready_conditions=%s)", TestContainerImageName, TestSubnetwork, service1ReadyConditionsScriptPart)
+	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, ready_conditions=%s)", TestContainerImageName, service1ReadyConditionsScriptPart)
 	serviceConfig2 := fmt.Sprintf("ServiceConfig(image=%q, cpu_allocation=%d, memory_allocation=%d, ready_conditions=%s)", TestContainerImageName, TestCpuAllocation, TestMemoryAllocation, service2ReadyConditionsScriptPart)
 	return fmt.Sprintf(`%s(%s={%q: %s, %q: %s})`, add_service.AddServicesBuiltinName, add_service.ConfigsArgName, TestServiceName, serviceConfig1, TestServiceName2, serviceConfig2)
 }

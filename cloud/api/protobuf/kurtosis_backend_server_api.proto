@@ -1,0 +1,68 @@
+syntax = "proto3";
+package kurtosis_cloud;
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings";
+
+import "google/protobuf/empty.proto";
+
+service KurtosisCloudBackendServer {
+  rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc CreateCloudInstance(CreateCloudInstanceConfigArgs) returns (CreateCloudInstanceConfigResponse) {};
+  rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
+  rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
+  rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
+}
+
+message GetOrCreateApiKeyRequest {
+  string access_token = 1;
+}
+
+message GetOrCreateApiKeyResponse {
+  string api_key = 1;
+}
+
+message GetOrCreateInstanceRequest {
+  string api_key = 1;
+}
+
+message GetOrCreateInstanceResponse {
+  string instance_id = 1;
+}
+
+message CreateCloudInstanceConfigArgs {
+  string api_key = 1;
+  string user_id = 2;
+}
+
+message CreateCloudInstanceConfigResponse {
+  string instance_id = 1;
+}
+
+message GetCloudInstanceConfigArgs {
+  string api_key = 1;
+  string instance_id = 2;
+}
+
+message LaunchResult {
+  string instance_name = 1;
+  string instance_id = 2;
+  string public_dns = 3;
+  string ip_address = 4;
+}
+
+message GetCloudInstanceConfigResponse {
+  string user_id = 1;
+  string instance_id = 2;
+  string context_config = 3;
+  LaunchResult launch_result = 4;
+  string status = 5;
+  string created = 6;
+  string updated = 7;
+  optional AwsKey user_key = 8; // TODO: remove the optional once the cloud BE/FE are upgraded and released
+}
+
+message AwsKey {
+  string id = 1;
+  string secret = 2;
+}

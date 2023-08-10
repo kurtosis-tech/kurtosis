@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -20,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/xtgo/uuid"
 	"go.starlark.net/starlark"
+	"io"
 	"os"
 	"path"
 	"strings"
@@ -153,15 +155,16 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 	}
 	builtin.run = pythonScript.GoString()
 
-	compressedScript, scriptCompressionInterpretationErr := getCompressedPythonScriptForUpload(builtin.run)
+	compressedScript, compressedScriptMd5, scriptCompressionInterpretationErr := getCompressedPythonScriptForUpload(builtin.run)
 	if err != nil {
 		return nil, scriptCompressionInterpretationErr
 	}
+	defer compressedScript.Close()
 	uniqueFilesArtifactName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
 	if err != nil {
 		return nil, startosis_errors.NewInterpretationError("an error occurred while generating unique artifact name for python script")
 	}
-	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, uniqueFilesArtifactName)
+	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, compressedScriptMd5, uniqueFilesArtifactName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while storing the python script to disk")
 	}
@@ -201,7 +204,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 		image = defaultRunPythonImageName
 	}
 
-	var filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion
+	var filesArtifactExpansion *service_directory.FilesArtifactsExpansion
 	if arguments.IsSet(FilesArgName) {
 		filesStarlark, err := builtin_argument.ExtractArgumentValue[*starlark.Dict](arguments, FilesArgName)
 		if err != nil {
@@ -325,21 +328,19 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	return instructionResult, err
 }
 
-func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
-	var maybePackagesWithRuntimeValuesReplaced []string
-	for _, pythonPackage := range builtin.packages {
-		maybePackageWithRuntimeValueReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(pythonPackage, builtin.runtimeValueStore)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "an error occurred while replacing runtime value in a package passed to run_python")
-		}
-		maybePackagesWithRuntimeValuesReplaced = append(maybePackagesWithRuntimeValuesReplaced, maybePackageWithRuntimeValueReplaced)
+func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+	if instructionsAreEqual {
+		return enclave_structure.InstructionIsEqual
 	}
+	return enclave_structure.InstructionIsUnknown
+}
 
-	if len(maybePackagesWithRuntimeValuesReplaced) == 0 {
+func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {
+	if len(builtin.packages) == 0 {
 		return nil, nil
 	}
 
-	packageInstallationSubCommand := fmt.Sprintf("%v %v", pipInstallCmd, strings.Join(maybePackagesWithRuntimeValuesReplaced, spaceDelimiter))
+	packageInstallationSubCommand := fmt.Sprintf("%v %v", pipInstallCmd, strings.Join(builtin.packages, spaceDelimiter))
 	packageInstallationCommand := []string{shellWrapperCommand, "-c", packageInstallationSubCommand}
 
 	executionResult, err := builtin.serviceNetwork.RunExec(
@@ -373,19 +374,19 @@ func getPythonCommandToRun(builtin *RunPythonCapabilities) (string, error) {
 	return fmt.Sprintf("python %s", pythonScriptAbsolutePath), nil
 }
 
-func getCompressedPythonScriptForUpload(pythonScript string) ([]byte, *startosis_errors.InterpretationError) {
+func getCompressedPythonScriptForUpload(pythonScript string) (io.ReadCloser, []byte, *startosis_errors.InterpretationError) {
 	temporaryPythonScriptDir, err := os.MkdirTemp(defaultTmpDir, temporaryPythonDirectoryPrefix)
 	defer os.Remove(temporaryPythonScriptDir)
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while creating a temporary folder to write the python script too")
+		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while creating a temporary folder to write the python script too")
 	}
 	pythonScriptFilePath := path.Join(temporaryPythonScriptDir, pythonScriptFileName)
 	if err = os.WriteFile(pythonScriptFilePath, []byte(pythonScript), pythonScriptReadPermission); err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while writing python script to disk")
+		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while writing python script to disk")
 	}
-	compressed, err := shared_utils.CompressPath(pythonScriptFilePath, enforceMaxSizeLimit)
+	compressed, _, contentMd5, err := shared_utils.CompressPath(pythonScriptFilePath, enforceMaxSizeLimit)
 	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while compressing the python script")
+		return nil, nil, startosis_errors.NewInterpretationError("an error occurred while compressing the python script")
 	}
-	return compressed, nil
+	return compressed, contentMd5, nil
 }

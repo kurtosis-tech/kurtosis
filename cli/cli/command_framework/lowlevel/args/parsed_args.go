@@ -34,7 +34,6 @@ func ParseArgsForCompletion(argConfigs []*ArgConfig, input []string) (*ParsedArg
 		// Greedy case (arg must always be last)
 		if config.IsGreedy {
 			greedyArgValues[key] = input[inputIdx:]
-			inputIdx += len(input) - inputIdx
 			nextArg = config // Greedy args must always be at the end, so they'll be infinitely-completable
 			break
 		}
@@ -93,7 +92,6 @@ func ParseArgsForValidation(argConfigs []*ArgConfig, input []string) (*ParsedArg
 		// Greedy case (arg must always be last)
 		if config.IsGreedy {
 			greedyArgValues[key] = input[inputIdx:]
-			inputIdx += len(input) - inputIdx
 			break
 		}
 

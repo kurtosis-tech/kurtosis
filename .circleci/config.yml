@@ -12,43 +12,71 @@ filters_ignore_main: &filters_ignore_main
 # cli cluster param used to run test suites against docker/kubernetes tests
 param_cli_cluster_backend: &param_cli_cluster_backend
   cli-cluster-backend:
-    description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'minikube'"
+    description: "Kurtosis cluster backend for the cli to use. Must be one of 'docker', 'kubernetes'"
     type: enum
-    enum: ["docker", "minikube"]
+    enum: ["docker", "kubernetes"]
 
 # Install go version 1.19 to run our integration tests on the minimal version we support
 steps_install_go: &steps_install_go
   - run: |
-      wget https://go.dev/dl/go1.19.9.linux-amd64.tar.gz
+      wget https://go.dev/dl/go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz
       sudo rm -rf /usr/local/go
-      sudo tar -C /usr/local -xzf go1.19.9.linux-amd64.tar.gz
+      sudo tar -C /usr/local -xzf go<< pipeline.parameters.go-version >>.linux-amd64.tar.gz
 
-# Steps to prepare a job for Kubernetes testing
-steps_prepare_testing_k8s: &steps_prepare_testing_k8s
+# Steps to prepare a job for Kubernetes testing (with K3S K8S distribution)
+steps_prepare_testing_k8s_k3s: &steps_prepare_testing_k8s_k3s
   steps:
-    - run: |
-        curl -LO https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
-        sudo dpkg -i minikube_latest_amd64.deb
-        minikube start --vm-driver=docker --kubernetes-version=v1.19.0
     - run:
-        name: Check status
+        name: Install K3D and create the K3D/K3S cluster on Docker
         command: |
-          minikube status
-    - run: |
-        eval $(minikube docker-env)
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
-        docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
-    # Set minikube cluster with some previous steps to force minikube cluster type in the cluster-setting file, this save us to start the engine with the cluster set command
-    # because we are going to start it on the next step
-    - run: |
-        KURTOSIS_CLUSTER_SETTING_FILEPATH="<< pipeline.parameters.kurtosis-cluster-setting-abs-filepath >>"
-        echo -n "minikube" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
-        echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
-    - run: |
-        ${KURTOSIS_BINPATH} cluster set minikube --cli-log-level trace
-        ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
+          curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash
+          k3d cluster create --servers 1 --no-lb --wait --verbose
     - run:
+        name: Load Kurtosis images into the K3S cluster
+        # First load the image into Docker and then import the images into K3S by taking the image from Docker
+        command: |
+          kurtosis_version="$(./scripts/get-docker-tag.sh)"
+          
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.core-server-image-filename >>"
+          
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.engine-server-image-filename >>"
+          
+          docker load -i  "<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+          
+          k3d image import "kurtosistech/core:$kurtosis_version" "kurtosistech/engine:$kurtosis_version" "kurtosistech/files-artifacts-expander:$kurtosis_version"
+    # Edit the Kurtosis config file in order to have K3S cluster configuration
+    - run:
+        name: Add K3S cluster config in Kurtosis config file
+        command: |
+          KURTOSIS_CONFIG_FILEPATH=$($KURTOSIS_BINPATH config path)
+          cat \<< EOF > "$KURTOSIS_CONFIG_FILEPATH"
+          config-version: 2
+          should-send-metrics: true
+          kurtosis-clusters:
+            docker:
+              type: docker
+            k3d-k3s-default:
+              type: kubernetes
+              config:
+                kubernetes-cluster-name: k3d-k3s-default
+                storage-class: standard
+                enclave-size-in-megabytes: 2048
+          EOF
+    # Set the K3S cluster with some previous steps to force this cluster type in the cluster-setting file. This save us to start the engine with the cluster set command
+    # because we are going to start it on the next step
+    - run:
+        name: Set K3S Kurtosis cluster
+        command: |
+          KURTOSIS_CLUSTER_SETTING_FILEPATH="<< pipeline.parameters.kurtosis-cluster-setting-abs-filepath >>"
+          echo -n "k3d-k3s-default" > "$KURTOSIS_CLUSTER_SETTING_FILEPATH"
+          echo "Kurtosis cluster-setting file content: $(cat $KURTOSIS_CLUSTER_SETTING_FILEPATH)"
+          ${KURTOSIS_BINPATH} cluster set k3d-k3s-default --cli-log-level trace
+    - run:
+        name: Start Kurtosis engine in K8s backend
+        command: |
+          ${KURTOSIS_BINPATH} engine start --enclave-pool-size 2
+    - run:
+        name: Run Kurtosis gateway
         command: "${KURTOSIS_BINPATH} gateway"
         background: true
 
@@ -101,7 +129,9 @@ orbs:
 executors:
   ubuntu_vm:
     machine:
-      image: ubuntu-2004:202201-02
+      # This custom CircleCi Ubuntu image has a pre-installed Docker, so we are not using the CircleCI remote Docker when we
+      # initiate this machine. More here: https://discuss.circleci.com/t/linux-machine-executor-images-2022-january-q1-update/42831
+      image: ubuntu-2004:2023.07.1
 
 parameters:
   go-version:
@@ -119,9 +149,6 @@ parameters:
     default: "1.19.10"
   # Separate (and newer) than the API version because we want lots of people to be able to use the Kurtosis API and the API doesn't need to be
   # the same version as the server
-  server-go-version:
-    type: string
-    default: "1.19.10"
   rust-version:
     type: string
     default: 1.68.2
@@ -134,9 +161,6 @@ parameters:
   engine-server-build-cache-key-prefix:
     type: string
     default: "engine-server-go-mod-v1"   # Can bump this version to bust the cache
-  cli-go-version:
-    type: string
-    default: "1.19.10"
   workspace-with-cli-binary-and-images-mountpoint:
     type: string
     default: "/tmp/workspace"
@@ -171,6 +195,12 @@ parameters:
   rendertemplate-cli-test-template-relative-path:
     type: string
     default: "internal_testsuites/resources/render_template_cli_test/template.txt"
+  dockerimport-cli-dotenv-relative-path:
+    type: string
+    default: "internal_testsuites/resources/docker_import_cli_test/.env"
+  dockerimport-cli-dockerfile-relative-path:
+    type: string
+    default: "internal_testsuites/resources/docker_import_cli_test/docker-compose.yml"
   rendertemplate-cli-test-data-json-relative-path:
     type: string
     default: "internal_testsuites/resources/render_template_cli_test/data.json"
@@ -260,7 +290,7 @@ jobs:
 
   build_files_artifacts_expander:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -288,7 +318,7 @@ jobs:
 
   build_core_launcher:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -302,7 +332,7 @@ jobs:
 
   build_api_container_server:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -345,7 +375,7 @@ jobs:
 
   build_engine_launcher:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -359,7 +389,7 @@ jobs:
 
   build_engine_server:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - checkout
 
@@ -458,10 +488,12 @@ jobs:
       #Run config init to avoid metrics consent prompt when execute engine start command,
       #We do not send metrics from CI to not dirty the metrics data
       - run: "${KURTOSIS_BINPATH} analytics disable"
+
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_k8s
+            and:
+                - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
@@ -471,10 +503,10 @@ jobs:
       # Run the testsuite for kubernetes and docker, but don't fail the job immediately so that we can upload the enclave dump
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/golang/scripts/test.sh minikube; then
+                if ! ./internal_testsuites/golang/scripts/test.sh kubernetes; then
                   touch /tmp/testsuite-failed
                 fi
 
@@ -490,21 +522,22 @@ jobs:
                 fi
 
       # TODO TODO TODO DELETE THIS HACK!!!!!
+      # First reason (only for K8s):
       # As of 2022-11-18, 'enclave dump' in Kubernetes in CircleCI (but not locally) takes 30s to run per enclave, and "suceeds"
       # but without dumping anything! To avoid our CI runs getting an extra 15 minutes added on, we're only dumping enclaves in Docker
-      - when:
-          condition:
-            equal: [ "docker", << parameters.cli-cluster-backend >> ]
-          steps:
-            <<: *run_dump_kurtosis_enclaves
+      # Second reason:
+      # As of 2023-07-26, stop enclave calls were replaced by destroy enclave calls because doing so improve the velocity of the entire K8s test suite by 6min
+      # We can't run enclave dumps if the the enclaves are not running at the moment, but we could enable it once the centralized logs feature is added on Kurtosis
+      # because we could use enclave-dumps again (it will be calling the centralize logs component instead of getting the logs form the containers)
 
       # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
       # Dump enclave data so we can debug any issues that arise
       # - <<: *run_dump_kurtosis_enclaves
 
-      - store_artifacts:
-          path: /tmp/enclave-dumps.zip
-          destination: enclave-dumps.zip
+      # TODO UNCOMMENT THIS WHEN WE FIX THE BUG ABOVE!!!
+      #- store_artifacts:
+      #    path: /tmp/enclave-dumps.zip
+      #    destination: enclave-dumps.zip
 
       # Finally, fail the job if the testsuite failed
       - run: "! [ -f /tmp/testsuite-failed ]"
@@ -532,8 +565,9 @@ jobs:
       - run: "${KURTOSIS_BINPATH} analytics disable"
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_k8s
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
@@ -543,10 +577,10 @@ jobs:
       # Run the testsuite for either docker or kubernetes, but don't fail the job immediately so that we can upload the enclave dump
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
             - run: |
-                if ! ./internal_testsuites/typescript/scripts/test.sh minikube; then
+                if ! ./internal_testsuites/typescript/scripts/test.sh kubernetes; then
                    touch /tmp/testsuite-failed
                 fi
       - when:
@@ -599,7 +633,7 @@ jobs:
           sudo apt update
           sudo apt install kurtosis-cli
       # We don't send metrics to avoid polluting our logs
-      - run: kurtosis config init dont-send-metrics
+      - run: kurtosis analytics disable
 
       # Start up an enclave with some services inside
       - run: kurtosis enclave add --name running-old-enclave
@@ -678,11 +712,12 @@ jobs:
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
 
-      # When backend is 'minikube' install minikube and start a Kurtosis gateway
+      # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_k8s
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
@@ -722,6 +757,9 @@ jobs:
       # Execute github starlark module
       - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
 
+      # Execute docker compose import
+      - run: "${KURTOSIS_BINPATH} import --enclave test-import --env << pipeline.parameters.dockerimport-cli-dotenv-relative-path >> << pipeline.parameters.dockerimport-cli-dockerfile-relative-path >>"
+
 
       - run: "${KURTOSIS_BINPATH} enclave stop test-enclave"
       - run: "${KURTOSIS_BINPATH} enclave stop test-datastore"
@@ -741,12 +779,19 @@ jobs:
       # Ensure Kubernetes resources clean up successfully
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
+            equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           steps:
+            - run:
+                name: "Install kubectl"
+                # Install kubectl and move it to the /usr/local/bin in order to make it accesible from the PATH
+                command: |
+                  curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+                  chmod +x kubectl
+                  sudo mv kubectl /usr/local/bin
             - run:
                 name: "Verify no kurtosis pods are running after clean and stopping the engine"
                 command: |
-                  kurtosis_pods=$(minikube kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis)
+                  kurtosis_pods=$(kubectl -- get pods --all-namespaces --selector=kurtosistech.com/app-id=kurtosis)
                   if ! [ $(echo "${kurtosis_pods}" |  grep -f <(printf "%s\n" "Running") | wc -l) -eq 0 ]; then
                     echo "${kurtosis_pods}"
                     false
@@ -804,11 +849,12 @@ jobs:
           echo 'export KURTOSIS_BINPATH="<< pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.cli-dist-home-relative-dirpath >>/<< pipeline.parameters.cli-linux-amd-64-binary-relative-filepath >>"' >> "${BASH_ENV}"
       - run: "${KURTOSIS_BINPATH} analytics disable"
 
-      # When backend is 'minikube' install minikube and start a Kurtosis gateway
+      # When backend is 'kubernetes' install kubernetes and start a Kurtosis gateway
       - when:
           condition:
-            equal: [ "minikube", << parameters.cli-cluster-backend >> ]
-          <<: *steps_prepare_testing_k8s
+            and:
+              - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+          <<: *steps_prepare_testing_k8s_k3s
 
       - when:
           condition:
@@ -859,7 +905,7 @@ jobs:
 
   publish_files_artifacts_expander_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering
@@ -891,7 +937,7 @@ jobs:
 
   publish_api_container_server_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering
@@ -929,7 +975,7 @@ jobs:
 
   publish_engine_server_image:
     docker:
-      - image: "cimg/go:<< pipeline.parameters.server-go-version >>"
+      - image: "cimg/go:<< pipeline.parameters.go-version >>"
     steps:
       - slack/notify:
           channel: engineering
@@ -1127,7 +1173,7 @@ workflows:
 
       #      - test_basic_cli_functionality:
       #          name: "Test Basic CLI Functionality in Kubernetes"
-      #          cli-cluster-backend: "minikube"
+      #          cli-cluster-backend: "kubernetes"
       #          context:
       #            - docker-user
       #          requires:
@@ -1163,7 +1209,7 @@ workflows:
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
-          cli-cluster-backend: "minikube"
+          cli-cluster-backend: "kubernetes"
           context:
             - docker-user
           requires:
@@ -1187,7 +1233,7 @@ workflows:
 
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
-          cli-cluster-backend: "minikube"
+          cli-cluster-backend: "kubernetes"
           context:
             - docker-user
           requires:

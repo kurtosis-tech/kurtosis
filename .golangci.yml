@@ -1,7 +1,8 @@
 linters:
   enable:
     - exhaustruct
-  disable:
-    - staticcheck # TODO(vcolombo): Remove this
+    - exportloopref
+    - gomnd
+    - staticcheck
   max-issues-per-linter: 0
   sort-results: true
