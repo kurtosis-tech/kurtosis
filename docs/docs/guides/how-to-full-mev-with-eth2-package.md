@@ -1,4 +1,9 @@
-# How To: Instantiate a private Ethereum testnet with Proposer-Builder Separation (PBS) emulation
+---
+title: How to launch a private Ethereum testnet with in-protocol Proposer Builder Seperation (PBS) emulation
+sidebar_label: Launch a testnet with MEV infra
+slug: /how-to-full-mev-with-eth2-package
+toc_max_heading_level: 2
+---
 
 We're elated to share that Ethereum testnets spun up using Kurtosis' [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now support in-protocol [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) emulation using Flashbot's open-source [MEV-Boost](https://boost.flashbots.net) implementation. This milestone marks a huge step forward in the journey towards a full, in-protocol PBS implementation for Proof-of-Stake Ethereum and is exciting because engineers can now use the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) to instantiate fully functioning testnets to validate functionality, behvaior, and scales across all client combinations *with MEV infrastructure.* Keep reading to learn [how it all works](#architecture--details) & [how to get started with the `eth2-package`](#quickstart).
 
