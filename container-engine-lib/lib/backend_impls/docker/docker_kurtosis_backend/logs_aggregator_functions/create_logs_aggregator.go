@@ -16,7 +16,7 @@ const (
 
 func CreateLogsAggregator(
 	ctx context.Context,
-	portNumber uint16,
+	logListeningPort uint16,
 	logsAggregatorContainer LogsAggregatorContainer,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
@@ -40,15 +40,14 @@ func CreateLogsAggregator(
 
 	containerId, containerLabels, removeLogsAggregatorContainerFunc, err := logsAggregatorContainer.CreateAndStart(
 		ctx,
-		portNumber,
+		logListeningPort,
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the logs aggregator container with port number '%v' in Docker network with ID '%v'",
-			portNumber,
+			"An error occurred creating the logs aggregator container in Docker network with ID '%v'",
 			targetNetworkId,
 		)
 	}
