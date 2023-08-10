@@ -94,6 +94,87 @@ You will use the above file by passing it in at runtime, effectively enabling yo
 #### Launch the network with `full MEV`
 You can now launch the network 
 
+```bash
+Starlark code successfully run. Output was:
+{
+	"grafana_info": {
+		"dashboard_path": "/d/QdTOwy-nz/eth2-merge-kurtosis-module-dashboard?orgId=1",
+		"password": "admin",
+		"user": "admin"
+	}
+}
+
+INFO[2023-08-09T11:16:00+02:00] ====================================================
+INFO[2023-08-09T11:16:00+02:00] ||          Created enclave: timid-brook          ||
+INFO[2023-08-09T11:16:00+02:00] ====================================================
+Name:            timid-brook
+UUID:            1d467f353496
+Status:          RUNNING
+Creation Time:   Wed, 09 Aug 2023 11:06:50 CEST
+
+========================================= Files Artifacts =========================================
+UUID           Name
+004cb2a16def   1-lighthouse-geth-0-63
+e98eee4d8a99   2-lighthouse-geth-64-127
+601b49f6e437   cl-forkmon-config
+21192db4c9b4   cl-genesis-data
+fcdd39be227b   el-forkmon-config
+38905cf9e831   el-genesis-data
+0ba35b186c20   genesis-generation-config-cl
+b477313c48f4   genesis-generation-config-el
+b119fb95bd44   geth-prefunded-keys
+c4fd103c5447   grafana-config
+122cfb453ebe   grafana-dashboards
+b86556fccf74   prometheus-config
+2d2d99849ff0   prysm-password
+
+========================================== User Services ==========================================
+UUID           Name                                       Ports                                                  Status
+1bde5712f965   cl-1-lighthouse-geth                       http: 4000/tcp -> http://127.0.0.1:62873               RUNNING
+                                                          metrics: 5054/tcp -> http://127.0.0.1:62874
+                                                          tcp-discovery: 9000/tcp -> 127.0.0.1:62875
+                                                          udp-discovery: 9000/udp -> 127.0.0.1:53993
+57f94044300c   cl-1-lighthouse-geth-validator             http: 5042/tcp -> 127.0.0.1:62876                      RUNNING
+                                                          metrics: 5064/tcp -> http://127.0.0.1:62877
+ae2d5b824656   cl-2-lighthouse-geth                       http: 4000/tcp -> http://127.0.0.1:62879               RUNNING
+                                                          metrics: 5054/tcp -> http://127.0.0.1:62880
+                                                          tcp-discovery: 9000/tcp -> 127.0.0.1:62878
+                                                          udp-discovery: 9000/udp -> 127.0.0.1:65058
+c1eb34a91b7e   cl-2-lighthouse-geth-validator             http: 5042/tcp -> 127.0.0.1:62882                      RUNNING
+                                                          metrics: 5064/tcp -> http://127.0.0.1:62881
+65e1ae6652c9   cl-forkmon                                 http: 80/tcp -> http://127.0.0.1:62933                 RUNNING
+e7f673086384   el-1-geth-lighthouse                       engine-rpc: 8551/tcp -> 127.0.0.1:62861                RUNNING
+                                                          rpc: 8545/tcp -> 127.0.0.1:62863
+                                                          tcp-discovery: 30303/tcp -> 127.0.0.1:62862
+                                                          udp-discovery: 30303/udp -> 127.0.0.1:56858
+                                                          ws: 8546/tcp -> 127.0.0.1:62860
+3048d9aafc12   el-2-geth-lighthouse                       engine-rpc: 8551/tcp -> 127.0.0.1:62866                RUNNING
+                                                          rpc: 8545/tcp -> 127.0.0.1:62864
+                                                          tcp-discovery: 30303/tcp -> 127.0.0.1:62867
+                                                          udp-discovery: 30303/udp -> 127.0.0.1:62287
+                                                          ws: 8546/tcp -> 127.0.0.1:62865
+70e19424c664   el-forkmon                                 http: 8080/tcp -> http://127.0.0.1:62934               RUNNING
+f4bebfdc819b   grafana                                    http: 3000/tcp -> http://127.0.0.1:62937               RUNNING
+219954ae8f7e   mev-boost-0                                api: 18550/tcp -> 127.0.0.1:62931                      RUNNING
+287c555090c6   mev-boost-1                                api: 18550/tcp -> 127.0.0.1:62932                      RUNNING
+2fedae36a1f8   mev-flood                                  <none>                                                 RUNNING
+bb163cad3912   mev-relay-api                              api: 9062/tcp -> 127.0.0.1:62929                       RUNNING
+5591d1d17ec5   mev-relay-housekeeper                      <none>                                                 RUNNING
+026f3744c98f   mev-relay-website                          api: 9060/tcp -> 127.0.0.1:62930                       RUNNING
+096fdfb33909   postgres                                   postgresql: 5432/tcp -> postgresql://127.0.0.1:62928   RUNNING
+f283002d8c77   prelaunch-data-generator-cl-genesis-data   <none>                                                 RUNNING
+af010cabc0ce   prelaunch-data-generator-el-genesis-data   <none>                                                 RUNNING
+3fcd033e1d38   prometheus                                 http: 9090/tcp -> http://127.0.0.1:62936               RUNNING
+145b673410f9   redis                                      client: 6379/tcp -> 127.0.0.1:62927                    RUNNING
+2172a3e173f8   testnet-verifier                           <none>                                                 RUNNING
+f833b940ae5b   transaction-spammer                        <none>                                                 RUNNING
+```
+
+
+
+
+
+
 #### Visit the website to see registered validators and delivered payloads 
 
 ## Roadmap
