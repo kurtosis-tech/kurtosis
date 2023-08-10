@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	stopLogsAggregatorContainerTimeout = 1 * time.Minute
+	stopLogsAggregatorContainerTimeout = 2 * time.Second
 )
 
 // Destroys logs aggregator idempotently, returns nil if no logs aggregator logs aggregator container was found

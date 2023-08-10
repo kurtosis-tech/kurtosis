@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/stacktrace"
 )
@@ -62,8 +63,12 @@ func DestroyEngines(
 		)
 	}
 
-	if err := removeCentralizedLogsComponents(ctx, dockerManager); err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logging components.")
+	// This is a small hack so that the log aggregator isn't cleaned while trying to remove stopped engines (eg. kurtosis clean -a)
+	shouldRemoveLogComponents := !filters.Statuses[container_status.ContainerStatus_Stopped]
+	if shouldRemoveLogComponents {
+		if err := removeCentralizedLogsComponents(ctx, dockerManager); err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logging components.")
+		}
 	}
 
 	return successfulGuids, erroredGuids, nil
