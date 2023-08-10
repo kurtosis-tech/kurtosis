@@ -70,6 +70,7 @@ func CreateEngine(
 	}
 	targetNetworkId := engineNetwork.GetId()
 
+	logrus.Infof("Starting the centralized logs components...")
 	removeCentralizedLogsComponentsFunc, err := createCentralizedLogsComponents(
 		ctx,
 		targetNetworkId,
@@ -86,6 +87,7 @@ func CreateEngine(
 			removeCentralizedLogsComponentsFunc()
 		}
 	}()
+	logrus.Infof("Centralized logs components started.")
 
 	httpPortSpec, err := port_spec.NewPortSpec(uint16(frontendPortSpec), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {

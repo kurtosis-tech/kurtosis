@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"time"
 )
 
@@ -11,10 +12,12 @@ const (
 	stopLogsAggregatorContainerTimeout = 1 * time.Minute
 )
 
+// Returns nil if logs aggregator container is successfully destroyed or no logs aggregator container was found
 func DestroyLogsAggregator(ctx context.Context, dockerManager *docker_manager.DockerManager) error {
 	_, maybeLogsAggregatorContainerId, err := getLogsAggregatorObjectAndContainerId(ctx, dockerManager)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs aggregator.")
+		logrus.Warnf("Attempted to destroy logs aggregator but no logs aggregator container was found.")
+		return nil
 	}
 
 	if maybeLogsAggregatorContainerId == "" {
