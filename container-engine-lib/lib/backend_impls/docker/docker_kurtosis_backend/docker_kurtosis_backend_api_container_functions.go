@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -147,6 +148,12 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	//The APIContainer will be configured to send the logs to the Fluentbit logs collector server
+	fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
+		enclaveLogsCollector.GetEnclaveNetworkIpAddress().String(),
+		logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels(),
+	)
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
 		apiContainerAttrs.GetName().GetString(),
@@ -163,6 +170,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 	).WithLabels(
 		labelStrs,
+	).WithLoggingDriver(
+		fluentdLoggingDriverCnfg,
 	).Build()
 
 	if err = backend.dockerManager.FetchImage(ctx, image); err != nil {
