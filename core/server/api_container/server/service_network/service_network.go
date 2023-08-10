@@ -99,7 +99,7 @@ type ServiceNetwork interface {
 
 	GetExistingAndHistoricalServiceIdentifiers() (service_identifiers.ServiceIdentifiers, error)
 
-	GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool, error)
+	ExistServiceRegistration(serviceName service.ServiceName) (bool, error)
 
 	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 

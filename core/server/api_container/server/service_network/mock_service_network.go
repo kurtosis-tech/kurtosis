@@ -210,6 +210,58 @@ func (_c *MockServiceNetwork_CopyFilesFromService_Call) RunAndReturn(run func(co
 	return _c
 }
 
+// ExistServiceRegistration provides a mock function with given fields: serviceName
+func (_m *MockServiceNetwork) ExistServiceRegistration(serviceName service.ServiceName) (bool, error) {
+	ret := _m.Called(serviceName)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(service.ServiceName) (bool, error)); ok {
+		return rf(serviceName)
+	}
+	if rf, ok := ret.Get(0).(func(service.ServiceName) bool); ok {
+		r0 = rf(serviceName)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(service.ServiceName) error); ok {
+		r1 = rf(serviceName)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockServiceNetwork_ExistServiceRegistration_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ExistServiceRegistration'
+type MockServiceNetwork_ExistServiceRegistration_Call struct {
+	*mock.Call
+}
+
+// ExistServiceRegistration is a helper method to define mock.On call
+//   - serviceName service.ServiceName
+func (_e *MockServiceNetwork_Expecter) ExistServiceRegistration(serviceName interface{}) *MockServiceNetwork_ExistServiceRegistration_Call {
+	return &MockServiceNetwork_ExistServiceRegistration_Call{Call: _e.mock.On("ExistServiceRegistration", serviceName)}
+}
+
+func (_c *MockServiceNetwork_ExistServiceRegistration_Call) Run(run func(serviceName service.ServiceName)) *MockServiceNetwork_ExistServiceRegistration_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(service.ServiceName))
+	})
+	return _c
+}
+
+func (_c *MockServiceNetwork_ExistServiceRegistration_Call) Return(_a0 bool, _a1 error) *MockServiceNetwork_ExistServiceRegistration_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockServiceNetwork_ExistServiceRegistration_Call) RunAndReturn(run func(service.ServiceName) (bool, error)) *MockServiceNetwork_ExistServiceRegistration_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetApiContainerInfo provides a mock function with given fields:
 func (_m *MockServiceNetwork) GetApiContainerInfo() *ApiContainerInfo {
 	ret := _m.Called()
@@ -478,67 +530,6 @@ func (_c *MockServiceNetwork_GetServiceNames_Call) Return(_a0 map[service.Servic
 }
 
 func (_c *MockServiceNetwork_GetServiceNames_Call) RunAndReturn(run func() (map[service.ServiceName]bool, error)) *MockServiceNetwork_GetServiceNames_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetServiceRegistration provides a mock function with given fields: serviceName
-func (_m *MockServiceNetwork) GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool, error) {
-	ret := _m.Called(serviceName)
-
-	var r0 *service.ServiceRegistration
-	var r1 bool
-	var r2 error
-	if rf, ok := ret.Get(0).(func(service.ServiceName) (*service.ServiceRegistration, bool, error)); ok {
-		return rf(serviceName)
-	}
-	if rf, ok := ret.Get(0).(func(service.ServiceName) *service.ServiceRegistration); ok {
-		r0 = rf(serviceName)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*service.ServiceRegistration)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(service.ServiceName) bool); ok {
-		r1 = rf(serviceName)
-	} else {
-		r1 = ret.Get(1).(bool)
-	}
-
-	if rf, ok := ret.Get(2).(func(service.ServiceName) error); ok {
-		r2 = rf(serviceName)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockServiceNetwork_GetServiceRegistration_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetServiceRegistration'
-type MockServiceNetwork_GetServiceRegistration_Call struct {
-	*mock.Call
-}
-
-// GetServiceRegistration is a helper method to define mock.On call
-//   - serviceName service.ServiceName
-func (_e *MockServiceNetwork_Expecter) GetServiceRegistration(serviceName interface{}) *MockServiceNetwork_GetServiceRegistration_Call {
-	return &MockServiceNetwork_GetServiceRegistration_Call{Call: _e.mock.On("GetServiceRegistration", serviceName)}
-}
-
-func (_c *MockServiceNetwork_GetServiceRegistration_Call) Run(run func(serviceName service.ServiceName)) *MockServiceNetwork_GetServiceRegistration_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(service.ServiceName))
-	})
-	return _c
-}
-
-func (_c *MockServiceNetwork_GetServiceRegistration_Call) Return(_a0 *service.ServiceRegistration, _a1 bool, _a2 error) *MockServiceNetwork_GetServiceRegistration_Call {
-	_c.Call.Return(_a0, _a1, _a2)
-	return _c
-}
-
-func (_c *MockServiceNetwork_GetServiceRegistration_Call) RunAndReturn(run func(service.ServiceName) (*service.ServiceRegistration, bool, error)) *MockServiceNetwork_GetServiceRegistration_Call {
 	_c.Call.Return(run)
 	return _c
 }

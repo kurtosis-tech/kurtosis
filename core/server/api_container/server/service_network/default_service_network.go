@@ -722,16 +722,16 @@ func (network *DefaultServiceNetwork) CopyFilesFromService(ctx context.Context, 
 	return filesArtifactUuid, nil
 }
 
-func (network *DefaultServiceNetwork) GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool, error) {
+func (network *DefaultServiceNetwork) ExistServiceRegistration(serviceName service.ServiceName) (bool, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	registration, err := network.serviceRegistrationRepository.Get(serviceName)
+	exist, err := network.serviceRegistrationRepository.Exist(serviceName)
 	if err != nil {
-		return nil, false, stacktrace.Propagate(err, "An error occurred getting service registration for service '%s'", serviceName)
+		return false, stacktrace.Propagate(err, "An error occurred getting service registration for service '%s'", serviceName)
 	}
 
-	return registration, true, nil
+	return exist, nil
 }
 
 func (network *DefaultServiceNetwork) RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error) {
