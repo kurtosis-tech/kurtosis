@@ -30,6 +30,8 @@ func run(ctx context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
 		return stacktrace.Propagate(err, "Unable to determine current state of Kurtosis Portal process")
 	}
 
+	// If there is a healthy running Portal, we do nothing since we don't want to break the current port forward.
+	// We could save the port forward state and restart the Portal but it is not yet implemented.
 	if isPortalReachable {
 		logrus.Infof("Portal is currently running on PID '%d' and healthy.", currentPortalPid)
 		return nil
