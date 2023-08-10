@@ -312,8 +312,25 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 }
 
 func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifiers(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse, error) {
-	allIdentifiers := apicService.serviceNetwork.GetExistingAndHistoricalServiceIdentifiers()
-	return &kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse{AllIdentifiers: allIdentifiers}, nil
+	allIdentifiers, err := apicService.serviceNetwork.GetExistingAndHistoricalServiceIdentifiers()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical service identifiers")
+	}
+	serviceIdentifiersGrpc := []*kurtosis_core_rpc_api_bindings.ServiceIdentifiers{}
+
+	for _, serviceIdentifier := range allIdentifiers {
+		serviceIdentifierGrpc := &kurtosis_core_rpc_api_bindings.ServiceIdentifiers{
+			ServiceUuid:   string(serviceIdentifier.GetUuid()),
+			ShortenedUuid: serviceIdentifier.GetShortenedUUIDStr(),
+			Name:          string(serviceIdentifier.GetName()),
+		}
+		serviceIdentifiersGrpc = append(serviceIdentifiersGrpc, serviceIdentifierGrpc)
+	}
+
+	existingAndHistoricalServiceIdentifiersResponse := &kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse{
+		AllIdentifiers: serviceIdentifiersGrpc,
+	}
+	return existingAndHistoricalServiceIdentifiersResponse, nil
 }
 
 func (apicService ApiContainerService) UploadFilesArtifact(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactServer) error {
