@@ -24,6 +24,8 @@ const (
 
 	portalBinaryFileMode  = 0700
 	portalVersionFileMode = 0600
+	portalTagLatest       = "latest"
+	portalTag             = "0.0.4"
 
 	osArchitectureSeparator = "_"
 
@@ -32,13 +34,13 @@ const (
 	numberOfAssetsPerPage = 50
 )
 
-// DownloadLatestKurtosisPortalBinary downloads the latest version of Kurtosis Portal.
-// It returns true if a new version was downloaded and installed, false if it no-oped because latest was already
-// installed or because latest version information could not be retrieved.
+// DownloadRequiredKurtosisPortalBinary downloads the required version of Kurtosis Portal.
+// It returns true if a new version was downloaded and installed, false if it no-oped because required was already
+// installed or because required version information could not be retrieved.
 // Note that it returns an error only if the end state is such that the portal cannot be run properly. I.e. if a
-// Portal is already installed, and it failed to retrieve the latest version for example, it returns gracefully
+// Portal is already installed, and it failed to retrieve the required version for example, it returns gracefully
 // as this is not critical (current version will be used and will continue to run fine)
-func DownloadLatestKurtosisPortalBinary(ctx context.Context) (bool, error) {
+func DownloadRequiredKurtosisPortalBinary(ctx context.Context) (bool, error) {
 	binaryFilePath, err := host_machine_directories.GetPortalBinaryFilePath()
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Unable to get file path to Kurtosis Portal binary file")
@@ -54,46 +56,50 @@ func DownloadLatestKurtosisPortalBinary(ctx context.Context) (bool, error) {
 	}
 
 	ghClient := github.NewClient(http.DefaultClient)
-	latestRelease, err := getLatestRelease(ctx, ghClient)
+	release, err := getRelease(ctx, ghClient)
 	if err != nil {
 		return false, defaultToCurrentVersionOrError(currentVersionStrMaybe, err)
 	}
 
-	latestVersionStr, currentVersionMatchesLatest, err := compareLatestVersionWithCurrent(currentVersionStrMaybe, latestRelease)
+	requiredVersionStr, currentVersionMatchesRequired, err := compareRequiredVersionWithCurrent(currentVersionStrMaybe, release)
 	if err != nil {
 		return false, defaultToCurrentVersionOrError(currentVersionStrMaybe, err)
 	}
-	if currentVersionMatchesLatest {
-		logrus.Infof("Kurtosis Portal version '%s' is the latest and already installed", latestVersionStr)
+	if currentVersionMatchesRequired {
+		logrus.Infof("Installed Kurtosis Portal version '%s' is the required one", requiredVersionStr)
 		return false, nil
 	}
 
 	if currentVersionStrMaybe == "" {
 		// no Portal is currently installed. Installing a brand new one
-		logrus.Infof("Installing Kurtosis Portal version '%s'", latestVersionStr)
+		logrus.Infof("Installing Kurtosis Portal version '%s'", requiredVersionStr)
 	} else {
-		logrus.Infof("Upgrading currently Kurtosis Portal version '%s' to '%s'", currentVersionStrMaybe, latestVersionStr)
+		logrus.Infof("Upgrading currently Kurtosis Portal version '%s' to '%s'", currentVersionStrMaybe, requiredVersionStr)
 	}
 
-	githubAssetContent, err := downloadGithubAsset(ctx, ghClient, latestRelease)
+	githubAssetContent, err := downloadGithubAsset(ctx, ghClient, release)
 	if err != nil {
 		return false, defaultToCurrentVersionOrError(currentVersionStrMaybe, err)
 	}
 
-	if err = extractAssetTgzToBinaryFileOnDisk(githubAssetContent, latestVersionStr, binaryFilePath, currentVersionFilePath); err != nil {
+	if err = extractAssetTgzToBinaryFileOnDisk(githubAssetContent, requiredVersionStr, binaryFilePath, currentVersionFilePath); err != nil {
 		return false, defaultToCurrentVersionOrError(currentVersionStrMaybe, err)
 	}
 	return true, nil
 }
 
-func getLatestRelease(ctx context.Context, ghClient *github.Client) (*github.RepositoryRelease, error) {
-	// First, browse the list of releases for the Kurtosis Portal repo
-	latestRelease, _, err := ghClient.Repositories.GetLatestRelease(ctx, kurtosisTechGithubOrg, kurtosisPortalGithubRepoName)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to retrieve latest version of Kurtosis Portal form GitHub")
+func getRelease(ctx context.Context, ghClient *github.Client) (*github.RepositoryRelease, error) {
+	var err error
+	var release *github.RepositoryRelease
+	if portalTag == portalTagLatest {
+		release, _, err = ghClient.Repositories.GetLatestRelease(ctx, kurtosisTechGithubOrg, kurtosisPortalGithubRepoName)
+	} else {
+		release, _, err = ghClient.Repositories.GetReleaseByTag(ctx, kurtosisTechGithubOrg, kurtosisPortalGithubRepoName, portalTag)
 	}
-	logrus.Debugf("Latest release is %s", latestRelease.GetName())
-	return latestRelease, nil
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Unable to retrieve version %s of Kurtosis Portal from GitHub", portalTag)
+	}
+	return release, nil
 }
 
 func getVersionCurrentlyInstalled(currentVersionFilePath string) (string, error) {
@@ -107,23 +113,23 @@ func getVersionCurrentlyInstalled(currentVersionFilePath string) (string, error)
 	return strings.TrimSpace(string(currentVersionBytes)), nil
 }
 
-func compareLatestVersionWithCurrent(currentVersionStrIfAny string, latestRelease *github.RepositoryRelease) (string, bool, error) {
-	latestVersionStr := latestRelease.GetName()
-	if currentVersionStrIfAny == latestVersionStr {
-		return latestVersionStr, true, nil
+func compareRequiredVersionWithCurrent(currentVersionStrIfAny string, requiredRelease *github.RepositoryRelease) (string, bool, error) {
+	requiredVersionStr := requiredRelease.GetName()
+	if currentVersionStrIfAny == requiredVersionStr {
+		return requiredVersionStr, true, nil
 	}
-	return latestVersionStr, false, nil
+	return requiredVersionStr, false, nil
 }
 
-func downloadGithubAsset(ctx context.Context, ghClient *github.Client, latestRelease *github.RepositoryRelease) (io.ReadCloser, error) {
+func downloadGithubAsset(ctx context.Context, ghClient *github.Client, release *github.RepositoryRelease) (io.ReadCloser, error) {
 	// Get all assets associated with this release and identify the one matching the current machine architecture
 	opts := &github.ListOptions{
 		Page:    assetsFirstPageNumber,
 		PerPage: numberOfAssetsPerPage,
 	}
-	allReleaseAssets, _, err := ghClient.Repositories.ListReleaseAssets(ctx, kurtosisTechGithubOrg, kurtosisPortalGithubRepoName, latestRelease.GetID(), opts)
+	allReleaseAssets, _, err := ghClient.Repositories.ListReleaseAssets(ctx, kurtosisTechGithubOrg, kurtosisPortalGithubRepoName, release.GetID(), opts)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to get list of assets from latest version")
+		return nil, stacktrace.Propagate(err, "Unable to get list of assets from required version")
 	}
 	detectedOsArch := fmt.Sprintf("%s%s%s", runtime.GOOS, osArchitectureSeparator, runtime.GOARCH)
 	assetFileExpectedSuffix := fmt.Sprintf("%s%s", detectedOsArch, githubAssetExtension)
@@ -162,6 +168,14 @@ func extractAssetTgzToBinaryFileOnDisk(assetContent io.ReadCloser, assetVersion 
 		return stacktrace.Propagate(err, "Archive seems to be a directory, but expecting a single binary file")
 	}
 
+	// Remove the existing Portal binary file since some OSes cache file signatures and complain that the content change
+	// when you just copy into the existing file.  Darwin is an example.
+	err = os.Remove(destFilePath)
+	if err != nil && !os.IsNotExist(err) {
+		return stacktrace.Propagate(err, "Unable to remove the existing Kurtosis Portal binary file")
+	}
+
+	// Create a new empty Portal binary file and copy the asset content into it.
 	portalBinaryFile, err := os.Create(destFilePath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to create a new empty file to store Kurtosis Portal binary")
@@ -169,7 +183,6 @@ func extractAssetTgzToBinaryFileOnDisk(assetContent io.ReadCloser, assetVersion 
 	if err = os.Chmod(portalBinaryFile.Name(), portalBinaryFileMode); err != nil {
 		return stacktrace.Propagate(err, "Unable to switch file mode to executable for Kurtosis Portal binary file")
 	}
-
 	if _, err = io.Copy(portalBinaryFile, assetTarReader); err != nil {
 		return stacktrace.Propagate(err, "Unable to copy content of Kurtosis Portal binary to executable file")
 	}
@@ -185,9 +198,9 @@ func extractAssetTgzToBinaryFileOnDisk(assetContent io.ReadCloser, assetVersion 
 
 func defaultToCurrentVersionOrError(currentVersionStr string, nonNilError error) error {
 	if currentVersionStr != "" {
-		logrus.Warnf("Checking for latest version of Kurtosis Portal failed. Currently installed version '%s' will be used", currentVersionStr)
+		logrus.Warnf("Checking for required version of Kurtosis Portal failed. Currently installed version '%s' will be used", currentVersionStr)
 		logrus.Debugf("Error was: %v", nonNilError.Error())
 		return nil
 	}
-	return stacktrace.Propagate(nonNilError, "An error occurred installing Kurtosis Portal latest version")
+	return stacktrace.Propagate(nonNilError, "An error occurred installing Kurtosis Portal required version")
 }
