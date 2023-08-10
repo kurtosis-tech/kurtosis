@@ -52,7 +52,6 @@ const (
 	httpServerLocalhost    = "0.0.0.0"
 	inputName              = "forward"
 	inputListenIP          = "0.0.0.0"
-	modifyFilterName       = "modify"
 	matchAllRegex          = "*"
 
 	// fluentbit doesn't have a dedicated vector output plugin but vector added a source input plugin for fluentbit

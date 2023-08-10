@@ -392,18 +392,17 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	return successfullyDestroyedServices, failedServices, nil
 }
 
-func (backend *DockerKurtosisBackend) CreateLogsAggregator(ctx context.Context, logsAggregatorPortNum uint16) (*logs_aggregator.LogsAggregator, error) {
+func (backend *DockerKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
 	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() //Declaring the implementation
 
 	logsAggregator, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
-		logsAggregatorPortNum,
 		logsAggregatorContainer,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator using the logs aggregator container '%+v' and the port number '%v'", logsAggregatorContainer, logsAggregatorPortNum)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator using the logs aggregator container '%+v'.", logsAggregatorContainer)
 	}
 	return logsAggregator, nil
 }

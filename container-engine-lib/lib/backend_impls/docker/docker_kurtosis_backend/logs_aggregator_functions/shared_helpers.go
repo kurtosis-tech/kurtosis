@@ -99,6 +99,7 @@ func getLogsAggregatorObjectFromContainerInfo(
 	logsAggregatorObj := logs_aggregator.NewLogsAggregator(
 		logsAggregatorStatus,
 		privateIpAddr,
+		defaultLogsListeningPortNum,
 	)
 
 	return logsAggregatorObj, nil

@@ -427,7 +427,7 @@ func (backend *KubernetesKurtosisBackend) GetLogsAggregator(
 	return nil, stacktrace.NewError("Getting the logs aggregator isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context, logsAggregatorPortNumber uint16) (*logs_aggregator.LogsAggregator, error) {
+func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
 	// TODO IMPLEMENT
 	return nil, stacktrace.NewError("Creating the logs aggregator isn't yet implemented on Kubernetes")
 }

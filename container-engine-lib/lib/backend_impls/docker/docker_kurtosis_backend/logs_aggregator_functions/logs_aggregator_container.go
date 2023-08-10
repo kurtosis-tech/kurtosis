@@ -9,9 +9,9 @@ import (
 type LogsAggregatorContainer interface {
 	CreateAndStart(
 		ctx context.Context,
-		// This is the port that this LogAggregatorContainer will listen for forward logs on
-		// LogCollectors should forward logs to this port
-		logListeningPort uint16,
+		// This is the port that this LogsAggregatorContainer will listen for logs on
+		// LogsCollectors should forward logs to this port
+		logsListeningPort uint16,
 		targetNetworkId string,
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,

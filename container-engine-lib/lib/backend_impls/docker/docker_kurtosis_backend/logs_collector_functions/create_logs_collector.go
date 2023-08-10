@@ -18,7 +18,6 @@ import (
 const (
 	defaultContainerStatusForNewLogsCollectorContainer = types.ContainerStatus_Running
 	emptyAliasForLogsCollector                         = ""
-	defaultLogsAggregatorPort                          = uint16(9714)
 )
 
 var (
@@ -57,13 +56,13 @@ func CreateLogsCollectorForEnclave(
 	}
 
 	logsAggregatorHost := logsAggregator.GetMaybePrivateIpAddr().String()
-	logsAggregatorPort := defaultLogsAggregatorPort
+	logsAggregatorPortNum := logsAggregator.GetListeningPortNum()
 
 	containerId, containerLabels, hostMachinePortBindings, removeLogsCollectorContainerFunc, err := logsCollectorContainer.CreateAndStart(
 		ctx,
 		enclaveUuid,
 		logsAggregatorHost,
-		logsAggregatorPort,
+		logsAggregatorPortNum,
 		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,
 		logsCollectorTcpPortId,
@@ -78,7 +77,7 @@ func CreateLogsCollectorForEnclave(
 			"An error occurred running the logs collector container with container ID '%v' with logs aggregator host '%v', logs aggregator port '%v', HTTP port number '%v', TCP port id '%v', and HTTP port id '%v' in Docker network with ID '%v'",
 			containerId,
 			logsAggregatorHost,
-			logsAggregatorPort,
+			logsAggregatorPortNum,
 			logsCollectorHttpPortNumber,
 			logsCollectorTcpPortId,
 			logsCollectorHttpPortId,

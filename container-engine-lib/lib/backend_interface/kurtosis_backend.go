@@ -312,7 +312,7 @@ type KurtosisBackend interface {
 		resultErr error, // Represents an error with the function itself, rather than the user services
 	)
 
-	CreateLogsAggregator(ctx context.Context, logsAggregatorPortNumber uint16) (*logs_aggregator.LogsAggregator, error)
+	CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error)
 
 	// Returns nil if logs aggregator was not found
 	GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error)

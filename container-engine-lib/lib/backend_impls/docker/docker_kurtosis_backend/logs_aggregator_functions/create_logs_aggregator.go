@@ -16,7 +16,6 @@ const (
 
 func CreateLogsAggregator(
 	ctx context.Context,
-	logListeningPort uint16,
 	logsAggregatorContainer LogsAggregatorContainer,
 	dockerManager *docker_manager.DockerManager,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
@@ -40,7 +39,7 @@ func CreateLogsAggregator(
 
 	containerId, containerLabels, removeLogsAggregatorContainerFunc, err := logsAggregatorContainer.CreateAndStart(
 		ctx,
-		logListeningPort,
+		defaultLogsListeningPortNum,
 		targetNetworkId,
 		objAttrsProvider,
 		dockerManager)

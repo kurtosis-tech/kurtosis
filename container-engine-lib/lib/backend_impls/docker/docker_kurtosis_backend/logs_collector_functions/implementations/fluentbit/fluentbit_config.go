@@ -29,8 +29,8 @@ type Output struct {
 }
 
 func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
-	logAggregatorHost string,
-	logAggregatorPort uint16,
+	logsAggregatorHost string,
+	logsAggregatorPort uint16,
 	tcpPortNumber uint16,
 	httpPortNumber uint16,
 ) *FluentbitConfig {
@@ -51,8 +51,8 @@ func newDefaultFluentbitConfigForKurtosisCentralizedLogs(
 		Output: &Output{
 			Name:  vectorOutputTypeName,
 			Match: matchAllRegex,
-			Host:  logAggregatorHost,
-			Port:  logAggregatorPort,
+			Host:  logsAggregatorHost,
+			Port:  logsAggregatorPort,
 		},
 	}
 }

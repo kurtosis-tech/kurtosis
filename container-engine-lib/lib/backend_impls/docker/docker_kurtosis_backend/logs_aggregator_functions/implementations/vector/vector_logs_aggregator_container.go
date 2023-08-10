@@ -18,12 +18,12 @@ func NewVectorLogsAggregatorContainer() *vectorLogsAggregatorContainer {
 
 func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	ctx context.Context,
-	portNumber uint16,
+	logsListeningPortNumber uint16,
 	targetNetworkId string,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	dockerManager *docker_manager.DockerManager,
 ) (string, map[string]string, func(), error) {
-	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(portNumber)
+	vectorContainerConfigProviderObj := createVectorContainerConfigProvider(logsListeningPortNumber)
 
 	logsAggregatorVolumeAttrs, err := objAttrsProvider.ForLogsAggregatorVolume()
 	if err != nil {
