@@ -1,8 +1,10 @@
 package vector
 
 const (
-	configDirpath       = "/etc/vector/"
-	healthCheckEndpoint = "health"
+	configDirpath                = "/etc/vector/"
+	healthCheckEndpoint          = "health"
+	defaultGraphQlApiHttpPortNum = uint16(8686)
+	httpProtocolStr              = "http"
 
 	////////////////////////--VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage = "timberio/vector:0.31.0-debian"

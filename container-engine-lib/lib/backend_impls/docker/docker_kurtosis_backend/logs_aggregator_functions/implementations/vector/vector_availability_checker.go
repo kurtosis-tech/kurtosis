@@ -9,8 +9,6 @@ import (
 )
 
 const (
-	httpProtocolStr                             = "http"
-	defaultGraphQlApiHttpPortNum                = uint16(8686)
 	waitForAvailabilityInitialDelayMilliseconds = 100
 	waitForAvailabilityMaxRetries               = 20
 	waitForAvailabilityRetriesDelayMilliseconds = 50
