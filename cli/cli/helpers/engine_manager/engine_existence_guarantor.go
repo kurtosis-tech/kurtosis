@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
@@ -135,15 +134,6 @@ func (guarantor *engineExistenceGuarantor) getPostVisitingHostMachineIpAndPort()
 func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 	logrus.Infof("No Kurtosis engine was found; attempting to start one...")
 
-	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
-		logrus.Infof("Starting the centralized logs components...")
-		ctx := context.Background()
-		if err := guarantor.ensureCentralizedLogsComponentsAreRunning(ctx, shouldForceLogsComponentsContainersRestartWhenEngineContainerIsStopped); err != nil {
-			return stacktrace.Propagate(err, "An error occurred starting the centralized logs components")
-		}
-		logrus.Infof("Centralized logs components started")
-	}
-
 	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
 	metricsUserId, err := metricsUserIdStore.GetUserID()
 	if err != nil {
@@ -206,13 +196,6 @@ func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResp
 }
 
 func (guarantor *engineExistenceGuarantor) VisitRunning() error {
-	//TODO(centralized-logs-infra-deprecation) remove this code in the future when people don't have centralized logs infra running
-	if guarantor.kurtosisClusterType == resolved_config.KurtosisClusterType_Docker {
-		ctx := context.Background()
-		if err := guarantor.ensureCentralizedLogsComponentsAreRunning(ctx, shouldForceLogsComponentsContainersRestartWhenEngineContainerIsRunning); err != nil {
-			return stacktrace.Propagate(err, "An error occurred ensuring that the centralized logs components are running")
-		}
-	}
 	guarantor.postVisitingHostMachineIpAndPort = guarantor.preVisitingMaybeHostMachineIpAndPort
 	runningEngineSemver, cliEngineSemver, err := guarantor.getRunningAndCLIEngineVersions()
 	if err != nil {
@@ -278,29 +261,4 @@ func (guarantor *engineExistenceGuarantor) getRunningAndCLIEngineVersions() (*se
 	}
 
 	return runningEngineSemver, launcherEngineSemver, nil
-}
-
-func (guarantor *engineExistenceGuarantor) ensureCentralizedLogsComponentsAreRunning(ctx context.Context, shouldForceContainerRestart bool) error {
-	logsAggregator, err := guarantor.kurtosisBackend.GetLogsAggregator(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
-	}
-
-	isThereLogAggregator := logsAggregator != nil
-	isLogAggregatorRunning := logsAggregator.GetStatus() == container_status.ContainerStatus_Running
-
-	if shouldForceContainerRestart || (isThereLogAggregator && !isLogAggregatorRunning) {
-		if err = guarantor.kurtosisBackend.DestroyLogsAggregator(ctx); err != nil {
-			return stacktrace.Propagate(err, "An error occurred destroying the logs aggregator")
-		}
-		isThereLogAggregator = false
-	}
-
-	if !isThereLogAggregator {
-		if _, err := guarantor.kurtosisBackend.CreateLogsAggregator(ctx, defaultLogAggregatorPortNum); err != nil {
-			return stacktrace.Propagate(err, "An error occurred creating the logs aggregator listening for logs at port number '%v'", defaultLogAggregatorPortNum)
-		}
-	}
-
-	return nil
 }
