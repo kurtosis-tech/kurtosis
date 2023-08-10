@@ -30,8 +30,11 @@ func NewConnectServer(listenPort uint16, stopGracePeriod time.Duration, handler 
 		path:            path,
 	}
 }
-
 func (server *ConnectServer) RunServerUntilInterrupted() error {
+	return server.RunServerUntilInterruptedWithCors(cors.Default())
+}
+
+func (server *ConnectServer) RunServerUntilInterruptedWithCors(cors *cors.Cors) error {
 	// Signals are used to interrupt the server, so we catch them here
 	termSignalChan := make(chan os.Signal, 1)
 	signal.Notify(termSignalChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
@@ -41,19 +44,13 @@ func (server *ConnectServer) RunServerUntilInterrupted() error {
 		interruptSignal := struct{}{}
 		serverStopChan <- interruptSignal
 	}()
-	if err := server.RunServerUntilStopped(serverStopChan); err != nil {
+	if err := server.RunServerUntilStopped(serverStopChan, cors); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server using the interrupt channel for stopping")
 	}
 	return nil
 }
 
 func (server *ConnectServer) RunServerUntilStopped(
-	stopper <-chan struct{},
-) error {
-	return server.RunServerUntilStoppedWithCors(stopper, cors.Default())
-}
-
-func (server *ConnectServer) RunServerUntilStoppedWithCors(
 	stopper <-chan struct{},
 	cors *cors.Cors,
 ) error {
