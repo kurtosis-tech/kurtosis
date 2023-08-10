@@ -129,6 +129,23 @@ func (manager *EngineManager) GetEngineStatus(
 	// TODO Replace this hacky method of defaulting to localhost:DefaultGrpcPort to get connected to the engine
 	runningEngineIpAndPort := getDefaultKurtosisEngineLocalhostMachineIpAndPort()
 
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err == nil {
+		if store.IsRemote(currentContext) {
+			portalManager := portal_manager.NewPortalManager()
+			if portalManager.IsReachable() {
+				// Forward the remote engine port to the local machine
+				portalClient := portalManager.GetClient()
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(runningEngineIpAndPort.portNum), uint32(runningEngineIpAndPort.portNum), &kurtosis_context.EnginePortTransportProtocol)
+				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
+					return "", nil, "", stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
+				}
+			}
+		}
+	} else {
+		logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
+	}
+
 	engineClient, engineClientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(runningEngineIpAndPort)
 	if err != nil {
 		return EngineStatus_ContainerRunningButServerNotResponding, runningEngineIpAndPort, "", nil
