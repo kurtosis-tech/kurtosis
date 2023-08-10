@@ -47,14 +47,23 @@ func (server *ConnectServer) RunServerUntilInterrupted() error {
 	return nil
 }
 
-func (server *ConnectServer) RunServerUntilStopped(stopper <-chan struct{}) error {
+func (server *ConnectServer) RunServerUntilStopped(
+	stopper <-chan struct{},
+) error {
+	return server.RunServerUntilStoppedWithCors(stopper, cors.Default())
+}
+
+func (server *ConnectServer) RunServerUntilStoppedWithCors(
+	stopper <-chan struct{},
+	cors *cors.Cors,
+) error {
 	mux := http.NewServeMux()
 
 	mux.Handle(server.path, server.handler)
 
 	httpServer := http.Server{
 		Addr:    fmt.Sprintf(":%v", server.listenPort),
-		Handler: cors.Default().Handler(h2c.NewHandler(mux, &http2.Server{})),
+		Handler: cors.Handler(h2c.NewHandler(mux, &http2.Server{})),
 	}
 
 	go func() {
