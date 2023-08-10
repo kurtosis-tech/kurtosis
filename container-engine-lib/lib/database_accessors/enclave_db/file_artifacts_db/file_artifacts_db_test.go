@@ -19,7 +19,7 @@ func TestFileArtifactPersistance(t *testing.T) {
 	fileArtifactDb.SetContentMd5("1", []byte("1"))
 	fileArtifactDb.SetFullUuid("1", []string{"1"})
 	require.Nil(t, fileArtifactDb.Persist())
-	fileArtifactDb, err = GetFileArtifactsDbFromEnclaveDb(enclaveDb, &fileArtifactData{
+	fileArtifactDb, err = getFileArtifactsDbFromEnclaveDb(enclaveDb, &fileArtifactData{
 		map[string]string{},
 		map[string][]string{},
 		map[string][]byte{},

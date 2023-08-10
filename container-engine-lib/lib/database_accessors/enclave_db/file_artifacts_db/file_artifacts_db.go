@@ -113,14 +113,14 @@ func GetOrCreateNewFileArtifactsDb() (*FileArtifactPersisted, error) {
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get enclave database")
 	}
-	fileArtifactPersisted, err := GetFileArtifactsDbFromEnclaveDb(db, &data)
+	fileArtifactPersisted, err := getFileArtifactsDbFromEnclaveDb(db, &data)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to hydrate pre-existing file artifacts")
 	}
 	return fileArtifactPersisted, nil
 }
 
-func GetFileArtifactsDbFromEnclaveDb(db *enclave_db.EnclaveDB, data *fileArtifactData) (*FileArtifactPersisted, error) {
+func getFileArtifactsDbFromEnclaveDb(db *enclave_db.EnclaveDB, data *fileArtifactData) (*FileArtifactPersisted, error) {
 	err := db.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucket(fileArtifactBucketName)
 		if err != nil && err != bolt.ErrBucketExists {
@@ -154,7 +154,7 @@ func GetFileArtifactsDbFromEnclaveDb(db *enclave_db.EnclaveDB, data *fileArtifac
 }
 
 func GetFileArtifactsDbForTesting(db *enclave_db.EnclaveDB, nameToUuid map[string]string) (*FileArtifactPersisted, error) {
-	fileArtifactPersisted, err := GetFileArtifactsDbFromEnclaveDb(db, &fileArtifactData{
+	fileArtifactPersisted, err := getFileArtifactsDbFromEnclaveDb(db, &fileArtifactData{
 		nameToUuid,
 		map[string][]string{},
 		map[string][]byte{},
