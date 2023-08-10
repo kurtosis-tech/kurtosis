@@ -374,9 +374,12 @@ func (network *DefaultServiceNetwork) UpdateServices(ctx context.Context, update
 				"inside this enclave: '%s'", serviceName)
 			continue
 		}
+		serviceStatus := service.ServiceStatus_Started
+		if err := network.serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
+			failedServicesPool[serviceName] = stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s' after the service was updated", serviceStatus, serviceName)
+			continue
+		}
 		successfullyUpdatedService[serviceName] = newServiceObj
-		network.serviceRegistrationRepository.UpdateStatus(serviceName, service.ServiceStatus_Started)
-
 	}
 	return successfullyUpdatedService, failedServicesPool, nil
 }
