@@ -2,6 +2,12 @@ package portal_manager
 
 import (
 	"context"
+	"os"
+	"os/exec"
+	"strconv"
+	"syscall"
+	"time"
+
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	portal_generated_api "github.com/kurtosis-tech/kurtosis-portal/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -9,10 +15,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/host_machine_directories"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"os"
-	"os/exec"
-	"strconv"
-	"syscall"
 )
 
 const (
@@ -27,6 +29,9 @@ const (
 		"reached locally on its ports. This is unexpected and Kurtosis cannot stop it. Was the Portal started " +
 		"with something else then Kurtosis CLI? If that's the case, please kill the current Portal process and " +
 		"start it using Kurtosis CLI"
+
+	retries                  = 25
+	retriesDelayMilliseconds = 200
 )
 
 type PortalManager struct {
@@ -161,6 +166,9 @@ func (portalManager *PortalManager) StopExisting(_ context.Context) error {
 			logrus.Warnf("Error stopping currently running portal on PID: '%d'. It might already be stopped. "+
 				"PID file will be removed. Error was: %s", pid, err.Error())
 		}
+		if err = waitForTermination(process.Pid, retries, retriesDelayMilliseconds); err != nil {
+			logrus.Warnf("Error waiting for running portal on PID '%d' to terminate. Error was: %s", pid, err.Error())
+		}
 	} else {
 		logrus.Infof("Portal already stopped but PID file exists. Removing it.")
 	}
@@ -213,6 +221,37 @@ func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRem
 	return successfullyMappedPorts, failedPorts, nil
 }
 
+// StartRequiredVersion downloads the required version and (re)starts the portal if the required version
+// is not already running.
+func (portalManager *PortalManager) StartRequiredVersion(ctx context.Context) error {
+	// Checking if new version is available and potentially downloading it
+	newVersionDownloaded, err := DownloadRequiredKurtosisPortalBinary(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "An unexpected error occurred trying to download the required version of Kurtosis Portal")
+	}
+
+	currentPortalPid, _, isPortalReachable, err := portalManager.CurrentStatus(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Unable to determine current state of Kurtosis Portal process")
+	}
+
+	if isPortalReachable && !newVersionDownloaded {
+		logrus.Infof("Portal is currently running the required version on PID '%d' and healthy.", currentPortalPid)
+		return nil
+	}
+
+	if err := portalManager.StopExisting(ctx); err != nil {
+		return stacktrace.Propagate(err, "Error stopping Kurtosis Portal")
+	}
+
+	startedPortalPid, err := portalManager.StartNew(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error starting portal")
+	}
+	logrus.Infof("Kurtosis Portal started successfully on PID %d", startedPortalPid)
+	return nil
+}
+
 func (portalManager *PortalManager) instantiateClientIfUnset() error {
 	portalDaemonClientMaybe, err := kurtosis_context.CreatePortalDaemonClient(true)
 	if err != nil {
@@ -262,4 +301,22 @@ func getRunningProcessFromPID(pid int) (*os.Process, error) {
 		return nil, nil
 	}
 	return process, nil
+}
+
+// waitForTermination waits for the portal process running on pid to terminate
+func waitForTermination(pid int, retries int, retriesDelayMilliseconds int) error {
+	logrus.Info("Waiting for the portal to terminate...")
+	for i := 0; i < retries; i++ {
+		process, err := getRunningProcessFromPID(pid)
+		if err != nil {
+			return stacktrace.Propagate(err, "Unexpected error getting process from pid '%d' while waiting for termination", pid)
+		}
+		if process == nil {
+			logrus.Info("Portal terminated")
+			return nil
+		}
+		time.Sleep(time.Duration(retriesDelayMilliseconds) * time.Millisecond)
+	}
+
+	return stacktrace.NewError("Portal did not terminate after %d retries", retries)
 }
