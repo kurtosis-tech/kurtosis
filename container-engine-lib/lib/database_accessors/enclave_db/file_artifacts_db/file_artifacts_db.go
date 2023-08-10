@@ -2,10 +2,10 @@ package file_artifacts_db
 
 import (
 	"encoding/json"
+	"errors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 )
 
@@ -122,35 +122,32 @@ func GetOrCreateNewFileArtifactsDb() (*FileArtifactPersisted, error) {
 
 func getFileArtifactsDbFromEnclaveDb(db *enclave_db.EnclaveDB, data *fileArtifactData) (*FileArtifactPersisted, error) {
 	err := db.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucket(fileArtifactBucketName)
-		if err != nil && err != bolt.ErrBucketExists {
-			return stacktrace.Propagate(err, "An error occurred while creating file artifact bucket")
+		bucket, bucketErr := tx.CreateBucket(fileArtifactBucketName)
+		// New bucket was created
+		if errors.Is(bucketErr, bolt.ErrBucketExists) {
+			content := tx.Bucket(fileArtifactBucketName).Get(fileArtifactDataStructKey)
+			if err := json.Unmarshal(content, data); err != nil {
+				return stacktrace.Propagate(err, "An error occurred restoring previous file artifact db state from '%v'", content)
+			}
+			return nil
 		}
-		if err != bolt.ErrBucketExists {
-			if err = bucket.Put(fileArtifactDataStructKey, consts.EmptyValueForJsonSet); err != nil {
+		// No need to create new bucket
+		if bucketErr == nil {
+			if err := bucket.Put(fileArtifactDataStructKey, consts.EmptyValueForJsonSet); err != nil {
 				return stacktrace.Propagate(err, "An error occurred while creating updating artifact bucket o '%v'", consts.EmptyValueForJsonSet)
 			}
 			return nil
 		}
-		content := tx.Bucket(fileArtifactBucketName).Get(fileArtifactDataStructKey)
-		if err := json.Unmarshal(content, data); err != nil {
-			return stacktrace.Propagate(err, "An error occurred restoring previous file artifact db state from '%v'", content)
-		}
-		return nil
+		// Unexpected error
+		return stacktrace.Propagate(bucketErr, "An error occurred while creating file artifact bucket")
 	})
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating file artifact db")
+	if err == nil {
+		return &FileArtifactPersisted{
+			db,
+			data,
+		}, nil
 	}
-	// Bucket does exist, skipping population step
-	if err == bolt.ErrBucketExists {
-		logrus.Debugf("Taken IP addresses loaded from database")
-	} else {
-		logrus.Debugf("Taken IP addresses saved to database")
-	}
-	return &FileArtifactPersisted{
-		db,
-		data,
-	}, nil
+	return nil, stacktrace.Propagate(err, "An error occurred while getting file artifact db")
 }
 
 func GetFileArtifactsDbForTesting(db *enclave_db.EnclaveDB, nameToUuid map[string]string) (*FileArtifactPersisted, error) {
