@@ -493,12 +493,11 @@ func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) 
 		rawDirectoryObj := fileItem[1]
 		directoryObj, isDirectoryArg := rawDirectoryObj.(*directory.Directory)
 		if !isDirectoryArg {
-			// might be okay as we're supporting strings as well for backward compat
+			// we're also supporting raw strings as well and transform them into files artifact name.
 			directoryObjAsStr, isSimpleStringArg := rawDirectoryObj.(starlark.String)
 			if !isSimpleStringArg {
 				return nil, nil, startosis_errors.NewInterpretationError("Unable to convert value of '%s' dictionary '%v' to a Directory object", attrNameForLogging, filesDict)
 			}
-			// TODO: add starlark_warning.PrintOnceAtTheEndOfExecutionf("%v %v", starlark_warning.WarningConstant, warningMessage) once it's in the doc
 			directoryObj, interpretationErr = directory.CreateDirectoryFromFilesArtifact(directoryObjAsStr.GoString())
 			if interpretationErr != nil {
 				return nil, nil, interpretationErr
