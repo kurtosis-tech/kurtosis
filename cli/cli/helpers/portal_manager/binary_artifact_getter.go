@@ -56,12 +56,7 @@ func DownloadRequiredKurtosisPortalBinary(ctx context.Context) (bool, error) {
 	}
 
 	ghClient := github.NewClient(http.DefaultClient)
-	var release *github.RepositoryRelease
-	if portalTag == portalTagLatest {
-		release, err = getLatestRelease(ctx, ghClient)
-	} else {
-		release, err = getReleaseByTag(ctx, ghClient, portalTag)
-	}
+	release, err := getRelease(ctx, ghClient)
 	if err != nil {
 		return false, defaultToCurrentVersionOrError(currentVersionStrMaybe, err)
 	}
@@ -93,19 +88,16 @@ func DownloadRequiredKurtosisPortalBinary(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func getLatestRelease(ctx context.Context, ghClient *github.Client) (*github.RepositoryRelease, error) {
-	latestRelease, _, err := ghClient.Repositories.GetLatestRelease(ctx, kurtosisTechGithubOrg, kurtosisPortalGithubRepoName)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to retrieve latest version of Kurtosis Portal from GitHub")
+func getRelease(ctx context.Context, ghClient *github.Client) (*github.RepositoryRelease, error) {
+	var err error
+	var release *github.RepositoryRelease
+	if portalTag == portalTagLatest {
+		release, _, err = ghClient.Repositories.GetLatestRelease(ctx, kurtosisTechGithubOrg, kurtosisPortalGithubRepoName)
+	} else {
+		release, _, err = ghClient.Repositories.GetReleaseByTag(ctx, kurtosisTechGithubOrg, kurtosisPortalGithubRepoName, portalTag)
 	}
-	logrus.Debugf("Latest release is %s", latestRelease.GetName())
-	return latestRelease, nil
-}
-
-func getReleaseByTag(ctx context.Context, ghClient *github.Client, tag string) (*github.RepositoryRelease, error) {
-	release, _, err := ghClient.Repositories.GetReleaseByTag(ctx, kurtosisTechGithubOrg, kurtosisPortalGithubRepoName, tag)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Unable to retrieve version with tag %s of Kurtosis Portal from GitHub", tag)
+		return nil, stacktrace.Propagate(err, "Unable to retrieve version %s of Kurtosis Portal from GitHub", portalTag)
 	}
 	return release, nil
 }
@@ -176,6 +168,14 @@ func extractAssetTgzToBinaryFileOnDisk(assetContent io.ReadCloser, assetVersion 
 		return stacktrace.Propagate(err, "Archive seems to be a directory, but expecting a single binary file")
 	}
 
+	// Remove the existing Portal binary file since some OSes cache file signatures and complain that the content change
+	// when you just copy into the existing file.  Darwin is an example.
+	err = os.Remove(destFilePath)
+	if err != nil && !os.IsNotExist(err) {
+		return stacktrace.Propagate(err, "Unable to remove the existing Kurtosis Portal binary file")
+	}
+
+	// Create a new empty Portal binary file and copy the asset content into it.
 	portalBinaryFile, err := os.Create(destFilePath)
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to create a new empty file to store Kurtosis Portal binary")
@@ -183,7 +183,6 @@ func extractAssetTgzToBinaryFileOnDisk(assetContent io.ReadCloser, assetVersion 
 	if err = os.Chmod(portalBinaryFile.Name(), portalBinaryFileMode); err != nil {
 		return stacktrace.Propagate(err, "Unable to switch file mode to executable for Kurtosis Portal binary file")
 	}
-
 	if _, err = io.Copy(portalBinaryFile, assetTarReader); err != nil {
 		return stacktrace.Propagate(err, "Unable to copy content of Kurtosis Portal binary to executable file")
 	}

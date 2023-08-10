@@ -3,6 +3,7 @@ package context_switch
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/context_id_arg"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
@@ -112,7 +113,7 @@ func SwitchContext(
 
 	portalManager := portal_manager.NewPortalManager()
 	if store.IsRemote(currentContext) {
-		if err := portalManager.DownloadAndStart(ctx); err != nil {
+		if err := portalManager.StartRequiredVersion(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred starting the portal")
 		}
 		portalDaemonClient := portalManager.GetClient()
@@ -123,6 +124,10 @@ func SwitchContext(
 			}
 		}
 	} else {
+		// We stop the portal when the user switches back to the local context.
+		// We do that to be consistent with the start above.
+		// However the portal is designed to also work with the local context with a client and server
+		// running locally.
 		if err := portalManager.StopExisting(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping Kurtosis Portal")
 		}

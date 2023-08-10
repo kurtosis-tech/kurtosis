@@ -2,6 +2,7 @@ package start
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
@@ -23,9 +24,19 @@ var PortalStartCmd = &lowlevel.LowlevelKurtosisCommand{
 }
 
 func run(ctx context.Context, _ *flags.ParsedFlags, _ *args.ParsedArgs) error {
-	logrus.Infof("Starting Kurtosis Portal")
 	portalManager := portal_manager.NewPortalManager()
-	err := portalManager.DownloadAndStart(ctx)
+	currentPortalPid, _, isPortalReachable, err := portalManager.CurrentStatus(ctx)
+	if err != nil {
+		return stacktrace.Propagate(err, "Unable to determine current state of Kurtosis Portal process")
+	}
+
+	if isPortalReachable {
+		logrus.Infof("Portal is currently running on PID '%d' and healthy.", currentPortalPid)
+		return nil
+	}
+
+	logrus.Infof("Starting Kurtosis Portal")
+	err = portalManager.StartRequiredVersion(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "Error starting portal")
 	}
