@@ -227,10 +227,9 @@ func createCentralizedLogsComponents(
 		logsAggregatorContainer,
 		dockerManager,
 		objAttrsProvider)
-
-	removeCentralizedLogsComponentsFunc := func() {
-		removeLogsAggregatorFunc()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator.")
 	}
 
-	return removeCentralizedLogsComponentsFunc, err
+	return removeLogsAggregatorFunc, err
 }
