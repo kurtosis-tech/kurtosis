@@ -32,10 +32,6 @@ const (
 	listen {{.Input.Listen}}
 	port {{.Input.Port}}
 	storage.type  {{.Input.StorageType}}
-[FILTER]
-	name {{.Filter.Name}}
-	match {{.Filter.Match}}
-	{{.Filter.GetRulesStr}}
 [OUTPUT]
 	name {{.Output.Name}}
 	match {{.Output.Match}}
