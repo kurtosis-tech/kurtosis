@@ -18,6 +18,8 @@ func TestServiceConfigMarshallers(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, marshaledServiceConfig)
 
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
 	newServiceConfig := &ServiceConfig{}
 
 	err = json.Unmarshal(marshaledServiceConfig, newServiceConfig)

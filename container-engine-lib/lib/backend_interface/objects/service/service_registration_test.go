@@ -27,6 +27,8 @@ func TestServiceRegistrationMarshallers(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, marshaledServiceRegistration)
 
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
 	newServiceRegistration := &ServiceRegistration{}
 
 	err = json.Unmarshal(marshaledServiceRegistration, newServiceRegistration)

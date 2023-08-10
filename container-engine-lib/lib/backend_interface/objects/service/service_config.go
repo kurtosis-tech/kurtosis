@@ -137,6 +137,8 @@ func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {
 
 func (serviceConfig *ServiceConfig) UnmarshalJSON(data []byte) error {
 
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
 	unmarshalledPrivateStructPtr := &privateServiceConfig{}
 
 	if err := json.Unmarshal(data, unmarshalledPrivateStructPtr); err != nil {

@@ -69,6 +69,8 @@ func (spec *PortSpec) MarshalJSON() ([]byte, error) {
 
 func (spec *PortSpec) UnmarshalJSON(data []byte) error {
 
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
 	unmarshalledPrivateStructPtr := &privatePortSpec{}
 
 	if err := json.Unmarshal(data, unmarshalledPrivateStructPtr); err != nil {

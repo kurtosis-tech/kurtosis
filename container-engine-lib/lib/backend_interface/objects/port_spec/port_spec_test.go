@@ -62,6 +62,8 @@ func TestPortSpecMarshallers(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, marshaledPortSpec)
 
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
 	newPortSpec := &PortSpec{}
 
 	err = json.Unmarshal(marshaledPortSpec, newPortSpec)

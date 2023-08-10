@@ -99,6 +99,8 @@ func (registration *ServiceRegistration) MarshalJSON() ([]byte, error) {
 
 func (registration *ServiceRegistration) UnmarshalJSON(data []byte) error {
 
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
 	unmarshalledPrivateStructPtr := &privateServiceRegistration{}
 
 	if err := json.Unmarshal(data, unmarshalledPrivateStructPtr); err != nil {
