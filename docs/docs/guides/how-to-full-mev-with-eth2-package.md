@@ -16,7 +16,7 @@ And if that wasn't enough, Kurtosis environment definitions (known as [Packages]
 ## Brief overview of the architecture
 Explicitly, the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) supports two MEV modes: `full-mev` and `mock-mev`. 
 
-The former mode is valuable for validating behavior between the protocol and out-of-protocol middle-ware infrastructure (e.g. searchers, relayer) and instantiates [mev-boost](https://github.com/flashbots/mev-boost), [mev-relay](https://github.com/flashbots/mev-boost-relay), [mev-flood](https://github.com/flashbots/mev-flood) and Flashbot's Geth-based block builder called [mev-builder](https://github.com/flashbots/builder). The latter mode will only spin up [mev-boost](https://github.com/flashbots/mev-boost) and a [mock-builder](https://github.com/marioevz/mock-builder), which is useful for testing in-protocol behavior, like how public mempool transactions or searcher bundles get built into specific payload structures.
+The former mode is valuable for validating behavior between the protocol and out-of-protocol middle-ware infrastructure (e.g. searchers, relayer) and instantiates [mev-boost](https://github.com/flashbots/mev-boost), [mev-relay](https://github.com/flashbots/mev-boost-relay), [mev-flood](https://github.com/flashbots/mev-flood) and Flashbot's Geth-based block builder called [mev-builder](https://github.com/flashbots/builder). The latter mode will only spin up [mev-boost](https://github.com/flashbots/mev-boost) and a [mock-builder](https://github.com/marioevz/mock-builder), which is useful for testing in-protocol behavior like testing if clients are able to call the relayer for a payload via `mev-boost`, reject invalid payloads, or trigger the circuit breaker to ensure functionality of the beacon chain.
 
 ![mev-arch](./assets/mev-infra-arch-diagram.png)
 
@@ -89,10 +89,11 @@ Next, create a file titled: `eth2-package-params.json` in your working directory
     "mev_type": full
 }
 ```
+You will use the above file by passing it in at runtime, effectively enabling you to define the way your network should look using parameters.
 
-You will use the above file by passing it in at runtime, enabling you to paramterize the entire 
 #### Launch the network with `full MEV`
+You can now launch the network 
 
-#### 
+#### Visit the website to see registered validators and delivered payloads 
 
 ## Roadmap
