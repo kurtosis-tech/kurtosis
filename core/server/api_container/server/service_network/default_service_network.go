@@ -857,7 +857,7 @@ func (network *DefaultServiceNetwork) registerService(
 		}
 	}()
 
-	if err := network.serviceRegistrationRepository.Save(serviceName, serviceRegistration); err != nil {
+	if err := network.serviceRegistrationRepository.Save(serviceRegistration); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred saving service registration '%+v' for service '%s'", serviceRegistration, serviceName)
 	}
 	// remove service from the registered service repository is something fails downstream

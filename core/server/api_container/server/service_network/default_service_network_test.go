@@ -558,7 +558,7 @@ func TestStopService_Successful(t *testing.T) {
 	)
 	require.Nil(t, err)
 
-	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	err = network.serviceRegistrationRepository.Save(serviceRegistration)
 	require.NoError(t, err)
 
 	// The service is registered before being started
@@ -615,7 +615,7 @@ func TestStopService_StopUserServicesFailed(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	err = network.serviceRegistrationRepository.Save(serviceRegistration)
 	require.NoError(t, err)
 
 	// The service is registered before being started
@@ -670,7 +670,7 @@ func TestStopService_ServiceAlreadyStopped(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	err = network.serviceRegistrationRepository.Save(serviceRegistration)
 	require.NoError(t, err)
 
 	// The service is registered before being started
@@ -723,7 +723,7 @@ func TestStartService_Successful(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	err = network.serviceRegistrationRepository.Save(serviceRegistration)
 	require.NoError(t, err)
 
 	// The service is registered before being started
@@ -777,7 +777,7 @@ func TestStartService_StartRegisteredUserServicesFailed(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	err = network.serviceRegistrationRepository.Save(serviceRegistration)
 	require.NoError(t, err)
 
 	// The service is registered before being started
@@ -830,7 +830,7 @@ func TestStartService_ServiceAlreadyStarted(t *testing.T) {
 		enclaveDb,
 	)
 	require.Nil(t, err)
-	err = network.serviceRegistrationRepository.Save(serviceName, serviceRegistration)
+	err = network.serviceRegistrationRepository.Save(serviceRegistration)
 	require.NoError(t, err)
 
 	// The service is registered before being started
@@ -884,7 +884,7 @@ func TestUpdateService(t *testing.T) {
 		testServiceHostnameFromInt(existingServiceIndex))
 	existingServiceRegistration.SetConfig(initialServiceConfig)
 	existingServiceRegistration.SetStatus(service.ServiceStatus_Started)
-	err = network.serviceRegistrationRepository.Save(existingServiceRegistration.GetName(), existingServiceRegistration)
+	err = network.serviceRegistrationRepository.Save(existingServiceRegistration)
 	require.NoError(t, err)
 
 	// service that will fail because it's not registered in the enclave prior to update
@@ -908,7 +908,7 @@ func TestUpdateService(t *testing.T) {
 		testServiceHostnameFromInt(failedToBeRemovedServiceIndex))
 	failedToBeRemovedServiceRegistration.SetConfig(initialServiceConfig)
 	failedToBeRemovedServiceRegistration.SetStatus(service.ServiceStatus_Started)
-	err = network.serviceRegistrationRepository.Save(failedToBeRemovedServiceRegistration.GetName(), failedToBeRemovedServiceRegistration)
+	err = network.serviceRegistrationRepository.Save(failedToBeRemovedServiceRegistration)
 	require.NoError(t, err)
 
 	// service that will fail to be re-created once it has been removed
@@ -922,7 +922,7 @@ func TestUpdateService(t *testing.T) {
 		testServiceHostnameFromInt(failedToBeRecreatedServiceIndex))
 	failedToBeRecreatedServiceRegistration.SetConfig(initialServiceConfig)
 	failedToBeRecreatedServiceRegistration.SetStatus(service.ServiceStatus_Started)
-	err = network.serviceRegistrationRepository.Save(failedToBeRecreatedServiceRegistration.GetName(), failedToBeRecreatedServiceRegistration)
+	err = network.serviceRegistrationRepository.Save(failedToBeRecreatedServiceRegistration)
 	require.NoError(t, err)
 
 	// The service will be removed first

@@ -132,13 +132,13 @@ func (repository *ServiceRegistrationRepository) GetAllServiceNames() (map[servi
 }
 
 func (repository *ServiceRegistrationRepository) Save(
-	serviceName service.ServiceName,
 	serviceRegistration *service.ServiceRegistration,
 ) error {
 
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(serviceRegistrationBucketName)
 
+		serviceName := serviceRegistration.GetName()
 		if err := saveServiceRegistrationIntoTheBucket(bucket, serviceName, serviceRegistration); err != nil {
 			return stacktrace.Propagate(err, "An error occurred saving service registration '%+v' for service '%s' in the service registration bucket", serviceRegistration, serviceName)
 		}
