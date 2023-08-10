@@ -53,7 +53,7 @@ func getLogsAggregatorContainer(ctx context.Context, dockerManager *docker_manag
 	}
 
 	if len(matchingLogsAggregatorContainers) == 0 {
-		return nil, stacktrace.NewError("No logs aggregator container were found.")
+		return nil, nil
 	}
 	if len(matchingLogsAggregatorContainers) > 1 {
 		return nil, stacktrace.NewError("Found more than one logs Aggregator Docker container'; this is a bug in Kurtosis")
