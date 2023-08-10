@@ -77,7 +77,7 @@ func (server *ConnectServer) RunServerUntilStopped(
 	}()
 	select {
 	case <-serverStoppedChan:
-		logrus.Debug("gRPC server has exited gracefully")
+		logrus.Debug("API server has exited gracefully")
 	case <-time.After(server.stopGracePeriod):
 		if err := httpServer.Close(); err != nil {
 			logrus.Infof("Error occurred while forcefully closing the server, error: %+v", err)
