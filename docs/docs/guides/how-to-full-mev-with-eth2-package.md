@@ -47,7 +47,7 @@ Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provi
 <details><summary>Sample output from `mev-flood` operations within the eth2-package:</summary>
 You will see this get printed in your terminal when Kurtosis initializes the `mev-flood` service
 	
-```bash
+```py
 Command returned with exit code '0' and the following output:
 --------------------
 ENV: undefined
