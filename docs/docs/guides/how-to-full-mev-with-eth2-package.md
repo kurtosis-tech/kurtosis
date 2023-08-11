@@ -16,7 +16,7 @@ We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech
 
 This milestone marks a huge step forward in the journey towards a full, in-protocol PBS implementation for Proof-of-Stake Ethereum as developers across the ecosystem now have a way to instantiate fully functioning testnets to validate functionality, behvaior, and scales across all client combinations *with MEV infrastructure.* With this new 
 
-Keep reading to learn [how it all works](#architecture--details) & [how to get started with the `eth2-package`](#quickstart).
+Keep reading to learn [how it all works](#brief-overview-of-the-architecture) & [how to get started with the `eth2-package`](#quickstart).
 
 #### Why `eth2-package`?
 As a reminder, the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) is a reproducible and portable environment definition that should be used to bootstrap & deploy private testnets. The package will function the exact same way locally or in the cloud over Docker or Kubernetes, supports all major Execution Layer (EL) and Consensus Layer (CL) client implementations, and can be scaled to whatever size you need - limited only by your underlying hardware/backend.
