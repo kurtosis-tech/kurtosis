@@ -71,7 +71,7 @@ func StopUserServices(
 		successfulUuids[serviceUuid] = true
 		serviceRegistration, found := serviceRegistrationsByServiceUuid[serviceUuid]
 		if !found {
-			erroredUuidStrs[uuidStr] = stacktrace.Propagate(err, "Expected to find service registration by service UUID '%v' in map '%+v', but none was found; this is a bug in Kurtosis", serviceUuid, serviceRegistrationsByServiceUuid)
+			erroredUuidStrs[uuidStr] = stacktrace.NewError("Expected to find service registration by service UUID '%v' in map '%+v', but none was found; this is a bug in Kurtosis", serviceUuid, serviceRegistrationsByServiceUuid)
 			delete(successfulUuidStrs, uuidStr)
 			continue
 		}
