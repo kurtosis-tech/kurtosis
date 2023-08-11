@@ -5,20 +5,15 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 )
 
-// The following docker labels will be added into the logs stream which is necessary for creating new tags
-// in the logs database and then use it for querying them to get the specific user service's logs
+// The following docker labels will be added into the logs stream
+// These are necessary for propagating information for log filtering and retrieval through the logging pipeline
 var LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream = []*docker_label_key.DockerLabelKey{
 	label_key_consts.GUIDDockerLabelKey,
 	label_key_consts.ContainerTypeDockerLabelKey,
+	label_key_consts.EnclaveUUIDDockerLabelKey,
 }
-
-// The 'enclaveID' value is used for Fluentbit to send it to Loki as the "X-Scope-OrgID" request's header
-// due Loki is now configured to use multi tenancy, and we established this relation: enclaveID = tenantID
-var LogsDatabaseKurtosisTrackedDockerLabelUsedForIdentifyTenants = label_key_consts.EnclaveUUIDDockerLabelKey
 
 // These are all the logs database Kurtosis tracked Docker Labels used
 func GetAllLogsDatabaseKurtosisTrackedDockerLabels() []*docker_label_key.DockerLabelKey {
-	allLogsDatabaseKurtosisTrackedDockerLabelsSet := LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream
-	allLogsDatabaseKurtosisTrackedDockerLabelsSet = append(allLogsDatabaseKurtosisTrackedDockerLabelsSet, LogsDatabaseKurtosisTrackedDockerLabelUsedForIdentifyTenants)
-	return allLogsDatabaseKurtosisTrackedDockerLabelsSet
+	return LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream
 }
