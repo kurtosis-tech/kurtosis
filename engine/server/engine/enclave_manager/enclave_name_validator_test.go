@@ -38,7 +38,7 @@ func TestValidateEnclaveId_failureInvalidChar(t *testing.T) {
 }
 
 func TestValidateEnclaveId_failureTooLong(t *testing.T) {
-	err := validateEnclaveName("IAmWayTooLongToBeAnEnclaveIdBecauseIShouldBeLessThan60CharsIA")
+	err := validateEnclaveName("IAmWayTooLongToBeAnEnclaveIdBecauseIShouldBeLessThan60CharsIu")
 	require.NotNil(t, err)
 }
 
