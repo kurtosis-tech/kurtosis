@@ -2,6 +2,7 @@ package service_registration
 
 import (
 	"encoding/json"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/stacktrace"
@@ -129,6 +130,39 @@ func (repository *ServiceRegistrationRepository) GetAllServiceNames() (map[servi
 		return nil, stacktrace.Propagate(err, "An error occurred while getting all service names from the service registration repository")
 	}
 	return serviceNames, nil
+}
+
+func (repository *ServiceRegistrationRepository) GetAllEnclaveServiceRegistrations(
+	enclaveUuid enclave.EnclaveUUID,
+) (map[service.ServiceUUID]*service.ServiceRegistration, error) {
+	allEnclaveServiceRegistrations := map[service.ServiceUUID]*service.ServiceRegistration{}
+
+	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(serviceRegistrationBucketName)
+
+		if err := bucket.ForEach(func(serviceNameKey, serviceRegistrationBytes []byte) error {
+			serviceNameStr := string(serviceNameKey)
+			serviceName := service.ServiceName(serviceNameStr)
+			serviceRegistration, err := getServiceRegistrationFromBytes(serviceRegistrationBytes, serviceName)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred getting service registration from bytes for service '%s'", serviceName)
+			}
+
+			if serviceRegistration.GetEnclaveID() == enclaveUuid {
+				serviceUuid := serviceRegistration.GetUUID()
+				allEnclaveServiceRegistrations[serviceUuid] = serviceRegistration
+			}
+			return nil
+		}); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while iterating the service registration repository to get the service names list")
+		}
+
+		return nil
+	}); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting all service names from the service registration repository")
+	}
+
+	return allEnclaveServiceRegistrations, nil
 }
 
 func (repository *ServiceRegistrationRepository) Save(

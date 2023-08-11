@@ -328,7 +328,13 @@ func (backend *DockerKurtosisBackend) DestroyEnclaves(
 				enclaveUuid,
 			)
 		}
-		if _, found := backend.serviceRegistrations[enclaveUuid]; found {
+
+		serviceRegistrations, err := backend.serviceRegistrationRepository.GetAllEnclaveServiceRegistrations(enclaveUuid)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "An error occurred getting all enclave service registrations from the repository for enclave with UUID '%v'", enclaveUuid)
+		}
+
+		if len(serviceRegistrations) > 0 {
 			return nil, nil, stacktrace.NewError(
 				"Received a request to destroy enclave '%v' for which services are being tracked; this likely "+
 					"means that destroy enclave is being called where it shouldn't be (i.e. inside the API container)",

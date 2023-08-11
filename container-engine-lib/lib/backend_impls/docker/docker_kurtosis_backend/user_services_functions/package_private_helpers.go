@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"strings"
@@ -18,7 +19,7 @@ func destroyUserServicesUnlocked(
 	ctx context.Context,
 	enclaveId enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
-	serviceRegistrationsForEnclave map[service.ServiceUUID]*service.ServiceRegistration,
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	enclaveFreeIpProvidersForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
 ) (
@@ -29,6 +30,12 @@ func destroyUserServicesUnlocked(
 	// We filter registrations here because a registration is the canonical resource for a Kurtosis user service - no registration,
 	// no Kurtosis service - and not all registrations will have Docker resources
 	matchingRegistrations := map[service.ServiceUUID]*service.ServiceRegistration{}
+
+	serviceRegistrationsForEnclave, err := serviceRegistrationRepository.GetAllEnclaveServiceRegistrations(enclaveId)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all enclave service registrations from the repository for enclave with UUID '%v'", enclaveId)
+	}
+
 	for uuid, registration := range serviceRegistrationsForEnclave {
 		if filters.UUIDs != nil && len(filters.UUIDs) > 0 {
 			if _, found := filters.UUIDs[registration.GetUUID()]; !found {
@@ -127,7 +134,20 @@ func destroyUserServicesUnlocked(
 		if err = enclaveFreeIpProvidersForEnclave.ReleaseIpAddr(ipAddr); err != nil {
 			logrus.Errorf("Error releasing IP address '%v'", ipAddr)
 		}
-		delete(serviceRegistrationsForEnclave, uuid)
+
+		serviceRegistration, found := serviceRegistrationsForEnclave[uuid]
+		if !found {
+			erroredUuids[uuid] = stacktrace.NewError("Failed to get service registration for service UUID '%v'. This should never happen. This is a Kurtosis bug.", uuid)
+			delete(successfulUuids, uuid)
+			continue
+		}
+
+		serviceName := serviceRegistration.GetName()
+		if err := serviceRegistrationRepository.Delete(serviceName); err != nil {
+			erroredUuids[uuid] = stacktrace.Propagate(err, "An error occurred deleting the service registration for service '%v' from the repository", serviceName)
+			delete(successfulUuids, uuid)
+			continue
+		}
 	}
 
 	return successfulUuids, erroredUuids, nil

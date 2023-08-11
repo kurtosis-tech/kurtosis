@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -14,7 +15,7 @@ func StopUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
-	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	resultSuccessfulServiceUUIDs map[service.ServiceUUID]bool,
@@ -48,6 +49,11 @@ func StopUserServices(
 		return nil
 	}
 
+	serviceRegistrationsByServiceUuid, err := serviceRegistrationRepository.GetAllEnclaveServiceRegistrations(enclaveUuid)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all enclave service registrations from the repository for enclave with UUID '%v'", enclaveUuid)
+	}
+
 	successfulUuidStrs, erroredUuidStrs, err := docker_operation_parallelizer.RunDockerOperationInParallelForKurtosisObjects(
 		ctx,
 		servicesToStopByContainerId,
@@ -63,7 +69,19 @@ func StopUserServices(
 	for uuidStr := range successfulUuidStrs {
 		serviceUuid := service.ServiceUUID(uuidStr)
 		successfulUuids[serviceUuid] = true
-		serviceRegistrations[serviceUuid].SetStatus(service.ServiceStatus_Stopped)
+		serviceRegistration, found := serviceRegistrationsByServiceUuid[serviceUuid]
+		if !found {
+			erroredUuidStrs[uuidStr] = stacktrace.Propagate(err, "Expected to find service registration by service UUID '%v' in map '%+v', but none was found; this is a bug in Kurtosis", serviceUuid, serviceRegistrationsByServiceUuid)
+			delete(successfulUuidStrs, uuidStr)
+			continue
+		}
+		serviceName := serviceRegistration.GetName()
+		serviceStatus := service.ServiceStatus_Stopped
+		if err := serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
+			erroredUuidStrs[uuidStr] = stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s'", serviceStatus, serviceName)
+			delete(successfulUuidStrs, uuidStr)
+			continue
+		}
 	}
 
 	erroredUuids := map[service.ServiceUUID]error{}
