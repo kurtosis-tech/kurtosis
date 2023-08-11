@@ -194,6 +194,10 @@ scrape_configs:
      static_configs:
        - targets: ['foobar.com']
    
+   - job_name: 'beacon-metrics-gazer'
+     metrics_path: '/metrics'
+     static_configs:
+      - targets: ['beacon-metrics-gazer:8080']
 `
 	logrus.Infof("Checking that the file got mounted on " + serviceIdForDependentService)
 	serviceCtx, err = enclaveCtx.GetServiceContext(serviceIdForDependentService)
