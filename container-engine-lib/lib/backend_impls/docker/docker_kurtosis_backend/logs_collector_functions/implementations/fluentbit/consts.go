@@ -7,12 +7,10 @@ import (
 const (
 	rootDirpath = "/fluent-bit"
 
-	////////////////////////--LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
+	////////////////////////--FLUENT BIT CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage        = "fluent/fluent-bit:1.9.7"
 	tcpTransportProtocol  = port_spec.TransportProtocol_TCP
 	httpTransportProtocol = port_spec.TransportProtocol_TCP
-
-	lokiOutputTypeName = "loki"
 
 	configDirpathInContainer  = rootDirpath + "/etc"
 	configFilepathInContainer = configDirpathInContainer + "/fluent-bit.conf"
@@ -34,23 +32,15 @@ const (
 	listen {{.Input.Listen}}
 	port {{.Input.Port}}
 	storage.type  {{.Input.StorageType}}
-[FILTER]
-	name {{.Filter.Name}}
-	match {{.Filter.Match}}
-	{{.Filter.GetRulesStr}}
 [OUTPUT]
 	name {{.Output.Name}}
 	match {{.Output.Match}}
 	host {{.Output.Host}}
 	port {{.Output.Port}}
-	labels {{.Output.GetLabelsStr}}
-	line_format {{.Output.LineFormat}}
-	tenant_id_key {{.Output.TenantIDKey}}
-	retry_limit {{.Output.RetryLimit}}
 `
 
 	healthCheckEndpointPath = "api/v1/health"
-	////////////////////////--FINISH LOKI CONTAINER CONFIGURATION SECTION--/////////////////////////////
+	////////////////////////--FINISH FLUENT BIT CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
 	////////////////////////--FLUENTBIT CONFIGURATION SECTION--/////////////////////////////
 	logLevel               = "debug"
@@ -58,9 +48,10 @@ const (
 	httpServerLocalhost    = "0.0.0.0"
 	inputName              = "forward"
 	inputListenIP          = "0.0.0.0"
-	modifyFilterName       = "modify"
 	matchAllRegex          = "*"
-	jsonLineFormat         = "json"
-	unlimitedOutputRetry   = "no_limits"
+
+	// fluentbit doesn't have a dedicated vector output plugin but vector added a source input plugin for fluentbit
+	// with the ability to pick up logs over fluentbit's forward output plugin, PR here: https://github.com/vectordotdev/vector/pull/7548
+	vectorOutputTypeName = "forward"
 	////////////////////////--FINISH FLUENTBIT CONFIGURATION SECTION--/////////////////////////////
 )

@@ -21,11 +21,5 @@ type LogsCollectorContainer interface {
 		targetNetworkId string,
 		objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 		dockerManager *docker_manager.DockerManager,
-	) (
-		resultContainerId string,
-		resultContainerLabels map[string]string,
-		restulHostMachinePortBindings map[nat.Port]*nat.PortBinding,
-		resultRemoveLogsCollectorContainerFunc func(),
-		resultErr error,
-	)
+	) (string, map[string]string, map[nat.Port]*nat.PortBinding, func(), error)
 }

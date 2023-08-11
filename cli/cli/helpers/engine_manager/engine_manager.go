@@ -281,7 +281,6 @@ func (manager *EngineManager) StopEngineIdempotently(ctx context.Context) error 
 	}
 
 	logrus.Debugf("Destroyed signal sent to engines %v", successfulDestroyedEngineGuids)
-
 	return nil
 }
 
