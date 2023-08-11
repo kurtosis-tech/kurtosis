@@ -122,7 +122,11 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	// 4. Run the interpretation with the mask.
 	//     - If it's successful, then we've found the optimized plan
 	//     - if it's not successful, then the mask is not compatible with the package. Go back to step 1
-	firstPossibleIndexForMatchingInstruction := 0
+	var firstPossibleIndexForMatchingInstruction int
+	if currentEnclavePlan.Size() > naiveInstructionsPlan.Size() {
+
+		firstPossibleIndexForMatchingInstruction = currentEnclavePlan.Size() - naiveInstructionsPlan.Size()
+	}
 	for {
 		// initialize an empty optimized plan and an empty the mask
 		potentialMask := resolver.NewInstructionsPlanMask(len(naiveInstructionsPlanSequence))
@@ -193,28 +197,6 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			optimizedPlan.AddScheduledInstruction(scheduledInstruction)
 		}
 
-		// there might be still be instructions in the current enclave plan that have not been imported to the
-		// optimized plan
-		// for now, we support this only if no new instructions will be executed for this run. If that's not the case
-		// continue the loop in the hope of finding another mask
-		if len(currentEnclavePlanSequence) > matchingInstructionIdx+optimizedPlan.Size() {
-			logrus.Debugf("There are %d instructions remaining in the current state that have not been transferred to the new plan. Transferring them now", len(currentEnclavePlanSequence)-matchingInstructionIdx+optimizedPlan.Size())
-			atLeastOneInstructionWillBeExecuted := false
-			for _, instructionThatWillPotentiallyBeRun := range attemptInstructionsPlanSequence {
-				if !instructionThatWillPotentiallyBeRun.IsExecuted() {
-					atLeastOneInstructionWillBeExecuted = true
-				}
-			}
-			if atLeastOneInstructionWillBeExecuted {
-				logrus.Debugf("The remaining instructions in the current enclave plan cannot be transferred to the new plan because this plan contains instructions that will be executed." +
-					"The remaining instructions might depend on those and Kurtosis cannot re-run them (this is unsupported for now)")
-				continue
-			}
-			// recopy all remaining instructions into the optimized plan
-			for _, remainingInstructionFromCurrentEnclaveState := range currentEnclavePlanSequence[matchingInstructionIdx+optimizedPlan.Size():] {
-				optimizedPlan.AddScheduledInstruction(remainingInstructionFromCurrentEnclaveState).ImportedFromCurrentEnclavePlan(true).Executed(true)
-			}
-		}
 		// finally we can return the optimized plan as well as the serialized script output returned by the last
 		// interpretation attempt
 		return attemptSerializedScriptOutput, optimizedPlan, nil

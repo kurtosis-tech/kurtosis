@@ -215,66 +215,6 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 	require.False(suite.T(), scheduledInstruction3.IsExecuted())
 }
 
-// This is a bit of an edge case here, we run only part of the instruction that are identical to what was already run
-// Current plan ->     [`print("instruction1")`  `print("instruction2")`  `print("instruction3")`]
-// Package to run ->   [`print("instruction1")`  `print("instruction2")`                         ]
-// Check that instruction 1 and 2 are part of the new plan, already executed, and instruction3 is ALSO part of the
-// plan, but marked as imported from a previous plan
-func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_ReplacePartOfInstructionWithIdenticalInstruction() {
-	initialScript := `def run(plan, args):
-	plan.print(msg="instruction1")
-	plan.print(msg="instruction2")
-	plan.print(msg="instruction3")
-`
-	// Interpretation of the initial script to generate the current enclave plan
-	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
-		context.Background(),
-		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		useDefaultMainFunctionName,
-		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		initialScript,
-		noInputParams,
-		enclave_structure.NewEnclaveComponents(),
-		resolver.NewInstructionsPlanMask(0))
-	require.Nil(suite.T(), interpretationApiErr)
-	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
-
-	updatedScript := `def run(plan, args):
-	plan.print(msg="instruction1")
-	plan.print(msg="instruction2")
-`
-	// Interpret the updated script against the current enclave plan
-	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
-		context.Background(),
-		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		useDefaultMainFunctionName,
-		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		updatedScript,
-		noInputParams,
-		currentEnclavePlan,
-	)
-	require.Nil(suite.T(), interpretationError)
-
-	instructionSequence, err := instructionsPlan.GeneratePlan()
-	require.Nil(suite.T(), err)
-	require.Equal(suite.T(), 3, len(instructionSequence))
-
-	scheduledInstruction1 := instructionSequence[0]
-	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction1.IsExecuted())
-
-	scheduledInstruction2 := instructionSequence[1]
-	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction2.IsExecuted())
-
-	scheduledInstruction3 := instructionSequence[2]
-	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
-	require.True(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction3.IsExecuted())
-}
-
 // Submit a package with a update on an instruction located "in the middle" of the package
 // Current plan ->     [`print("instruction1")`  `print("instruction2")`      `print("instruction3")`]
 // Package to run ->   [`print("instruction1")`  `print("instruction2_NEW")`  `print("instruction3")`]
