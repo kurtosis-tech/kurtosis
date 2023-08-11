@@ -13,7 +13,7 @@ const (
 	binaryFilepath = "/usr/bin/vector"
 	configFileFlag = "-c"
 
-	logsStorageDirpath = "/etc/vector/"
+	logsStorageDirpath = "/tmp/"
 	////////////////////////--FINISH VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
 	////////////////////////--VECTOR CONFIGURATION SECTION--/////////////////////////////
@@ -25,8 +25,26 @@ const (
 	stdoutSinkID = "\"stdout\""
 	stdoutTypeId = "\"console\""
 
+	fileSinkId      = "\"file\""
+	fileTypeId      = "\"file\""
+	filepathForLogs = "/tmp/vector.txt"
+
 	configFileTemplateName = "vectorConfigFileTemplate"
-	configFileTemplate     = `
+	//	configFileTemplate     = `
+	//[api]
+	//enabled = true
+	//address = "0.0.0.0:8686"
+	//
+	//[sources.{{ .Source.Id }}]
+	//type = {{ .Source.Type }}
+	//address = "{{ .Source.Address }}"
+	//
+	//[sinks.{{ .Sink.Id }}]
+	//type = {{ .Sink.Type }}
+	//inputs = {{ .Sink.Inputs }}
+	//encoding.codec = "json"
+
+	configFileTemplate = `
 [api]
 enabled = true
 address = "0.0.0.0:8686"
@@ -38,7 +56,7 @@ address = "{{ .Source.Address }}"
 [sinks.{{ .Sink.Id }}]
 type = {{ .Sink.Type }}
 inputs = {{ .Sink.Inputs }}
-encoding.codec = "json"
+path = {{ .Sink.Filepath }}
 `
 	////////////////////////--FINISH--VECTOR CONFIGURATION SECTION--/////////////////////////////
 )

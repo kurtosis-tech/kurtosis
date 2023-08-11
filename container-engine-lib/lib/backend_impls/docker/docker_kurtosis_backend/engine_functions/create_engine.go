@@ -141,6 +141,10 @@ func CreateEngine(
 		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
 	}
 
+	volumeMounts := map[string]string{
+		"kurtosis-logs-storage": "/tmp/",
+	}
+
 	if serverArgs.OnBastionHost {
 		// Mount the host engine config directory so the engine can access files like the remote backend config.
 		bindMounts[consts.HostEngineConfigDirToMount] = consts.EngineConfigLocalDir
@@ -165,6 +169,8 @@ func CreateEngine(
 		envVars,
 	).WithBindMounts(
 		bindMounts,
+	).WithVolumeMounts(
+		volumeMounts,
 	).WithUsedPorts(
 		usedPorts,
 	).WithLabels(
