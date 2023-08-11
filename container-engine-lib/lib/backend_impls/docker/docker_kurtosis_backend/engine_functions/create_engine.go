@@ -72,6 +72,13 @@ func CreateEngine(
 	targetNetworkId := engineNetwork.GetId()
 
 	logrus.Infof("Starting the centralized logs components...")
+	// Creation of volume should be idempotent because the volume with persisted logs in it could already exist
+	// Thus, we don't defer an undo volume if this operation fails
+	// TODO: retrieve name and labels from objsAttrProvider
+	if err = dockerManager.CreateVolume(ctx, "kurtosis-logs-storage", map[string]string{}); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating logs storage.")
+	}
+
 	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() // Declaring implementation
 	_, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
