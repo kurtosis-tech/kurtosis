@@ -12,6 +12,8 @@ const (
 	configFilepath = configDirpath + "vector.toml"
 	binaryFilepath = "/usr/bin/vector"
 	configFileFlag = "-c"
+
+	logsStorageDirpath = "/etc/vector/"
 	////////////////////////--FINISH VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
 	////////////////////////--VECTOR CONFIGURATION SECTION--/////////////////////////////
