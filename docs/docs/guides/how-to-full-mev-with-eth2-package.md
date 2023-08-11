@@ -41,7 +41,7 @@ Everything you see below in the architecture diagram gets configured, initialize
 
 :::note
 Quick aside on what `mev-flood` does:
-Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provision liquidity on UniV2 pairs, & begin to send a constant stream of UniV2 swap transactions to the network's public mempool or to Flashbot's `mev-builder`. It is important to note that `mev-flood` will only be initialized with the `full-mev` set up. Read more about [`mev-flood` here](https://github.com/flashbots/mev-flood). 
+Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provision liquidity on UniV2 pairs, & begin to send a constant stream of UniV2 swap transactions to the network's public mempool or to Flashbot's `mev-builder`. It is important to note that `mev-flood` will only be initialized with the `full-mev` set up and will send transactions with a block value of 0. Read more about [`mev-flood` here](https://github.com/flashbots/mev-flood). 
 :::
 
 <details><summary>Sample output from `mev-flood` operations within the eth2-package:</summary>
@@ -214,11 +214,27 @@ Now that your network is online, you can visit the relay website using the local
 
 The screenshot above is what the website looks like after the 4th epoch. You can see that all 128 validators (2 nodes, each with 64 validators) are registered. The table below will display recently delivered and verified payloads from `mev-relay` to the `mev-boost` sidecar on each node.
 
+And there you have it! You've now spun up a private Ethereum testnet over Docker with the Flashbot's implementation of PBS! 
+
+## Roadmap
+The inclusion of a Proposer Builder Seperation (PBS) implemention was in support of the Ethereum Foundation's efforts to validate functionality and behavior in end-to-end testing (between in-protocol and out-of-protocol infrastructure), as well as the functionality of the beacon chain for in-protocol code paths (e.g. can clients: call for payloads reject invalid payloads, and trigger the circuit breaker when necessary).
+
+The next immediate thing we hope to do is to *decompose* the environment definition into smaller pieces, enabling developers to build-their-own MEV-enabled systems by simply importing only the parts of the MEV infrastructure that they need. We've begun working on this already with [eth-kurtosis](https://github.com/kurtosis-tech/eth-kurtosis), which contains an index of composable building blocks to define your own testnet.
+
+If there are other use cases you had in mind (e.g. fuzzing the network at the protocol level) or have questions about `eth-kurtosis` or this `eth2-package`, please don't hesitate to reach out!
 
 ## Conclusion
+This guide was meant to be quick - we hope it was. To recap, you:
+- Installed Kurtosis and Docker
+- Created a `.json` file that contains the necessary parameters for the network
+- Ran a single command to spin up a private Ethereum testnet with MEV infrastructure
 
-TODO
-## Roadmap
+The `eth2-package` is available for anyone to use, will work the same way on your local machine or in the cloud, and will run on Docker or Kubernetes.
 
+You saw first-hand how packages, effectively environment definitions, are written once and then can be used by anyone in a very trivial way to reproduce the environment. This accelerates developer velocity by enabling engineers to spend less time on configuring and setting up development and testing frameworks, and more time instead on building the unique features and capabilities for their projects.
 
-TODO
+Additionally, we hope you also enjoyed the parameterizability aspect of Kurtosis Packages. By changing the `eth2-package-params.json`, you can get a fine-tune your testnet however you see fit. 
+
+We hope this guide was helpful and we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using [`kurtosis feedback`](../cli-reference/feedback.md) from the CLI to file an issue in our [Github](https://github.com/kurtosis-tech/eth-kurtosis/issues) or post your question in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions).
+
+Thank you!
