@@ -24,12 +24,11 @@ This guide will walk you through how to build your very own fully functioning, p
 
 **What you will do:**
 
-1. Create a local Kurtosis package template & push it to Github
+1. Create a local Kurtosis package template
 2. Import required dependencies
 3. Define how your private Ethereum testnet should look like. This example will leverage the Lighthouse CL client and Geth EL client to build a single, full node over Docker with [`eth-kurtosis`](https://github.com/kurtosis-tech/eth-kurtosis/tree/main).
 4. Launch the private testnet locally over Docker
-5. Publish your testnet definition to Github
-6. Learn about some advanced workflows you can do with `eth-kurtosis`.
+5. Learn about some advanced workflows you can do with `eth-kurtosis`.
 
 **What you will need beforehand to get started:**
 
@@ -172,22 +171,7 @@ You'll now see in the `User Services` section all the ports that you will use to
 
 Congratulations! You now have a full Ethereum staking node for all your private testnet needs.
 
-
-### 5. Add our `main.star` file to your `my-testnet` repository on Github!
-One last step you'll want to do is to add your new `main.star` file to Github! 
-
-First, save your `main.star` file and then push it to your repository so that your repository now contains 3 files:
-- `main.star`
-- `kurtosis.yml`
-- `network_params.json`
-
-```bash
-kurtosis run github.com/$YOUR_GITHUB_USERNAME/my-testnet/main.star
-```
-
-Everything should work the same way as it did before, but the beauty of using Kurtosis is that you can now run the above command anywhere and the node will be spun up in the exact same way. Additionally, this means your testnet can be shared with your teammates to bring up the *exact same* environment - making reproducing of bugs or functionalities painless.
-
-### 6. Advanced Workflows
+### 5. Advanced Workflows
 You may already know what you want to do with the private testnet you've just spun up, and that's great! We hope this was helpful in getting you started and to show you just how easy it was to write your own testnet definition using Kurtosis.
 
 Otherwise, we've got some neat ideas for what you can do next. If you need a hand with any of the below, feel free to let us know in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/new/choose) where we and members of our community can help!
