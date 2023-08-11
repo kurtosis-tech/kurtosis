@@ -13,8 +13,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -420,23 +420,21 @@ func (backend *KubernetesKurtosisBackend) GetAvailableCPUAndMemory(ctx context.C
 	return 0, 0, isResourceInformationComplete, nil
 }
 
-func (backend *KubernetesKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {
+func (backend *KubernetesKurtosisBackend) GetLogsAggregator(
+	ctx context.Context,
+) (*logs_aggregator.LogsAggregator, error) {
 	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Creating the logs database isn't yet implemented on Kubernetes")
+	return nil, stacktrace.NewError("Getting the logs aggregator isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) GetLogsDatabase(
-	ctx context.Context,
-) (*logs_database.LogsDatabase, error) {
+func (backend *KubernetesKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
 	// TODO IMPLEMENT
-	return nil, stacktrace.NewError("Getting the logs database isn't yet implemented on Kubernetes")
+	return nil, stacktrace.NewError("Creating the logs aggregator isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyLogsDatabase(
-	ctx context.Context,
-) error {
+func (backend *KubernetesKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
 	// TODO IMPLEMENT
-	return stacktrace.NewError("Destroying the logs database isn't yet implemented on Kubernetes")
+	return stacktrace.NewError("Destroying the logs aggregator isn't yet implemented on Kubernetes")
 }
 
 func (backend *KubernetesKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {

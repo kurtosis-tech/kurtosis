@@ -16,7 +16,7 @@ jest.setTimeout(JEST_TIMEOUT_MS)
 
 test("Test valid Starlark package with input", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME)
+    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME + "-test-one")
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error
@@ -58,7 +58,7 @@ test("Test valid Starlark package with input", async () => {
 
 test("Test valid Starlark package with input - missing key in params", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME)
+    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME + "-test-two")
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error

@@ -16,13 +16,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
 	"time"
 )
 
 const (
-	namespacePrefix = "kurtosis-enclave"
+	namespacePrefix = "kt"
 
 	persistentServiceDirectoryNameFragment = "service-persistent-directory"
 )
@@ -64,13 +63,10 @@ func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveUUID)
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error) {
-	namespaceUuid, err := uuid_generator.GenerateUUIDString()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to generate UUID string for namespace name for enclave '%v'", provider.enclaveId)
-	}
+	// TODO: might need to revert this if we have multiple users on the same cluster (what if two people create enclaves with name test?)
 	name, err := getCompositeKubernetesObjectName([]string{
 		namespacePrefix,
-		namespaceUuid,
+		enclaveName,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)

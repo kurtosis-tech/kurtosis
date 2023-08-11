@@ -3,6 +3,7 @@ package enclave_db
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	bolt "go.etcd.io/bbolt"
+	"os"
 	"sync"
 	"time"
 )
@@ -44,4 +45,17 @@ func GetOrCreateEnclaveDatabase() (*EnclaveDB, error) {
 	}
 
 	return &EnclaveDB{databaseInstance}, nil
+}
+
+func EraseDatabase() error {
+	path := databaseInstance.Path()
+	err := databaseInstance.Close()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to close database during erase process")
+	}
+	err = os.Remove(path)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to erase database file during erase process '%v'", path)
+	}
+	return nil
 }
