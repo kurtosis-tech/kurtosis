@@ -5,7 +5,18 @@ slug: /how-to-full-mev-with-eth2-package
 toc_max_heading_level: 2
 ---
 
-We're elated to share that Ethereum testnets spun up using Kurtosis' [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now support in-protocol [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) emulation using Flashbot's open-source [MEV-Boost](https://boost.flashbots.net) implementation. This milestone marks a huge step forward in the journey towards a full, in-protocol PBS implementation for Proof-of-Stake Ethereum and is exciting because engineers can now use the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) to instantiate fully functioning testnets to validate functionality, behvaior, and scales across all client combinations *with MEV infrastructure.* Keep reading to learn [how it all works](#architecture--details) & [how to get started with the `eth2-package`](#quickstart).
+:::tip
+Here are some quick short-cuts for folks who would prefer:
+* To get going ASAP: install Kurtosis & Docker and then run: `kurtosis run github.com/kurtosis-tech/eth2-package '{"mev_type": "full"}'`
+* To dive into the code example: visit the repository [here](https://github.com/kurtosis-tech/eth2-package).
+* Not to run this package on their local machine: try it out on the [Kurtosis playground](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/eth2-package)
+:::
+
+We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now supports in-protocol [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) emulation using Flashbot's open-source [MEV-Boost](https://boost.flashbots.net) implementation. 
+
+This milestone marks a huge step forward in the journey towards a full, in-protocol PBS implementation for Proof-of-Stake Ethereum as developers across the ecosystem now have a way to instantiate fully functioning testnets to validate functionality, behvaior, and scales across all client combinations *with MEV infrastructure.* With this new 
+
+Keep reading to learn [how it all works](#architecture--details) & [how to get started with the `eth2-package`](#quickstart).
 
 #### Why `eth2-package`?
 As a reminder, the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) is a reproducible and portable environment definition that should be used to bootstrap & deploy private testnets. The package will function the exact same way locally or in the cloud over Docker or Kubernetes, supports all major Execution Layer (EL) and Consensus Layer (CL) client implementations, and can be scaled to whatever size you need - limited only by your underlying hardware/backend.
@@ -16,84 +27,102 @@ And if that wasn't enough, Kurtosis environment definitions (known as [Packages]
 ## Brief overview of the architecture
 Explicitly, the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) supports two MEV modes: `full-mev` and `mock-mev`. 
 
-The former mode is valuable for validating behavior between the protocol and out-of-protocol middle-ware infrastructure (e.g. searchers, relayer) and instantiates [mev-boost](https://github.com/flashbots/mev-boost), [mev-relay](https://github.com/flashbots/mev-boost-relay), [mev-flood](https://github.com/flashbots/mev-flood) and Flashbot's Geth-based block builder called [mev-builder](https://github.com/flashbots/builder). The latter mode will only spin up [mev-boost](https://github.com/flashbots/mev-boost) and a [mock-builder](https://github.com/marioevz/mock-builder), which is useful for testing in-protocol behavior like testing if clients are able to call the relayer for a payload via `mev-boost`, reject invalid payloads, or trigger the circuit breaker to ensure functionality of the beacon chain.
+The former mode is valuable for validating behavior between the protocol and out-of-protocol middle-ware infrastructure (e.g. searchers, relayer) and instantiates [`mev-boost`](https://github.com/flashbots/mev-boost), [`mev-relay`](https://github.com/flashbots/mev-boost-relay), [`mev-flood`](https://github.com/flashbots/mev-flood) and Flashbot's Geth-based block builder called [`mev-builder`](https://github.com/flashbots/builder). The latter mode will only spin up [`mev-boost`](https://github.com/flashbots/mev-boost) and a [`mock-builder`](https://github.com/marioevz/mock-builder), which is useful for testing in-protocol behavior like testing if clients are able to call the relayer for a payload via `mev-boost`, reject invalid payloads, or trigger the [circuit breaker](https://hackmd.io/@ralexstokes/BJn9N6Thc) to ensure functionality of the beacon chain.
 
-![mev-arch](./assets/mev-infra-arch-diagram.png)
+Everything you see below in the architecture diagram gets configured, initialized, and bootstrapped together by Kurtosis.
+
+![mev-arch](../../static/img/guides/full-mev-infra-arch-diagram.png)
+
+#### Caveats:
+* The `mev-boost` service (a sidecar for the consensus layer client) requires Capella at an epoch of non-zero. For the eth2-package, the Capella fork is set to happen after the first epoch to be started up and fully connected to the CL client.
+* Validators (64 per node by default, so 128 in the example in this guide) will get registered with the relay automatically after the 2nd epoch. This registration process is simply a configuration addition to the mev-boost config - which Kurtosis will automatically take care of as part of the set up. This means that the `mev-relay` infrastructure only becomes aware of the existence of the validators after the 2nd epoch.
+* After the 3rd epoch, the `mev-relay` service will begin to receive execution payloads (`eth_sendPayload`, which does not contain transaction content) from the `mev-builder` service (or `mock-builder` in `mock-mev` mode). 
+* Validators will then start to receive validated execution payload headers from the `mev-relay` service (via `mev-boost`) after the 4th epoch. The validator selects the most vauable header, signs the payload, and returns the signed header to the relay - effectively proposing that block to be included. Once the relay verifies the block proposer's signature, the relay will respond with the full execution payload body (incl. the transaction contents) for the validator to use when proposing a `SignedBeaconBlock` to the network.
+
+:::note
+Quick aside on what `mev-flood` does:
+Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provision liquidity on UniV2 pairs, & begin to send a constant stream of UniV2 swap transactions to the network's public mempool or to Flashbot's `mev-builder`. It is important to note that `mev-flood` will only be initialized with the `full-mev` set up. Read more about [`mev-flood` here](https://github.com/flashbots/mev-flood). 
+:::
+
+<details><summary>Sample output from `mev-flood` operations within the eth2-package:</summary>
+You will see this get printed in your terminal when Kurtosis initializes the `mev-flood` service
+```bash
+Command returned with exit code '0' and the following output:
+--------------------
+ENV: undefined
+connected to http://172.16.0.5:8545 with wallet 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
+deploying DAI contract
+deploying base contracts: DAI, WETH, uniswapV2factory...
+minting DAI for admin 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766...
+minting DAI for user 0xdF8466f277964Bb7a0FFD819403302C34DCD530A...
+minting 2500.0 WETH for admin 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766...
+minting 500.0 WETH for user 0xdF8466f277964Bb7a0FFD819403302C34DCD530A...
+approving atomicSwap to spend token 0xAb2A01BC351770D09611Ac80f1DE076D56E0487d on behalf of 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
+approving atomicSwap to spend token 0x4c849Ff66a6F0A954cbf7818b8a763105C2787D6 on behalf of 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
+approving atomicSwap to spend token 0xAb2A01BC351770D09611Ac80f1DE076D56E0487d on behalf of 0xdF8466f277964Bb7a0FFD819403302C34DCD530A
+approving atomicSwap to spend token 0x4c849Ff66a6F0A954cbf7818b8a763105C2787D6 on behalf of 0xdF8466f277964Bb7a0FFD819403302C34DCD530A
+depositing WETH into pair...
+depositing DAI into pair...
+minting LP tokens...
+depositing WETH into pair...
+depositing DAI into pair...
+minting LP tokens...
+liquidity deployed via mempool
+Saved deployment: /app/cli/deployments/deployment.json
+deployment saved to deployment.json
+--------------------
+```
+</details>
 
 ## Quickstart
-Using the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) is very straight forward. In this short quickstart, you will:
-1. Install required dependencies
-2. Configure your network
-3. Launch your network with `full MEV`
+Leveraging the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) is simple. In this short quickstart, you will:
+1. Install Docker & Kurtosis locally.
+2. Configure your network using a `.json` file.
+3. Run a single command to launch your network with `full MEV`.
 4. Visit the website to witness payloads being delivered.
 
 #### Install dependencies
-* [Install Docker](https://docs.docker.com/get-docker/) and ensure the Docker Daemon is running on your machine (e.g. open Docker Desktop). You can quickly check if Docker is running by running: `docker image ls` from your terminal.
+* [Install Docker](https://docs.docker.com/get-docker/) and ensure the Docker Daemon is running on your machine (e.g. open Docker Desktop). You can quickly check if Docker is running by running: `docker image ls` from your terminal to see all your Docker images.
 * [Install Kurtosis](https://docs.kurtosis.com/install/#ii-install-the-cli) or [upgrade Kurtosis to the latest version](https://docs.kurtosis.com/upgrade). You can check if Kurtosis is running using the command: `kurtosis version`, which will print your current Kurtosis engine version and CLI version.
 
 #### Configure your network
 Next, create a file titled: `eth2-package-params.json` in your working directory and populate it with:
 ```json
 {
-    //  Specification of the participants in the network
-    "participants": [
-        // Each "participants" block represents a single Ethereum full node. 
-        // Therefore, filling in 2 participant blocks will spin up 2 nodes
-        {
-            "el_client_type": "geth",
-            "el_client_image": "ethereum/client-go:latest",
-            "el_client_log_level": "",
-            "el_extra_params": [],
-            "cl_client_type": "lighthouse",
-            "cl_client_image": "lighthouse: sigp/lighthouse:latest",
-            "cl_client_log_level": "",
-            "beacon_extra_params": [],
-            "validator_extra_params": [],
-            "builder_network_params": null
-        }
-    ],
-    "network_params": {
-        "network_id": "3151908",
-        "deposit_contract_address": "0x4242424242424242424242424242424242424242",
-        "seconds_per_slot": 12,
-        "slots_per_epoch": 32,
-        "num_validator_keys_per_node": 64,
-        "preregistered_validator_keys_mnemonic": "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete",
-         "deneb_for_epoch": 500,
-
-    },
-    // True by default such that in addition to the Ethereum network:
-    //  - A transaction spammer is launched to fake transactions sent to the network
-    //  - Forkmon will be launched after CL genesis has happened
-    //  - A prometheus will be started, coupled with grafana
-    "launch_additional_services": true,
-
-    //  If set, the package will block until a finalized epoch has occurred.
-    "wait_for_finalization": false,
-
-    //  If set to true, the package will block until all verifications have passed
-    "wait_for_verifications": false,
-
-    //  If set, after the merge, this will be the maximum number of epochs wait for the verifications to succeed.
-    "verifications_epoch_limit": 5,
-
-    //  The global log level that all clients should log at
-    //  Valid values are "error", "warn", "info", "debug", and "trace"
-    //  This value will be overridden by participant-specific values
-    "global_client_log_level": "info",
-
-    // Supports three valeus
-    // Default: None - no mev boost, mev builder, mev flood or relays are spun up
-    // mock - mock-builder & mev-boost are spun up
-    // full - mev-boost, relays, flooder and builder are all spun up
-    "mev_type": full
+	"participants": [{
+		"el_client_type": "geth",
+		"el_client_image": "ethereum/client-go:latest",
+		"el_client_log_level": "",
+		"el_extra_params": [],
+		"cl_client_type": "lighthouse",
+		"cl_client_image": "sigp/lighthouse:latest",
+		"cl_client_log_level": "",
+		"beacon_extra_params": [],
+		"validator_extra_params": [],
+		"builder_network_params": null
+	}],
+	"network_params": {
+		"network_id": "3151908",
+		"deposit_contract_address": "0x4242424242424242424242424242424242424242",
+		"seconds_per_slot": 12,
+		"slots_per_epoch": 32,
+		"num_validator_keys_per_node": 64,
+		"preregistered_validator_keys_mnemonic": "giant issue aisle success illegal bike spike question tent bar rely arctic volcano long crawl hungry vocal artwork sniff fantasy very lucky have athlete",
+		"deneb_for_epoch": 500
+	},
+	"verifications_epoch_limit": 5,
+	"global_client_log_level": "info",
+	"mev_type": "full"
 }
 ```
 You will use the above file by passing it in at runtime, effectively enabling you to define the way your network should look using parameters.
 
 #### Launch the network with `full MEV`
-You can now launch the network 
-
+Great! You're now ready to bring up your own network. Simply run:
+```bash
+TODO: FIX kurtosis run --enclave eth-network github.com/kurtosis-tech/eth2-package "$(cat ~/eth2-package-params.json)"
+```
+Kurtosis will then begin to spin up your private Ethereum testnet with `full MEV`. You will see a stream of text get printed in your terminal as Kurtosis begins to generate genesis files, configure the Ethereum nodes, launch a Grafana and Prometheus instance, and bootstrap the network together with the full suite of MEV products from Flashbots. In ~2 minutes, you should see the following output at the end:
 ```bash
 Starlark code successfully run. Output was:
 {
@@ -104,13 +133,13 @@ Starlark code successfully run. Output was:
 	}
 }
 
-INFO[2023-08-09T11:16:00+02:00] ====================================================
-INFO[2023-08-09T11:16:00+02:00] ||          Created enclave: timid-brook          ||
-INFO[2023-08-09T11:16:00+02:00] ====================================================
-Name:            timid-brook
+INFO[2023-08-03T11:16:00+02:00] ====================================================
+INFO[2023-08-03T11:16:00+02:00] ||          Created enclave: eth-network          ||
+INFO[2023-08-03T11:16:00+02:00] ====================================================
+Name:            eth-network
 UUID:            1d467f353496
 Status:          RUNNING
-Creation Time:   Wed, 09 Aug 2023 11:06:50 CEST
+Creation Time:   Thu, 03 Aug 2023 11:06:50 CEST
 
 ========================================= Files Artifacts =========================================
 UUID           Name
@@ -170,11 +199,26 @@ af010cabc0ce   prelaunch-data-generator-el-genesis-data   <none>                
 f833b940ae5b   transaction-spammer                        <none>                                                 RUNNING
 ```
 
+As you can see above, there is *a lot* going on in your enclave - but don't worry, let's go through everything together.
 
+The first section that gets printed contains some basic metadata about the enclave that was spun up. This includes the name of the enclave `eth-network`, its [Resource Idenfitier](https://docs.kurtosis.com/concepts-reference/resource-identifier/), your enclave's status, and the time it was created.
 
+Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
 
-
+Lastly, there is a section called `User Services` which display the number of services (running in Docker containers) that make up your network. You will notice that there are 2 Ethereum nodes, each with a `MEV-Boost` instance spun up & connected to it. In addition to this, you will see the rest of the Flashbots MEV infrastructure including the MEV-Relay suite of services (e.g. `relay`, `relay-api`, `relay-housekeeper`, `relay-website`) and `MEV-Flood`. By default, the `eth2-package` also comes with supporting services which include a fork monitor, redis, postgres, grafana, prometheus, a transaction spammer, a testnet-verifier, and the services used to generate genesis data. Each of these services are running in Docker containers inside your local enclave & Kurtosis has automatically mapped each container port to your machine's ephemeral ports for seamless interaction with the services running in your enclave.
 
 #### Visit the website to see registered validators and delivered payloads 
+Now that your network is online, you can visit the relay website using the local port mapped to that endpoint. For this example, it will be `127.0.0.1:62930`, but it will be different for you.
 
+![flashbots-website](../../static/img/guides/full-mev-flashbots-website.png)
+
+The screenshot above is what the website looks like after the 4th epoch. You can see that all 128 validators (2 nodes, each with 64 validators) are registered. The table below will display recently delivered and verified payloads from `mev-relay` to the `mev-boost` sidecar on each node.
+
+
+## Conclusion
+
+TODO
 ## Roadmap
+
+
+TODO
