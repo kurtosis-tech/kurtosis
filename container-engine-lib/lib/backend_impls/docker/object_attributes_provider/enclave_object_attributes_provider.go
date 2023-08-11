@@ -20,6 +20,7 @@ import (
 )
 
 const (
+	networkPrefix          = "kt-"
 	apiContainerNamePrefix = "kurtosis-api"
 
 	artifactExpansionVolumeNameFragment    = "files-artifact-expansion"
@@ -73,10 +74,11 @@ func newDockerEnclaveObjectAttributesProviderImpl(
 }
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enclaveName string, creationTime time.Time) (DockerObjectAttributes, error) {
-	enclaveIdStr := provider.enclaveId.GetString()
-	name, err := docker_object_name.CreateNewDockerObjectName(enclaveIdStr)
+	// TODO: might need to revert this if we have multiple users on the same cluster (what if two people create enclaves with name test?)
+	enclaveNetworkNameStr := networkPrefix + enclaveName
+	name, err := docker_object_name.CreateNewDockerObjectName(enclaveNetworkNameStr)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", enclaveIdStr)
+		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", enclaveNetworkNameStr)
 	}
 
 	creationTimeStr := creationTime.Format(time.RFC3339)
