@@ -69,8 +69,9 @@ message AwsKey {
 }
 
 message GetOrCreateEnclaveS3StorageRequest {
-  string user_id = 1;
-  string enclave_name = 2;
+  string api_key = 1;
+  string user_id = 2;
+  string enclave_name = 3;
 }
 
 message GetOrCreateEnclaveS3StorageResponse {
