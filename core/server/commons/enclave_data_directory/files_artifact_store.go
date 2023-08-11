@@ -64,9 +64,6 @@ func NewFilesArtifactStoreForTesting(
 func (store FilesArtifactStore) StoreFile(reader io.Reader, contentMd5 []byte, artifactName string) (FilesArtifactUUID, error) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
-	defer func(fileArtifactDb *file_artifacts_db.FileArtifactPersisted) {
-		_ = fileArtifactDb.Persist()
-	}(store.fileArtifactDb)
 
 	filesArtifactUuid, err := NewFilesArtifactUUID()
 	if err != nil {
@@ -80,6 +77,9 @@ func (store FilesArtifactStore) StoreFile(reader io.Reader, contentMd5 []byte, a
 	err = store.storeFilesToArtifactUuidUnlocked(artifactName, filesArtifactUuid, reader, contentMd5)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred creating new files artifact UUID")
+	}
+	if err := store.fileArtifactDb.Persist(); err != nil {
+		return "", stacktrace.Propagate(err, "Failed persisting data on file artifacts db")
 	}
 	return filesArtifactUuid, nil
 }
@@ -102,9 +102,6 @@ func (store FilesArtifactStore) UpdateFile(filesArtifactUuid FilesArtifactUUID, 
 func (store FilesArtifactStore) GetFile(artifactIdentifier string) (FilesArtifactUUID, *EnclaveDataDirFile, []byte, bool, error) {
 	store.mutex.RLock()
 	defer store.mutex.RUnlock()
-	defer func(fileArtifactDb *file_artifacts_db.FileArtifactPersisted) {
-		_ = fileArtifactDb.Persist()
-	}(store.fileArtifactDb)
 
 	filesArtifactUuid := FilesArtifactUUID(artifactIdentifier)
 	fileArtifactUuid, file, contentMd5, found, err := store.getFileUnlocked(filesArtifactUuid)
@@ -126,16 +123,16 @@ func (store FilesArtifactStore) GetFile(artifactIdentifier string) (FilesArtifac
 		return store.getFileUnlocked(FilesArtifactUUID(filesArtifactUuidGet))
 	}
 
+	if err := store.fileArtifactDb.Persist(); err != nil {
+		return "", nil, nil, false, stacktrace.Propagate(err, "Failed persisting data on file artifacts db")
+	}
 	return "", nil, nil, false, nil
 }
 
 // RemoveFile Remove the file by uuid, then by shortened uuid and then by name
-func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) error {
+func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) (deferedErr error) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
-	defer func(fileArtifactDb *file_artifacts_db.FileArtifactPersisted) {
-		_ = fileArtifactDb.Persist()
-	}(store.fileArtifactDb)
 	var filesArtifactUuid FilesArtifactUUID
 
 	filesArtifactUuid = FilesArtifactUUID(artifactIdentifier)
@@ -166,6 +163,9 @@ func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) error {
 		return nil
 	}
 
+	if err := store.fileArtifactDb.Persist(); err != nil {
+		return stacktrace.Propagate(err, "Failed persisting data on file artifacts db")
+	}
 	return stacktrace.NewError("Couldn't find file for identifier '%v', tried looking up UUID, shortened UUID and by name", artifactIdentifier)
 }
 

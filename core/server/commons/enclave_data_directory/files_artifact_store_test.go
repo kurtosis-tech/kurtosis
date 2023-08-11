@@ -16,7 +16,8 @@ import (
 )
 
 func TestFileStore_StoreFileSimpleCase(t *testing.T) {
-	fileStore := getTestFileStore(t)
+	fileStore, closer := getTestFileStore(t)
+	defer closer()
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
 	targetArtifactName := "test-artifact-name"
@@ -43,7 +44,8 @@ func TestFileStore_StoreFileSimpleCase(t *testing.T) {
 }
 
 func TestFileStore_StoringToExistingUUIDFails(t *testing.T) {
-	fileStore := getTestFileStore(t)
+	fileStore, closer := getTestFileStore(t)
+	defer closer()
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
 	testArtifactName := "test-artifact-name"
@@ -59,7 +61,8 @@ func TestFileStore_StoringToExistingUUIDFails(t *testing.T) {
 }
 
 func TestFileStore_GetFilepathByUUIDProperFilepath(t *testing.T) {
-	fileStore := getTestFileStore(t)
+	fileStore, closer := getTestFileStore(t)
+	defer closer()
 	testContent := "Long Live Kurtosis!"
 	testArtifactName := "test-artifact"
 	reader := strings.NewReader(testContent)
@@ -81,7 +84,8 @@ func TestFileStore_GetFilepathByUUIDProperFilepath(t *testing.T) {
 }
 
 func TestFileStore_StoreFilesUniquely(t *testing.T) {
-	fileStore := getTestFileStore(t)
+	fileStore, closer := getTestFileStore(t)
+	defer closer()
 	testContent := "Long Live Kurtosis!"
 	otherTestContent := "Long Live Kurtosis, But Different!"
 
@@ -117,7 +121,8 @@ func TestFileStore_StoreFilesUniquely(t *testing.T) {
 }
 
 func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
-	fileStore := getTestFileStore(t)
+	fileStore, closer := getTestFileStore(t)
+	defer closer()
 	testContent := "Long Live Kurtosis!"
 	reader := strings.NewReader(testContent)
 	testArtifactName := "test-artifact"
@@ -143,7 +148,8 @@ func TestFileStore_RemoveFileRemovesFileFromDisk(t *testing.T) {
 }
 
 func TestFileStore_RemoveFileFailsForNonExistentId(t *testing.T) {
-	fileStore := getTestFileStore(t)
+	fileStore, closer := getTestFileStore(t)
+	defer closer()
 	nonExistentId, err := NewFilesArtifactUUID()
 	require.Nil(t, err)
 
@@ -152,7 +158,8 @@ func TestFileStore_RemoveFileFailsForNonExistentId(t *testing.T) {
 }
 
 func TestFilesArtifactStore_GetFileNamesAndUuids(t *testing.T) {
-	fileStore := getTestFileStore(t)
+	fileStore, closer := getTestFileStore(t)
+	defer closer()
 	testContent := "Long Live Kurtosis!"
 	otherTestContent := "Long Live Kurtosis, But Different!"
 
@@ -176,17 +183,16 @@ func TestFilesArtifactStore_GetFileNamesAndUuids(t *testing.T) {
 	require.Contains(t, fileNameAndUuids, FileNameAndUuid{uuid: anotherUUID, name: testArtifact2})
 }
 
-func getTestFileStore(t *testing.T) *FilesArtifactStore {
+func getTestFileStore(t *testing.T) (*FilesArtifactStore, func()) {
 	absDirpath, err := os.MkdirTemp("", "")
 	require.Nil(t, err)
 	db, closer, err := test_helpers.CreateEnclaveDbForTesting()
 	require.Nil(t, err)
-	defer closer()
 	fileArtifactDb, err := file_artifacts_db.GetFileArtifactsDbForTesting(db, map[string]string{})
 	require.Nil(t, err)
 	fileStore := newFilesArtifactStoreFromDb(absDirpath, "", fileArtifactDb)
 	require.Nil(t, err)
-	return fileStore
+	return fileStore, closer
 }
 
 func Test_generateUniqueNameForFileArtifact_MaxRetriesOver(t *testing.T) {
