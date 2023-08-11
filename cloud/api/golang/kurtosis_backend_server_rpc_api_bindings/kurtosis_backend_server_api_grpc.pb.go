@@ -20,11 +20,12 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	KurtosisCloudBackendServer_IsAvailable_FullMethodName            = "/kurtosis_cloud.KurtosisCloudBackendServer/IsAvailable"
-	KurtosisCloudBackendServer_CreateCloudInstance_FullMethodName    = "/kurtosis_cloud.KurtosisCloudBackendServer/CreateCloudInstance"
-	KurtosisCloudBackendServer_GetCloudInstanceConfig_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/GetCloudInstanceConfig"
-	KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateApiKey"
-	KurtosisCloudBackendServer_GetOrCreateInstance_FullMethodName    = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
+	KurtosisCloudBackendServer_IsAvailable_FullMethodName                 = "/kurtosis_cloud.KurtosisCloudBackendServer/IsAvailable"
+	KurtosisCloudBackendServer_CreateCloudInstance_FullMethodName         = "/kurtosis_cloud.KurtosisCloudBackendServer/CreateCloudInstance"
+	KurtosisCloudBackendServer_GetCloudInstanceConfig_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetCloudInstanceConfig"
+	KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName           = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateApiKey"
+	KurtosisCloudBackendServer_GetOrCreateInstance_FullMethodName         = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
+	KurtosisCloudBackendServer_GetOrCreateEnclaveS3Storage_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateEnclaveS3Storage"
 )
 
 // KurtosisCloudBackendServerClient is the client API for KurtosisCloudBackendServer service.
@@ -36,6 +37,7 @@ type KurtosisCloudBackendServerClient interface {
 	GetCloudInstanceConfig(ctx context.Context, in *GetCloudInstanceConfigArgs, opts ...grpc.CallOption) (*GetCloudInstanceConfigResponse, error)
 	GetOrCreateApiKey(ctx context.Context, in *GetOrCreateApiKeyRequest, opts ...grpc.CallOption) (*GetOrCreateApiKeyResponse, error)
 	GetOrCreateInstance(ctx context.Context, in *GetOrCreateInstanceRequest, opts ...grpc.CallOption) (*GetOrCreateInstanceResponse, error)
+	GetOrCreateEnclaveS3Storage(ctx context.Context, in *GetOrCreateEnclaveS3StorageRequest, opts ...grpc.CallOption) (*GetOrCreateEnclaveS3StorageResponse, error)
 }
 
 type kurtosisCloudBackendServerClient struct {
@@ -91,6 +93,15 @@ func (c *kurtosisCloudBackendServerClient) GetOrCreateInstance(ctx context.Conte
 	return out, nil
 }
 
+func (c *kurtosisCloudBackendServerClient) GetOrCreateEnclaveS3Storage(ctx context.Context, in *GetOrCreateEnclaveS3StorageRequest, opts ...grpc.CallOption) (*GetOrCreateEnclaveS3StorageResponse, error) {
+	out := new(GetOrCreateEnclaveS3StorageResponse)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_GetOrCreateEnclaveS3Storage_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KurtosisCloudBackendServerServer is the server API for KurtosisCloudBackendServer service.
 // All implementations should embed UnimplementedKurtosisCloudBackendServerServer
 // for forward compatibility
@@ -100,6 +111,7 @@ type KurtosisCloudBackendServerServer interface {
 	GetCloudInstanceConfig(context.Context, *GetCloudInstanceConfigArgs) (*GetCloudInstanceConfigResponse, error)
 	GetOrCreateApiKey(context.Context, *GetOrCreateApiKeyRequest) (*GetOrCreateApiKeyResponse, error)
 	GetOrCreateInstance(context.Context, *GetOrCreateInstanceRequest) (*GetOrCreateInstanceResponse, error)
+	GetOrCreateEnclaveS3Storage(context.Context, *GetOrCreateEnclaveS3StorageRequest) (*GetOrCreateEnclaveS3StorageResponse, error)
 }
 
 // UnimplementedKurtosisCloudBackendServerServer should be embedded to have forward compatible implementations.
@@ -120,6 +132,9 @@ func (UnimplementedKurtosisCloudBackendServerServer) GetOrCreateApiKey(context.C
 }
 func (UnimplementedKurtosisCloudBackendServerServer) GetOrCreateInstance(context.Context, *GetOrCreateInstanceRequest) (*GetOrCreateInstanceResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrCreateInstance not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) GetOrCreateEnclaveS3Storage(context.Context, *GetOrCreateEnclaveS3StorageRequest) (*GetOrCreateEnclaveS3StorageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrCreateEnclaveS3Storage not implemented")
 }
 
 // UnsafeKurtosisCloudBackendServerServer may be embedded to opt out of forward compatibility for this service.
@@ -223,6 +238,24 @@ func _KurtosisCloudBackendServer_GetOrCreateInstance_Handler(srv interface{}, ct
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisCloudBackendServer_GetOrCreateEnclaveS3Storage_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrCreateEnclaveS3StorageRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).GetOrCreateEnclaveS3Storage(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_GetOrCreateEnclaveS3Storage_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).GetOrCreateEnclaveS3Storage(ctx, req.(*GetOrCreateEnclaveS3StorageRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KurtosisCloudBackendServer_ServiceDesc is the grpc.ServiceDesc for KurtosisCloudBackendServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -249,6 +282,10 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOrCreateInstance",
 			Handler:    _KurtosisCloudBackendServer_GetOrCreateInstance_Handler,
+		},
+		{
+			MethodName: "GetOrCreateEnclaveS3Storage",
+			Handler:    _KurtosisCloudBackendServer_GetOrCreateEnclaveS3Storage_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

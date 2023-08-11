@@ -12,6 +12,7 @@ service KurtosisCloudBackendServer {
   rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
   rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
   rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
+  rpc GetOrCreateEnclaveS3Storage(GetOrCreateEnclaveS3StorageRequest) returns (GetOrCreateEnclaveS3StorageResponse) {};
 }
 
 message GetOrCreateApiKeyRequest {
@@ -65,4 +66,14 @@ message GetCloudInstanceConfigResponse {
 message AwsKey {
   string id = 1;
   string secret = 2;
+}
+
+message GetOrCreateEnclaveS3StorageRequest {
+  string user_id = 1;
+  string enclave_name = 2;
+}
+
+message GetOrCreateEnclaveS3StorageResponse {
+  string bucket_name = 1;
+  string bucket_folder = 2;
 }
