@@ -22,11 +22,11 @@ func getLogsAggregatorObjectAndContainerId(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 ) (*logs_aggregator.LogsAggregator, string, error) {
-	logsAggregatorContainer, err := getLogsAggregatorContainer(ctx, dockerManager)
+	logsAggregatorContainer, found, err := getLogsAggregatorContainer(ctx, dockerManager)
 	if err != nil {
 		return nil, "", stacktrace.Propagate(err, "An error occurred getting all logs aggregator containers")
 	}
-	if logsAggregatorContainer == nil {
+	if !found {
 		return nil, "", nil
 	}
 
@@ -45,8 +45,8 @@ func getLogsAggregatorObjectAndContainerId(
 	return logsAggregatorObject, logsAggregatorContainerID, nil
 }
 
-// Returns nil [Container] object if no logs aggregator container is found
-func getLogsAggregatorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, error) {
+// Returns nil [Container] object and false if no logs aggregator container is found
+func getLogsAggregatorContainer(ctx context.Context, dockerManager *docker_manager.DockerManager) (*types.Container, bool, error) {
 	logsAggregatorContainerSearchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():         label_value_consts.AppIDDockerLabelValue.GetString(),
 		label_key_consts.ContainerTypeDockerLabelKey.GetString(): label_value_consts.LogsAggregatorTypeDockerLabelValue.GetString(),
@@ -54,16 +54,16 @@ func getLogsAggregatorContainer(ctx context.Context, dockerManager *docker_manag
 
 	matchingLogsAggregatorContainers, err := dockerManager.GetContainersByLabels(ctx, logsAggregatorContainerSearchLabels, shouldShowStoppedLogsAggregatorContainers)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred fetching the logs aggregator container using labels: %+v", logsAggregatorContainerSearchLabels)
+		return nil, false, stacktrace.Propagate(err, "An error occurred fetching the logs aggregator container using labels: %+v", logsAggregatorContainerSearchLabels)
 	}
 
 	if len(matchingLogsAggregatorContainers) == 0 {
-		return nil, nil
+		return nil, false, nil
 	}
 	if len(matchingLogsAggregatorContainers) > 1 {
-		return nil, stacktrace.NewError("Found more than one logs aggregator Docker container'; this is a bug in Kurtosis")
+		return nil, false, stacktrace.NewError("Found more than one logs aggregator Docker container'; this is a bug in Kurtosis")
 	}
-	return matchingLogsAggregatorContainers[0], nil
+	return matchingLogsAggregatorContainers[0], true, nil
 }
 
 func getLogsAggregatorObjectFromContainerInfo(

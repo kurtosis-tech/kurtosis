@@ -72,11 +72,12 @@ func CreateEngine(
 	targetNetworkId := engineNetwork.GetId()
 
 	logrus.Infof("Starting the centralized logs components...")
-	removeCentralizedLogsComponentsFunc, err := createCentralizedLogsComponents(
+	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() // Declaring implementation
+	_, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
+		logsAggregatorContainer,
 		dockerManager,
-		objAttrsProvider,
-	)
+		objAttrsProvider)
 	if err != nil {
 		return nil, stacktrace.Propagate(err,
 			"An error occurred attempting to create logging components for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
@@ -84,7 +85,7 @@ func CreateEngine(
 	shouldRemoveCentralizedLogComponents := true
 	defer func() {
 		if shouldRemoveCentralizedLogComponents {
-			removeCentralizedLogsComponentsFunc()
+			removeLogsAggregatorFunc()
 		}
 	}()
 	logrus.Infof("Centralized logs components started.")
@@ -208,28 +209,4 @@ func CreateEngine(
 	shouldRemoveCentralizedLogComponents = false
 	shouldKillEngineContainer = false
 	return result, nil
-}
-
-// ====================================================================================================
-//
-//	Private helper methods
-//
-// ====================================================================================================
-func createCentralizedLogsComponents(
-	ctx context.Context,
-	dockerManager *docker_manager.DockerManager,
-	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
-) (func(), error) {
-	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() // Declaring implementation
-
-	_, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(
-		ctx,
-		logsAggregatorContainer,
-		dockerManager,
-		objAttrsProvider)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator.")
-	}
-
-	return removeLogsAggregatorFunc, err
 }

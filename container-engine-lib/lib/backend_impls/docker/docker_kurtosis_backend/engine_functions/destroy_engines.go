@@ -65,19 +65,10 @@ func DestroyEngines(
 	// This is a small hack so that the log aggregator isn't cleaned while trying to remove stopped engines (eg. kurtosis clean -a)
 	shouldRemoveLogComponents := len(matchingEnginesByContainerId) == 0
 	if shouldRemoveLogComponents {
-		if err := removeCentralizedLogsComponents(ctx, dockerManager); err != nil {
+		if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, dockerManager); err != nil {
 			return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logging components.")
 		}
 	}
 
 	return successfulGuids, erroredGuids, nil
-}
-
-// ====================================================================================================
-//
-//	Private helper methods
-//
-// ====================================================================================================
-func removeCentralizedLogsComponents(ctx context.Context, dockerManager *docker_manager.DockerManager) error {
-	return logs_aggregator_functions.DestroyLogsAggregator(ctx, dockerManager)
 }
