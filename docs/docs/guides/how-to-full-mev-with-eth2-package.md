@@ -80,7 +80,7 @@ Leveraging the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) i
 1. Install Docker & Kurtosis locally.
 2. Configure your network using a `.json` file.
 3. Run a single command to launch your network with `full MEV`.
-4. Visit the website to witness payloads being delivered.
+4. Visit the website to witness payloads being delivered from the Relayer to the `mev-boost` sidecar connected to each validator (for block proposals).
 
 #### Install dependencies
 * [Install Docker](https://docs.docker.com/get-docker/) and ensure the Docker Daemon is running on your machine (e.g. open Docker Desktop). You can quickly check if Docker is running by running: `docker image ls` from your terminal to see all your Docker images.
