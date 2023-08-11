@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -68,10 +69,16 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred getting enclave network by enclave UUID '%v'", enclaveUuid)
 	}
 
+	enclaveLogsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the logs collector for enclave '%v; This is a bug in Kurtosis'", enclaveUuid)
+	}
+
 	networkCidr := enclaveNetwork.GetIpAndMask()
 	alreadyTakenIps := map[string]bool{
-		networkCidr.IP.String():       true,
-		enclaveNetwork.GetGatewayIp(): true,
+		networkCidr.IP.String():                                    true,
+		enclaveNetwork.GetGatewayIp():                              true,
+		enclaveLogsCollector.GetEnclaveNetworkIpAddress().String(): true,
 	}
 
 	ipAddr, err := network_helpers.GetFreeIpAddrFromSubnet(alreadyTakenIps, networkCidr)
@@ -141,6 +148,16 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
+	//The APIContainer will be configured to send the logs to the Fluentbit logs collector server
+	logCollectorAddr, err := enclaveLogsCollector.GetEnclaveNetworkAddressString()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving the log collector address.")
+	}
+	fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
+		logCollectorAddr,
+		logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels(),
+	)
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
 		apiContainerAttrs.GetName().GetString(),
@@ -157,6 +174,8 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 	).WithLabels(
 		labelStrs,
+	).WithLoggingDriver(
+		fluentdLoggingDriverCnfg,
 	).Build()
 
 	if err = backend.dockerManager.FetchImage(ctx, image); err != nil {

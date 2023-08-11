@@ -3,10 +3,10 @@ package docker_kurtosis_backend
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/engine_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions/implementations/fluentbit"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_database_functions/implementations/loki"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/user_services_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -19,8 +19,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
 	"github.com/kurtosis-tech/stacktrace"
@@ -218,11 +218,28 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		)
 	}
 
+	logsCollector, err := backend.GetLogsCollectorForEnclave(ctx, enclaveUuid)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs collector")
+	}
+	if logsCollector == nil || logsCollector.GetStatus() != container_status.ContainerStatus_Running {
+		return nil, nil, stacktrace.NewError("The user services can't be started because no logs collector is running for it to send logs to.")
+	}
+
+	logsCollectorIpAddressInEnclaveNetwork := logsCollector.GetEnclaveNetworkIpAddress()
+	if logsCollectorIpAddressInEnclaveNetwork == nil {
+		return nil, nil, stacktrace.NewError("Expected the logs collector to have an ip address in the enclave network but it does not.")
+	}
+
+	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorIpAddressInEnclaveNetwork, logsCollector.GetPrivateHttpPort().GetNumber())
+
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
 		services,
 		serviceRegistrationsForEnclave,
+		logsCollector,
+		logsCollectorAvailabilityChecker,
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
 		backend.dockerManager)
@@ -375,57 +392,36 @@ func (backend *DockerKurtosisBackend) DestroyUserServices(
 	return successfullyDestroyedServices, failedServices, nil
 }
 
-func (backend *DockerKurtosisBackend) CreateLogsDatabase(
-	ctx context.Context,
-	logsDatabaseHttpPortNumber uint16,
-) (
-	*logs_database.LogsDatabase,
-	error,
-) {
+func (backend *DockerKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() //Declaring the implementation
 
-	//Declaring the implementation
-	logsDatabaseContainer := loki.NewLokiLogDatabaseContainer()
-
-	logsDatabase, err := logs_database_functions.CreateLogsDatabase(
+	logsAggregator, _, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
-		logsDatabaseHttpPortNumber,
-		logsDatabaseContainer,
+		logsAggregatorContainer,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database using the logs database container '%+v' and the HTTP port number '%v'", logsDatabaseContainer, logsDatabaseHttpPortNumber)
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs aggregator using the logs aggregator container '%+v'.", logsAggregatorContainer)
 	}
-	return logsDatabase, nil
+	return logsAggregator, nil
 }
 
-// If nothing is found returns nil
-func (backend *DockerKurtosisBackend) GetLogsDatabase(
-	ctx context.Context,
-) (
-	resultMaybeLogsDatabase *logs_database.LogsDatabase,
-	resultErr error,
-) {
-	maybeLogsDatabase, err := logs_database_functions.GetLogsDatabase(
+func (backend *DockerKurtosisBackend) GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(
 		ctx,
 		backend.dockerManager,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator")
 	}
 
-	return maybeLogsDatabase, nil
+	return maybeLogsAggregator, nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyLogsDatabase(
-	ctx context.Context,
-) error {
-
-	if err := logs_database_functions.DestroyLogsDatabase(
-		ctx,
-		backend.dockerManager,
-	); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
+func (backend *DockerKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
+	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, backend.dockerManager); err != nil {
+		return stacktrace.Propagate(err, "An error occurred destroying the logs aggregator")
 	}
 
 	return nil
@@ -440,15 +436,13 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	*logs_collector.LogsCollector,
 	error,
 ) {
-
-	//TODO we we'd have to replace this part if we ever wanted to send to an external source
-	logsDatabase, err := backend.GetLogsDatabase(ctx)
+	logsAggregator, err := backend.GetLogsAggregator(ctx)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database; the logs collector cannot be run without a logs database")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator; the logs collector cannot be run without a logs aggregator")
 	}
 
-	if logsDatabase == nil || logsDatabase.GetStatus() != container_status.ContainerStatus_Running {
-		return nil, stacktrace.NewError("The logs database is not running; the logs collector cannot be run without a running logs database")
+	if logsAggregator == nil || logsAggregator.GetStatus() != container_status.ContainerStatus_Running {
+		return nil, stacktrace.NewError("The logs aggregator is not running; the logs collector cannot be run without a running logs aggregator")
 	}
 
 	//Declaring the implementation
@@ -460,7 +454,7 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 		logsCollectorTcpPortNumber,
 		logsCollectorHttpPortNumber,
 		logsCollectorContainer,
-		logsDatabase,
+		logsAggregator,
 		backend.dockerManager,
 		backend.objAttrsProvider,
 	)

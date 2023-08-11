@@ -134,6 +134,7 @@ func runMain() error {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
+	// TODO: replace with persistent client so that we can get logs even after enclave is stopped
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 
 	engineServerService := server.NewEngineServerService(
