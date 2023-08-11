@@ -18,7 +18,9 @@ import (
 
 const (
 	// If set to empty, then we'll use whichever default version the launcher provides
-	defaultEngineImageVersionTag = ""
+	defaultEngineImageVersionTag                                           = ""
+	shouldForceLogsComponentsContainersRestartWhenEngineContainerIsStopped = true
+	shouldForceLogsComponentsContainersRestartWhenEngineContainerIsRunning = false
 )
 
 var engineRestartCmd = fmt.Sprintf(
@@ -194,7 +196,6 @@ func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResp
 }
 
 func (guarantor *engineExistenceGuarantor) VisitRunning() error {
-
 	guarantor.postVisitingHostMachineIpAndPort = guarantor.preVisitingMaybeHostMachineIpAndPort
 	runningEngineSemver, cliEngineSemver, err := guarantor.getRunningAndCLIEngineVersions()
 	if err != nil {
