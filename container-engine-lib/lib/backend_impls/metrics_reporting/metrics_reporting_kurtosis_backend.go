@@ -8,8 +8,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
@@ -386,45 +386,16 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateLogsDatabase(
-	ctx context.Context,
-	logsDatabaseHttpPortNumber uint16,
-) (
-	*logs_database.LogsDatabase,
-	error,
-) {
-
-	logsDatabase, err := backend.underlying.CreateLogsDatabase(ctx, logsDatabaseHttpPortNumber)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database with HTTP port number '%v'", logsDatabaseHttpPortNumber)
-	}
-
-	return logsDatabase, nil
+func (backend *MetricsReportingKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	return backend.underlying.CreateLogsAggregator(ctx)
 }
 
-// if nothing is found returns nil
-func (backend *MetricsReportingKurtosisBackend) GetLogsDatabase(
-	ctx context.Context,
-) (
-	resultMaybeLogsDatabase *logs_database.LogsDatabase,
-	resultErr error,
-) {
-	maybeLogsDatabase, err := backend.underlying.GetLogsDatabase(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
-	}
-
-	return maybeLogsDatabase, nil
+func (backend *MetricsReportingKurtosisBackend) GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	return backend.underlying.GetLogsAggregator(ctx)
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyLogsDatabase(
-	ctx context.Context,
-) error {
-	if err := backend.underlying.DestroyLogsDatabase(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
-	}
-
-	return nil
+func (backend *MetricsReportingKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
+	return backend.underlying.DestroyLogsAggregator(ctx)
 }
 
 func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {

@@ -2,6 +2,8 @@ package user_service_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"strings"
 	"sync"
 
@@ -98,6 +100,8 @@ func StartRegisteredUserServices(
 	enclaveUuid enclave.EnclaveUUID,
 	services map[service.ServiceUUID]*service.ServiceConfig,
 	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
+	logsCollector *logs_collector.LogsCollector,
+	logsCollectorAvailabilityChecker logs_collector_functions.LogsCollectorAvailabilityChecker,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	freeIpProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
@@ -169,6 +173,22 @@ func StartRegisteredUserServices(
 		return nil, nil, stacktrace.Propagate(err, "Couldn't get an object attribute provider for enclave '%v'", enclaveUuid)
 	}
 
+	// Check if the logs collector is available
+	// As the container logs are sent asynchronously we'd not know whether they're being received by the collector and there would be no errors if the collector never comes up
+	// The least we can do is check if the collector server is healthy before starting the user service, if in case it gets shut down later we can't do much about it anyway.
+	if err = logsCollectorAvailabilityChecker.WaitForAvailability(); err != nil {
+		return nil, nil,
+			stacktrace.Propagate(err, "An error occurred while waiting to see if the logs collector was available.")
+	}
+
+	logsCollectorEnclaveAddr, err := logsCollector.GetEnclaveNetworkAddressString()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting the private TCP address")
+	}
+
+	// The following docker labels will be added into the logs stream which is necessary for filtering, retrieving persisted logs
+	logsCollectorLabels := logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels()
+
 	successfulStarts, failedStarts, err := runStartServiceOperationsInParallel(
 		ctx,
 		enclaveNetworkID,
@@ -177,6 +197,8 @@ func StartRegisteredUserServices(
 		enclaveObjAttrsProvider,
 		freeIpProviderForEnclave,
 		dockerManager,
+		logsCollectorEnclaveAddr,
+		logsCollectorLabels,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while trying to start services in parallel.")
@@ -376,6 +398,8 @@ func runStartServiceOperationsInParallel(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
+	logsCollectorAddress string,
+	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -400,6 +424,8 @@ func runStartServiceOperationsInParallel(
 			enclaveObjAttrsProvider,
 			freeIpAddrProvider,
 			dockerManager,
+			logsCollectorAddress,
+			logsCollectorLabels,
 		)
 	}
 
@@ -433,6 +459,8 @@ func createStartServiceOperation(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
+	logsCollectorAddress string,
+	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) operation_parallelizer.Operation {
 	id := serviceRegistration.GetName()
 	privateIpAddr := serviceRegistration.GetPrivateIP()
@@ -563,6 +591,16 @@ func createStartServiceOperation(
 			}
 		}
 
+		if logsCollectorAddress == "" {
+			return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
+		}
+
+		// The container will be configured to send the logs to the Fluentbit logs collector server
+		fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
+			logsCollectorAddress,
+			logsCollectorLabels,
+		)
+
 		createAndStartArgsBuilder := docker_manager.NewCreateAndStartContainerArgsBuilder(
 			containerImageName,
 			containerName.GetString(),
@@ -587,6 +625,8 @@ func createStartServiceOperation(
 			true,
 		).WithVolumeMounts(
 			volumeMounts,
+		).WithLoggingDriver(
+			fluentdLoggingDriverCnfg,
 		)
 
 		if entrypointArgs != nil {

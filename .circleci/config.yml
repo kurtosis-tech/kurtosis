@@ -492,7 +492,7 @@ jobs:
       - when:
           condition:
             and:
-                - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
+               - equal: [ "kubernetes", << parameters.cli-cluster-backend >> ]
           <<: *steps_prepare_testing_k8s_k3s
 
       - when:

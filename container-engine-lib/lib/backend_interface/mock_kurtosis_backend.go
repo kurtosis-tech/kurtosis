@@ -16,9 +16,9 @@ import (
 
 	io "io"
 
-	logs_collector "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	logs_aggregator "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 
-	logs_database "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
+	logs_collector "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -197,7 +197,7 @@ func (_c *MockKurtosisBackend_CreateEnclave_Call) Return(_a0 *enclave.Enclave, _
 	return _c
 }
 
-func (_c *MockKurtosisBackend_CreateEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, string, bool) (*enclave.Enclave, error)) *MockKurtosisBackend_CreateEnclave_Call {
+func (_c *MockKurtosisBackend_CreateEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, string) (*enclave.Enclave, error)) *MockKurtosisBackend_CreateEnclave_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -260,6 +260,60 @@ func (_c *MockKurtosisBackend_CreateEngine_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
+// CreateLogsAggregator provides a mock function with given fields: ctx
+func (_m *MockKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *logs_aggregator.LogsAggregator
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*logs_aggregator.LogsAggregator, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *logs_aggregator.LogsAggregator); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*logs_aggregator.LogsAggregator)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockKurtosisBackend_CreateLogsAggregator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLogsAggregator'
+type MockKurtosisBackend_CreateLogsAggregator_Call struct {
+	*mock.Call
+}
+
+// CreateLogsAggregator is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) CreateLogsAggregator(ctx interface{}) *MockKurtosisBackend_CreateLogsAggregator_Call {
+	return &MockKurtosisBackend_CreateLogsAggregator_Call{Call: _e.mock.On("CreateLogsAggregator", ctx)}
+}
+
+func (_c *MockKurtosisBackend_CreateLogsAggregator_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_CreateLogsAggregator_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateLogsAggregator_Call) Return(_a0 *logs_aggregator.LogsAggregator, _a1 error) *MockKurtosisBackend_CreateLogsAggregator_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_CreateLogsAggregator_Call) RunAndReturn(run func(context.Context) (*logs_aggregator.LogsAggregator, error)) *MockKurtosisBackend_CreateLogsAggregator_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // CreateLogsCollectorForEnclave provides a mock function with given fields: ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber
 func (_m *MockKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
 	ret := _m.Called(ctx, enclaveUuid, logsCollectorHttpPortNumber, logsCollectorTcpPortNumber)
@@ -313,61 +367,6 @@ func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) Return(_a0 *lo
 }
 
 func (_c *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, uint16, uint16) (*logs_collector.LogsCollector, error)) *MockKurtosisBackend_CreateLogsCollectorForEnclave_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// CreateLogsDatabase provides a mock function with given fields: ctx, logsDatabaseHttpPortNumber
-func (_m *MockKurtosisBackend) CreateLogsDatabase(ctx context.Context, logsDatabaseHttpPortNumber uint16) (*logs_database.LogsDatabase, error) {
-	ret := _m.Called(ctx, logsDatabaseHttpPortNumber)
-
-	var r0 *logs_database.LogsDatabase
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uint16) (*logs_database.LogsDatabase, error)); ok {
-		return rf(ctx, logsDatabaseHttpPortNumber)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, uint16) *logs_database.LogsDatabase); ok {
-		r0 = rf(ctx, logsDatabaseHttpPortNumber)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*logs_database.LogsDatabase)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, uint16) error); ok {
-		r1 = rf(ctx, logsDatabaseHttpPortNumber)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockKurtosisBackend_CreateLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CreateLogsDatabase'
-type MockKurtosisBackend_CreateLogsDatabase_Call struct {
-	*mock.Call
-}
-
-// CreateLogsDatabase is a helper method to define mock.On call
-//   - ctx context.Context
-//   - logsDatabaseHttpPortNumber uint16
-func (_e *MockKurtosisBackend_Expecter) CreateLogsDatabase(ctx interface{}, logsDatabaseHttpPortNumber interface{}) *MockKurtosisBackend_CreateLogsDatabase_Call {
-	return &MockKurtosisBackend_CreateLogsDatabase_Call{Call: _e.mock.On("CreateLogsDatabase", ctx, logsDatabaseHttpPortNumber)}
-}
-
-func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) Run(run func(ctx context.Context, logsDatabaseHttpPortNumber uint16)) *MockKurtosisBackend_CreateLogsDatabase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(uint16))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) Return(_a0 *logs_database.LogsDatabase, _a1 error) *MockKurtosisBackend_CreateLogsDatabase_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_CreateLogsDatabase_Call) RunAndReturn(run func(context.Context, uint16) (*logs_database.LogsDatabase, error)) *MockKurtosisBackend_CreateLogsDatabase_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -564,6 +563,48 @@ func (_c *MockKurtosisBackend_DestroyEngines_Call) RunAndReturn(run func(context
 	return _c
 }
 
+// DestroyLogsAggregator provides a mock function with given fields: ctx
+func (_m *MockKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
+	ret := _m.Called(ctx)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// MockKurtosisBackend_DestroyLogsAggregator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyLogsAggregator'
+type MockKurtosisBackend_DestroyLogsAggregator_Call struct {
+	*mock.Call
+}
+
+// DestroyLogsAggregator is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) DestroyLogsAggregator(ctx interface{}) *MockKurtosisBackend_DestroyLogsAggregator_Call {
+	return &MockKurtosisBackend_DestroyLogsAggregator_Call{Call: _e.mock.On("DestroyLogsAggregator", ctx)}
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsAggregator_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyLogsAggregator_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsAggregator_Call) Return(_a0 error) *MockKurtosisBackend_DestroyLogsAggregator_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_DestroyLogsAggregator_Call) RunAndReturn(run func(context.Context) error) *MockKurtosisBackend_DestroyLogsAggregator_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // DestroyLogsCollectorForEnclave provides a mock function with given fields: ctx, enclaveUuid
 func (_m *MockKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error {
 	ret := _m.Called(ctx, enclaveUuid)
@@ -603,48 +644,6 @@ func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) Return(_a0 er
 }
 
 func (_c *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID) error) *MockKurtosisBackend_DestroyLogsCollectorForEnclave_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// DestroyLogsDatabase provides a mock function with given fields: ctx
-func (_m *MockKurtosisBackend) DestroyLogsDatabase(ctx context.Context) error {
-	ret := _m.Called(ctx)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context) error); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
-// MockKurtosisBackend_DestroyLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'DestroyLogsDatabase'
-type MockKurtosisBackend_DestroyLogsDatabase_Call struct {
-	*mock.Call
-}
-
-// DestroyLogsDatabase is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockKurtosisBackend_Expecter) DestroyLogsDatabase(ctx interface{}) *MockKurtosisBackend_DestroyLogsDatabase_Call {
-	return &MockKurtosisBackend_DestroyLogsDatabase_Call{Call: _e.mock.On("DestroyLogsDatabase", ctx)}
-}
-
-func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_DestroyLogsDatabase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) Return(_a0 error) *MockKurtosisBackend_DestroyLogsDatabase_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_DestroyLogsDatabase_Call) RunAndReturn(run func(context.Context) error) *MockKurtosisBackend_DestroyLogsDatabase_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1118,6 +1117,60 @@ func (_c *MockKurtosisBackend_GetEngines_Call) RunAndReturn(run func(context.Con
 	return _c
 }
 
+// GetLogsAggregator provides a mock function with given fields: ctx
+func (_m *MockKurtosisBackend) GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	ret := _m.Called(ctx)
+
+	var r0 *logs_aggregator.LogsAggregator
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (*logs_aggregator.LogsAggregator, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) *logs_aggregator.LogsAggregator); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*logs_aggregator.LogsAggregator)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockKurtosisBackend_GetLogsAggregator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLogsAggregator'
+type MockKurtosisBackend_GetLogsAggregator_Call struct {
+	*mock.Call
+}
+
+// GetLogsAggregator is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockKurtosisBackend_Expecter) GetLogsAggregator(ctx interface{}) *MockKurtosisBackend_GetLogsAggregator_Call {
+	return &MockKurtosisBackend_GetLogsAggregator_Call{Call: _e.mock.On("GetLogsAggregator", ctx)}
+}
+
+func (_c *MockKurtosisBackend_GetLogsAggregator_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_GetLogsAggregator_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetLogsAggregator_Call) Return(_a0 *logs_aggregator.LogsAggregator, _a1 error) *MockKurtosisBackend_GetLogsAggregator_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockKurtosisBackend_GetLogsAggregator_Call) RunAndReturn(run func(context.Context) (*logs_aggregator.LogsAggregator, error)) *MockKurtosisBackend_GetLogsAggregator_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLogsCollectorForEnclave provides a mock function with given fields: ctx, enclaveUuid
 func (_m *MockKurtosisBackend) GetLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (*logs_collector.LogsCollector, error) {
 	ret := _m.Called(ctx, enclaveUuid)
@@ -1169,60 +1222,6 @@ func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) Return(_a0 *logs_
 }
 
 func (_c *MockKurtosisBackend_GetLogsCollectorForEnclave_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID) (*logs_collector.LogsCollector, error)) *MockKurtosisBackend_GetLogsCollectorForEnclave_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetLogsDatabase provides a mock function with given fields: ctx
-func (_m *MockKurtosisBackend) GetLogsDatabase(ctx context.Context) (*logs_database.LogsDatabase, error) {
-	ret := _m.Called(ctx)
-
-	var r0 *logs_database.LogsDatabase
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*logs_database.LogsDatabase, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) *logs_database.LogsDatabase); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*logs_database.LogsDatabase)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockKurtosisBackend_GetLogsDatabase_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetLogsDatabase'
-type MockKurtosisBackend_GetLogsDatabase_Call struct {
-	*mock.Call
-}
-
-// GetLogsDatabase is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockKurtosisBackend_Expecter) GetLogsDatabase(ctx interface{}) *MockKurtosisBackend_GetLogsDatabase_Call {
-	return &MockKurtosisBackend_GetLogsDatabase_Call{Call: _e.mock.On("GetLogsDatabase", ctx)}
-}
-
-func (_c *MockKurtosisBackend_GetLogsDatabase_Call) Run(run func(ctx context.Context)) *MockKurtosisBackend_GetLogsDatabase_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_GetLogsDatabase_Call) Return(_a0 *logs_database.LogsDatabase, _a1 error) *MockKurtosisBackend_GetLogsDatabase_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_GetLogsDatabase_Call) RunAndReturn(run func(context.Context) (*logs_database.LogsDatabase, error)) *MockKurtosisBackend_GetLogsDatabase_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -1523,83 +1522,18 @@ func (_c *MockKurtosisBackend_RemoveRegisteredUserServiceProcesses_Call) RunAndR
 	return _c
 }
 
-// RunNetworkingSidecarExecCommands provides a mock function with given fields: ctx, enclaveUuid, networkingSidecarsCommands
-func (_m *MockKurtosisBackend) RunNetworkingSidecarExecCommands(ctx context.Context, enclaveUuid enclave.EnclaveUUID, networkingSidecarsCommands map[service.ServiceUUID][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error) {
-	ret := _m.Called(ctx, enclaveUuid, networkingSidecarsCommands)
-
-	var r0 map[service.ServiceUUID]*exec_result.ExecResult
-	var r1 map[service.ServiceUUID]error
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error)); ok {
-		return rf(ctx, enclaveUuid, networkingSidecarsCommands)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) map[service.ServiceUUID]*exec_result.ExecResult); ok {
-		r0 = rf(ctx, enclaveUuid, networkingSidecarsCommands)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[service.ServiceUUID]*exec_result.ExecResult)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) map[service.ServiceUUID]error); ok {
-		r1 = rf(ctx, enclaveUuid, networkingSidecarsCommands)
-	} else {
-		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(map[service.ServiceUUID]error)
-		}
-	}
-
-	if rf, ok := ret.Get(2).(func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) error); ok {
-		r2 = rf(ctx, enclaveUuid, networkingSidecarsCommands)
-	} else {
-		r2 = ret.Error(2)
-	}
-
-	return r0, r1, r2
-}
-
-// MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RunNetworkingSidecarExecCommands'
-type MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call struct {
-	*mock.Call
-}
-
-// RunNetworkingSidecarExecCommands is a helper method to define mock.On call
-//   - ctx context.Context
-//   - enclaveUuid enclave.EnclaveUUID
-//   - networkingSidecarsCommands map[service.ServiceUUID][]string
-func (_e *MockKurtosisBackend_Expecter) RunNetworkingSidecarExecCommands(ctx interface{}, enclaveUuid interface{}, networkingSidecarsCommands interface{}) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
-	return &MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call{Call: _e.mock.On("RunNetworkingSidecarExecCommands", ctx, enclaveUuid, networkingSidecarsCommands)}
-}
-
-func (_c *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, networkingSidecarsCommands map[service.ServiceUUID][]string)) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(map[service.ServiceUUID][]string))
-	})
-	return _c
-}
-
-func (_c *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call) Return(successfulNetworkingSidecarExecResults map[service.ServiceUUID]*exec_result.ExecResult, erroredUserServiceUuids map[service.ServiceUUID]error, resultErr error) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
-	_c.Call.Return(successfulNetworkingSidecarExecResults, erroredUserServiceUuids, resultErr)
-	return _c
-}
-
-func (_c *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call) RunAndReturn(run func(context.Context, enclave.EnclaveUUID, map[service.ServiceUUID][]string) (map[service.ServiceUUID]*exec_result.ExecResult, map[service.ServiceUUID]error, error)) *MockKurtosisBackend_RunNetworkingSidecarExecCommands_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// RunUserServiceExecCommandWithStreamedOutput provides a mock function with given fields: ctx, enclaveUuid, serviceUuid, command
-func (_m *MockKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, command []string) (chan string, chan *exec_result.ExecResult, error) {
-	ret := _m.Called(ctx, enclaveUuid, serviceUuid, command)
+// RunUserServiceExecCommandWithStreamedOutput provides a mock function with given fields: ctx, enclaveUuid, serviceUuid, cmd
+func (_m *MockKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, cmd []string) (chan string, chan *exec_result.ExecResult, error) {
+	ret := _m.Called(ctx, enclaveUuid, serviceUuid, cmd)
 
 	var r0 chan string
 	var r1 chan *exec_result.ExecResult
 	var r2 error
 	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, []string) (chan string, chan *exec_result.ExecResult, error)); ok {
-		return rf(ctx, enclaveUuid, serviceUuid, command)
+		return rf(ctx, enclaveUuid, serviceUuid, cmd)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, []string) chan string); ok {
-		r0 = rf(ctx, enclaveUuid, serviceUuid, command)
+		r0 = rf(ctx, enclaveUuid, serviceUuid, cmd)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(chan string)
@@ -1607,7 +1541,7 @@ func (_m *MockKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(ctx c
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, []string) chan *exec_result.ExecResult); ok {
-		r1 = rf(ctx, enclaveUuid, serviceUuid, command)
+		r1 = rf(ctx, enclaveUuid, serviceUuid, cmd)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(chan *exec_result.ExecResult)
@@ -1615,7 +1549,7 @@ func (_m *MockKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(ctx c
 	}
 
 	if rf, ok := ret.Get(2).(func(context.Context, enclave.EnclaveUUID, service.ServiceUUID, []string) error); ok {
-		r2 = rf(ctx, enclaveUuid, serviceUuid, command)
+		r2 = rf(ctx, enclaveUuid, serviceUuid, cmd)
 	} else {
 		r2 = ret.Error(2)
 	}
@@ -1632,12 +1566,12 @@ type MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call struct
 //   - ctx context.Context
 //   - enclaveUuid enclave.EnclaveUUID
 //   - serviceUuid service.ServiceUUID
-//   - command []string
-func (_e *MockKurtosisBackend_Expecter) RunUserServiceExecCommandWithStreamedOutput(ctx interface{}, enclaveUuid interface{}, serviceUuid interface{}, command interface{}) *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call {
-	return &MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call{Call: _e.mock.On("RunUserServiceExecCommandWithStreamedOutput", ctx, enclaveUuid, serviceUuid, command)}
+//   - cmd []string
+func (_e *MockKurtosisBackend_Expecter) RunUserServiceExecCommandWithStreamedOutput(ctx interface{}, enclaveUuid interface{}, serviceUuid interface{}, cmd interface{}) *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call {
+	return &MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call{Call: _e.mock.On("RunUserServiceExecCommandWithStreamedOutput", ctx, enclaveUuid, serviceUuid, cmd)}
 }
 
-func (_c *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, command []string)) *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call {
+func (_c *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call) Run(run func(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID, cmd []string)) *MockKurtosisBackend_RunUserServiceExecCommandWithStreamedOutput_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(enclave.EnclaveUUID), args[2].(service.ServiceUUID), args[3].([]string))
 	})
