@@ -6,6 +6,7 @@
 package enclave_data_directory
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"github.com/kurtosis-tech/stacktrace"
 	"path"
@@ -49,13 +50,19 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the files artifact store dirpath '%v' exists.", absoluteDirpath)
 	}
 
+	var dbError error
 	// NOTE: We use a 'once' to initialize the filesArtifactStore because it contains a mutex,
 	// and we don't ever want multiple filesArtifactStore instances in existence
 	once.Do(func() {
-		currentFilesArtifactStore = newFilesArtifactStore(absoluteDirpath, relativeDirpath)
+		db, err := file_artifacts_db.GetOrCreateNewFileArtifactsDb()
+		if err != nil {
+			dbError = stacktrace.Propagate(err, "Failed to get file artifacts db")
+			return
+		}
+		currentFilesArtifactStore = newFilesArtifactStoreFromDb(absoluteDirpath, relativeDirpath, db)
 	})
 
-	return currentFilesArtifactStore, nil
+	return currentFilesArtifactStore, dbError
 }
 
 func (dir EnclaveDataDirectory) GetGitPackageContentProvider() (*git_package_content_provider.GitPackageContentProvider, error) {
