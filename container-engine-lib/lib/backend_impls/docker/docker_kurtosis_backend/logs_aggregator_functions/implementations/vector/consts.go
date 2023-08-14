@@ -21,30 +21,12 @@ const (
 	fluentBitSourceType      = "\"fluent\""
 	fluentBitSourceIpAddress = "0.0.0.0"
 
-	// TODO: change output when persistent volume is implemented
-	stdoutSinkID = "\"stdout\""
-	stdoutTypeId = "\"console\""
-
-	fileSinkId      = "\"file\""
-	fileTypeId      = "\"file\""
-	filepathForLogs = "/tmp/vector.txt"
+	fileSinkId   = "\"file\""
+	fileTypeId   = "\"file\""
+	logsFilepath = "\"/tmp/vector.json\""
 
 	configFileTemplateName = "vectorConfigFileTemplate"
-	//	configFileTemplate     = `
-	//[api]
-	//enabled = true
-	//address = "0.0.0.0:8686"
-	//
-	//[sources.{{ .Source.Id }}]
-	//type = {{ .Source.Type }}
-	//address = "{{ .Source.Address }}"
-	//
-	//[sinks.{{ .Sink.Id }}]
-	//type = {{ .Sink.Type }}
-	//inputs = {{ .Sink.Inputs }}
-	//encoding.codec = "json"
-
-	configFileTemplate = `
+	configFileTemplate     = `
 [api]
 enabled = true
 address = "0.0.0.0:8686"
@@ -57,6 +39,7 @@ address = "{{ .Source.Address }}"
 type = {{ .Sink.Type }}
 inputs = {{ .Sink.Inputs }}
 path = {{ .Sink.Filepath }}
+encoding.codec = "json"
 `
 	////////////////////////--FINISH--VECTOR CONFIGURATION SECTION--/////////////////////////////
 )

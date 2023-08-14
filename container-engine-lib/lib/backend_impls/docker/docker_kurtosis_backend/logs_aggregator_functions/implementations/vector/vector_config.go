@@ -34,7 +34,7 @@ func newDefaultVectorConfig(listeningPortNumber uint16) *VectorConfig {
 			Id:       fileSinkId,
 			Type:     fileTypeId,
 			Inputs:   []string{fluentBitSourceId},
-			Filepath: filepathForLogs,
+			Filepath: logsFilepath,
 		},
 	}
 }
