@@ -91,7 +91,7 @@ If you want to run a non-main branch, tag or commit use the following syntax
 All these will call the `run(plan)` function of the package's `main.star`.
 
 ### Parameterization
-Kurtosis [packages][packages-reference] can accept parameters, allowing their behaviour to change. 
+Kurtosis packages can accept parameters, allowing their behaviour to change. 
 
 To make your package take in arguments, first add extra parameters to your package's `run` function:
 
@@ -123,18 +123,22 @@ Consumers of your package can then pass in these parameters to configure your pa
 
 <Tabs>
 <TabItem value="cli" label="CLI" default>
+
 ```bash
 kurtosis run github.com/YOUR-USER/YOUR-REPO '{"some_parameter": 5, "some_other_parameter": "New value"}'
 ```
 For detailed instructions on passing arguments via the CLI, see the ["Arguments" section of the `kurtosis run` documentation][kurtosis-run-arguments].
+
 </TabItem>
 <TabItem value="starlark" label="Starlark" default>
+
 ```python
 your_package = import_module("github.com/YOUR-USER/YOUR-REPO/main.star")
 
 def run(plan):
     your_package.run(plan, some_parameter = 5, some_other_parameter = "New value")
 ```
+
 </TabItem>
 </Tabs>
 
@@ -144,4 +148,4 @@ def run(plan):
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=package+in%3Aname&type=all&language=&sort=
 [how-do-kurtosis-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
 [plan]: ./plan.md
-[packages-reference]: ./packages.md
+[kurtosis-run-arguments]: ../cli-reference/run.md#arguments
