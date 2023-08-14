@@ -2,6 +2,7 @@ package engine_functions
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
@@ -64,6 +65,10 @@ func StopEngines(
 			"An error occurred stopping engine '%v'",
 			guidStr,
 		)
+	}
+
+	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, dockerManager); err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logging components.")
 	}
 
 	return successfulGuids, erroredGuids, nil
