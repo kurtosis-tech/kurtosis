@@ -6,7 +6,7 @@
 ### Features
 
 * add more endpoints to support the Cloud ([#1077](https://github.com/kurtosis-tech/kurtosis/issues/1077)) ([1d70382](https://github.com/kurtosis-tech/kurtosis/commit/1d70382cdefd5361da10c88c64a6c5be81ae3a57))
-* enable streaming exec output in container engine [stream exec pt. 1] ([#1043](https://github.com/kurtosis-tech/kurtosis/issues/1043)) ([e8f34ef](https://github.com/kurtosis-tech/kurtosis/commit/e8f34ef3d33cf84499ddb07b461ca87319bef0fc))
+* enable streaming exec output in container engine (stream exec pt. 1) ([#1043](https://github.com/kurtosis-tech/kurtosis/issues/1043)) ([e8f34ef](https://github.com/kurtosis-tech/kurtosis/commit/e8f34ef3d33cf84499ddb07b461ca87319bef0fc))
 * implement new logging architecture v0 ([#1071](https://github.com/kurtosis-tech/kurtosis/issues/1071)) ([c66c148](https://github.com/kurtosis-tech/kurtosis/commit/c66c1480c8f8e6fcc8e17488135ff3d1cb456ffa))
 * make enclave namespace and network naming deterministic ([#1100](https://github.com/kurtosis-tech/kurtosis/issues/1100)) ([0d42106](https://github.com/kurtosis-tech/kurtosis/commit/0d42106a015793f7a5d7ede06a54fac58767af7d))
 * Persist file artifacts ([#1084](https://github.com/kurtosis-tech/kurtosis/issues/1084)) ([c7b3590](https://github.com/kurtosis-tech/kurtosis/commit/c7b3590a121ef4a9398efe7a5bc479578a04c43f))
