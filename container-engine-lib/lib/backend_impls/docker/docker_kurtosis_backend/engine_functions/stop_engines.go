@@ -67,6 +67,7 @@ func StopEngines(
 		)
 	}
 
+	// Stop centralized logging components
 	if err := logs_aggregator_functions.DestroyLogsAggregator(ctx, dockerManager); err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred removing the logging components.")
 	}
