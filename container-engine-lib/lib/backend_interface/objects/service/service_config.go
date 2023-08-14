@@ -1,8 +1,8 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 )
 
 // Config options for the underlying container of a service
@@ -20,7 +20,9 @@ type ServiceConfig struct {
 	envVars map[string]string
 
 	// Leave as nil to not do any files artifact expansion
-	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion
+	filesArtifactExpansion *service_directory.FilesArtifactsExpansion
+
+	persistentDirectories *service_directory.PersistentDirectories
 
 	cpuAllocationMillicpus uint64
 
@@ -31,8 +33,6 @@ type ServiceConfig struct {
 	minCpuAllocationMilliCpus uint64
 
 	minMemoryAllocationMegabytes uint64
-
-	subnetwork string
 }
 
 func NewServiceConfig(
@@ -42,13 +42,13 @@ func NewServiceConfig(
 	entrypointArgs []string,
 	cmdArgs []string,
 	envVars map[string]string,
-	filesArtifactExpansion *files_artifacts_expansion.FilesArtifactsExpansion,
+	filesArtifactExpansion *service_directory.FilesArtifactsExpansion,
+	persistentDirectories *service_directory.PersistentDirectories,
 	cpuAllocationMillicpus uint64,
 	memoryAllocationMegabytes uint64,
 	privateIPAddrPlaceholder string,
 	minCpuMilliCores uint64,
 	minMemoryMegaBytes uint64,
-	subnetwork string,
 ) *ServiceConfig {
 	return &ServiceConfig{
 		containerImageName:        containerImageName,
@@ -58,13 +58,13 @@ func NewServiceConfig(
 		cmdArgs:                   cmdArgs,
 		envVars:                   envVars,
 		filesArtifactExpansion:    filesArtifactExpansion,
+		persistentDirectories:     persistentDirectories,
 		cpuAllocationMillicpus:    cpuAllocationMillicpus,
 		memoryAllocationMegabytes: memoryAllocationMegabytes,
 		privateIPAddrPlaceholder:  privateIPAddrPlaceholder,
 		// The minimum resources specification is only available for kubernetes
 		minCpuAllocationMilliCpus:    minCpuMilliCores,
 		minMemoryAllocationMegabytes: minMemoryMegaBytes,
-		subnetwork:                   subnetwork,
 	}
 }
 
@@ -92,8 +92,12 @@ func (serviceConfig *ServiceConfig) GetEnvVars() map[string]string {
 	return serviceConfig.envVars
 }
 
-func (serviceConfig *ServiceConfig) GetFilesArtifactsExpansion() *files_artifacts_expansion.FilesArtifactsExpansion {
+func (serviceConfig *ServiceConfig) GetFilesArtifactsExpansion() *service_directory.FilesArtifactsExpansion {
 	return serviceConfig.filesArtifactExpansion
+}
+
+func (serviceConfig *ServiceConfig) GetPersistentDirectories() *service_directory.PersistentDirectories {
+	return serviceConfig.persistentDirectories
 }
 
 func (serviceConfig *ServiceConfig) GetCPUAllocationMillicpus() uint64 {
@@ -116,8 +120,4 @@ func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
 // only available for Kubernetes
 func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.minMemoryAllocationMegabytes
-}
-
-func (serviceConfig *ServiceConfig) GetSubnetwork() string {
-	return serviceConfig.subnetwork
 }

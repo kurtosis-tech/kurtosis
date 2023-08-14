@@ -10,6 +10,25 @@ service KurtosisCloudBackendServer {
   rpc IsAvailable (google.protobuf.Empty) returns (google.protobuf.Empty) {};
   rpc CreateCloudInstance(CreateCloudInstanceConfigArgs) returns (CreateCloudInstanceConfigResponse) {};
   rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
+  rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
+  rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
+  rpc GetOrCreateEnclaveS3Storage(GetOrCreateEnclaveS3StorageRequest) returns (GetOrCreateEnclaveS3StorageResponse) {};
+}
+
+message GetOrCreateApiKeyRequest {
+  string access_token = 1;
+}
+
+message GetOrCreateApiKeyResponse {
+  string api_key = 1;
+}
+
+message GetOrCreateInstanceRequest {
+  string api_key = 1;
+}
+
+message GetOrCreateInstanceResponse {
+  string instance_id = 1;
 }
 
 message CreateCloudInstanceConfigArgs {
@@ -39,4 +58,23 @@ message GetCloudInstanceConfigResponse {
   string context_config = 3;
   LaunchResult launch_result = 4;
   string status = 5;
+  string created = 6;
+  string updated = 7;
+  optional AwsKey user_key = 8; // TODO: remove the optional once the cloud BE/FE are upgraded and released
+}
+
+message AwsKey {
+  string id = 1;
+  string secret = 2;
+}
+
+message GetOrCreateEnclaveS3StorageRequest {
+  string api_key = 1;
+  string user_id = 2;
+  string enclave_name = 3;
+}
+
+message GetOrCreateEnclaveS3StorageResponse {
+  string bucket_name = 1;
+  string bucket_folder = 2;
 }

@@ -15,9 +15,8 @@ import (
 )
 
 const (
-	defaultDryRun         = false
-	isPartitioningEnabled = false
-	defaultParallelism    = 1
+	defaultDryRun      = false
+	defaultParallelism = 1
 
 	validPackageWithInputTestName = "upload-file-package"
 	validPackageWithInputRelPath  = "../../../starlark/upload-file-package"
@@ -38,7 +37,7 @@ func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, validPackageWithInputTestName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, validPackageWithInputTestName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() { _ = destroyEnclaveFunc() }()
 

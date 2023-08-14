@@ -1,6 +1,8 @@
 package object_attributes_provider
 
 import (
+	"crypto/md5"
+	"encoding/hex"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_annotation_value"
@@ -13,17 +15,19 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/stacktrace"
 	"time"
 )
 
 const (
-	namespacePrefix = "kurtosis-enclave"
+	namespacePrefix = "kt"
+
+	persistentServiceDirectoryNameFragment = "service-persistent-directory"
 )
 
 type KubernetesEnclaveObjectAttributesProvider interface {
-	ForEnclaveNamespace(isPartitioningEnabled bool, creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error)
+	ForEnclaveNamespace(creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error)
 	ForApiContainer() KubernetesApiContainerObjectAttributesProvider
 	ForUserServiceService(
 		uuid service.ServiceUUID,
@@ -33,6 +37,10 @@ type KubernetesEnclaveObjectAttributesProvider interface {
 		uuid service.ServiceUUID,
 		id service.ServiceName,
 		privatePorts map[string]*port_spec.PortSpec,
+	) (KubernetesObjectAttributes, error)
+	ForSinglePersistentDirectoryVolume(
+		serviceUUID service.ServiceUUID,
+		persistentKey service_directory.DirectoryPersistentKey,
 	) (KubernetesObjectAttributes, error)
 }
 
@@ -54,14 +62,11 @@ func GetKubernetesEnclaveObjectAttributesProvider(enclaveId enclave.EnclaveUUID)
 	return newKubernetesEnclaveObjectAttributesProviderImpl(enclaveId)
 }
 
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(isPartitioningEnabled bool, creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error) {
-	namespaceUuid, err := uuid_generator.GenerateUUIDString()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to generate UUID string for namespace name for enclave '%v'", provider.enclaveId)
-	}
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespace(creationTime time.Time, enclaveName string) (KubernetesObjectAttributes, error) {
+	// TODO: might need to revert this if we have multiple users on the same cluster (what if two people create enclaves with name test?)
 	name, err := getCompositeKubernetesObjectName([]string{
 		namespacePrefix,
-		namespaceUuid,
+		enclaveName,
 	})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a name object from string '%v'", provider.enclaveId)
@@ -74,13 +79,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to get labels for enclave namespace using ID '%v'", provider.enclaveId)
 	}
-
-	isPartitioningEnabledLabelValue := label_value_consts.NetworkPartitioningDisabledKubernetesLabelValue
-	if isPartitioningEnabled {
-		isPartitioningEnabledLabelValue = label_value_consts.NetworkPartitioningEnabledKubernetesLabelValue
-	}
-
-	labels[label_key_consts.IsNetworkPartitioningEnabledKubernetesLabelKey] = isPartitioningEnabledLabelValue
 
 	creationTimeStr := creationTime.Format(time.RFC3339)
 
@@ -116,12 +114,6 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForEnclaveNamespa
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForApiContainer() KubernetesApiContainerObjectAttributesProvider {
 	enclaveId := enclave.EnclaveUUID(provider.enclaveId)
 	return GetKubernetesApiContainerObjectAttributesProvider(enclaveId)
-}
-
-func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForNetworkingSidecarContainer(
-	serviceUUIDSidecarAttachedTo service.ServiceUUID,
-) (KubernetesObjectAttributes, error) {
-	panic("implement me")
 }
 
 func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServiceService(
@@ -193,6 +185,38 @@ func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForUserServicePod
 	return objectAttributes, nil
 }
 
+func (provider *kubernetesEnclaveObjectAttributesProviderImpl) ForSinglePersistentDirectoryVolume(serviceUUID service.ServiceUUID, persistentKey service_directory.DirectoryPersistentKey) (KubernetesObjectAttributes, error) {
+	hasher := md5.New()
+	hasher.Write([]byte(provider.enclaveId))
+	hasher.Write([]byte(serviceUUID))
+	hasher.Write([]byte(persistentKey))
+	persistentKeyHash := hex.EncodeToString(hasher.Sum(nil))
+
+	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(string(persistentKey), persistentKeyHash)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"Failed to get labels for persistent volume with key '%s' and UUID '%s'",
+			persistentKey,
+			persistentKeyHash,
+		)
+	}
+
+	//No userServiceService annotations.
+	annotations := map[*kubernetes_annotation_key.KubernetesAnnotationKey]*kubernetes_annotation_value.KubernetesAnnotationValue{}
+
+	name, err := getKubernetesPersistentDirectoryName(persistentKeyHash)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create service persistent directory name for hash: '%s'", persistentKeyHash)
+	}
+	objectAttributes, err := newKubernetesObjectAttributesImpl(name, labels, annotations)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create service persistent directory object attributes")
+	}
+
+	return objectAttributes, nil
+}
+
 // ====================================================================================================
 //
 //	Private Helper Functions
@@ -204,6 +228,17 @@ func getKubernetesObjectName(
 	name, err := getCompositeKubernetesObjectName(
 		[]string{
 			string(serviceName),
+		})
+	return name, err
+}
+
+func getKubernetesPersistentDirectoryName(
+	persistentServiceDirectoryName string,
+) (*kubernetes_object_name.KubernetesObjectName, error) {
+	name, err := getCompositeKubernetesObjectName(
+		[]string{
+			persistentServiceDirectoryNameFragment,
+			persistentServiceDirectoryName,
 		})
 	return name, err
 }

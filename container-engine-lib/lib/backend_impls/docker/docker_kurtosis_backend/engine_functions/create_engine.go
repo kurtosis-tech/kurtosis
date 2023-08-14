@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_aggregator_functions/implementations/vector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -62,6 +64,31 @@ func CreateEngine(
 			consts.EngineTransportProtocol.String(),
 		)
 	}
+
+	engineNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting the engine network")
+	}
+	targetNetworkId := engineNetwork.GetId()
+
+	logrus.Infof("Starting the centralized logs components...")
+	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() // Declaring implementation
+	_, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(
+		ctx,
+		logsAggregatorContainer,
+		dockerManager,
+		objAttrsProvider)
+	if err != nil {
+		return nil, stacktrace.Propagate(err,
+			"An error occurred attempting to create logging components for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
+	}
+	shouldRemoveCentralizedLogComponents := true
+	defer func() {
+		if shouldRemoveCentralizedLogComponents {
+			removeLogsAggregatorFunc()
+		}
+	}()
+	logrus.Infof("Centralized logs components started.")
 
 	httpPortSpec, err := port_spec.NewPortSpec(uint16(frontendPortSpec), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
@@ -123,12 +150,6 @@ func CreateEngine(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	engineNetwork, err := shared_helpers.GetEngineAndLogsComponentsNetwork(ctx, dockerManager)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the engine network")
-	}
-	targetNetworkId := engineNetwork.GetId()
-
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImageAndTag,
 		engineAttrs.GetName().GetString(),
@@ -185,6 +206,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
+	shouldRemoveCentralizedLogComponents = false
 	shouldKillEngineContainer = false
 	return result, nil
 }

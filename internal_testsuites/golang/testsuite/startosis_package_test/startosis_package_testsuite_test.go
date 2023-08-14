@@ -15,7 +15,6 @@ import (
 
 const (
 	name                   = "startosis-package"
-	isPartitioningEnabled  = false
 	emptyRunParams         = "{}"
 	defaultDryRun          = false
 	defaultParallelism     = 4
@@ -40,7 +39,7 @@ func TestStartosisPackageTestSuite(t *testing.T) {
 func (suite *StartosisPackageTestSuite) SetupTest() {
 	ctx := context.Background()
 	t := suite.T()
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	suite.enclaveCtx = enclaveCtx
 	suite.destroyEnclaveFunc = destroyEnclaveFunc

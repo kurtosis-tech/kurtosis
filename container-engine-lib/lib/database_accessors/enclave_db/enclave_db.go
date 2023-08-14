@@ -3,12 +3,15 @@ package enclave_db
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	bolt "go.etcd.io/bbolt"
+	"os"
 	"sync"
+	"time"
 )
 
 const (
 	readWritePermissionToDatabase = 0666
 	enclaveDbFilePath             = "enclave.db"
+	timeOut                       = 10 * time.Second
 )
 
 var (
@@ -24,7 +27,7 @@ type EnclaveDB struct {
 func GetOrCreateEnclaveDatabase() (*EnclaveDB, error) {
 	openDatabaseOnce.Do(func() {
 		databaseInstance, databaseOpenError = bolt.Open(enclaveDbFilePath, readWritePermissionToDatabase, &bolt.Options{
-			Timeout:         0,
+			Timeout:         timeOut, //to fail if any other process is locking the file
 			NoGrowSync:      false,
 			NoFreelistSync:  false,
 			FreelistType:    "",
@@ -42,4 +45,17 @@ func GetOrCreateEnclaveDatabase() (*EnclaveDB, error) {
 	}
 
 	return &EnclaveDB{databaseInstance}, nil
+}
+
+func EraseDatabase() error {
+	path := databaseInstance.Path()
+	err := databaseInstance.Close()
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to close database during erase process")
+	}
+	err = os.Remove(path)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to erase database file during erase process '%v'", path)
+	}
+	return nil
 }

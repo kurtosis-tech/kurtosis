@@ -7,6 +7,7 @@ package enclave_data_directory
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/name_generator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -27,20 +28,18 @@ const (
 type FilesArtifactStore struct {
 	fileCache                       *FileCache
 	mutex                           *sync.RWMutex
-	artifactNameToArtifactUuid      map[string]FilesArtifactUUID
-	shortenedUuidToFullUuid         map[string][]FilesArtifactUUID
+	fileArtifactDb                  *file_artifacts_db.FileArtifactPersisted
 	maxRetriesToGetFileArtifactName int
 	generateNatureThemeName         func() string
 }
 
-func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot string) *FilesArtifactStore {
+func newFilesArtifactStoreFromDb(absoluteDirpath string, dirpathRelativeToDataDirRoot string, db *file_artifacts_db.FileArtifactPersisted) *FilesArtifactStore {
 	return &FilesArtifactStore{
 		fileCache:                       newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
 		mutex:                           &sync.RWMutex{},
-		artifactNameToArtifactUuid:      make(map[string]FilesArtifactUUID),
-		shortenedUuidToFullUuid:         make(map[string][]FilesArtifactUUID),
 		maxRetriesToGetFileArtifactName: maxFileArtifactNameRetriesDefault,
 		generateNatureThemeName:         name_generator.GenerateNatureThemeNameForFileArtifacts,
+		fileArtifactDb:                  db,
 	}
 }
 
@@ -48,122 +47,151 @@ func newFilesArtifactStore(absoluteDirpath string, dirpathRelativeToDataDirRoot 
 func NewFilesArtifactStoreForTesting(
 	absoluteDirpath string,
 	dirpathRelativeToDataDirRoot string,
-	artifactNameToArtifactUuid map[string]FilesArtifactUUID,
-	shortenedUuidToFullUuid map[string][]FilesArtifactUUID,
+	fileArtifactDb *file_artifacts_db.FileArtifactPersisted,
 	maxRetry int,
 	nameGeneratorMock func() string,
 ) *FilesArtifactStore {
 	return &FilesArtifactStore{
 		fileCache:                       newFileCache(absoluteDirpath, dirpathRelativeToDataDirRoot),
 		mutex:                           &sync.RWMutex{},
-		artifactNameToArtifactUuid:      artifactNameToArtifactUuid,
-		shortenedUuidToFullUuid:         shortenedUuidToFullUuid,
+		fileArtifactDb:                  fileArtifactDb,
 		maxRetriesToGetFileArtifactName: maxRetry,
 		generateNatureThemeName:         nameGeneratorMock,
 	}
 }
 
 // StoreFile Saves file to disk.
-func (store FilesArtifactStore) StoreFile(reader io.Reader, artifactName string) (FilesArtifactUUID, error) {
+func (store FilesArtifactStore) StoreFile(reader io.Reader, contentMd5 []byte, artifactName string) (FilesArtifactUUID, error) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
-	if _, found := store.artifactNameToArtifactUuid[artifactName]; found {
+
+	filesArtifactUuid, err := NewFilesArtifactUUID()
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred creating new files artifact UUID")
+	}
+
+	if _, found := store.fileArtifactDb.GetArtifactUuid(artifactName); found {
 		return "", stacktrace.NewError("Files artifact name '%v' has already been used", artifactName)
 	}
-	filesArtifactUuid, err := store.storeFilesToArtifactUuidUnlocked(reader)
+
+	err = store.storeFilesToArtifactUuidUnlocked(artifactName, filesArtifactUuid, reader, contentMd5)
 	if err != nil {
-		return "", err
+		return "", stacktrace.Propagate(err, "An error occurred creating new files artifact UUID")
 	}
-	store.artifactNameToArtifactUuid[artifactName] = filesArtifactUuid
+	if err := store.fileArtifactDb.Persist(); err != nil {
+		return "", stacktrace.Propagate(err, "Failed persisting data on file artifacts db")
+	}
 	return filesArtifactUuid, nil
 }
 
+func (store FilesArtifactStore) UpdateFile(filesArtifactUuid FilesArtifactUUID, reader io.Reader, contentMd5 []byte) error {
+	store.mutex.Lock()
+	defer store.mutex.Unlock()
+
+	artifactName, err := store.removeFileUnlocked(filesArtifactUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "Error removing the files artifact '%s' prior to persisting its new content", filesArtifactUuid)
+	}
+	if err = store.storeFilesToArtifactUuidUnlocked(artifactName, filesArtifactUuid, reader, contentMd5); err != nil {
+		return stacktrace.Propagate(err, "Error persisting updated content for files artifact '%s'", filesArtifactUuid)
+	}
+	return nil
+}
+
 // GetFile Get the file by uuid, then by shortened uuid and finally by name
-func (store FilesArtifactStore) GetFile(artifactIdentifier string) (*EnclaveDataDirFile, error) {
+func (store FilesArtifactStore) GetFile(artifactIdentifier string) (FilesArtifactUUID, *EnclaveDataDirFile, []byte, bool, error) {
 	store.mutex.RLock()
 	defer store.mutex.RUnlock()
 
 	filesArtifactUuid := FilesArtifactUUID(artifactIdentifier)
-	file, err := store.getFileUnlocked(filesArtifactUuid)
+	fileArtifactUuid, file, contentMd5, found, err := store.getFileUnlocked(filesArtifactUuid)
 	if err == nil {
-		return file, nil
+		return fileArtifactUuid, file, contentMd5, found, nil
 	}
 
-	filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactIdentifier]
+	filesArtifactUuids, found := store.fileArtifactDb.GetFullUuid(artifactIdentifier)
 	if found {
 		if len(filesArtifactUuids) > maxAllowedMatchesAgainstShortenedUuid {
-			return nil, stacktrace.NewError("Tried using the shortened uuid '%v' to get file but found multiple matches '%v'. Use a complete uuid to be specific about what to get.", artifactIdentifier, filesArtifactUuids)
+			return "", nil, nil, false, stacktrace.NewError("Tried using the shortened uuid '%v' to get file but found multiple matches '%v'. Use a complete uuid to be specific about what to get.", artifactIdentifier, filesArtifactUuids)
 		}
-		filesArtifactUuid := filesArtifactUuids[0]
+		filesArtifactUuid = FilesArtifactUUID(filesArtifactUuids[0])
 		return store.getFileUnlocked(filesArtifactUuid)
 	}
 
-	filesArtifactUuid, found = store.artifactNameToArtifactUuid[artifactIdentifier]
+	filesArtifactUuidGet, found := store.fileArtifactDb.GetArtifactUuid(artifactIdentifier)
 	if found {
-		return store.getFileUnlocked(filesArtifactUuid)
+		return store.getFileUnlocked(FilesArtifactUUID(filesArtifactUuidGet))
 	}
 
-	return nil, stacktrace.NewError("Couldn't find file for identifier '%v' tried, tried looking up UUID, shortened UUID and by name", artifactIdentifier)
+	if err := store.fileArtifactDb.Persist(); err != nil {
+		return "", nil, nil, false, stacktrace.Propagate(err, "Failed persisting data on file artifacts db")
+	}
+	return "", nil, nil, false, nil
 }
 
 // RemoveFile Remove the file by uuid, then by shortened uuid and then by name
-func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) error {
+func (store FilesArtifactStore) RemoveFile(artifactIdentifier string) (deferedErr error) {
 	store.mutex.Lock()
 	defer store.mutex.Unlock()
 	var filesArtifactUuid FilesArtifactUUID
 
 	filesArtifactUuid = FilesArtifactUUID(artifactIdentifier)
-	err := store.removeFileUnlocked(filesArtifactUuid)
+	_, err := store.removeFileUnlocked(filesArtifactUuid)
 	if err == nil {
 		return nil
 	}
 
-	filesArtifactUuids, found := store.shortenedUuidToFullUuid[artifactIdentifier]
+	filesArtifactUuids, found := store.fileArtifactDb.GetFullUuid(artifactIdentifier)
 	if found {
 		if len(filesArtifactUuids) > maxAllowedMatchesAgainstShortenedUuid {
 			return stacktrace.NewError("Tried using the shortened uuid '%v' to remove file but found multiple matches '%v'. Use a complete uuid to be specific about what to delete.", artifactIdentifier, filesArtifactUuids)
 		}
-		filesArtifactUuid = filesArtifactUuids[0]
-		return store.removeFileUnlocked(filesArtifactUuid)
+		filesArtifactUuid = FilesArtifactUUID(filesArtifactUuids[0])
+		_, err = store.removeFileUnlocked(filesArtifactUuid)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing files artifact with UUID '%s'", filesArtifactUuid)
+		}
+		return nil
 	}
 
-	filesArtifactUuid, found = store.artifactNameToArtifactUuid[artifactIdentifier]
+	filesArtifactUuidGet, found := store.fileArtifactDb.GetArtifactUuid(artifactIdentifier)
 	if found {
-		return store.removeFileUnlocked(filesArtifactUuid)
+		_, err = store.removeFileUnlocked(FilesArtifactUUID(filesArtifactUuidGet))
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred removing files artifact with UUID '%s'", filesArtifactUuid)
+		}
+		return nil
 	}
 
-	return stacktrace.NewError("Couldn't find file for identifier '%v' tried, tried looking up UUID, shortened UUID and by name", artifactIdentifier)
+	if err := store.fileArtifactDb.Persist(); err != nil {
+		return stacktrace.Propagate(err, "Failed persisting data on file artifacts db")
+	}
+	return stacktrace.NewError("Couldn't find file for identifier '%v', tried looking up UUID, shortened UUID and by name", artifactIdentifier)
 }
 
 func (store FilesArtifactStore) ListFiles() map[string]bool {
 	store.mutex.RLock()
 	defer store.mutex.RUnlock()
-	artifactNameSet := make(map[string]bool)
-	for artifactName := range store.artifactNameToArtifactUuid {
-		artifactNameSet[artifactName] = true
-	}
-	return artifactNameSet
+	return store.fileArtifactDb.ListFiles()
 }
 
 func (store FilesArtifactStore) GetFileNamesAndUuids() []FileNameAndUuid {
 	store.mutex.RLock()
 	defer store.mutex.RUnlock()
 	var nameAndUuids []FileNameAndUuid
-	for artifactName, artifactUuid := range store.artifactNameToArtifactUuid {
+	for artifactName, artifactUuid := range store.fileArtifactDb.GetArtifactUuidMap() {
 		nameAndUuid := FileNameAndUuid{
-			uuid: artifactUuid,
+			uuid: FilesArtifactUUID(artifactUuid),
 			name: artifactName,
 		}
 		nameAndUuids = append(nameAndUuids, nameAndUuid)
 	}
 	return nameAndUuids
-
 }
 
 // CheckIfArtifactNameExists - It checks whether the FileArtifact with a name exists or not
 func (store FilesArtifactStore) CheckIfArtifactNameExists(artifactName string) bool {
-
-	_, found := store.artifactNameToArtifactUuid[artifactName]
+	_, found := store.fileArtifactDb.GetArtifactUuid(artifactName)
 	return found
 }
 
@@ -176,7 +204,7 @@ func (store FilesArtifactStore) GenerateUniqueNameForFileArtifact() string {
 	// try to find unique nature theme random generator
 	for i := 0; i <= store.maxRetriesToGetFileArtifactName; i++ {
 		maybeUniqueName = store.generateNatureThemeName()
-		_, found := store.artifactNameToArtifactUuid[maybeUniqueName]
+		_, found := store.fileArtifactDb.GetArtifactUuid(maybeUniqueName)
 		if !found {
 			return maybeUniqueName
 		}
@@ -186,11 +214,11 @@ func (store FilesArtifactStore) GenerateUniqueNameForFileArtifact() string {
 	additionalSuffix := 1
 	maybeUniqueNameWithRandomNumber := fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
 
-	_, found := store.artifactNameToArtifactUuid[maybeUniqueNameWithRandomNumber]
+	_, found := store.fileArtifactDb.GetArtifactUuid(maybeUniqueNameWithRandomNumber)
 	for found {
 		additionalSuffix = additionalSuffix + 1
 		maybeUniqueNameWithRandomNumber = fmt.Sprintf("%v-%v", maybeUniqueName, additionalSuffix)
-		_, found = store.artifactNameToArtifactUuid[maybeUniqueNameWithRandomNumber]
+		_, found = store.fileArtifactDb.GetArtifactUuid(maybeUniqueNameWithRandomNumber)
 	}
 
 	logrus.Warnf("Cannot find unique name generator, therefore using a name with a number %v", maybeUniqueNameWithRandomNumber)
@@ -198,79 +226,75 @@ func (store FilesArtifactStore) GenerateUniqueNameForFileArtifact() string {
 }
 
 // storeFilesToArtifactUuidUnlocked this is an non thread method to be used from thread safe contexts
-func (store FilesArtifactStore) storeFilesToArtifactUuidUnlocked(reader io.Reader) (FilesArtifactUUID, error) {
-	filesArtifactUuid, err := NewFilesArtifactUUID()
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred creating new files artifact UUID")
-	}
+func (store FilesArtifactStore) storeFilesToArtifactUuidUnlocked(filesArtifactName string, filesArtifactUuid FilesArtifactUUID, reader io.Reader, contentMd5 []byte) error {
 
 	filename := strings.Join(
 		[]string{string(filesArtifactUuid), artifactExtension},
 		".",
 	)
-	_, err = store.fileCache.AddFile(filename, reader)
+	_, err := store.fileCache.AddFile(filename, reader)
 	if err != nil {
-		return "", stacktrace.Propagate(
-			err,
-			"Could not store file '%s' to the file cache",
-			filename,
-		)
+		return stacktrace.Propagate(err, "Could not store file '%s' to the file cache", filename)
 	}
-	shortenedUuidSlice := store.shortenedUuidToFullUuid[uuid_generator.ShortenedUUIDString(string(filesArtifactUuid))]
-	store.shortenedUuidToFullUuid[uuid_generator.ShortenedUUIDString(string(filesArtifactUuid))] = append(shortenedUuidSlice, filesArtifactUuid)
-	return filesArtifactUuid, nil
+	shortenedUuidSlice, _ := store.fileArtifactDb.GetFullUuid(uuid_generator.ShortenedUUIDString(string(filesArtifactUuid)))
+	store.fileArtifactDb.SetFullUuid(uuid_generator.ShortenedUUIDString(string(filesArtifactUuid)), append(shortenedUuidSlice, string(filesArtifactUuid)))
+	store.fileArtifactDb.SetContentMd5(string(filesArtifactUuid), contentMd5)
+	store.fileArtifactDb.SetArtifactUuid(filesArtifactName, string(filesArtifactUuid))
+	return nil
 }
 
 // getFileUnlocked this is not thread safe, must be used from a thread safe context
-func (store FilesArtifactStore) getFileUnlocked(filesArtifactUuid FilesArtifactUUID) (*EnclaveDataDirFile, error) {
+func (store FilesArtifactStore) getFileUnlocked(filesArtifactUuid FilesArtifactUUID) (FilesArtifactUUID, *EnclaveDataDirFile, []byte, bool, error) {
+	fileContentHash, found := store.fileArtifactDb.GetContentMd5(string(filesArtifactUuid))
+	if !found {
+		return "", nil, nil, false, stacktrace.NewError("Could not retrieve file with ID '%s' as it doesn't exist in the store", filesArtifactUuid)
+	}
 	filename := strings.Join(
 		[]string{string(filesArtifactUuid), artifactExtension},
 		".",
 	)
 	enclaveDataDirFile, err := store.fileCache.GetFile(filename)
 	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"Could not retrieve file with filename '%s' from the file cache",
-			filename,
-		)
+		return "", nil, nil, false, stacktrace.Propagate(err, "Could not retrieve file with filename '%s' from the file cache", filename)
 	}
-	return enclaveDataDirFile, nil
-
+	return filesArtifactUuid, enclaveDataDirFile, fileContentHash, true, nil
 }
 
 // removeFileUnlocked this is not thread safe, must be used from a thread safe context
-func (store FilesArtifactStore) removeFileUnlocked(filesArtifactUuid FilesArtifactUUID) error {
+func (store FilesArtifactStore) removeFileUnlocked(filesArtifactUuid FilesArtifactUUID) (string, error) {
 	filename := strings.Join(
 		[]string{string(filesArtifactUuid), artifactExtension},
 		".",
 	)
 
+	var artifactName string
 	if err := store.fileCache.RemoveFile(filename); err != nil {
-		return stacktrace.Propagate(err, "There was an error in removing '%v' from the file store", filename)
+		return "", stacktrace.Propagate(err, "There was an error in removing '%v' from the file store", filename)
 	}
-	for name, artifactUuid := range store.artifactNameToArtifactUuid {
-		if artifactUuid == filesArtifactUuid {
-			delete(store.artifactNameToArtifactUuid, name)
+	for name, artifactUuid := range store.fileArtifactDb.GetArtifactUuidMap() {
+		if artifactUuid == string(filesArtifactUuid) {
+			artifactName = name
+			store.fileArtifactDb.DeleteArtifactUuid(name)
+			store.fileArtifactDb.DeleteContentMd5(artifactUuid)
 		}
 	}
 	shortenedUuid := uuid_generator.ShortenedUUIDString(string(filesArtifactUuid))
-	artifactUuids, found := store.shortenedUuidToFullUuid[shortenedUuid]
+	artifactUuids, found := store.fileArtifactDb.GetFullUuid(shortenedUuid)
 	if found {
 		var targetArtifactIdx int
 		for index, artifactUuid := range artifactUuids {
-			if artifactUuid == filesArtifactUuid {
+			if artifactUuid == string(filesArtifactUuid) {
 				targetArtifactIdx = index
 			}
 		}
 		// if there's only one matching uuid we delete the shortened uuid
 		if len(artifactUuids) == 1 {
-			delete(store.shortenedUuidToFullUuid, shortenedUuid)
-			return nil
+			store.fileArtifactDb.DeleteFullUuid(shortenedUuid)
+			return artifactName, nil
 		}
 		// otherwise we just delete the target artifact uuid
-		store.shortenedUuidToFullUuid[shortenedUuid] = append(artifactUuids[0:targetArtifactIdx], artifactUuids[targetArtifactIdx+1:]...)
+		store.fileArtifactDb.DeleteFullUuidIndex(shortenedUuid, targetArtifactIdx)
 	}
 
-	return nil
+	return artifactName, nil
 }

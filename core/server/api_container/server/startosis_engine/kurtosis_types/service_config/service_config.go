@@ -2,15 +2,16 @@ package service_config
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/files_artifacts_expansion"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/files_artifacts_expander/args"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
 	starlark_port_spec "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -30,7 +31,6 @@ const (
 	CmdAttr                         = "cmd"
 	EnvVarsAttr                     = "env_vars"
 	PrivateIpAddressPlaceholderAttr = "private_ip_address_placeholder"
-	SubnetworkAttr                  = "subnetwork"
 	CpuAllocationAttr               = "cpu_allocation"
 	MemoryAllocationAttr            = "memory_allocation"
 	ReadyConditionsAttr             = "ready_conditions"
@@ -39,7 +39,6 @@ const (
 	MaxCpuMilliCoresAttr            = "max_cpu"
 	MaxMemoryMegaBytesAttr          = "max_memory"
 
-	DefaultSubnetwork               = "default"
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	filesArtifactExpansionDirsParentDirpath string = "/files-artifacts"
@@ -105,14 +104,6 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.NonEmptyString(value, PrivateIpAddressPlaceholderAttr)
-					},
-				},
-				{
-					Name:              SubnetworkAttr,
-					IsOptional:        true,
-					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
-					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, SubnetworkAttr)
 					},
 				},
 				{
@@ -203,7 +194,7 @@ func (config *ServiceConfig) Copy() (builtin_argument.KurtosisValueType, error) 
 	}, nil
 }
 
-func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*files_artifacts_expansion.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
+func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]string, serviceNetwork service_network.ServiceNetwork) (*service_directory.FilesArtifactsExpansion, *startosis_errors.InterpretationError) {
 	filesArtifactsExpansions := []args.FilesArtifactExpansion{}
 	serviceDirpathsToArtifactIdentifiers := map[string]string{}
 	expanderDirpathToUserServiceDirpathMap := map[string]string{}
@@ -242,12 +233,20 @@ func ConvertFilesArtifactsMounts(filesArtifactsMountDirpathsMap map[string]strin
 		apiContainerInfo.GetVersion(),
 	)
 
-	return &files_artifacts_expansion.FilesArtifactsExpansion{
+	return &service_directory.FilesArtifactsExpansion{
 		ExpanderImage:                        expanderImageAndTag,
 		ExpanderEnvVars:                      expanderEnvVars,
 		ServiceDirpathsToArtifactIdentifiers: serviceDirpathsToArtifactIdentifiers,
 		ExpanderDirpathsToServiceDirpaths:    expanderDirpathToUserServiceDirpathMap,
 	}, nil
+}
+
+func convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap map[string]string) *service_directory.PersistentDirectories {
+	persistentDirectoriesMap := map[string]service_directory.DirectoryPersistentKey{}
+	for dirPath, persistentKeyStr := range persistentDirectoriesDirpathsMap {
+		persistentDirectoriesMap[dirPath] = service_directory.DirectoryPersistentKey(persistentKeyStr)
+	}
+	return service_directory.NewPersistentDirectories(persistentDirectoriesMap)
 }
 
 func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.ServiceNetwork) (*service.ServiceConfig, *startosis_errors.InterpretationError) {
@@ -258,7 +257,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 	}
 	if !found {
 		return nil, startosis_errors.NewInterpretationError("Required attribute '%s' could not be found on type '%s'",
-			SubnetworkAttr, ServiceConfigTypeName)
+			ImageAttr, ServiceConfigTypeName)
 	}
 	imageName := image.GoString()
 
@@ -292,14 +291,16 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		}
 	}
 
-	var filesArtifactExpansions *files_artifacts_expansion.FilesArtifactsExpansion
+	var filesArtifactExpansions *service_directory.FilesArtifactsExpansion
+	var persistentDirectories *service_directory.PersistentDirectories
 	filesStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, FilesAttr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 	if found {
 		var filesArtifactsMountDirpathsMap map[string]string
-		filesArtifactsMountDirpathsMap, interpretationErr = kurtosis_types.SafeCastToMapStringString(filesStarlark, FilesAttr)
+		var persistentDirectoriesDirpathsMap map[string]string
+		filesArtifactsMountDirpathsMap, persistentDirectoriesDirpathsMap, interpretationErr = convertFilesArguments(FilesAttr, filesStarlark)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
@@ -307,6 +308,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
+		persistentDirectories = convertPersistentDirectoryMounts(persistentDirectoriesDirpathsMap)
 	}
 
 	var entryPointArgs []string
@@ -354,17 +356,6 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		privateIpAddressPlaceholder = privateIpAddressPlaceholderStarlark.GoString()
 	} else {
 		privateIpAddressPlaceholder = DefaultPrivateIPAddrPlaceholder
-	}
-
-	var subnetwork string
-	subnetworkStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[starlark.String](config.KurtosisValueTypeDefault, SubnetworkAttr)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	if found && subnetworkStarlark.GoString() != "" {
-		subnetwork = subnetworkStarlark.GoString()
-	} else {
-		subnetwork = DefaultSubnetwork
 	}
 
 	var maxCpu uint64
@@ -451,12 +442,12 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		cmdArgs,
 		envVars,
 		filesArtifactExpansions,
+		persistentDirectories,
 		maxCpu,
 		maxMemory,
 		privateIpAddressPlaceholder,
 		minCpu,
 		minMemory,
-		subnetwork,
 	), nil
 }
 
@@ -486,4 +477,51 @@ func convertPortMapEntry(attrNameForLogging string, key starlark.Value, value st
 		return "", nil, interpretationErr
 	}
 	return keyStr.GoString(), servicePortSpec, nil
+}
+
+func convertFilesArguments(attrNameForLogging string, filesDict *starlark.Dict) (map[string]string, map[string]string, *startosis_errors.InterpretationError) {
+	filesArtifacts := map[string]string{}
+	persistentDirectories := map[string]string{}
+	for _, fileItem := range filesDict.Items() {
+		rawDirPath := fileItem[0]
+		dirPath, ok := rawDirPath.(starlark.String)
+		if !ok {
+			return nil, nil, startosis_errors.NewInterpretationError("Unable to convert key of '%s' dictionary '%v' to string", attrNameForLogging, filesDict)
+		}
+
+		var interpretationErr *startosis_errors.InterpretationError
+		rawDirectoryObj := fileItem[1]
+		directoryObj, isDirectoryArg := rawDirectoryObj.(*directory.Directory)
+		if !isDirectoryArg {
+			// we're also supporting raw strings as well and transform them into files artifact name.
+			directoryObjAsStr, isSimpleStringArg := rawDirectoryObj.(starlark.String)
+			if !isSimpleStringArg {
+				return nil, nil, startosis_errors.NewInterpretationError("Unable to convert value of '%s' dictionary '%v' to a Directory object", attrNameForLogging, filesDict)
+			}
+			directoryObj, interpretationErr = directory.CreateDirectoryFromFilesArtifact(directoryObjAsStr.GoString())
+			if interpretationErr != nil {
+				return nil, nil, interpretationErr
+			}
+		}
+		artifactName, artifactNameSet, interpretationErr := directoryObj.GetArtifactNameIfSet()
+		if interpretationErr != nil {
+			return nil, nil, interpretationErr
+		}
+		persistentKey, persistentKeySet, interpretationErr := directoryObj.GetPersistentKeyIfSet()
+		if interpretationErr != nil {
+			return nil, nil, interpretationErr
+		}
+		if artifactNameSet == persistentKeySet {
+			// this condition is a XOR
+			return nil, nil, startosis_errors.NewInterpretationError("Parameter '%s' and '%s' cannot be set on the same '%s' object: '%s'",
+				directory.ArtifactNameAttr, directory.PersistentKeyAttr, directory.DirectoryTypeName, directoryObj.String())
+		}
+		if artifactNameSet {
+			filesArtifacts[dirPath.GoString()] = artifactName
+		} else {
+			// persistentKey is necessarily set since we checked the exclusivity above
+			persistentDirectories[dirPath.GoString()] = persistentKey
+		}
+	}
+	return filesArtifacts, persistentDirectories, nil
 }

@@ -8,8 +8,7 @@ import (
 )
 
 const (
-	enclaveTestName       = "render-templates-test"
-	isPartitioningEnabled = false
+	enclaveTestName = "render-templates-test"
 
 	starlarkScript = `
 def run(plan):
@@ -63,7 +62,7 @@ def run(plan):
 
 func TestRenderTemplates(t *testing.T) {
 	ctx := context.Background()
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()

@@ -45,8 +45,6 @@ const (
 	apiWaitForStartupMaxPolls          = 10
 	apiWaitForStartupDelayMilliseconds = 1000
 
-	defaultPartitionId = ""
-
 	fileServerServiceImage   = "flashspys/nginx-static"
 	fileServerPortId         = "http"
 	fileServerPrivatePortNum = 80
@@ -82,9 +80,8 @@ const (
 	testDatastoreKey   = "my-key"
 	testDatastoreValue = "test-value"
 
-	partitioningDisabled = false
-	defaultDryRun        = false
-	emptyParams          = "{}"
+	defaultDryRun = false
+	emptyParams   = "{}"
 
 	waitForGetAvaliabilityStalarkScript = `
 def run(plan, args):
@@ -100,7 +97,6 @@ def run(plan, args):
 
 	dockerGettingStartedImage = "docker/getting-started"
 
-	emptySubnetwork                = ""
 	emptyPrivateIpAddrPlaceholder  = ""
 	emptyCpuAllocationMillicpus    = 0
 	emptyMemoryAllocationMegabytes = 0
@@ -275,14 +271,6 @@ func ValidateDatastoreServiceHealthy(ctx context.Context, enclaveCtx *enclaves.E
 }
 
 func AddAPIService(ctx context.Context, serviceName services.ServiceName, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
-	serviceCtx, client, clientCloseFunc, err := AddAPIServiceToPartition(ctx, serviceName, enclaveCtx, datastorePrivateIp, defaultPartitionId)
-	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred adding API service to default partition")
-	}
-	return serviceCtx, client, clientCloseFunc, nil
-}
-
-func AddAPIServiceToPartition(ctx context.Context, serviceName services.ServiceName, enclaveCtx *enclaves.EnclaveContext, datastorePrivateIp string, partitionId enclaves.PartitionID) (*services.ServiceContext, example_api_server_rpc_api_bindings.ExampleAPIServerServiceClient, func(), error) {
 	configFilepath, err := createApiConfigFile(datastorePrivateIp)
 	if err != nil {
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating the datastore config file")
@@ -293,7 +281,7 @@ func AddAPIServiceToPartition(ctx context.Context, serviceName services.ServiceN
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred uploading the datastore config file")
 	}
 
-	serviceConfigStarlark := getApiServiceServiceConfigStarlark(artifactName, partitionId)
+	serviceConfigStarlark := getApiServiceServiceConfigStarlark(artifactName)
 
 	serviceCtx, err := AddService(ctx, enclaveCtx, serviceName, serviceConfigStarlark)
 	if err != nil {
@@ -330,7 +318,7 @@ func RunScriptWithDefaultConfig(ctx context.Context, enclaveCtx *enclaves.Enclav
 func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) (*enclaves.StarlarkRunResult, error) {
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := CreateEnclave(t, ctx, testName, partitioningDisabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() { _ = destroyEnclaveFunc() }()
 
@@ -565,17 +553,17 @@ func GenerateRandomTempFile(byteSize int, filePathOptional string) (string, func
 //
 // ====================================================================================================
 func getDatastoreServiceConfigStarlark() string {
-	return services.GetServiceConfigStarlark(datastoreImage, map[string]*kurtosis_core_rpc_api_bindings.Port{datastorePortId: datastorePortSpec}, emptyFileArtifactMountPoints, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptySubnetwork, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+	return services.GetServiceConfigStarlark(datastoreImage, map[string]*kurtosis_core_rpc_api_bindings.Port{datastorePortId: datastorePortSpec}, emptyFileArtifactMountPoints, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
 }
 
-func getApiServiceServiceConfigStarlark(apiConfigArtifactName string, partitionId enclaves.PartitionID) string {
+func getApiServiceServiceConfigStarlark(apiConfigArtifactName string) string {
 	startCmd := []string{
 		"./example-api-server.bin",
 		"--config",
 		path.Join(configMountpathOnApiContainer, configFilename),
 	}
 
-	return services.GetServiceConfigStarlark(apiServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{apiPortId: apiPortSpec}, map[string]string{configMountpathOnApiContainer: apiConfigArtifactName}, emptyEntrypointArgs, startCmd, emptyEnvVars, string(partitionId), emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+	return services.GetServiceConfigStarlark(apiServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{apiPortId: apiPortSpec}, map[string]string{configMountpathOnApiContainer: apiConfigArtifactName}, emptyEntrypointArgs, startCmd, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
 }
 
 func createApiConfigFile(datastoreIP string) (string, error) {
@@ -629,7 +617,7 @@ func getFileServerServiceConfigStarlark(filesArtifactMountPoints map[string]serv
 		filesArtifactMountPointsStr[k] = string(v)
 	}
 
-	return services.GetServiceConfigStarlark(fileServerServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{fileServerPortId: fileServerPortSpec}, filesArtifactMountPointsStr, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptySubnetwork, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+	return services.GetServiceConfigStarlark(fileServerServiceImage, map[string]*kurtosis_core_rpc_api_bindings.Port{fileServerPortId: fileServerPortSpec}, filesArtifactMountPointsStr, emptyEntrypointArgs, emptyCmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
 }
 
 func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bindings.DatastoreServiceClient, func(), error) {
@@ -681,5 +669,5 @@ func getServiceWithLogLinesServiceConfigStarlark(logLines []string) string {
 
 	cmdArgs := []string{echoLogLinesLoopCmdStr}
 
-	return services.GetServiceConfigStarlark(dockerGettingStartedImage, emptyPrivatePorts, emptyFileArtifactMountPoints, entrypointArgs, cmdArgs, emptyEnvVars, emptySubnetwork, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
+	return services.GetServiceConfigStarlark(dockerGettingStartedImage, emptyPrivatePorts, emptyFileArtifactMountPoints, entrypointArgs, cmdArgs, emptyEnvVars, emptyPrivateIpAddrPlaceholder, emptyCpuAllocationMillicpus, emptyMemoryAllocationMegabytes, 0, 0)
 }

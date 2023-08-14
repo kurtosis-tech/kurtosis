@@ -27,8 +27,6 @@ type APIContainerArgs struct {
 
 	EnclaveUUID string `json:"enclaveUuid"`
 
-	IsPartitioningEnabled bool `json:"isPartitioningEnabled"`
-
 	// The directory on the API container where the enclave data directory will have been mounted
 	EnclaveDataVolumeDirpath string `json:"enclaveDataVolume"`
 
@@ -77,7 +75,6 @@ func NewAPIContainerArgs(
 	logLevel string,
 	grpcListenPortNum uint16,
 	enclaveUuid string,
-	isPartitioningEnabled bool,
 	enclaveDataVolumeDirpath string,
 	kurtosisBackendType KurtosisBackendType,
 	kurtosisBackendConfig interface{},
@@ -87,7 +84,6 @@ func NewAPIContainerArgs(
 		LogLevel:                 logLevel,
 		GrpcListenPortNum:        grpcListenPortNum,
 		EnclaveUUID:              enclaveUuid,
-		IsPartitioningEnabled:    isPartitioningEnabled,
 		EnclaveDataVolumeDirpath: enclaveDataVolumeDirpath,
 		KurtosisBackendType:      kurtosisBackendType,
 		KurtosisBackendConfig:    kurtosisBackendConfig,

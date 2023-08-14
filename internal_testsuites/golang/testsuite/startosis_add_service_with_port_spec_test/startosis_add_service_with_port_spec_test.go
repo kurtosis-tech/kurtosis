@@ -10,8 +10,7 @@ import (
 )
 
 const (
-	testName              = "add-service-with-port-spec1"
-	isPartitioningEnabled = false
+	testName = "add-service-with-port-spec1"
 
 	serviceName = "docker-getting-started-success"
 
@@ -40,7 +39,7 @@ func TestAddServiceWithPortSpec_Success(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()

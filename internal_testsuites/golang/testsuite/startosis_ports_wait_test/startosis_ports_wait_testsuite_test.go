@@ -11,8 +11,7 @@ import (
 )
 
 const (
-	name                  = "startosis-ports-wait"
-	isPartitioningEnabled = false
+	name = "startosis-ports-wait"
 )
 
 type StartosisPortsWaitTestSuite struct {
@@ -28,7 +27,7 @@ func TestStartosisPortsWaitTestSuite(t *testing.T) {
 func (suite *StartosisPortsWaitTestSuite) SetupTest() {
 	ctx := context.Background()
 	t := suite.T()
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, name)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	suite.enclaveCtx = enclaveCtx
 	suite.destroyEnclaveFunc = destroyEnclaveFunc

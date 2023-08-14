@@ -33,12 +33,12 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		nil,
 		nil,
 		nil,
+		nil,
 		0,
 		0,
 		"",
 		0,
 		0,
-		"",
 	)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -66,12 +66,12 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		[]string{"bash", "-c", "sleep " + runtimeValue},
 		nil,
 		nil,
+		nil,
 		0,
 		0,
 		"",
 		0,
 		0,
-		"",
 	)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -101,12 +101,12 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 			"PORT": runtimeValue,
 		},
 		nil,
+		nil,
 		0,
 		0,
 		"",
 		0,
 		0,
-		"",
 	)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -137,12 +137,12 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 		nil,
 		nil,
 		nil,
+		nil,
 		0,
 		0,
 		"",
 		0,
 		0,
-		"",
 	)
 
 	replacedServiceName, _, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)

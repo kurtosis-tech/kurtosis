@@ -66,7 +66,6 @@ func (service *EngineServerService) CreateEnclave(ctx context.Context, args *kur
 		args.ApiContainerVersionTag,
 		apiContainerLogLevel,
 		args.EnclaveName,
-		args.IsPartitioningEnabled,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.EnclaveName)
@@ -261,7 +260,6 @@ func newLogsResponse(
 	notFoundServiceUuids map[string]bool,
 ) *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
 	serviceLogLinesByUuid := make(map[string]*kurtosis_engine_rpc_api_bindings.LogLine, len(serviceLogsByServiceUuid))
-
 	for serviceUuid := range requestedServiceUuids {
 		serviceUuidStr := string(serviceUuid)
 		_, isInNotFoundUuidList := notFoundServiceUuids[serviceUuidStr]

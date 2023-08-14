@@ -27,12 +27,6 @@ func NewPort(
 	}
 }
 
-func NewUpdateServiceConfig(subnetwork string) *kurtosis_core_rpc_api_bindings.UpdateServiceConfig {
-	return &kurtosis_core_rpc_api_bindings.UpdateServiceConfig{
-		Subnetwork: &subnetwork,
-	}
-}
-
 // ==============================================================================================
 //
 //	Execute Starlark Arguments
@@ -303,6 +297,7 @@ func NewServiceInfo(
 	privatePorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	maybePublicIpAddr string,
 	maybePublicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
+	serviceStatus kurtosis_core_rpc_api_bindings.ServiceStatus,
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
 		ServiceUuid:       uuid,
@@ -312,6 +307,7 @@ func NewServiceInfo(
 		PrivatePorts:      privatePorts,
 		MaybePublicIpAddr: maybePublicIpAddr,
 		MaybePublicPorts:  maybePublicPorts,
+		ServiceStatus:     serviceStatus,
 	}
 }
 

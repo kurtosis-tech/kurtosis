@@ -9,7 +9,6 @@ import { createEnclave } from "../../test_helpers/enclave_setup";
 import { addDatastoreService } from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "basic-datastore";
-const IS_PARTITIONING_ENABLED = false;
 const DATASTORE_SERVICE_NAME: ServiceName = "datastore";
 const TEST_KEY = "test-key"
 const TEST_VALUE = "test-value";
@@ -19,7 +18,7 @@ jest.setTimeout(180000)
 test("Test basic datastore test", async () => {
         
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(TEST_NAME)
     
     if(createEnclaveResult.isErr()) { throw createEnclaveResult.error }
     

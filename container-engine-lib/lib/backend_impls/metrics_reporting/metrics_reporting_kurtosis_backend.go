@@ -8,9 +8,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_database"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/networking_sidecar"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
@@ -100,10 +99,10 @@ func (backend *MetricsReportingKurtosisBackend) DumpKurtosis(ctx context.Context
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error) {
-	result, err := backend.underlying.CreateEnclave(ctx, enclaveUuid, enclaveName, isPartitioningEnabled)
+func (backend *MetricsReportingKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string) (*enclave.Enclave, error) {
+	result, err := backend.underlying.CreateEnclave(ctx, enclaveUuid, enclaveName)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with UUID '%v' and is-partitioning-enabled value '%v'", enclaveUuid, isPartitioningEnabled)
+		return nil, stacktrace.Propagate(err, "An error occurred creating enclave with UUID '%v'", enclaveUuid)
 	}
 	return result, nil
 }
@@ -319,6 +318,15 @@ func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommands(
 	return succesfulUserServiceExecResults, erroredUserServiceUuids, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) RunUserServiceExecCommandWithStreamedOutput(
+	ctx context.Context,
+	enclaveUuid enclave.EnclaveUUID,
+	serviceUuid service.ServiceUUID,
+	cmd []string,
+) (chan string, chan *exec_result.ExecResult, error) {
+	return backend.underlying.RunUserServiceExecCommandWithStreamedOutput(ctx, enclaveUuid, serviceUuid, cmd)
+}
+
 func (backend *MetricsReportingKurtosisBackend) GetShellOnUserService(ctx context.Context, enclaveUuid enclave.EnclaveUUID, serviceUuid service.ServiceUUID) (resultErr error) {
 	err := backend.underlying.GetShellOnUserService(ctx, enclaveUuid, serviceUuid)
 	if err != nil {
@@ -378,120 +386,16 @@ func (backend *MetricsReportingKurtosisBackend) DestroyUserServices(
 	return successes, failures, nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) CreateNetworkingSidecar(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	serviceUuid service.ServiceUUID,
-) (
-	*networking_sidecar.NetworkingSidecar,
-	error,
-) {
-	networkingSidecar, err := backend.underlying.CreateNetworkingSidecar(ctx, enclaveUuid, serviceUuid)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating networking sidecar for user service with UUID '%v' in enclave with UUID '%v'", serviceUuid, enclaveUuid)
-	}
-	return networkingSidecar, nil
+func (backend *MetricsReportingKurtosisBackend) CreateLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	return backend.underlying.CreateLogsAggregator(ctx)
 }
 
-func (backend *MetricsReportingKurtosisBackend) GetNetworkingSidecars(
-	ctx context.Context,
-	filters *networking_sidecar.NetworkingSidecarFilters,
-) (
-	map[service.ServiceUUID]*networking_sidecar.NetworkingSidecar,
-	error,
-) {
-	networkingSidecars, err := backend.underlying.GetNetworkingSidecars(ctx, filters)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting networking sidecars using filters '%+v'", filters)
-	}
-	return networkingSidecars, nil
+func (backend *MetricsReportingKurtosisBackend) GetLogsAggregator(ctx context.Context) (*logs_aggregator.LogsAggregator, error) {
+	return backend.underlying.GetLogsAggregator(ctx)
 }
 
-func (backend *MetricsReportingKurtosisBackend) RunNetworkingSidecarExecCommands(
-	ctx context.Context,
-	enclaveUuid enclave.EnclaveUUID,
-	networkingSidecarsCommands map[service.ServiceUUID][]string,
-) (
-	map[service.ServiceUUID]*exec_result.ExecResult,
-	map[service.ServiceUUID]error,
-	error,
-) {
-	successfulNetworkingSidecarExecResults, erroredUserServiceUuids, err := backend.underlying.RunNetworkingSidecarExecCommands(ctx, enclaveUuid, networkingSidecarsCommands)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred running networking sidecar exec commands '%+v' in enclave with UUID '%v'", networkingSidecarsCommands, enclaveUuid)
-	}
-	return successfulNetworkingSidecarExecResults, erroredUserServiceUuids, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) StopNetworkingSidecars(
-	ctx context.Context,
-	filters *networking_sidecar.NetworkingSidecarFilters,
-) (
-	map[service.ServiceUUID]bool,
-	map[service.ServiceUUID]error,
-	error,
-) {
-	successfulUserServiceUuids, erroredUserServiceUuids, err := backend.underlying.StopNetworkingSidecars(ctx, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred stopping networking sidecars using filters '%+v'", filters)
-	}
-	return successfulUserServiceUuids, erroredUserServiceUuids, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) DestroyNetworkingSidecars(
-	ctx context.Context,
-	filters *networking_sidecar.NetworkingSidecarFilters,
-) (
-	map[service.ServiceUUID]bool,
-	map[service.ServiceUUID]error,
-	error,
-) {
-	successfulUserServiceUuids, erroredUserServiceUuids, err := backend.underlying.DestroyNetworkingSidecars(ctx, filters)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying networking sidecars using filters '%+v'", filters)
-	}
-	return successfulUserServiceUuids, erroredUserServiceUuids, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) CreateLogsDatabase(
-	ctx context.Context,
-	logsDatabaseHttpPortNumber uint16,
-) (
-	*logs_database.LogsDatabase,
-	error,
-) {
-
-	logsDatabase, err := backend.underlying.CreateLogsDatabase(ctx, logsDatabaseHttpPortNumber)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating the logs database with HTTP port number '%v'", logsDatabaseHttpPortNumber)
-	}
-
-	return logsDatabase, nil
-}
-
-// if nothing is found returns nil
-func (backend *MetricsReportingKurtosisBackend) GetLogsDatabase(
-	ctx context.Context,
-) (
-	resultMaybeLogsDatabase *logs_database.LogsDatabase,
-	resultErr error,
-) {
-	maybeLogsDatabase, err := backend.underlying.GetLogsDatabase(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs database")
-	}
-
-	return maybeLogsDatabase, nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) DestroyLogsDatabase(
-	ctx context.Context,
-) error {
-	if err := backend.underlying.DestroyLogsDatabase(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred destroying the logs database")
-	}
-
-	return nil
+func (backend *MetricsReportingKurtosisBackend) DestroyLogsAggregator(ctx context.Context) error {
+	return backend.underlying.DestroyLogsAggregator(ctx)
 }
 
 func (backend *MetricsReportingKurtosisBackend) CreateLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, logsCollectorHttpPortNumber uint16, logsCollectorTcpPortNumber uint16) (*logs_collector.LogsCollector, error) {
@@ -520,13 +424,6 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(c
 		return stacktrace.Propagate(err, "An error occurred destroying the logs collector")
 	}
 
-	return nil
-}
-
-func (backend *MetricsReportingKurtosisBackend) DestroyDeprecatedCentralizedLogsResources(ctx context.Context) error {
-	if err := backend.underlying.DestroyDeprecatedCentralizedLogsResources(ctx); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while destroying deprecated logs collector")
-	}
 	return nil
 }
 

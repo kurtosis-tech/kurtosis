@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	apiv1 "k8s.io/api/core/v1"
+	rbacv1 "k8s.io/api/rbac/v1"
 	applyconfigurationsv1 "k8s.io/client-go/applyconfigurations/core/v1"
 	"strings"
 	"time"
@@ -33,6 +34,12 @@ type enclaveKubernetesResources struct {
 	// Not technically resources that define an enclave, but we need them for
 	// StopEnclave
 	services []apiv1.Service
+
+	persistentVolumes []apiv1.PersistentVolume
+
+	clusterRoles []rbacv1.ClusterRole
+
+	clusterRoleBindings []rbacv1.ClusterRoleBinding
 }
 
 // ====================================================================================================
@@ -44,14 +51,10 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	enclaveName string,
-	isPartitioningEnabled bool,
 ) (
 	*enclave.Enclave,
 	error,
 ) {
-	if isPartitioningEnabled {
-		return nil, stacktrace.NewError("Partitioning not supported for Kubernetes-backed Kurtosis.")
-	}
 	teardownContext := context.Background()
 
 	searchNamespaceLabels := map[string]string{
@@ -70,7 +73,7 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 
 	// Make Enclave attributes provider
 	enclaveObjAttrsProvider := backend.objAttrsProvider.ForEnclave(enclaveUuid)
-	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(isPartitioningEnabled, creationTime, enclaveName)
+	enclaveNamespaceAttrs, err := enclaveObjAttrsProvider.ForEnclaveNamespace(creationTime, enclaveName)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveUuid)
 	}
@@ -94,9 +97,12 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	}()
 
 	enclaveResources := &enclaveKubernetesResources{
-		namespace: enclaveNamespace,
-		pods:      []apiv1.Pod{},
-		services:  nil,
+		namespace:           enclaveNamespace,
+		pods:                []apiv1.Pod{},
+		services:            nil,
+		persistentVolumes:   []apiv1.PersistentVolume{},
+		clusterRoles:        []rbacv1.ClusterRole{},
+		clusterRoleBindings: []rbacv1.ClusterRoleBinding{},
 	}
 	enclaveObjsById, err := getEnclaveObjectsFromKubernetesResources(map[enclave.EnclaveUUID]*enclaveKubernetesResources{
 		enclaveUuid: enclaveResources,
@@ -292,6 +298,51 @@ func (backend *KubernetesKurtosisBackend) DestroyEnclaves(
 			}
 		}
 
+		// Remove persistent volume
+		if resources.persistentVolumes != nil {
+			for _, persistentVolume := range resources.persistentVolumes {
+				if err := backend.kubernetesManager.RemovePersistentVolume(ctx, persistentVolume.Name); err != nil {
+					erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+						err,
+						"An error occurred removing persistent volume '%v' for enclave '%v'",
+						persistentVolume.Name,
+						enclaveId,
+					)
+					continue
+				}
+			}
+		}
+
+		// Remove custom API container Cluster Role Bindings
+		if resources.clusterRoleBindings != nil {
+			for _, clusterRoleBinding := range resources.clusterRoleBindings {
+				if err := backend.kubernetesManager.RemoveClusterRoleBindings(ctx, &clusterRoleBinding); err != nil {
+					erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+						err,
+						"An error occurred removing cluster role binding '%v' for enclave '%v'",
+						clusterRoleBinding.Name,
+						enclaveId,
+					)
+					continue
+				}
+			}
+		}
+
+		// Remove custom API container Cluster Role
+		if resources.clusterRoles != nil {
+			for _, clusterRole := range resources.clusterRoles {
+				if err := backend.kubernetesManager.RemoveClusterRole(ctx, &clusterRole); err != nil {
+					erroredEnclaveIds[enclaveId] = stacktrace.Propagate(
+						err,
+						"An error occurred removing cluster role '%v' for enclave '%v'",
+						clusterRole.Name,
+						enclaveId,
+					)
+					continue
+				}
+			}
+		}
+
 		successfulEnclaveIds[enclaveId] = true
 	}
 
@@ -467,7 +518,7 @@ func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
 		}
 
 		// Pods and Services
-		podsList, servicesList, err := backend.kubernetesManager.GetPodsAndServicesByLabels(
+		podsList, servicesList, persistentVolumesList, clusterRolesList, clusterRoleBindingsList, err := backend.kubernetesManager.GetAllEnclaveResourcesByLabels(
 			ctx,
 			namespaceName,
 			enclaveWithIDMatchLabels,
@@ -476,16 +527,28 @@ func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
 			return nil, stacktrace.Propagate(err, "An error occurred getting pods and services matching enclave ID '%v' in namespace '%v'", enclaveIdStr, namespace.GetName())
 		}
 
-		pods := []apiv1.Pod{}
+		var pods []apiv1.Pod
 		pods = append(pods, podsList.Items...)
 
-		services := []apiv1.Service{}
+		var services []apiv1.Service
 		services = append(services, servicesList.Items...)
 
+		var persistentVolumes []apiv1.PersistentVolume
+		persistentVolumes = append(persistentVolumes, persistentVolumesList.Items...)
+
+		var clusterRoles []rbacv1.ClusterRole
+		clusterRoles = append(clusterRoles, clusterRolesList.Items...)
+
+		var clusterRoleBindings []rbacv1.ClusterRoleBinding
+		clusterRoleBindings = append(clusterRoleBindings, clusterRoleBindingsList.Items...)
+
 		enclaveResources := &enclaveKubernetesResources{
-			namespace: namespace,
-			pods:      pods,
-			services:  services,
+			namespace:           namespace,
+			pods:                pods,
+			services:            services,
+			persistentVolumes:   persistentVolumes,
+			clusterRoles:        clusterRoles,
+			clusterRoleBindings: clusterRoleBindings,
 		}
 
 		return enclaveResources, nil

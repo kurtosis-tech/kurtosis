@@ -13,7 +13,6 @@ import {createEnclave} from "../../test_helpers/enclave_setup";
 import {addServicesWithLogLines, getLogsResponseAndEvaluateResponse} from "../../test_helpers/test_helpers";
 
 const TEST_NAME = "stream-logs";
-const IS_PARTITIONING_ENABLED = false;
 
 const EXAMPLE_SERVICE_NAME: ServiceName = "stream-logs";
 
@@ -72,7 +71,7 @@ test("Test Stream Logs", TestStreamLogs);
 
 async function TestStreamLogs() {
 
-    const createEnclaveResult = await createEnclave(TEST_NAME, IS_PARTITIONING_ENABLED);
+    const createEnclaveResult = await createEnclave(TEST_NAME);
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error;

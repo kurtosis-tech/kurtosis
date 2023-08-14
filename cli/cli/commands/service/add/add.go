@@ -3,7 +3,6 @@ package add
 import (
 	"context"
 	"fmt"
-	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -68,14 +67,11 @@ const (
 	privateIPAddressPlaceholderDefault = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
 	// Each envvar should be KEY1=VALUE1, which means we should have two components to each envvar declaration
-	expectedNumberKeyValueComponentsInEnvvarDeclaration  = 2
-	portNumberIndex                                      = 0
-	transportProtocolIndex                               = 1
-	applicationProtocolIndex                             = 0
-	remainingPortSpecIndex                               = 1
-	maybePortSpecComponentsLengthWithApplicationProtocol = 2
-	expectedPortIdSpecComponentsCount                    = 2
-	expectedMountFragmentsCount                          = 2
+	expectedNumberKeyValueComponentsInEnvvarDeclaration = 2
+	portNumberIndex                                     = 0
+	transportProtocolIndex                              = 1
+	expectedPortIdSpecComponentsCount                   = 2
+	expectedMountFragmentsCount                         = 2
 
 	minRemainingPortSpecComponents = 1
 	maxRemainingPortSpecComponents = 2
@@ -309,11 +305,9 @@ func run(
 		)
 	}
 
-	// TODO Allow adding services to an already-repartitioned enclave
 	starlarkScript := fmt.Sprintf(`def run(plan):
 	plan.add_service(name = "%s", config = %s)
-	plan.print("%s") # we add this print of a random UUID to make sure the single add_service above won't get cached
-`, serviceName, serviceConfigStarlark, uuid.New().String())
+`, serviceName, serviceConfigStarlark)
 	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
@@ -446,7 +440,7 @@ func GetServiceConfigStarlark(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred parsing files artifact mounts string '%v'", filesArtifactMountsStr)
 	}
-	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, "", privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes), nil
+	return services.GetServiceConfigStarlark(image, ports, filesArtifactMounts, entrypoint, cmdArgs, envvarsMap, privateIPAddressPlaceholder, cpuAllocationMillicpus, memoryAllocationMegabytes, minCpuMilliCores, minMemoryMegaBytes), nil
 }
 
 // Parses a string in the form KEY1=VALUE1,KEY2=VALUE2 into a map of strings

@@ -1,7 +1,6 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {
     DEFAULT_DRY_RUN,
-    IS_PARTITIONING_ENABLED,
     JEST_TIMEOUT_MS,
 } from "./shared_constants";
 import * as path from "path";
@@ -17,7 +16,7 @@ jest.setTimeout(JEST_TIMEOUT_MS)
 
 test("Test valid Starlark package with input", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME + "-test-one")
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error
@@ -59,7 +58,7 @@ test("Test valid Starlark package with input", async () => {
 
 test("Test valid Starlark package with input - missing key in params", async () => {
     // ------------------------------------- ENGINE SETUP ----------------------------------------------
-    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME, IS_PARTITIONING_ENABLED)
+    const createEnclaveResult = await createEnclave(VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME + "-test-two")
 
     if (createEnclaveResult.isErr()) {
         throw createEnclaveResult.error

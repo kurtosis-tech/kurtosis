@@ -17,8 +17,7 @@ import (
 )
 
 const (
-	testName              = "search-logs"
-	isPartitioningEnabled = false
+	testName = "search-logs"
 
 	exampleServiceNamePrefix = "search-logs-"
 
@@ -29,14 +28,14 @@ const (
 
 	firstFilterText     = "The data have being loaded"
 	secondFilterText    = "Starting feature"
-	thirdFilterText     = "network"
+	thirdFilterText     = "pool"
 	matchRegexFilterStr = "Starting.*logs'"
 
 	testTimeOut = 180 * time.Second
 
 	logLine1 = "Starting feature 'centralized logs'"
-	logLine2 = "Starting feature 'network partitioning'"
-	logLine3 = "Starting feature 'network soft partitioning'"
+	logLine2 = "Starting feature 'enclave pool'"
+	logLine3 = "Starting feature 'enclave pool with size 2'"
 	logLine4 = "The data have being loaded"
 )
 
@@ -104,7 +103,7 @@ func TestSearchLogs(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()

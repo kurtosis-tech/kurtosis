@@ -289,7 +289,7 @@ func createFilesArtifactsExpansionVolumes(
 		for key, value := range volumeAttrs.GetLabels() {
 			volumeLabelsStrs[key.GetString()] = value.GetString()
 		}
-		if err := dockerManager.CreateVolume(
+		if err = dockerManager.CreateVolume(
 			ctx,
 			volumeAttrs.GetName().GetString(),
 			volumeLabelsStrs,
@@ -302,23 +302,25 @@ func createFilesArtifactsExpansionVolumes(
 				mountpointExpanderWants,
 			)
 		}
-		//goland:noinspection GoDeferInLoop
-		defer func() {
-			if shouldDeleteVolumes {
-				// Background context so we still run this even if the input context was cancelled
-				if err := dockerManager.RemoveVolume(context.Background(), volumeNameStr); err != nil {
-					logrus.Warnf(
-						"Creating files artifact expansion volumes didn't complete successfully so we tried to delete volume '%v' that we created, but doing so threw an error:\n%v",
-						volumeNameStr,
-						err,
-					)
-					logrus.Warnf("You'll need to clean up volume '%v' manually!", volumeNameStr)
-				}
-			}
-		}()
-
 		result[mountpointExpanderWants] = volumeNameStr
 	}
+
+	defer func() {
+		if !shouldDeleteVolumes {
+			return
+		}
+		for _, volumeNameStr := range result {
+			// Background context so we still run this even if the input context was cancelled
+			if err := dockerManager.RemoveVolume(context.Background(), volumeNameStr); err != nil {
+				logrus.Warnf(
+					"Creating files artifact expansion volumes didn't complete successfully so we tried to delete volume '%v' that we created, but doing so threw an error:\n%v",
+					volumeNameStr,
+					err,
+				)
+				logrus.Warnf("You'll need to clean up volume '%v' manually!", volumeNameStr)
+			}
+		}
+	}()
 	shouldDeleteVolumes = false
 	return result, nil
 }

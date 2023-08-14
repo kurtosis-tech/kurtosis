@@ -35,8 +35,6 @@ import (
 
 type EnclaveUUID string
 
-type PartitionID string
-
 const (
 	kurtosisYamlFilename    = "kurtosis.yml"
 	enforceMaxFileSizeLimit = true
@@ -283,7 +281,7 @@ func (enclaveCtx *EnclaveContext) GetServices() (map[services.ServiceName]servic
 
 // Docs available at https://docs.kurtosis.com/sdk#uploadfilesstring-pathtoupload-string-artifactname
 func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName string) (services.FilesArtifactUUID, services.FileArtifactName, error) {
-	content, contentSize, err := shared_utils.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
+	content, contentSize, _, err := shared_utils.CompressPath(pathToUpload, enforceMaxFileSizeLimit)
 	if err != nil {
 		return "", "", stacktrace.Propagate(err,
 			"There was an error compressing the file '%v' before upload",
@@ -291,6 +289,7 @@ func (enclaveCtx *EnclaveContext) UploadFiles(pathToUpload string, artifactName 
 	}
 	defer content.Close()
 
+	// TODO: add content hash to API as well since we have it, as an optional field
 	client, err := enclaveCtx.client.UploadFilesArtifact(context.Background())
 	if err != nil {
 		return "", "", stacktrace.Propagate(err, "An error was encountered initiating the data upload to the API Container.")
@@ -474,13 +473,14 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
 	logrus.Infof("Compressing package '%v' at '%v' for upload", packageId, packageRootPath)
-	compressedModule, commpressedModuleSize, err := shared_utils.CompressPath(packageRootPath, enforceMaxFileSizeLimit)
+	compressedModule, commpressedModuleSize, _, err := shared_utils.CompressPath(packageRootPath, enforceMaxFileSizeLimit)
 	if err != nil {
 		return stacktrace.Propagate(err, "There was an error compressing module '%v' before upload", packageRootPath)
 	}
 	defer compressedModule.Close()
 	logrus.Infof("Uploading and executing package '%v'", packageId)
 
+	// TODO: add content hash to API here as well
 	client, err := enclaveCtx.client.UploadStarlarkPackage(context.Background())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error was encountered initiating the data upload to the API Container.")

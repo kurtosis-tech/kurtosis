@@ -2,7 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
-	docker_types "github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -21,6 +21,9 @@ const (
 	shouldFetchStoppedContainersWhenGettingEnclaveStatus = true
 
 	shouldFetchStoppedContainersWhenDumpingEnclave = true
+
+	defaultHttpLogsCollectorPortNum = uint16(9712)
+	defaultTcpLogsCollectorPortNum  = uint16(9713)
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
@@ -32,7 +35,7 @@ type matchingNetworkInformation struct {
 	containers    []*types.Container
 }
 
-func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string, isPartitioningEnabled bool) (*enclave.Enclave, error) {
+func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID, enclaveName string) (*enclave.Enclave, error) {
 	teardownCtx := context.Background() // Separate context for tearing stuff down in case the input context is cancelled
 
 	searchNetworkLabels := map[string]string{
@@ -68,7 +71,7 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 
 	creationTime := time.Now()
 
-	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork(enclaveName, creationTime, isPartitioningEnabled)
+	enclaveNetworkAttrs, err := enclaveObjAttrsProvider.ForEnclaveNetwork(enclaveName, creationTime)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get the enclave network attributes for the enclave with ID '%v'", enclaveUuid)
 	}
@@ -142,6 +145,21 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 
 	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime)
 
+	// TODO the logs collector has a random private ip address in the enclave network that must be tracked
+	if _, err := backend.CreateLogsCollectorForEnclave(ctx, enclaveUuid, defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum)
+	}
+	shouldDeleteLogsCollector := true
+	defer func() {
+		if shouldDeleteLogsCollector {
+			err = backend.DestroyLogsCollectorForEnclave(ctx, enclaveUuid)
+			if err != nil {
+				logrus.Errorf("Couldn't cleanup logs collector for enclave '%v' as the following error was thrown:\n%v", enclaveUuid, err)
+			}
+		}
+	}()
+
+	shouldDeleteLogsCollector = false
 	shouldDeleteNetwork = false
 	shouldDeleteVolume = false
 	return newEnclave, nil
@@ -488,9 +506,9 @@ func getAllEnclaveVolumes(
 	ctx context.Context,
 	dockerManager *docker_manager.DockerManager,
 	enclaveUuid enclave.EnclaveUUID,
-) ([]*docker_types.Volume, error) {
+) ([]*volume.Volume, error) {
 
-	var volumes []*docker_types.Volume
+	var volumes []*volume.Volume
 
 	searchLabels := map[string]string{
 		label_key_consts.AppIDDockerLabelKey.GetString():       label_value_consts.AppIDDockerLabelValue.GetString(),

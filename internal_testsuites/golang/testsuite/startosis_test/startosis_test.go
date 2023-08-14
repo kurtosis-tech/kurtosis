@@ -10,11 +10,10 @@ import (
 )
 
 const (
-	testName              = "module"
-	isPartitioningEnabled = false
-	defaultDryRun         = false
-	defaultParallelism    = 4
-	greetingsArg          = `{"greeting": "World!"}`
+	testName           = "module"
+	defaultDryRun      = false
+	defaultParallelism = 4
+	greetingsArg       = `{"greeting": "World!"}`
 
 	serviceName                   = "example-datastore-server-1"
 	serviceIdForDependentService  = "example-datastore-server-2"
@@ -113,7 +112,7 @@ func TestStartosis(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()
@@ -195,6 +194,10 @@ scrape_configs:
      static_configs:
        - targets: ['foobar.com']
    
+   - job_name: 'beacon-metrics-gazer'
+     metrics_path: '/metrics'
+     static_configs:
+      - targets: ['beacon-metrics-gazer:8080']
 `
 	logrus.Infof("Checking that the file got mounted on " + serviceIdForDependentService)
 	serviceCtx, err = enclaveCtx.GetServiceContext(serviceIdForDependentService)

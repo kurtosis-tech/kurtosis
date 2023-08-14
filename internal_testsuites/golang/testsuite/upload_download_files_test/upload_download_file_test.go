@@ -28,8 +28,7 @@ const (
 	numberOfTempTestFilesToCreateInSubDir     = 3
 	numberOfTempTestFilesToCreateInArchiveDir = 1
 
-	enclaveTestName       = "upload-files-test"
-	isPartitioningEnabled = false
+	enclaveTestName = "upload-files-test"
 
 	// Filenames & contents for the files stored in the files artifact
 	diskDirKeyword                = "diskDir"
@@ -55,7 +54,7 @@ func TestUploadAndDownloadFiles(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := context.Background()
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() {
 		err = destroyEnclaveFunc()
@@ -101,7 +100,7 @@ func TestUploadAndDownloadLargeFilesCheckingConsistency(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName, isPartitioningEnabled)
+	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, enclaveTestName)
 	require.NoError(t, err, "An error occurred creating an enclave")
 	defer func() { _ = destroyEnclaveFunc() }()
 
@@ -120,7 +119,7 @@ func TestUploadAndDownloadLargeFilesCheckingConsistency(t *testing.T) {
 	require.NoError(t, err)
 
 	// Compute the hash of the initial file, compressed in the same way artifacts are compressed
-	initialFileCompressed, _, err := shared_utils.CompressPath(randomFilePath, enforceFileSizeLimit)
+	initialFileCompressed, _, _, err := shared_utils.CompressPath(randomFilePath, enforceFileSizeLimit)
 	require.NoError(t, err)
 	md5Hash := md5.New()
 	_, err = io.Copy(md5Hash, initialFileCompressed)
