@@ -60,6 +60,7 @@ var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 		),
 		service_identifier_arg.NewServiceIdentifierArg(
 			serviceIdentifierArgKey,
+			enclaveIdentifierArgKey,
 			isServiceIdentifierArgGreedy,
 			isServiceIdentifierArgOptional,
 		),
