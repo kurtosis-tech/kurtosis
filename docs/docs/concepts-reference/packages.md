@@ -108,23 +108,34 @@ def run(plan):
 def run(plan, some_parameter, some_other_parameter = "Default value"):
 ```
 
+:::warning
+You may come across an old style of package parameterization where the `run` function takes a single `args` variable containing all the package's parameters, like so:
+
+```python
+# OLD STYLE - DO NOT USE
+def run(plan, args):
+```
+
+This method is now deprecated, and will be removed in the future.
+:::
+
 Consumers of your package can then pass in these parameters to configure your package:
 
 <Tabs>
-    <TabItem value="cli" label="CLI" default>
-        ```bash
-        kurtosis run github.com/YOUR-USER/YOUR-REPO '{"some_parameter": 5, "some_other_parameter": "New value"}'
-        ```
-        For detailed instructions on passing arguments via the CLI, see the ["Arguments" section of the `kurtosis run` documentation][kurtosis-run-arguments].
-    </TabItem>
-    <TabItem value="starlark" label="Starlark" default>
-        ```python
-        your_package = import_module("github.com/YOUR-USER/YOUR-REPO/main.star")
+<TabItem value="cli" label="CLI" default>
+```bash
+kurtosis run github.com/YOUR-USER/YOUR-REPO '{"some_parameter": 5, "some_other_parameter": "New value"}'
+```
+For detailed instructions on passing arguments via the CLI, see the ["Arguments" section of the `kurtosis run` documentation][kurtosis-run-arguments].
+</TabItem>
+<TabItem value="starlark" label="Starlark" default>
+```python
+your_package = import_module("github.com/YOUR-USER/YOUR-REPO/main.star")
 
-        def run(plan):
-            your_package.run(plan, some_parameter = 5, some_other_parameter = "New value")
-        ```
-    </TabItem>
+def run(plan):
+    your_package.run(plan, some_parameter = 5, some_other_parameter = "New value")
+```
+</TabItem>
 </Tabs>
 
 <!-------------------- ONLY LINKS BELOW HERE -------------------------->
@@ -133,4 +144,4 @@ Consumers of your package can then pass in these parameters to configure your pa
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=package+in%3Aname&type=all&language=&sort=
 [how-do-kurtosis-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
 [plan]: ./plan.md
-[args-reference]: ./args.md
+[packages-reference]: ./packages.md
