@@ -73,6 +73,8 @@ doc/tags
 # Test binary, built with `go test -c`
 *.test
 
+# Docker Buildx Logfile
+2d
 
 # Output directories
 build/
