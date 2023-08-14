@@ -33,7 +33,7 @@ If you want to run a non-main branch, tag or commit use the following syntax
 
 ### Arguments
 
-Package behaviour can be customized by passing in arguments when running the package. To do so, pass in the package arguments as a JSON string to `kurtosis run`.
+Package behaviour can be customized by passing in JSON-serialized arguments when calling `kurtosis run`.
 
 For example, if your package's `run` function looks like this...
 
