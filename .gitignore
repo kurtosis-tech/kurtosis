@@ -74,7 +74,7 @@ doc/tags
 *.test
 
 # Docker Buildx Logfile
-2d
+/2d
 
 # Output directories
 build/
