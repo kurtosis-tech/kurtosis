@@ -33,7 +33,7 @@ The `eth2-package` with MEV emulation are already in use by client teams to help
 
 Everything you see below in the architecture diagram gets configured, initialized, and bootstrapped together by Kurtosis.
 
-![mev-arch](/docs/static/img/guides/full-mev-infra-arch-diagram.png)
+![mev-arch](../../static/img/guides/full-mev-infra-arch-diagram.png)
 
 #### Caveats:
 * The `mev-boost-relay` service (a sidecar for the consensus layer client) requires Capella at an epoch of non-zero. For the eth2-package, the Capella fork is set to happen after the first epoch to be started up and fully connected to the CL client.
@@ -213,7 +213,7 @@ Lastly, there is a section called `User Services` which display the number of se
 #### Visit the website to see registered validators and delivered payloads 
 Now that your network is online, you can visit the relay website using the local port mapped to that endpoint. For this example, it will be `127.0.0.1:62930`, but it will be different for you.
 
-![flashbots-website](/docs/static/img/guides/full-mev-flashbots-website.png)
+![flashbots-website](../../static/img/guides/full-mev-flashbots-website.png)
 
 The screenshot above is what the website looks like after the 4th epoch. You can see that all 128 validators (2 nodes, each with 64 validators) are registered. The table below will display recently delivered and verified payloads from `mev-relay` to the `mev-boost` sidecar on each node.
 
