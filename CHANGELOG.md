@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.81.7](https://github.com/kurtosis-tech/kurtosis/compare/0.81.6...0.81.7) (2023-08-14)
+
+
+### Features
+
+* add connect-go bindings generation to cloud ([#1090](https://github.com/kurtosis-tech/kurtosis/issues/1090)) ([8ba54d0](https://github.com/kurtosis-tech/kurtosis/commit/8ba54d099e550669d6c3be185880bc1f73ac24f3))
+
+
+### Bug Fixes
+
+* move where logs aggregator is destroyed ([#1110](https://github.com/kurtosis-tech/kurtosis/issues/1110)) ([aa392f3](https://github.com/kurtosis-tech/kurtosis/commit/aa392f39557afb976a6b74db5c80ffea991b4294))
+
+## [0.81.6](https://github.com/kurtosis-tech/kurtosis/compare/0.81.5...0.81.6) (2023-08-11)
+
+
+### Features
+
+* add more endpoints to support the Cloud ([#1077](https://github.com/kurtosis-tech/kurtosis/issues/1077)) ([1d70382](https://github.com/kurtosis-tech/kurtosis/commit/1d70382cdefd5361da10c88c64a6c5be81ae3a57))
+* enable streaming exec output in container engine (stream exec pt. 1) ([#1043](https://github.com/kurtosis-tech/kurtosis/issues/1043)) ([e8f34ef](https://github.com/kurtosis-tech/kurtosis/commit/e8f34ef3d33cf84499ddb07b461ca87319bef0fc))
+* implement new logging architecture v0 ([#1071](https://github.com/kurtosis-tech/kurtosis/issues/1071)) ([c66c148](https://github.com/kurtosis-tech/kurtosis/commit/c66c1480c8f8e6fcc8e17488135ff3d1cb456ffa))
+* make enclave namespace and network naming deterministic ([#1100](https://github.com/kurtosis-tech/kurtosis/issues/1100)) ([0d42106](https://github.com/kurtosis-tech/kurtosis/commit/0d42106a015793f7a5d7ede06a54fac58767af7d))
+* Persist file artifacts ([#1084](https://github.com/kurtosis-tech/kurtosis/issues/1084)) ([c7b3590](https://github.com/kurtosis-tech/kurtosis/commit/c7b3590a121ef4a9398efe7a5bc479578a04c43f))
+* Portal automatic start and stop on context change ([#1086](https://github.com/kurtosis-tech/kurtosis/issues/1086)) ([a6a73d1](https://github.com/kurtosis-tech/kurtosis/commit/a6a73d1c2a03c9d6d9e89b689b86bf170e39f108)), closes [#970](https://github.com/kurtosis-tech/kurtosis/issues/970)
+* Update files if already present in enclave ([#1066](https://github.com/kurtosis-tech/kurtosis/issues/1066)) ([1135543](https://github.com/kurtosis-tech/kurtosis/commit/1135543b1dea9ddb2f5419cffd9fd1557e644824))
+
+
+### Bug Fixes
+
+* Add API key to endpoint ([#1102](https://github.com/kurtosis-tech/kurtosis/issues/1102)) ([64f0c20](https://github.com/kurtosis-tech/kurtosis/commit/64f0c2034405fbaefb7dfb26f63308f055978f53))
+* Fix issue with idempotent plan resolution ([#1087](https://github.com/kurtosis-tech/kurtosis/issues/1087)) ([fd48f8f](https://github.com/kurtosis-tech/kurtosis/commit/fd48f8f5f34abe2929b7831ef1453b67eba0b3ca))
+* Forward the engine port after verifying that an engine container is running and before initializing the engine client ([#1099](https://github.com/kurtosis-tech/kurtosis/issues/1099)) ([b0b7a3b](https://github.com/kurtosis-tech/kurtosis/commit/b0b7a3b0fa5da07803d1d5b2697ca9805d8147d9))
+* update golang docker client to latest ([#1082](https://github.com/kurtosis-tech/kurtosis/issues/1082)) ([724084f](https://github.com/kurtosis-tech/kurtosis/commit/724084f1f0b6d0645990d7b92e41ad6e286f9259))
+
 ## [0.81.5](https://github.com/kurtosis-tech/kurtosis/compare/0.81.4...0.81.5) (2023-08-07)
 
 
