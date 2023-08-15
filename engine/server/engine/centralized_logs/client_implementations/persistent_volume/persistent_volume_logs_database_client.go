@@ -20,7 +20,7 @@ const (
 	oneSenderAdded = 1
 
 	// Location of logs on the filesystem of the engine
-	logsFilepath = "var/log/kurtosis/logs.json"
+	logsFilepath = "/var/log/kurtosis/logs.json"
 
 	newlineRune = '\n'
 

@@ -1,10 +1,7 @@
 package vector
 
 const (
-	configDirpath                = "/etc/vector/"
-	healthCheckEndpoint          = "health"
-	defaultGraphQlApiHttpPortNum = uint16(8686)
-	httpProtocolStr              = "http"
+	configDirpath = "/etc/vector/"
 
 	////////////////////////--VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 	containerImage = "timberio/vector:0.31.0-debian"
@@ -26,15 +23,13 @@ const (
 
 	// We store log files per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
+
 	// https://vector.dev/docs/reference/configuration/template-syntax/
-	logsFilepath = "\"" + logsStorageDirpath + "{{ timestamp }}/{{ container_name }}-logs.json\""
+	//logsFilepath    = "\"" + logsStorageDirpath + "/{{ container_name }}.json\""
+	logsFilepath = "\"" + logsStorageDirpath + "logs.json\""
 
 	configFileTemplateName = "vectorConfigFileTemplate"
 	configFileTemplate     = `
-[api]
-enabled = true
-address = "0.0.0.0:8686"
-
 [sources.{{ .Source.Id }}]
 type = {{ .Source.Type }}
 address = "{{ .Source.Address }}"
