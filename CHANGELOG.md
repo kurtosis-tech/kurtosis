@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.81.7](https://github.com/kurtosis-tech/kurtosis/compare/0.81.6...0.81.7) (2023-08-14)
+
+
+### Features
+
+* add connect-go bindings generation to cloud ([#1090](https://github.com/kurtosis-tech/kurtosis/issues/1090)) ([8ba54d0](https://github.com/kurtosis-tech/kurtosis/commit/8ba54d099e550669d6c3be185880bc1f73ac24f3))
+
+
+### Bug Fixes
+
+* move where logs aggregator is destroyed ([#1110](https://github.com/kurtosis-tech/kurtosis/issues/1110)) ([aa392f3](https://github.com/kurtosis-tech/kurtosis/commit/aa392f39557afb976a6b74db5c80ffea991b4294))
+
 ## [0.81.6](https://github.com/kurtosis-tech/kurtosis/compare/0.81.5...0.81.6) (2023-08-11)
 
 

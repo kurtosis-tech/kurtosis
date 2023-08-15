@@ -55,6 +55,7 @@ var ServiceShellCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 		),
 		service_identifier_arg.NewServiceIdentifierArg(
 			serviceIdentifierArgKey,
+			enclaveIdentifierArgKey,
 			isServiceGuidArgOptional,
 			isServiceGuidArgGreedy,
 		),
