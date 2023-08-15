@@ -1120,21 +1120,28 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
-	//logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	//doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
-	//if err != nil {
-	//	return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
-	//}
-	//logrus.Tracef("Is image available locally?: %v", doesImageExistLocally)
-
-	//if !doesImageExistLocally {
-	//logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
-	err := manager.pullImage(ctx, dockerImage)
+	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
 	if err != nil {
-		return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
+		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
 	}
-	//logrus.Tracef("Image successfully pulled from remote to local")
-	//}
+	logrus.Tracef("Is image available locally?: %v", doesImageExistLocally)
+
+	// try and pull latest image even if image exists locally
+	if doesImageExistLocally {
+		logrus.Tracef("Image does exist locally, but attempting to get latest from remote image repository.")
+		err = manager.pullImage(ctx, dockerImage)
+		if err != nil {
+			logrus.Tracef("Failed to pull Docker image '%v' from remote image repository. Going to use available local image.", dockerImage)
+		} else {
+			logrus.Tracef("Latest image successfully pulled from remote to local")
+		}
+	} else {
+		err = manager.pullImage(ctx, dockerImage)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository.", dockerImage)
+		}
+	}
 
 	return nil
 }
