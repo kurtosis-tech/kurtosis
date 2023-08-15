@@ -45,7 +45,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 ) {
 	publicIpAddr, publicGrpcPortSpec, err := launcher.LaunchWithCustomVersion(
 		ctx,
-		"test",
+		"0.81.7",
 		logLevel,
 		grpcListenPortNum,
 		metricsUserID,

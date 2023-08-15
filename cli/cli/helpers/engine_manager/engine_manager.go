@@ -137,7 +137,7 @@ func (manager *EngineManager) GetEngineStatus(
 			if portalManager.IsReachable() {
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(runningEngineIpAndPort.portNum), uint32(runningEngineIpAndPort.portNum), &kurtosis_context.EnginePortTransportProtocol)
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(runningEngineIpAndPort.portNum), uint32(runningEngineIpAndPort.portNum), kurtosis_context.EngineRemoteEndpointType, &kurtosis_context.EnginePortTransportProtocol)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return "", nil, "", stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
 				}

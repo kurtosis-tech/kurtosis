@@ -117,7 +117,6 @@ func GetPortalBinaryFilePath() (string, error) {
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal binary file path using '%s'", xdgRelFilepath)
 	}
-	portalBinaryFilePath = "/Users/laurent/github.com/kurtosis-tech/kurtosis-portal/daemon/dist/portal_darwin_arm64/kurtosis-portal"
 	return portalBinaryFilePath, nil
 }
 
