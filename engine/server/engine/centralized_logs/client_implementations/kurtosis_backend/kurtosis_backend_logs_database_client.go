@@ -46,7 +46,11 @@ func (client *kurtosisBackendLogsDatabaseClient) StreamUserServiceLogs(
 
 	ctx, cancelCtxFunc := context.WithCancel(ctx)
 
-	userServiceFilters := newUserServiceFilters(userServiceUuids)
+	userServiceFilters := &service.ServiceFilters{
+		Names:    nil,
+		UUIDs:    userServiceUuids,
+		Statuses: nil,
+	}
 
 	conjunctiveLogFiltersWithRegex, err := logline.NewConjunctiveLogFiltersWithRegex(conjunctiveLogLineFilters)
 	if err != nil {
@@ -154,15 +158,6 @@ func (client *kurtosisBackendLogsDatabaseClient) FilterExistingServiceUuids(
 //	Private helper functions
 //
 // ====================================================================================================
-func newUserServiceFilters(userServiceGuids map[service.ServiceUUID]bool) *service.ServiceFilters {
-	userServiceFilters := &service.ServiceFilters{
-		Names:    nil,
-		UUIDs:    userServiceGuids,
-		Statuses: nil,
-	}
-	return userServiceFilters
-}
-
 func streamServiceLogLines(
 	ctx context.Context,
 	wgSenders *sync.WaitGroup,
