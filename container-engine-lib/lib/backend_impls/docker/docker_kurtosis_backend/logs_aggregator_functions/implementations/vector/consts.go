@@ -13,7 +13,7 @@ const (
 	binaryFilepath = "/usr/bin/vector"
 	configFileFlag = "-c"
 
-	logsStorageDirpath = "/tmp/"
+	logsStorageDirpath = "/var/log/kurtosis/"
 	////////////////////////--FINISH VECTOR CONTAINER CONFIGURATION SECTION--/////////////////////////////
 
 	////////////////////////--VECTOR CONFIGURATION SECTION--/////////////////////////////
@@ -21,9 +21,13 @@ const (
 	fluentBitSourceType      = "\"fluent\""
 	fluentBitSourceIpAddress = "0.0.0.0"
 
-	fileSinkId   = "\"file\""
-	fileTypeId   = "\"file\""
-	logsFilepath = "\"/tmp/vector.json\""
+	fileSinkId = "\"file\""
+	fileTypeId = "\"file\""
+
+	// We store log files per-enclave, per-service
+	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
+	// https://vector.dev/docs/reference/configuration/template-syntax/
+	logsFilepath = "\"" + logsStorageDirpath + "{{ timestamp }}/{{ container_name }}-logs.json\""
 
 	configFileTemplateName = "vectorConfigFileTemplate"
 	configFileTemplate     = `

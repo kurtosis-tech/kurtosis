@@ -22,9 +22,10 @@ const (
 	// Location of logs on the filesystem of the engine
 	logsFilepath = "var/log/kurtosis/logs.json"
 
-	newlineRune         = '\n'
-	serviceUUIDLogLabel = "service_id"
-	enclaveUUIDLogLabel = "enclave_id"
+	newlineRune = '\n'
+
+	serviceUUIDLogLabel = "container_id"
+	enclaveUUIDLogLabel = "com.kurtosistech.enclave-id"
 	logLabel            = "log"
 
 	maxNumLogsToReturn = 200
@@ -60,7 +61,7 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	logsFile, err := os.Open(logsFilepath)
 	if err != nil {
 		cancelCtxFunc()
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred opening logs file while attempting to stream logs.")
+		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred opening logs file.")
 	}
 
 	conjunctiveLogFiltersWithRegex, err := logline.NewConjunctiveLogFiltersWithRegex(conjunctiveLogLineFilters)

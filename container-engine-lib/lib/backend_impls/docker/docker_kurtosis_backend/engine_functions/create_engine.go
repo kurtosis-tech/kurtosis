@@ -142,7 +142,7 @@ func CreateEngine(
 	}
 
 	volumeMounts := map[string]string{
-		"kurtosis-logs-storage": "/tmp/",
+		"kurtosis-logs-storage": "/var/log/kurtosis/",
 	}
 
 	if serverArgs.OnBastionHost {
