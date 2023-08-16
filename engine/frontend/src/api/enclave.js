@@ -1,9 +1,5 @@
 //import {EngineServicePromiseClient} from 'kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb'
 import {GetServiceLogsArgs, CreateEnclaveArgs} from 'kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/engine_service_pb'
-import {EngineServicePromiseClient} from "kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb"
-//import {ApiContainerServiceClient} from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb'
-import google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
-import { StoreFilesArtifactFromServiceArgs } from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import {runStarlarkPackage} from "./container"
 import axios from "axios";
 
