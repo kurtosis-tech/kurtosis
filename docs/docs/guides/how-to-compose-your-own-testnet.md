@@ -60,7 +60,7 @@ Now, create a `kurtosis.yml` file in the same folder with the following:
 ```yml
 name: github.com/foo-bar/my-testnet
 ```
-Awesome. You have just created the beginnings of your first [Kurtosis package](../concepts-reference/packages.md)! This package will form the backbone of the environment definition you will use to instantiate and deploy your private testnet. A Kurtosis package is completely reproducible, modular, and will work locally (Docker, Minikube, k3s, etc) or in the cloud, on backends like EC2 or Kubernetes. All that is missing to make your new Kurtosis package [runnable](https://docs.kurtosis.com/concepts-reference/packages/#runnable-packages) is to push it to github and add a `main.star` file in the directory - which you will do next!
+Awesome. You have just created the beginnings of your first [Kurtosis package](../concepts-reference/packages.md)! This package will form the backbone of the environment definition you will use to instantiate and deploy your private testnet. A Kurtosis package is completely reproducible, modular, and will work locally (Docker, Minikube, k3s, etc) or in the cloud, on backends like EC2 or Kubernetes. 
 
 ### 2. Import dependencies
 Now that you have a local project to house your definition and some parameters to start the network with, its time to actually build the network. First, create a Starlark file called `main.star` and add the following three lines:
@@ -118,7 +118,7 @@ Here, the Geth client is launched  using the `run()` function in `geth.star` and
 And that is it! In these short few lines, you now have an environment definition that spins up a full stacking Ethereum node with Geth and Lighthouse over Docker on your local machine.
 
 ### 4. Run your new testnet!
-Finally, time to give it a spin! Go back to your terminal & from within the `my-testnet` directory, run:
+Finally, time to give it a spin! Go back to your terminal and from within the `my-testnet` directory, run:
 ```
 kurtosis run .
 ```
