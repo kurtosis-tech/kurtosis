@@ -16,4 +16,5 @@ use (
 	./kurtosis_version
 	./name_generator
 	connect-server
+	enclave-manager/api/golang
 )

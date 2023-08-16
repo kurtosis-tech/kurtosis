@@ -1,7 +1,6 @@
 package server
 
 import (
-	"github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings/kurtosis_enclave_manager_api_bindingsconnect"
 	"time"
 )
 
@@ -12,9 +11,11 @@ const (
 
 func RunEnclaveApiServer() {
 
+	//kurtosis_enclave_manager_api_bindingsconnect.NewKurtosisEnclaveManagerServerClient()
+	//kurtosis_enclave_manager_api_bindingsconnect
 	//srv := apiserver.NewWebserver()
 
-	apiPath, handler := kurtosis_enclave_manager_api_bindingsconnect.New
+	//apiPath, handler := kurtosis_enclave_manager_api_bindingsconnect
 
 	//logrus.Infof("Web server running and listening on port %d", listenPort)
 	//apiServer := connect_server.NewConnectServer(
