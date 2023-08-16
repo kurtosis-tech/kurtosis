@@ -89,6 +89,7 @@ var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKur
 		),
 		service_identifier_arg.NewServiceIdentifierArg(
 			serviceIdentifierArgKey,
+			enclaveIdentifierArgKey,
 			isServiceIdentifierArgOptional,
 			isServiceIdentifierArgGreedy,
 		),

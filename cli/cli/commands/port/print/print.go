@@ -53,6 +53,7 @@ var PortPrintCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 		// TODO we should fix this after https://github.com/kurtosis-tech/kurtosis/issues/879
 		service_identifier_arg.NewHistoricalServiceIdentifierArgWithValidationDisabled(
 			serviceIdentifierArgKey,
+			enclaveIdentifierArgKey,
 			isServiceIdentifierArgOptional,
 			isServiceIdentifierArgGreedy,
 		),
