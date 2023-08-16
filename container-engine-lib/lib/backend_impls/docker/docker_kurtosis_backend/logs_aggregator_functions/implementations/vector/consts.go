@@ -25,8 +25,7 @@ const (
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
 
 	// https://vector.dev/docs/reference/configuration/template-syntax/
-	logsFilepath = "\"" + logsStorageDirpath + "/{{ container_name }}.json\""
-	//logsFilepath = "\"" + logsStorageDirpath + "logs.json\""
+	logsFilepath = "\"" + logsStorageDirpath + "/{{ enclave-id }}-{{ container_name }}.json\""
 
 	configFileTemplateName = "vectorConfigFileTemplate"
 	configFileTemplate     = `

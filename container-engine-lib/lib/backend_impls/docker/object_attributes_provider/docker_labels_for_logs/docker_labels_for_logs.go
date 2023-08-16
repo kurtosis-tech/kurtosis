@@ -10,6 +10,7 @@ import (
 var LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream = []*docker_label_key.DockerLabelKey{
 	label_key_consts.ContainerTypeDockerLabelKey,
 	label_key_consts.UserServiceGUIDDockerLabelKey,
+	label_key_consts.LogsEnclaveIDDockerLabelKey,
 	label_key_consts.EnclaveUUIDDockerLabelKey,
 	label_key_consts.EnclaveNameDockerLabelKey,
 }

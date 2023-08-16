@@ -112,6 +112,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enc
 
 	labels[label_key_consts.EnclaveCreationTimeLabelKey] = creationTimeLabelValue
 	labels[label_key_consts.EnclaveNameDockerLabelKey] = enclaveNameLabelValue
+	labels[label_key_consts.LogsEnclaveIDDockerLabelKey] = provider.enclaveId
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -236,6 +237,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
 	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
 	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
+	labels[label_key_consts.LogsEnclaveIDDockerLabelKey] = provider.enclaveId
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {

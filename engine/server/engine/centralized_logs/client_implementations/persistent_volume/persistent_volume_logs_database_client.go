@@ -26,7 +26,7 @@ const (
 	newlineRune = '\n'
 
 	serviceUUIDLogLabel = "container_name"
-	enclaveUUIDLogLabel = "com.kurtosistech.enclave-id"
+	enclaveUUIDLogLabel = "enclave-id"
 	logLabel            = "log"
 
 	maxNumLogsToReturn = 200
