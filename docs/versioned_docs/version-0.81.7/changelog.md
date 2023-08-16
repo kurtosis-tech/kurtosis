@@ -1,12 +1,5 @@
 # Changelog
 
-## [0.81.8](https://github.com/kurtosis-tech/kurtosis/compare/0.81.7...0.81.8) (2023-08-15)
-
-
-### Bug Fixes
-
-* make enclave identifier arg passable to service identifier completion provider ([#1107](https://github.com/kurtosis-tech/kurtosis/issues/1107)) ([051bc95](https://github.com/kurtosis-tech/kurtosis/commit/051bc95287fc56ed1af077c8992edeef935bdc57)), closes [#1094](https://github.com/kurtosis-tech/kurtosis/issues/1094)
-
 ## [0.81.7](https://github.com/kurtosis-tech/kurtosis/compare/0.81.6...0.81.7) (2023-08-14)
 
 
