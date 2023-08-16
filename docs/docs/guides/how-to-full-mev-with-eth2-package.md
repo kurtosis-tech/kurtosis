@@ -12,7 +12,7 @@ Here are some quick short-cuts for folks who would prefer:
 * Not to run this package on their local machine: try it out on the [Kurtosis playground](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/eth2-package)
 :::
 
-We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now supports the Flashbot's implementation of[Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using [MEV-Boost](https://boost.flashbots.net) protocol.
+We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now supports the Flashbot's implementation of [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using [MEV-Boost](https://boost.flashbots.net) protocol.
 
 This milestone marks a huge step forward in the journey towards a full, in-protocol PBS implementation for Proof-of-Stake Ethereum as developers across the ecosystem now have a way to instantiate fully functioning testnets to validate functionality, behvaior, and scales across all client combinations with a Builder API implementation (Flashbots', in this case).
 
@@ -45,37 +45,6 @@ Everything you see below in the architecture diagram gets configured, initialize
 Quick aside on what `mev-flood` does:
 Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provision liquidity on UniV2 pairs, & begin to send a constant stream of UniV2 swap transactions to the network's public mempool. Depending on the mode you're running, either the `mock-builder` or Flashbot's `mev-builder`, the transactions will be bundled into payloads for downstream use by the relayer or by validators themselves. It is important to note that `mev-flood` will only be initialized with the `full-mev` set up and will send transactions with a non-zero block value. Read more about [`mev-flood` here](https://github.com/flashbots/mev-flood). 
 :::
-
-<details><summary>Sample output from `mev-flood` operations within the eth2-package:</summary>
-You will see this get printed in your terminal when Kurtosis initializes the `mev-flood` service:
-	
-```py
-Command returned with exit code '0' and the following output:
-
-ENV: undefined
-connected to http://172.16.0.5:8545 with wallet 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
-deploying DAI contract
-deploying base contracts: DAI, WETH, uniswapV2factory...
-minting DAI for admin 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766...
-minting DAI for user 0xdF8466f277964Bb7a0FFD819403302C34DCD530A...
-minting 2500.0 WETH for admin 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766...
-minting 500.0 WETH for user 0xdF8466f277964Bb7a0FFD819403302C34DCD530A...
-approving atomicSwap to spend token 0xAb2A01BC351770D09611Ac80f1DE076D56E0487d on behalf of 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
-approving atomicSwap to spend token 0x4c849Ff66a6F0A954cbf7818b8a763105C2787D6 on behalf of 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
-approving atomicSwap to spend token 0xAb2A01BC351770D09611Ac80f1DE076D56E0487d on behalf of 0xdF8466f277964Bb7a0FFD819403302C34DCD530A
-approving atomicSwap to spend token 0x4c849Ff66a6F0A954cbf7818b8a763105C2787D6 on behalf of 0xdF8466f277964Bb7a0FFD819403302C34DCD530A
-depositing WETH into pair...
-depositing DAI into pair...
-minting LP tokens...
-depositing WETH into pair...
-depositing DAI into pair...
-minting LP tokens...
-liquidity deployed via mempool
-Saved deployment: /app/cli/deployments/deployment.json
-deployment saved to deployment.json
-
-```
-</details>
 
 ## Quickstart
 Leveraging the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) is simple. In this short quickstart, you will:
