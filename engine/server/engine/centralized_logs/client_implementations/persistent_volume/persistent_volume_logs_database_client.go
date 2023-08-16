@@ -13,6 +13,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -24,7 +25,7 @@ const (
 
 	newlineRune = '\n'
 
-	serviceUUIDLogLabel = "container_id"
+	serviceUUIDLogLabel = "container_name"
 	enclaveUUIDLogLabel = "com.kurtosistech.enclave-id"
 	logLabel            = "log"
 
@@ -201,14 +202,27 @@ func streamServiceLogLines(
 				streamErrChan <- stacktrace.NewError("An error retrieving the enclave uuid field from logs json file. This is a bug in Kurtosis.")
 				return
 			}
-			logServiceUuidStr, found := jsonLog[serviceUUIDLogLabel]
+			containerNameStr, found := jsonLog[serviceUUIDLogLabel]
 			if !found {
 				streamErrChan <- stacktrace.NewError("An error retrieving the enclave uuid field from logs json file. This is a bug in Kurtosis.")
 				return
 			}
 
+			logrus.Debugf("ENCLAVE UUID STR: %v", logEnclaveUuidStr)
+			logrus.Debugf("CONTAINER NAME STR: %v", containerNameStr)
+
 			logEnclaveUuid := enclave.EnclaveUUID(logEnclaveUuidStr)
-			logServiceUuid := service.ServiceUUID(logServiceUuidStr)
+
+			var serviceUUID service.ServiceUUID
+			doesServiceMatch := false
+			for uuid := range userServiceUuids {
+				uuidStr := string(uuid)
+				if strings.Contains(containerNameStr, uuidStr) {
+					doesServiceMatch = true
+					serviceUUID = uuid
+					break
+				}
+			}
 
 			// Then we filter by checking:
 			// 1. if the log message is valid based on requested filters
@@ -219,7 +233,9 @@ func streamServiceLogLines(
 				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 				break
 			}
-			isValidBasedOnEnclaveAndServiceUuid := (enclaveUuid == logEnclaveUuid) && (userServiceUuids[logServiceUuid])
+			logrus.Debugf("ENCLAVE MATCHES: %v", enclaveUuid == logEnclaveUuid)
+			logrus.Debugf("SERVICE MATCHES: %v", doesServiceMatch)
+			isValidBasedOnEnclaveAndServiceUuid := (enclaveUuid == logEnclaveUuid) && doesServiceMatch
 			shouldReturnLogLine := isValidBasedOnFilters && isValidBasedOnEnclaveAndServiceUuid
 			if !shouldReturnLogLine {
 				break
@@ -228,7 +244,7 @@ func streamServiceLogLines(
 			// send the log line
 			logLines := []logline.LogLine{*logLine}
 			userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
-				logServiceUuid: logLines,
+				serviceUUID: logLines,
 			}
 			logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
 			numLogsReturned++
