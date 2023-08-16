@@ -9,6 +9,7 @@ import (
 // These are necessary for propagating information for log filtering and retrieval through the logging pipeline
 var LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream = []*docker_label_key.DockerLabelKey{
 	label_key_consts.ContainerTypeDockerLabelKey,
+	label_key_consts.UserServiceGUIDDockerLabelKey,
 	label_key_consts.EnclaveUUIDDockerLabelKey,
 	label_key_consts.EnclaveNameDockerLabelKey,
 }
