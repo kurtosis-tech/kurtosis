@@ -12,7 +12,7 @@ Here are some quick short-cuts for folks who would prefer:
 * Not to run this package on their local machine: try it out on the [Kurtosis playground](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/eth2-package)
 :::
 
-We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now supports the Flashbot's implementation of[Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using [MEV-Boost](https://boost.flashbots.net) protocol. 
+We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now supports the Flashbot's implementation of[Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using [MEV-Boost](https://boost.flashbots.net) protocol.
 
 This milestone marks a huge step forward in the journey towards a full, in-protocol PBS implementation for Proof-of-Stake Ethereum as developers across the ecosystem now have a way to instantiate fully functioning testnets to validate functionality, behvaior, and scales across all client combinations with a Builder API implementation (Flashbots', in this case).
 
