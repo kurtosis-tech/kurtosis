@@ -1,6 +1,5 @@
 ---
-title: How to launch a private Ethereum testnet with in-protocol Proposer Builder Seperation (PBS) emulation
-sidebar_label: Launch a testnet with MEV infra
+title: How to launch a private Ethereum testnet with Proposer Builder Seperation (PBS) emulation using Flashbots MEV-Boost
 slug: /how-to-full-mev-with-eth2-package
 toc_max_heading_level: 2
 ---
@@ -12,7 +11,7 @@ Here are some quick short-cuts for folks who would prefer:
 * Not to run this package on their local machine: try it out on the [Kurtosis playground](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/eth2-package)
 :::
 
-We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now supports the Flashbot's implementation [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using Flashbot's open-source [MEV-Boost](https://boost.flashbots.net) protocol. 
+We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now supports Flashbot's implementation of [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using Flashbot's open-source [MEV-Boost](https://boost.flashbots.net) protocol. 
 
 This milestone marks a huge step forward in the journey towards a full, in-protocol PBS implementation for Proof-of-Stake Ethereum as developers across the ecosystem now have a way to instantiate fully functioning testnets to validate functionality, behvaior, and scales across all client combinations with a Builder API implementation (Flashbots', in this case).
 
@@ -36,7 +35,7 @@ Everything you see below in the architecture diagram gets configured, initialize
 ![mev-arch](/img/guides/full-mev-infra-arch-diagram.png)
 
 #### Caveats:
-* The `mev-boost-relay` service (a sidecar for the consensus layer client) requires Capella at an epoch of non-zero. For the eth2-package, the Capella fork is set to happen after the first epoch to be started up and fully connected to the CL client.
+* The `mev-boost-relay` service requires Capella at an epoch of non-zero. For the eth2-package, the Capella fork is set to happen after the first epoch to be started up and fully connected to the CL client.
 * Validators (64 per node by default, so 128 in the example in this guide) will get registered with the relay automatically after the 2nd epoch. This registration process is simply a configuration addition to the mev-boost config - which Kurtosis will automatically take care of as part of the set up. This means that the `mev-relay` infrastructure only becomes aware of the existence of the validators after the 2nd epoch.
 * After the 3rd epoch, the `mev-relay` service will begin to receive execution payloads (`eth_sendPayload`, which does not contain transaction content) from the `mev-builder` service (or `mock-builder` in `mock-mev` mode).
 * Validators will then start to receive validated execution payload headers from the `mev-relay` service (via `mev-boost`) after the 4th epoch. The validator selects the most valuable header, signs the payload, and returns the signed header to the relay - effectively proposing that block to be included. Once the relay verifies the block proposer's signature, the relay will respond with the full execution payload body (incl. the transaction contents) for the validator to use when proposing a `SignedBeaconBlock` to the network.
@@ -47,11 +46,11 @@ Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provi
 :::
 
 <details><summary>Sample output from `mev-flood` operations within the eth2-package:</summary>
-You will see this get printed in your terminal when Kurtosis initializes the `mev-flood` service
+You will see this get printed in your terminal when Kurtosis initializes the `mev-flood` service:
 	
 ```py
+
 Command returned with exit code '0' and the following output:
---------------------
 ENV: undefined
 connected to http://172.16.0.5:8545 with wallet 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
 deploying DAI contract
@@ -73,8 +72,8 @@ minting LP tokens...
 liquidity deployed via mempool
 Saved deployment: /app/cli/deployments/deployment.json
 deployment saved to deployment.json
---------------------
 ```
+
 </details>
 
 ## Quickstart
