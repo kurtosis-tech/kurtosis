@@ -58,7 +58,7 @@ The contents above will be used to define the specific parameters with which to 
 
 Now, create a `kurtosis.yml` file in the same folder with the following:
 ```yml
-name: github.com/my-testnet
+name: github.com/foo-bar/my-testnet
 ```
 Awesome. You have just created the beginnings of your first [Kurtosis package](../concepts-reference/packages.md)! This package will form the backbone of the environment definition you will use to instantiate and deploy your private testnet. A Kurtosis package is completely reproducible, modular, and will work locally (Docker, Minikube, k3s, etc) or in the cloud, on backends like EC2 or Kubernetes. All that is missing to make your new Kurtosis package [runnable](https://docs.kurtosis.com/concepts-reference/packages/#runnable-packages) is to push it to github and add a `main.star` file in the directory - which you will do next!
 
@@ -68,8 +68,6 @@ Now that you have a local project to house your definition and some parameters t
 # main.star
 geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
 lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
-
-# Again, replacing $YOUR_GITHUB_USERNAME with your Github username
 network_params = json.decode(read_file("./network_params.json"))
 ```
 
@@ -100,8 +98,6 @@ With some execution layer genesis data in hand, you will now bootstrap the node!
 # main.star
 geth = import_module("github.com/kurtosis-tech/geth-package/lib/geth.star")
 lighthouse = import_module("github.com/kurtosis-tech/lighthouse-package/lib/lighthouse.star")
-
-# Again, replacing $YOUR_GITHUB_USERNAME with your Github username
 network_params = json.decode(read_file("./network_params.json"))
 
 def run(plan):
@@ -186,8 +182,7 @@ We're currently building out more components of [`eth-kurtosis`](https://github.
 
 To recap, in this guide you:
 * Created a working directory locally for your Kurtosis package
-* Wrote a very short environment definition, `main.star`, which simply imported the client implementations for your node, generated the necessary starting state, and then launched them!
-* Pushed your environment definition to Github, enabling it to be used time and again for the future with complete reproduciblity. 
+* Wrote a very short environment definition, `main.star`, which imported the client launchers for your node, generated the necessary starting state, and then launched them!
 
 You also saw first-hand how the composability aspect of Kurtosis environment definitions were used to abstract away a lot of the complexities that come with bootstrapping your own node. And because this is entirely reproducible, your team can use this as a private blockchain for validating and testing changes for your application.
 
