@@ -91,9 +91,9 @@ The Kurtosis CLI cannot be installed directly on Windows. Windows users are enco
 </Tabs>
 
 :::tip
-In order to upgrade Kurtosis to another version *after you've performed a downgrade (i.e. installed a historical version)*, you must first uninstall the version of Kurtosis you've install and re-install Kurtosis. When using Homebrew, the workflow will be:
-1. `brew uninstall brew uninstall kurtosis-tech/tap/kurtosis-cli@<current-version>`
-2. `brew install kurtosis-tech/tap/kurtosis-cli` for upgrading to the latest version or `brew install kurtosis-tech/tap/kurtosis-cli@<target-version` for upgrading to a specific version
+In order to upgrade Kurtosis to another version *after you've performed a downgrade (i.e. installed a historical version)*, you must first uninstall the version of Kurtosis you've installed and re-install Kurtosis. When using Homebrew, the workflow will be (replacing `HISTORICAL-VERSION` with the historical version you have installed):
+1. `brew uninstall brew uninstall kurtosis-tech/tap/kurtosis-cli@HISTORICAL-VERSION`
+2. `brew install kurtosis-tech/tap/kurtosis-cli` for upgrading to the latest version or `brew install kurtosis-tech/tap/kurtosis-cli@TARGET-VERSION` for upgrading to a specific version
 3. `kurtosis engine restart`
 :::
 
