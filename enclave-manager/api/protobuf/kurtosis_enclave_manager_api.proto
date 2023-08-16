@@ -1,0 +1,27 @@
+syntax = "proto3";
+package kurtosis_enclave_manager;
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings";
+
+import "google/protobuf/empty.proto";
+
+service KurtosisEnclaveManagerServer {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc GetEnclaves(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc GetServices(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+}
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;  // Used only by the Watch method.
+  }
+  ServingStatus status = 1;
+}
