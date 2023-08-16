@@ -400,12 +400,7 @@ func (network *DefaultServiceNetwork) RemoveService(
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting the service registration for service '%s'", serviceName)
 	}
-
 	serviceUuid := serviceToRemove.GetUUID()
-
-	if err := network.serviceRegistrationRepository.Delete(serviceName); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred deleting the service registration for service '%v' from the repository", serviceName)
-	}
 
 	// We stop the service, rather than destroying it, so that we can keep logs around
 	stopServiceFilters := &service.ServiceFilters{
@@ -421,6 +416,10 @@ func (network *DefaultServiceNetwork) RemoveService(
 	}
 	if err, found := erroredUuids[serviceUuid]; found {
 		return "", stacktrace.Propagate(err, "An error occurred stopping service '%v'", serviceUuid)
+	}
+
+	if err := network.serviceRegistrationRepository.Delete(serviceName); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred deleting the service registration for service '%v' from the repository", serviceName)
 	}
 
 	return serviceUuid, nil
