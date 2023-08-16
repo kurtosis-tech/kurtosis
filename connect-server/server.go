@@ -31,7 +31,7 @@ func NewConnectServer(listenPort uint16, stopGracePeriod time.Duration, handler 
 	}
 }
 func (server *ConnectServer) RunServerUntilInterrupted() error {
-	return server.RunServerUntilInterruptedWithCors(cors.Default())
+	return server.RunServerUntilInterruptedWithCors(cors.AllowAll())
 }
 
 func (server *ConnectServer) RunServerUntilInterruptedWithCors(cors *cors.Cors) error {

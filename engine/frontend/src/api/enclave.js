@@ -5,8 +5,9 @@ import {EngineServicePromiseClient} from "kurtosis-sdk/build/engine/kurtosis_eng
 import google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
 import { StoreFilesArtifactFromServiceArgs } from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb';
 import {runStarlarkPackage} from "./container"
+import axios from "axios";
 
-const engineClient = new EngineServicePromiseClient("http://localhost:9710");
+const ENGINE_URL =  "http://localhost:9710"
 
 const createApiPromiseClient = (apiClient) => {
     if (apiClient) {
@@ -15,22 +16,45 @@ const createApiPromiseClient = (apiClient) => {
     return "";
 }
 
-export const getEnclavesFromKurtosis = async () => {
-    const respFromGrpc = await engineClient.getEnclaves(new google_protobuf_empty_pb.Empty, null);
-    const response = respFromGrpc.toObject()
-    
-    // processing the data so that frontend can consume it! 
-    const responseProcessed = response.enclaveInfoMap.map(enclave => {
-        return {
-            uuid: enclave[0],
-            name: enclave[1].name,
-            created: enclave[1].creationTime.seconds,
-            status: enclave[1].apiContainerStatus,
-            apiClient: createApiPromiseClient(enclave[1].apiContainerHostMachineInfo) 
-        }
-    });
+export const makeRestApiRequest = async ( url, data, config) => {
+    const response = await axios.post(`${ENGINE_URL}/${url}`, data, config)
+    return response;
+}
 
-    return responseProcessed
+export const getEnclavesFromKurtosis = async () => {
+    const respFromGrpc = await makeRestApiRequest(
+         "engine_api.EngineService/GetEnclaves",
+        {"field":""},
+        {"headers":{'Content-Type': "application/json"}}
+    )
+
+    const {data} = respFromGrpc
+    return Object.keys(data.enclaveInfo).map(key => {
+        const enclave = data.enclaveInfo[key]
+        return {
+            uuid: enclave.enclaveUuid,
+            name: enclave.name,
+            created: enclave.creationTime,
+            status: enclave.apiContainerStatus,
+            apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo)
+        }
+    })
+
+}
+
+export const createEnclave = async () => {
+    const enclaveArgs = new CreateEnclaveArgs();
+    enclaveArgs.setApiContainerVersionTag("")
+    enclaveArgs.setApiContainerLogLevel("info");
+    const enclaveGRPC = await engineClient.createEnclave(enclaveArgs, null)
+    const enclave = enclaveGRPC.toObject().enclaveInfo;
+    return {
+        uuid: enclave.uuid,
+        name: enclave.name,
+        created: enclave.creationTime.seconds,
+        status: enclave.apiContainerStatus,
+        apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo)
+    }
 }
 
 export const getServiceLogs = async (enclaveName, serviceUuid) => {
@@ -46,20 +70,7 @@ export const getServiceLogs = async (enclaveName, serviceUuid) => {
     return stream;
 }
 
-export const createEnclave = async () => {
-    const enclaveArgs = new CreateEnclaveArgs();
-    enclaveArgs.setApiContainerVersionTag("")
-    enclaveArgs.setApiContainerLogLevel("info");
-    const enclaveGRPC = await engineClient.createEnclave(enclaveArgs, null)
-    const enclave = enclaveGRPC.toObject().enclaveInfo;
-    return {
-        uuid: enclave.uuid,
-        name: enclave.name,
-        created: enclave.creationTime.seconds,
-        status: enclave.apiContainerStatus,
-        apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo) 
-    }
-}
+
 
 export const runStarlark = async(apiClient, packageId, args) => {
     const stream = await runStarlarkPackage(apiClient, packageId, args)
