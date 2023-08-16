@@ -17,10 +17,6 @@ import (
 const (
 	engineServerNamePrefix = "kurtosis-engine"
 	logsAggregatorName     = "kurtosis-logs-aggregator"
-
-	//We always use the same name because we are going to have only one instance of this volume,
-	//so when the engine is restarted it mounts the same volume with the previous logs
-	logsAggregatorVolumeName = logsAggregatorName + "-vol"
 )
 
 type DockerObjectAttributesProvider interface {
@@ -31,7 +27,6 @@ type DockerObjectAttributesProvider interface {
 	) (DockerObjectAttributes, error)
 	ForEnclave(enclaveUuid enclave.EnclaveUUID) (DockerEnclaveObjectAttributesProvider, error)
 	ForLogsAggregator() (DockerObjectAttributes, error)
-	ForLogsAggregatorVolume() (DockerObjectAttributes, error)
 }
 
 func GetDockerObjectAttributesProvider() DockerObjectAttributesProvider {
@@ -119,23 +114,5 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregator() (DockerO
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
 	}
-	return objectAttributes, nil
-}
-
-func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregatorVolume() (DockerObjectAttributes, error) {
-	name, err := docker_object_name.CreateNewDockerObjectName(logsAggregatorVolumeName)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker object name object from string '%v'", logsAggregatorVolumeName)
-	}
-
-	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.VolumeTypeDockerLabelKey: label_value_consts.LogsAggregatorTypeDockerLabelValue,
-	}
-
-	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while creating the ObjectAttributesImpl with the name '%s' and labels '%+v'", name, labels)
-	}
-
 	return objectAttributes, nil
 }
