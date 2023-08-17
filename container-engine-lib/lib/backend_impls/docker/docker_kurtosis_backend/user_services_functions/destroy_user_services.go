@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"sync"
 )
@@ -27,7 +28,7 @@ func DestroyUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
-	serviceRegistrationsForEnclave map[service.ServiceUUID]*service.ServiceRegistration,
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	serviceRegistrationMutex *sync.Mutex,
 	freeIpProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
@@ -40,7 +41,7 @@ func DestroyUserServices(
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
 
-	successfulUuids, erroredUuids, err := destroyUserServicesUnlocked(ctx, enclaveUuid, filters, serviceRegistrationsForEnclave, freeIpProviderForEnclave, dockerManager)
+	successfulUuids, erroredUuids, err := destroyUserServicesUnlocked(ctx, enclaveUuid, filters, serviceRegistrationRepository, freeIpProviderForEnclave, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while destroying user services")
 	}

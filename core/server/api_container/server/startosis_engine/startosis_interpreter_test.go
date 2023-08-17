@@ -64,7 +64,7 @@ func (suite *StartosisInterpreterTestSuite) SetupTest() {
 
 	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore)
 
-	mockedServiceRegistration := service.NewServiceRegistration(
+	service.NewServiceRegistration(
 		testServiceName,
 		service.ServiceUUID(fmt.Sprintf("%s-%s", testServiceName, serviceUuidSuffix)),
 		mockEnclaveUuid,
@@ -72,7 +72,7 @@ func (suite *StartosisInterpreterTestSuite) SetupTest() {
 		string(testServiceName),
 	)
 	suite.serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Maybe().Return(mockFileArtifactName, nil)
-	suite.serviceNetwork.EXPECT().GetServiceRegistration(testServiceName).Maybe().Return(&mockedServiceRegistration, nil)
+	suite.serviceNetwork.EXPECT().ExistServiceRegistration(testServiceName).Maybe().Return(true, nil)
 }
 
 func TestRunStartosisInterpreterTestSuite(t *testing.T) {
