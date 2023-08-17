@@ -24,8 +24,16 @@ func NewWebserver() *WebServer {
 	return &WebServer{}
 }
 
-func (c *WebServer) Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error) {
-	return nil, nil
+func (c *WebServer) Check(
+	_ context.Context,
+	req *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest],
+) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error) {
+	response := &connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse]{
+		Msg: &kurtosis_enclave_manager_api_bindings.HealthCheckResponse{
+			Status: 1,
+		},
+	}
+	return response, nil
 }
 func (c *WebServer) GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return nil, nil
