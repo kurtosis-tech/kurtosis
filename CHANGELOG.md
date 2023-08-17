@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.81.9](https://github.com/kurtosis-tech/kurtosis/compare/0.81.8...0.81.9) (2023-08-17)
+
+
+### Features
+
+* Implements service registration repository in Docker Kurtosis Backend ([#1105](https://github.com/kurtosis-tech/kurtosis/issues/1105)) ([723a14e](https://github.com/kurtosis-tech/kurtosis/commit/723a14e041a74744337aeb38d64fa86306b36883))
+
+## [0.81.8](https://github.com/kurtosis-tech/kurtosis/compare/0.81.7...0.81.8) (2023-08-15)
+
+
+### Bug Fixes
+
+* make enclave identifier arg passable to service identifier completion provider ([#1107](https://github.com/kurtosis-tech/kurtosis/issues/1107)) ([051bc95](https://github.com/kurtosis-tech/kurtosis/commit/051bc95287fc56ed1af077c8992edeef935bdc57)), closes [#1094](https://github.com/kurtosis-tech/kurtosis/issues/1094)
+
 ## [0.81.7](https://github.com/kurtosis-tech/kurtosis/compare/0.81.6...0.81.7) (2023-08-14)
 
 

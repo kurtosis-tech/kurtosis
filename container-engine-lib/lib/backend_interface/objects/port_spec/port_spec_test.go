@@ -1,9 +1,14 @@
 package port_spec
 
 import (
+	"encoding/json"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
+)
+
+var (
+	httpAppProtocol = "https"
 )
 
 var portWaitForTest = NewWait(5 * time.Second)
@@ -14,14 +19,17 @@ func TestConstructorErrorsOnUnrecognizedProtocol(t *testing.T) {
 }
 
 func TestNewPortSpec_WithApplicationProtocolPresent(t *testing.T) {
-	https := "https"
-	spec, err := NewPortSpec(123, TransportProtocol_TCP, https, portWaitForTest)
+	spec, err := NewPortSpec(123, TransportProtocol_TCP, httpAppProtocol, portWaitForTest)
 
-	specActual := &PortSpec{
+	privatePortSpec := &privatePortSpec{
 		123,
 		TransportProtocol_TCP,
-		&https,
+		&httpAppProtocol,
 		portWaitForTest,
+	}
+
+	specActual := &PortSpec{
+		privatePortSpec,
 	}
 
 	require.NoError(t, err)
@@ -31,13 +39,35 @@ func TestNewPortSpec_WithApplicationProtocolPresent(t *testing.T) {
 func TestNewPortSpec_WithApplicationProtocolAbsent(t *testing.T) {
 	spec, err := NewPortSpec(123, TransportProtocol_TCP, "", portWaitForTest)
 
-	specActual := &PortSpec{
+	privatePortSpec := &privatePortSpec{
 		123,
 		TransportProtocol_TCP,
 		nil,
 		portWaitForTest,
 	}
 
+	specActual := &PortSpec{
+		privatePortSpec,
+	}
+
 	require.NoError(t, err)
 	require.Equal(t, spec, specActual)
+}
+
+func TestPortSpecMarshallers(t *testing.T) {
+	originalPortSpec, err := NewPortSpec(123, TransportProtocol_TCP, httpAppProtocol, portWaitForTest)
+	require.NoError(t, err)
+
+	marshaledPortSpec, err := json.Marshal(originalPortSpec)
+	require.NoError(t, err)
+	require.NotNil(t, marshaledPortSpec)
+
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
+	newPortSpec := &PortSpec{}
+
+	err = json.Unmarshal(marshaledPortSpec, newPortSpec)
+	require.NoError(t, err)
+
+	require.EqualValues(t, originalPortSpec, newPortSpec)
 }

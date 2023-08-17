@@ -298,7 +298,12 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 	}
 
 	// otherwise we fetch everything
-	for serviceName := range apicService.serviceNetwork.GetServiceNames() {
+	allServiceNames, err := apicService.serviceNetwork.GetServiceNames()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting all service names")
+	}
+
+	for serviceName := range allServiceNames {
 		serviceNameStr := string(serviceName)
 		serviceInfo, err := apicService.getServiceInfo(ctx, serviceNameStr)
 		if err != nil {
