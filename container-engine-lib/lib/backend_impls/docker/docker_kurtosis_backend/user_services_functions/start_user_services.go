@@ -233,6 +233,7 @@ func StartRegisteredUserServices(
 		if err := serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
 			failedServicesPool[serviceUuid] = stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s'", serviceStatus, serviceName)
 			delete(successfulStarts, serviceUuid)
+			delete(successfulServicesPool, serviceUuid)
 			continue
 		}
 	}
