@@ -39,17 +39,21 @@ export const getEnclavesFromKurtosis = async () => {
     )
 
     const {data} = respFromGrpc
-    return Object.keys(data.enclaveInfo).map(key => {
-        const enclave = data.enclaveInfo[key]
-        return {
-            uuid: enclave.enclaveUuid,
-            name: enclave.name,
-            created: enclave.creationTime,
-            status: enclave.apiContainerStatus,
-            apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo)
-        }
-    })
 
+    if ("enclaveInfo" in data) {
+        return Object.keys(data.enclaveInfo).map(key => {
+            const enclave = data.enclaveInfo[key]
+            return {
+                uuid: enclave.enclaveUuid,
+                name: enclave.name,
+                created: enclave.creationTime,
+                status: enclave.apiContainerStatus,
+                apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo)
+            }
+        })
+    }
+
+    return []
 }
 
 export const createEnclave = async () => {
