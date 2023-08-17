@@ -112,6 +112,10 @@ func (creator *EnclaveCreator) CreateEnclave(
 	newEnclaveUuidStr := string(newEnclaveUuid)
 	shortenedUuid := uuid_generator.ShortenedUUIDString(newEnclaveUuidStr)
 
+	bridgeIpAddr := ""
+	if apiContainer.GetBridgeNetworkIPAddress() != nil {
+		bridgeIpAddr = apiContainer.GetBridgeNetworkIPAddress().String()
+	}
 	newEnclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:        newEnclaveUuidStr,
 		Name:               newEnclave.GetName(),
@@ -122,6 +126,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 			ContainerId:           "",
 			IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
 			GrpcPortInsideEnclave: uint32(apiContainerListenGrpcPortNumInsideNetwork),
+			BridgeIpAddress:       bridgeIpAddr,
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,

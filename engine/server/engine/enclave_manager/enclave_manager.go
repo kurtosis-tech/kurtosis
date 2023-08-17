@@ -379,10 +379,16 @@ func getEnclaveApiContainerInformation(
 	if err != nil {
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container status for enclave '%v'", enclaveId)
 	}
+
+	bridgeIpAddr := ""
+	if apiContainer.GetBridgeNetworkIPAddress() != nil {
+		bridgeIpAddr = apiContainer.GetBridgeNetworkIPAddress().String()
+	}
 	resultApiContainerInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
 		ContainerId:           "",
 		IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
 		GrpcPortInsideEnclave: uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
+		BridgeIpAddress:       bridgeIpAddr,
 	}
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if resultApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {
