@@ -169,9 +169,9 @@ func streamServiceLogLines(
 				return
 			}
 
-			// each logLineStr is of the following structure: {"label1": "...", "label2":"...", "log": "...", "timestamp", ... }
-			// eg. {"container_type":"api-container","enclave_id":"ffd1c0ba29e1a464c","container_id":"8f8558ba",
-			//	"container_name":"/kurtosis-api--ffd", "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
+			// each logLineStr is of the following structure: {"enclave_uuid": "...", "service_uuid":"...", "log": "...",.. "timestamp":"..."}
+			// eg. {"container_type":"api-container", "container_id":"8f8558ba", "container_name":"/kurtosis-api--ffd",
+			// "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
 
 			// First, we decode the line
 			var jsonLog JsonLog

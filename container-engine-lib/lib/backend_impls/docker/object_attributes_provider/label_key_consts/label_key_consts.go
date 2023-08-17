@@ -37,9 +37,9 @@ const (
 
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
 
-	// We create a duplicate of the enclave id label key because:
-	// the logs aggregator (vector) needs the enclave id label to create the filepath where logs are stored in persistent volume
-	// but vectors template syntax can't interpret "com.kurtosistech.enclave-id"
+	// We create a duplicate of the enclave uuid and service uuid label key because:
+	// the logs aggregator (vector) needs the enclave uuid and service uuid label keys to create the filepath where logs are stored in persistent volume
+	// but vectors template syntax can't interpret the "com.kurtosistech." prefix, so we can't use the existing label keys
 	logsEnclaveUuidLabelKeyStr    = "enclave_uuid"
 	logsServiceUuidDockerLabelKey = "service_uuid"
 )
@@ -64,5 +64,5 @@ var EnclaveNameDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enc
 var EnclaveCreationTimeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveCreationTime)
 var PrivateIPDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
 var UserServiceGUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(userServiceGuidDockerLabelKeyStr)
-var LogsEnclaveIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsEnclaveUuidLabelKeyStr)
-var LogsServiceIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsServiceUuidDockerLabelKey)
+var LogsEnclaveUUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsEnclaveUuidLabelKeyStr)
+var LogsServiceUUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsServiceUuidDockerLabelKey)
