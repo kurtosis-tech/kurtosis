@@ -76,15 +76,15 @@ export const createEnclave = async () => {
     }
 }
 
-export const getServiceLogs = async (enclaveName, serviceUuid) => {
+export const getServiceLogs = async (ctrl, enclaveName, serviceUuid) => {
     const args = {
         "enclaveIdentifier": enclaveName,
         "serviceUuidSet": {
             [serviceUuid]: true
         },
-        followLogs: false,
+        followLogs: true,
     }
-    return engineClient.getServiceLogs(args);
+    return engineClient.getServiceLogs(args, {signal: ctrl.signal});
 }
 
 export const runStarlark = async(apiClient, packageId, args) => {
