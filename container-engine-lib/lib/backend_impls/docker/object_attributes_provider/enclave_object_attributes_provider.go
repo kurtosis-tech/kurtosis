@@ -112,7 +112,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enc
 
 	labels[label_key_consts.EnclaveCreationTimeLabelKey] = creationTimeLabelValue
 	labels[label_key_consts.EnclaveNameDockerLabelKey] = enclaveNameLabelValue
-	labels[label_key_consts.LogsEnclaveIDDockerLabelKey] = provider.enclaveId
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -237,7 +236,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
 	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
 	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
-	labels[label_key_consts.LogsEnclaveIDDockerLabelKey] = provider.enclaveId
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -469,7 +467,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForUserService
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
 	return map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.EnclaveUUIDDockerLabelKey: provider.enclaveId,
+		label_key_consts.EnclaveUUIDDockerLabelKey:   provider.enclaveId,
+		label_key_consts.LogsEnclaveIDDockerLabelKey: provider.enclaveId,
 	}
 }
 
@@ -480,6 +479,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", guid)
 	}
 	labels[label_key_consts.GUIDDockerLabelKey] = guidLabelValue
+	labels[label_key_consts.LogsServiceIDDockerLabelKey] = guidLabelValue
 	return labels, nil
 }
 

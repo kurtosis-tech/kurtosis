@@ -21,7 +21,7 @@ const (
 	oneSenderAdded = 1
 
 	// Location of logs on the filesystem of the engine
-	logsFilepath = "/var/log/kurtosis/logs.json"
+	logsStorageDirpath = "/var/log/kurtosis/"
 
 	newlineRune = '\n'
 
@@ -251,3 +251,5 @@ func streamServiceLogLines(
 		}
 	}
 }
+
+func constructLogsFilepath(userSer)

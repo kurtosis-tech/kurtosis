@@ -27,7 +27,7 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	containerLabels map[string]string,
 	networkId string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
-	// TODO: get volume name from arg pass in via objs attr provider
+	//j
 	volumeMounts := map[string]string{
 		"kurtosis-logs-storage": logsStorageDirpath,
 	}

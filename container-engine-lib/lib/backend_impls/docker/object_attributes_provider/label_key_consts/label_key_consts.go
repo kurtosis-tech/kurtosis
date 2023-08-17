@@ -30,17 +30,18 @@ const (
 
 	enclaveIdLabelKeyStr = labelNamespaceStr + "enclave-id"
 
-	// We create a duplicate of the enclave id label key because:
-	// the logs aggregator (vector) needs the enclave id label to create the filepath where logs are stored in persistent volume
-	// but vectors template syntax can't interpret "com.kurtosistech.enclave-id"
-	logsEnclaveIdLabelKeyStr = "enclave-id"
-
 	// TODO deprecate this in favor of storing in DB
 	enclaveNameLabelKeyStr = labelNamespaceStr + "enclave-name"
 
 	enclaveCreationTime = labelNamespaceStr + "enclave-creation-time"
 
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
+
+	// We create a duplicate of the enclave id label key because:
+	// the logs aggregator (vector) needs the enclave id label to create the filepath where logs are stored in persistent volume
+	// but vectors template syntax can't interpret "com.kurtosistech.enclave-id"
+	logsEnclaveUuidLabelKeyStr    = "enclave_uuid"
+	logsServiceUuidDockerLabelKey = "service_uuid"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -59,8 +60,9 @@ var IDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(idLabelKeySt
 var GUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(guidLabelKeyStr)
 var PortSpecsDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(portSpecsLabelKeyStr)
 var EnclaveUUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveIdLabelKeyStr)
-var LogsEnclaveIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsEnclaveIdLabelKeyStr)
 var EnclaveNameDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveNameLabelKeyStr)
 var EnclaveCreationTimeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveCreationTime)
 var PrivateIPDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
 var UserServiceGUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(userServiceGuidDockerLabelKeyStr)
+var LogsEnclaveIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsEnclaveUuidLabelKeyStr)
+var LogsServiceIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsServiceUuidDockerLabelKey)
