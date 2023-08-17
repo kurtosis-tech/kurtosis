@@ -12,7 +12,6 @@ import (
 // We had created this to return the user's IP before the container exists
 // The user doesn't need the private IP address anymore.
 // Now this is used for caches in APIC & DockerKurtosisBackend
-// TODO visit removing this after data is stored in a database
 type ServiceRegistration struct {
 	// we do this way in order to have exported fields which can be marshalled
 	// and an unexported type for encapsulation
