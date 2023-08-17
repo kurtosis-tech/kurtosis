@@ -56,9 +56,6 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	context.CancelFunc,
 	error,
 ) {
-	logrus.Debugf("ENCLAVE UUID: %v", enclaveUuid)
-	logrus.Debugf("USER SERVICE UUIDS: %v", userServiceUuids)
-
 	ctx, cancelCtxFunc := context.WithCancel(ctx)
 
 	conjunctiveLogFiltersWithRegex, err := logline.NewConjunctiveLogFiltersWithRegex(conjunctiveLogLineFilters)
