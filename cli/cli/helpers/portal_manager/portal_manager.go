@@ -207,7 +207,7 @@ func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRem
 		} else {
 			logrus.Warnf("Mapping other than TCP or UDP port is not supported right now. Will skip port '%d' because protocal is '%v'", remotePort.GetNumber(), remotePort.GetTransportProtocol())
 		}
-		forwardPortsArgs := portal_constructors.NewForwardPortArgs(uint32(localPort), uint32(remotePort.GetNumber()), kurtosis_context.UserServiceEndpointType, &transportProtocol)
+		forwardPortsArgs := portal_constructors.NewForwardPortArgs(uint32(localPort), uint32(remotePort.GetNumber()), kurtosis_context.UserServiceEndpointType, &transportProtocol, &kurtosis_context.ForwardPortDoNotWaitUntilReady)
 		if _, err := portalManager.portalClientMaybe.ForwardPort(ctx, forwardPortsArgs); err != nil {
 			failedPorts[localPort] = remotePort
 		} else {

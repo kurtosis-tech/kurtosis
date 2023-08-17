@@ -137,7 +137,7 @@ func (manager *EngineManager) GetEngineStatus(
 			if portalManager.IsReachable() {
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(runningEngineIpAndPort.portNum), uint32(runningEngineIpAndPort.portNum), kurtosis_context.EngineRemoteEndpointType, &kurtosis_context.EnginePortTransportProtocol)
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(runningEngineIpAndPort.portNum), uint32(runningEngineIpAndPort.portNum), kurtosis_context.EngineRemoteEndpointType, &kurtosis_context.EnginePortTransportProtocol, &kurtosis_context.ForwardPortWaitUntilReady)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return "", nil, "", stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
 				}
@@ -353,11 +353,6 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	}
 	hostMachinePortBinding := engineGuarantor.getPostVisitingHostMachineIpAndPort()
 
-	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(hostMachinePortBinding)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the running engine; this is very strange and likely indicates a bug in the engine itself")
-	}
-
 	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
 	if err == nil {
 		if store.IsRemote(currentContext) {
@@ -365,7 +360,7 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 			if portalManager.IsReachable() {
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(hostMachinePortBinding.portNum), uint32(hostMachinePortBinding.portNum), kurtosis_context.EngineRemoteEndpointType, &kurtosis_context.EnginePortTransportProtocol)
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(hostMachinePortBinding.portNum), uint32(hostMachinePortBinding.portNum), kurtosis_context.EngineRemoteEndpointType, &kurtosis_context.EnginePortTransportProtocol, &kurtosis_context.ForwardPortWaitUntilReady)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return nil, nil, stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine.")
 				}
@@ -373,6 +368,11 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 		}
 	} else {
 		logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
+	}
+
+	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(hostMachinePortBinding)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the running engine; this is very strange and likely indicates a bug in the engine itself")
 	}
 
 	clusterType := manager.clusterConfig.GetClusterType()

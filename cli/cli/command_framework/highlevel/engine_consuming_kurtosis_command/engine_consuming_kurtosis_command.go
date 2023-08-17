@@ -163,7 +163,7 @@ func (cmd *EngineConsumingKurtosisCommand) getSetupFunc() func(context.Context) 
 				}
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), kurtosis_context.EngineRemoteEndpointType, &kurtosis_context.EnginePortTransportProtocol)
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), uint32(kurtosis_context.DefaultGrpcEngineServerPortNum), kurtosis_context.EngineRemoteEndpointType, &kurtosis_context.EnginePortTransportProtocol, &kurtosis_context.ForwardPortWaitUntilReady)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return nil, stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
 				}
