@@ -17,7 +17,7 @@ import (
 
 func destroyUserServicesUnlocked(
 	ctx context.Context,
-	enclaveId enclave.EnclaveUUID,
+	enclaveUuid enclave.EnclaveUUID,
 	filters *service.ServiceFilters,
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	enclaveFreeIpProvidersForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
@@ -31,9 +31,9 @@ func destroyUserServicesUnlocked(
 	// no Kurtosis service - and not all registrations will have Docker resources
 	matchingRegistrations := map[service.ServiceUUID]*service.ServiceRegistration{}
 
-	serviceRegistrationsForEnclave, err := serviceRegistrationRepository.GetAllEnclaveServiceRegistrations(enclaveId)
+	serviceRegistrationsForEnclave, err := serviceRegistrationRepository.GetAllEnclaveServiceRegistrations(enclaveUuid)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all enclave service registrations from the repository for enclave with UUID '%v'", enclaveId)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all enclave service registrations from the repository for enclave with UUID '%v'", enclaveUuid)
 	}
 
 	for uuid, registration := range serviceRegistrationsForEnclave {
@@ -54,7 +54,7 @@ func destroyUserServicesUnlocked(
 
 	// NOTE: This may end up with less results here than we have registrations, if the user registered but did not start a service,
 	// though we should never end up with _more_ Docker resources
-	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveId, filters, dockerManager)
+	allServiceObjs, allDockerResources, err := shared_helpers.GetMatchingUserServiceObjsAndDockerResourcesNoMutex(ctx, enclaveUuid, filters, dockerManager)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred getting user services matching filters '%+v'", filters)
 	}
