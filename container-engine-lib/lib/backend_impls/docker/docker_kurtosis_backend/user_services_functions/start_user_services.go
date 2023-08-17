@@ -595,7 +595,6 @@ func createStartServiceOperation(
 			return nil, stacktrace.NewError("Expected to have a logs collector server address value to send the user service logs, but it is empty")
 		}
 
-		logrus.Debugf("LOG COLLECTOR LABELS: %v", logsCollectorLabels)
 		// The container will be configured to send the logs to the Fluentbit logs collector server
 		fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
 			logsCollectorAddress,

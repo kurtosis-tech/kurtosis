@@ -25,6 +25,7 @@ const (
 	frontendPortSpec                            = 9711
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
+	logsStorageDirpath                          = "/var/log/kurtosis"
 )
 
 func CreateEngine(
@@ -72,10 +73,19 @@ func CreateEngine(
 	targetNetworkId := engineNetwork.GetId()
 
 	logrus.Infof("Starting the centralized logs components...")
+	logsStorageAttrs, err := objAttrsProvider.ForLogsStorageVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving logs storage object attributes.")
+	}
+	logsStorageVolumeNameStr := logsStorageAttrs.GetName().GetString()
+	volumeLabelStrs := map[string]string{}
+	for labelKey, labelValue := range logsStorageAttrs.GetLabels() {
+		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
 	// Creation of volume should be idempotent because the volume with persisted logs in it could already exist
 	// Thus, we don't defer an undo volume if this operation fails
-	// TODO: retrieve name and labels from objsAttrProvider
-	if err = dockerManager.CreateVolume(ctx, "kurtosis-logs-storage", map[string]string{}); err != nil {
+	if err = dockerManager.CreateVolume(ctx, logsStorageVolumeNameStr, volumeLabelStrs); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating logs storage.")
 	}
 
@@ -142,7 +152,7 @@ func CreateEngine(
 	}
 
 	volumeMounts := map[string]string{
-		"kurtosis-logs-storage": "/var/log/kurtosis/",
+		logsStorageVolumeNameStr: logsStorageDirpath,
 	}
 
 	if serverArgs.OnBastionHost {

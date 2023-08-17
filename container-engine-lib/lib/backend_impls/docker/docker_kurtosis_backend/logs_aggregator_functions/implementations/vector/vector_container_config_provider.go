@@ -26,10 +26,11 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	containerName string,
 	containerLabels map[string]string,
 	networkId string,
+	logsStorageVolumeName string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
-	//j
+
 	volumeMounts := map[string]string{
-		"kurtosis-logs-storage": logsStorageDirpath,
+		logsStorageVolumeName: logsStorageDirpath,
 	}
 
 	logsAggregatorConfigContentStr, err := vector.getConfigFileContent()
