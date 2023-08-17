@@ -4,10 +4,8 @@
 # It requires the Golang Protobuf extension to the 'protoc' compiler, as well as the Golang gRPC extension
 
 set -euo pipefail
-# script_dirpath="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
-
-
-
+script_dir_path="$(cd "$(dirname "${BASH_SOURCE[0]}")"; pwd)"
+api_dir_path="$(dirname "${script_dir_path}")"
 # ==================================================================================================
 #                                           Constants
 # ==================================================================================================
@@ -247,6 +245,19 @@ generate_typescript_bindings() {
                 "${input_filepath}"; then
             echo "Error: An error occurred generating TypeScript Web bindings for file '${input_filepath}'" >&2
             return 1
+        fi
+
+        if ! "${node_protoc_bin_filepath}" \
+              -I="${input_abs_dirpath}" \
+              "--plugin=protoc-gen-es=${api_dir_path}/typescript/node_modules/.bin/protoc-gen-es" \
+              "--es_out=${output_abs_dirpath}/connect" \
+              "--es_opt=target=js+dts" \
+              "--plugin=protoc-gen-connect-es=${api_dir_path}/typescript/node_modules/.bin/protoc-gen-connect-es" \
+              "--connect-es_out=${output_abs_dirpath}/connect" \
+              "--connect-es_opt=target=js+dts" \
+              "${input_filepath}"; then
+          echo "Error: An error occurred generating TypeScript Node bindings for file '${input_filepath}'" >&2
+          return 1
         fi
     done
 }

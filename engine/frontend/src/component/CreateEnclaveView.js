@@ -28,7 +28,7 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
     useEffect(() => {
         setLoading(true)
         let stream;
-        const fetch = async () => {
+        const fetchLogs = async () => {
           stream = await runStarlark(enclave.apiClient, packageId, args);
           stream.on("data", data => {
             const result = data.toObject();
@@ -68,7 +68,7 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
           });
         }
 
-        fetch();
+        fetchLogs();
     }, [packageId])
 
     const handleServiceClick = (service) => {

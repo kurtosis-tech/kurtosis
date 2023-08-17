@@ -45,20 +45,17 @@ const ServiceInfo = ({enclaves}) => {
     const {name: enclaveName, uuid:serviceUuid} = params;
 
     useEffect(() => {
-        let stream;
-        const fetch = async () => {
-            stream = await getServiceLogs(enclaveName, serviceUuid);
-            stream.on("data", data => {
-                const log = data.toObject().serviceLogsByServiceUuidMap[0][1].lineList
-                setLogs(logs => [...logs, log[0]])
-            })
+        const fetchLogs = async () => {
+            const stream = await getServiceLogs(enclaveName, serviceUuid);
+            console.log(stream)
+            for await (const res of stream) {
+               const log = res["serviceLogsByServiceUuid"][serviceUuid]["line"][0]
+                setLogs(logs => [...logs, log])
+            }
         }
-        fetch()
+        fetchLogs()
         return () => {
-            if (stream) {
-                stream.cancel();
-                setLogs([])
-            };
+            setLogs([]);
         };
     }, [serviceUuid])
 

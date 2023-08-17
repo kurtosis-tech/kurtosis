@@ -1,7 +1,21 @@
 //import {EngineServicePromiseClient} from 'kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb'
-import {GetServiceLogsArgs, CreateEnclaveArgs} from 'kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/engine_service_pb'
 import {runStarlarkPackage} from "./container"
 import axios from "axios";
+
+import {EngineService} from  "kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/connect/engine_service_connect";
+
+import {createPromiseClient} from "@bufbuild/connect";
+
+import {
+    createConnectTransport,
+} from "@bufbuild/connect-web";
+
+
+const transport = createConnectTransport({
+    baseUrl: "http://localhost:9710"
+})
+
+const engineClient = createPromiseClient(EngineService, transport);
 
 const ENGINE_URL =  "http://localhost:9710"
 
@@ -39,34 +53,35 @@ export const getEnclavesFromKurtosis = async () => {
 }
 
 export const createEnclave = async () => {
-    const enclaveArgs = new CreateEnclaveArgs();
-    enclaveArgs.setApiContainerVersionTag("")
-    enclaveArgs.setApiContainerLogLevel("info");
-    const enclaveGRPC = await engineClient.createEnclave(enclaveArgs, null)
-    const enclave = enclaveGRPC.toObject().enclaveInfo;
+    const data = {
+        apiContainerVersionTag: "",
+        apiContainerLogLevel: "info",
+        isPartitioningEnabled: false,
+    }
+    const response = await makeRestApiRequest("engine_api.EngineService/CreateEnclave", JSON.stringify(data), {"headers":{'Content-Type': "application/json"}})
+
+    const enclave = response.data.enclaveInfo;
+    const apiClient = createApiPromiseClient(enclave.apiContainerHostMachineInfo);
+
     return {
-        uuid: enclave.uuid,
+        uuid: enclave.enclaveUuid,
         name: enclave.name,
-        created: enclave.creationTime.seconds,
+        created: enclave.creationTime,
         status: enclave.apiContainerStatus,
-        apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo)
+        apiClient
     }
 }
 
 export const getServiceLogs = async (enclaveName, serviceUuid) => {
-    const args = new GetServiceLogsArgs();
-
-    args.setEnclaveIdentifier(enclaveName);
-    const serviceUuidMapSet = args.getServiceUuidSetMap();
-    const isServiceUuidInSet = true;
-    serviceUuidMapSet.set(serviceUuid, isServiceUuidInSet)
-    args.setFollowLogs(true);
-
-    const stream = engineClient.getServiceLogs(args, {});
-    return stream;
+    const args = {
+        "enclaveIdentifier": enclaveName,
+        "serviceUuidSet": {
+            [serviceUuid]: true
+        },
+        followLogs: false,
+    }
+    return engineClient.getServiceLogs(args);
 }
-
-
 
 export const runStarlark = async(apiClient, packageId, args) => {
     const stream = await runStarlarkPackage(apiClient, packageId, args)
