@@ -75,6 +75,13 @@ The fix is to [restart the engine][kurtosis-engine-restart] like so:
 kurtosis engine restart
 ```
 
+:::tip
+In order to upgrade Kurtosis to another version *after you've performed a downgrade (i.e. installed a historical version)*, you must first uninstall the version of Kurtosis you've installed and re-install Kurtosis. When using Homebrew, the workflow will be (replacing `HISTORICAL-VERSION` with the historical version you have installed):
+1. `brew uninstall brew uninstall kurtosis-tech/tap/kurtosis-cli@HISTORICAL-VERSION`
+2. `brew install kurtosis-tech/tap/kurtosis-cli` for upgrading to the latest version or `brew install kurtosis-tech/tap/kurtosis-cli@TARGET-VERSION` for upgrading to a specific version
+3. `kurtosis engine restart`
+:::
+
 <!-------------------------- ONLY LINKS BELOW HERE ---------------------------->
 [install-guide]: ./installing-the-cli.md
 [cli-changelog]: ../changelog.md
