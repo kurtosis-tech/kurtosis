@@ -24,7 +24,7 @@ const (
 	// We store log files in the volume per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
 	// https://vector.dev/docs/reference/configuration/template-syntax/
-	logsFilepath = "\"" + logsStorageDirpath + "/{{ enclave_uuid }}/{{ service_uuid }}.json\""
+	logsFilepath = "\"" + logsStorageDirpath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
 
 	configFileTemplateName = "vectorConfigFileTemplate"
 	configFileTemplate     = `

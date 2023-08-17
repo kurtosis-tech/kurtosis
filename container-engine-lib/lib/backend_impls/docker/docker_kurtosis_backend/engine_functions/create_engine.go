@@ -25,7 +25,7 @@ const (
 	frontendPortSpec                            = 9711
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
-	logsStorageDirpath                          = "/var/log/kurtosis"
+	logsStorageDirpath                          = "/var/log/kurtosis/"
 )
 
 func CreateEngine(
@@ -77,7 +77,7 @@ func CreateEngine(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving logs storage object attributes.")
 	}
-	logsStorageVolumeNameStr := logsStorageAttrs.GetName().GetString()
+	logsStorageVolNameStr := logsStorageAttrs.GetName().GetString()
 	volumeLabelStrs := map[string]string{}
 	for labelKey, labelValue := range logsStorageAttrs.GetLabels() {
 		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
@@ -85,7 +85,7 @@ func CreateEngine(
 
 	// Creation of volume should be idempotent because the volume with persisted logs in it could already exist
 	// Thus, we don't defer an undo volume if this operation fails
-	if err = dockerManager.CreateVolume(ctx, logsStorageVolumeNameStr, volumeLabelStrs); err != nil {
+	if err = dockerManager.CreateVolume(ctx, logsStorageVolNameStr, volumeLabelStrs); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating logs storage.")
 	}
 
@@ -152,7 +152,7 @@ func CreateEngine(
 	}
 
 	volumeMounts := map[string]string{
-		logsStorageVolumeNameStr: logsStorageDirpath,
+		logsStorageVolNameStr: logsStorageDirpath,
 	}
 
 	if serverArgs.OnBastionHost {

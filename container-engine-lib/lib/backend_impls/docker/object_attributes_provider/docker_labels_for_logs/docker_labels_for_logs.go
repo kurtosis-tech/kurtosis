@@ -10,7 +10,7 @@ import (
 var LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream = []*docker_label_key.DockerLabelKey{
 	label_key_consts.ContainerTypeDockerLabelKey,
 	label_key_consts.LogsEnclaveUUIDDockerLabelKey,
-	label_key_consts.LogsEnclaveUUIDDockerLabelKey,
+	label_key_consts.LogsServiceUUIDDockerLabelKey,
 }
 
 // These are all the logs database Kurtosis tracked Docker Labels used
