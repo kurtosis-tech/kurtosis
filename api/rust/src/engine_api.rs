@@ -44,6 +44,9 @@ pub struct EnclaveApiContainerInfo {
     /// The grpc port inside the enclave network that the API container is listening on
     #[prost(uint32, tag = "3")]
     pub grpc_port_inside_enclave: u32,
+    /// this is the bridge ip address that gets assigned to api container
+    #[prost(string, tag = "6")]
+    pub bridge_ip_address: ::prost::alloc::string::String,
 }
 /// Will only be present if the API container is running
 #[allow(clippy::derive_partial_eq_without_eq)]

@@ -223,6 +223,13 @@ export declare class EnclaveAPIContainerInfo extends Message<EnclaveAPIContainer
    */
   grpcPortInsideEnclave: number;
 
+  /**
+   * this is the bridge ip address that gets assigned to api container
+   *
+   * @generated from field: string bridge_ip_address = 6;
+   */
+  bridgeIpAddress: string;
+
   constructor(data?: PartialMessage<EnclaveAPIContainerInfo>);
 
   static readonly runtime: typeof proto3;
