@@ -1,5 +1,5 @@
 ---
-title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Seperation (PBS)
+title: How to launch a private Ethereum testnet with in-protocol Proposer Builder Seperation (PBS) emulation
 sidebar_label: Launch a testnet with MEV infra
 slug: /how-to-full-mev-with-eth2-package
 toc_max_heading_level: 2
@@ -12,7 +12,7 @@ Here are some quick short-cuts for folks who would prefer:
 * Not to run this package on their local machine: try it out on the [Kurtosis playground](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/eth2-package)
 :::
 
-We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now supports the Flashbot's implementation of [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using [MEV-Boost](https://boost.flashbots.net) protocol.
+We're elated to share that the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) now supports the Flashbot's implementation [Proposer-Builder Separation (PBS)](https://ethereum.org/en/roadmap/pbs/) using Flashbot's open-source [MEV-Boost](https://boost.flashbots.net) protocol. 
 
 This milestone marks a huge step forward in the journey towards a full, in-protocol PBS implementation for Proof-of-Stake Ethereum as developers across the ecosystem now have a way to instantiate fully functioning testnets to validate functionality, behvaior, and scales across all client combinations with a Builder API implementation (Flashbots', in this case).
 
@@ -22,7 +22,7 @@ Keep reading to learn [how it all works](#brief-overview-of-the-architecture) & 
 As a reminder, the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) is a reproducible and portable environment definition that should be used to bootstrap & deploy private testnets. The package will function the exact same way locally or in the cloud over Docker or Kubernetes, supports all major Execution Layer (EL) and Consensus Layer (CL) client implementations, and can be scaled to whatever size your team needs - limited only by your underlying hardware/backend.
 
 #### What if I only want the MEV parts?
-And if that wasn't enough, Kurtosis environment definitions (known as [Packages](https://docs.kurtosis.com/concepts-reference/packages/)) are entirely composable, meaning you can define and build-your-own private testnet using only the parts you need and with the option of adding your own services (e.g. MEV searcher tools). Feel free to check out the following [code example](https://github.com/kurtosis-tech/2-el-cl-mev-package/blob/main/main.star).
+And if that wasn't enough, Kurtosis environment definitions (known as [Packages](https://docs.kurtosis.com/concepts-reference/packages/)) are entirely composable, meaning you can define and build-your-own private testnet using only the parts you need and with the option of adding your own services (e.g. MEV searcher tools). Feel free to check out [eth-kurtosis](https://github.com/kurtosis-tech/eth-kurtosis) for how to do this!
 
 ## Brief overview of the architecture
 Explicitly, the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) supports two modes: `full-mev` and `mock-mev`. 
@@ -36,15 +36,46 @@ Everything you see below in the architecture diagram gets configured, initialize
 ![mev-arch](/img/guides/full-mev-infra-arch-diagram.png)
 
 #### Caveats:
-* The `mev-boost-relay` service requires Capella at an epoch of non-zero. For the eth2-package, the Capella fork is set to happen after the first epoch to be started up and fully connected to the CL client.
+* The `mev-boost-relay` service (a sidecar for the consensus layer client) requires Capella at an epoch of non-zero. For the eth2-package, the Capella fork is set to happen after the first epoch to be started up and fully connected to the CL client.
 * Validators (64 per node by default, so 128 in the example in this guide) will get registered with the relay automatically after the 2nd epoch. This registration process is simply a configuration addition to the mev-boost config - which Kurtosis will automatically take care of as part of the set up. This means that the `mev-relay` infrastructure only becomes aware of the existence of the validators after the 2nd epoch.
 * After the 3rd epoch, the `mev-relay` service will begin to receive execution payloads (`eth_sendPayload`, which does not contain transaction content) from the `mev-builder` service (or `mock-builder` in `mock-mev` mode).
-* Validators will then start to receive validated execution payload headers from the `mev-relay` service (via `mev-boost`) after the 4th epoch. The validator selects the most valuable header, signs the payload, and returns the signed header to the relay - effectively proposing the payload of transactions to be included in the soon-to-be-proposed block. Once the relay verifies the block proposer's signature, the relay will respond with the full execution payload body (incl. the transaction contents) for the validator to use when proposing a `SignedBeaconBlock` to the network.
+* Validators will then start to receive validated execution payload headers from the `mev-relay` service (via `mev-boost`) after the 4th epoch. The validator selects the most valuable header, signs the payload, and returns the signed header to the relay - effectively proposing that block to be included. Once the relay verifies the block proposer's signature, the relay will respond with the full execution payload body (incl. the transaction contents) for the validator to use when proposing a `SignedBeaconBlock` to the network.
 
 :::note
 Quick aside on what `mev-flood` does:
 Once the network is online, `mev-flood` will deploy UniV2 smart contracts, provision liquidity on UniV2 pairs, & begin to send a constant stream of UniV2 swap transactions to the network's public mempool. Depending on the mode you're running, either the `mock-builder` or Flashbot's `mev-builder`, the transactions will be bundled into payloads for downstream use by the relayer or by validators themselves. It is important to note that `mev-flood` will only be initialized with the `full-mev` set up and will send transactions with a non-zero block value. Read more about [`mev-flood` here](https://github.com/flashbots/mev-flood). 
 :::
+
+<details><summary>Sample output from `mev-flood` operations within the eth2-package:</summary>
+You will see this get printed in your terminal when Kurtosis initializes the `mev-flood` service
+	
+```py
+Command returned with exit code '0' and the following output:
+--------------------
+ENV: undefined
+connected to http://172.16.0.5:8545 with wallet 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
+deploying DAI contract
+deploying base contracts: DAI, WETH, uniswapV2factory...
+minting DAI for admin 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766...
+minting DAI for user 0xdF8466f277964Bb7a0FFD819403302C34DCD530A...
+minting 2500.0 WETH for admin 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766...
+minting 500.0 WETH for user 0xdF8466f277964Bb7a0FFD819403302C34DCD530A...
+approving atomicSwap to spend token 0xAb2A01BC351770D09611Ac80f1DE076D56E0487d on behalf of 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
+approving atomicSwap to spend token 0x4c849Ff66a6F0A954cbf7818b8a763105C2787D6 on behalf of 0x878705ba3f8Bc32FCf7F4CAa1A35E72AF65CF766
+approving atomicSwap to spend token 0xAb2A01BC351770D09611Ac80f1DE076D56E0487d on behalf of 0xdF8466f277964Bb7a0FFD819403302C34DCD530A
+approving atomicSwap to spend token 0x4c849Ff66a6F0A954cbf7818b8a763105C2787D6 on behalf of 0xdF8466f277964Bb7a0FFD819403302C34DCD530A
+depositing WETH into pair...
+depositing DAI into pair...
+minting LP tokens...
+depositing WETH into pair...
+depositing DAI into pair...
+minting LP tokens...
+liquidity deployed via mempool
+Saved deployment: /app/cli/deployments/deployment.json
+deployment saved to deployment.json
+--------------------
+```
+</details>
 
 ## Quickstart
 Leveraging the [`eth2-package`](https://github.com/kurtosis-tech/eth2-package) is simple. In this short quickstart, you will:
