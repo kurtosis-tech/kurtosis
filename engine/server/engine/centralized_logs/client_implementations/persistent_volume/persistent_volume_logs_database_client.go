@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -13,7 +14,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"io"
 	"os"
-	"strings"
 	"sync"
 )
 
@@ -22,12 +22,11 @@ const (
 
 	// Location of logs on the filesystem of the engine
 	logsStorageDirpath = "/var/log/kurtosis/"
+	filetype           = ".json"
 
 	newlineRune = '\n'
 
-	serviceUUIDLogLabel = "container_name"
-	enclaveUUIDLogLabel = "enclave-id"
-	logLabel            = "log"
+	logLabel = "log"
 
 	maxNumLogsToReturn = 200
 )
@@ -62,12 +61,6 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 
 	ctx, cancelCtxFunc := context.WithCancel(ctx)
 
-	logsFile, err := os.Open(logsFilepath)
-	if err != nil {
-		cancelCtxFunc()
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred opening logs file.")
-	}
-
 	conjunctiveLogFiltersWithRegex, err := logline.NewConjunctiveLogFiltersWithRegex(conjunctiveLogLineFilters)
 	if err != nil {
 		cancelCtxFunc()
@@ -81,28 +74,25 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	logsByKurtosisUserServiceUuidChan := make(chan map[service.ServiceUUID][]logline.LogLine)
 
 	wgSenders := &sync.WaitGroup{}
-	wgSenders.Add(oneSenderAdded)
-	go streamServiceLogLines(
-		ctx,
-		wgSenders,
-		logsByKurtosisUserServiceUuidChan,
-		streamErrChan,
-		enclaveUuid,
-		userServiceUuids,
-		logsFile,
-		conjunctiveLogFiltersWithRegex,
-		shouldFollowLogs,
-	)
+	for serviceUuid := range userServiceUuids {
+		wgSenders.Add(oneSenderAdded)
+		go streamServiceLogLines(
+			ctx,
+			wgSenders,
+			logsByKurtosisUserServiceUuidChan,
+			streamErrChan,
+			enclaveUuid,
+			serviceUuid,
+			conjunctiveLogFiltersWithRegex,
+			shouldFollowLogs,
+		)
+	}
 
 	// this go routine handles the stream cancellation
 	go func() {
 		//wait for stream go routine to end
 		wgSenders.Wait()
 
-		//close resources first
-		if err := logsFile.Close(); err != nil {
-			logrus.Warnf("An error occurred attempting to close the user service logs file after streaming:\n%v", err)
-		}
 		close(logsByKurtosisUserServiceUuidChan)
 		close(streamErrChan)
 
@@ -149,30 +139,36 @@ func streamServiceLogLines(
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	streamErrChan chan error,
 	enclaveUuid enclave.EnclaveUUID,
-	userServiceUuids map[service.ServiceUUID]bool,
-	logsFile io.Reader,
+	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
 ) {
 	defer wgSenders.Done()
 
+	// logs are stored per enclave id, per service uuid, eg. <base path>/123440231421/54325342w2341.json
+	logsFilepath := fmt.Sprintf("%s%s/%s%s", logsStorageDirpath, string(enclaveUuid), string(serviceUuid), filetype)
+	logsFile, err := os.Open(logsFilepath)
+	if err != nil {
+		streamErrChan <- stacktrace.Propagate(err, "An error occurred opening the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
+		return
+	}
 	logsReader := bufio.NewReader(logsFile)
 
 	numLogsReturned := 0
 	for shouldFollowLogs || numLogsReturned < maxNumLogsToReturn {
 		select {
 		case <-ctx.Done():
-			logrus.Debugf("Context was canceled, stopping streaming service logs for services '%v'", userServiceUuids)
+			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v' in enclave '%v", serviceUuid, enclaveUuid)
 			return
 		default:
 			jsonLogStr, err := logsReader.ReadString(newlineRune)
 			if err != nil && errors.Is(err, io.EOF) {
 				// exiting stream
-				logrus.Debugf("EOF error returned when reading logs for services '%v'", userServiceUuids)
+				logrus.Debugf("EOF error returned when reading logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 				return
 			}
 			if err != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred reading the logs file '%v'", userServiceUuids)
+				streamErrChan <- stacktrace.Propagate(err, "An error occurred reading the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
 				return
 			}
 
@@ -184,7 +180,7 @@ func streamServiceLogLines(
 			var jsonLog JsonLog
 			err = json.Unmarshal([]byte(jsonLogStr), &jsonLog)
 			if err != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred reading the logs file '%v'", userServiceUuids)
+				streamErrChan <- stacktrace.Propagate(err, "An error occurred parsing the json logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
 				return
 			}
 
@@ -196,47 +192,12 @@ func streamServiceLogLines(
 			}
 			logLine := logline.NewLogLine(logLineStr)
 
-			// We also extract enclave uuid and service uuid
-			logEnclaveUuidStr, found := jsonLog[enclaveUUIDLogLabel]
-			if !found {
-				streamErrChan <- stacktrace.NewError("An error retrieving the enclave uuid field from logs json file. This is a bug in Kurtosis.")
-				return
-			}
-			containerNameStr, found := jsonLog[serviceUUIDLogLabel]
-			if !found {
-				streamErrChan <- stacktrace.NewError("An error retrieving the enclave uuid field from logs json file. This is a bug in Kurtosis.")
-				return
-			}
-
-			logrus.Debugf("ENCLAVE UUID STR: %v", logEnclaveUuidStr)
-			logrus.Debugf("CONTAINER NAME STR: %v", containerNameStr)
-
-			logEnclaveUuid := enclave.EnclaveUUID(logEnclaveUuidStr)
-
-			var serviceUUID service.ServiceUUID
-			doesServiceMatch := false
-			for uuid := range userServiceUuids {
-				uuidStr := string(uuid)
-				if strings.Contains(containerNameStr, uuidStr) {
-					doesServiceMatch = true
-					serviceUUID = uuid
-					break
-				}
-			}
-
-			// Then we filter by checking:
-			// 1. if the log message is valid based on requested filters
-			// 2. if the log is associated with the requested enclave and one of the requested services
-			//	  we check this bc currently all logs are in one file
-			isValidBasedOnFilters, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
+			// Then we filter by checking if the log message is valid based on requested filters
+			shouldReturnLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
 			if err != nil {
 				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 				break
 			}
-			logrus.Debugf("ENCLAVE MATCHES: %v", enclaveUuid == logEnclaveUuid)
-			logrus.Debugf("SERVICE MATCHES: %v", doesServiceMatch)
-			isValidBasedOnEnclaveAndServiceUuid := (enclaveUuid == logEnclaveUuid) && doesServiceMatch
-			shouldReturnLogLine := isValidBasedOnFilters && isValidBasedOnEnclaveAndServiceUuid
 			if !shouldReturnLogLine {
 				break
 			}
@@ -244,12 +205,10 @@ func streamServiceLogLines(
 			// send the log line
 			logLines := []logline.LogLine{*logLine}
 			userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
-				serviceUUID: logLines,
+				serviceUuid: logLines,
 			}
 			logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
 			numLogsReturned++
 		}
 	}
 }
-
-func constructLogsFilepath(userSer)
