@@ -47,6 +47,8 @@ const (
 	webappPortAddr            = ":9711"
 
 	remoteBackendConfigFilename = "remote_backend_config.json"
+	pathToStaticFolder          = "/run/webapp"
+	indexPath                   = "index.html"
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -135,13 +137,9 @@ func runMain() error {
 
 	// TODO: replace with persistent client so that we can get logs even after enclave is stopped
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
-	
+
 	go func() {
-		pathToStaticFolder := "/run/webapp"
-		indexPath := "index.html"
-
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
-
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)
 			if err != nil {
