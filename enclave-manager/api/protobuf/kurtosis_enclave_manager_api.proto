@@ -5,11 +5,16 @@ package kurtosis_enclave_manager;
 option go_package = "github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings";
 
 import "google/protobuf/empty.proto";
+import "engine_service.proto";
 
 service KurtosisEnclaveManagerServer {
   rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
-  rpc GetEnclaves(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc GetEnclaves(google.protobuf.Empty) returns (engine_api.GetEnclavesResponse) {};
   rpc GetServices(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc CreateEnclave(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc GetServiceLogs(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc RunStarlarkPackage(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (google.protobuf.Empty) {};
 }
 
 message HealthCheckRequest {

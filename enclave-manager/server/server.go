@@ -3,17 +3,19 @@ package main
 import (
 	"context"
 	"github.com/bufbuild/connect-go"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings/kurtosis_enclave_manager_api_bindingsconnect"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"net/http"
 	"time"
 )
 
 const (
-	listenPort                = 8080
+	listenPort                = 8081
 	grpcServerStopGracePeriod = 5 * time.Second
 )
 
@@ -35,7 +37,22 @@ func (c *WebServer) Check(
 	}
 	return response, nil
 }
-func (c *WebServer) GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+func (c *WebServer) GetEnclaves(
+	ctx context.Context,
+	req *connect.Request[emptypb.Empty],
+) (*connect.Response[emptypb.Empty], error) {
+
+	client := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceClient(
+		http.DefaultClient,
+		"http://localhost:9710",
+	)
+	enclaves, err := client.GetEnclaves(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	logrus.Infof(enclaves.Msg.String())
+
 	return nil, nil
 }
 func (c *WebServer) GetServices(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
