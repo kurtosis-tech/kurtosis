@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"os"
 	"sync"
 )
 
@@ -36,11 +35,14 @@ type JsonLog map[string]string
 // persistentVolumeLogsDatabaseClient pulls logs from a Docker volume the engine is mounted to
 type persistentVolumeLogsDatabaseClient struct {
 	kurtosisBackend backend_interface.KurtosisBackend
+
+	filesystem VolumeFilesystem
 }
 
-func NewPersistentVolumeLogsDatabaseClient(kurtosisBackend backend_interface.KurtosisBackend) *persistentVolumeLogsDatabaseClient {
+func NewPersistentVolumeLogsDatabaseClient(kurtosisBackend backend_interface.KurtosisBackend, filesystem VolumeFilesystem) *persistentVolumeLogsDatabaseClient {
 	return &persistentVolumeLogsDatabaseClient{
 		kurtosisBackend: kurtosisBackend,
+		filesystem:      filesystem,
 	}
 }
 
@@ -75,6 +77,7 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 		wgSenders.Add(oneSenderAdded)
 		go streamServiceLogLines(
 			ctx,
+			client.filesystem,
 			wgSenders,
 			logsByKurtosisUserServiceUuidChan,
 			streamErrChan,
@@ -132,6 +135,7 @@ func (client *persistentVolumeLogsDatabaseClient) FilterExistingServiceUuids(
 // ====================================================================================================
 func streamServiceLogLines(
 	ctx context.Context,
+	fs VolumeFilesystem,
 	wgSenders *sync.WaitGroup,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	streamErrChan chan error,
@@ -144,7 +148,7 @@ func streamServiceLogLines(
 
 	// logs are stored per enclave id, per service uuid, eg. <base path>/123440231421/54325342w2341.json
 	logsFilepath := fmt.Sprintf("%s%s/%s%s", logsStorageDirpath, string(enclaveUuid), string(serviceUuid), filetype)
-	logsFile, err := os.Open(logsFilepath)
+	logsFile, err := fs.Open(logsFilepath)
 	if err != nil {
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred opening the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
 		return
