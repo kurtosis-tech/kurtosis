@@ -16,7 +16,7 @@ Starlark itself is very basic; Google designed it to be extended to fulfill a gi
 We extended basic Starlark with [our own DSL](../starlark-reference/index.md) so that it could [fulfill the properties of reusable environment definitions](../explanations/reusable-environment-definitions.md). This gave us:
 
 - A [list of Kurtosis-specific functions][starlark-reference] for working with an environment
-- The [ability to accept parameters][run-args-reference]
+- The [ability to accept parameters][packages-parameterization]
 - Dependencies, so Kurtosis scripts can [import other scripts][locators-reference]
 - A [GitHub-based packaging system](./packages.md), so environment definitions can be shared with each other
 
@@ -30,7 +30,7 @@ We've released an [official Kurtosis Starlark VS Code extension][vscode-plugin] 
 [enclaves-reference]: ./enclaves.md
 [why-kurtosis-starlark]: ../explanations/why-kurtosis-starlark.md
 [starlark-reference]: ../starlark-reference/index.md
-[run-args-reference]: ./packages.md#arguments
+[packages-parameterization]: ./packages.md#parameterization
 [locators-reference]: ./locators.md
 [multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
 [multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
