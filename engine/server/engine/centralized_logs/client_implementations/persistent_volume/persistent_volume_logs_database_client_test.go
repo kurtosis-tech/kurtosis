@@ -16,6 +16,9 @@ import (
 )
 
 const (
+	// We use this storage path for tests because fstest.MapFS doesn't like forward slashes
+	logsStorageDirpathForTests = "var/log/kurtosis/"
+
 	testEnclaveUuid      = "test-enclave"
 	enclaveUuid          = enclave.EnclaveUUID(testEnclaveUuid)
 	testUserService1Uuid = "test-user-service-1"
@@ -59,19 +62,25 @@ func TestStreamUserServiceLogs_WithFilters(t *testing.T) {
 		*regexFilter,
 	}
 
-	expectedFirstLogLine := logLine2
+	expectedFirstLogLine := "Starting feature 'network partitioning'"
 
-	underlyingFs := createUnderlyingMapFilesystem()
+	underlyingFs := createFullUnderlyingMapFilesystem()
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+		testUserService2Uuid: true,
+		testUserService3Uuid: true,
+	}
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
 		logLinesFilters,
+		userServiceUuids,
 		expectedServiceAmountLogLinesByServiceUuid,
 		doNotFollowLogs,
 		underlyingFs,
 	)
 
-	t.Logf("RECEIVER USER SERVICE LOGS BY UUID: %v", receivedUserServiceLogsByUuid)
 	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
 		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
 		require.True(t, found)
@@ -98,13 +107,20 @@ func TestStreamUserServiceLogs_WithFiltersAndWithFollowLogs(t *testing.T) {
 		*regexFilter,
 	}
 
-	expectedFirstLogLine := logLine5
+	expectedFirstLogLine := "Starting feature 'files manager'"
 
-	underlyingFs := createUnderlyingMapFilesystem()
+	underlyingFs := createFullUnderlyingMapFilesystem()
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+		testUserService2Uuid: true,
+		testUserService3Uuid: true,
+	}
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
 		logLinesFilters,
+		userServiceUuids,
 		expectedServiceAmountLogLinesByServiceUuid,
 		followLogs,
 		underlyingFs,
@@ -134,11 +150,18 @@ func TestStreamUserServiceLogs_FilteredAllLogLines(t *testing.T) {
 		*firstTextFilter,
 	}
 
-	underlyingFs := createUnderlyingMapFilesystem()
+	underlyingFs := createFullUnderlyingMapFilesystem()
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+		testUserService2Uuid: true,
+		testUserService3Uuid: true,
+	}
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
 		logLinesFilters,
+		userServiceUuids,
 		expectedServiceAmountLogLinesByServiceUuid,
 		doNotFollowLogs,
 		underlyingFs,
@@ -166,11 +189,18 @@ func TestStreamUserServiceLogs_FilteredAllLogLinesWithFollowLogs(t *testing.T) {
 		*firstTextFilter,
 	}
 
-	underlyingFs := createUnderlyingMapFilesystem()
+	underlyingFs := createFullUnderlyingMapFilesystem()
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+		testUserService2Uuid: true,
+		testUserService3Uuid: true,
+	}
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
 		logLinesFilters,
+		userServiceUuids,
 		expectedServiceAmountLogLinesByServiceUuid,
 		followLogs,
 		underlyingFs,
@@ -199,11 +229,18 @@ func TestStreamUserServiceLogs_NoLogsFromPersistentVolume(t *testing.T) {
 		*firstTextFilter,
 	}
 
-	underlyingFs := fstest.MapFS{}
+	underlyingFs := createEmptyUnderlyingMapFilesystem()
+
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+		testUserService2Uuid: true,
+		testUserService3Uuid: true,
+	}
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
 		logLinesFilters,
+		userServiceUuids,
 		expectedServiceAmountLogLinesByServiceUuid,
 		followLogs,
 		underlyingFs,
@@ -219,7 +256,7 @@ func TestStreamUserServiceLogs_NoLogsFromPersistentVolume(t *testing.T) {
 }
 
 func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing.T) {
-	expectedAmountLogLines := 100000
+	expectedAmountLogLines := maxNumLogsToReturn
 
 	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
 		testUserService1Uuid: expectedAmountLogLines,
@@ -227,7 +264,7 @@ func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing
 
 	emptyFilters := []logline.LogLineFilter{}
 
-	expectedFirstLogLine := logLine1
+	expectedFirstLogLine := "Starting feature 'centralized logs'"
 
 	logLines := []string{}
 
@@ -237,17 +274,22 @@ func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing
 
 	logLinesStr := strings.Join(logLines, "\n")
 
-	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpath, string(enclaveUuid), testUserService1Uuid, filetype)
+	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, string(enclaveUuid), testUserService1Uuid, filetype)
 
-	underlyingFs := fstest.MapFS{
+	underlyingFs := &fstest.MapFS{
 		file1: {
 			Data: []byte(logLinesStr),
 		},
 	}
 
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+	}
+
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
 		emptyFilters,
+		userServiceUuids,
 		expectedServiceAmountLogLinesByServiceUuid,
 		doNotFollowLogs,
 		underlyingFs,
@@ -274,17 +316,22 @@ func TestStreamUserServiceLogs_EmptyLogLines(t *testing.T) {
 
 	logLinesStr := ""
 
-	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpath, string(enclaveUuid), testUserService1Uuid, filetype)
+	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, string(enclaveUuid), testUserService1Uuid, filetype)
 
-	underlyingFs := fstest.MapFS{
+	underlyingFs := &fstest.MapFS{
 		file1: {
 			Data: []byte(logLinesStr),
 		},
 	}
 
+	userServiceUuids := map[service.ServiceUUID]bool{
+		testUserService1Uuid: true,
+	}
+
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
 		emptyFilters,
+		userServiceUuids,
 		expectedServiceAmountLogLinesByServiceUuid,
 		doNotFollowLogs,
 		underlyingFs,
@@ -307,18 +354,12 @@ func TestStreamUserServiceLogs_EmptyLogLines(t *testing.T) {
 func executeStreamCallAndGetReceivedServiceLogLines(
 	t *testing.T,
 	logLinesFilters []logline.LogLineFilter,
+	userServiceUuids map[service.ServiceUUID]bool,
 	expectedServiceAmountLogLinesByServiceUuid map[service.ServiceUUID]int,
 	shouldFollowLogs bool,
-	underlyingFs fstest.MapFS,
+	underlyingFs *fstest.MapFS,
 ) (map[service.ServiceUUID][]logline.LogLine, error) {
-	t.Log("EXECUTING STREAM CALL AND GETTING RECEIVED SERVICE LOG LINE")
 	ctx := context.Background()
-
-	userServiceUuids := map[service.ServiceUUID]bool{
-		testUserService1Uuid: true,
-		testUserService2Uuid: true,
-		testUserService3Uuid: true,
-	}
 
 	receivedServiceLogsByUuid := map[service.ServiceUUID][]logline.LogLine{}
 
@@ -327,10 +368,10 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 	}
 
 	kurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
-	mockedFs := NewMockedVolumeFilesystem(underlyingFs)
 
+	mockedFs := NewMockedVolumeFilesystem(underlyingFs)
 	logsDatabaseClient := NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, mockedFs)
-	t.Log("CALLING STREAM USER SERVICE LOGS")
+
 	userServiceLogsByUuidChan, errChan, receivedCancelCtxFunc, err := logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveUuid, userServiceUuids, logLinesFilters, shouldFollowLogs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs for UUIDs '%+v' using log line filters '%v' in enclave '%v'", userServiceUuids, logLinesFilters, enclaveUuid)
@@ -343,25 +384,19 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 
 	require.NotNil(t, userServiceLogsByUuidChan, "Received a nil user service logs channel, but a non-nil value was expected")
 	require.NotNil(t, errChan, "Received a nil error logs channel, but a non-nil value was expected")
-	t.Log("DID NOT RECEIVE NIL SERVICE LOGS CHANNEL")
 
 	shouldReceiveStream := true
 	for shouldReceiveStream {
-		t.Log("RECEIVING STREAM")
 		select {
 		case <-time.Tick(testTimeOut):
-			t.Log("TIMEOUT ERROR")
 			return nil, stacktrace.NewError("Receiving stream logs in the test has reached the '%v' time out", testTimeOut)
 		case streamErr, isChanOpen := <-errChan:
-			t.Log("RECEIVING STREAM ERROR")
 			if !isChanOpen {
 				shouldReceiveStream = false
 				break
 			}
-
-			t.Logf("RECEIVING STREAM ERR: %v", streamErr)
+			return nil, stacktrace.Propagate(streamErr, "Receiving streaming error.")
 		case userServiceLogsByUuid, isChanOpen := <-userServiceLogsByUuidChan:
-			t.Log("RECEIVING LOGS")
 			if !isChanOpen {
 				shouldReceiveStream = false
 				break
@@ -390,16 +425,16 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 	return receivedServiceLogsByUuid, nil
 }
 
-func createUnderlyingMapFilesystem() fstest.MapFS {
+func createFullUnderlyingMapFilesystem() *fstest.MapFS {
 	logLines := []string{logLine1, logLine2, logLine3, logLine4, logLine5, logLine6, logLine7, logLine8}
 
 	logLinesStr := strings.Join(logLines, "\n")
 
-	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpath, string(enclaveUuid), testUserService1Uuid, filetype)
-	file2 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpath, string(enclaveUuid), testUserService2Uuid, filetype)
-	file3 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpath, string(enclaveUuid), testUserService3Uuid, filetype)
+	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService1Uuid, filetype)
+	file2 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService2Uuid, filetype)
+	file3 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService3Uuid, filetype)
 
-	mapFs := fstest.MapFS{
+	mapFs := &fstest.MapFS{
 		file1: {
 			Data: []byte(logLinesStr),
 		},
@@ -408,6 +443,26 @@ func createUnderlyingMapFilesystem() fstest.MapFS {
 		},
 		file3: {
 			Data: []byte(logLinesStr),
+		},
+	}
+
+	return mapFs
+}
+
+func createEmptyUnderlyingMapFilesystem() *fstest.MapFS {
+	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService1Uuid, filetype)
+	file2 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService2Uuid, filetype)
+	file3 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService3Uuid, filetype)
+
+	mapFs := &fstest.MapFS{
+		file1: {
+			Data: []byte{},
+		},
+		file2: {
+			Data: []byte{},
+		},
+		file3: {
+			Data: []byte{},
 		},
 	}
 
