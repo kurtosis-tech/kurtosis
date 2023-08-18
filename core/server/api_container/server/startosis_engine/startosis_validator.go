@@ -48,7 +48,14 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 		starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 			validationInProgressMsg, defaultCurrentStepNumber, defaultTotalStepsNumber)
 
-		serviceNames := validator.serviceNetwork.GetServiceNames()
+		serviceNames, err := validator.serviceNetwork.GetServiceNames()
+		if err != nil {
+			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "An error occurred getting all service names")
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
+			starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromRunFailureEvent()
+			return
+		}
+
 		serviceNamePortIdMapping, err := getServiceNameToPortIDsMap(serviceNames, validator.serviceNetwork)
 		if err != nil {
 			wrappedValidationError := startosis_errors.WrapWithValidationError(err, "Couldn't create validator environment as we ran into errors fetching existing services and ports")

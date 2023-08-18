@@ -13,25 +13,25 @@ import (
 )
 
 const (
-	enclaveIdentifierArgKey         = "enclave"
 	validShortenedUuidOrNameMatches = 1
 	uuidDelimiter                   = ", "
 )
 
 func NewServiceIdentifierArg(
-	argKey string,
+	serviceIdentifierArgKey string,
+	enclaveIdentifierArgKey string,
 	isOptional bool,
 	isGreedy bool,
 ) *args.ArgConfig {
 
-	validate := getValidationFunc(argKey, isGreedy)
+	validate := getValidationFunc(serviceIdentifierArgKey, isGreedy, enclaveIdentifierArgKey)
 
 	return &args.ArgConfig{
-		Key:                   argKey,
+		Key:                   serviceIdentifierArgKey,
 		IsOptional:            isOptional,
 		DefaultValue:          "",
 		IsGreedy:              isGreedy,
-		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletionsOfActiveServices),
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletionsOfActiveServices(enclaveIdentifierArgKey)),
 		ValidationFunc:        validate,
 	}
 }
@@ -39,7 +39,8 @@ func NewServiceIdentifierArg(
 // TODO we added this constructor for allowing 'service logs' command to disable the validation for consuming logs from removed or stopped enclaves
 // TODO after https://github.com/kurtosis-tech/kurtosis/issues/879 is done
 func NewHistoricalServiceIdentifierArgWithValidationDisabled(
-	argKey string,
+	serviceIdentifierArgKey string,
+	enclaveIdentifierArgKey string,
 	isOptional bool,
 	isGreedy bool,
 ) *args.ArgConfig {
@@ -47,11 +48,11 @@ func NewHistoricalServiceIdentifierArgWithValidationDisabled(
 	var noValidationFunc func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error
 
 	return &args.ArgConfig{
-		Key:                   argKey,
+		Key:                   serviceIdentifierArgKey,
 		IsOptional:            isOptional,
 		DefaultValue:          "",
 		IsGreedy:              isGreedy,
-		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletionsForExistingAndHistoricalServices),
+		ArgCompletionProvider: args.NewManualCompletionsProvider(getCompletionsForExistingAndHistoricalServices(enclaveIdentifierArgKey)),
 		ValidationFunc:        noValidationFunc,
 	}
 }
@@ -88,75 +89,82 @@ func getServiceUuidsAndNamesForEnclave(ctx context.Context, enclaveIdentifier st
 	return serviceUuids, serviceNamesToUuid, nil
 }
 
-func getCompletionsForExistingAndHistoricalServices(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
-	enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
-	}
+func getCompletionsForExistingAndHistoricalServices(enclaveIdentifierArgKey string) func(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+	return func(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+		enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
+		}
 
-	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
-	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred connecting to the Kurtosis engine for retrieving the service UUIDs & names for tab completion",
-		)
-	}
+		kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
+		if err != nil {
+			return nil, stacktrace.Propagate(
+				err,
+				"An error occurred connecting to the Kurtosis engine for retrieving the service UUIDs & names for tab completion",
+			)
+		}
 
-	enclaveContext, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave for identifier '%v'", enclaveIdentifier)
-	}
+		enclaveContext, err := kurtosisCtx.GetEnclaveContext(ctx, enclaveIdentifier)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave for identifier '%v'", enclaveIdentifier)
+		}
 
-	serviceIdentifiers, err := enclaveContext.GetExistingAndHistoricalServiceIdentifiers(ctx)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while fetching services for enclave '%v'", enclaveContext.GetEnclaveName())
-	}
+		serviceIdentifiers, err := enclaveContext.GetExistingAndHistoricalServiceIdentifiers(ctx)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while fetching services for enclave '%v'", enclaveContext.GetEnclaveName())
+		}
 
-	return serviceIdentifiers.GetOrderedListOfNames(), nil
+		return serviceIdentifiers.GetOrderedListOfNames(), nil
+	}
 }
 
-func getCompletionsOfActiveServices(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
-	enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
-	}
+func getCompletionsOfActiveServices(enclaveIdentifierArgKey string) func(ctx context.Context, flags *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+	return func(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) ([]string, error) {
+		enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
+		}
 
-	_, serviceNames, err := getServiceUuidsAndNamesForEnclave(ctx, enclaveIdentifier)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave identifier tab completion")
-	}
+		_, serviceNames, err := getServiceUuidsAndNamesForEnclave(ctx, enclaveIdentifier)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave identifier tab completion")
+		}
 
-	serviceNamesList := []string{}
-	for serviceName := range serviceNames {
-		serviceNamesList = append(serviceNamesList, string(serviceName))
-	}
-	sort.Strings(serviceNamesList)
+		serviceNamesList := []string{}
+		for serviceName := range serviceNames {
+			serviceNamesList = append(serviceNamesList, string(serviceName))
+		}
+		sort.Strings(serviceNamesList)
 
-	return serviceNamesList, nil
+		return serviceNamesList, nil
+	}
 }
 
-func getServiceIdentifiersForValidation(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) (map[services.ServiceUUID]bool, map[services.ServiceName]services.ServiceUUID, map[string][]services.ServiceUUID, error) {
-	enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
-	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
-	}
+func getServiceIdentifiersForValidation(enclaveIdentifierArgKey string) func(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) (map[services.ServiceUUID]bool, map[services.ServiceName]services.ServiceUUID, map[string][]services.ServiceUUID, error) {
+	return func(ctx context.Context, _ *flags.ParsedFlags, previousArgs *args.ParsedArgs) (map[services.ServiceUUID]bool, map[services.ServiceName]services.ServiceUUID, map[string][]services.ServiceUUID, error) {
+		enclaveIdentifier, err := previousArgs.GetNonGreedyArg(enclaveIdentifierArgKey)
+		if err != nil {
+			return nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the enclave identifier using key '%v'", enclaveIdentifierArgKey)
+		}
 
-	serviceUuids, serviceNames, err := getServiceUuidsAndNamesForEnclave(ctx, enclaveIdentifier)
-	if err != nil {
-		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave identifier tab completion")
-	}
+		serviceUuids, serviceNames, err := getServiceUuidsAndNamesForEnclave(ctx, enclaveIdentifier)
+		if err != nil {
+			return nil, nil, nil, stacktrace.Propagate(err, "An error occurred getting the services retrieving for enclave identifier tab completion")
+		}
 
-	shortenedUuidsToUuids := make(map[string][]services.ServiceUUID)
-	for serviceUuid := range serviceUuids {
-		shortenedUuid := uuid_generator.ShortenedUUIDString(string(serviceUuid))
-		shortenedUuidsToUuids[shortenedUuid] = append(shortenedUuidsToUuids[shortenedUuid], serviceUuid)
+		shortenedUuidsToUuids := make(map[string][]services.ServiceUUID)
+		for serviceUuid := range serviceUuids {
+			shortenedUuid := uuid_generator.ShortenedUUIDString(string(serviceUuid))
+			shortenedUuidsToUuids[shortenedUuid] = append(shortenedUuidsToUuids[shortenedUuid], serviceUuid)
+		}
+		return serviceUuids, serviceNames, shortenedUuidsToUuids, nil
 	}
-	return serviceUuids, serviceNames, shortenedUuidsToUuids, nil
 }
 
 func getValidationFunc(
 	argKey string,
 	isGreedy bool,
+	enclaveIdentifierArgKey string,
 ) func(context.Context, *flags.ParsedFlags, *args.ParsedArgs) error {
 	return func(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) error {
 		var serviceIdentifiersToValidate []string
@@ -174,7 +182,7 @@ func getValidationFunc(
 			serviceIdentifiersToValidate = []string{serviceUuid}
 		}
 
-		serviceUuids, serviceNames, shortenedUuidsToUuids, err := getServiceIdentifiersForValidation(ctx, flags, args)
+		serviceUuids, serviceNames, shortenedUuidsToUuids, err := getServiceIdentifiersForValidation(enclaveIdentifierArgKey)(ctx, flags, args)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred while getting the services for the enclave")
 		}

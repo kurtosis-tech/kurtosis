@@ -113,6 +113,7 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		),
 		service_identifier_arg.NewServiceIdentifierArg(
 			serviceIdentifierArgKey,
+			enclaveIdentifierArgKey,
 			isServiceIdentifierArgGreedy,
 			isServiceIdentifierArgOptional,
 		),
