@@ -22,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -48,6 +47,8 @@ const (
 	webappPortAddr            = ":9711"
 
 	remoteBackendConfigFilename = "remote_backend_config.json"
+	pathToStaticFolder          = "/run/webapp"
+	indexPath                   = "index.html"
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -138,11 +139,7 @@ func runMain() error {
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
 
 	go func() {
-		pathToStaticFolder := "/run/webapp"
-		indexPath := "index.html"
-
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
-
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)
 			if err != nil {
@@ -176,7 +173,7 @@ func runMain() error {
 
 	logrus.Info("Running server...")
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
-	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
+	if err := engineHttpServer.RunServerUntilInterrupted(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 	return nil

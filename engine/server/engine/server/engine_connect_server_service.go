@@ -131,9 +131,14 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 }
 
 func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, connectArgs *connect_go.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], stream *connect_go.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
+
 	args := connectArgs.Msg
 	enclaveIdentifier := args.GetEnclaveIdentifier()
 	enclaveUuid, err := service.enclaveManager.GetEnclaveUuidForEnclaveIdentifier(context.Background(), enclaveIdentifier)
+
+	contextWithCancel, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	if err != nil {
 		logrus.Errorf("An error occurred while fetching uuid for enclave '%v'. This could happen if the enclave has been deleted. Treating it as UUID", enclaveIdentifier)
 		enclaveUuid = enclave.EnclaveUUID(enclaveIdentifier)
@@ -157,7 +162,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		cancelCtxFunc                func()
 	)
 
-	notFoundServiceUuids, err := service.reportAnyMissingUuidsAndGetNotFoundUuidsList(ctx, enclaveUuid, requestedServiceUuids, stream)
+	notFoundServiceUuids, err := service.reportAnyMissingUuidsAndGetNotFoundUuidsList(contextWithCancel, enclaveUuid, requestedServiceUuids, stream)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred reporting missing user service UUIDs for enclave '%v' and requested service UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
 	}
@@ -167,7 +172,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveFilters())
 	}
 
-	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveUuid, requestedServiceUuids, conjunctiveLogLineFilters, shouldFollowLogs)
+	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(contextWithCancel, enclaveUuid, requestedServiceUuids, conjunctiveLogLineFilters, shouldFollowLogs)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -200,7 +205,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 				return stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
 			}
 		//client cancel ctx case
-		case <-ctx.Done():
+		case <-contextWithCancel.Done():
 			logrus.Debug("The user service logs stream has done")
 			return nil
 		//error from logs database case
@@ -213,6 +218,13 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 			return nil
 		}
 	}
+}
+
+func (service *EngineConnectServerService) Close() error {
+	if err := service.enclaveManager.Close(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred closing the enclave manager")
+	}
+	return nil
 }
 
 func (service *EngineConnectServerService) reportAnyMissingUuidsAndGetNotFoundUuidsList(
@@ -243,6 +255,11 @@ func (service *EngineConnectServerService) reportAnyMissingUuidsAndGetNotFoundUu
 	return notFoundServiceUuids, nil
 }
 
+// ====================================================================================================
+//
+//	Private Helper Functions
+//
+// ====================================================================================================
 func newLogsResponse(
 	requestedServiceUuids map[user_service.ServiceUUID]bool,
 	serviceLogsByServiceUuid map[user_service.ServiceUUID][]logline.LogLine,
