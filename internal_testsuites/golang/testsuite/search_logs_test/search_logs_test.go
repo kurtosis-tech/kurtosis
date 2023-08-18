@@ -37,6 +37,8 @@ const (
 	logLine2 = "Starting feature 'enclave pool'"
 	logLine3 = "Starting feature 'enclave pool with size 2'"
 	logLine4 = "The data have being loaded"
+
+	secondsToWaitForLogs = 1 * time.Second
 )
 
 var (
@@ -118,6 +120,7 @@ func TestSearchLogs(t *testing.T) {
 	require.NoError(t, err, "An error occurred adding services with log lines '%+v'", logLinesByService)
 	require.Equal(t, len(logLinesByService), len(serviceList))
 
+	time.Sleep(secondsToWaitForLogs)
 	// ------------------------------------- TEST RUN -------------------------------------------------
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
 

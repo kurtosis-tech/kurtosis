@@ -147,15 +147,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
 
-	//The APIContainer will be configured to send the logs to the Fluentbit logs collector server
-	logCollectorAddr, err := enclaveLogsCollector.GetEnclaveNetworkAddressString()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving the log collector address.")
-	}
-	//fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
-	//	logCollectorAddr,
-	//	logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels(),
-	//)
+	// TODO: configure the APIContainer to send the logs to the Fluentbit logs collector server
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
@@ -173,8 +165,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 	).WithLabels(
 		labelStrs,
-		//).WithLoggingDriver(
-		//	fluentdLoggingDriverCnfg,
 	).Build()
 
 	if err = backend.dockerManager.FetchImage(ctx, image); err != nil {
