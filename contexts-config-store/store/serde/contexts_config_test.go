@@ -53,7 +53,8 @@ var (
 	}],
 	"currentContextUuid":{
 		"value":"dc2a9471c70649b7aafae2448970dd2e"
-	}
+	},
+    "unknownField": "shouldBeIgnored"
 }`
 )
 

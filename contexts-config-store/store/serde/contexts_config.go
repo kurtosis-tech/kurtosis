@@ -16,7 +16,8 @@ func SerializeKurtosisContextsConfig(kurtosisContextsConfig *generated.KurtosisC
 
 func DeserializeKurtosisContextsConfig(serializedKurtosisContextsConfig []byte) (*generated.KurtosisContextsConfig, error) {
 	kurtosisContextsConfig := new(generated.KurtosisContextsConfig)
-	if err := protojson.Unmarshal(serializedKurtosisContextsConfig, kurtosisContextsConfig); err != nil {
+	unmarshaller := protojson.UnmarshalOptions{DiscardUnknown: true}
+	if err := unmarshaller.Unmarshal(serializedKurtosisContextsConfig, kurtosisContextsConfig); err != nil {
 		return nil, stacktrace.Propagate(err, "Unable to deserialize Kurtosis contexts config object")
 	}
 	return kurtosisContextsConfig, nil
