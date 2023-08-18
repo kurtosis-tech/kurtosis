@@ -27,7 +27,10 @@ const (
 	logsFilepath = "\"" + logsStorageDirpath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
 
 	configFileTemplateName = "vectorConfigFileTemplate"
-	configFileTemplate     = `
+
+	// Note: we set buffer to block so that we don't drop any logs, however this could apply backpressure up the topology
+	// if we start noticing slowdown due to vector buffer blocking, we might want to revisit our architecture
+	configFileTemplate = `
 [sources.{{ .Source.Id }}]
 type = {{ .Source.Type }}
 address = "{{ .Source.Address }}"
@@ -39,5 +42,6 @@ path = {{ .Sink.Filepath }}
 encoding.codec = "json"
 buffer.when_full = "block"
 `
+
 	////////////////////////--FINISH--VECTOR CONFIGURATION SECTION--/////////////////////////////
 )

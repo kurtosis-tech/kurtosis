@@ -116,6 +116,8 @@ async function TestSearchLogs() {
             throw new Error(`Expected number of added services '${LOG_LINES_BY_SERVICE.size}', but the actual number of added services is '${serviceList.size}'`);
         }
 
+        // It takes some time for logs to persist so we sleep to ensure logs have persisted
+        // Otherwise the test is flaky
         await sleep(MILLISECONDS_TO_WAIT_FOR_LOGS);
         // ------------------------------------- TEST RUN ----------------------------------------------
 

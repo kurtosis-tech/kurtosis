@@ -120,6 +120,8 @@ func TestSearchLogs(t *testing.T) {
 	require.NoError(t, err, "An error occurred adding services with log lines '%+v'", logLinesByService)
 	require.Equal(t, len(logLinesByService), len(serviceList))
 
+	// It takes some time for logs to persist so we sleep to ensure logs have persisted
+	// Otherwise the test is flaky
 	time.Sleep(secondsToWaitForLogs)
 	// ------------------------------------- TEST RUN -------------------------------------------------
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
