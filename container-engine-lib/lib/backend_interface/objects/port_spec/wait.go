@@ -1,6 +1,7 @@
 package port_spec
 
 import (
+	"encoding/json"
 	"github.com/kurtosis-tech/stacktrace"
 	"time"
 )
@@ -24,9 +25,7 @@ func CreateWaitWithDefaultValues() (*Wait, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a new wait with default values")
 	}
 
-	newWait := &Wait{
-		timeout: defaultTimeout,
-	}
+	newWait := NewWait(defaultTimeout)
 
 	return newWait, nil
 }
@@ -38,7 +37,9 @@ func CreateWait(timeoutStr string) (*Wait, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a wait object using time out string '%s'", timeoutStr)
 	}
 
-	return &Wait{timeout: timeoutDuration}, nil
+	newWait := NewWait(timeoutDuration)
+
+	return newWait, nil
 }
 
 func (wait *Wait) GetTimeout() time.Duration {
@@ -47,4 +48,23 @@ func (wait *Wait) GetTimeout() time.Duration {
 
 func (wait *Wait) String() string {
 	return wait.timeout.String()
+}
+
+func (wait *Wait) MarshalJSON() ([]byte, error) {
+
+	return json.Marshal(wait.timeout)
+}
+
+func (wait *Wait) UnmarshalJSON(data []byte) error {
+
+	var timeout time.Duration
+
+	timeOutPtr := &timeout
+
+	if err := json.Unmarshal(data, timeOutPtr); err != nil {
+		return stacktrace.Propagate(err, "An error occurred unmarshalling time duration")
+	}
+
+	wait.timeout = timeout
+	return nil
 }
