@@ -25,15 +25,15 @@ For example, suppose there is a repo called `package-repo` by the author `packag
 
 ```
 /
-    package-repo
-        my-package
+    package-repo/
+        my-package/
             kurtosis.yml
             main.star
-            helpers
+            helpers/
                 helpers.star
 ```
 
-whose `kurtosis.yml` file looked like so:
+whose `kurtosis.yml` file looks like so:
 
 ```yaml
 name: github.com/package-author/package-repo/my-package
@@ -66,7 +66,7 @@ def run(plan):
 More on the `plan` parameter [here][plan].
 :::
 
-Runnable packages can be executed from the CLI in one of three ways:
+Runnable packages can be called through the `kurtosis run` function of the CLI:
 
 ```bash
 # OPTION 1: Point to a directory with a `kurtosis.yml` and `main.star` on local filesystem
@@ -90,8 +90,57 @@ If you want to run a non-main branch, tag or commit use the following syntax
 
 All these will call the `run(plan)` function of the package's `main.star`.
 
-### Arguments
-Kurtosis packages can be parameterized with arguments by adding an `args` parameter to the `run` function. Read more about package arguments [here][args-reference].
+### Parameterization
+Kurtosis packages can accept parameters, allowing their behaviour to change. 
+
+To make your package take in arguments, first add extra parameters to your package's `run` function:
+
+From this...
+
+```python
+def run(plan):
+```
+
+...to this:
+
+```python
+# Parameters without a default value are required; parameter with a default value are optional
+def run(plan, some_parameter, some_other_parameter = "Default value"):
+```
+
+:::warning
+You may come across an old style of package parameterization where the `run` function takes a single `args` variable containing all the package's parameters, like so:
+
+```python
+# OLD STYLE - DO NOT USE
+def run(plan, args):
+```
+
+This method is now deprecated, and will be removed in the future.
+:::
+
+Consumers of your package can then pass in these parameters to configure your package:
+
+<Tabs>
+<TabItem value="cli" label="CLI" default>
+
+```bash
+kurtosis run github.com/YOUR-USER/YOUR-REPO '{"some_parameter": 5, "some_other_parameter": "New value"}'
+```
+For detailed instructions on passing arguments via the CLI, see the ["Arguments" section of the `kurtosis run` documentation][kurtosis-run-arguments].
+
+</TabItem>
+<TabItem value="starlark" label="Starlark" default>
+
+```python
+your_package = import_module("github.com/YOUR-USER/YOUR-REPO/main.star")
+
+def run(plan):
+    your_package.run(plan, some_parameter = 5, some_other_parameter = "New value")
+```
+
+</TabItem>
+</Tabs>
 
 <!-------------------- ONLY LINKS BELOW HERE -------------------------->
 [kurtosis-yml]: ./kurtosis-yml.md
@@ -99,4 +148,4 @@ Kurtosis packages can be parameterized with arguments by adding an `args` parame
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=package+in%3Aname&type=all&language=&sort=
 [how-do-kurtosis-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
 [plan]: ./plan.md
-[args-reference]: ./args.md
+[kurtosis-run-arguments]: ../cli-reference/run.md#arguments

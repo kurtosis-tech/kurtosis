@@ -15,4 +15,5 @@ use (
 	./internal_testsuites/golang
 	./kurtosis_version
 	./name_generator
+	connect-server
 )
