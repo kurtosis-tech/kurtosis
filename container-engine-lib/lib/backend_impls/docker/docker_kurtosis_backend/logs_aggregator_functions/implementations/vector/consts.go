@@ -37,6 +37,7 @@ type = {{ .Sink.Type }}
 inputs = {{ .Sink.Inputs }}
 path = {{ .Sink.Filepath }}
 encoding.codec = "json"
+buffer.when_full = "block"
 `
 	////////////////////////--FINISH--VECTOR CONFIGURATION SECTION--/////////////////////////////
 )
