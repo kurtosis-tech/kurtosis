@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.81.9](https://github.com/kurtosis-tech/kurtosis/compare/0.81.8...0.81.9) (2023-08-17)
+
+
+### Features
+
+* Implements service registration repository in Docker Kurtosis Backend ([#1105](https://github.com/kurtosis-tech/kurtosis/issues/1105)) ([723a14e](https://github.com/kurtosis-tech/kurtosis/commit/723a14e041a74744337aeb38d64fa86306b36883))
+
 ## [0.81.8](https://github.com/kurtosis-tech/kurtosis/compare/0.81.7...0.81.8) (2023-08-15)
 
 
