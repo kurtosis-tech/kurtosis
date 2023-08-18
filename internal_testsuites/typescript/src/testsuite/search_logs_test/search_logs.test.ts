@@ -84,6 +84,9 @@ const SHOULD_FOLLOW_LOGS_VALUES_BY_REQUEST: boolean[] = [
     SHOULD_NOT_FOLLOW_LOGS,
 ]
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const MILLISECONDS_TO_WAIT_FOR_LOGS = 1000
+
 jest.setTimeout(180000);
 
 test("Test Search Logs", TestSearchLogs);
@@ -113,6 +116,7 @@ async function TestSearchLogs() {
             throw new Error(`Expected number of added services '${LOG_LINES_BY_SERVICE.size}', but the actual number of added services is '${serviceList.size}'`);
         }
 
+        await sleep(MILLISECONDS_TO_WAIT_FOR_LOGS);
         // ------------------------------------- TEST RUN ----------------------------------------------
 
         const newKurtosisContextResult = await KurtosisContext.newKurtosisContextFromLocalEngine();
