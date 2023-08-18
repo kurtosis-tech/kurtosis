@@ -31,7 +31,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	serviceNetwork.EXPECT().GetApiContainerInfo().Maybe().Return(
 		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0"),
 	)
-	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore)
+	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, "")
 }
 
 func TestRunStartosisInterpreterIdempotentTestSuite(t *testing.T) {

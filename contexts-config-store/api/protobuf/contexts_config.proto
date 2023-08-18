@@ -48,6 +48,8 @@ message RemoteContextV0 {
 
   // TLS config to use to connect to remote Kurtosis. If absent, HTTP will be used
   optional TlsConfig tls_config = 5;
+
+  optional string env_vars = 6;
 }
 
 message TlsConfig {

@@ -38,6 +38,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 	backendConfigSupplier KurtosisBackendConfigSupplier,
 	onBastionHost bool,
 	poolSize uint8,
+	enclaveEnvVars string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -53,6 +54,7 @@ func (launcher *EngineServerLauncher) LaunchWithDefaultVersion(
 		backendConfigSupplier,
 		onBastionHost,
 		poolSize,
+		enclaveEnvVars,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred launching the engine server container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -70,6 +72,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 	backendConfigSupplier KurtosisBackendConfigSupplier,
 	onBastionHost bool,
 	poolSize uint8,
+	enclaveEnvVars string,
 ) (
 	resultPublicIpAddr net.IP,
 	resultPublicGrpcPortSpec *port_spec.PortSpec,
@@ -86,6 +89,7 @@ func (launcher *EngineServerLauncher) LaunchWithCustomVersion(
 		kurtosisBackendConfig,
 		onBastionHost,
 		poolSize,
+		enclaveEnvVars,
 	)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred creating the engine server args")
