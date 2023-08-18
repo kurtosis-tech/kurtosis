@@ -70,7 +70,9 @@ func TestSerializeContextsConfig(t *testing.T) {
 	writtenContextsConfig := new(generated.KurtosisContextsConfig)
 	require.NoError(t, protojson.Unmarshal(result, writtenContextsConfig))
 	expectedContextsConfig := new(generated.KurtosisContextsConfig)
-	require.NoError(t, protojson.Unmarshal([]byte(serializedContextsConfig), expectedContextsConfig))
+
+	unmarshaller := protojson.UnmarshalOptions{DiscardUnknown: true} // nolint: exhaustruct
+	require.NoError(t, unmarshaller.Unmarshal([]byte(serializedContextsConfig), expectedContextsConfig))
 
 	require.True(t, proto.Equal(writtenContextsConfig, expectedContextsConfig))
 }
