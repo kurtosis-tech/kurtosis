@@ -22,6 +22,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -135,7 +136,7 @@ func runMain() error {
 
 	// TODO: replace with persistent client so that we can get logs even after enclave is stopped
 	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
-	
+
 	go func() {
 		pathToStaticFolder := "/run/webapp"
 		indexPath := "index.html"
@@ -175,7 +176,7 @@ func runMain() error {
 
 	logrus.Info("Running server...")
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
-	if err := engineHttpServer.RunServerUntilInterrupted(); err != nil {
+	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 	return nil
