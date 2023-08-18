@@ -35,7 +35,7 @@ const renderFileArtifacts = (file_artifacts) => {
     })
 }
 
-const ServiceInfo = ({enclaves}) => {
+const ServiceInfo = () => {
     const navigate = useNavigate();
     const [logs, setLogs] = useState([])
     const {state} = useLocation();
@@ -46,19 +46,22 @@ const ServiceInfo = ({enclaves}) => {
 
     useEffect(() => {
         let stream;
-        const fetch = async () => {
-            stream = await getServiceLogs(enclaveName, serviceUuid);
-            stream.on("data", data => {
-                const log = data.toObject().serviceLogsByServiceUuidMap[0][1].lineList
-                setLogs(logs => [...logs, log[0]])
-            })
+        const ctrl = new AbortController();
+        const fetchLogs = async () => {
+            stream = await getServiceLogs(ctrl, enclaveName, serviceUuid);
+            try {
+                for await (const res of stream) {
+                    const log = res["serviceLogsByServiceUuid"][serviceUuid]["line"][0]
+                    setLogs(logs => [...logs, log])
+                }
+            } catch (ex) {
+                console.log("aborted stream!")
+            }
         }
-        fetch()
+        fetchLogs()
         return () => {
-            if (stream) {
-                stream.cancel();
-                setLogs([])
-            };
+            ctrl.abort()
+            setLogs([]);
         };
     }, [serviceUuid])
 

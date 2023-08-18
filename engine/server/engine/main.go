@@ -8,7 +8,8 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
+	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
@@ -20,10 +21,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"net/http"
 	"os"
 	"path"
@@ -48,6 +47,8 @@ const (
 	webappPortAddr            = ":9711"
 
 	remoteBackendConfigFilename = "remote_backend_config.json"
+	pathToStaticFolder          = "/run/webapp"
+	indexPath                   = "index.html"
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -138,36 +139,8 @@ func runMain() error {
 	osFs := persistent_volume.NewOsVolumeFilesystem()
 	logsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs)
 
-	engineServerService := server.NewEngineServerService(
-		serverArgs.ImageVersionTag,
-		enclaveManager,
-		serverArgs.MetricsUserID,
-		serverArgs.DidUserAcceptSendingMetrics,
-		logsDatabaseClient,
-	)
-	defer func() {
-		if err := engineServerService.Close(); err != nil {
-			logrus.Errorf("We tried to close the engine server service but something fails. Err:\n%v", err)
-		}
-	}()
-
-	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
-		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
-	}
-	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
-		serverArgs.GrpcListenPortNum,
-		grpcServerStopGracePeriod,
-		[]func(*grpc.Server){
-			engineServerServiceRegistrationFunc,
-		},
-	)
-
 	go func() {
-		pathToStaticFolder := "/run/webapp"
-		indexPath := "index.html"
-
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
-
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)
 			if err != nil {
@@ -196,8 +169,12 @@ func runMain() error {
 		}
 	}()
 
+	engineConnectServer := server.NewEngineConnectServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
+	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
+
 	logrus.Info("Running server...")
-	if err := engineServer.RunUntilInterrupted(); err != nil {
+	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
+	if err := engineHttpServer.RunServerUntilInterrupted(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 	return nil

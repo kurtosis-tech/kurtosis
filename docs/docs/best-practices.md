@@ -6,7 +6,7 @@ slug: /best-practices
 
 Passing package arguments to the CLI
 -------------------------------
-Passing [package arguments][args-concepts-reference] to the CLI can get hairy due to the interaction between Bash and JSON quotes. The following are tips to make your life easier:
+Passing [package parameters][package-parameterization] via the CLI can get hairy due to the interaction between Bash and JSON quotes. The following are tips to make your life easier:
 
 1. **When you have a small number of arguments:** surround the arguments with single quotes so you don't have to escape double quotes in your JSON. E.g.:
    ```bash
@@ -14,9 +14,9 @@ Passing [package arguments][args-concepts-reference] to the CLI can get hairy du
    ```
 1. **When you have a large number of arguments:** put them in a `.json` file and use [Bash command substitution](https://www.gnu.org/software/bash/manual/html_node/Command-Substitution.html) _inside double quotes_ to slot them into the `kurtosis run` command. E.g.:
    ```bash
-   kurtosis run github.com/user/repo "$(cat my-args.json)"
+   kurtosis run github.com/user/repo "$(cat my-params.json)"
    ```
-   The double quotes around the `$(cat my-args.json)` are important so any spaces inside `my-args.json` don't fool Bash into thinking you're passing in two separate arguments.
+   The double quotes around the `$(cat my-params.json)` are important so any spaces inside `my-params.json` don't fool Bash into thinking you're passing in two separate arguments.
 
 Choosing the right wait
 -----------------------
@@ -39,17 +39,17 @@ Choosing service names in Kurtosis
 ----------------------------------
 Kurtosis service names implements [RFC-1035](https://datatracker.ietf.org/doc/html/rfc1035), meaning the names of all services must be a valid [RFC-1035 Label Name](https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#rfc-1035-label-names). Tactically this means a service name must:
 
-* contain at most 63 characters
-* contain only lowercase alphanumeric characters or '-'
-* start with an alphabetic character
-* end with an alphanumeric character
+- contain at most 63 characters
+- contain only lowercase alphanumeric characters or '-'
+- start with an alphabetic character
+- end with an alphanumeric character
 
 Failure to adhere to the above standards will result in errors when running Kurtosis.
 
 
 
 <!---------------------------------------- ONLY LINKS BELOW HERE!!! ----------------------------------->
-[args-concepts-reference]: ./concepts-reference/args.md
+[package-parameterization]: ./concepts-reference/packages.md#parameterization
 
 [service-config-starlark-reference]: ./starlark-reference/service-config.md
 [port-spec-starlark-reference]: ./starlark-reference/port-spec.md
