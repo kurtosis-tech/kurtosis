@@ -7,7 +7,7 @@ replace github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grp
 require (
 	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/go-yaml/yaml v2.1.0+incompatible
-	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230712110324-ce92904bb514
+	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230817174449-4e62f726c900
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230803130419-099ee7a4e3dc
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang v0.0.0-20230803130419-099ee7a4e3dc
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409

@@ -45,9 +45,8 @@ require (
 	github.com/compose-spec/compose-go v1.17.0
 	github.com/fatih/color v1.13.0
 	github.com/google/go-github/v50 v50.2.0
-	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.5.1
-	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230712110324-ce92904bb514
+	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230817174449-4e62f726c900
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230727152609-768e95d2dbeb
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230727131823-40788a849ce5
@@ -94,6 +93,7 @@ require (
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
+	github.com/google/uuid v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/improbable-eng/grpc-web v0.15.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
