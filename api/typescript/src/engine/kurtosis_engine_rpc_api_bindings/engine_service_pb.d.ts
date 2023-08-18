@@ -78,6 +78,9 @@ export class EnclaveAPIContainerInfo extends jspb.Message {
   getGrpcPortInsideEnclave(): number;
   setGrpcPortInsideEnclave(value: number): EnclaveAPIContainerInfo;
 
+  getBridgeIpAddress(): string;
+  setBridgeIpAddress(value: string): EnclaveAPIContainerInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveAPIContainerInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveAPIContainerInfo): EnclaveAPIContainerInfo.AsObject;
@@ -91,6 +94,7 @@ export namespace EnclaveAPIContainerInfo {
     containerId: string,
     ipInsideEnclave: string,
     grpcPortInsideEnclave: number,
+    bridgeIpAddress: string,
   }
 }
 
