@@ -336,34 +336,6 @@ export async function addServiceViaStarlark(enclaveContext: EnclaveContext, serv
     return ok(serviceContext)
 }
 
-
-export async function removeServiceViaStarlark(enclaveContext: EnclaveContext, serviceName: string): Promise<Result<Error>> {
-    const removeServiceScript = `def run(plan):
-	plan.remove_service(name="${serviceName}")
-`
-    const starlarkScriptRunResultPromise = enclaveContext.runStarlarkScriptBlocking(
-        DEFAULT_RUN_FUNCTION_NAME,
-        removeServiceScript,
-        STARLARK_SCRIPT_NO_PARAM,
-        STARLARK_NO_DRY_RUN,
-        NO_EXPERIMENTAL_FEATURE,
-    )
-    const starlarkScriptRunResult = await starlarkScriptRunResultPromise
-
-    if (starlarkScriptRunResult.isErr()) {
-        return err(starlarkScriptRunResult.error);
-    }
-    const starlarkScriptRunResultValue = starlarkScriptRunResult.value
-    if (starlarkScriptRunResultValue.interpretationError != undefined) {
-        return err(new Error(starlarkScriptRunResultValue.interpretationError.getErrorMessage()));
-    } else if (starlarkScriptRunResultValue.validationErrors.length > 0) {
-        return err(new Error(`Starlark script did not pass validation. Errors were:\n${starlarkScriptRunResultValue.validationErrors.join("\n")}`));
-    } else if (starlarkScriptRunResultValue.executionError != undefined) {
-        return err(new Error(starlarkScriptRunResultValue.executionError.getErrorMessage()));
-    }
-    return ok()
-}
-
 // ====================================================================================================
 //                                      Private Helper Methods
 // ====================================================================================================
