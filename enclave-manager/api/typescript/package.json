@@ -4,7 +4,7 @@
     "description": "This repo contains a Typescript client for communicating with the Enclave Manager API server.",
     "types": "./build/index",
     "scripts": {
-        "build": "tsc && cp -R src/ build/ && cp -R node_modules/kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/connect/* build/ node_modules/kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/connect/* build/",
+        "build": "tsc && cp -R src/ build/ && cp -R node_modules/kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/connect/* build/ && cp -R node_modules/kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/connect/* build/",
         "test": "ts-mocha -p tsconfig.json 'test/**/*.ts'"
     },
     "files": [
