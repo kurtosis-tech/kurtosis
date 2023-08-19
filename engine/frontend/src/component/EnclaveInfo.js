@@ -101,7 +101,7 @@ const EncalveInfo = ({enclaves}) => {
         }
     }
 
-    const EnclaveInfoCompoenent = ({services, fileArtifacts, handleServiceClick, handleFileArtifactClick}) => (
+    const EnclaveInfoComponent = ({services, fileArtifacts, handleServiceClick, handleFileArtifactClick}) => (
         <div className='flex flex-col h-[calc(100vh-3rem)] space-y-1 overflow-auto'>
             <div className="flex flex-col h-1/2 min-h-1/2 border-8">
                 <Heading content={"Services"} size={"text-xl"} />
@@ -132,7 +132,7 @@ const EncalveInfo = ({enclaves}) => {
                 </div>
                 {encalveInfoLoading ? 
                     <LoadingOverlay /> : 
-                    <EnclaveInfoCompoenent 
+                    <EnclaveInfoComponent
                         services={services} 
                         fileArtifacts={fileArtifacts}
                         handleServiceClick={handleServiceClick}
