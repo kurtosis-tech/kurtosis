@@ -19,7 +19,7 @@ api_proto_rel_dir="protobuf"
 api_go_mod_rel_file="golang/go.mod"
 
 # Typescript
-#api_typescript_proto_generated_rel_dir="typescript/src/generated"
+api_typescript_rel_dir="typescript"
 
 # ==================================================================================================
 #                                             Main Logic
@@ -29,6 +29,7 @@ api_go_mod_rel_file="golang/go.mod"
 api_golang_engine="${repo_root_dirpath}/api/protobuf/engine"
 api_golang_core="${repo_root_dirpath}/api/protobuf/core"
 
+api_typescript_abs_dir="${root_dirpath}/${api_typescript_rel_dir}"
 api_proto_abs_dir="${root_dirpath}/${api_proto_rel_dir}"
 api_golang_proto_generated_abs_dir="${repo_root_dirpath}"
 api_go_mod_abs_file="${root_dirpath}/${api_go_mod_rel_file}"
@@ -46,4 +47,10 @@ protoc \
   --go-grpc_opt=require_unimplemented_servers=false \
   --connect-go_out="${api_golang_proto_generated_abs_dir}" \
   --connect-go_opt=module="${api_golang_module}" \
+  --plugin=protoc-gen-es=../typescript/node_modules/.bin/protoc-gen-es \
+  --es_out="${api_typescript_abs_dir}/src/" \
+  --es_opt=target=ts \
+  --plugin=protoc-gen-connect-es="${api_typescript_abs_dir}/node_modules/.bin/protoc-gen-connect-es" \
+  --connect-es_out="${api_typescript_abs_dir}/src/" \
+  --connect-es_opt=target=ts \
   "${api_proto_abs_dir}"/*.proto

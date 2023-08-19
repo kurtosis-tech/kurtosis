@@ -6,10 +6,10 @@ import ServiceInfo from "./ServiceInfo";
 import FileArtifactInfo from './FileArtifactInfo';
 import Enclaves from "./Enclaves";
 import CreateEnclave from "./CreateEnclave"
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 import {getEnclavesFromKurtosis} from "../api/enclave";
 
-import { Route, Routes } from 'react-router-dom';
+import {Route, Routes} from 'react-router-dom';
 
 const Home = () => {
     const [enclaves, setEnclaves] = useState([])
@@ -31,19 +31,20 @@ const Home = () => {
 
     return (
         <div className="h-screen flex flex-col bg-slate-800">
-            <TitleBar />
+            <TitleBar/>
             <div className="flex h-[calc(100vh-4rem)]">
                 <Routes>
-                    <Route exact path="/" element={<Main totalEnclaves={enclaves.length}/>} />
-                    <Route exact path="/enclave/*" element={<CreateEnclave addEnclave={addEnclave}/>} />
-                    <Route exact path="/enclaves" element={<Enclaves enclaves={enclaves} isLoading={encalveLoading}/>} />
-                    <Route path="/enclaves/:name" element={<EnclaveInfo enclaves={enclaves}/>} />
-                    <Route path="/enclaves/:name/services/:uuid" element={<ServiceInfo/>} />
-                    <Route path="/enclaves/:name/files/:fileArtifactName" element={<FileArtifactInfo enclaves={enclaves}/>} />
+                    <Route exact path="/" element={<Main totalEnclaves={enclaves.length}/>}/>
+                    <Route exact path="/enclave/*" element={<CreateEnclave addEnclave={addEnclave}/>}/>
+                    <Route exact path="/enclaves" element={<Enclaves enclaves={enclaves} isLoading={encalveLoading}/>}/>
+                    <Route path="/enclaves/:name" element={<EnclaveInfo enclaves={enclaves}/>}/>
+                    <Route path="/enclaves/:name/services/:uuid" element={<ServiceInfo/>}/>
+                    <Route path="/enclaves/:name/files/:fileArtifactName"
+                           element={<FileArtifactInfo enclaves={enclaves}/>}/>
                 </Routes>
             </div>
         </div>
-  );
+    );
 }
 
 export default Home;

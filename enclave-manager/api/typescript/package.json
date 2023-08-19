@@ -1,0 +1,68 @@
+{
+    "name": "enclave-manager-sdk",
+    "main": "./build/index",
+    "description": "This repo contains a Typescript client for communicating with the Enclave Manager API server.",
+    "types": "./build/index",
+    "scripts": {
+        "build": "tsc && cp -R src/ build/ && cp -R node_modules/kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/connect/* build/ node_modules/kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/connect/* build/",
+        "test": "ts-mocha -p tsconfig.json 'test/**/*.ts'"
+    },
+    "files": [
+        "build"
+    ],
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/kurtosis-tech/enclave-manager-sdk.git"
+    },
+    "keywords": [
+        "kurtosis",
+        "enclave manager",
+        "core",
+        "enclave-manager-sdk"
+    ],
+    "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/kurtosis-tech/enclave-manager-sdk/issues"
+    },
+    "homepage": "https://github.com/kurtosis-tech/enclave-manager-sdk#readme",
+    "engines": {
+        "node": ">=16.13.0"
+    },
+    "dependencies": {
+        "@bufbuild/connect": "^0.12.0",
+        "@bufbuild/connect-web": "^0.12.0",
+        "@bufbuild/protobuf": "^1.3.0",
+        "@grpc/grpc-js": "^1.4.4",
+        "@types/google-protobuf": "^3.15.5",
+        "@types/js-yaml": "^4.0.5",
+        "@types/path-browserify": "^1.0.0",
+        "@types/semver": "^7.3.9",
+        "browser-or-node": "^2.0.0",
+        "google-protobuf": "^3.17.3",
+        "grpc-web": "^1.3.0",
+        "js-yaml": "^4.1.0",
+        "loglevel": "^1.7.1",
+        "neverthrow": "^4.2.2",
+        "path-browserify": "^1.0.1",
+        "semver": "^7.3.5",
+        "tar": "^6.1.11",
+        "@bufbuild/protoc-gen-connect-es": "^0.12.0",
+        "@bufbuild/protoc-gen-es": "^1.3.0",
+        "kurtosis-sdk": "../../../api/typescript/"
+    },
+    "devDependencies": {
+        "@bufbuild/buf": "^1.26.1",
+        "@bufbuild/protoc-gen-connect-es": "^0.12.0",
+        "@bufbuild/protoc-gen-es": "^1.3.0",
+        "@types/chai": "^4.2.21",
+        "@types/google-protobuf": "^3.15.5",
+        "@types/mocha": "^9.0.0",
+        "@types/tar": "^6.1.1",
+        "@types/targz": "^1.0.1",
+        "chai": "^4.3.4",
+        "mocha": "^9.0.3",
+        "ts-mocha": "^8.0.0",
+        "typescript": "^4.3.5"
+    }
+}
