@@ -73,7 +73,6 @@ func (c *WebServer) GetServices(
 	ipAddress := request.Msg.ApicIpAddress
 	port := request.Msg.ApicPort
 
-	// buf bindings don't seem to work as I expect:
 	host, err := url.Parse(fmt.Sprintf("http://%s:%d", ipAddress, port))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse the connection url")
@@ -82,6 +81,7 @@ func (c *WebServer) GetServices(
 	apiContainerServiceClient := kurtosis_core_rpc_api_bindingsconnect.NewApiContainerServiceClient(
 		http.DefaultClient,
 		host.String(),
+		connect.WithGRPCWeb(),
 	)
 
 	serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.GetServicesArgs]{
@@ -89,37 +89,13 @@ func (c *WebServer) GetServices(
 			ServiceIdentifiers: map[string]bool{},
 		},
 	}
-	resp, err := apiContainerServiceClient.GetServices(ctx, serviceRequest)
+	serviceInfoMapFromAPIC, err := apiContainerServiceClient.GetServices(ctx, serviceRequest)
 
-	// Old bindings:
-	//host := fmt.Sprintf("%s:%d", ipAddress, port)
-	//logrus.Infof("Calling APIC: %s", host)
-	//
-	//conn, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(
-	//		err,
-	//		"An error occurred connecting to the API container grpc port at '%v'",
-	//		host,
-	//	)
-	//}
-	//defer func() {
-	//	conn.Close()
-	//}()
-	//
-	//apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
-	//getAllServicesMap := map[string]bool{}
-	//getAllServicesArgs := binding_constructors.NewGetServicesArgs(getAllServicesMap)
-	//allServicesResponse, err := apiContainerClient.GetServices(ctx, getAllServicesArgs)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "Failed to get service information for all services in APIC '%v'", host)
-	//}
-	//serviceInfoMapFromAPIC := allServicesResponse.GetServiceInfo()
-	//resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse]{
-	//	Msg: &kurtosis_core_rpc_api_bindings.GetServicesResponse{
-	//		ServiceInfo: serviceInfoMapFromAPIC,
-	//	},
-	//}
+	resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse]{
+		Msg: &kurtosis_core_rpc_api_bindings.GetServicesResponse{
+			ServiceInfo: serviceInfoMapFromAPIC.Msg.GetServiceInfo(),
+		},
+	}
 	return resp, nil
 }
 
