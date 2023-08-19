@@ -115,9 +115,20 @@ func (c *WebServer) CreateEnclave(
 	return resp, nil
 }
 func (c *WebServer) GetServiceLogs(
-	context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
+	ctx context.Context,
+	req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
 ) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error) {
-	return nil, nil
+	result, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	resp := &connect.Response[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]{
+		Msg: &kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse{
+			ServiceLogsByServiceUuid: result.Msg().ServiceLogsByServiceUuid,
+			NotFoundServiceUuidSet:   result.Msg().NotFoundServiceUuidSet,
+		},
+	}
+	return resp, nil
 }
 func (c *WebServer) RunStarlarkPackage(
 	context.Context,
