@@ -122,11 +122,11 @@ func GetPortalBinaryFilePath() (string, error) {
 
 func GetPortalLogFilePath() (string, error) {
 	xdgRelFilepath := getRelativeFilepathForPortalForXDG(portalLogFilename)
-	portalBinaryFilePath, err := xdg.DataFile(xdgRelFilepath)
+	portalLogFilePath, err := xdg.DataFile(xdgRelFilepath)
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred getting Kurtosis Portal log file path using '%s'", xdgRelFilepath)
 	}
-	return portalBinaryFilePath, nil
+	return portalLogFilePath, nil
 }
 
 func GetPortalVersionFilePath() (string, error) {

@@ -25,7 +25,7 @@ const (
 	portalBinaryFileMode  = 0700
 	portalVersionFileMode = 0600
 	portalTagLatest       = "latest"
-	portalTag             = "0.0.4"
+	portalTag             = "latest"
 
 	osArchitectureSeparator = "_"
 
