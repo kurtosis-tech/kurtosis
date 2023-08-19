@@ -8,6 +8,7 @@ package kurtosis_enclave_manager_api_bindings
 
 import (
 	context "context"
+	kurtosis_core_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	kurtosis_engine_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
@@ -36,7 +37,7 @@ const (
 type KurtosisEnclaveManagerServerClient interface {
 	Check(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
 	GetEnclaves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
-	GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
+	GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
 	CreateEnclave(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetServiceLogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RunStarlarkPackage(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -69,8 +70,8 @@ func (c *kurtosisEnclaveManagerServerClient) GetEnclaves(ctx context.Context, in
 	return out, nil
 }
 
-func (c *kurtosisEnclaveManagerServerClient) GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error) {
-	out := new(emptypb.Empty)
+func (c *kurtosisEnclaveManagerServerClient) GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+	out := new(kurtosis_core_rpc_api_bindings.GetServicesResponse)
 	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetServices_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -120,7 +121,7 @@ func (c *kurtosisEnclaveManagerServerClient) ListFilesArtifactNamesAndUuids(ctx 
 type KurtosisEnclaveManagerServerServer interface {
 	Check(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
 	GetEnclaves(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
-	GetServices(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+	GetServices(context.Context, *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
 	CreateEnclave(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	GetServiceLogs(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	RunStarlarkPackage(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
@@ -137,7 +138,7 @@ func (UnimplementedKurtosisEnclaveManagerServerServer) Check(context.Context, *H
 func (UnimplementedKurtosisEnclaveManagerServerServer) GetEnclaves(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnclaves not implemented")
 }
-func (UnimplementedKurtosisEnclaveManagerServerServer) GetServices(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+func (UnimplementedKurtosisEnclaveManagerServerServer) GetServices(context.Context, *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
 }
 func (UnimplementedKurtosisEnclaveManagerServerServer) CreateEnclave(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {

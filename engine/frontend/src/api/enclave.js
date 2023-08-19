@@ -2,13 +2,11 @@
 import {runStarlarkPackage} from "./container"
 import axios from "axios";
 
-import {EngineService} from  "kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/connect/engine_service_connect";
+import {EngineService} from "kurtosis-sdk/build/engine/kurtosis_engine_rpc_api_bindings/connect/engine_service_connect";
 
 import {createPromiseClient} from "@bufbuild/connect";
 
-import {
-    createConnectTransport,
-} from "@bufbuild/connect-web";
+import {createConnectTransport,} from "@bufbuild/connect-web";
 
 
 const transport = createConnectTransport({
@@ -17,7 +15,7 @@ const transport = createConnectTransport({
 
 const engineClient = createPromiseClient(EngineService, transport);
 
-const ENGINE_URL =  "http://localhost:9710"
+const ENGINE_URL =  "http://localhost:8081"
 
 const createApiPromiseClient = (apiClient) => {
     if (apiClient) {
@@ -33,7 +31,7 @@ export const makeRestApiRequest = async ( url, data, config) => {
 
 export const getEnclavesFromKurtosis = async () => {
     const respFromGrpc = await makeRestApiRequest(
-         "engine_api.EngineService/GetEnclaves",
+         "kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetEnclaves",
         {"field":""},
         {"headers":{'Content-Type': "application/json"}}
     )

@@ -27,6 +27,7 @@ api_go_mod_rel_file="golang/go.mod"
 
 # Dependencies from other modules
 api_golang_engine="${repo_root_dirpath}/api/protobuf/engine"
+api_golang_core="${repo_root_dirpath}/api/protobuf/core"
 
 api_proto_abs_dir="${root_dirpath}/${api_proto_rel_dir}"
 api_golang_proto_generated_abs_dir="${repo_root_dirpath}"
@@ -37,6 +38,7 @@ api_golang_module="github.com/kurtosis-tech/kurtosis"
 protoc \
   -I="${api_proto_abs_dir}" \
   -I="${api_golang_engine}" \
+  -I="${api_golang_core}" \
   --go_out="${api_golang_proto_generated_abs_dir}" \
   --go-grpc_out="${api_golang_proto_generated_abs_dir}" \
   --go_opt=module="${api_golang_module}" \

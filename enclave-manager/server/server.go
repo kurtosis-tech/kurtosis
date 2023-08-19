@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/bufbuild/connect-go"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings"
@@ -27,8 +28,8 @@ func NewWebserver() *WebServer {
 }
 
 func (c *WebServer) Check(
-	_ context.Context,
-	req *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest],
+	context.Context,
+	*connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest],
 ) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error) {
 	response := &connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse]{
 		Msg: &kurtosis_enclave_manager_api_bindings.HealthCheckResponse{
@@ -40,8 +41,7 @@ func (c *WebServer) Check(
 func (c *WebServer) GetEnclaves(
 	ctx context.Context,
 	req *connect.Request[emptypb.Empty],
-) (*connect.Response[emptypb.Empty], error) {
-
+) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	client := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceClient(
 		http.DefaultClient,
 		"http://localhost:9710",
@@ -50,12 +50,27 @@ func (c *WebServer) GetEnclaves(
 	if err != nil {
 		return nil, err
 	}
-
-	logrus.Infof(enclaves.Msg.String())
-
-	return nil, nil
+	resp := &connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]{
+		Msg: &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{
+			EnclaveInfo: enclaves.Msg.EnclaveInfo,
+		},
+	}
+	return resp, nil
 }
 func (c *WebServer) GetServices(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return nil, nil
+}
+
+func (c *WebServer) CreateEnclave(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return nil, nil
+}
+func (c *WebServer) GetServiceLogs(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return nil, nil
+}
+func (c *WebServer) RunStarlarkPackage(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+	return nil, nil
+}
+func (c *WebServer) ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
 	return nil, nil
 }
 
