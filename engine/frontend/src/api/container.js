@@ -1,15 +1,13 @@
 import google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
 import {
-    GetServicesArgs,
-    RunStarlarkPackageArgs,
     FilesArtifactNameAndUuid,
-    InspectFilesArtifactContentsRequest
+    InspectFilesArtifactContentsRequest,
+    RunStarlarkPackageArgs
 } from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {
     ApiContainerServicePromiseClient
 } from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb'
 import {getServicesFromEnclaveManager} from "./api";
-import {calculateNewValue} from "@testing-library/user-event/dist/utils";
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
@@ -109,38 +107,28 @@ export const getEnclaveInformation = async (url) => {
     }
 
     const processServiceRequest = (data) => {
-        console.log("json", JSON.stringify(data))
-
-        console.log("keys", Object.keys(data.serviceInfo))
-
-        const newStructure = Object.keys(data.serviceInfo)
+        return Object.keys(data.serviceInfo)
             .map(serviceName => {
                 const ports = Object.keys(data.serviceInfo[serviceName].maybePublicPorts)
                     .map(portName => {
-                            const portEntry = {
+                            return {
                                 publicPortNumber: data.serviceInfo[serviceName].maybePublicPorts[portName].number,
                                 privatePortNumber: data.serviceInfo[serviceName].privatePorts[portName].number,
                                 applicationProtocol: data.serviceInfo[serviceName].privatePorts[portName].maybeApplicationProtocol,
                                 portName: portName,
                                 transportProtocol: TransportProtocolEnum[data.serviceInfo[serviceName].privatePorts[portName].transportProtocol],
                             }
-                            return portEntry;
                         }
                     )
 
-                const service = {
+                return {
                     name: data.serviceInfo[serviceName].name,
                     uuid: data.serviceInfo[serviceName].serviceUuid,
                     privateIpAddr: data.serviceInfo[serviceName].privateIpAddr,
                     ports: ports,
                 }
-                return service;
             })
-
-        console.log("newStructure", JSON.stringify(newStructure))
-        return newStructure;
     }
-    console.log(JSON.stringify(processServiceRequest))
 
     const processFileArtifactRequest = (data) => {
         return data.fileNamesAndUuidsList.map(artifact => {
