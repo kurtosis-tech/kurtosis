@@ -16,8 +16,8 @@ export const getEnclavesFromEnclaveManager = async () => {
 export const getServicesFromEnclaveManager = async (host, port) => {
     const request = new GetServicesRequest(
         {
-            "apicIpAddress": "127.0.0.1",
-            "apicPort": 55296,
+            "apicIpAddress": host,
+            "apicPort": port,
         }
     );
     return enclaveManagerClient.getServices(request);

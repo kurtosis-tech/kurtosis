@@ -5,6 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
+import { RunStarlarkPackageArgs } from "./api_container_service_pb.js";
 
 /**
  * @generated from message kurtosis_enclave_manager.HealthCheckRequest
@@ -154,6 +155,98 @@ export class GetServicesRequest extends Message<GetServicesRequest> {
 
   static equals(a: GetServicesRequest | PlainMessage<GetServicesRequest> | undefined, b: GetServicesRequest | PlainMessage<GetServicesRequest> | undefined): boolean {
     return proto3.util.equals(GetServicesRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message kurtosis_enclave_manager.GetListFilesArtifactNamesAndUuidsRequest
+ */
+export class GetListFilesArtifactNamesAndUuidsRequest extends Message<GetListFilesArtifactNamesAndUuidsRequest> {
+  /**
+   * @generated from field: string apic_ip_address = 1;
+   */
+  apicIpAddress = "";
+
+  /**
+   * @generated from field: int32 apic_port = 2;
+   */
+  apicPort = 0;
+
+  constructor(data?: PartialMessage<GetListFilesArtifactNamesAndUuidsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_enclave_manager.GetListFilesArtifactNamesAndUuidsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "apic_ip_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "apic_port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetListFilesArtifactNamesAndUuidsRequest {
+    return new GetListFilesArtifactNamesAndUuidsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetListFilesArtifactNamesAndUuidsRequest {
+    return new GetListFilesArtifactNamesAndUuidsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetListFilesArtifactNamesAndUuidsRequest {
+    return new GetListFilesArtifactNamesAndUuidsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: GetListFilesArtifactNamesAndUuidsRequest | PlainMessage<GetListFilesArtifactNamesAndUuidsRequest> | undefined, b: GetListFilesArtifactNamesAndUuidsRequest | PlainMessage<GetListFilesArtifactNamesAndUuidsRequest> | undefined): boolean {
+    return proto3.util.equals(GetListFilesArtifactNamesAndUuidsRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message kurtosis_enclave_manager.RunStarlarkPackageRequest
+ */
+export class RunStarlarkPackageRequest extends Message<RunStarlarkPackageRequest> {
+  /**
+   * @generated from field: string apic_ip_address = 1;
+   */
+  apicIpAddress = "";
+
+  /**
+   * @generated from field: int32 apic_port = 2;
+   */
+  apicPort = 0;
+
+  /**
+   * @generated from field: api_container_api.RunStarlarkPackageArgs RunStarlarkPackageArgs = 3;
+   */
+  RunStarlarkPackageArgs?: RunStarlarkPackageArgs;
+
+  constructor(data?: PartialMessage<RunStarlarkPackageRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_enclave_manager.RunStarlarkPackageRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "apic_ip_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "apic_port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "RunStarlarkPackageArgs", kind: "message", T: RunStarlarkPackageArgs },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): RunStarlarkPackageRequest {
+    return new RunStarlarkPackageRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): RunStarlarkPackageRequest {
+    return new RunStarlarkPackageRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): RunStarlarkPackageRequest {
+    return new RunStarlarkPackageRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: RunStarlarkPackageRequest | PlainMessage<RunStarlarkPackageRequest> | undefined, b: RunStarlarkPackageRequest | PlainMessage<RunStarlarkPackageRequest> | undefined): boolean {
+    return proto3.util.equals(RunStarlarkPackageRequest, a, b);
   }
 }
 

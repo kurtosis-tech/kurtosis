@@ -99,16 +99,27 @@ func (c *WebServer) GetServices(
 	return resp, nil
 }
 
-func (c *WebServer) CreateEnclave(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+func (c *WebServer) CreateEnclave(
+	context.Context,
+	*connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs],
+) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	return nil, nil
 }
-func (c *WebServer) GetServiceLogs(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+func (c *WebServer) GetServiceLogs(
+	context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
+) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error) {
 	return nil, nil
 }
-func (c *WebServer) RunStarlarkPackage(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+func (c *WebServer) RunStarlarkPackage(
+	context.Context,
+	*connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest],
+) (*connect.Response[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine], error) {
 	return nil, nil
 }
-func (c *WebServer) ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error) {
+func (c *WebServer) ListFilesArtifactNamesAndUuids(
+	context.Context,
+	*connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest],
+) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
 	return nil, nil
 }
 

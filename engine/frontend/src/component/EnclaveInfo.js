@@ -76,7 +76,7 @@ const EncalveInfo = ({enclaves}) => {
         const fetch = async () => {
             const selected = enclaves.filter(enclave => enclave.name === name);
             if (selected.length > 0) {
-                const {services, artifacts} = await getEnclaveInformation(selected[0].apiClient);
+                const {services, artifacts} = await getEnclaveInformation(selected[0].host, selected[0].port);
                 setServices(services)
                 setFileArtifacts(artifacts)
             }

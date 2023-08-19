@@ -34,12 +34,14 @@ export const getEnclavesFromKurtosis = async () => {
     if ("enclaveInfo" in data) {
         return Object.keys(data.enclaveInfo).map(key => {
             const enclave = data.enclaveInfo[key]
+            console.log("enclave",enclave)
             return {
                 uuid: enclave.enclaveUuid,
                 name: enclave.name,
                 // created: enclave.creationTime,
                 status: enclave.apiContainerStatus,
-                apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo)
+                host: enclave.apiContainerHostMachineInfo.ipOnHostMachine,
+                port: enclave.apiContainerHostMachineInfo.grpcPortOnHostMachine,
             }
         });
     }

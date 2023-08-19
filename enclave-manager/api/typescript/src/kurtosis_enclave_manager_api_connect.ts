@@ -3,10 +3,10 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { GetServicesRequest, HealthCheckRequest, HealthCheckResponse } from "./kurtosis_enclave_manager_api_pb.js";
+import { GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, HealthCheckRequest, HealthCheckResponse, RunStarlarkPackageRequest } from "./kurtosis_enclave_manager_api_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
-import { GetEnclavesResponse } from "./engine_service_pb.js";
-import { GetServicesResponse } from "./api_container_service_pb.js";
+import { CreateEnclaveArgs, CreateEnclaveResponse, GetEnclavesResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
+import { GetServicesResponse, ListFilesArtifactNamesAndUuidsResponse, StarlarkRunResponseLine } from "./api_container_service_pb.js";
 
 /**
  * @generated from service kurtosis_enclave_manager.KurtosisEnclaveManagerServer
@@ -42,30 +42,12 @@ export const KurtosisEnclaveManagerServer = {
       kind: MethodKind.Unary,
     },
     /**
-     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.CreateEnclave
-     */
-    createEnclave: {
-      name: "CreateEnclave",
-      I: Empty,
-      O: Empty,
-      kind: MethodKind.Unary,
-    },
-    /**
      * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetServiceLogs
      */
     getServiceLogs: {
       name: "GetServiceLogs",
-      I: Empty,
-      O: Empty,
-      kind: MethodKind.Unary,
-    },
-    /**
-     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.RunStarlarkPackage
-     */
-    runStarlarkPackage: {
-      name: "RunStarlarkPackage",
-      I: Empty,
-      O: Empty,
+      I: GetServiceLogsArgs,
+      O: GetServiceLogsResponse,
       kind: MethodKind.Unary,
     },
     /**
@@ -73,8 +55,26 @@ export const KurtosisEnclaveManagerServer = {
      */
     listFilesArtifactNamesAndUuids: {
       name: "ListFilesArtifactNamesAndUuids",
-      I: Empty,
-      O: Empty,
+      I: GetListFilesArtifactNamesAndUuidsRequest,
+      O: ListFilesArtifactNamesAndUuidsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.RunStarlarkPackage
+     */
+    runStarlarkPackage: {
+      name: "RunStarlarkPackage",
+      I: RunStarlarkPackageRequest,
+      O: StarlarkRunResponseLine,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.CreateEnclave
+     */
+    createEnclave: {
+      name: "CreateEnclave",
+      I: CreateEnclaveArgs,
+      O: CreateEnclaveResponse,
       kind: MethodKind.Unary,
     },
   }

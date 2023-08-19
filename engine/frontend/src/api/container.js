@@ -84,18 +84,18 @@ export const getFileArtifactInfo = async (url, fileArtifactName) => {
     return response;
 }
 
-export const getEnclaveInformation = async (url) => {
-    if (url === "") {
+export const getEnclaveInformation = async (host, port) => {
+    if (host === "") {
         return {
             services: [],
             artifacts: []
         }
     }
 
-    const containerClient = new ApiContainerServicePromiseClient(url);
+    const containerClient = new ApiContainerServicePromiseClient(`http://${host}:${port}`);
     const makeGetServiceRequest = async () => {
         try {
-            return await getServicesFromEnclaveManager();
+            return await getServicesFromEnclaveManager(host, port);
         } catch (error) {
             return {serviceInfo: []}
         }

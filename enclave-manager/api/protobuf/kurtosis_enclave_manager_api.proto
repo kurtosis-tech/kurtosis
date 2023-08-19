@@ -12,10 +12,10 @@ service KurtosisEnclaveManagerServer {
   rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
   rpc GetEnclaves(google.protobuf.Empty) returns (engine_api.GetEnclavesResponse) {};
   rpc GetServices(GetServicesRequest) returns (api_container_api.GetServicesResponse) {};
-  rpc CreateEnclave(google.protobuf.Empty) returns (google.protobuf.Empty) {};
-  rpc GetServiceLogs(google.protobuf.Empty) returns (google.protobuf.Empty) {};
-  rpc RunStarlarkPackage(google.protobuf.Empty) returns (google.protobuf.Empty) {};
-  rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (google.protobuf.Empty) {};
+  rpc GetServiceLogs(engine_api.GetServiceLogsArgs) returns (engine_api.GetServiceLogsResponse) {};
+  rpc ListFilesArtifactNamesAndUuids(GetListFilesArtifactNamesAndUuidsRequest) returns (api_container_api.ListFilesArtifactNamesAndUuidsResponse) {};
+  rpc RunStarlarkPackage(RunStarlarkPackageRequest) returns (api_container_api.StarlarkRunResponseLine) {};
+  rpc CreateEnclave(engine_api.CreateEnclaveArgs) returns (engine_api.CreateEnclaveResponse) {};
 }
 
 message HealthCheckRequest {
@@ -33,8 +33,17 @@ message HealthCheckResponse {
 }
 
 message GetServicesRequest{
-
   string apic_ip_address = 1;
   int32 apic_port = 2;
+}
 
+message GetListFilesArtifactNamesAndUuidsRequest{
+  string apic_ip_address = 1;
+  int32 apic_port = 2;
+}
+
+message RunStarlarkPackageRequest{
+  string apic_ip_address = 1;
+  int32 apic_port = 2;
+  api_container_api.RunStarlarkPackageArgs RunStarlarkPackageArgs = 3;
 }
