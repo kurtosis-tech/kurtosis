@@ -53,9 +53,9 @@ func (c *WebServer) Check(
 }
 func (c *WebServer) GetEnclaves(
 	ctx context.Context,
-	request *connect.Request[emptypb.Empty],
+	req *connect.Request[emptypb.Empty],
 ) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	enclaves, err := (*c.engineServiceClient).GetEnclaves(ctx, request)
+	enclaves, err := (*c.engineServiceClient).GetEnclaves(ctx, req)
 	if err != nil {
 		return nil, err
 	}
@@ -100,10 +100,19 @@ func (c *WebServer) GetServices(
 }
 
 func (c *WebServer) CreateEnclave(
-	context.Context,
-	*connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs],
+	ctx context.Context,
+	req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs],
 ) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
-	return nil, nil
+	result, err := (*c.engineServiceClient).CreateEnclave(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	resp := &connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse]{
+		Msg: &kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse{
+			EnclaveInfo: result.Msg.EnclaveInfo,
+		},
+	}
+	return resp, nil
 }
 func (c *WebServer) GetServiceLogs(
 	context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
