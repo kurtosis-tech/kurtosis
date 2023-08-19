@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"github.com/bufbuild/connect-go"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings/kurtosis_core_rpc_api_bindingsconnect"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
@@ -14,10 +14,9 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -73,51 +72,54 @@ func (c *WebServer) GetServices(
 
 	ipAddress := request.Msg.ApicIpAddress
 	port := request.Msg.ApicPort
+
 	// buf bindings don't seem to work as I expect:
-	//host, err := url.Parse(fmt.Sprintf("http://%s:%d", ipAddress, port))
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "Failed to parse the connection url")
-	//}
-	//logrus.Infof("Calling APIC: %s", host.String())
-	//apiContainerServiceClient := kurtosis_core_rpc_api_bindingsconnect.NewApiContainerServiceClient(
-	//	http.DefaultClient,
-	//	host.String(),
-	//)
-	//
-	//serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.GetServicesArgs]{
-	//	Msg: &kurtosis_core_rpc_api_bindings.GetServicesArgs{
-	//		ServiceIdentifiers: map[string]bool{},
-	//	},
-	//}
-	//res, err := apiContainerServiceClient.GetServices(ctx, serviceRequest)
-	host := fmt.Sprintf("%s:%d", ipAddress, port)
-	logrus.Infof("Calling APIC: %s", host)
-
-	conn, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	host, err := url.Parse(fmt.Sprintf("http://%s:%d", ipAddress, port))
 	if err != nil {
-		return nil, stacktrace.Propagate(
-			err,
-			"An error occurred connecting to the API container grpc port at '%v'",
-			host,
-		)
+		return nil, stacktrace.Propagate(err, "Failed to parse the connection url")
 	}
-	defer func() {
-		conn.Close()
-	}()
+	logrus.Infof("Calling APIC: %s", host.String())
+	apiContainerServiceClient := kurtosis_core_rpc_api_bindingsconnect.NewApiContainerServiceClient(
+		http.DefaultClient,
+		host.String(),
+	)
 
-	apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
-	getAllServicesMap := map[string]bool{}
-	getAllServicesArgs := binding_constructors.NewGetServicesArgs(getAllServicesMap)
-	allServicesResponse, err := apiContainerClient.GetServices(ctx, getAllServicesArgs)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to get service information for all services in APIC '%v'", host)
-	}
-	serviceInfoMapFromAPIC := allServicesResponse.GetServiceInfo()
-	resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse]{
-		Msg: &kurtosis_core_rpc_api_bindings.GetServicesResponse{
-			ServiceInfo: serviceInfoMapFromAPIC,
+	serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.GetServicesArgs]{
+		Msg: &kurtosis_core_rpc_api_bindings.GetServicesArgs{
+			ServiceIdentifiers: map[string]bool{},
 		},
 	}
+	resp, err := apiContainerServiceClient.GetServices(ctx, serviceRequest)
+
+	// Old bindings:
+	//host := fmt.Sprintf("%s:%d", ipAddress, port)
+	//logrus.Infof("Calling APIC: %s", host)
+	//
+	//conn, err := grpc.Dial(host, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	//if err != nil {
+	//	return nil, stacktrace.Propagate(
+	//		err,
+	//		"An error occurred connecting to the API container grpc port at '%v'",
+	//		host,
+	//	)
+	//}
+	//defer func() {
+	//	conn.Close()
+	//}()
+	//
+	//apiContainerClient := kurtosis_core_rpc_api_bindings.NewApiContainerServiceClient(conn)
+	//getAllServicesMap := map[string]bool{}
+	//getAllServicesArgs := binding_constructors.NewGetServicesArgs(getAllServicesMap)
+	//allServicesResponse, err := apiContainerClient.GetServices(ctx, getAllServicesArgs)
+	//if err != nil {
+	//	return nil, stacktrace.Propagate(err, "Failed to get service information for all services in APIC '%v'", host)
+	//}
+	//serviceInfoMapFromAPIC := allServicesResponse.GetServiceInfo()
+	//resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse]{
+	//	Msg: &kurtosis_core_rpc_api_bindings.GetServicesResponse{
+	//		ServiceInfo: serviceInfoMapFromAPIC,
+	//	},
+	//}
 	return resp, nil
 }
 
