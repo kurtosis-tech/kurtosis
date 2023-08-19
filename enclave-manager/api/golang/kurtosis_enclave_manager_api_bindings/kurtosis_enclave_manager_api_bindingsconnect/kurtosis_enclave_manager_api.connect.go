@@ -65,7 +65,7 @@ const (
 type KurtosisEnclaveManagerServerClient interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
-	GetServices(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
+	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
 	CreateEnclave(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	GetServiceLogs(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	RunStarlarkPackage(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
@@ -93,7 +93,7 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerGetEnclavesProcedure,
 			opts...,
 		),
-		getServices: connect.NewClient[emptypb.Empty, kurtosis_core_rpc_api_bindings.GetServicesResponse](
+		getServices: connect.NewClient[kurtosis_enclave_manager_api_bindings.GetServicesRequest, kurtosis_core_rpc_api_bindings.GetServicesResponse](
 			httpClient,
 			baseURL+KurtosisEnclaveManagerServerGetServicesProcedure,
 			opts...,
@@ -125,7 +125,7 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 type kurtosisEnclaveManagerServerClient struct {
 	check                          *connect.Client[kurtosis_enclave_manager_api_bindings.HealthCheckRequest, kurtosis_enclave_manager_api_bindings.HealthCheckResponse]
 	getEnclaves                    *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
-	getServices                    *connect.Client[emptypb.Empty, kurtosis_core_rpc_api_bindings.GetServicesResponse]
+	getServices                    *connect.Client[kurtosis_enclave_manager_api_bindings.GetServicesRequest, kurtosis_core_rpc_api_bindings.GetServicesResponse]
 	createEnclave                  *connect.Client[emptypb.Empty, emptypb.Empty]
 	getServiceLogs                 *connect.Client[emptypb.Empty, emptypb.Empty]
 	runStarlarkPackage             *connect.Client[emptypb.Empty, emptypb.Empty]
@@ -143,7 +143,7 @@ func (c *kurtosisEnclaveManagerServerClient) GetEnclaves(ctx context.Context, re
 }
 
 // GetServices calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetServices.
-func (c *kurtosisEnclaveManagerServerClient) GetServices(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
+func (c *kurtosisEnclaveManagerServerClient) GetServices(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
 	return c.getServices.CallUnary(ctx, req)
 }
 
@@ -174,7 +174,7 @@ func (c *kurtosisEnclaveManagerServerClient) ListFilesArtifactNamesAndUuids(ctx 
 type KurtosisEnclaveManagerServerHandler interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
-	GetServices(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
+	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
 	CreateEnclave(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	GetServiceLogs(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
 	RunStarlarkPackage(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[emptypb.Empty], error)
@@ -255,7 +255,7 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) GetEnclaves(context.Cont
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetEnclaves is not implemented"))
 }
 
-func (UnimplementedKurtosisEnclaveManagerServerHandler) GetServices(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
+func (UnimplementedKurtosisEnclaveManagerServerHandler) GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetServices is not implemented"))
 }
 

@@ -11,7 +11,7 @@ import "api_container_service.proto";
 service KurtosisEnclaveManagerServer {
   rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
   rpc GetEnclaves(google.protobuf.Empty) returns (engine_api.GetEnclavesResponse) {};
-  rpc GetServices(google.protobuf.Empty) returns (api_container_api.GetServicesResponse) {};
+  rpc GetServices(GetServicesRequest) returns (api_container_api.GetServicesResponse) {};
   rpc CreateEnclave(google.protobuf.Empty) returns (google.protobuf.Empty) {};
   rpc GetServiceLogs(google.protobuf.Empty) returns (google.protobuf.Empty) {};
   rpc RunStarlarkPackage(google.protobuf.Empty) returns (google.protobuf.Empty) {};

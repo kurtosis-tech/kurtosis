@@ -37,7 +37,7 @@ const (
 type KurtosisEnclaveManagerServerClient interface {
 	Check(ctx context.Context, in *HealthCheckRequest, opts ...grpc.CallOption) (*HealthCheckResponse, error)
 	GetEnclaves(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
-	GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
+	GetServices(ctx context.Context, in *GetServicesRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
 	CreateEnclave(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	GetServiceLogs(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
 	RunStarlarkPackage(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*emptypb.Empty, error)
@@ -70,7 +70,7 @@ func (c *kurtosisEnclaveManagerServerClient) GetEnclaves(ctx context.Context, in
 	return out, nil
 }
 
-func (c *kurtosisEnclaveManagerServerClient) GetServices(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+func (c *kurtosisEnclaveManagerServerClient) GetServices(ctx context.Context, in *GetServicesRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 	out := new(kurtosis_core_rpc_api_bindings.GetServicesResponse)
 	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetServices_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -121,7 +121,7 @@ func (c *kurtosisEnclaveManagerServerClient) ListFilesArtifactNamesAndUuids(ctx 
 type KurtosisEnclaveManagerServerServer interface {
 	Check(context.Context, *HealthCheckRequest) (*HealthCheckResponse, error)
 	GetEnclaves(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error)
-	GetServices(context.Context, *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
+	GetServices(context.Context, *GetServicesRequest) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error)
 	CreateEnclave(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	GetServiceLogs(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 	RunStarlarkPackage(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
@@ -138,7 +138,7 @@ func (UnimplementedKurtosisEnclaveManagerServerServer) Check(context.Context, *H
 func (UnimplementedKurtosisEnclaveManagerServerServer) GetEnclaves(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.GetEnclavesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEnclaves not implemented")
 }
-func (UnimplementedKurtosisEnclaveManagerServerServer) GetServices(context.Context, *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+func (UnimplementedKurtosisEnclaveManagerServerServer) GetServices(context.Context, *GetServicesRequest) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetServices not implemented")
 }
 func (UnimplementedKurtosisEnclaveManagerServerServer) CreateEnclave(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
@@ -202,7 +202,7 @@ func _KurtosisEnclaveManagerServer_GetEnclaves_Handler(srv interface{}, ctx cont
 }
 
 func _KurtosisEnclaveManagerServer_GetServices_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(emptypb.Empty)
+	in := new(GetServicesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -214,7 +214,7 @@ func _KurtosisEnclaveManagerServer_GetServices_Handler(srv interface{}, ctx cont
 		FullMethod: KurtosisEnclaveManagerServer_GetServices_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisEnclaveManagerServerServer).GetServices(ctx, req.(*emptypb.Empty))
+		return srv.(KurtosisEnclaveManagerServerServer).GetServices(ctx, req.(*GetServicesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
