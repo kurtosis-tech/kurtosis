@@ -5,12 +5,14 @@ import {
 import {
     getServicesFromEnclaveManager,
     inspectFilesArtifactContentsFromEnclaveManager,
-    listFilesArtifactNamesAndUuidsFromEnclaveManager
+    listFilesArtifactNamesAndUuidsFromEnclaveManager, runStarlarkPackageFromEnclaveManager
 } from "./api";
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
 export const runStarlarkPackage = async (url, packageId, args) => {
+
+    // runStarlarkPackageFromEnclaveManager()
     const containerClient = new ApiContainerServicePromiseClient(url);
     const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
 

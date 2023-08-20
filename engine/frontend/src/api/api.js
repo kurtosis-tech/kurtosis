@@ -4,7 +4,7 @@ import {createConnectTransport,} from "@bufbuild/connect-web";
 import {
     GetListFilesArtifactNamesAndUuidsRequest,
     GetServicesRequest,
-    InspectFilesArtifactContentsRequest
+    InspectFilesArtifactContentsRequest, RunStarlarkPackageRequest
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import {CreateEnclaveArgs} from "enclave-manager-sdk/build/engine_service_pb";
 
@@ -61,4 +61,17 @@ export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, ver
         }
     );
     return enclaveManagerClient.createEnclave(request);
+}
+
+export const runStarlarkPackageFromEnclaveManager = async (host, port, enclaveName, logLevel, versionTag) => {
+    const request = new RunStarlarkPackageRequest(
+        {
+            "apicIpAddress": host,
+            "apicPort": port,
+            "RunStarlarkPackageArgs": {
+                // TODO
+            }
+        }
+    );
+    return enclaveManagerClient.runStarlarkPackage(request);
 }

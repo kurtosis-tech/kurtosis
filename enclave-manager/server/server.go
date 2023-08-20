@@ -84,19 +84,17 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 	return resp, nil
 }
 
-func (c *WebServer) GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
-
-	//result, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
-	//
-	//str.Send(result.)
-	//
-	//
-	//
-	//if err != nil {
-	//	return nil, err
-	//}
-	//return result, err
-	return nil
+func (c *WebServer) GetServiceLogs(
+	ctx context.Context,
+	req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
+	str *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
+) error {
+	result, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
+	if err != nil {
+		return err
+	}
+	res := result.Msg()
+	return str.Send(res)
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
@@ -118,16 +116,17 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *con
 	return resp, nil
 }
 
-func (c *WebServer) RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
-	//apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
-	//if err != nil {
-	//	return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
-	//}
-	//serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs]{
-	//	Msg: req.Msg.RunStarlarkPackageArgs,
-	//}
-	//return (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
-	return nil
+func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
+	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to create the APIC client")
+	}
+	serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs]{
+		Msg: req.Msg.RunStarlarkPackageArgs,
+	}
+	apicStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
+	res := apicStream.Msg()
+	return str.Send(res)
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
