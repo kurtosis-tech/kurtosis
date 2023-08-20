@@ -69,9 +69,9 @@ type KurtosisEnclaveManagerServerClient interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
-	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error)
+	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error)
 	ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error)
-	RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine], error)
+	RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine], error)
 	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
 	InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error)
 }
@@ -158,8 +158,8 @@ func (c *kurtosisEnclaveManagerServerClient) GetServices(ctx context.Context, re
 }
 
 // GetServiceLogs calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetServiceLogs.
-func (c *kurtosisEnclaveManagerServerClient) GetServiceLogs(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error) {
-	return c.getServiceLogs.CallUnary(ctx, req)
+func (c *kurtosisEnclaveManagerServerClient) GetServiceLogs(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error) {
+	return c.getServiceLogs.CallServerStream(ctx, req)
 }
 
 // ListFilesArtifactNamesAndUuids calls
@@ -170,8 +170,8 @@ func (c *kurtosisEnclaveManagerServerClient) ListFilesArtifactNamesAndUuids(ctx 
 
 // RunStarlarkPackage calls
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer.RunStarlarkPackage.
-func (c *kurtosisEnclaveManagerServerClient) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine], error) {
-	return c.runStarlarkPackage.CallUnary(ctx, req)
+func (c *kurtosisEnclaveManagerServerClient) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine], error) {
+	return c.runStarlarkPackage.CallServerStream(ctx, req)
 }
 
 // CreateEnclave calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.CreateEnclave.
@@ -191,9 +191,9 @@ type KurtosisEnclaveManagerServerHandler interface {
 	Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error)
 	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	GetServices(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error)
-	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error)
+	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error
 	ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error)
-	RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine], error)
+	RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error
 	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
 	InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error)
 }
@@ -219,7 +219,7 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.GetServices,
 		opts...,
 	)
-	kurtosisEnclaveManagerServerGetServiceLogsHandler := connect.NewUnaryHandler(
+	kurtosisEnclaveManagerServerGetServiceLogsHandler := connect.NewServerStreamHandler(
 		KurtosisEnclaveManagerServerGetServiceLogsProcedure,
 		svc.GetServiceLogs,
 		opts...,
@@ -229,7 +229,7 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.ListFilesArtifactNamesAndUuids,
 		opts...,
 	)
-	kurtosisEnclaveManagerServerRunStarlarkPackageHandler := connect.NewUnaryHandler(
+	kurtosisEnclaveManagerServerRunStarlarkPackageHandler := connect.NewServerStreamHandler(
 		KurtosisEnclaveManagerServerRunStarlarkPackageProcedure,
 		svc.RunStarlarkPackage,
 		opts...,
@@ -283,16 +283,16 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) GetServices(context.Cont
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetServices is not implemented"))
 }
 
-func (UnimplementedKurtosisEnclaveManagerServerHandler) GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetServiceLogs is not implemented"))
+func (UnimplementedKurtosisEnclaveManagerServerHandler) GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.GetServiceLogs is not implemented"))
 }
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.ListFilesArtifactNamesAndUuids is not implemented"))
 }
 
-func (UnimplementedKurtosisEnclaveManagerServerHandler) RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.RunStarlarkPackage is not implemented"))
+func (UnimplementedKurtosisEnclaveManagerServerHandler) RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.RunStarlarkPackage is not implemented"))
 }
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {

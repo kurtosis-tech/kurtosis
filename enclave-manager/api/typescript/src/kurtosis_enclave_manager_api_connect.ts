@@ -48,7 +48,7 @@ export const KurtosisEnclaveManagerServer = {
       name: "GetServiceLogs",
       I: GetServiceLogsArgs,
       O: GetServiceLogsResponse,
-      kind: MethodKind.Unary,
+      kind: MethodKind.ServerStreaming,
     },
     /**
      * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.ListFilesArtifactNamesAndUuids
@@ -66,7 +66,7 @@ export const KurtosisEnclaveManagerServer = {
       name: "RunStarlarkPackage",
       I: RunStarlarkPackageRequest,
       O: StarlarkRunResponseLine,
-      kind: MethodKind.Unary,
+      kind: MethodKind.ServerStreaming,
     },
     /**
      * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.CreateEnclave
