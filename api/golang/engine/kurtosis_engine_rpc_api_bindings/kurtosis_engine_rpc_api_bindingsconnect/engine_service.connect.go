@@ -5,9 +5,9 @@
 package kurtosis_engine_rpc_api_bindingsconnect
 
 import (
+	connect "connectrpc.com/connect"
 	context "context"
 	errors "errors"
-	connect_go "github.com/bufbuild/connect-go"
 	kurtosis_engine_rpc_api_bindings "github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
@@ -19,7 +19,7 @@ import (
 // generated with a version of connect newer than the one compiled into your binary. You can fix the
 // problem by either regenerating this code with an older version of connect or updating the connect
 // version compiled into your binary.
-const _ = connect_go.IsAtLeastVersion0_1_0
+const _ = connect.IsAtLeastVersion0_1_0
 
 const (
 	// EngineServiceName is the fully-qualified name of the EngineService service.
@@ -62,26 +62,26 @@ const (
 // EngineServiceClient is a client for the engine_api.EngineService service.
 type EngineServiceClient interface {
 	// Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
-	GetEngineInfo(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error)
+	GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error)
 	// ==============================================================================================
 	//
 	//	Enclave Management
 	//
 	// ==============================================================================================
 	// Creates a new Kurtosis Enclave
-	CreateEnclave(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
+	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
 	// Returns information about the existing enclaves
-	GetEnclaves(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
+	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	// Returns information about all existing & historical enclaves
-	GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error)
+	GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error)
 	// Stops all containers in an enclave
-	StopEnclave(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error)
+	StopEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 	// Destroys an enclave, removing all artifacts associated with it
-	DestroyEnclave(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error)
+	DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 	// Gets rid of old enclaves
-	Clean(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error)
+	Clean(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error)
 	// Get service logs
-	GetServiceLogs(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect_go.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error)
+	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error)
 }
 
 // NewEngineServiceClient constructs a client for the engine_api.EngineService service. By default,
@@ -91,45 +91,45 @@ type EngineServiceClient interface {
 //
 // The URL supplied here should be the base URL for the Connect or gRPC server (for example,
 // http://api.acme.com or https://acme.com/grpc).
-func NewEngineServiceClient(httpClient connect_go.HTTPClient, baseURL string, opts ...connect_go.ClientOption) EngineServiceClient {
+func NewEngineServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) EngineServiceClient {
 	baseURL = strings.TrimRight(baseURL, "/")
 	return &engineServiceClient{
-		getEngineInfo: connect_go.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse](
+		getEngineInfo: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse](
 			httpClient,
 			baseURL+EngineServiceGetEngineInfoProcedure,
 			opts...,
 		),
-		createEnclave: connect_go.NewClient[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse](
+		createEnclave: connect.NewClient[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse](
 			httpClient,
 			baseURL+EngineServiceCreateEnclaveProcedure,
 			opts...,
 		),
-		getEnclaves: connect_go.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse](
+		getEnclaves: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse](
 			httpClient,
 			baseURL+EngineServiceGetEnclavesProcedure,
 			opts...,
 		),
-		getExistingAndHistoricalEnclaveIdentifiers: connect_go.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse](
+		getExistingAndHistoricalEnclaveIdentifiers: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse](
 			httpClient,
 			baseURL+EngineServiceGetExistingAndHistoricalEnclaveIdentifiersProcedure,
 			opts...,
 		),
-		stopEnclave: connect_go.NewClient[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs, emptypb.Empty](
+		stopEnclave: connect.NewClient[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs, emptypb.Empty](
 			httpClient,
 			baseURL+EngineServiceStopEnclaveProcedure,
 			opts...,
 		),
-		destroyEnclave: connect_go.NewClient[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty](
+		destroyEnclave: connect.NewClient[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty](
 			httpClient,
 			baseURL+EngineServiceDestroyEnclaveProcedure,
 			opts...,
 		),
-		clean: connect_go.NewClient[kurtosis_engine_rpc_api_bindings.CleanArgs, kurtosis_engine_rpc_api_bindings.CleanResponse](
+		clean: connect.NewClient[kurtosis_engine_rpc_api_bindings.CleanArgs, kurtosis_engine_rpc_api_bindings.CleanResponse](
 			httpClient,
 			baseURL+EngineServiceCleanProcedure,
 			opts...,
 		),
-		getServiceLogs: connect_go.NewClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse](
+		getServiceLogs: connect.NewClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse](
 			httpClient,
 			baseURL+EngineServiceGetServiceLogsProcedure,
 			opts...,
@@ -139,80 +139,80 @@ func NewEngineServiceClient(httpClient connect_go.HTTPClient, baseURL string, op
 
 // engineServiceClient implements EngineServiceClient.
 type engineServiceClient struct {
-	getEngineInfo                              *connect_go.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse]
-	createEnclave                              *connect_go.Client[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse]
-	getEnclaves                                *connect_go.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
-	getExistingAndHistoricalEnclaveIdentifiers *connect_go.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse]
-	stopEnclave                                *connect_go.Client[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs, emptypb.Empty]
-	destroyEnclave                             *connect_go.Client[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty]
-	clean                                      *connect_go.Client[kurtosis_engine_rpc_api_bindings.CleanArgs, kurtosis_engine_rpc_api_bindings.CleanResponse]
-	getServiceLogs                             *connect_go.Client[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]
+	getEngineInfo                              *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse]
+	createEnclave                              *connect.Client[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse]
+	getEnclaves                                *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetEnclavesResponse]
+	getExistingAndHistoricalEnclaveIdentifiers *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse]
+	stopEnclave                                *connect.Client[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs, emptypb.Empty]
+	destroyEnclave                             *connect.Client[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty]
+	clean                                      *connect.Client[kurtosis_engine_rpc_api_bindings.CleanArgs, kurtosis_engine_rpc_api_bindings.CleanResponse]
+	getServiceLogs                             *connect.Client[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]
 }
 
 // GetEngineInfo calls engine_api.EngineService.GetEngineInfo.
-func (c *engineServiceClient) GetEngineInfo(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
+func (c *engineServiceClient) GetEngineInfo(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
 	return c.getEngineInfo.CallUnary(ctx, req)
 }
 
 // CreateEnclave calls engine_api.EngineService.CreateEnclave.
-func (c *engineServiceClient) CreateEnclave(ctx context.Context, req *connect_go.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
+func (c *engineServiceClient) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	return c.createEnclave.CallUnary(ctx, req)
 }
 
 // GetEnclaves calls engine_api.EngineService.GetEnclaves.
-func (c *engineServiceClient) GetEnclaves(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+func (c *engineServiceClient) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	return c.getEnclaves.CallUnary(ctx, req)
 }
 
 // GetExistingAndHistoricalEnclaveIdentifiers calls
 // engine_api.EngineService.GetExistingAndHistoricalEnclaveIdentifiers.
-func (c *engineServiceClient) GetExistingAndHistoricalEnclaveIdentifiers(ctx context.Context, req *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {
+func (c *engineServiceClient) GetExistingAndHistoricalEnclaveIdentifiers(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {
 	return c.getExistingAndHistoricalEnclaveIdentifiers.CallUnary(ctx, req)
 }
 
 // StopEnclave calls engine_api.EngineService.StopEnclave.
-func (c *engineServiceClient) StopEnclave(ctx context.Context, req *connect_go.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error) {
+func (c *engineServiceClient) StopEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
 	return c.stopEnclave.CallUnary(ctx, req)
 }
 
 // DestroyEnclave calls engine_api.EngineService.DestroyEnclave.
-func (c *engineServiceClient) DestroyEnclave(ctx context.Context, req *connect_go.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error) {
+func (c *engineServiceClient) DestroyEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
 	return c.destroyEnclave.CallUnary(ctx, req)
 }
 
 // Clean calls engine_api.EngineService.Clean.
-func (c *engineServiceClient) Clean(ctx context.Context, req *connect_go.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error) {
+func (c *engineServiceClient) Clean(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error) {
 	return c.clean.CallUnary(ctx, req)
 }
 
 // GetServiceLogs calls engine_api.EngineService.GetServiceLogs.
-func (c *engineServiceClient) GetServiceLogs(ctx context.Context, req *connect_go.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect_go.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error) {
+func (c *engineServiceClient) GetServiceLogs(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error) {
 	return c.getServiceLogs.CallServerStream(ctx, req)
 }
 
 // EngineServiceHandler is an implementation of the engine_api.EngineService service.
 type EngineServiceHandler interface {
 	// Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
-	GetEngineInfo(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error)
+	GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error)
 	// ==============================================================================================
 	//
 	//	Enclave Management
 	//
 	// ==============================================================================================
 	// Creates a new Kurtosis Enclave
-	CreateEnclave(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
+	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
 	// Returns information about the existing enclaves
-	GetEnclaves(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
+	GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error)
 	// Returns information about all existing & historical enclaves
-	GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error)
+	GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error)
 	// Stops all containers in an enclave
-	StopEnclave(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error)
+	StopEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 	// Destroys an enclave, removing all artifacts associated with it
-	DestroyEnclave(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error)
+	DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 	// Gets rid of old enclaves
-	Clean(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error)
+	Clean(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error)
 	// Get service logs
-	GetServiceLogs(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect_go.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error
+	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error
 }
 
 // NewEngineServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -220,43 +220,43 @@ type EngineServiceHandler interface {
 //
 // By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
 // and JSON codecs. They also support gzip compression.
-func NewEngineServiceHandler(svc EngineServiceHandler, opts ...connect_go.HandlerOption) (string, http.Handler) {
-	engineServiceGetEngineInfoHandler := connect_go.NewUnaryHandler(
+func NewEngineServiceHandler(svc EngineServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	engineServiceGetEngineInfoHandler := connect.NewUnaryHandler(
 		EngineServiceGetEngineInfoProcedure,
 		svc.GetEngineInfo,
 		opts...,
 	)
-	engineServiceCreateEnclaveHandler := connect_go.NewUnaryHandler(
+	engineServiceCreateEnclaveHandler := connect.NewUnaryHandler(
 		EngineServiceCreateEnclaveProcedure,
 		svc.CreateEnclave,
 		opts...,
 	)
-	engineServiceGetEnclavesHandler := connect_go.NewUnaryHandler(
+	engineServiceGetEnclavesHandler := connect.NewUnaryHandler(
 		EngineServiceGetEnclavesProcedure,
 		svc.GetEnclaves,
 		opts...,
 	)
-	engineServiceGetExistingAndHistoricalEnclaveIdentifiersHandler := connect_go.NewUnaryHandler(
+	engineServiceGetExistingAndHistoricalEnclaveIdentifiersHandler := connect.NewUnaryHandler(
 		EngineServiceGetExistingAndHistoricalEnclaveIdentifiersProcedure,
 		svc.GetExistingAndHistoricalEnclaveIdentifiers,
 		opts...,
 	)
-	engineServiceStopEnclaveHandler := connect_go.NewUnaryHandler(
+	engineServiceStopEnclaveHandler := connect.NewUnaryHandler(
 		EngineServiceStopEnclaveProcedure,
 		svc.StopEnclave,
 		opts...,
 	)
-	engineServiceDestroyEnclaveHandler := connect_go.NewUnaryHandler(
+	engineServiceDestroyEnclaveHandler := connect.NewUnaryHandler(
 		EngineServiceDestroyEnclaveProcedure,
 		svc.DestroyEnclave,
 		opts...,
 	)
-	engineServiceCleanHandler := connect_go.NewUnaryHandler(
+	engineServiceCleanHandler := connect.NewUnaryHandler(
 		EngineServiceCleanProcedure,
 		svc.Clean,
 		opts...,
 	)
-	engineServiceGetServiceLogsHandler := connect_go.NewServerStreamHandler(
+	engineServiceGetServiceLogsHandler := connect.NewServerStreamHandler(
 		EngineServiceGetServiceLogsProcedure,
 		svc.GetServiceLogs,
 		opts...,
@@ -288,34 +288,34 @@ func NewEngineServiceHandler(svc EngineServiceHandler, opts ...connect_go.Handle
 // UnimplementedEngineServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedEngineServiceHandler struct{}
 
-func (UnimplementedEngineServiceHandler) GetEngineInfo(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.GetEngineInfo is not implemented"))
+func (UnimplementedEngineServiceHandler) GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetEngineInfo is not implemented"))
 }
 
-func (UnimplementedEngineServiceHandler) CreateEnclave(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.CreateEnclave is not implemented"))
+func (UnimplementedEngineServiceHandler) CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.CreateEnclave is not implemented"))
 }
 
-func (UnimplementedEngineServiceHandler) GetEnclaves(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.GetEnclaves is not implemented"))
+func (UnimplementedEngineServiceHandler) GetEnclaves(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetEnclaves is not implemented"))
 }
 
-func (UnimplementedEngineServiceHandler) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.GetExistingAndHistoricalEnclaveIdentifiers is not implemented"))
+func (UnimplementedEngineServiceHandler) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetExistingAndHistoricalEnclaveIdentifiers is not implemented"))
 }
 
-func (UnimplementedEngineServiceHandler) StopEnclave(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.StopEnclave is not implemented"))
+func (UnimplementedEngineServiceHandler) StopEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.StopEnclave is not implemented"))
 }
 
-func (UnimplementedEngineServiceHandler) DestroyEnclave(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.DestroyEnclave is not implemented"))
+func (UnimplementedEngineServiceHandler) DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.DestroyEnclave is not implemented"))
 }
 
-func (UnimplementedEngineServiceHandler) Clean(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error) {
-	return nil, connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.Clean is not implemented"))
+func (UnimplementedEngineServiceHandler) Clean(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.Clean is not implemented"))
 }
 
-func (UnimplementedEngineServiceHandler) GetServiceLogs(context.Context, *connect_go.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect_go.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
-	return connect_go.NewError(connect_go.CodeUnimplemented, errors.New("engine_api.EngineService.GetServiceLogs is not implemented"))
+func (UnimplementedEngineServiceHandler) GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
+	return connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetServiceLogs is not implemented"))
 }
