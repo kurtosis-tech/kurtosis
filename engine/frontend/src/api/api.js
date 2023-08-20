@@ -6,6 +6,7 @@ import {
     GetServicesRequest,
     InspectFilesArtifactContentsRequest
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
+import {CreateEnclaveArgs} from "enclave-manager-sdk/build/engine_service_pb";
 
 const transport = createConnectTransport({
     baseUrl: "http://localhost:8081"
@@ -48,4 +49,16 @@ export const inspectFilesArtifactContentsFromEnclaveManager = async (host, port,
         }
     );
     return enclaveManagerClient.inspectFilesArtifactContents(request);
+}
+
+
+export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, versionTag) => {
+    const request = new CreateEnclaveArgs(
+        {
+            "enclaveName": enclaveName,
+            "apiContainerVersionTag": versionTag,
+            "apiContainerLogLevel": logLevel,
+        }
+    );
+    return enclaveManagerClient.createEnclave(request);
 }

@@ -7,8 +7,7 @@ import {KurtosisEnclaveManagerServer} from "enclave-manager-sdk/build/kurtosis_e
 import {createPromiseClient} from "@bufbuild/connect";
 
 import {createConnectTransport,} from "@bufbuild/connect-web";
-import {getEnclavesFromEnclaveManager} from "./api";
-
+import {createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager} from "./api";
 
 const transport = createConnectTransport({
     baseUrl: "http://localhost:8081"
@@ -48,22 +47,18 @@ export const getEnclavesFromKurtosis = async () => {
 }
 
 export const createEnclave = async () => {
-    const data = {
-        apiContainerVersionTag: "",
-        apiContainerLogLevel: "info",
-        isPartitioningEnabled: false,
-    }
-    const response = await makeRestApiRequest("engine_api.EngineService/CreateEnclave", JSON.stringify(data), {"headers": {'Content-Type': "application/json"}})
+    const enclaveName = ""; // TODO We could make this input from the UI
+    const apiContainerVersionTag = "";
+    const apiContainerLogLevel= "info";
+    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag)
 
-    const enclave = response.data.enclaveInfo;
-    const apiClient = createApiPromiseClient(enclave.apiContainerHostMachineInfo);
+    const enclave = response.enclaveInfo;
 
     return {
         uuid: enclave.enclaveUuid,
         name: enclave.name,
         created: enclave.creationTime,
         status: enclave.apiContainerStatus,
-        apiClient
     }
 }
 
