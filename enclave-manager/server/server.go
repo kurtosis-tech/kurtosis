@@ -68,8 +68,8 @@ func (c *WebServer) GetEnclaves(
 }
 func (c *WebServer) GetServices(
 	ctx context.Context,
-	request *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
-
+	request *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest],
+) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
 	ipAddress := request.Msg.ApicIpAddress
 	port := request.Msg.ApicPort
 
@@ -137,10 +137,32 @@ func (c *WebServer) RunStarlarkPackage(
 	return nil, nil
 }
 func (c *WebServer) ListFilesArtifactNamesAndUuids(
-	context.Context,
-	*connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest],
+	ctx context.Context,
+	req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
-	return nil, nil
+	ipAddress := req.Msg.ApicIpAddress
+	port := req.Msg.ApicPort
+
+	host, err := url.Parse(fmt.Sprintf("http://%s:%d", ipAddress, port))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to parse the connection url")
+	}
+	logrus.Infof("Calling APIC: %s", host.String())
+	apiContainerServiceClient := kurtosis_core_rpc_api_bindingsconnect.NewApiContainerServiceClient(
+		http.DefaultClient,
+		host.String(),
+		connect.WithGRPCWeb(),
+	)
+
+	serviceRequest := &connect.Request[emptypb.Empty]{}
+	result, err := apiContainerServiceClient.ListFilesArtifactNamesAndUuids(ctx, serviceRequest)
+
+	resp := &connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse]{
+		Msg: &kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse{
+			FileNamesAndUuids: result.Msg.FileNamesAndUuids,
+		},
+	}
+	return resp, nil
 }
 
 func RunEnclaveApiServer() {

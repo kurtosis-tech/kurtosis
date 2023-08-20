@@ -1,4 +1,3 @@
-import google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
 import {
     FilesArtifactNameAndUuid,
     InspectFilesArtifactContentsRequest,
@@ -7,7 +6,7 @@ import {
 import {
     ApiContainerServicePromiseClient
 } from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb'
-import {getServicesFromEnclaveManager} from "./api";
+import {getServicesFromEnclaveManager, listFilesArtifactNamesAndUuidsFromEnclaveManager} from "./api";
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
@@ -92,7 +91,6 @@ export const getEnclaveInformation = async (host, port) => {
         }
     }
 
-    const containerClient = new ApiContainerServicePromiseClient(`http://${host}:${port}`);
     const makeGetServiceRequest = async () => {
         try {
             return await getServicesFromEnclaveManager(host, port);
@@ -102,8 +100,7 @@ export const getEnclaveInformation = async (host, port) => {
     }
 
     const makeFileArtifactRequest = async () => {
-        const fileArtifactResponse = await containerClient.listFilesArtifactNamesAndUuids(new google_protobuf_empty_pb.Empty, null)
-        return fileArtifactResponse.toObject();
+        return listFilesArtifactNamesAndUuidsFromEnclaveManager(host, port);
     }
 
     const processServiceRequest = (data) => {
@@ -131,10 +128,11 @@ export const getEnclaveInformation = async (host, port) => {
     }
 
     const processFileArtifactRequest = (data) => {
-        return data.fileNamesAndUuidsList.map(artifact => {
+        console.log("data.fileNamesAndUuids", data.fileNamesAndUuids)
+        return data.fileNamesAndUuids.map(artifact => {
             return {
-                name: artifact.filename,
-                uuid: artifact.fileuuid,
+                name: artifact.fileName,
+                uuid: artifact.fileUuid,
             }
         })
     }

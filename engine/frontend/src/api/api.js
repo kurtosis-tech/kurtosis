@@ -1,7 +1,7 @@
 import {KurtosisEnclaveManagerServer} from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import {createPromiseClient} from "@bufbuild/connect";
 import {createConnectTransport,} from "@bufbuild/connect-web";
-import {GetServicesRequest} from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
+import {GetServicesRequest, GetListFilesArtifactNamesAndUuidsRequest} from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 
 const transport = createConnectTransport({
     baseUrl: "http://localhost:8081"
@@ -21,4 +21,14 @@ export const getServicesFromEnclaveManager = async (host, port) => {
         }
     );
     return enclaveManagerClient.getServices(request);
+}
+
+export const listFilesArtifactNamesAndUuidsFromEnclaveManager = async (host, port) => {
+    const request = new GetListFilesArtifactNamesAndUuidsRequest(
+        {
+            "apicIpAddress": host,
+            "apicPort": port,
+        }
+    );
+    return enclaveManagerClient.listFilesArtifactNamesAndUuids(request);
 }
