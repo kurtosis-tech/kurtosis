@@ -89,7 +89,7 @@ const FileArtifactInfo = ({enclaves}) => {
             const fetch = async () => {
                 const selected = enclaves.filter(enclave => enclave.name === enclaveName);
                 if (selected.length > 0) {
-                    const {files} = await getFileArtifactInfo(selected[0].apiClient, fileArtifactName);
+                    const {files} = await getFileArtifactInfo(selected[0].host, selected[0].port, fileArtifactName);
                     setFiles(files)
                     setCurrentFiles(files)
                     setCurrentPath([])

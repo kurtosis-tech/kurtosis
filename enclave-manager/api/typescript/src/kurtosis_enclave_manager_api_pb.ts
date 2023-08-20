@@ -5,7 +5,7 @@
 
 import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialMessage, PlainMessage } from "@bufbuild/protobuf";
 import { Message, proto3 } from "@bufbuild/protobuf";
-import { RunStarlarkPackageArgs } from "./api_container_service_pb.js";
+import { FilesArtifactNameAndUuid, RunStarlarkPackageArgs } from "./api_container_service_pb.js";
 
 /**
  * @generated from message kurtosis_enclave_manager.HealthCheckRequest
@@ -247,6 +247,55 @@ export class RunStarlarkPackageRequest extends Message<RunStarlarkPackageRequest
 
   static equals(a: RunStarlarkPackageRequest | PlainMessage<RunStarlarkPackageRequest> | undefined, b: RunStarlarkPackageRequest | PlainMessage<RunStarlarkPackageRequest> | undefined): boolean {
     return proto3.util.equals(RunStarlarkPackageRequest, a, b);
+  }
+}
+
+/**
+ * @generated from message kurtosis_enclave_manager.InspectFilesArtifactContentsRequest
+ */
+export class InspectFilesArtifactContentsRequest extends Message<InspectFilesArtifactContentsRequest> {
+  /**
+   * @generated from field: string apic_ip_address = 1;
+   */
+  apicIpAddress = "";
+
+  /**
+   * @generated from field: int32 apic_port = 2;
+   */
+  apicPort = 0;
+
+  /**
+   * @generated from field: api_container_api.FilesArtifactNameAndUuid file_names_and_uuid = 3;
+   */
+  fileNamesAndUuid?: FilesArtifactNameAndUuid;
+
+  constructor(data?: PartialMessage<InspectFilesArtifactContentsRequest>) {
+    super();
+    proto3.util.initPartial(data, this);
+  }
+
+  static readonly runtime: typeof proto3 = proto3;
+  static readonly typeName = "kurtosis_enclave_manager.InspectFilesArtifactContentsRequest";
+  static readonly fields: FieldList = proto3.util.newFieldList(() => [
+    { no: 1, name: "apic_ip_address", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "apic_port", kind: "scalar", T: 5 /* ScalarType.INT32 */ },
+    { no: 3, name: "file_names_and_uuid", kind: "message", T: FilesArtifactNameAndUuid },
+  ]);
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): InspectFilesArtifactContentsRequest {
+    return new InspectFilesArtifactContentsRequest().fromBinary(bytes, options);
+  }
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): InspectFilesArtifactContentsRequest {
+    return new InspectFilesArtifactContentsRequest().fromJson(jsonValue, options);
+  }
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): InspectFilesArtifactContentsRequest {
+    return new InspectFilesArtifactContentsRequest().fromJsonString(jsonString, options);
+  }
+
+  static equals(a: InspectFilesArtifactContentsRequest | PlainMessage<InspectFilesArtifactContentsRequest> | undefined, b: InspectFilesArtifactContentsRequest | PlainMessage<InspectFilesArtifactContentsRequest> | undefined): boolean {
+    return proto3.util.equals(InspectFilesArtifactContentsRequest, a, b);
   }
 }
 

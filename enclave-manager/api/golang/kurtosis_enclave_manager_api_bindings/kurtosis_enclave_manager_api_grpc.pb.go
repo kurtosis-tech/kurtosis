@@ -29,6 +29,7 @@ const (
 	KurtosisEnclaveManagerServer_ListFilesArtifactNamesAndUuids_FullMethodName = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/ListFilesArtifactNamesAndUuids"
 	KurtosisEnclaveManagerServer_RunStarlarkPackage_FullMethodName             = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/RunStarlarkPackage"
 	KurtosisEnclaveManagerServer_CreateEnclave_FullMethodName                  = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/CreateEnclave"
+	KurtosisEnclaveManagerServer_InspectFilesArtifactContents_FullMethodName   = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/InspectFilesArtifactContents"
 )
 
 // KurtosisEnclaveManagerServerClient is the client API for KurtosisEnclaveManagerServer service.
@@ -42,6 +43,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	ListFilesArtifactNamesAndUuids(ctx context.Context, in *GetListFilesArtifactNamesAndUuidsRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error)
 	RunStarlarkPackage(ctx context.Context, in *RunStarlarkPackageRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, error)
 	CreateEnclave(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error)
+	InspectFilesArtifactContents(ctx context.Context, in *InspectFilesArtifactContentsRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error)
 }
 
 type kurtosisEnclaveManagerServerClient struct {
@@ -115,6 +117,15 @@ func (c *kurtosisEnclaveManagerServerClient) CreateEnclave(ctx context.Context, 
 	return out, nil
 }
 
+func (c *kurtosisEnclaveManagerServerClient) InspectFilesArtifactContents(ctx context.Context, in *InspectFilesArtifactContentsRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
+	out := new(kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse)
+	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_InspectFilesArtifactContents_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KurtosisEnclaveManagerServerServer is the server API for KurtosisEnclaveManagerServer service.
 // All implementations should embed UnimplementedKurtosisEnclaveManagerServerServer
 // for forward compatibility
@@ -126,6 +137,7 @@ type KurtosisEnclaveManagerServerServer interface {
 	ListFilesArtifactNamesAndUuids(context.Context, *GetListFilesArtifactNamesAndUuidsRequest) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error)
 	RunStarlarkPackage(context.Context, *RunStarlarkPackageRequest) (*kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, error)
 	CreateEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error)
+	InspectFilesArtifactContents(context.Context, *InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error)
 }
 
 // UnimplementedKurtosisEnclaveManagerServerServer should be embedded to have forward compatible implementations.
@@ -152,6 +164,9 @@ func (UnimplementedKurtosisEnclaveManagerServerServer) RunStarlarkPackage(contex
 }
 func (UnimplementedKurtosisEnclaveManagerServerServer) CreateEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreateEnclave not implemented")
+}
+func (UnimplementedKurtosisEnclaveManagerServerServer) InspectFilesArtifactContents(context.Context, *InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InspectFilesArtifactContents not implemented")
 }
 
 // UnsafeKurtosisEnclaveManagerServerServer may be embedded to opt out of forward compatibility for this service.
@@ -291,6 +306,24 @@ func _KurtosisEnclaveManagerServer_CreateEnclave_Handler(srv interface{}, ctx co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisEnclaveManagerServer_InspectFilesArtifactContents_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InspectFilesArtifactContentsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisEnclaveManagerServerServer).InspectFilesArtifactContents(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisEnclaveManagerServer_InspectFilesArtifactContents_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisEnclaveManagerServerServer).InspectFilesArtifactContents(ctx, req.(*InspectFilesArtifactContentsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KurtosisEnclaveManagerServer_ServiceDesc is the grpc.ServiceDesc for KurtosisEnclaveManagerServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -325,6 +358,10 @@ var KurtosisEnclaveManagerServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateEnclave",
 			Handler:    _KurtosisEnclaveManagerServer_CreateEnclave_Handler,
+		},
+		{
+			MethodName: "InspectFilesArtifactContents",
+			Handler:    _KurtosisEnclaveManagerServer_InspectFilesArtifactContents_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

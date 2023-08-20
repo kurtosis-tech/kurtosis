@@ -3,10 +3,10 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, HealthCheckRequest, HealthCheckResponse, RunStarlarkPackageRequest } from "./kurtosis_enclave_manager_api_pb.js";
+import { GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, HealthCheckRequest, HealthCheckResponse, InspectFilesArtifactContentsRequest, RunStarlarkPackageRequest } from "./kurtosis_enclave_manager_api_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 import { CreateEnclaveArgs, CreateEnclaveResponse, GetEnclavesResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
-import { GetServicesResponse, ListFilesArtifactNamesAndUuidsResponse, StarlarkRunResponseLine } from "./api_container_service_pb.js";
+import { GetServicesResponse, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, StarlarkRunResponseLine } from "./api_container_service_pb.js";
 
 /**
  * @generated from service kurtosis_enclave_manager.KurtosisEnclaveManagerServer
@@ -75,6 +75,15 @@ export const KurtosisEnclaveManagerServer = {
       name: "CreateEnclave",
       I: CreateEnclaveArgs,
       O: CreateEnclaveResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.InspectFilesArtifactContents
+     */
+    inspectFilesArtifactContents: {
+      name: "InspectFilesArtifactContents",
+      I: InspectFilesArtifactContentsRequest,
+      O: InspectFilesArtifactContentsResponse,
       kind: MethodKind.Unary,
     },
   }

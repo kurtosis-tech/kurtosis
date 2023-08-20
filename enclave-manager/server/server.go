@@ -90,6 +90,9 @@ func (c *WebServer) GetServices(
 		},
 	}
 	serviceInfoMapFromAPIC, err := apiContainerServiceClient.GetServices(ctx, serviceRequest)
+	if err != nil {
+		return nil, err
+	}
 
 	resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse]{
 		Msg: &kurtosis_core_rpc_api_bindings.GetServicesResponse{
@@ -156,10 +159,47 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(
 
 	serviceRequest := &connect.Request[emptypb.Empty]{}
 	result, err := apiContainerServiceClient.ListFilesArtifactNamesAndUuids(ctx, serviceRequest)
-
+	if err != nil {
+		return nil, err
+	}
 	resp := &connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse]{
 		Msg: &kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse{
 			FileNamesAndUuids: result.Msg.FileNamesAndUuids,
+		},
+	}
+	return resp, nil
+}
+
+func (c *WebServer) InspectFilesArtifactContents(
+	ctx context.Context,
+	req *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest],
+) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
+	ipAddress := req.Msg.ApicIpAddress
+	port := req.Msg.ApicPort
+
+	host, err := url.Parse(fmt.Sprintf("http://%s:%d", ipAddress, port))
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to parse the connection url")
+	}
+	logrus.Infof("Calling APIC: %s", host.String())
+	apiContainerServiceClient := kurtosis_core_rpc_api_bindingsconnect.NewApiContainerServiceClient(
+		http.DefaultClient,
+		host.String(),
+		connect.WithGRPCWeb(),
+	)
+
+	request := &connect.Request[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest]{
+		Msg: &kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest{
+			FileNamesAndUuid: req.Msg.FileNamesAndUuid,
+		},
+	}
+	result, err := apiContainerServiceClient.InspectFilesArtifactContents(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	resp := &connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse]{
+		Msg: &kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse{
+			FileDescriptions: result.Msg.FileDescriptions,
 		},
 	}
 	return resp, nil

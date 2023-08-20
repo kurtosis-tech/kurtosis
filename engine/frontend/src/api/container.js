@@ -1,12 +1,12 @@
-import {
-    FilesArtifactNameAndUuid,
-    InspectFilesArtifactContentsRequest,
-    RunStarlarkPackageArgs
-} from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
+import {RunStarlarkPackageArgs} from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import {
     ApiContainerServicePromiseClient
 } from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb'
-import {getServicesFromEnclaveManager, listFilesArtifactNamesAndUuidsFromEnclaveManager} from "./api";
+import {
+    getServicesFromEnclaveManager,
+    inspectFilesArtifactContentsFromEnclaveManager,
+    listFilesArtifactNamesAndUuidsFromEnclaveManager
+} from "./api";
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
@@ -27,16 +27,10 @@ const getDataFromApiContainer = async (request, process) => {
     return process(data)
 }
 
-export const getFileArtifactInfo = async (url, fileArtifactName) => {
-    const containerClient = new ApiContainerServicePromiseClient(url);
+export const getFileArtifactInfo = async (host, port, fileArtifactName) => {
     const makeGetFileArtifactInfo = async () => {
         try {
-            const fileArtifactArgs = new FilesArtifactNameAndUuid()
-            fileArtifactArgs.setFilename(fileArtifactName)
-            const inspectFileArtifactReq = new InspectFilesArtifactContentsRequest()
-            inspectFileArtifactReq.setFileNamesAndUuid(fileArtifactArgs)
-            const responseFromGrpc = await containerClient.inspectFilesArtifactContents(inspectFileArtifactReq, {})
-            return responseFromGrpc.toObject()
+            return inspectFilesArtifactContentsFromEnclaveManager(host, port, fileArtifactName)
         } catch (error) {
             return {
                 files: []
@@ -65,7 +59,7 @@ export const getFileArtifactInfo = async (url, fileArtifactName) => {
             }
         }
 
-        data.fileDescriptionsList.map(file => {
+        data.fileDescriptions.map(file => {
             const splitted_path = file.path.split("/")
             if (splitted_path[splitted_path.length - 1] === "") {
                 recursive(splitted_path, 0, processed)
@@ -128,7 +122,6 @@ export const getEnclaveInformation = async (host, port) => {
     }
 
     const processFileArtifactRequest = (data) => {
-        console.log("data.fileNamesAndUuids", data.fileNamesAndUuids)
         return data.fileNamesAndUuids.map(artifact => {
             return {
                 name: artifact.fileName,
@@ -141,6 +134,6 @@ export const getEnclaveInformation = async (host, port) => {
     const fileArtifactsPromise = getDataFromApiContainer(makeFileArtifactRequest, processFileArtifactRequest)
 
     const [services, artifacts] = await Promise.all([servicesPromise, fileArtifactsPromise])
-    console.log("sa", services, artifacts)
+    // console.log("sa", services, artifacts)
     return {services, artifacts}
 }
