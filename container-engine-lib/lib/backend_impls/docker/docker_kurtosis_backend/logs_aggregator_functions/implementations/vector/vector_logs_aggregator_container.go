@@ -32,7 +32,15 @@ func (vectorContainer *vectorLogsAggregatorContainer) CreateAndStart(
 	for labelKey, labelValue := range logsAggregatorAttrs.GetLabels() {
 		containerLabelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
-	createAndStartArgs, err := vectorContainerConfigProviderObj.GetContainerArgs(containerName, containerLabelStrs, targetNetworkId)
+
+	// Engine handles creating the volume, but we need to mount the aggregator can send logs to logs storage
+	logsStorageAttrs, err := objAttrsProvider.ForLogsStorageVolume()
+	if err != nil {
+		return "", nil, nil, stacktrace.Propagate(err, "An error occurred getting the logs storage volume attributes.")
+	}
+	logsStorageVolNameStr := logsStorageAttrs.GetName().GetString()
+
+	createAndStartArgs, err := vectorContainerConfigProviderObj.GetContainerArgs(containerName, containerLabelStrs, targetNetworkId, logsStorageVolNameStr)
 	if err != nil {
 		return "", nil, nil, err
 	}

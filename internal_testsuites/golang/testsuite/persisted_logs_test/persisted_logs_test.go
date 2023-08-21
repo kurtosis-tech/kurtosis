@@ -4,7 +4,7 @@
 // We don't run this test in Kubernetes because, as of 2022-10-28, the centralized logs feature is not implemented in Kubernetes yet
 //TODO remove this comments after Kubernetes implementation
 
-package search_logs_test
+package persisted_logs_test
 
 import (
 	"context"
@@ -17,9 +17,10 @@ import (
 )
 
 const (
-	testName = "search-logs"
+	// Tests that logs are still around after services are removed
+	testName = "persisted-logs"
 
-	exampleServiceNamePrefix = "search-logs-"
+	exampleServiceNamePrefix = "persisted-logs-"
 
 	shouldFollowLogs    = true
 	shouldNotFollowLogs = false
@@ -127,9 +128,13 @@ func TestSearchLogs(t *testing.T) {
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
 
 	userServiceUuids := map[services.ServiceUUID]bool{}
-	for _, serviceCtx := range serviceList {
+	for serviceName, serviceCtx := range serviceList {
 		serviceUuid := serviceCtx.GetServiceUUID()
 		userServiceUuids[serviceUuid] = true
+
+		// NOW REMOVE THE SERVICE
+		err = test_helpers.RemoveService(ctx, enclaveCtx, serviceName)
+		require.NoError(t, err, "An error occurred trying to remove service '%v' during test", serviceName)
 	}
 
 	expectedLogLinesByService := map[services.ServiceUUID][]string{}

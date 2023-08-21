@@ -31,6 +31,8 @@ const (
 	secondLogLine = "test"
 	thirdLogLine  = "running"
 	lastLogLine   = "successfully"
+
+	secondsToWaitForLogs = 1 * time.Second
 )
 
 var (
@@ -76,6 +78,9 @@ func TestStreamLogs(t *testing.T) {
 	serviceList, err := test_helpers.AddServicesWithLogLines(ctx, enclaveCtx, logLinesByService)
 	require.NoError(t, err, "An error occurred adding the datastore service")
 
+	// It takes some time for logs to persist so we sleep to ensure logs have persisted
+	// Otherwise the test is flaky
+	time.Sleep(secondsToWaitForLogs)
 	// ------------------------------------- TEST RUN ----------------------------------------------
 
 	enclaveUuid := enclaveCtx.GetEnclaveUuid()
