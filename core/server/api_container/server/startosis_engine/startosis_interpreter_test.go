@@ -62,7 +62,7 @@ func (suite *StartosisInterpreterTestSuite) SetupTest() {
 	suite.runtimeValueStore = runtime_value_store.NewRuntimeValueStore()
 	suite.serviceNetwork = service_network.NewMockServiceNetwork(suite.T())
 
-	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore)
+	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, "")
 
 	service.NewServiceRegistration(
 		testServiceName,

@@ -24,3 +24,29 @@ func NewLocalOnlyContext(uuid *generated.ContextUuid, name string) *generated.Ku
 		},
 	}
 }
+
+func NewRemoteV0Context(
+	uuid *generated.ContextUuid,
+	name string,
+	host string,
+	remotePortalPort uint32,
+	kurtosisBackendPort uint32,
+	tunnelPort uint32,
+	tlsConfig *generated.TlsConfig,
+	envVars *string,
+) *generated.KurtosisContext {
+	return &generated.KurtosisContext{
+		Uuid: uuid,
+		Name: name,
+		KurtosisContextInfo: &generated.KurtosisContext_RemoteContextV0{
+			RemoteContextV0: &generated.RemoteContextV0{
+				Host:                host,
+				RemotePortalPort:    remotePortalPort,
+				KurtosisBackendPort: kurtosisBackendPort,
+				TunnelPort:          tunnelPort,
+				TlsConfig:           tlsConfig,
+				EnvVars:             envVars,
+			},
+		},
+	}
+}

@@ -41,6 +41,7 @@ type EngineManager struct {
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterConfig                             *resolved_config.KurtosisClusterConfig
 	onBastionHost                             bool
+	enclaveEnvVars                            string
 	// Make engine IP, port, and protocol configurable in the future
 }
 
@@ -84,10 +85,12 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 	engineBackendConfigSupplier := clusterConfig.GetEngineBackendConfigSupplier()
 
 	onBastionHost := false
+	var enclaveEnvVars string
 	currentContext, _ := store.GetContextsConfigStore().GetCurrentContext()
 	if currentContext != nil {
 		if store.IsRemote(currentContext) {
 			onBastionHost = true
+			enclaveEnvVars = currentContext.GetRemoteContextV0().GetEnvVars()
 		}
 	}
 
@@ -95,8 +98,9 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		kurtosisBackend:   kurtosisBackend,
 		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
 		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
-		clusterConfig: clusterConfig,
-		onBastionHost: onBastionHost,
+		clusterConfig:  clusterConfig,
+		onBastionHost:  onBastionHost,
+		enclaveEnvVars: enclaveEnvVars,
 	}, nil
 }
 
@@ -186,6 +190,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		clusterType,
 		manager.onBastionHost,
 		poolSize,
+		manager.enclaveEnvVars,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -216,6 +221,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		clusterType,
 		manager.onBastionHost,
 		poolSize,
+		manager.enclaveEnvVars,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {

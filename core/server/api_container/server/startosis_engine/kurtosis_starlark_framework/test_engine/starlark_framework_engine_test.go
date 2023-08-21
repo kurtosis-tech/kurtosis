@@ -71,7 +71,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	thread := newStarlarkThread(frameworkTestThreadName)
 
-	predeclared := getBasePredeclaredDict(t)
+	predeclared := getBasePredeclaredDict(t, thread)
 	// Add the KurtosisPlanInstruction that is being tested
 	instructionFromBuiltin := builtin.GetInstruction()
 	emptyEnclaveComponents := enclave_structure.NewEnclaveComponents()
@@ -109,7 +109,7 @@ func testKurtosisHelper(t *testing.T, builtin KurtosisHelperBaseTest) {
 	testId := builtin.GetId()
 	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict(t)
+	predeclared := getBasePredeclaredDict(t, thread)
 	// Add the KurtosisPlanInstruction that is being tested
 	helper := builtin.GetHelper()
 	predeclared[helper.GetName()] = starlark.NewBuiltin(helper.GetName(), helper.CreateBuiltin())
@@ -126,7 +126,7 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 	testId := builtin.GetId()
 	thread := newStarlarkThread("framework-testing-engine")
 
-	predeclared := getBasePredeclaredDict(t)
+	predeclared := getBasePredeclaredDict(t, thread)
 
 	starlarkCode := builtin.GetStarlarkCode()
 	starlarkCodeToExecute := codeToExecute(starlarkCode)
@@ -149,8 +149,8 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 	require.Equal(t, starlarkCode, serializedType)
 }
 
-func getBasePredeclaredDict(t *testing.T) starlark.StringDict {
-	kurtosisModule, err := builtins.KurtosisModule()
+func getBasePredeclaredDict(t *testing.T, thread *starlark.Thread) starlark.StringDict {
+	kurtosisModule, err := builtins.KurtosisModule(thread, "")
 	require.Nil(t, err)
 	// TODO: refactor this with the one we have in the interpreter
 	predeclared := starlark.StringDict{
