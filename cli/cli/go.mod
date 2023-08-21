@@ -46,7 +46,7 @@ require (
 	github.com/fatih/color v1.13.0
 	github.com/google/go-github/v50 v50.2.0
 	github.com/joho/godotenv v1.5.1
-	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230817174449-4e62f726c900
+	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0
 	github.com/kurtosis-tech/kurtosis/name_generator v0.0.0-20230727152609-768e95d2dbeb
 	github.com/kurtosis-tech/metrics-library/golang v0.0.0-20230727131823-40788a849ce5

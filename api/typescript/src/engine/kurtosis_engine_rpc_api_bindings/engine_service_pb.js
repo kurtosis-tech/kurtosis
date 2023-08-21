@@ -929,7 +929,8 @@ proto.engine_api.EnclaveAPIContainerInfo.toObject = function(includeInstance, ms
   var f, obj = {
     containerId: jspb.Message.getFieldWithDefault(msg, 1, ""),
     ipInsideEnclave: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    grpcPortInsideEnclave: jspb.Message.getFieldWithDefault(msg, 3, 0)
+    grpcPortInsideEnclave: jspb.Message.getFieldWithDefault(msg, 3, 0),
+    bridgeIpAddress: jspb.Message.getFieldWithDefault(msg, 6, "")
   };
 
   if (includeInstance) {
@@ -978,6 +979,10 @@ proto.engine_api.EnclaveAPIContainerInfo.deserializeBinaryFromReader = function(
       var value = /** @type {number} */ (reader.readUint32());
       msg.setGrpcPortInsideEnclave(value);
       break;
+    case 6:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setBridgeIpAddress(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -1025,6 +1030,13 @@ proto.engine_api.EnclaveAPIContainerInfo.serializeBinaryToWriter = function(mess
   if (f !== 0) {
     writer.writeUint32(
       3,
+      f
+    );
+  }
+  f = message.getBridgeIpAddress();
+  if (f.length > 0) {
+    writer.writeString(
+      6,
       f
     );
   }
@@ -1082,6 +1094,24 @@ proto.engine_api.EnclaveAPIContainerInfo.prototype.getGrpcPortInsideEnclave = fu
  */
 proto.engine_api.EnclaveAPIContainerInfo.prototype.setGrpcPortInsideEnclave = function(value) {
   return jspb.Message.setProto3IntField(this, 3, value);
+};
+
+
+/**
+ * optional string bridge_ip_address = 6;
+ * @return {string}
+ */
+proto.engine_api.EnclaveAPIContainerInfo.prototype.getBridgeIpAddress = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 6, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.engine_api.EnclaveAPIContainerInfo} returns this
+ */
+proto.engine_api.EnclaveAPIContainerInfo.prototype.setBridgeIpAddress = function(value) {
+  return jspb.Message.setProto3StringField(this, 6, value);
 };
 
 
