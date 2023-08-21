@@ -2,8 +2,8 @@ package builtins
 
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkjson"
 	"go.starlark.net/starlarkstruct"
 )
 
@@ -14,13 +14,7 @@ const (
 )
 
 const (
-	decoderKey  = "decode"
-	encoderKey  = "encode"
-	indenterKey = "indent"
-
-	kurtosisParserKey    = "_kurtosis_parser"
-	kurtosisParserStruct = "struct"
-	kurtosisParserDict   = "dict"
+	decoderKey = "decode"
 )
 
 var (

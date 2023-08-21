@@ -82,6 +82,7 @@ func CreateEnclavePool(
 		fillChan:                fillChan,
 		engineVersion:           engineVersion,
 		cancelSubRoutineCtxFunc: cancelCtxFunc,
+		enclaveEnvVars:          enclaveEnvVars,
 	}
 
 	go enclavePool.run(ctxWithCancel)
