@@ -1,9 +1,9 @@
 package main
 
 import (
+	"connectrpc.com/connect"
 	"context"
 	"fmt"
-	"github.com/bufbuild/connect-go"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings/kurtosis_core_rpc_api_bindingsconnect"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -81,6 +81,9 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 			ServiceInfo: serviceInfoMapFromAPIC.Msg.GetServiceInfo(),
 		},
 	}
+
+	logrus.Infof("YOLO SERVICES: %+v", resp)
+
 	return resp, nil
 }
 
@@ -89,12 +92,28 @@ func (c *WebServer) GetServiceLogs(
 	req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
 	str *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) error {
+
 	result, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
 	if err != nil {
 		return err
 	}
-	res := result.Msg()
-	return str.Send(res)
+
+	logs := getServiceLogsFromEngine(result)
+	for {
+		select {
+		case <-ctx.Done():
+			err := result.Close()
+			if err != nil {
+				logrus.Errorf("Error ocurred: %+v", err)
+			}
+			return nil
+		case resp := <-logs:
+			errWhileSending := str.Send(resp)
+			if errWhileSending != nil {
+				return errWhileSending
+			}
+		}
+	}
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
@@ -195,5 +214,16 @@ func RunEnclaveApiServer() {
 	if err := apiServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		logrus.Error("An error occurred running the server", err)
 	}
+}
 
+func getServiceLogsFromEngine(client *connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
+	result := make(chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse)
+	go func() {
+		for client.Receive() {
+			res := client.Msg()
+			logrus.Infof("Msg: %+v", res)
+			result <- res
+		}
+	}()
+	return result
 }
