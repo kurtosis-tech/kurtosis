@@ -147,11 +147,13 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 	}
 
 	apicStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
-	logs := getRuntimeLogsWhenCreatingEnclave(apicStream)
+	ctxWithCancel, cancel := context.WithCancel(ctx)
 
+	logs := getRuntimeLogsWhenCreatingEnclave(cancel, apicStream)
 	for {
 		select {
-		case <-ctx.Done():
+		case <-ctxWithCancel.Done():
+			logrus.Infof("Closing the stream")
 			err := apicStream.Close()
 			if err != nil {
 				logrus.Errorf("Error ocurred: %+v", err)
@@ -178,7 +180,6 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 			EnclaveInfo: result.Msg.EnclaveInfo,
 		},
 	}
-
 	logrus.Infof("Create Enclave: %+v", resp)
 	return resp, nil
 }
@@ -249,13 +250,14 @@ func getServiceLogsFromEngine(client *connect.ServerStreamForClient[kurtosis_eng
 	return result
 }
 
-func getRuntimeLogsWhenCreatingEnclave(client *connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func getRuntimeLogsWhenCreatingEnclave(cancel context.CancelFunc, client *connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	result := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		for client.Receive() {
 			res := client.Msg()
 			result <- res
 		}
+		cancel()
 	}()
 	return result
 }

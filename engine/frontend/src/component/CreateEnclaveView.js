@@ -32,7 +32,6 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
         const fetchLogs = async () => {
           stream = await runStarlark(enclave.host, enclave.port, packageId, args);
           for await (const res of stream) {
-              console.log(enclave)
               const result = res["runResponseLine"]
               if (result.case === "instruction") {
                   setLogs(logs => [...logs, result.value.executableInstruction])
@@ -49,7 +48,6 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
                   }
                   setLogs(logs => [...logs, result.value.serializedInstructionResult])
               }
-              console.log(result)
           }
           // stream.on("data", data => {
           //   const result = data.toObject();
