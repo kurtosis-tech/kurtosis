@@ -17,9 +17,10 @@ type Source struct {
 }
 
 type Sink struct {
-	Id     string
-	Type   string
-	Inputs []string
+	Id       string
+	Type     string
+	Inputs   []string
+	Filepath string
 }
 
 func newDefaultVectorConfig(listeningPortNumber uint16) *VectorConfig {
@@ -30,9 +31,10 @@ func newDefaultVectorConfig(listeningPortNumber uint16) *VectorConfig {
 			Address: fmt.Sprintf("%s:%s", fluentBitSourceIpAddress, strconv.Itoa(int(listeningPortNumber))),
 		},
 		Sink: &Sink{
-			Id:     stdoutSinkID,
-			Type:   stdoutTypeId,
-			Inputs: []string{fluentBitSourceId},
+			Id:       fileSinkId,
+			Type:     fileTypeId,
+			Inputs:   []string{fluentBitSourceId},
+			Filepath: logsFilepath,
 		},
 	}
 }
