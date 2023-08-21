@@ -979,6 +979,7 @@ func getApiContainerObjectsFromKubernetesResources(
 			privateGrpcPortSpec,
 			publicIpAddr,
 			publicGrpcPortSpec,
+			nil,
 		)
 
 		result[enclaveId] = apiContainerObj

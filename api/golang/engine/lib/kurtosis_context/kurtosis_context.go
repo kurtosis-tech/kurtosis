@@ -47,6 +47,13 @@ var (
 	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
 
 	EnginePortTransportProtocol = portal_api.TransportProtocol_TCP
+
+	ApicRemoteEndpointType   = portal_api.RemoteEndpointType_Apic
+	EngineRemoteEndpointType = portal_api.RemoteEndpointType_Engine
+	UserServiceEndpointType  = portal_api.RemoteEndpointType_UserService
+
+	ForwardPortWaitUntilReady      = true
+	ForwardPortDoNotWaitUntilReady = false
 )
 
 // Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
@@ -346,12 +353,13 @@ func newEnclaveContextFromEnclaveInfo(
 	portalClient portal_api.KurtosisPortalClientClient,
 	enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) (*enclaves.EnclaveContext, error) {
+	// for remote contexts, we need to tunnel the APIC port to the local machine
 	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
 	if err == nil {
 		// for remote contexts, we need to tunnel the APIC port to the local machine
 		if store.IsRemote(currentContext) && portalClient != nil {
 			apicGrpcPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcPortOnHostMachine()
-			forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, &apicPortTransportProtocol)
+			forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, ApicRemoteEndpointType, &apicPortTransportProtocol, &ForwardPortWaitUntilReady)
 			if _, err := portalClient.ForwardPort(ctx, forwardApicPortArgs); err != nil {
 				return nil, stacktrace.Propagate(err, "Unable to forward remote API container port to the local machine")
 			}

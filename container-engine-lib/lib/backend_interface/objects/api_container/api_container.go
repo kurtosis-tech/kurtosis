@@ -23,6 +23,8 @@ type APIContainer struct {
 	// This information will be nil if the API container isn't running
 	publicIpAddr   net.IP
 	publicGrpcPort *port_spec.PortSpec
+
+	bridgeNetworkIpAddress net.IP
 }
 
 func NewAPIContainer(
@@ -32,14 +34,16 @@ func NewAPIContainer(
 	privateGrpcPort *port_spec.PortSpec,
 	publicIpAddr net.IP,
 	publicGrpcPort *port_spec.PortSpec,
+	bridgeNetworkIpAddress net.IP,
 ) *APIContainer {
 	return &APIContainer{
-		enclaveId:       enclaveId,
-		status:          status,
-		privateIpAddr:   privateIpAddr,
-		privateGrpcPort: privateGrpcPort,
-		publicIpAddr:    publicIpAddr,
-		publicGrpcPort:  publicGrpcPort,
+		enclaveId:              enclaveId,
+		status:                 status,
+		privateIpAddr:          privateIpAddr,
+		privateGrpcPort:        privateGrpcPort,
+		publicIpAddr:           publicIpAddr,
+		publicGrpcPort:         publicGrpcPort,
+		bridgeNetworkIpAddress: bridgeNetworkIpAddress,
 	}
 }
 
@@ -53,6 +57,10 @@ func (apiContainer *APIContainer) GetStatus() container_status.ContainerStatus {
 
 func (apiContainer *APIContainer) GetPrivateIPAddress() net.IP {
 	return apiContainer.privateIpAddr
+}
+
+func (apiContainer *APIContainer) GetBridgeNetworkIPAddress() net.IP {
+	return apiContainer.bridgeNetworkIpAddress
 }
 
 func (apiContainer *APIContainer) GetPrivateGRPCPort() *port_spec.PortSpec {

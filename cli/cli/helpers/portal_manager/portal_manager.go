@@ -97,7 +97,7 @@ func (portalManager *PortalManager) StartNew(ctx context.Context) (int, error) {
 	}
 	portalBinaryFile, err := host_machine_directories.GetPortalBinaryFilePath()
 	if err != nil {
-		return defaultPIDForStoppedProcess, stacktrace.Propagate(err, "Unable to get file path to PID file")
+		return defaultPIDForStoppedProcess, stacktrace.Propagate(err, "Unable to get file path to Portal binary")
 	}
 
 	// Start portal daemon
@@ -207,7 +207,7 @@ func (portalManager *PortalManager) MapPorts(ctx context.Context, localPortToRem
 		} else {
 			logrus.Warnf("Mapping other than TCP or UDP port is not supported right now. Will skip port '%d' because protocal is '%v'", remotePort.GetNumber(), remotePort.GetTransportProtocol())
 		}
-		forwardPortsArgs := portal_constructors.NewForwardPortArgs(uint32(localPort), uint32(remotePort.GetNumber()), &transportProtocol)
+		forwardPortsArgs := portal_constructors.NewForwardPortArgs(uint32(localPort), uint32(remotePort.GetNumber()), kurtosis_context.UserServiceEndpointType, &transportProtocol, &kurtosis_context.ForwardPortDoNotWaitUntilReady)
 		if _, err := portalManager.portalClientMaybe.ForwardPort(ctx, forwardPortsArgs); err != nil {
 			failedPorts[localPort] = remotePort
 		} else {

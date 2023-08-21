@@ -180,6 +180,31 @@ def run(plan):
 	return serviceContext, nil
 }
 
+func RemoveService(
+	ctx context.Context,
+	enclaveCtx *enclaves.EnclaveContext,
+	serviceName services.ServiceName,
+) error {
+	starlarkScript := fmt.Sprintf(`
+def run(plan):
+	plan.remove_service(name = "%s")
+`, serviceName)
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error has occurred when running Starlark to remove service")
+	}
+	if len(starlarkRunResult.ValidationErrors) > 0 {
+		return stacktrace.NewError("An error has occurred when validating Starlark to remove service: %s", starlarkRunResult.ValidationErrors)
+	}
+	if starlarkRunResult.InterpretationError != nil {
+		return stacktrace.NewError("An error has occurred when interpreting Starlark to remove service: %s", starlarkRunResult.InterpretationError)
+	}
+	if starlarkRunResult.ExecutionError != nil {
+		return stacktrace.NewError("An error has occurred when executing Starlark to remove service: %s", starlarkRunResult.ExecutionError)
+	}
+	return nil
+}
+
 func AddDatastoreService(
 	ctx context.Context,
 	serviceName services.ServiceName,

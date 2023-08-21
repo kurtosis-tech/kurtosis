@@ -26,7 +26,13 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	containerName string,
 	containerLabels map[string]string,
 	networkId string,
+	logsStorageVolumeName string,
 ) (*docker_manager.CreateAndStartContainerArgs, error) {
+
+	volumeMounts := map[string]string{
+		logsStorageVolumeName: logsStorageDirpath,
+	}
+
 	logsAggregatorConfigContentStr, err := vector.getConfigFileContent()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki server's configuration content")
@@ -54,6 +60,8 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 		networkId,
 	).WithLabels(
 		containerLabels,
+	).WithVolumeMounts(
+		volumeMounts,
 	).WithEntrypointArgs(
 		[]string{
 			shBinaryFilepath,

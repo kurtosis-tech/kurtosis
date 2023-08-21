@@ -36,8 +36,7 @@ func NewServiceIdentifierArg(
 	}
 }
 
-// TODO we added this constructor for allowing 'service logs' command to disable the validation for consuming logs from removed or stopped enclaves
-// TODO after https://github.com/kurtosis-tech/kurtosis/issues/879 is done
+// This constructor is for allowing 'service logs' command to disable the validation for consuming logs from removed or stopped enclaves
 func NewHistoricalServiceIdentifierArgWithValidationDisabled(
 	serviceIdentifierArgKey string,
 	enclaveIdentifierArgKey string,

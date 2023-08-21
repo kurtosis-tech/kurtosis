@@ -25,6 +25,7 @@ const (
 	frontendPortSpec                            = 9711
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
+	logsStorageDirpath                          = "/var/log/kurtosis/"
 )
 
 func CreateEngine(
@@ -72,6 +73,22 @@ func CreateEngine(
 	targetNetworkId := engineNetwork.GetId()
 
 	logrus.Infof("Starting the centralized logs components...")
+	logsStorageAttrs, err := objAttrsProvider.ForLogsStorageVolume()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred retrieving logs storage object attributes.")
+	}
+	logsStorageVolNameStr := logsStorageAttrs.GetName().GetString()
+	volumeLabelStrs := map[string]string{}
+	for labelKey, labelValue := range logsStorageAttrs.GetLabels() {
+		volumeLabelStrs[labelKey.GetString()] = labelValue.GetString()
+	}
+
+	// Creation of volume should be idempotent because the volume with persisted logs in it could already exist
+	// Thus, we don't defer an undo volume if this operation fails
+	if err = dockerManager.CreateVolume(ctx, logsStorageVolNameStr, volumeLabelStrs); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating logs storage.")
+	}
+
 	logsAggregatorContainer := vector.NewVectorLogsAggregatorContainer() // Declaring implementation
 	_, removeLogsAggregatorFunc, err := logs_aggregator_functions.CreateLogsAggregator(
 		ctx,
@@ -134,6 +151,10 @@ func CreateEngine(
 		consts.DockerSocketFilepath: consts.DockerSocketFilepath,
 	}
 
+	volumeMounts := map[string]string{
+		logsStorageVolNameStr: logsStorageDirpath,
+	}
+
 	if serverArgs.OnBastionHost {
 		// Mount the host engine config directory so the engine can access files like the remote backend config.
 		bindMounts[consts.HostEngineConfigDirToMount] = consts.EngineConfigLocalDir
@@ -158,6 +179,8 @@ func CreateEngine(
 		envVars,
 	).WithBindMounts(
 		bindMounts,
+	).WithVolumeMounts(
+		volumeMounts,
 	).WithUsedPorts(
 		usedPorts,
 	).WithLabels(
