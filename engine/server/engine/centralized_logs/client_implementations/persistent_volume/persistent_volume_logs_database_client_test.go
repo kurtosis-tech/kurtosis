@@ -26,8 +26,8 @@ const (
 	testUserService3Uuid = "test-user-service-3"
 
 	logLine1 = "{\"log\":\"Starting feature 'centralized logs'\"}"
-	logLine2 = "{\"log\":\"Starting feature 'network partitioning'\"}"
-	logLine3 = "{\"log\":\"Starting feature 'network soft partitioning'\"}"
+	logLine2 = "{\"log\":\"Starting feature 'idempotent runs'\"}"
+	logLine3 = "{\"log\":\"Starting feature 'idempotent apics'\"}"
 	logLine4 = "{\"log\":\"Starting feature 'files storage'\"}"
 	logLine5 = "{\"log\":\"Starting feature 'files manager'\"}"
 	logLine6 = "{\"log\":\"The enclave was created\"}"
@@ -37,7 +37,7 @@ const (
 	firstFilterText           = "feature"
 	secondFilterText          = "Files"
 	notFoundedFilterText      = "it shouldn't be found in the log lines"
-	firstMatchRegexFilterStr  = "Starting.*partitioning'"
+	firstMatchRegexFilterStr  = "Starting.*idempotent'"
 	secondMatchRegexFilterStr = "[S].*manager"
 
 	testTimeOut     = 2 * time.Second
@@ -62,7 +62,7 @@ func TestStreamUserServiceLogs_WithFilters(t *testing.T) {
 		*regexFilter,
 	}
 
-	expectedFirstLogLine := "Starting feature 'network partitioning'"
+	expectedFirstLogLine := "Starting feature 'idempotent runs'"
 
 	underlyingFs := createFullUnderlyingMapFilesystem()
 
