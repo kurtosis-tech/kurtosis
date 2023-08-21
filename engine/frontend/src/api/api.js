@@ -7,6 +7,7 @@ import {
     InspectFilesArtifactContentsRequest, RunStarlarkPackageRequest
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import {CreateEnclaveArgs} from "enclave-manager-sdk/build/engine_service_pb";
+import {RunStarlarkPackageArgs} from "enclave-manager-sdk/build/api_container_service_pb";
 
 const transport = createConnectTransport({
     baseUrl: "http://localhost:8081"
@@ -63,15 +64,25 @@ export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, ver
     return enclaveManagerClient.createEnclave(request);
 }
 
-export const runStarlarkPackageFromEnclaveManager = async (host, port, enclaveName, logLevel, versionTag) => {
+export const runStarlarkPackageFromEnclaveManager = async (host, port, packageId, args) => {
+
+    const runStarlarkPackageArgs = new RunStarlarkPackageArgs(
+        {
+            "dryRun": false,
+            "remote": "RunStarlarkPackageArgs_Remote",
+            "packageId": packageId,
+            "serializedParams": args,
+        }
+    )
+
     const request = new RunStarlarkPackageRequest(
         {
             "apicIpAddress": host,
             "apicPort": port,
-            "RunStarlarkPackageArgs": {
-                // TODO
-            }
+            "RunStarlarkPackageArgs": runStarlarkPackageArgs
         }
     );
+
+    console.log(request)
     return enclaveManagerClient.runStarlarkPackage(request);
 }

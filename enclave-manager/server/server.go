@@ -81,9 +81,6 @@ func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtos
 			ServiceInfo: serviceInfoMapFromAPIC.Msg.GetServiceInfo(),
 		},
 	}
-
-	logrus.Infof("YOLO SERVICES: %+v", resp)
-
 	return resp, nil
 }
 
@@ -106,6 +103,7 @@ func (c *WebServer) GetServiceLogs(
 			if err != nil {
 				logrus.Errorf("Error ocurred: %+v", err)
 			}
+			close(logs)
 			return nil
 		case resp := <-logs:
 			errWhileSending := str.Send(resp)
@@ -137,15 +135,37 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *con
 
 func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
+	runPackageArgs := req.Msg.RunStarlarkPackageArgs
+	boolean := true
+	runPackageArgs.ClonePackage = &boolean
+
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
 	serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs]{
 		Msg: req.Msg.RunStarlarkPackageArgs,
 	}
+
 	apicStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
-	res := apicStream.Msg()
-	return str.Send(res)
+	logs := getRuntimeLogsWhenCreatingEnclave(apicStream)
+
+	for {
+		select {
+		case <-ctx.Done():
+			err := apicStream.Close()
+			if err != nil {
+				logrus.Errorf("Error ocurred: %+v", err)
+			}
+			close(logs)
+			return nil
+		case resp := <-logs:
+			errWhileSending := str.Send(resp)
+			if errWhileSending != nil {
+				logrus.Errorf("error occurred: %+v", errWhileSending)
+				return nil
+			}
+		}
+	}
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
@@ -158,6 +178,8 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 			EnclaveInfo: result.Msg.EnclaveInfo,
 		},
 	}
+
+	logrus.Infof("Create Enclave: %+v", resp)
 	return resp, nil
 }
 
@@ -221,7 +243,17 @@ func getServiceLogsFromEngine(client *connect.ServerStreamForClient[kurtosis_eng
 	go func() {
 		for client.Receive() {
 			res := client.Msg()
-			logrus.Infof("Msg: %+v", res)
+			result <- res
+		}
+	}()
+	return result
+}
+
+func getRuntimeLogsWhenCreatingEnclave(client *connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	result := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
+	go func() {
+		for client.Receive() {
+			res := client.Msg()
 			result <- res
 		}
 	}()

@@ -53,12 +53,13 @@ export const createEnclave = async () => {
     const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag)
 
     const enclave = response.enclaveInfo;
-
     return {
         uuid: enclave.enclaveUuid,
         name: enclave.name,
         created: enclave.creationTime,
         status: enclave.apiContainerStatus,
+        host: enclave.apiContainerHostMachineInfo.ipOnHostMachine,
+        port: enclave.apiContainerHostMachineInfo.grpcPortOnHostMachine,
     }
 }
 
@@ -73,7 +74,7 @@ export const getServiceLogs = async (ctrl, enclaveName, serviceUuid) => {
     return enclaveManagerClient.getServiceLogs(args, {signal: ctrl.signal});
 }
 
-export const runStarlark = async (apiClient, packageId, args) => {
-    const stream = await runStarlarkPackage(apiClient, packageId, args)
+export const runStarlark = async (host, port, packageId, args) => {
+    const stream = await runStarlarkPackage(host, port, packageId, args)
     return stream;
 }

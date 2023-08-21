@@ -26,49 +26,70 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
     }
 
     useEffect(() => {
+        console.log("how many time?")
         setLoading(true)
         let stream;
         const fetchLogs = async () => {
-          stream = await runStarlark(enclave.apiClient, packageId, args);
-          stream.on("data", data => {
-            const result = data.toObject();
-            if (result.instruction && result.instruction.executableInstruction) {
-                setLogs(logs => [...logs, result.instruction.executableInstruction])
-            }
+          stream = await runStarlark(enclave.host, enclave.port, packageId, args);
+          for await (const res of stream) {
+              console.log(enclave)
+              const result = res["runResponseLine"]
+              if (result.case === "instruction") {
+                  setLogs(logs => [...logs, result.value.executableInstruction])
+              }
 
-            if (result.progressInfo && result.progressInfo.currentStepInfoList.length > 0) {
-                let length = result.progressInfo.currentStepInfoList.length;
-                setLogs(logs => [...logs, result.progressInfo.currentStepInfoList[length-1]])
-            } 
-            
-            if (result.instructionResult && result.instructionResult.serializedInstructionResult) {
-                if (result.instructionResult.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
-                    getServices(enclave.apiClient)
-                }
-                setLogs(logs => [...logs, result.instructionResult.serializedInstructionResult])
-            }
+              if (result.case === "progressInfo" && result.value.currentStepInfo.length > 0) {
+                  console.log("progressinfo: ", result)
+                  setLogs(logs => [...logs, result.value.currentStepInfo[result.value.currentStepNumber]])
+              }
 
-            if (result.error) {
-                if (result.error.interpretationError) {
-                    setLogs(logs => [...logs, result.error.interpretationError.errorMessage])
-                }
-
-                if (result.error.executionError) {
-                    setLogs(logs => [...logs, result.error.executionError.errorMessage])
-                }
-
-                if (result.error.validationError) {
-                    setLogs(logs => [...logs, result.error.validationError.errorMessage])
-                }
-            }
-          });
-
-          stream.on("end", () => {
-            setLoading(false)
-          });
+              if (result.case === "instructionResult" && result.value.serializedInstructionResult) {
+                  if (result.value.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
+                      //getServices(enclave.apiClient)
+                  }
+                  setLogs(logs => [...logs, result.value.serializedInstructionResult])
+              }
+              console.log(result)
+          }
+          // stream.on("data", data => {
+          //   const result = data.toObject();
+          //   if (result.instruction && result.instruction.executableInstruction) {
+          //       setLogs(logs => [...logs, result.instruction.executableInstruction])
+          //   }
+          //
+          //   if (result.progressInfo && result.progressInfo.currentStepInfoList.length > 0) {
+          //       let length = result.progressInfo.currentStepInfoList.length;
+          //       setLogs(logs => [...logs, result.progressInfo.currentStepInfoList[length-1]])
+          //   }
+          //
+          //   if (result.instructionResult && result.instructionResult.serializedInstructionResult) {
+          //       if (result.instructionResult.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
+          //           getServices(enclave.apiClient)
+          //       }
+          //       setLogs(logs => [...logs, result.instructionResult.serializedInstructionResult])
+          //   }
+          //
+          //   if (result.error) {
+          //       if (result.error.interpretationError) {
+          //           setLogs(logs => [...logs, result.error.interpretationError.errorMessage])
+          //       }
+          //
+          //       if (result.error.executionError) {
+          //           setLogs(logs => [...logs, result.error.executionError.errorMessage])
+          //       }
+          //
+          //       if (result.error.validationError) {
+          //           setLogs(logs => [...logs, result.error.validationError.errorMessage])
+          //       }
+          //   }
+          // });
+          //
+          // stream.on("end", () => {
+          //   setLoading(false)
+          // });
         }
 
-        fetchLogs();
+       fetchLogs();
     }, [packageId])
 
     const handleServiceClick = (service) => {
