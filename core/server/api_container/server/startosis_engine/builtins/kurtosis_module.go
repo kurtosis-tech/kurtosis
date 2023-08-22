@@ -5,15 +5,12 @@ import (
 	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"strings"
 )
 
 const (
 	KurtosisModuleName = "kurtosis"
 
-	EnvironmentVarsKey = "env"
-)
-
-const (
 	decoderKey = "decode"
 )
 
@@ -21,26 +18,22 @@ var (
 	noKwargs []starlark.Tuple
 )
 
-// TODO This module was created for storing Kurtosis constatns that then can be used for any Kurtosis module or package
-// TODO we use to store the contants related with subnetworks (BLOCKED, ALLOWED) here but these were removed since we deprecate the network partitioning feature
-// TODO it's planned to store some another constants like the port protols here, so we are leaving it here for this reason.
 func KurtosisModule(thread *starlark.Thread, enclaveEnvVars string) (*starlarkstruct.Module, *startosis_errors.InterpretationError) {
-	enclaveEnvVarsDict, interpretationErr := convertEnvVarsToDict(thread, enclaveEnvVars)
+	enclaveEnvVarsStringDict, interpretationErr := convertEnvVarsToDict(thread, enclaveEnvVars)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
 	return &starlarkstruct.Module{
-		Name: KurtosisModuleName,
-		Members: starlark.StringDict{
-			EnvironmentVarsKey: enclaveEnvVarsDict,
-		},
+		Name:    KurtosisModuleName,
+		Members: *enclaveEnvVarsStringDict,
 	}, nil
 }
 
-func convertEnvVarsToDict(thread *starlark.Thread, enclaveEnvVars string) (*starlark.Dict, *startosis_errors.InterpretationError) {
+func convertEnvVarsToDict(thread *starlark.Thread, enclaveEnvVars string) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+	envVarsDict := starlark.StringDict{}
 	if enclaveEnvVars == "" {
-		return starlark.NewDict(0), nil
+		return &envVarsDict, nil
 	}
 	if !starlarkjson.Module.Members.Has(decoderKey) {
 		return nil, startosis_errors.NewInterpretationError("Unable to deserialize enclave env vars because Starlark deserializer was not found.")
@@ -61,5 +54,21 @@ func convertEnvVarsToDict(thread *starlark.Thread, enclaveEnvVars string) (*star
 	if !ok {
 		return nil, startosis_errors.NewInterpretationError("Unable to parse enclave env vars '%v' into a dictionary. JSON other than dictionaries aren't support right now.", deserializedInputValue)
 	}
-	return parsedDeserializedInputValue, nil
+
+	for _, rawEnvVarName := range parsedDeserializedInputValue.Keys() {
+		envVarName, ok := rawEnvVarName.(starlark.String)
+		if !ok {
+			return nil, startosis_errors.NewInterpretationError("Environment variable name '%v' was not a string. This is an unexpected bug", rawEnvVarName)
+		}
+		envVarValue, found, err := parsedDeserializedInputValue.Get(envVarName)
+		if err != nil {
+			return nil, startosis_errors.WrapWithInterpretationError(err, "An unexpected error occurred converting the environment variables dictionary for key '%s'", envVarName)
+		}
+		if !found {
+			return nil, startosis_errors.NewInterpretationError("No value found for key '%s' converting the environment variables dictionary", envVarName)
+		}
+		lowercaseEnvVarName := strings.ToLower(envVarName.GoString())
+		envVarsDict[lowercaseEnvVarName] = envVarValue
+	}
+	return &envVarsDict, nil
 }
