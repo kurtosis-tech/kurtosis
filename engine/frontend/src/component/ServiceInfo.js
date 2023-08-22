@@ -10,7 +10,7 @@ import {getServiceLogs} from "../api/enclave";
 const renderServices = (services, handleClick) => {
     return services.map(service => {
         return (
-            <div className={`flex items-center justify-center h-14 text-base bg-green-700`} key={service.name} onClick={()=>handleClick(service)}>
+            <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={service.name} onClick={()=>handleClick(service)}>
                 <div className='cursor-default text-lg text-white'> {service.name} </div>
             </div>
         )
@@ -28,7 +28,7 @@ const renderFileArtifacts = (file_artifacts) => {
 
     return file_artifacts.map((file_artifact)=> {
         return (
-            <div className="border-4 bg-slate-800 text-lg align-middle text-center h-16 p-3 text-green-600"> 
+            <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]">
                 <div> {file_artifact.name} </div>
             </div>
         )

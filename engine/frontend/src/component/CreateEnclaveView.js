@@ -78,7 +78,7 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
     const renderServices = (services, handleClick) => {
         return services.map(service => {
             return (
-                <div className={`flex items-center justify-center h-14 text-base bg-green-700`} key={service.name} onClick={()=>handleClick(service)}>
+                <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={service.name} onClick={()=>handleClick(service)}>
                     <div className='cursor-default text-lg text-white'> {service.name} </div>
                 </div>
             )

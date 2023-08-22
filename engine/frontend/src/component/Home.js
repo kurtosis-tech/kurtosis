@@ -32,7 +32,7 @@ const Home = () => {
     }
 
     return (
-        <div className="h-screen flex flex-col bg-slate-800">
+        <div className="h-screen flex flex-col bg-[#171923]">
             <TitleBar/>
             <div className="flex h-[calc(100vh-4rem)]">
                 <Routes>
