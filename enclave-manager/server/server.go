@@ -1,9 +1,9 @@
 package main
 
 import (
+	"connectrpc.com/connect"
 	"context"
 	"fmt"
-	"github.com/bufbuild/connect-go"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings/kurtosis_core_rpc_api_bindingsconnect"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -141,12 +141,29 @@ func (c *WebServer) GetServiceLogs(
 	req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
 	str *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) error {
+
 	result, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
 	if err != nil {
 		return err
 	}
-	res := result.Msg()
-	return str.Send(res)
+
+	logs := getServiceLogsFromEngine(result)
+	for {
+		select {
+		case <-ctx.Done():
+			err := result.Close()
+			if err != nil {
+				logrus.Errorf("Error ocurred: %+v", err)
+			}
+			close(logs)
+			return nil
+		case resp := <-logs:
+			errWhileSending := str.Send(resp)
+			if errWhileSending != nil {
+				return errWhileSending
+			}
+		}
+	}
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
@@ -177,15 +194,38 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *con
 
 func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
+	runPackageArgs := req.Msg.RunStarlarkPackageArgs
+	boolean := true
+	runPackageArgs.ClonePackage = &boolean
+
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
 	serviceRequest := &connect.Request[kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs]{
 		Msg: req.Msg.RunStarlarkPackageArgs,
 	}
+
 	apicStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
-	res := apicStream.Msg()
-	return str.Send(res)
+	ctxWithCancel, cancel := context.WithCancel(ctx)
+
+	logs := getRuntimeLogsWhenCreatingEnclave(cancel, apicStream)
+	for {
+		select {
+		case <-ctxWithCancel.Done():
+			err := apicStream.Close()
+			close(logs)
+			if err != nil {
+				return stacktrace.Propagate(err, "Error occurred after closing the stream")
+			}
+			return nil
+		case resp := <-logs:
+			errWhileSending := str.Send(resp)
+			if errWhileSending != nil {
+				logrus.Errorf("error occurred: %+v", errWhileSending)
+				return stacktrace.Propagate(errWhileSending, "Error occurred while sending streams")
+			}
+		}
+	}
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
@@ -205,6 +245,7 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 			EnclaveInfo: result.Msg.EnclaveInfo,
 		},
 	}
+	logrus.Infof("Create Enclave: %+v", resp)
 	return resp, nil
 }
 
@@ -319,5 +360,27 @@ func RunEnclaveApiServer() {
 	if err := apiServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		logrus.Error("An error occurred running the server", err)
 	}
+}
 
+func getServiceLogsFromEngine(client *connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
+	result := make(chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse)
+	go func() {
+		for client.Receive() {
+			res := client.Msg()
+			result <- res
+		}
+	}()
+	return result
+}
+
+func getRuntimeLogsWhenCreatingEnclave(cancel context.CancelFunc, client *connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	result := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
+	go func() {
+		for client.Receive() {
+			res := client.Msg()
+			result <- res
+		}
+		cancel()
+	}()
+	return result
 }

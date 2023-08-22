@@ -74,9 +74,12 @@ export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, ver
     return enclaveManagerClient.createEnclave(request, createHeaderOptionsWithToken(token));
 }
 
-export const runStarlarkPackageFromEnclaveManager = async (host, port,  packageId, args, token) => {
+<<<<<<< HEAD
+export const runStarlarkPackageFromEnclaveManager = async (host, port, enclaveName, logLevel, versionTag, token) => {
+=======
+export const runStarlarkPackageFromEnclaveManager = async (host, port, packageId, args) => {
 
-    const request = new RunStarlarkPackageArgs(
+    const runStarlarkPackageArgs = new RunStarlarkPackageArgs(
         {
             "dryRun": false,
             "remote": "RunStarlarkPackageArgs_Remote",
@@ -85,6 +88,19 @@ export const runStarlarkPackageFromEnclaveManager = async (host, port,  packageI
         }
     )
 
-
+>>>>>>> b6bb7e1b58b54b9591b6bbc49fe7812bb6b0fe9e
+    const request = new RunStarlarkPackageRequest(
+        {
+            "apicIpAddress": host,
+            "apicPort": port,
+            "RunStarlarkPackageArgs": runStarlarkPackageArgs
+        }
+    );
+<<<<<<< HEAD
     return enclaveManagerClient.runStarlarkPackage(request, createHeaderOptionsWithToken(token));
+=======
+
+    console.log(request)
+    return enclaveManagerClient.runStarlarkPackage(request);
+>>>>>>> b6bb7e1b58b54b9591b6bbc49fe7812bb6b0fe9e
 }

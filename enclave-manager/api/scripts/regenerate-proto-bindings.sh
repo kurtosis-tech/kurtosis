@@ -47,7 +47,7 @@ protoc \
   --go-grpc_opt=require_unimplemented_servers=false \
   --connect-go_out="${api_golang_proto_generated_abs_dir}" \
   --connect-go_opt=module="${api_golang_module}" \
-  --plugin=protoc-gen-es=../typescript/node_modules/.bin/protoc-gen-es \
+  --plugin=protoc-gen-es="${api_typescript_abs_dir}/node_modules/.bin/protoc-gen-es" \
   --es_out="${api_typescript_abs_dir}/src/" \
   --es_opt=target=ts \
   --plugin=protoc-gen-connect-es="${api_typescript_abs_dir}/node_modules/.bin/protoc-gen-connect-es" \

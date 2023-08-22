@@ -32,12 +32,21 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
         setLoading(true)
         let stream;
         const fetchLogs = async () => {
-          stream = await runStarlark(enclave.host, enclave.port, packageId, args, appData.jwtToken);
+<<<<<<< HEAD
+          stream = await runStarlark(enclave.apiClient, packageId, args, appData.jwtToken);
+          stream.on("data", data => {
+            const result = data.toObject();
+            if (result.instruction && result.instruction.executableInstruction) {
+                setLogs(logs => [...logs, result.instruction.executableInstruction])
+            }
+=======
+          stream = await runStarlark(enclave.host, enclave.port, packageId, args);
           for await (const res of stream) {
               const result = res["runResponseLine"]
               if (result.case === "instruction") {
                   setLogs(logs => [...logs, result.value.executableInstruction])
               }
+>>>>>>> b6bb7e1b58b54b9591b6bbc49fe7812bb6b0fe9e
 
               if (result.case === "progressInfo" && result.value.currentStepInfo.length > 0) {
                   console.log("progressinfo: ", result)

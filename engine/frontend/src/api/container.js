@@ -1,27 +1,24 @@
-import {RunStarlarkPackageArgs} from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import {
-    ApiContainerServicePromiseClient
-} from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb'
 import {
     getServicesFromEnclaveManager,
     inspectFilesArtifactContentsFromEnclaveManager,
-    listFilesArtifactNamesAndUuidsFromEnclaveManager, runStarlarkPackageFromEnclaveManager
+    listFilesArtifactNamesAndUuidsFromEnclaveManager,
+    runStarlarkPackageFromEnclaveManager
 } from "./api";
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
-export const runStarlarkPackage = async (url, packageId, args) => {
+export const runStarlarkPackage = async (host, port, packageId, args, token) => {
+    return runStarlarkPackageFromEnclaveManager(host, port, packageId, args, token)
 
-    // runStarlarkPackageFromEnclaveManager()
-    const containerClient = new ApiContainerServicePromiseClient(url);
-    const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
-
-    runStarlarkPackageArgs.setDryRun(false);
-    runStarlarkPackageArgs.setRemote(true);
-    runStarlarkPackageArgs.setPackageId(packageId);
-    runStarlarkPackageArgs.setSerializedParams(args)
-    const stream = containerClient.runStarlarkPackage(runStarlarkPackageArgs, null);
-    return stream;
+    // const containerClient = new ApiContainerServicePromiseClient(url);
+    // const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
+    //
+    // runStarlarkPackageArgs.setDryRun(false);
+    // runStarlarkPackageArgs.setRemote(true);
+    // runStarlarkPackageArgs.setPackageId(packageId);
+    // runStarlarkPackageArgs.setSerializedParams(args)
+    // const stream = containerClient.runStarlarkPackage(runStarlarkPackageArgs, null);
+    // return stream;x
 }
 
 const getDataFromApiContainer = async (request, process, token) => {
