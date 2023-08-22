@@ -4,7 +4,8 @@ import {createConnectTransport,} from "@bufbuild/connect-web";
 import {
     GetListFilesArtifactNamesAndUuidsRequest,
     GetServicesRequest,
-    InspectFilesArtifactContentsRequest, RunStarlarkPackageRequest
+    InspectFilesArtifactContentsRequest,
+    RunStarlarkPackageRequest
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import {CreateEnclaveArgs} from "enclave-manager-sdk/build/engine_service_pb";
 import {RunStarlarkPackageArgs} from "enclave-manager-sdk/build/api_container_service_pb";
@@ -15,8 +16,13 @@ const transport = createConnectTransport({
 
 const enclaveManagerClient = createPromiseClient(KurtosisEnclaveManagerServer, transport);
 
-export const getEnclavesFromEnclaveManager = async () => {
-    return enclaveManagerClient.getEnclaves({});
+export const getEnclavesFromEnclaveManager = async (token) => {
+    const headers = new Headers();
+    if(token) {
+        headers.set("Authorization", `Bearer ${token}`);
+    }
+    console.log("headers: ", headers.get("Authorization"))
+    return enclaveManagerClient.getEnclaves({}, {headers:headers});
 }
 
 export const getServicesFromEnclaveManager = async (host, port) => {
