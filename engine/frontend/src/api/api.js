@@ -21,7 +21,6 @@ const createHeaderOptionsWithToken = (token) => {
     if (token) {
         headers.set("Authorization", `Bearer ${token}`);
     }
-    console.log("headers: ", headers.get("Authorization"))
     return {headers: headers}
 }
 

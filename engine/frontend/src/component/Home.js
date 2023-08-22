@@ -44,7 +44,6 @@ const Home = () => {
             case 'jwtToken':
                 const value = event.data.value
                 if (value !== null && value !== undefined) {
-                    console.log("Got the message!!", value)
                     setAppData({
                         ...appData,
                         jwtToken: value,
@@ -59,9 +58,9 @@ const Home = () => {
 
     useEffect(() => {
         if (requireAuth && !appData.jwtToken) {
-            console.log("waiting for auth")
+            console.log("Waiting for auth token")
         } else {
-
+            console.log("Got auth token")
             setEnclaveLoading(true)
             const fetch = async () => {
                 const response = await getEnclavesFromKurtosis(appData.jwtToken);
