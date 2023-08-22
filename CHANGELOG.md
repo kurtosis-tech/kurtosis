@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.82.0](https://github.com/kurtosis-tech/kurtosis/compare/0.81.9...0.82.0) (2023-08-22)
+
+
+### ⚠ BREAKING CHANGES
+
+* Portal remote endpoints and forward port wait until ready option ([#1124](https://github.com/kurtosis-tech/kurtosis/issues/1124))
+
+### Features
+
+* Add possibility to pass env vars to enclave ([#1134](https://github.com/kurtosis-tech/kurtosis/issues/1134)) ([9889e6f](https://github.com/kurtosis-tech/kurtosis/commit/9889e6f126666451d378965e764a80d79ba72443))
+* added connect-go for engine ([#879](https://github.com/kurtosis-tech/kurtosis/issues/879)) ([8c0121c](https://github.com/kurtosis-tech/kurtosis/commit/8c0121cac01f53d858bbec90d87bec20f122430d))
+* make kurtosis service logs pull from persistent volume ([#1121](https://github.com/kurtosis-tech/kurtosis/issues/1121)) ([8e52a24](https://github.com/kurtosis-tech/kurtosis/commit/8e52a2489cb67707373f802c00dd4f37e7b56931))
+* Portal remote endpoints and forward port wait until ready option ([#1124](https://github.com/kurtosis-tech/kurtosis/issues/1124)) ([f4e3e77](https://github.com/kurtosis-tech/kurtosis/commit/f4e3e773463b98f7376ee49b70ab28d9da60caae))
+* propogated bridge network ip address ([#1135](https://github.com/kurtosis-tech/kurtosis/issues/1135)) ([04ed723](https://github.com/kurtosis-tech/kurtosis/commit/04ed723c00ac9adb820c56f1db6998eff483f294))
+
+
+### Bug Fixes
+
+* More flexible context config unmarshaller ([#1132](https://github.com/kurtosis-tech/kurtosis/issues/1132)) ([7892bda](https://github.com/kurtosis-tech/kurtosis/commit/7892bda4fe0a8e0251b9036e9b7cc18843eefcc1))
+* Use portal deps from the main branch - Part 2 ([#1138](https://github.com/kurtosis-tech/kurtosis/issues/1138)) ([f0a2353](https://github.com/kurtosis-tech/kurtosis/commit/f0a2353b68a5580552f66fb468a9bd3681b3e7d6))
+* Use portal deps from the main branch ([#1136](https://github.com/kurtosis-tech/kurtosis/issues/1136)) ([b9da525](https://github.com/kurtosis-tech/kurtosis/commit/b9da5254edbb291a6a1354c67bcbc357bde71c6c))
+
 ## [0.81.9](https://github.com/kurtosis-tech/kurtosis/compare/0.81.8...0.81.9) (2023-08-17)
 
 
