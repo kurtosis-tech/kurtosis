@@ -10,20 +10,22 @@ import {useEffect, useState} from "react";
 import {getEnclavesFromKurtosis} from "../api/enclave";
 
 import {Route, Routes} from 'react-router-dom';
+import {useAppContext} from "../context/AppState";
 
 const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [encalveLoading, setEnclaveLoading] = useState(false)
+    const {appData, setAppData} = useAppContext()
 
     useEffect(() => {
         setEnclaveLoading(true)
         const fetch = async () => {
-            const response = await getEnclavesFromKurtosis();
+            const response = await getEnclavesFromKurtosis(appData.jwtToken);
             setEnclaves(response)
             setEnclaveLoading(false)
         } 
         fetch()
-    }, [])
+    }, [appData.jwtToken])
 
     const addEnclave = (enclave) => {
         setEnclaves(enclaves => [...enclaves, enclave])

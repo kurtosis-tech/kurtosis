@@ -28,8 +28,8 @@ export const makeRestApiRequest = async (url, data, config) => {
     return response;
 }
 
-export const getEnclavesFromKurtosis = async () => {
-    const data = await getEnclavesFromEnclaveManager();
+export const getEnclavesFromKurtosis = async (token) => {
+    const data = await getEnclavesFromEnclaveManager(token);
     if ("enclaveInfo" in data) {
         return Object.keys(data.enclaveInfo).map(key => {
             const enclave = data.enclaveInfo[key]
