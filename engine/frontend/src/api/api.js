@@ -15,36 +15,40 @@ const transport = createConnectTransport({
 
 const enclaveManagerClient = createPromiseClient(KurtosisEnclaveManagerServer, transport);
 
-export const getEnclavesFromEnclaveManager = async (token) => {
+const createHeaderOptionsWithToken = (token) => {
     const headers = new Headers();
-    if(token) {
+    if (token) {
         headers.set("Authorization", `Bearer ${token}`);
     }
     console.log("headers: ", headers.get("Authorization"))
-    return enclaveManagerClient.getEnclaves({}, {headers:headers});
+    return {headers: headers}
 }
 
-export const getServicesFromEnclaveManager = async (host, port) => {
+export const getEnclavesFromEnclaveManager = async (token) => {
+    return enclaveManagerClient.getEnclaves({}, createHeaderOptionsWithToken(token));
+}
+
+export const getServicesFromEnclaveManager = async (host, port, token) => {
     const request = new GetServicesRequest(
         {
             "apicIpAddress": host,
             "apicPort": port,
         }
     );
-    return enclaveManagerClient.getServices(request);
+    return enclaveManagerClient.getServices(request, createHeaderOptionsWithToken(token));
 }
 
-export const listFilesArtifactNamesAndUuidsFromEnclaveManager = async (host, port) => {
+export const listFilesArtifactNamesAndUuidsFromEnclaveManager = async (host, port, token) => {
     const request = new GetListFilesArtifactNamesAndUuidsRequest(
         {
             "apicIpAddress": host,
             "apicPort": port,
         }
     );
-    return enclaveManagerClient.listFilesArtifactNamesAndUuids(request);
+    return enclaveManagerClient.listFilesArtifactNamesAndUuids(request, createHeaderOptionsWithToken(token));
 }
 
-export const inspectFilesArtifactContentsFromEnclaveManager = async (host, port, fileName, fileUuid) => {
+export const inspectFilesArtifactContentsFromEnclaveManager = async (host, port, fileName, token) => {
     const request = new InspectFilesArtifactContentsRequest(
         {
             "apicIpAddress": host,
@@ -54,11 +58,11 @@ export const inspectFilesArtifactContentsFromEnclaveManager = async (host, port,
             }
         }
     );
-    return enclaveManagerClient.inspectFilesArtifactContents(request);
+    return enclaveManagerClient.inspectFilesArtifactContents(request, createHeaderOptionsWithToken(token));
 }
 
 
-export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, versionTag) => {
+export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, versionTag, token) => {
     const request = new CreateEnclaveArgs(
         {
             "enclaveName": enclaveName,
@@ -66,10 +70,10 @@ export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, ver
             "apiContainerLogLevel": logLevel,
         }
     );
-    return enclaveManagerClient.createEnclave(request);
+    return enclaveManagerClient.createEnclave(request, createHeaderOptionsWithToken(token));
 }
 
-export const runStarlarkPackageFromEnclaveManager = async (host, port, enclaveName, logLevel, versionTag) => {
+export const runStarlarkPackageFromEnclaveManager = async (host, port, enclaveName, logLevel, versionTag, token) => {
     const request = new RunStarlarkPackageRequest(
         {
             "apicIpAddress": host,
@@ -79,5 +83,5 @@ export const runStarlarkPackageFromEnclaveManager = async (host, port, enclaveNa
             }
         }
     );
-    return enclaveManagerClient.runStarlarkPackage(request);
+    return enclaveManagerClient.runStarlarkPackage(request, createHeaderOptionsWithToken(token));
 }

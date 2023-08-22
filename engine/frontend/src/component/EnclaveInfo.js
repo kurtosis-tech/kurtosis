@@ -7,6 +7,7 @@ import NoData from "./NoData";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import LoadingOverlay from "./LoadingOverflow";
+import {useAppContext} from "../context/AppState";
 
 
 const renderEnclaves = (enclaves, handleClick) => {
@@ -69,14 +70,15 @@ const EncalveInfo = ({enclaves}) => {
     const [services, setServices] = useState([])
     const [fileArtifacts, setFileArtifacts] = useState([])
     const [encalveInfoLoading, setEnclaveInfoLoading] = useState(false)
-    
+    const {appData} = useAppContext()
+
     useEffect(() => {
         // console.log("EnclaveInfo: ", enclaves)
         setEnclaveInfoLoading(true)
         const fetch = async () => {
             const selected = enclaves.filter(enclave => enclave.name === name);
             if (selected.length > 0) {
-                const {services, artifacts} = await getEnclaveInformation(selected[0].host, selected[0].port);
+                const {services, artifacts} = await getEnclaveInformation(selected[0].host, selected[0].port, appData.jwtToken);
                 setServices(services)
                 setFileArtifacts(artifacts)
             }

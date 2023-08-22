@@ -8,6 +8,7 @@ import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import LoadingOverlay from "./LoadingOverflow";
 import e from "cors";
+import {useAppContext} from "../context/AppState";
 
 const BreadCumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
     const total = currentPath.length;
@@ -80,7 +81,8 @@ const FileArtifactInfo = ({enclaves}) => {
     const [detailInfo, setDetailInfo] = useState({})
     const {state} = useLocation();
     const {fileArtifacts} = state;
-    
+    const {appData} = useAppContext()
+
     useEffect(() => {
         if (enclaves.length === 0) {
             navigate(`/enclaves/${enclaveName}`)
@@ -89,7 +91,7 @@ const FileArtifactInfo = ({enclaves}) => {
             const fetch = async () => {
                 const selected = enclaves.filter(enclave => enclave.name === enclaveName);
                 if (selected.length > 0) {
-                    const {files} = await getFileArtifactInfo(selected[0].host, selected[0].port, fileArtifactName);
+                    const {files} = await getFileArtifactInfo(selected[0].host, selected[0].port, fileArtifactName, appData.jwtToken);
                     setFiles(files)
                     setCurrentFiles(files)
                     setCurrentPath([])
@@ -99,7 +101,7 @@ const FileArtifactInfo = ({enclaves}) => {
             } 
             fetch()
         }
-    }, [fileArtifactName])
+    }, [fileArtifactName, appData.jwtToken])
 
     const handleCleanButton = () => {
         setCurrentPath([])

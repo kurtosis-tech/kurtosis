@@ -24,15 +24,15 @@ export const runStarlarkPackage = async (url, packageId, args) => {
     return stream;
 }
 
-const getDataFromApiContainer = async (request, process) => {
-    const data = await request()
+const getDataFromApiContainer = async (request, process, token) => {
+    const data = await request(token)
     return process(data)
 }
 
-export const getFileArtifactInfo = async (host, port, fileArtifactName) => {
+export const getFileArtifactInfo = async (host, port, fileArtifactName, token) => {
     const makeGetFileArtifactInfo = async () => {
         try {
-            return inspectFilesArtifactContentsFromEnclaveManager(host, port, fileArtifactName)
+            return inspectFilesArtifactContentsFromEnclaveManager(host, port, fileArtifactName, token)
         } catch (error) {
             return {
                 files: []
@@ -75,11 +75,11 @@ export const getFileArtifactInfo = async (host, port, fileArtifactName) => {
         }
     }
 
-    const response = await getDataFromApiContainer(makeGetFileArtifactInfo, processFileArtifact)
+    const response = await getDataFromApiContainer(makeGetFileArtifactInfo, processFileArtifact, token)
     return response;
 }
 
-export const getEnclaveInformation = async (host, port) => {
+export const getEnclaveInformation = async (host, port, token) => {
     if (host === "") {
         return {
             services: [],
@@ -89,14 +89,14 @@ export const getEnclaveInformation = async (host, port) => {
 
     const makeGetServiceRequest = async () => {
         try {
-            return await getServicesFromEnclaveManager(host, port);
+            return await getServicesFromEnclaveManager(host, port, token);
         } catch (error) {
             return {serviceInfo: []}
         }
     }
 
     const makeFileArtifactRequest = async () => {
-        return listFilesArtifactNamesAndUuidsFromEnclaveManager(host, port);
+        return listFilesArtifactNamesAndUuidsFromEnclaveManager(host, port, token);
     }
 
     const processServiceRequest = (data) => {

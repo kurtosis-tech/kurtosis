@@ -46,11 +46,11 @@ export const getEnclavesFromKurtosis = async (token) => {
     return []
 }
 
-export const createEnclave = async () => {
+export const createEnclave = async (token) => {
     const enclaveName = ""; // TODO We could make this input from the UI
     const apiContainerVersionTag = "";
     const apiContainerLogLevel= "info";
-    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag)
+    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag, token)
 
     const enclave = response.enclaveInfo;
 
@@ -73,7 +73,7 @@ export const getServiceLogs = async (ctrl, enclaveName, serviceUuid) => {
     return enclaveManagerClient.getServiceLogs(args, {signal: ctrl.signal});
 }
 
-export const runStarlark = async (apiClient, packageId, args) => {
+export const runStarlark = async (apiClient, packageId, args, token) => {
     const stream = await runStarlarkPackage(apiClient, packageId, args)
     return stream;
 }

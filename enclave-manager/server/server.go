@@ -106,6 +106,13 @@ func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptyp
 	return resp, nil
 }
 func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
@@ -143,6 +150,13 @@ func (c *WebServer) GetServiceLogs(
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
@@ -175,6 +189,13 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
 	result, err := (*c.engineServiceClient).CreateEnclave(ctx, req)
 	if err != nil {
 		return nil, err
@@ -188,6 +209,13 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 }
 
 func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")

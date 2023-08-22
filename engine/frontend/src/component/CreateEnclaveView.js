@@ -9,6 +9,7 @@ import {useNavigate} from "react-router-dom";
 import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
 import LoadingOverlay from "./LoadingOverflow";
+import {useAppContext} from "../context/AppState";
 
 const SERVICE_IS_ADDED = "added with service";
 
@@ -17,9 +18,10 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
     const [services, setServices] = useState([])
+    const {appData} = useAppContext()
 
     const getServices = async (apiClient) => {
-        const {services: newServices} = await getEnclaveInformation(apiClient);
+        const {services: newServices} = await getEnclaveInformation(apiClient, appData.jwtToken);
         if (newServices.length > services.length) {
             setServices(newServices) 
         }
@@ -29,7 +31,7 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
         setLoading(true)
         let stream;
         const fetchLogs = async () => {
-          stream = await runStarlark(enclave.apiClient, packageId, args);
+          stream = await runStarlark(enclave.apiClient, packageId, args, appData.jwtToken);
           stream.on("data", data => {
             const result = data.toObject();
             if (result.instruction && result.instruction.executableInstruction) {
