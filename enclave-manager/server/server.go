@@ -153,18 +153,17 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 	for {
 		select {
 		case <-ctxWithCancel.Done():
-			logrus.Infof("Closing the stream")
 			err := apicStream.Close()
-			if err != nil {
-				logrus.Errorf("Error ocurred: %+v", err)
-			}
 			close(logs)
+			if err != nil {
+				return stacktrace.Propagate(err, "Error occurred after closing the stream")
+			}
 			return nil
 		case resp := <-logs:
 			errWhileSending := str.Send(resp)
 			if errWhileSending != nil {
 				logrus.Errorf("error occurred: %+v", errWhileSending)
-				return nil
+				return stacktrace.Propagate(errWhileSending, "Error occurred while sending streams")
 			}
 		}
 	}
