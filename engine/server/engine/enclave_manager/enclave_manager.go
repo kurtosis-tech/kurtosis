@@ -61,6 +61,7 @@ type EnclaveManager struct {
 
 	enclaveCreator *EnclaveCreator
 	enclavePool    *EnclavePool
+	enclaveEnvVars string
 }
 
 func CreateEnclaveManager(
@@ -69,6 +70,7 @@ func CreateEnclaveManager(
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
 	engineVersion string,
 	poolSize uint8,
+	enclaveEnvVars string,
 ) (*EnclaveManager, error) {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
@@ -79,7 +81,7 @@ func CreateEnclaveManager(
 
 	// The enclave pool feature is only available for Kubernetes so far
 	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
-		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion)
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
 		}
@@ -92,6 +94,7 @@ func CreateEnclaveManager(
 		allExistingAndHistoricalIdentifiers:       []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{},
 		enclaveCreator:                            enclaveCreator,
 		enclavePool:                               enclavePool,
+		enclaveEnvVars:                            enclaveEnvVars,
 	}
 
 	return enclaveManager, nil
@@ -155,6 +158,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			apiContainerImageVersionTag,
 			apiContainerLogLevel,
 			enclaveName,
+			manager.enclaveEnvVars,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(

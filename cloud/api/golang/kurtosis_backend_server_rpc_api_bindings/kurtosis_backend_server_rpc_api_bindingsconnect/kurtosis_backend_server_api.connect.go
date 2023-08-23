@@ -50,9 +50,6 @@ const (
 	// KurtosisCloudBackendServerGetOrCreateInstanceProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's GetOrCreateInstance RPC.
 	KurtosisCloudBackendServerGetOrCreateInstanceProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
-	// KurtosisCloudBackendServerGetOrCreateEnclaveS3StorageProcedure is the fully-qualified name of the
-	// KurtosisCloudBackendServer's GetOrCreateEnclaveS3Storage RPC.
-	KurtosisCloudBackendServerGetOrCreateEnclaveS3StorageProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateEnclaveS3Storage"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -63,7 +60,6 @@ type KurtosisCloudBackendServerClient interface {
 	GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	GetOrCreateApiKey(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse], error)
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
-	GetOrCreateEnclaveS3Storage(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageResponse], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -101,22 +97,16 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerGetOrCreateInstanceProcedure,
 			opts...,
 		),
-		getOrCreateEnclaveS3Storage: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageResponse](
-			httpClient,
-			baseURL+KurtosisCloudBackendServerGetOrCreateEnclaveS3StorageProcedure,
-			opts...,
-		),
 	}
 }
 
 // kurtosisCloudBackendServerClient implements KurtosisCloudBackendServerClient.
 type kurtosisCloudBackendServerClient struct {
-	isAvailable                 *connect.Client[emptypb.Empty, emptypb.Empty]
-	createCloudInstance         *connect.Client[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse]
-	getCloudInstanceConfig      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
-	getOrCreateApiKey           *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse]
-	getOrCreateInstance         *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
-	getOrCreateEnclaveS3Storage *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageResponse]
+	isAvailable            *connect.Client[emptypb.Empty, emptypb.Empty]
+	createCloudInstance    *connect.Client[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse]
+	getCloudInstanceConfig *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
+	getOrCreateApiKey      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse]
+	getOrCreateInstance    *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -144,12 +134,6 @@ func (c *kurtosisCloudBackendServerClient) GetOrCreateInstance(ctx context.Conte
 	return c.getOrCreateInstance.CallUnary(ctx, req)
 }
 
-// GetOrCreateEnclaveS3Storage calls
-// kurtosis_cloud.KurtosisCloudBackendServer.GetOrCreateEnclaveS3Storage.
-func (c *kurtosisCloudBackendServerClient) GetOrCreateEnclaveS3Storage(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageResponse], error) {
-	return c.getOrCreateEnclaveS3Storage.CallUnary(ctx, req)
-}
-
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -158,7 +142,6 @@ type KurtosisCloudBackendServerHandler interface {
 	GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	GetOrCreateApiKey(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse], error)
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
-	GetOrCreateEnclaveS3Storage(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageResponse], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -192,11 +175,6 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.GetOrCreateInstance,
 		opts...,
 	)
-	kurtosisCloudBackendServerGetOrCreateEnclaveS3StorageHandler := connect.NewUnaryHandler(
-		KurtosisCloudBackendServerGetOrCreateEnclaveS3StorageProcedure,
-		svc.GetOrCreateEnclaveS3Storage,
-		opts...,
-	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -209,8 +187,6 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerGetOrCreateApiKeyHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerGetOrCreateInstanceProcedure:
 			kurtosisCloudBackendServerGetOrCreateInstanceHandler.ServeHTTP(w, r)
-		case KurtosisCloudBackendServerGetOrCreateEnclaveS3StorageProcedure:
-			kurtosisCloudBackendServerGetOrCreateEnclaveS3StorageHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -238,8 +214,4 @@ func (UnimplementedKurtosisCloudBackendServerHandler) GetOrCreateApiKey(context.
 
 func (UnimplementedKurtosisCloudBackendServerHandler) GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetOrCreateInstance is not implemented"))
-}
-
-func (UnimplementedKurtosisCloudBackendServerHandler) GetOrCreateEnclaveS3Storage(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateEnclaveS3StorageResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetOrCreateEnclaveS3Storage is not implemented"))
 }

@@ -467,7 +467,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForUserService
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
 	return map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.EnclaveUUIDDockerLabelKey: provider.enclaveId,
+		label_key_consts.EnclaveUUIDDockerLabelKey:     provider.enclaveId,
+		label_key_consts.LogsEnclaveUUIDDockerLabelKey: provider.enclaveId,
 	}
 }
 
@@ -478,6 +479,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", guid)
 	}
 	labels[label_key_consts.GUIDDockerLabelKey] = guidLabelValue
+	labels[label_key_consts.LogsServiceUUIDDockerLabelKey] = guidLabelValue
 	return labels, nil
 }
 

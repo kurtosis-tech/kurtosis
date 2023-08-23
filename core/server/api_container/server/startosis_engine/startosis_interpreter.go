@@ -59,17 +59,19 @@ type StartosisInterpreter struct {
 	moduleGlobalsCache map[string]*startosis_packages.ModuleCacheEntry
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider startosis_packages.PackageContentProvider
+	enclaveEnvVars        string
 }
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, enclaveVarEnvs string) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
 		recipeExecutor:        runtimeValueStore,
 		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
 		moduleContentProvider: moduleContentProvider,
+		enclaveEnvVars:        enclaveVarEnvs,
 	}
 }
 
@@ -318,7 +320,7 @@ func (interpreter *StartosisInterpreter) interpretInternal(moduleLocator string,
 	// previous calls inside the same thread
 	// The thread name is set to the locator of the module so that we can use it to resolve relative paths
 	thread := newStarlarkThread(moduleLocator)
-	predeclared, interpretationErr := interpreter.buildBindings(instructionPlan)
+	predeclared, interpretationErr := interpreter.buildBindings(thread, instructionPlan)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -331,7 +333,7 @@ func (interpreter *StartosisInterpreter) interpretInternal(moduleLocator string,
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(instructionPlan *instructions_plan.InstructionsPlan) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, instructionPlan *instructions_plan.InstructionsPlan) (*starlark.StringDict, *startosis_errors.InterpretationError) {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		result, err := interpreter.interpretInternal(moduleId, serializedStartosis, instructionPlan)
 		if err != nil {
@@ -340,7 +342,7 @@ func (interpreter *StartosisInterpreter) buildBindings(instructionPlan *instruct
 		return result, nil
 	}
 
-	kurtosisModule, interpretationErr := builtins.KurtosisModule()
+	kurtosisModule, interpretationErr := builtins.KurtosisModule(thread, interpreter.enclaveEnvVars)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

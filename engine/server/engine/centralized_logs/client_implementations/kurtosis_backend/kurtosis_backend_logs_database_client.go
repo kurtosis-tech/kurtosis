@@ -12,7 +12,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
-	"regexp"
 	"strings"
 	"sync"
 )
@@ -47,9 +46,13 @@ func (client *kurtosisBackendLogsDatabaseClient) StreamUserServiceLogs(
 
 	ctx, cancelCtxFunc := context.WithCancel(ctx)
 
-	userServiceFilters := newUserServiceFilters(userServiceUuids)
+	userServiceFilters := &service.ServiceFilters{
+		Names:    nil,
+		UUIDs:    userServiceUuids,
+		Statuses: nil,
+	}
 
-	conjunctiveLogFiltersWithRegex, err := newConjunctiveLogFiltersWithRegex(conjunctiveLogLineFilters)
+	conjunctiveLogFiltersWithRegex, err := logline.NewConjunctiveLogFiltersWithRegex(conjunctiveLogLineFilters)
 	if err != nil {
 		cancelCtxFunc()
 		return nil, nil, nil, stacktrace.Propagate(err, "An error occurred creating conjunctive log line filter with regex from filters '%+v'", conjunctiveLogLineFilters)
@@ -155,15 +158,6 @@ func (client *kurtosisBackendLogsDatabaseClient) FilterExistingServiceUuids(
 //	Private helper functions
 //
 // ====================================================================================================
-func newUserServiceFilters(userServiceGuids map[service.ServiceUUID]bool) *service.ServiceFilters {
-	userServiceFilters := &service.ServiceFilters{
-		Names:    nil,
-		UUIDs:    userServiceGuids,
-		Statuses: nil,
-	}
-	return userServiceFilters
-}
-
 func streamServiceLogLines(
 	ctx context.Context,
 	wgSenders *sync.WaitGroup,
@@ -171,7 +165,7 @@ func streamServiceLogLines(
 	streamErrChan chan error,
 	serviceUuid service.ServiceUUID,
 	userServiceReadCloserLog io.ReadCloser,
-	conjunctiveLogLinesFiltersWithRegex []LogLineFilterWithRegex,
+	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 ) {
 	defer wgSenders.Done()
 
@@ -179,7 +173,7 @@ func streamServiceLogLines(
 
 	for {
 		select {
-		//client cancel ctx case
+		// client cancel ctx case
 		case <-ctx.Done():
 			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v'", serviceUuid)
 			return
@@ -199,7 +193,7 @@ func streamServiceLogLines(
 			logLine := logline.NewLogLine(logLineStr)
 
 			//filtering it
-			shouldReturnLogLine, err := shouldReturnLogLineBaseOnFilters(logLine, conjunctiveLogLinesFiltersWithRegex)
+			shouldReturnLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
 			if err != nil {
 				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 				break
@@ -216,65 +210,4 @@ func streamServiceLogLines(
 			logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
 		}
 	}
-}
-
-func shouldReturnLogLineBaseOnFilters(
-	logLine *logline.LogLine,
-	conjunctiveLogLinesFiltersWithRegex []LogLineFilterWithRegex,
-) (bool, error) {
-
-	shouldReturnIt := true
-
-	for _, logLineFilter := range conjunctiveLogLinesFiltersWithRegex {
-		operator := logLineFilter.GetOperator()
-
-		logLineContent := logLine.GetContent()
-		logLineContentLowerCase := strings.ToLower(logLineContent)
-		textPatternLowerCase := strings.ToLower(logLineFilter.GetTextPattern())
-
-		switch operator {
-		case logline.LogLineOperator_DoesContainText:
-			if !strings.Contains(logLineContentLowerCase, textPatternLowerCase) {
-				shouldReturnIt = false
-			}
-		case logline.LogLineOperator_DoesNotContainText:
-			if strings.Contains(logLineContentLowerCase, textPatternLowerCase) {
-				shouldReturnIt = false
-			}
-		case logline.LogLineOperator_DoesContainMatchRegex:
-			if !logLineFilter.compiledRegexPattern.MatchString(logLineContent) {
-				shouldReturnIt = false
-			}
-		case logline.LogLineOperator_DoesNotContainMatchRegex:
-			if logLineFilter.compiledRegexPattern.MatchString(logLineContent) {
-				shouldReturnIt = false
-			}
-		default:
-			return false, stacktrace.NewError("Unrecognized log line filter operator '%v' in filter '%v'; this is a bug in Kurtosis", operator, logLineFilter)
-		}
-		if !shouldReturnIt {
-			break
-		}
-	}
-
-	return shouldReturnIt, nil
-}
-
-func newConjunctiveLogFiltersWithRegex(conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters) ([]LogLineFilterWithRegex, error) {
-	conjunctiveLogFiltersWithRegex := []LogLineFilterWithRegex{}
-	for _, logLineFilter := range conjunctiveLogLineFilters {
-		logLineFilterWithRegex := newLogLineFilterWithRegex(logLineFilter, nil)
-
-		if logLineFilter.IsRegexFilter() {
-			filterRegexPattern := logLineFilter.GetTextPattern()
-			logLineRegexPattern, err := regexp.Compile(filterRegexPattern)
-			if err != nil {
-				return nil, stacktrace.Propagate(err, "An error occurred compiling regex string '%v' for log line filter '%+v'", filterRegexPattern, logLineFilter)
-			}
-			logLineFilterWithRegex.compiledRegexPattern = logLineRegexPattern
-		}
-		conjunctiveLogFiltersWithRegex = append(conjunctiveLogFiltersWithRegex, *logLineFilterWithRegex)
-	}
-
-	return conjunctiveLogFiltersWithRegex, nil
 }

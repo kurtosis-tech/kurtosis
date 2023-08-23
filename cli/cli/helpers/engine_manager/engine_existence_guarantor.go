@@ -67,6 +67,8 @@ type engineExistenceGuarantor struct {
 	onBastionHost bool
 
 	poolSize uint8
+
+	enclaveEnvVars string
 }
 
 func newEngineExistenceGuarantorWithDefaultVersion(
@@ -80,6 +82,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 	kurtosisClusterType resolved_config.KurtosisClusterType,
 	onBastionHost bool,
 	poolSize uint8,
+	enclaveEnvVars string,
 ) *engineExistenceGuarantor {
 	return newEngineExistenceGuarantorWithCustomVersion(
 		ctx,
@@ -93,6 +96,7 @@ func newEngineExistenceGuarantorWithDefaultVersion(
 		kurtosisClusterType,
 		onBastionHost,
 		poolSize,
+		enclaveEnvVars,
 	)
 }
 
@@ -108,6 +112,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 	kurtosisClusterType resolved_config.KurtosisClusterType,
 	onBastionHost bool,
 	poolSize uint8,
+	enclaveEnvVars string,
 ) *engineExistenceGuarantor {
 	return &engineExistenceGuarantor{
 		ctx:                                  ctx,
@@ -123,6 +128,7 @@ func newEngineExistenceGuarantorWithCustomVersion(
 		kurtosisClusterType:                       kurtosisClusterType,
 		onBastionHost:                             onBastionHost,
 		poolSize:                                  poolSize,
+		enclaveEnvVars:                            enclaveEnvVars,
 	}
 }
 
@@ -151,6 +157,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.engineServerKurtosisBackendConfigSupplier,
 			guarantor.onBastionHost,
 			guarantor.poolSize,
+			guarantor.enclaveEnvVars,
 		)
 	} else {
 		_, _, engineLaunchErr = guarantor.engineServerLauncher.LaunchWithCustomVersion(
@@ -163,6 +170,7 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 			guarantor.engineServerKurtosisBackendConfigSupplier,
 			guarantor.onBastionHost,
 			guarantor.poolSize,
+			guarantor.enclaveEnvVars,
 		)
 	}
 	if engineLaunchErr != nil {

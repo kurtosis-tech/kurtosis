@@ -21,6 +21,7 @@ require (
 )
 
 require (
+	connectrpc.com/connect v1.11.0 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

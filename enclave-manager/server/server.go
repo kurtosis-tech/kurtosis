@@ -29,7 +29,7 @@ const (
 	engineHostUrl             = "http://localhost:9710"
 	kurtosisCloudApiHost      = "https://cloud.kurtosis.com"
 	kurtosisCloudApiPort      = 8080
-	enforceAuth               = true
+	enforceAuth               = false // This setting is temporary and will be dynamically changed in following work
 )
 
 type Authentication struct {

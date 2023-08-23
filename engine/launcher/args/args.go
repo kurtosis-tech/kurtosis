@@ -11,6 +11,8 @@ import (
 
 const (
 	jsonFieldTag = "json"
+
+	emptyJsonField = "{}"
 )
 
 // Fields are public for JSON de/serialization
@@ -41,6 +43,10 @@ type EngineServerArgs struct {
 	// PoolSize represents the enclave pool size, for instance if this value is 3, these amount of idle enclaves
 	// will be created when the engine start in order to be used when users request for a new enclave.
 	PoolSize uint8 `json:"poolSize"`
+
+	// Environment variable to pass to all the enclaves the engine is going to create. Those environment variable will
+	// then be accessible in Starlark scripts in the `kurtosis` module
+	EnclaveEnvVars string `json:"enclaveEnvVars"`
 }
 
 func (args *EngineServerArgs) UnmarshalJSON(data []byte) error {
@@ -86,7 +92,11 @@ func NewEngineServerArgs(
 	kurtosisLocalBackendConfig interface{},
 	onBastionHost bool,
 	poolSize uint8,
+	enclaveEnvVars string,
 ) (*EngineServerArgs, error) {
+	if enclaveEnvVars == "" {
+		enclaveEnvVars = emptyJsonField
+	}
 	result := &EngineServerArgs{
 		GrpcListenPortNum:           grpcListenPortNum,
 		LogLevelStr:                 logLevelStr,
@@ -97,6 +107,7 @@ func NewEngineServerArgs(
 		KurtosisLocalBackendConfig:  kurtosisLocalBackendConfig,
 		OnBastionHost:               onBastionHost,
 		PoolSize:                    poolSize,
+		EnclaveEnvVars:              enclaveEnvVars,
 	}
 	if err := result.validate(); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred validating engine server args")

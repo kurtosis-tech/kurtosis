@@ -22,6 +22,12 @@ import (
 const (
 	instanceIdentifierArgKey      = "instance-id"
 	instanceIdentifierArgIsGreedy = false
+
+	awsAccessKeyIdEnv      = "AWS_ACCESS_KEY_ID"
+	awsSecretAccessKeyEnv  = "AWS_SECRET_ACCESS_KEY"
+	awsBucketRegionEnv     = "AWS_BUCKET_REGION"
+	awsBucketNameEnv       = "AWS_BUCKET_NAME"
+	awsBucketUserFolderEnv = "AWS_BUCKET_USER_FOLDER"
 )
 
 var LoadCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -95,9 +101,35 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	if err != nil {
 		return stacktrace.Propagate(err, "While attempting to reload the context with uuid %s an error occurred while removing it from the context store", parsedContext.Uuid)
 	}
-	if add.AddContext(parsedContext) != nil {
+	if add.AddContext(parsedContext, assembleEnvVars(result)) != nil {
 		return stacktrace.Propagate(err, "Unable to add context to context store")
 	}
 	contextIdentifier := parsedContext.GetName()
 	return context_switch.SwitchContext(ctx, contextIdentifier)
+}
+
+func assembleEnvVars(cloudInstanceConfig *api.GetCloudInstanceConfigResponse) *string {
+	var envVars string
+	if cloudInstanceConfig.GetAwsEnvironment() != nil {
+		awsEnvironment := cloudInstanceConfig.GetAwsEnvironment()
+		envVars = fmt.Sprintf("{%q: %q, %q: %q, %q: %q, %q: %q, %q: %q}",
+			awsAccessKeyIdEnv, awsEnvironment.GetAccessKeyId(),
+			awsSecretAccessKeyEnv, awsEnvironment.GetSecretAccessKey(),
+			awsBucketRegionEnv, awsEnvironment.GetBucketRegion(),
+			awsBucketNameEnv, awsEnvironment.GetBucketName(),
+			awsBucketUserFolderEnv, awsEnvironment.GetBucketUserFolder(),
+		)
+	} else if cloudInstanceConfig.GetUserKey() != nil {
+		// TODO: for backward compatibility - some components are computed live as they are constant. it should be
+		//  removed in favor of the above once the cloud BE is upgraded
+		awsUserKey := cloudInstanceConfig.GetUserKey()
+		envVars = fmt.Sprintf("{%q: %q, %q: %q, %q: %q, %q: %q, %q: %q}",
+			awsAccessKeyIdEnv, awsUserKey.GetId(),
+			awsSecretAccessKeyEnv, awsUserKey.GetSecret(),
+			awsBucketRegionEnv, "us-east-1",
+			awsBucketNameEnv, "kurtosis-cloud",
+			awsBucketUserFolderEnv, fmt.Sprintf("cloud-user-%s", cloudInstanceConfig.GetUserId()),
+		)
+	}
+	return &envVars
 }
