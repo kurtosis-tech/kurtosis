@@ -663,11 +663,15 @@ func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[serv
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	serviceUuids, err := getAllRegisteredServiceUuidsFromRepositoryUnlocked(network.serviceRegistrationRepository)
+	registeredServices, err := network.serviceRegistrationRepository.GetAll()
+	registeredServiceNames := map[service.ServiceName]bool{}
+	for name, _ := range registeredServices {
+		registeredServiceNames[name] = true
+	}
 
 	registeredServiceUuidsFilters := &service.ServiceFilters{
-		Names:    nil,
-		UUIDs:    serviceUuids,
+		Names:    registeredServiceNames,
+		UUIDs:    nil,
 		Statuses: nil,
 	}
 
@@ -676,20 +680,19 @@ func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[serv
 		return nil, stacktrace.Propagate(err, "an error occurred while fetching services from the backend")
 	}
 
-	if len(allServices) != len(serviceUuids) {
-		return nil, stacktrace.Propagate(err, "found more services '%v' than registered '%v'", len(allServices), len(serviceUuids))
-	}
+	filteredServicesToRegisteredServices := map[service.ServiceUUID]*service.Service{}
 
-	for _, serviceObj := range allServices {
-		identifier := string(serviceObj.GetRegistration().GetName())
-		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(identifier)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "couldn't find registration for service fetched from backend")
+	for name, registration := range registeredServices {
+		uuid := registration.GetUUID()
+		serviceObj, found := allServices[uuid]
+		if !found {
+			return nil, stacktrace.NewError("couldn't find service with uuid '%v' and name '%v' in backend", uuid, name)
 		}
-		serviceObj.GetRegistration().SetStatus(serviceRegistration.GetStatus())
+		serviceObj.GetRegistration().SetStatus(registration.GetStatus())
+		filteredServicesToRegisteredServices[uuid] = serviceObj
 	}
 
-	return allServices, nil
+	return filteredServicesToRegisteredServices, nil
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
@@ -1492,16 +1495,4 @@ func (network *DefaultServiceNetwork) getServiceRegistrationForIdentifierUnlocke
 	}
 
 	return serviceRegistration, nil
-}
-
-func getAllRegisteredServiceUuidsFromRepositoryUnlocked(repository *service_registration.ServiceRegistrationRepository) (map[service.ServiceUUID]bool, error) {
-	serviceUuids := map[service.ServiceUUID]bool{}
-	allServices, err := repository.GetAll()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "an error occurred getting services from repository")
-	}
-	for _, registration := range allServices {
-		serviceUuids[registration.GetUUID()] = true
-	}
-	return serviceUuids, nil
 }
