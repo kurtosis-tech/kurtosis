@@ -7,11 +7,12 @@ import NoData from "./NoData";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import LoadingOverlay from "./LoadingOverflow";
+import {useAppContext} from "../context/AppState";
 
 
 const renderEnclaves = (enclaves, handleClick) => {
     return enclaves.map(enclave => {
-        const backgroundColor = enclave.status === 1 ? "bg-green-700": "bg-red-600"
+        const backgroundColor = enclave.status === 1 ? "bg-[#24BA27]": "bg-red-600"
         return (
             <div className={`flex items-center justify-center h-14 text-base ${backgroundColor}`} key={enclave.name} onClick={()=>handleClick(enclave.name)}>
                 <div className='cursor-default text-lg text-white'> {enclave.name} </div>
@@ -33,7 +34,7 @@ const renderServices = (services, handleClick) => {
 
     return services.map((service)=> {
         return (
-            <div className="border-4 bg-slate-800 text-lg align-middle text-center h-16 p-3 text-green-600" onClick={() => handleClick(service, services)}> 
+            <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]" onClick={() => handleClick(service, services)}>
                 <div> {service.name} </div>
             </div>
         )
@@ -53,7 +54,7 @@ const renderFileArtifacts = (file_artifacts, handleFileArtifactClick) => {
 
     return file_artifacts.map((file_artifact)=> {
         return (
-            <div className="border-4 bg-slate-800 text-lg align-middle text-center h-16 p-3 text-green-600" onClick={() => handleFileArtifactClick(file_artifact.name, file_artifacts)}> 
+            <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]" onClick={() => handleFileArtifactClick(file_artifact.name, file_artifacts)}>
                 <div> {file_artifact.name} </div>
             </div>
         )
@@ -69,14 +70,15 @@ const EncalveInfo = ({enclaves}) => {
     const [services, setServices] = useState([])
     const [fileArtifacts, setFileArtifacts] = useState([])
     const [encalveInfoLoading, setEnclaveInfoLoading] = useState(false)
-    
+    const {appData} = useAppContext()
+
     useEffect(() => {
-        console.log("EnclaveInfo: ", enclaves)
+        // console.log("EnclaveInfo: ", enclaves)
         setEnclaveInfoLoading(true)
         const fetch = async () => {
             const selected = enclaves.filter(enclave => enclave.name === name);
             if (selected.length > 0) {
-                const {services, artifacts} = await getEnclaveInformation(selected[0].apiClient);
+                const {services, artifacts} = await getEnclaveInformation(selected[0].host, selected[0].port, appData.jwtToken);
                 setServices(services)
                 setFileArtifacts(artifacts)
             }
@@ -94,14 +96,14 @@ const EncalveInfo = ({enclaves}) => {
     }
 
     const handleFileArtifactClick = async (fileArtifactName, fileArtifacts) => {
-        console.log("Artifacts: ", fileArtifacts)
+        // console.log("Artifacts: ", fileArtifacts)
         const selected = enclaves.filter(enclave => enclave.name === name);
         if (selected.length > 0) {
             navigate(`/enclaves/${selected[0].name}/files/${fileArtifactName}`, {state: {fileArtifacts}})
         }
     }
 
-    const EnclaveInfoCompoenent = ({services, fileArtifacts, handleServiceClick, handleFileArtifactClick}) => (
+    const EnclaveInfoComponent = ({services, fileArtifacts, handleServiceClick, handleFileArtifactClick}) => (
         <div className='flex flex-col h-[calc(100vh-3rem)] space-y-1 overflow-auto'>
             <div className="flex flex-col h-1/2 min-h-1/2 border-8">
                 <Heading content={"Services"} size={"text-xl"} />
@@ -132,7 +134,7 @@ const EncalveInfo = ({enclaves}) => {
                 </div>
                 {encalveInfoLoading ? 
                     <LoadingOverlay /> : 
-                    <EnclaveInfoCompoenent 
+                    <EnclaveInfoComponent
                         services={services} 
                         fileArtifacts={fileArtifacts}
                         handleServiceClick={handleServiceClick}
