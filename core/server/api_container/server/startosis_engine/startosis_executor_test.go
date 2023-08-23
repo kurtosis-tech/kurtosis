@@ -34,8 +34,10 @@ var (
 )
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor := NewStartosisExecutor(runtime_value_store.NewRuntimeValueStore())
+	executor := NewStartosisExecutor(runtimeValueStore)
 
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	instruction0 := createMockInstruction(t, "instruction0", executeSuccessfully)
@@ -78,7 +80,10 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 }
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
-	executor := NewStartosisExecutor(runtime_value_store.NewRuntimeValueStore())
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
+
+	executor := NewStartosisExecutor(runtimeValueStore)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
@@ -116,7 +121,10 @@ instruction2()
 }
 
 func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
-	executor := NewStartosisExecutor(runtime_value_store.NewRuntimeValueStore())
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, createRuntimeValueStoreErr)
+
+	executor := NewStartosisExecutor(runtimeValueStore)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)

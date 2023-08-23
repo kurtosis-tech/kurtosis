@@ -17,7 +17,8 @@ const (
 var testIntRuntimeValue = starlark.MakeInt(0)
 
 func TestGetOrReplaceRuntimeValueFromString_BasicFetch(t *testing.T) {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
 	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testStringRuntimeValue})
@@ -33,7 +34,8 @@ func TestGetOrReplaceRuntimeValueFromString_BasicFetch(t *testing.T) {
 }
 
 func TestGetOrReplaceRuntimeValueFromString_Interpolated(t *testing.T) {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
 	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testStringRuntimeValue})
@@ -49,7 +51,8 @@ func TestGetOrReplaceRuntimeValueFromString_Interpolated(t *testing.T) {
 }
 
 func TestReplaceRuntimeValueFromString(t *testing.T) {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
 	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{testRuntimeValueField: testStringRuntimeValue})

@@ -161,7 +161,11 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
+	}
+
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
 		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, serverArgs.EnclaveEnvVars),

@@ -61,7 +61,10 @@ func (t renderMultipleTemplatesTestCase) GetId() string {
 }
 
 func (t renderMultipleTemplatesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return render_templates.NewRenderTemplatesInstruction(t.serviceNetwork, runtime_value_store.NewRuntimeValueStore())
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
+
+	return render_templates.NewRenderTemplatesInstruction(t.serviceNetwork, runtimeValueStore)
 }
 
 func (t renderMultipleTemplatesTestCase) GetStarlarkCode() string {

@@ -22,7 +22,8 @@ type postHttpRequestRecipeMinimalTestCase struct {
 }
 
 func newPostHttpRequestRecipeMinimalTestCase(t *testing.T) *postHttpRequestRecipeMinimalTestCase {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
 
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	serviceNetwork.EXPECT().HttpRequestService(

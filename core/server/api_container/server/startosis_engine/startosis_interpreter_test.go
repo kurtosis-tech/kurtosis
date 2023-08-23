@@ -59,7 +59,9 @@ type StartosisInterpreterTestSuite struct {
 
 func (suite *StartosisInterpreterTestSuite) SetupTest() {
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
-	suite.runtimeValueStore = runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(suite.T(), err)
+	suite.runtimeValueStore = runtimeValueStore
 	suite.serviceNetwork = service_network.NewMockServiceNetwork(suite.T())
 
 	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, "")

@@ -35,7 +35,8 @@ func (t assertTestCase) GetId() string {
 }
 
 func (t assertTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
 	runtimeValueStore.SetValue(t.runtimeValueUuid, map[string]starlark.Comparable{
 		"value": starlark.String(runtimeValueValue),
 	})

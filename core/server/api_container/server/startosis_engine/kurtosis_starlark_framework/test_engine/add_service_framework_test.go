@@ -34,7 +34,8 @@ func (t *addServiceTestCase) GetId() string {
 
 func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
 
 	serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
 	serviceNetwork.EXPECT().AddService(

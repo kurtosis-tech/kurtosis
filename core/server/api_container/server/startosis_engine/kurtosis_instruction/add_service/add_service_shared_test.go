@@ -15,7 +15,9 @@ const (
 )
 
 func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
+
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
 	runtimeValueName := "value"
@@ -48,7 +50,8 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 }
 
 func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
 	runtimeValueName := "value"
@@ -81,7 +84,8 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 }
 
 func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
 	runtimeValueName := "value"
@@ -119,7 +123,8 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 }
 
 func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
 	valueName := "value"
