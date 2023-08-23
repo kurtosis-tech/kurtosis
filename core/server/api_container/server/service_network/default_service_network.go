@@ -659,11 +659,15 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 	return resp, nil
 }
 
-func (network *DefaultServiceNetwork) GetUserServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error) {
+func (network *DefaultServiceNetwork) GetAllServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	emptyServiceFilters := &service.ServiceFilters{}
+	emptyServiceFilters := &service.ServiceFilters{
+		Names:    nil,
+		UUIDs:    nil,
+		Statuses: nil,
+	}
 
 	allServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveUuid, emptyServiceFilters)
 	if err != nil {

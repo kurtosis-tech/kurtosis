@@ -300,7 +300,7 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 	}
 
 	// otherwise we fetch everything
-	allServices, err := apicService.serviceNetwork.GetUserServices(ctx)
+	allServices, err := apicService.serviceNetwork.GetAllServices(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while fetching all services from the backend")
 	}

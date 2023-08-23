@@ -262,6 +262,60 @@ func (_c *MockServiceNetwork_ExistServiceRegistration_Call) RunAndReturn(run fun
 	return _c
 }
 
+// GetAllServices provides a mock function with given fields: ctx
+func (_m *MockServiceNetwork) GetAllServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error) {
+	ret := _m.Called(ctx)
+
+	var r0 map[service.ServiceUUID]*service.Service
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (map[service.ServiceUUID]*service.Service, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) map[service.ServiceUUID]*service.Service); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[service.ServiceUUID]*service.Service)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockServiceNetwork_GetAllServices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAllServices'
+type MockServiceNetwork_GetAllServices_Call struct {
+	*mock.Call
+}
+
+// GetAllServices is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockServiceNetwork_Expecter) GetAllServices(ctx interface{}) *MockServiceNetwork_GetAllServices_Call {
+	return &MockServiceNetwork_GetAllServices_Call{Call: _e.mock.On("GetAllServices", ctx)}
+}
+
+func (_c *MockServiceNetwork_GetAllServices_Call) Run(run func(ctx context.Context)) *MockServiceNetwork_GetAllServices_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockServiceNetwork_GetAllServices_Call) Return(_a0 map[service.ServiceUUID]*service.Service, _a1 error) *MockServiceNetwork_GetAllServices_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockServiceNetwork_GetAllServices_Call) RunAndReturn(run func(context.Context) (map[service.ServiceUUID]*service.Service, error)) *MockServiceNetwork_GetAllServices_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetApiContainerInfo provides a mock function with given fields:
 func (_m *MockServiceNetwork) GetApiContainerInfo() *ApiContainerInfo {
 	ret := _m.Called()
@@ -581,60 +635,6 @@ func (_c *MockServiceNetwork_GetUniqueNameForFileArtifact_Call) Return(_a0 strin
 }
 
 func (_c *MockServiceNetwork_GetUniqueNameForFileArtifact_Call) RunAndReturn(run func() (string, error)) *MockServiceNetwork_GetUniqueNameForFileArtifact_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// GetUserServices provides a mock function with given fields: ctx
-func (_m *MockServiceNetwork) GetUserServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error) {
-	ret := _m.Called(ctx)
-
-	var r0 map[service.ServiceUUID]*service.Service
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (map[service.ServiceUUID]*service.Service, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) map[service.ServiceUUID]*service.Service); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[service.ServiceUUID]*service.Service)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockServiceNetwork_GetUserServices_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetUserServices'
-type MockServiceNetwork_GetUserServices_Call struct {
-	*mock.Call
-}
-
-// GetUserServices is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockServiceNetwork_Expecter) GetUserServices(ctx interface{}) *MockServiceNetwork_GetUserServices_Call {
-	return &MockServiceNetwork_GetUserServices_Call{Call: _e.mock.On("GetUserServices", ctx)}
-}
-
-func (_c *MockServiceNetwork_GetUserServices_Call) Run(run func(ctx context.Context)) *MockServiceNetwork_GetUserServices_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockServiceNetwork_GetUserServices_Call) Return(_a0 map[service.ServiceUUID]*service.Service, _a1 error) *MockServiceNetwork_GetUserServices_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockServiceNetwork_GetUserServices_Call) RunAndReturn(run func(context.Context) (map[service.ServiceUUID]*service.Service, error)) *MockServiceNetwork_GetUserServices_Call {
 	_c.Call.Return(run)
 	return _c
 }
