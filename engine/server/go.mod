@@ -54,6 +54,7 @@ require (
 require github.com/bufbuild/connect-go v1.10.0
 
 require (
+	connectrpc.com/connect v1.11.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
