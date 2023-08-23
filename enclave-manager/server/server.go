@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"connectrpc.com/connect"
@@ -346,7 +346,7 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 	return nil, stacktrace.NewError("an empty API key was returned from Kurtosis Cloud Backend")
 }
 
-func RunEnclaveApiServer() {
+func RunEnclaveManagerApiServer() {
 	srv := NewWebserver()
 	apiPath, handler := kurtosis_enclave_manager_api_bindingsconnect.NewKurtosisEnclaveManagerServerHandler(srv)
 
