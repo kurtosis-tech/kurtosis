@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.82.1](https://github.com/kurtosis-tech/kurtosis/compare/0.82.0...0.82.1) (2023-08-23)
+
+
+### Features
+
+* add enclave manager ([#1148](https://github.com/kurtosis-tech/kurtosis/issues/1148)) ([54d94c5](https://github.com/kurtosis-tech/kurtosis/commit/54d94c5e80a2a89d5dbf0e9759871007b9141005))
+* Running Kurtosis in Kurtosis cloud doc ([#1142](https://github.com/kurtosis-tech/kurtosis/issues/1142)) ([dbff171](https://github.com/kurtosis-tech/kurtosis/commit/dbff17164c4f37070db2121fcffd04f1866c45a3))
+
+
+### Bug Fixes
+
+* use connectrpc instead of bufbuild ([#1144](https://github.com/kurtosis-tech/kurtosis/issues/1144)) ([d98bed1](https://github.com/kurtosis-tech/kurtosis/commit/d98bed1b9854624a97c9b2c452071ee476cf282d))
+
 ## [0.82.0](https://github.com/kurtosis-tech/kurtosis/compare/0.81.9...0.82.0) (2023-08-22)
 
 
