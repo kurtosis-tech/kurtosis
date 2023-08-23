@@ -93,6 +93,8 @@ type ServiceNetwork interface {
 
 	GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error)
 
+	GetUserServices(ctx context.Context, serviceIdentifier string) ([]*service.Service, error)
+
 	CopyFilesFromService(ctx context.Context, serviceIdentifier string, srcPath string, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
 	GetServiceNames() (map[service.ServiceName]bool, error)

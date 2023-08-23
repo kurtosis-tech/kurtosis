@@ -659,6 +659,11 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 	return resp, nil
 }
 
+func (network *DefaultServiceNetwork) GetUserServices(ctx context.Context, serviceIdentifier string) ([]*service.Service, error) {
+
+	return nil, nil
+}
+
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
