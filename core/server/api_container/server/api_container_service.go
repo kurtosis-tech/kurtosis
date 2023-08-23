@@ -711,7 +711,7 @@ func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Se
 	for uuid, serviceObj := range services {
 		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "there was an error converting the service obj for service with uuid '%v' to service info", uuid)
+			return nil, stacktrace.Propagate(err, "there was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
 		}
 		serviceInfos[serviceInfo.Name] = serviceInfo
 	}
