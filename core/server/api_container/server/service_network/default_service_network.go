@@ -659,17 +659,19 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 	return resp, nil
 }
 
-func (network *DefaultServiceNetwork) GetServices(ctx context.Context, serviceNames map[service.ServiceName]bool) (map[service.ServiceUUID]*service.Service, error) {
+func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
-	emptyServiceFilters := &service.ServiceFilters{
-		Names:    serviceNames,
-		UUIDs:    nil,
+	serviceUuids, err := getAllRegisteredServiceUuidsFromRepositoryUnlocked(network.serviceRegistrationRepository)
+
+	registeredServiceUuidsFilters := &service.ServiceFilters{
+		Names:    nil,
+		UUIDs:    serviceUuids,
 		Statuses: nil,
 	}
 
-	allServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveUuid, emptyServiceFilters)
+	allServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveUuid, registeredServiceUuidsFilters)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while fetching services from the backend")
 	}
@@ -1477,4 +1479,16 @@ func (network *DefaultServiceNetwork) getServiceRegistrationForIdentifierUnlocke
 	}
 
 	return serviceRegistration, nil
+}
+
+func getAllRegisteredServiceUuidsFromRepositoryUnlocked(repository *service_registration.ServiceRegistrationRepository) (map[service.ServiceUUID]bool, error) {
+	serviceUuids := map[service.ServiceUUID]bool{}
+	allServices, err := repository.GetAll()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred getting services from repository")
+	}
+	for _, registration := range allServices {
+		serviceUuids[registration.GetUUID()] = true
+	}
+	return serviceUuids, nil
 }

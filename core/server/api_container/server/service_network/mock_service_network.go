@@ -534,25 +534,25 @@ func (_c *MockServiceNetwork_GetServiceNames_Call) RunAndReturn(run func() (map[
 	return _c
 }
 
-// GetServices provides a mock function with given fields: ctx, serviceNames
-func (_m *MockServiceNetwork) GetServices(ctx context.Context, serviceNames map[service.ServiceName]bool) (map[service.ServiceUUID]*service.Service, error) {
-	ret := _m.Called(ctx, serviceNames)
+// GetServices provides a mock function with given fields: ctx
+func (_m *MockServiceNetwork) GetServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error) {
+	ret := _m.Called(ctx)
 
 	var r0 map[service.ServiceUUID]*service.Service
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]bool) (map[service.ServiceUUID]*service.Service, error)); ok {
-		return rf(ctx, serviceNames)
+	if rf, ok := ret.Get(0).(func(context.Context) (map[service.ServiceUUID]*service.Service, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, map[service.ServiceName]bool) map[service.ServiceUUID]*service.Service); ok {
-		r0 = rf(ctx, serviceNames)
+	if rf, ok := ret.Get(0).(func(context.Context) map[service.ServiceUUID]*service.Service); ok {
+		r0 = rf(ctx)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(map[service.ServiceUUID]*service.Service)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, map[service.ServiceName]bool) error); ok {
-		r1 = rf(ctx, serviceNames)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -567,14 +567,13 @@ type MockServiceNetwork_GetServices_Call struct {
 
 // GetServices is a helper method to define mock.On call
 //   - ctx context.Context
-//   - serviceNames map[service.ServiceName]bool
-func (_e *MockServiceNetwork_Expecter) GetServices(ctx interface{}, serviceNames interface{}) *MockServiceNetwork_GetServices_Call {
-	return &MockServiceNetwork_GetServices_Call{Call: _e.mock.On("GetServices", ctx, serviceNames)}
+func (_e *MockServiceNetwork_Expecter) GetServices(ctx interface{}) *MockServiceNetwork_GetServices_Call {
+	return &MockServiceNetwork_GetServices_Call{Call: _e.mock.On("GetServices", ctx)}
 }
 
-func (_c *MockServiceNetwork_GetServices_Call) Run(run func(ctx context.Context, serviceNames map[service.ServiceName]bool)) *MockServiceNetwork_GetServices_Call {
+func (_c *MockServiceNetwork_GetServices_Call) Run(run func(ctx context.Context)) *MockServiceNetwork_GetServices_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(map[service.ServiceName]bool))
+		run(args[0].(context.Context))
 	})
 	return _c
 }
@@ -584,7 +583,7 @@ func (_c *MockServiceNetwork_GetServices_Call) Return(_a0 map[service.ServiceUUI
 	return _c
 }
 
-func (_c *MockServiceNetwork_GetServices_Call) RunAndReturn(run func(context.Context, map[service.ServiceName]bool) (map[service.ServiceUUID]*service.Service, error)) *MockServiceNetwork_GetServices_Call {
+func (_c *MockServiceNetwork_GetServices_Call) RunAndReturn(run func(context.Context) (map[service.ServiceUUID]*service.Service, error)) *MockServiceNetwork_GetServices_Call {
 	_c.Call.Return(run)
 	return _c
 }
