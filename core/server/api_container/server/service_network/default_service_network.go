@@ -664,7 +664,7 @@ func (network *DefaultServiceNetwork) GetServices(ctx context.Context, serviceNa
 	defer network.mutex.Unlock()
 
 	emptyServiceFilters := &service.ServiceFilters{
-		Names:    nil,
+		Names:    serviceNames,
 		UUIDs:    nil,
 		Statuses: nil,
 	}
