@@ -659,9 +659,18 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 	return resp, nil
 }
 
-func (network *DefaultServiceNetwork) GetUserServices(ctx context.Context, serviceIdentifier string) ([]*service.Service, error) {
+func (network *DefaultServiceNetwork) GetUserServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
 
-	return nil, nil
+	emptyServiceFilters := &service.ServiceFilters{}
+
+	allServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveUuid, emptyServiceFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while fetching services from the backend")
+	}
+
+	return allServices, nil
 }
 
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
