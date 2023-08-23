@@ -4,14 +4,20 @@ import RightPanel from "./RightPanel";
 import LeftPanel from "./LeftPanel";
 import { LogView } from "./LogView";
 
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
 import LoadingOverlay from "./LoadingOverflow";
 
 const SERVICE_IS_ADDED = "added with service";
 
-export const CreateEnclaveView = ({packageId, enclave, args}) => {
+const PackageCatalogProgress = () => {
+    const location = useLocation()
+    const {state} = location;
+    const enclave = state.enclave;
+    const packageId = state.runArgs.packageId;
+    const args = state.runArgs.args;
+
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
@@ -107,3 +113,5 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
         </div>
     )
 }
+
+export default PackageCatalogProgress;

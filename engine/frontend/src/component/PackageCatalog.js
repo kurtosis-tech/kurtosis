@@ -16,26 +16,6 @@ import { SearchIcon } from '@chakra-ui/icons'
 import PackageCatalogOption from "./PackageCatalogOption";
 import { useNavigate } from "react-router";
 
-const pp = [
-    {
-        name: "github.com/kurtosis-tech/hyperlane",
-        stars: 200,
-        args: {},
-    },
-    {
-        name: "github.com/kurtosis-tech/hyperlane",
-        stars: 2400,
-        args: {},
-    },
-    {
-        name: "github.com/kurtosis-tech/hyperlane",
-        stars: 1100,
-        args: {},
-    },
-]
-
-
-
 const PackageCatalog = ({kurtosisPackages}) => {
     const navigate = useNavigate()
     const [chosenPackage, setChosenPackage] = useState(null)
@@ -50,7 +30,7 @@ const PackageCatalog = ({kurtosisPackages}) => {
 
     const handleConfigureButtonClick = () => {
         const kurtosisPackage = kurtosisPackages[chosenPackage]
-        navigate("/catalog/progress", {state: {kurtosisPackage}})
+        navigate("/catalog/form", {state: {kurtosisPackage}})
     }
 
     return (

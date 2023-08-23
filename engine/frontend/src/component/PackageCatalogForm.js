@@ -12,6 +12,7 @@ import {
 import PackageCatalogOption from "./PackageCatalogOption";
 import { useLocation } from "react-router";
 import {useState} from 'react';
+import { getKurtosisPackages } from '../api/enclave';
 
 
 const renderArgs = (args, handleChange, formData, errorData) => {
@@ -81,7 +82,7 @@ const checkValidIntType = (data) => {
     }
 }
 
-const PackageCatalogForm = () => {
+const PackageCatalogForm = ({handleCreateNewEnclave}) => {
 
     const location = useLocation()
     const {state} = location;
@@ -95,8 +96,6 @@ const PackageCatalogForm = () => {
     kurtosisPackage.args.map((arg, index)=> initialErrorData[index] = false)
     const [errorData, setErrorData] = useState(initialErrorData)
     
-    console.log(errorData)
-
     const handleFormDataChange = (value, index) => {
         const newData = {
             ...formData,
@@ -114,7 +113,6 @@ const PackageCatalogForm = () => {
     }
 
     const handleRunBtn = () => {
-        let errorFound = false;
         let errorsFound = {}
 
         Object.keys(formData).filter(key => {
@@ -134,7 +132,19 @@ const PackageCatalogForm = () => {
         })
 
         if (Object.keys(errorsFound).length === 0) {
-            console.log("success")
+            let args = {}
+            Object.keys(formData).map(key => {
+                const argName = kurtosisPackage.args[key].name
+                const value = formData[key]
+                args[argName] = value
+            })
+            const stringifiedArgs = JSON.stringify(args)
+            const runKurtosisPackageArgs = {
+                packageId: kurtosisPackage.name,
+                args: stringifiedArgs,
+            }
+            handleCreateNewEnclave(runKurtosisPackageArgs)
+
         } else {
            const newErrorData = {
             ...errorData,
