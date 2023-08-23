@@ -48,8 +48,7 @@ const ServiceInfo = () => {
         let stream;
         const ctrl = new AbortController();
         const fetchLogs = async () => {
-            // TODO FIX
-            // stream = await getServiceLogs(ctrl, enclaveName, serviceUuid);
+            stream = await getServiceLogs(ctrl, enclaveName, serviceUuid);
             try {
                 for await (const res of stream) {
                     const log = res["serviceLogsByServiceUuid"][serviceUuid]["line"][0]
