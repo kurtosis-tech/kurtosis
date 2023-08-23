@@ -676,6 +676,19 @@ func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[serv
 		return nil, stacktrace.Propagate(err, "an error occurred while fetching services from the backend")
 	}
 
+	if len(allServices) != len(serviceUuids) {
+		return nil, stacktrace.Propagate(err, "found more services '%v' than registered '%v'", len(allServices), len(serviceUuids))
+	}
+
+	for _, serviceObj := range allServices {
+		identifier := string(serviceObj.GetRegistration().GetName())
+		serviceRegistration, err := network.getServiceRegistrationForIdentifierUnlocked(identifier)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "couldn't find registration for service fetched from backend")
+		}
+		serviceObj.GetRegistration().SetStatus(serviceRegistration.GetStatus())
+	}
+
 	return allServices, nil
 }
 
