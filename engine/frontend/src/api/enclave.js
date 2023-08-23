@@ -38,8 +38,8 @@ export const getEnclavesFromKurtosis = async (token) => {
                 name: enclave.name,
                 // created: enclave.creationTime,
                 status: enclave.apiContainerStatus,
-                host: enclave.apiContainerHostMachineInfo.ipOnHostMachine,
-                port: enclave.apiContainerHostMachineInfo.grpcPortOnHostMachine,
+                host: enclave.apiContainerInfo.bridgeIpAddress,
+                port: enclave.apiContainerInfo.grpcPortInsideEnclave,
             }
         });
     }
@@ -58,8 +58,8 @@ export const createEnclave = async (token) => {
         name: enclave.name,
         created: enclave.creationTime,
         status: enclave.apiContainerStatus,
-        host: enclave.apiContainerHostMachineInfo.ipOnHostMachine,
-        port: enclave.apiContainerHostMachineInfo.grpcPortOnHostMachine,
+        host: enclave.apiContainerInfo.bridgeIpAddress,
+        port: enclave.apiContainerInfo.grpcPortInsideEnclave,
     }
 }
 
