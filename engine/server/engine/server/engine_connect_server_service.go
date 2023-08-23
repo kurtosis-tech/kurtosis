@@ -1,8 +1,8 @@
 package server
 
 import (
+	connect_go "connectrpc.com/connect"
 	"context"
-	connect_go "github.com/bufbuild/connect-go"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -12,7 +12,13 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"io/ioutil"
+	"net/http"
+	"regexp"
+	"strings"
 )
+
+var kurtosisPackageRegex = regexp.MustCompile(`[\w ,]+#type:[\w ]+`)
 
 type EngineConnectServerService struct {
 	// The version tag of the engine server image, so it can report its own version
@@ -225,6 +231,52 @@ func (service *EngineConnectServerService) Close() error {
 		return stacktrace.Propagate(err, "An error occurred closing the enclave manager")
 	}
 	return nil
+}
+
+func (service *EngineConnectServerService) GetPackages(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.PackageCatalogResponse], error) {
+	var args []*kurtosis_engine_rpc_api_bindings.PackageCatalogArg
+
+	packageName := "github.com/Peeeekay/kt-subpackages"
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/Peeeekay/kt-subpackages/contents/main.star", nil)
+	if err != nil {
+		logrus.Infof("%+v", err)
+	}
+
+	req.Header.Set("Accept", "application/vnd.github.v3.raw")
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		logrus.Infof("%+v", err)
+	}
+
+	resBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		logrus.Infof("%+v", err)
+	}
+
+	content := string(resBody)
+	logrus.Infof("CONTENT: %+v", content)
+	matches := kurtosisPackageRegex.FindAllString(content, -1)
+	for _, match := range matches {
+		cleanedMatch := strings.ReplaceAll(match, " ", "")
+		argTuple := strings.Split(cleanedMatch, ",")
+		arg := &kurtosis_engine_rpc_api_bindings.PackageCatalogArg{
+			Name: argTuple[0],
+			Type: strings.Split(argTuple[1], ":")[1],
+		}
+		args = append(args, arg)
+	}
+
+	kurtosisPackage := &kurtosis_engine_rpc_api_bindings.KurtosisPackage{
+		Name: packageName,
+		Args: args,
+	}
+
+	kurtosisPackages := []*kurtosis_engine_rpc_api_bindings.KurtosisPackage{kurtosisPackage}
+
+	response := &kurtosis_engine_rpc_api_bindings.PackageCatalogResponse{
+		Packages: kurtosisPackages,
+	}
+	return connect_go.NewResponse(response), nil
 }
 
 func (service *EngineConnectServerService) reportAnyMissingUuidsAndGetNotFoundUuidsList(

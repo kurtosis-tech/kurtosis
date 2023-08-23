@@ -219,6 +219,28 @@ pub struct LogLineFilter {
     #[prost(string, tag = "2")]
     pub text_pattern: ::prost::alloc::string::String,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PackageCatalogResponse {
+    #[prost(message, repeated, tag = "1")]
+    pub packages: ::prost::alloc::vec::Vec<KurtosisPackage>,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct KurtosisPackage {
+    #[prost(message, repeated, tag = "1")]
+    pub args: ::prost::alloc::vec::Vec<PackageCatalogArg>,
+    #[prost(string, tag = "2")]
+    pub name: ::prost::alloc::string::String,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct PackageCatalogArg {
+    #[prost(string, tag = "1")]
+    pub name: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub r#type: ::prost::alloc::string::String,
+}
 /// ==============================================================================================
 ///                                             Get Enclaves
 /// ==============================================================================================
@@ -630,6 +652,32 @@ pub mod engine_service_client {
                 .insert(GrpcMethod::new("engine_api.EngineService", "GetServiceLogs"));
             self.inner.server_streaming(req, path, codec).await
         }
+        /// Get Package
+        pub async fn get_packages(
+            &mut self,
+            request: impl tonic::IntoRequest<()>,
+        ) -> std::result::Result<
+            tonic::Response<super::PackageCatalogResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/engine_api.EngineService/GetPackages",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(GrpcMethod::new("engine_api.EngineService", "GetPackages"));
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -701,6 +749,14 @@ pub mod engine_service_server {
             request: tonic::Request<super::GetServiceLogsArgs>,
         ) -> std::result::Result<
             tonic::Response<Self::GetServiceLogsStream>,
+            tonic::Status,
+        >;
+        /// Get Package
+        async fn get_packages(
+            &self,
+            request: tonic::Request<()>,
+        ) -> std::result::Result<
+            tonic::Response<super::PackageCatalogResponse>,
             tonic::Status,
         >;
     }
@@ -1137,6 +1193,47 @@ pub mod engine_service_server {
                                 max_encoding_message_size,
                             );
                         let res = grpc.server_streaming(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/engine_api.EngineService/GetPackages" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetPackagesSvc<T: EngineService>(pub Arc<T>);
+                    impl<T: EngineService> tonic::server::UnaryService<()>
+                    for GetPackagesSvc<T> {
+                        type Response = super::PackageCatalogResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(&mut self, request: tonic::Request<()>) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).get_packages(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetPackagesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
                         Ok(res)
                     };
                     Box::pin(fut)

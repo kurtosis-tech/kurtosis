@@ -734,3 +734,85 @@ export declare class LogLineFilter extends Message<LogLineFilter> {
   static equals(a: LogLineFilter | PlainMessage<LogLineFilter> | undefined, b: LogLineFilter | PlainMessage<LogLineFilter> | undefined): boolean;
 }
 
+/**
+ * @generated from message engine_api.PackageCatalogResponse
+ */
+export declare class PackageCatalogResponse extends Message<PackageCatalogResponse> {
+  /**
+   * @generated from field: repeated engine_api.KurtosisPackage packages = 1;
+   */
+  packages: KurtosisPackage[];
+
+  constructor(data?: PartialMessage<PackageCatalogResponse>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "engine_api.PackageCatalogResponse";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PackageCatalogResponse;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PackageCatalogResponse;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PackageCatalogResponse;
+
+  static equals(a: PackageCatalogResponse | PlainMessage<PackageCatalogResponse> | undefined, b: PackageCatalogResponse | PlainMessage<PackageCatalogResponse> | undefined): boolean;
+}
+
+/**
+ * @generated from message engine_api.KurtosisPackage
+ */
+export declare class KurtosisPackage extends Message<KurtosisPackage> {
+  /**
+   * @generated from field: repeated engine_api.PackageCatalogArg args = 1;
+   */
+  args: PackageCatalogArg[];
+
+  /**
+   * @generated from field: string name = 2;
+   */
+  name: string;
+
+  constructor(data?: PartialMessage<KurtosisPackage>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "engine_api.KurtosisPackage";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): KurtosisPackage;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): KurtosisPackage;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): KurtosisPackage;
+
+  static equals(a: KurtosisPackage | PlainMessage<KurtosisPackage> | undefined, b: KurtosisPackage | PlainMessage<KurtosisPackage> | undefined): boolean;
+}
+
+/**
+ * @generated from message engine_api.PackageCatalogArg
+ */
+export declare class PackageCatalogArg extends Message<PackageCatalogArg> {
+  /**
+   * @generated from field: string name = 1;
+   */
+  name: string;
+
+  /**
+   * @generated from field: string type = 2;
+   */
+  type: string;
+
+  constructor(data?: PartialMessage<PackageCatalogArg>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "engine_api.PackageCatalogArg";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): PackageCatalogArg;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): PackageCatalogArg;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): PackageCatalogArg;
+
+  static equals(a: PackageCatalogArg | PlainMessage<PackageCatalogArg> | undefined, b: PackageCatalogArg | PlainMessage<PackageCatalogArg> | undefined): boolean;
+}
+

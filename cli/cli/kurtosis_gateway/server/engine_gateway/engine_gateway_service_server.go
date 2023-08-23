@@ -13,7 +13,9 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	restclient "k8s.io/client-go/rest"
 	"sync"
@@ -176,6 +178,10 @@ func (service *EngineGatewayServiceServer) StopEnclave(ctx context.Context, args
 	}
 
 	return &emptypb.Empty{}, nil
+}
+
+func (service *EngineGatewayServiceServer) GetPackages(context.Context, *emptypb.Empty) (*kurtosis_engine_rpc_api_bindings.PackageCatalogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPackages not implemented")
 }
 
 func (service *EngineGatewayServiceServer) DestroyEnclave(ctx context.Context, args *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {

@@ -4,7 +4,7 @@
 // @ts-nocheck
 
 import { Empty, MethodKind } from "@bufbuild/protobuf";
-import { CleanArgs, CleanResponse, CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetEngineInfoResponse, GetExistingAndHistoricalEnclaveIdentifiersResponse, GetServiceLogsArgs, GetServiceLogsResponse, StopEnclaveArgs } from "./engine_service_pb.js";
+import { CleanArgs, CleanResponse, CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetEngineInfoResponse, GetExistingAndHistoricalEnclaveIdentifiersResponse, GetServiceLogsArgs, GetServiceLogsResponse, PackageCatalogResponse, StopEnclaveArgs } from "./engine_service_pb.js";
 
 /**
  * @generated from service engine_api.EngineService
@@ -102,6 +102,17 @@ export const EngineService = {
       I: GetServiceLogsArgs,
       O: GetServiceLogsResponse,
       kind: MethodKind.ServerStreaming,
+    },
+    /**
+     * Get Package
+     *
+     * @generated from rpc engine_api.EngineService.GetPackages
+     */
+    getPackages: {
+      name: "GetPackages",
+      I: Empty,
+      O: PackageCatalogResponse,
+      kind: MethodKind.Unary,
     },
   }
 };

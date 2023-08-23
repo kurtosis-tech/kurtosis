@@ -28,6 +28,7 @@ const (
 	EngineService_DestroyEnclave_FullMethodName                             = "/engine_api.EngineService/DestroyEnclave"
 	EngineService_Clean_FullMethodName                                      = "/engine_api.EngineService/Clean"
 	EngineService_GetServiceLogs_FullMethodName                             = "/engine_api.EngineService/GetServiceLogs"
+	EngineService_GetPackages_FullMethodName                                = "/engine_api.EngineService/GetPackages"
 )
 
 // EngineServiceClient is the client API for EngineService service.
@@ -55,6 +56,8 @@ type EngineServiceClient interface {
 	Clean(ctx context.Context, in *CleanArgs, opts ...grpc.CallOption) (*CleanResponse, error)
 	// Get service logs
 	GetServiceLogs(ctx context.Context, in *GetServiceLogsArgs, opts ...grpc.CallOption) (EngineService_GetServiceLogsClient, error)
+	// Get Package
+	GetPackages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PackageCatalogResponse, error)
 }
 
 type engineServiceClient struct {
@@ -160,6 +163,15 @@ func (x *engineServiceGetServiceLogsClient) Recv() (*GetServiceLogsResponse, err
 	return m, nil
 }
 
+func (c *engineServiceClient) GetPackages(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PackageCatalogResponse, error) {
+	out := new(PackageCatalogResponse)
+	err := c.cc.Invoke(ctx, EngineService_GetPackages_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // EngineServiceServer is the server API for EngineService service.
 // All implementations should embed UnimplementedEngineServiceServer
 // for forward compatibility
@@ -185,6 +197,8 @@ type EngineServiceServer interface {
 	Clean(context.Context, *CleanArgs) (*CleanResponse, error)
 	// Get service logs
 	GetServiceLogs(*GetServiceLogsArgs, EngineService_GetServiceLogsServer) error
+	// Get Package
+	GetPackages(context.Context, *emptypb.Empty) (*PackageCatalogResponse, error)
 }
 
 // UnimplementedEngineServiceServer should be embedded to have forward compatible implementations.
@@ -214,6 +228,9 @@ func (UnimplementedEngineServiceServer) Clean(context.Context, *CleanArgs) (*Cle
 }
 func (UnimplementedEngineServiceServer) GetServiceLogs(*GetServiceLogsArgs, EngineService_GetServiceLogsServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetServiceLogs not implemented")
+}
+func (UnimplementedEngineServiceServer) GetPackages(context.Context, *emptypb.Empty) (*PackageCatalogResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetPackages not implemented")
 }
 
 // UnsafeEngineServiceServer may be embedded to opt out of forward compatibility for this service.
@@ -374,6 +391,24 @@ func (x *engineServiceGetServiceLogsServer) Send(m *GetServiceLogsResponse) erro
 	return x.ServerStream.SendMsg(m)
 }
 
+func _EngineService_GetPackages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(emptypb.Empty)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EngineServiceServer).GetPackages(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: EngineService_GetPackages_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EngineServiceServer).GetPackages(ctx, req.(*emptypb.Empty))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // EngineService_ServiceDesc is the grpc.ServiceDesc for EngineService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -408,6 +443,10 @@ var EngineService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Clean",
 			Handler:    _EngineService_Clean_Handler,
+		},
+		{
+			MethodName: "GetPackages",
+			Handler:    _EngineService_GetPackages_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

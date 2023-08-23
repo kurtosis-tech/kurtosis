@@ -31,6 +31,17 @@ export const makeRestApiRequest = async ( url, data, config) => {
     return response;
 }
 
+export const getKurtosisPackages = async () => {
+    const respFromGrpc = await makeRestApiRequest(
+        "engine_api.EngineService/GetPackages",
+       {"field":""},
+       {"headers":{'Content-Type': "application/json"}}
+    )
+
+    const {data} = respFromGrpc
+    return data.packages;
+}
+
 export const getEnclavesFromKurtosis = async () => {
     const respFromGrpc = await makeRestApiRequest(
          "engine_api.EngineService/GetEnclaves",
@@ -55,6 +66,8 @@ export const getEnclavesFromKurtosis = async () => {
 
     return []
 }
+
+
 
 export const createEnclave = async () => {
     const data = {

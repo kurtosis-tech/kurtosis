@@ -561,5 +561,66 @@ proto.engine_api.EngineServicePromiseClient.prototype.getServiceLogs =
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.google.protobuf.Empty,
+ *   !proto.engine_api.PackageCatalogResponse>}
+ */
+const methodDescriptor_EngineService_GetPackages = new grpc.web.MethodDescriptor(
+  '/engine_api.EngineService/GetPackages',
+  grpc.web.MethodType.UNARY,
+  google_protobuf_empty_pb.Empty,
+  proto.engine_api.PackageCatalogResponse,
+  /**
+   * @param {!proto.google.protobuf.Empty} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.engine_api.PackageCatalogResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.engine_api.PackageCatalogResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.engine_api.PackageCatalogResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.engine_api.EngineServiceClient.prototype.getPackages =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/engine_api.EngineService/GetPackages',
+      request,
+      metadata || {},
+      methodDescriptor_EngineService_GetPackages,
+      callback);
+};
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.engine_api.PackageCatalogResponse>}
+ *     Promise that resolves to the response
+ */
+proto.engine_api.EngineServicePromiseClient.prototype.getPackages =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/engine_api.EngineService/GetPackages',
+      request,
+      metadata || {},
+      methodDescriptor_EngineService_GetPackages);
+};
+
+
 module.exports = proto.engine_api;
 

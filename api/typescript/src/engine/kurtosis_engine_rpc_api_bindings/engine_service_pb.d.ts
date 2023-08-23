@@ -428,6 +428,72 @@ export namespace LogLineFilter {
   }
 }
 
+export class PackageCatalogResponse extends jspb.Message {
+  getPackagesList(): Array<KurtosisPackage>;
+  setPackagesList(value: Array<KurtosisPackage>): PackageCatalogResponse;
+  clearPackagesList(): PackageCatalogResponse;
+  addPackages(value?: KurtosisPackage, index?: number): KurtosisPackage;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PackageCatalogResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: PackageCatalogResponse): PackageCatalogResponse.AsObject;
+  static serializeBinaryToWriter(message: PackageCatalogResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PackageCatalogResponse;
+  static deserializeBinaryFromReader(message: PackageCatalogResponse, reader: jspb.BinaryReader): PackageCatalogResponse;
+}
+
+export namespace PackageCatalogResponse {
+  export type AsObject = {
+    packagesList: Array<KurtosisPackage.AsObject>,
+  }
+}
+
+export class KurtosisPackage extends jspb.Message {
+  getArgsList(): Array<PackageCatalogArg>;
+  setArgsList(value: Array<PackageCatalogArg>): KurtosisPackage;
+  clearArgsList(): KurtosisPackage;
+  addArgs(value?: PackageCatalogArg, index?: number): PackageCatalogArg;
+
+  getName(): string;
+  setName(value: string): KurtosisPackage;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): KurtosisPackage.AsObject;
+  static toObject(includeInstance: boolean, msg: KurtosisPackage): KurtosisPackage.AsObject;
+  static serializeBinaryToWriter(message: KurtosisPackage, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): KurtosisPackage;
+  static deserializeBinaryFromReader(message: KurtosisPackage, reader: jspb.BinaryReader): KurtosisPackage;
+}
+
+export namespace KurtosisPackage {
+  export type AsObject = {
+    argsList: Array<PackageCatalogArg.AsObject>,
+    name: string,
+  }
+}
+
+export class PackageCatalogArg extends jspb.Message {
+  getName(): string;
+  setName(value: string): PackageCatalogArg;
+
+  getType(): string;
+  setType(value: string): PackageCatalogArg;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): PackageCatalogArg.AsObject;
+  static toObject(includeInstance: boolean, msg: PackageCatalogArg): PackageCatalogArg.AsObject;
+  static serializeBinaryToWriter(message: PackageCatalogArg, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): PackageCatalogArg;
+  static deserializeBinaryFromReader(message: PackageCatalogArg, reader: jspb.BinaryReader): PackageCatalogArg;
+}
+
+export namespace PackageCatalogArg {
+  export type AsObject = {
+    name: string,
+    type: string,
+  }
+}
+
 export enum EnclaveContainersStatus { 
   ENCLAVECONTAINERSSTATUS_EMPTY = 0,
   ENCLAVECONTAINERSSTATUS_RUNNING = 1,

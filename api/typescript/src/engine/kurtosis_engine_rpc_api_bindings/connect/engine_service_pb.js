@@ -286,3 +286,35 @@ export const LogLineFilter = proto3.makeMessageType(
   ],
 );
 
+/**
+ * @generated from message engine_api.PackageCatalogResponse
+ */
+export const PackageCatalogResponse = proto3.makeMessageType(
+  "engine_api.PackageCatalogResponse",
+  () => [
+    { no: 1, name: "packages", kind: "message", T: KurtosisPackage, repeated: true },
+  ],
+);
+
+/**
+ * @generated from message engine_api.KurtosisPackage
+ */
+export const KurtosisPackage = proto3.makeMessageType(
+  "engine_api.KurtosisPackage",
+  () => [
+    { no: 1, name: "args", kind: "message", T: PackageCatalogArg, repeated: true },
+    { no: 2, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ],
+);
+
+/**
+ * @generated from message engine_api.PackageCatalogArg
+ */
+export const PackageCatalogArg = proto3.makeMessageType(
+  "engine_api.PackageCatalogArg",
+  () => [
+    { no: 1, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "type", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+  ],
+);
+

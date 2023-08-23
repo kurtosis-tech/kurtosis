@@ -10,7 +10,8 @@ import { useEffect, useState } from "react";
 import {getEnclavesFromKurtosis} from "../api/enclave";
 
 import { Route, Routes } from 'react-router-dom';
-
+import PackageCatalogRouter from './PackageCatalogRouter';
+ 
 const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [encalveLoading, setEnclaveLoading] = useState(false)
@@ -40,6 +41,7 @@ const Home = () => {
                     <Route path="/enclaves/:name" element={<EnclaveInfo enclaves={enclaves}/>} />
                     <Route path="/enclaves/:name/services/:uuid" element={<ServiceInfo/>} />
                     <Route path="/enclaves/:name/files/:fileArtifactName" element={<FileArtifactInfo enclaves={enclaves}/>} />
+                    <Route path="/catalog/*" element={<PackageCatalogRouter/>} />
                 </Routes>
             </div>
         </div>
