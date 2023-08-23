@@ -284,7 +284,9 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	filterServiceIdentifiers := args.ServiceIdentifiers
 
-	// if there are any filters we fetch those services only
+	// if there are any filters we fetch those services only - this goes one by one
+	// TODO (maybe) - explore perf differences between individual fetches vs filtering on the APIC side
+	// Note as of 2023-08-23 I(gyani) has only seen instances of fetch everything & fetch one, so we don't need to optimize just yet
 	if len(filterServiceIdentifiers) > 0 {
 		for serviceIdentifier := range filterServiceIdentifiers {
 			serviceInfo, err := apicService.getServiceInfoForIdentifier(ctx, serviceIdentifier)
