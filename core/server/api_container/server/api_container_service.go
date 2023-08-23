@@ -299,8 +299,12 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 		return resp, nil
 	}
 
-	// otherwise we fetch everything
-	allServices, err := apicService.serviceNetwork.GetAllServices(ctx)
+	// otherwise we fetch everything - we still get service names or we get services in "registered" or otherwise "unknown" state
+	allServiceNames, err := apicService.serviceNetwork.GetServiceNames()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while fetching services names")
+	}
+	allServices, err := apicService.serviceNetwork.GetServices(ctx, allServiceNames)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "an error occurred while fetching all services from the backend")
 	}

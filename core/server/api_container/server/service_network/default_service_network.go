@@ -659,7 +659,7 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 	return resp, nil
 }
 
-func (network *DefaultServiceNetwork) GetAllServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error) {
+func (network *DefaultServiceNetwork) GetServices(ctx context.Context, serviceNames map[service.ServiceName]bool) (map[service.ServiceUUID]*service.Service, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()
 
