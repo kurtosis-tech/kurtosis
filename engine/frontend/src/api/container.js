@@ -7,18 +7,8 @@ import {
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
-export const runStarlarkPackage = async (host, port, packageId, args, token) => {
-    return runStarlarkPackageFromEnclaveManager(host, port, packageId, args, token)
-
-    // const containerClient = new ApiContainerServicePromiseClient(url);
-    // const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
-    //
-    // runStarlarkPackageArgs.setDryRun(false);
-    // runStarlarkPackageArgs.setRemote(true);
-    // runStarlarkPackageArgs.setPackageId(packageId);
-    // runStarlarkPackageArgs.setSerializedParams(args)
-    // const stream = containerClient.runStarlarkPackage(runStarlarkPackageArgs, null);
-    // return stream;x
+export const runStarlarkPackage = async (host, port, packageId, args, token, apiHost) => {
+    return runStarlarkPackageFromEnclaveManager(host, port, packageId, args, token, apiHost)
 }
 
 const getDataFromApiContainer = async (request, process, token) => {
@@ -26,10 +16,10 @@ const getDataFromApiContainer = async (request, process, token) => {
     return process(data)
 }
 
-export const getFileArtifactInfo = async (host, port, fileArtifactName, token) => {
+export const getFileArtifactInfo = async (host, port, fileArtifactName, token, apiHost) => {
     const makeGetFileArtifactInfo = async () => {
         try {
-            return inspectFilesArtifactContentsFromEnclaveManager(host, port, fileArtifactName, token)
+            return inspectFilesArtifactContentsFromEnclaveManager(host, port, fileArtifactName, token, apiHost)
         } catch (error) {
             return {
                 files: []
@@ -76,7 +66,7 @@ export const getFileArtifactInfo = async (host, port, fileArtifactName, token) =
     return response;
 }
 
-export const getEnclaveInformation = async (host, port, token) => {
+export const getEnclaveInformation = async (host, port, token, apiHost) => {
     if (host === "") {
         return {
             services: [],
@@ -86,14 +76,14 @@ export const getEnclaveInformation = async (host, port, token) => {
 
     const makeGetServiceRequest = async () => {
         try {
-            return await getServicesFromEnclaveManager(host, port, token);
+            return await getServicesFromEnclaveManager(host, port, token, apiHost);
         } catch (error) {
             return {serviceInfo: []}
         }
     }
 
     const makeFileArtifactRequest = async () => {
-        return listFilesArtifactNamesAndUuidsFromEnclaveManager(host, port, token);
+        return listFilesArtifactNamesAndUuidsFromEnclaveManager(host, port, token, apiHost);
     }
 
     const processServiceRequest = (data) => {

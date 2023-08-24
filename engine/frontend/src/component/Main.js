@@ -1,7 +1,6 @@
 import React from 'react';
 import {useNavigate} from 'react-router-dom';
 import NoData from './NoData';
-import {useAppContext} from "../context/AppState";
 
 const Main = ({totalEnclaves}) => {
     const navigate = useNavigate()

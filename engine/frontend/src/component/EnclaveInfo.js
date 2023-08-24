@@ -1,14 +1,13 @@
 import Heading from "./Heading";
-import { useEffect, useState } from "react";
-import {useNavigate, useParams, useLocation} from "react-router-dom";
-import {getEnclaveInformation, getFileArtifactInfo} from "../api/container";
+import {useEffect, useState} from "react";
+import {useNavigate, useParams} from "react-router-dom";
+import {getEnclaveInformation} from "../api/container";
 
 import NoData from "./NoData";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import LoadingOverlay from "./LoadingOverflow";
 import {useAppContext} from "../context/AppState";
-
 
 const renderEnclaves = (enclaves, handleClick) => {
     return enclaves.map(enclave => {
@@ -55,7 +54,7 @@ const renderFileArtifacts = (file_artifacts, handleFileArtifactClick) => {
     return file_artifacts.map((file_artifact)=> {
         return (
             <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]" onClick={() => handleFileArtifactClick(file_artifact.name, file_artifacts)}>
-                <div> {file_artifact.name} </div>
+                <div>{file_artifact.name}</div>
             </div>
         )
     })
@@ -78,7 +77,7 @@ const EncalveInfo = ({enclaves}) => {
         const fetch = async () => {
             const selected = enclaves.filter(enclave => enclave.name === name);
             if (selected.length > 0) {
-                const {services, artifacts} = await getEnclaveInformation(selected[0].host, selected[0].port, appData.jwtToken);
+                const {services, artifacts} = await getEnclaveInformation(selected[0].host, selected[0].port, appData.jwtToken, appData.apiHost);
                 setServices(services)
                 setFileArtifacts(artifacts)
             }

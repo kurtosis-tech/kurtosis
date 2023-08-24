@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect, useState} from 'react';
 import TitleBar from "./TitleBar"
 import Main from "./Main"
 import EnclaveInfo from "./EnclaveInfo";
@@ -6,7 +6,6 @@ import ServiceInfo from "./ServiceInfo";
 import FileArtifactInfo from './FileArtifactInfo';
 import Enclaves from "./Enclaves";
 import CreateEnclave from "./CreateEnclave"
-import {useEffect, useState} from "react";
 import {getEnclavesFromKurtosis} from "../api/enclave";
 
 import {Route, Routes, useSearchParams} from 'react-router-dom';
@@ -32,6 +31,22 @@ const queryParamToBool = (value) => {
     return ((value + '').toLowerCase() === 'true')
 }
 
+const DefaultApiHost = "localhost"
+const DefaultApiPort = 8081
+
+const parseApiHostIntoIp = (apiHost) => {
+    if (apiHost && apiHost !== "") {
+        return apiHost.replaceAll("-", ".");
+    }
+    return undefined;
+}
+
+const createApiUrl = (apiHost, requireHttps) => {
+    const protocol = requireHttps ? "https" : "http"
+    const address = !apiHost ? DefaultApiHost : parseApiHostIntoIp(apiHost);
+    return `${protocol}://${address}:${DefaultApiPort}`;
+}
+
 const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [enclaveLoading, setEnclaveLoading] = useState(false)
@@ -53,23 +68,41 @@ const Home = () => {
         }
     }
     window.addEventListener("message", receiveMessage)
-
     const requireAuth = queryParamToBool(searchParams.get("require_authentication"))
+
+    useEffect(() => {
+        // At this time requireAuth=true means we are running remote which means connection is going through a TLS protected LB
+        const requireHttps = requireAuth;
+        const apiHost = createApiUrl(searchParams.get("api_host"), requireHttps)
+        if (apiHost && apiHost.length > 0) {
+            console.log(`Setting API host = ${apiHost}`)
+            setAppData({
+                ...appData,
+                apiHost: apiHost,
+            })
+        } else {
+            console.error("Could not determine the api host.")
+        }
+    }, [appData.apiHost])
 
     useEffect(() => {
         if (requireAuth && !appData.jwtToken) {
             console.log("Waiting for auth token")
         } else {
-            console.log("Got auth token")
-            setEnclaveLoading(true)
-            const fetch = async () => {
-                const response = await getEnclavesFromKurtosis(appData.jwtToken);
-                setEnclaves(response)
-                setEnclaveLoading(false)
+            if (appData.jwtToken) {
+                console.log("Got auth token")
             }
-            fetch()
+            if (appData.apiHost) {
+                setEnclaveLoading(true)
+                const fetch = async () => {
+                    const response = await getEnclavesFromKurtosis(appData.jwtToken, appData.apiHost);
+                    setEnclaves(response)
+                    setEnclaveLoading(false)
+                }
+                fetch()
+            }
         }
-    }, [appData.jwtToken])
+    }, [appData.jwtToken, appData.apiHost])
 
     const addEnclave = (enclave) => {
         setEnclaves(enclaves => [...enclaves, enclave])

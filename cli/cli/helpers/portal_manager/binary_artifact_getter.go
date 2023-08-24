@@ -66,7 +66,7 @@ func DownloadRequiredKurtosisPortalBinary(ctx context.Context) (bool, error) {
 		return false, defaultToCurrentVersionOrError(currentVersionStrMaybe, err)
 	}
 	if currentVersionMatchesRequired {
-		logrus.Infof("Installed Kurtosis Portal version '%s' is the required one", requiredVersionStr)
+		logrus.Infof("Installed Kurtosis Portal version '%s'", requiredVersionStr)
 		return false, nil
 	}
 

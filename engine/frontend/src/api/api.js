@@ -4,17 +4,15 @@ import {createConnectTransport,} from "@bufbuild/connect-web";
 import {
     GetListFilesArtifactNamesAndUuidsRequest,
     GetServicesRequest,
-    InspectFilesArtifactContentsRequest,
-    RunStarlarkPackageRequest
+    InspectFilesArtifactContentsRequest
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import {CreateEnclaveArgs} from "enclave-manager-sdk/build/engine_service_pb";
 import {RunStarlarkPackageArgs} from "enclave-manager-sdk/build/api_container_service_pb";
 
-const transport = createConnectTransport({
-    baseUrl: "http://localhost:8081"
-})
-
-const enclaveManagerClient = createPromiseClient(KurtosisEnclaveManagerServer, transport);
+export const createClient = (apiHost) => {
+    const transport = createConnectTransport({baseUrl: apiHost})
+    return createPromiseClient(KurtosisEnclaveManagerServer, transport)
+}
 
 const createHeaderOptionsWithToken = (token) => {
     const headers = new Headers();
@@ -24,11 +22,13 @@ const createHeaderOptionsWithToken = (token) => {
     return {headers: headers}
 }
 
-export const getEnclavesFromEnclaveManager = async (token) => {
+export const getEnclavesFromEnclaveManager = async (token, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
     return enclaveManagerClient.getEnclaves({}, createHeaderOptionsWithToken(token));
 }
 
-export const getServicesFromEnclaveManager = async (host, port, token) => {
+export const getServicesFromEnclaveManager = async (host, port, token, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
     const request = new GetServicesRequest(
         {
             "apicIpAddress": host,
@@ -38,7 +38,8 @@ export const getServicesFromEnclaveManager = async (host, port, token) => {
     return enclaveManagerClient.getServices(request, createHeaderOptionsWithToken(token));
 }
 
-export const listFilesArtifactNamesAndUuidsFromEnclaveManager = async (host, port, token) => {
+export const listFilesArtifactNamesAndUuidsFromEnclaveManager = async (host, port, token, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
     const request = new GetListFilesArtifactNamesAndUuidsRequest(
         {
             "apicIpAddress": host,
@@ -48,7 +49,8 @@ export const listFilesArtifactNamesAndUuidsFromEnclaveManager = async (host, por
     return enclaveManagerClient.listFilesArtifactNamesAndUuids(request, createHeaderOptionsWithToken(token));
 }
 
-export const inspectFilesArtifactContentsFromEnclaveManager = async (host, port, fileName, token) => {
+export const inspectFilesArtifactContentsFromEnclaveManager = async (host, port, fileName, token, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
     const request = new InspectFilesArtifactContentsRequest(
         {
             "apicIpAddress": host,
@@ -62,7 +64,8 @@ export const inspectFilesArtifactContentsFromEnclaveManager = async (host, port,
 }
 
 
-export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, versionTag, token) => {
+export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, versionTag, token, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
     const request = new CreateEnclaveArgs(
         {
             "enclaveName": enclaveName,
@@ -73,8 +76,8 @@ export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, ver
     return enclaveManagerClient.createEnclave(request, createHeaderOptionsWithToken(token));
 }
 
-export const runStarlarkPackageFromEnclaveManager = async (host, port,  packageId, args, token) => {
-
+export const runStarlarkPackageFromEnclaveManager = async (host, port, packageId, args, token, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
     const request = new RunStarlarkPackageArgs(
         {
             "dryRun": false,
@@ -83,7 +86,5 @@ export const runStarlarkPackageFromEnclaveManager = async (host, port,  packageI
             "serializedParams": args,
         }
     )
-
-
     return enclaveManagerClient.runStarlarkPackage(request, createHeaderOptionsWithToken(token));
 }
