@@ -35,7 +35,7 @@ const DefaultApiHost = "localhost"
 const DefaultApiPort = 8081
 
 const createApiUrl = (apiHost, requireHttps) => {
-    if(requireHttps){
+    if (requireHttps) {
         return `https://cloud.kurtosis.com/gateway/ips/${apiHost}/ports/${DefaultApiPort}`;
     }
     return `http://${DefaultApiHost}:${DefaultApiPort}`;
