@@ -15,12 +15,7 @@ type RuntimeValueStore struct {
 	serviceAssociatedValuesRepository *serviceAssociatedValuesRepository
 }
 
-func CreateRuntimeValueStore() (*RuntimeValueStore, error) {
-	enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting the enclave db")
-	}
-
+func CreateRuntimeValueStore(enclaveDb *enclave_db.EnclaveDB) (*RuntimeValueStore, error) {
 	associatedValuesRepository, err := getOrCreateNewServiceAssociatedValuesRepository(enclaveDb)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting or creating the new service associated values repository")
@@ -50,12 +45,14 @@ func (re *RuntimeValueStore) GetOrCreateValueAssociatedWithService(serviceName s
 		return "", stacktrace.Propagate(err, "An error occurred checking if there are associated values for service '%s' in the service associated values repository", serviceName)
 	}
 	if exist {
-		uuid, err := re.serviceAssociatedValuesRepository.Get(serviceName)
-		if err != nil {
+		uuid, getErr := re.serviceAssociatedValuesRepository.Get(serviceName)
+		if getErr != nil {
 			return "", stacktrace.Propagate(err, "An error occurred getting associated values for service '%s'", serviceName)
 		}
-		delete(re.recipeResultMap, uuid) // deleting old values so that they do not interfere until that are set again
-		return uuid, nil
+		if uuid != "" {
+			delete(re.recipeResultMap, uuid) // deleting old values so that they do not interfere until that are set again
+			return uuid, nil
+		}
 	}
 	uuid, err := re.CreateValue()
 	if err != nil {

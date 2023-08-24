@@ -43,7 +43,8 @@ func (t *requestTestCase1) GetId() string {
 
 func (t *requestTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	enclaveDb := getEnclaveDBForTest(t.T)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
 	require.NoError(t, err)
 
 	serviceNetwork.EXPECT().HttpRequestService(

@@ -16,8 +16,6 @@ const (
 
 	firstServiceAssociatedValueUuid  = "cddc2ea3948149d9afa2ef93abb4ec52"
 	secondServiceAssociatedValueUuid = "ae5c8bf2fbeb4de68f647280b1c79cbb"
-
-	notFoundAssociatedValuesErrMsg = "Not associated values found for service"
 )
 
 func TestSaveAndGet_Success(t *testing.T) {
@@ -42,9 +40,7 @@ func TestGet_NotAssociateValues(t *testing.T) {
 	repository := GetRepositoryForTest(t)
 
 	serviceAssociatedValues, err := repository.Get(serviceWithoutAssociatedValues)
-	require.Error(t, err)
-	require.ErrorContains(t, err, notFoundAssociatedValuesErrMsg)
-	require.ErrorContains(t, err, string(serviceWithoutAssociatedValues))
+	require.NoError(t, err)
 	require.Empty(t, serviceAssociatedValues)
 }
 

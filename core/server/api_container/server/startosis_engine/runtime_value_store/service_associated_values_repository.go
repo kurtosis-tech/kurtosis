@@ -70,10 +70,6 @@ func (repository *serviceAssociatedValuesRepository) Get(
 		// first get the bytes
 		uuidBytes := bucket.Get(serviceNameKey)
 
-		if uuidBytes == nil {
-			return stacktrace.NewError("Not associated values found for service '%s' exist on the service associated values repository", serviceName)
-		}
-
 		uuid = string(uuidBytes)
 
 		return nil

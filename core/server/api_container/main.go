@@ -161,7 +161,7 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
 	}

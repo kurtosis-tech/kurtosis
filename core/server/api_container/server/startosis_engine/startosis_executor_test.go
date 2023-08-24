@@ -5,13 +5,16 @@ import (
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
+	"os"
 	"strings"
 	"testing"
 )
@@ -34,7 +37,8 @@ var (
 )
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
-	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore()
+	enclaveDb := getEnclaveDBForTest(t)
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
 	executor := NewStartosisExecutor(runtimeValueStore)
@@ -80,7 +84,8 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 }
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore()
+	enclaveDb := getEnclaveDBForTest(t)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
 	require.NoError(t, err)
 
 	executor := NewStartosisExecutor(runtimeValueStore)
@@ -121,7 +126,8 @@ instruction2()
 }
 
 func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
-	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore()
+	enclaveDb := getEnclaveDBForTest(t)
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
 	executor := NewStartosisExecutor(runtimeValueStore)
@@ -192,4 +198,21 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 		}
 	}
 	return scriptOutput.String(), serializedInstructions, nil
+}
+
+func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer func() {
+		err = os.Remove(file.Name())
+		require.NoError(t, err)
+	}()
+
+	require.NoError(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.NoError(t, err)
+	enclaveDb := &enclave_db.EnclaveDB{
+		DB: db,
+	}
+
+	return enclaveDb
 }
