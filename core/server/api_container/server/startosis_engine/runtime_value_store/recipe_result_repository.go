@@ -6,9 +6,9 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
+	"go.starlark.net/starlark"
+	"strconv"
 )
-
-type stringifiedRecipeResultValue string
 
 var (
 	recipeResultBucketName = []byte("recipe-result-repository")
@@ -38,9 +38,11 @@ func getOrCreateNewRecipeResultRepository(enclaveDb *enclave_db.EnclaveDB) (*rec
 	return repository, nil
 }
 
+// Save store recipe result values into the repository, and it only accepts comparables of
+// starlark.String and starlark.Int so far
 func (repository *recipeResultRepository) Save(
 	uuid string,
-	value map[string]stringifiedRecipeResultValue,
+	value map[string]starlark.Comparable,
 ) error {
 
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
@@ -48,7 +50,26 @@ func (repository *recipeResultRepository) Save(
 
 		uuidKey := getUuidKey(uuid)
 
-		jsonBytes, err := json.Marshal(value)
+		stringifiedValue := map[string]string{}
+
+		for key, comparableValue := range value {
+			//TODO add more kind of comparable types if we want to extend the support
+			//TODO now starlark.Int and starlark.String are enough so far
+			switch comparableValue.(type) {
+			case starlark.Int:
+				stringifiedValue[key] = comparableValue.String()
+			case starlark.String:
+				comparableStr, ok := comparableValue.(starlark.String)
+				if !ok {
+					return stacktrace.NewError("An error occurred casting comparable type '%v' to Starlark string", comparableValue)
+				}
+				stringifiedValue[key] = comparableStr.GoString()
+			default:
+				return stacktrace.NewError("Unexpected comparable type on recipe result repository") //TODO improve error message by adding info expected types and received types
+			}
+		}
+
+		jsonBytes, err := json.Marshal(stringifiedValue)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred marshalling value '%+v' in the recipe result repository", value)
 		}
@@ -66,9 +87,9 @@ func (repository *recipeResultRepository) Save(
 
 func (repository *recipeResultRepository) Get(
 	uuid string,
-) (map[string]stringifiedRecipeResultValue, error) {
+) (map[string]starlark.Comparable, error) {
 
-	value := map[string]stringifiedRecipeResultValue{}
+	value := map[string]starlark.Comparable{}
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(recipeResultBucketName)
@@ -78,8 +99,21 @@ func (repository *recipeResultRepository) Get(
 		// first get the bytes
 		jsonBytes := bucket.Get(uuidKey)
 
-		if err := json.Unmarshal(jsonBytes, &value); err != nil {
+		stringifiedValue := map[string]string{}
+
+		if err := json.Unmarshal(jsonBytes, &stringifiedValue); err != nil {
 			return stacktrace.Propagate(err, "An error occurred unmarshalling the recipe result value with UUID '%s' from the repository", uuid)
+		}
+
+		for key, stringifiedComparable := range stringifiedValue {
+			var comparableValue starlark.Comparable
+			comparableInt, err := strconv.Atoi(stringifiedComparable)
+			if err != nil {
+				comparableValue = starlark.String(stringifiedComparable)
+			} else {
+				comparableValue = starlark.MakeInt(comparableInt)
+			}
+			value[key] = comparableValue
 		}
 
 		return nil

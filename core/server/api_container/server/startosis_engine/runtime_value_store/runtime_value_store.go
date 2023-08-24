@@ -64,6 +64,9 @@ func (re *RuntimeValueStore) GetOrCreateValueAssociatedWithService(serviceName s
 	return uuid, nil
 }
 
+// SetValue store recipe result values into the runtime value store, and it only accepts comparables of
+// starlark.String and starlark.Int so far, make sure to upgrade the recipe result repository if you
+// want to extend this capability supporting more comparable types
 func (re *RuntimeValueStore) SetValue(uuid string, value map[string]starlark.Comparable) {
 	re.recipeResultMap[uuid] = value
 }
