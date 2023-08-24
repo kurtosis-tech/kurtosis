@@ -172,7 +172,12 @@ func runMain() error {
 	}()
 
 	go func() {
-		em_api.RunEnclaveManagerApiServer()
+		err = em_api.RunEnclaveManagerApiServer()
+		if err != nil {
+			logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			os.Exit(failureExitCode)
+		}
 	}()
 
 	engineConnectServer := server.NewEngineConnectServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)

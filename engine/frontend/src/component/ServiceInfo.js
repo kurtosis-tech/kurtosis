@@ -5,6 +5,7 @@ import { LogView } from "./LogView";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import {getServiceLogs} from "../api/enclave";
+import {useAppContext} from "../context/AppState";
 
 
 const renderServices = (services, handleClick) => {
@@ -40,6 +41,7 @@ const ServiceInfo = () => {
     const [logs, setLogs] = useState([])
     const {state} = useLocation();
     const {services, selected} =  state;
+    const {appData} = useAppContext()
 
     const params = useParams()
     const {name: enclaveName, uuid:serviceUuid} = params;
@@ -48,7 +50,7 @@ const ServiceInfo = () => {
         let stream;
         const ctrl = new AbortController();
         const fetchLogs = async () => {
-            stream = await getServiceLogs(ctrl, enclaveName, serviceUuid);
+            stream = await getServiceLogs(ctrl, enclaveName, serviceUuid, appData.apiHost);
             try {
                 for await (const res of stream) {
                     const log = res["serviceLogsByServiceUuid"][serviceUuid]["line"][0]
