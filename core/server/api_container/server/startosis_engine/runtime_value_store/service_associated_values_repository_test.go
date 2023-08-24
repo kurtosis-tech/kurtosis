@@ -19,7 +19,7 @@ const (
 )
 
 func TestSaveAndGet_Success(t *testing.T) {
-	repository := GetRepositoryForTest(t)
+	repository := getRepositoryForTest(t)
 
 	err := repository.Save(firstServiceName, firstServiceAssociatedValueUuid)
 	require.NoError(t, err)
@@ -37,7 +37,7 @@ func TestSaveAndGet_Success(t *testing.T) {
 }
 
 func TestGet_NotAssociateValues(t *testing.T) {
-	repository := GetRepositoryForTest(t)
+	repository := getRepositoryForTest(t)
 
 	serviceAssociatedValues, err := repository.Get(serviceWithoutAssociatedValues)
 	require.NoError(t, err)
@@ -45,7 +45,7 @@ func TestGet_NotAssociateValues(t *testing.T) {
 }
 
 func TestExist_Success(t *testing.T) {
-	repository := GetRepositoryForTest(t)
+	repository := getRepositoryForTest(t)
 
 	err := repository.Save(firstServiceName, firstServiceAssociatedValueUuid)
 	require.NoError(t, err)
@@ -56,14 +56,14 @@ func TestExist_Success(t *testing.T) {
 }
 
 func TestNotExist_Success(t *testing.T) {
-	repository := GetRepositoryForTest(t)
+	repository := getRepositoryForTest(t)
 
 	exist, err := repository.Exist(serviceWithoutAssociatedValues)
 	require.NoError(t, err)
 	require.False(t, exist)
 }
 
-func GetRepositoryForTest(t *testing.T) *serviceAssociatedValuesRepository {
+func getRepositoryForTest(t *testing.T) *serviceAssociatedValuesRepository {
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer func() {
 		err = os.Remove(file.Name())
