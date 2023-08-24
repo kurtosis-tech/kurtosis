@@ -54,7 +54,7 @@ const renderFileArtifacts = (file_artifacts, handleFileArtifactClick) => {
     return file_artifacts.map((file_artifact)=> {
         return (
             <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]" onClick={() => handleFileArtifactClick(file_artifact.name, file_artifacts)}>
-                <div> {file_artifact.name} </div>
+                <div>{file_artifact.name}</div>
             </div>
         )
     })
