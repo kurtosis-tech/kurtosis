@@ -73,7 +73,7 @@ const Home = () => {
     useEffect(() => {
         // At this time requireAuth=true means we are running remote which means connection is going through a TLS protected LB
         const requireHttps = requireAuth;
-        const apiHost = createApiUrl(searchParams.get("apiHost"), requireHttps)
+        const apiHost = createApiUrl(searchParams.get("api_host"), requireHttps)
         if (apiHost && apiHost.length > 0) {
             console.log(`Setting API host=${apiHost}`)
             setAppData({
