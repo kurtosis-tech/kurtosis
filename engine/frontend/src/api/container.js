@@ -1,39 +1,38 @@
-import google_protobuf_empty_pb from 'google-protobuf/google/protobuf/empty_pb.js'
-import {GetServicesArgs, RunStarlarkPackageArgs, FilesArtifactNameAndUuid, InspectFilesArtifactContentsRequest} from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
-import {ApiContainerServicePromiseClient} from 'kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_grpc_web_pb'
+import {
+    getServicesFromEnclaveManager,
+    inspectFilesArtifactContentsFromEnclaveManager,
+    listFilesArtifactNamesAndUuidsFromEnclaveManager,
+    runStarlarkPackageFromEnclaveManager
+} from "./api";
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
 
-export const runStarlarkPackage = async (url, packageId, args) => {
-    const containerClient = new ApiContainerServicePromiseClient(url);
-    const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
+export const runStarlarkPackage = async (host, port, packageId, args, token) => {
+    return runStarlarkPackageFromEnclaveManager(host, port, packageId, args, token)
 
-    runStarlarkPackageArgs.setDryRun(false);
-    runStarlarkPackageArgs.setRemote(true);
-    runStarlarkPackageArgs.setPackageId(packageId);
-    runStarlarkPackageArgs.setSerializedParams(args)
-    const stream = containerClient.runStarlarkPackage(runStarlarkPackageArgs, null);
-    return stream;
+    // const containerClient = new ApiContainerServicePromiseClient(url);
+    // const runStarlarkPackageArgs = new RunStarlarkPackageArgs();
+    //
+    // runStarlarkPackageArgs.setDryRun(false);
+    // runStarlarkPackageArgs.setRemote(true);
+    // runStarlarkPackageArgs.setPackageId(packageId);
+    // runStarlarkPackageArgs.setSerializedParams(args)
+    // const stream = containerClient.runStarlarkPackage(runStarlarkPackageArgs, null);
+    // return stream;x
 }
 
-const getDataFromApiContainer = async (request, process) => {
-    const data = await request()
+const getDataFromApiContainer = async (request, process, token) => {
+    const data = await request(token)
     return process(data)
 }
 
-export const getFileArtifactInfo = async(url, fileArtifactName) => {
-    const containerClient = new ApiContainerServicePromiseClient(url);
+export const getFileArtifactInfo = async (host, port, fileArtifactName, token) => {
     const makeGetFileArtifactInfo = async () => {
         try {
-            const fileArtifactArgs = new FilesArtifactNameAndUuid()
-            fileArtifactArgs.setFilename(fileArtifactName)
-            const inspectFileArtifactReq = new InspectFilesArtifactContentsRequest()
-            inspectFileArtifactReq.setFileNamesAndUuid(fileArtifactArgs)
-            const responseFromGrpc = await containerClient.inspectFilesArtifactContents(inspectFileArtifactReq, {})
-            return responseFromGrpc.toObject()
+            return inspectFilesArtifactContentsFromEnclaveManager(host, port, fileArtifactName, token)
         } catch (error) {
             return {
-                files:[]
+                files: []
             }
         }
     }
@@ -55,11 +54,11 @@ export const getFileArtifactInfo = async(url, fileArtifactName) => {
             if (index === sub_dirs.length - 1) {
                 processed[subDir] = {...processed[subDir], ...file}
             } else {
-                add_file_recursive(sub_dirs, index + 1, processed[subDir], file)            
+                add_file_recursive(sub_dirs, index + 1, processed[subDir], file)
             }
         }
 
-        data.fileDescriptionsList.map(file => {
+        data.fileDescriptions.map(file => {
             const splitted_path = file.path.split("/")
             if (splitted_path[splitted_path.length - 1] === "") {
                 recursive(splitted_path, 0, processed)
@@ -73,61 +72,59 @@ export const getFileArtifactInfo = async(url, fileArtifactName) => {
         }
     }
 
-    const response = await getDataFromApiContainer(makeGetFileArtifactInfo, processFileArtifact)
+    const response = await getDataFromApiContainer(makeGetFileArtifactInfo, processFileArtifact, token)
     return response;
 }
 
-export const getEnclaveInformation = async (url) => {
-    if (url === "") {
+export const getEnclaveInformation = async (host, port, token) => {
+    if (host === "") {
         return {
             services: [],
             artifacts: []
         }
     }
 
-    const containerClient = new ApiContainerServicePromiseClient(url);
     const makeGetServiceRequest = async () => {
         try {
-            const serviceArgs = new GetServicesArgs();
-            const responseFromGrpc = await containerClient.getServices(serviceArgs, null)
-            return responseFromGrpc.toObject()
+            return await getServicesFromEnclaveManager(host, port, token);
         } catch (error) {
-            return {serviceInfoMap:[]}
+            return {serviceInfo: []}
         }
     }
 
     const makeFileArtifactRequest = async () => {
-        const fileArtifactResponse = await containerClient.listFilesArtifactNamesAndUuids(new google_protobuf_empty_pb.Empty, null)
-        return fileArtifactResponse.toObject();      
+        return listFilesArtifactNamesAndUuidsFromEnclaveManager(host, port, token);
     }
-    
+
     const processServiceRequest = (data) => {
-        return data.serviceInfoMap.map(service => {
-            const ports = service[1].maybePublicPortsMap.map((publicPort, index) => {
-                const privatePort = service[1].privatePortsMap[index]; 
+        return Object.keys(data.serviceInfo)
+            .map(serviceName => {
+                const ports = Object.keys(data.serviceInfo[serviceName].maybePublicPorts)
+                    .map(portName => {
+                            return {
+                                publicPortNumber: data.serviceInfo[serviceName].maybePublicPorts[portName].number,
+                                privatePortNumber: data.serviceInfo[serviceName].privatePorts[portName].number,
+                                applicationProtocol: data.serviceInfo[serviceName].privatePorts[portName].maybeApplicationProtocol,
+                                portName: portName,
+                                transportProtocol: TransportProtocolEnum[data.serviceInfo[serviceName].privatePorts[portName].transportProtocol],
+                            }
+                        }
+                    )
+
                 return {
-                    publicPortNumber:publicPort[1].number,
-                    privatePortNumber: privatePort[1].number,
-                    applicationProtocol: privatePort[1].maybeApplicationProtocol,
-                    portName: privatePort[0],
-                    transportProtocol: TransportProtocolEnum[privatePort[1].transportProtocol]
+                    name: data.serviceInfo[serviceName].name,
+                    uuid: data.serviceInfo[serviceName].serviceUuid,
+                    privateIpAddr: data.serviceInfo[serviceName].privateIpAddr,
+                    ports: ports,
                 }
             })
-    
-            return {
-                name: service[0],
-                uuid: service[1].serviceUuid,
-                privateIpAddr: service[1].privateIpAddr,
-                ports: ports,
-            }
-        }) 
     }
-    
+
     const processFileArtifactRequest = (data) => {
-        return data.fileNamesAndUuidsList.map(artifact => {
+        return data.fileNamesAndUuids.map(artifact => {
             return {
-                name: artifact.filename,
-                uuid: artifact.fileuuid,
+                name: artifact.fileName,
+                uuid: artifact.fileUuid,
             }
         })
     }
@@ -136,6 +133,6 @@ export const getEnclaveInformation = async (url) => {
     const fileArtifactsPromise = getDataFromApiContainer(makeFileArtifactRequest, processFileArtifactRequest)
 
     const [services, artifacts] = await Promise.all([servicesPromise, fileArtifactsPromise])
-    console.log("sa", services, artifacts)
-    return { services, artifacts}
+    // console.log("sa", services, artifacts)
+    return {services, artifacts}
 }

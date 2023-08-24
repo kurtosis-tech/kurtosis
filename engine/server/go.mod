@@ -8,6 +8,7 @@ replace (
 	github.com/kurtosis-tech/kurtosis/container-engine-lib => ../../container-engine-lib
 	github.com/kurtosis-tech/kurtosis/contexts-config-store => ../../contexts-config-store
 	github.com/kurtosis-tech/kurtosis/core/launcher => ../../core/launcher
+	github.com/kurtosis-tech/kurtosis/enclave-manager/server => ../../enclave-manager/server
 	github.com/kurtosis-tech/kurtosis/engine/launcher => ../launcher
 	github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 	github.com/kurtosis-tech/kurtosis/kurtosis_version => ../../kurtosis_version
@@ -51,10 +52,14 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-require github.com/bufbuild/connect-go v1.10.0
+require (
+	connectrpc.com/connect v1.11.0
+	github.com/bufbuild/connect-go v1.10.0 // indirect
+	github.com/kurtosis-tech/kurtosis/enclave-manager/server v0.0.0-00010101000000-000000000000
+	github.com/rs/cors v1.9.0
+)
 
 require (
-	connectrpc.com/connect v1.11.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20230124172434-306776ec8161 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -67,7 +72,9 @@ require (
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230823152418-dbff17164c4f // indirect
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // indirect
+	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0-20230816233608-4b981e813a4e // indirect
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
@@ -76,7 +83,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/rs/cors v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect

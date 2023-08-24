@@ -22,7 +22,8 @@ import (
 
 const (
 	//TODO: pass this parameter
-	frontendPortSpec                            = 9711
+	enclaveManagerUIPort                        = 9711
+	enclaveManagerAPIPort                       = 8081
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 	logsStorageDirpath                          = "/var/log/kurtosis/"
@@ -107,12 +108,27 @@ func CreateEngine(
 	}()
 	logrus.Infof("Centralized logs components started.")
 
-	httpPortSpec, err := port_spec.NewPortSpec(uint16(frontendPortSpec), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
+	enclaveManagerUIPortSpec, err := port_spec.NewPortSpec(uint16(enclaveManagerUIPort), consts.EngineTransportProtocol, consts.HttpApplicationProtocol, defaultWait)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
-			"An error occurred creating the engine's http port spec object using number '%v' and protocol '%v'",
-			frontendPortSpec,
+			"An error occurred creating the Enclave Manager UI's http port spec object using number '%v' and protocol '%v'",
+			enclaveManagerUIPort,
+			consts.EngineTransportProtocol.String(),
+		)
+	}
+
+	enclaveManagerApiPortSpec, err := port_spec.NewPortSpec(
+		uint16(enclaveManagerAPIPort),
+		consts.EngineTransportProtocol,
+		consts.HttpApplicationProtocol,
+		defaultWait,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(
+			err,
+			"An error occurred creating the Enclave Manager API's http port spec object using number '%v' and protocol '%v'",
+			enclaveManagerAPIPort,
 			consts.EngineTransportProtocol.String(),
 		)
 	}
@@ -136,14 +152,20 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred transforming the private grpc port spec to a Docker port")
 	}
 
-	httpDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(httpPortSpec)
+	enclaveManagerUIDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(enclaveManagerUIPortSpec)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the private http port spec to a Docker port")
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the Enclave Manager UI port spec to a Docker port")
+	}
+
+	enclaveManagerAPIDockerPort, err := shared_helpers.TransformPortSpecToDockerPort(enclaveManagerApiPortSpec)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the Enclave Manager API port spec to a Docker port")
 	}
 
 	usedPorts := map[nat.Port]docker_manager.PortPublishSpec{
-		privateGrpcDockerPort: docker_manager.NewManualPublishingSpec(grpcPortNum),
-		httpDockerPort:        docker_manager.NewManualPublishingSpec(uint16(frontendPortSpec)),
+		privateGrpcDockerPort:       docker_manager.NewManualPublishingSpec(grpcPortNum),
+		enclaveManagerUIDockerPort:  docker_manager.NewManualPublishingSpec(uint16(enclaveManagerUIPort)),
+		enclaveManagerAPIDockerPort: docker_manager.NewManualPublishingSpec(uint16(enclaveManagerAPIPort)),
 	}
 
 	bindMounts := map[string]string{

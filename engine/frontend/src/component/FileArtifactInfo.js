@@ -8,6 +8,7 @@ import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import LoadingOverlay from "./LoadingOverflow";
 import e from "cors";
+import {useAppContext} from "../context/AppState";
 
 const BreadCumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
     const total = currentPath.length;
@@ -41,7 +42,7 @@ const BreadCumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
 const renderFileArtfiacts = (fileArtifacts, handleClick) => {
     return fileArtifacts.map(fileArtifact => {
         return (
-            <div className={`flex items-center justify-center h-14 text-base bg-green-700`} key={fileArtifact.name} onClick={()=>handleClick(fileArtifact.name)}>
+            <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={fileArtifact.name} onClick={()=>handleClick(fileArtifact.name)}>
                 <div className='cursor-default text-lg text-white'> {fileArtifact.name} </div>
             </div>
         )
@@ -61,7 +62,7 @@ const renderFiles = (files, handleFileClick) => {
 
     return Object.keys(files).map((key)=> {
         return (
-            <div className="border-4 bg-slate-800 text-lg align-middle text-center h-16 p-3 text-green-600" onClick={()=> handleFileClick(key, files[key])}> 
+            <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]" onClick={()=> handleFileClick(key, files[key])}>
                 <div> {key} </div>
             </div>
         )
@@ -80,7 +81,8 @@ const FileArtifactInfo = ({enclaves}) => {
     const [detailInfo, setDetailInfo] = useState({})
     const {state} = useLocation();
     const {fileArtifacts} = state;
-    
+    const {appData} = useAppContext()
+
     useEffect(() => {
         if (enclaves.length === 0) {
             navigate(`/enclaves/${enclaveName}`)
@@ -89,7 +91,7 @@ const FileArtifactInfo = ({enclaves}) => {
             const fetch = async () => {
                 const selected = enclaves.filter(enclave => enclave.name === enclaveName);
                 if (selected.length > 0) {
-                    const {files} = await getFileArtifactInfo(selected[0].apiClient, fileArtifactName);
+                    const {files} = await getFileArtifactInfo(selected[0].host, selected[0].port, fileArtifactName, appData.jwtToken);
                     setFiles(files)
                     setCurrentFiles(files)
                     setCurrentPath([])
@@ -99,7 +101,7 @@ const FileArtifactInfo = ({enclaves}) => {
             } 
             fetch()
         }
-    }, [fileArtifactName])
+    }, [fileArtifactName, appData.jwtToken])
 
     const handleCleanButton = () => {
         setCurrentPath([])
