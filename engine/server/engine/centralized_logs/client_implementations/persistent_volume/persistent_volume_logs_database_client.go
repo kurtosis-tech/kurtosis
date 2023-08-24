@@ -165,8 +165,12 @@ func streamServiceLogLines(
 			jsonLogStr, err := logsReader.ReadString(newlineRune)
 			if err != nil && errors.Is(err, io.EOF) {
 				// exiting stream
-				logrus.Debugf("EOF error returned when reading logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
-				return
+				if shouldFollowLogs {
+					continue
+				} else {
+					logrus.Debugf("EOF error returned when reading logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
+					return
+				}
 			}
 			if err != nil {
 				streamErrChan <- stacktrace.Propagate(err, "An error occurred reading the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
