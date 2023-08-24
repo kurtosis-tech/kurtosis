@@ -75,7 +75,7 @@ const Home = () => {
         const requireHttps = requireAuth;
         const apiHost = createApiUrl(searchParams.get("api_host"), requireHttps)
         if (apiHost && apiHost.length > 0) {
-            console.log(`Setting API host=${apiHost}`)
+            console.log(`Setting API host = ${apiHost}`)
             setAppData({
                 ...appData,
                 apiHost: apiHost,
