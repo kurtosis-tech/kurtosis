@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.3](https://github.com/kurtosis-tech/kurtosis/compare/0.82.2...0.82.3) (2023-08-24)
+
+
+### Features
+
+* enable dynamic api host for Enclave Manager and auth enforcement ([#1153](https://github.com/kurtosis-tech/kurtosis/issues/1153)) ([a39706e](https://github.com/kurtosis-tech/kurtosis/commit/a39706e7ab2a7af46afd590b0c9fccf6cd65f4c4))
+
 ## [0.82.2](https://github.com/kurtosis-tech/kurtosis/compare/0.82.1...0.82.2) (2023-08-24)
 
 
