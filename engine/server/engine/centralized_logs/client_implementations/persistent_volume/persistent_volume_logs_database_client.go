@@ -22,7 +22,7 @@ const (
 	// Location of logs on the filesystem of the engine
 	logsStorageDirpath = "/var/log/kurtosis/"
 	filetype           = ".json"
-	
+
 	logLabel = "log"
 
 	maxNumLogsToReturn = 200
