@@ -1,12 +1,10 @@
 package runtime_value_store
 
 import (
-	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 )
 
@@ -67,19 +65,6 @@ func (re *RuntimeValueStore) GetOrCreateValueAssociatedWithService(serviceName s
 }
 
 func (re *RuntimeValueStore) SetValue(uuid string, value map[string]starlark.Comparable) {
-	newValue, err := json.Marshal(value)
-	if err != nil {
-		logrus.Errorf("An error occurred for value: %+v", value)
-	}
-	logrus.Infof("Marshalled value: %s", newValue)
-
-	newMap := &map[string]starlark.String{}
-
-	err = json.Unmarshal(newValue, newMap)
-	if err != nil {
-		logrus.Errorf("An error occurred for newMap: %+v", newMap)
-	}
-	logrus.Infof("New map: %+v", newMap)
 	re.recipeResultMap[uuid] = value
 }
 
