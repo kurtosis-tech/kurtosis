@@ -7,6 +7,9 @@ const defaultState = {
     instanceId: undefined,
     instanceStatus: undefined,
     jwtToken: undefined,
+    apiProtocol: undefined,
+    apiHost: undefined,
+    apiPort: undefined,
 }
 
 export const AppContext = createContext({

@@ -10,6 +10,7 @@ import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
 import LoadingOverlay from "./LoadingOverflow";
 import {useAppContext} from "../context/AppState";
+import app from "../App";
 
 const SERVICE_IS_ADDED = "added with service";
 
@@ -20,19 +21,20 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
     const [services, setServices] = useState([])
     const {appData} = useAppContext()
 
-    const getServices = async (apiClient) => {
-        const {services: newServices} = await getEnclaveInformation(apiClient, appData.jwtToken);
-        if (newServices.length > services.length) {
-            setServices(newServices) 
-        }
-    }
+    // Not in use anymore?:
+    // const getServices = async (apiClient) => {
+    //     const {services: newServices} = await getEnclaveInformation(apiClient, appData.jwtToken, appData.apiHost);
+    //     if (newServices.length > services.length) {
+    //         setServices(newServices)
+    //     }
+    // }
 
     useEffect(() => {
         console.log("how many time?")
         setLoading(true)
         let stream;
         const fetchLogs = async () => {
-          stream = await runStarlark(enclave.host, enclave.port, packageId, args, appData.jwtToken);
+          stream = await runStarlark(enclave.host, enclave.port, packageId, args, appData.jwtToken, appData.apiHost);
           for await (const res of stream) {
               const result = res["runResponseLine"]
               if (result.case === "instruction") {

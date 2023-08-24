@@ -1,35 +1,8 @@
-//import {EngineServicePromiseClient} from 'kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb'
 import {runStarlarkPackage} from "./container"
-import axios from "axios";
+import {createClient, createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager} from "./api";
 
-import {KurtosisEnclaveManagerServer} from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
-
-import {createPromiseClient} from "@bufbuild/connect";
-
-import {createConnectTransport,} from "@bufbuild/connect-web";
-import {createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager} from "./api";
-
-const transport = createConnectTransport({
-    baseUrl: "http://localhost:8081"
-})
-
-const enclaveManagerClient = createPromiseClient(KurtosisEnclaveManagerServer, transport);
-const ENGINE_URL = "http://localhost:8081"
-
-const createApiPromiseClient = (apiClient) => {
-    if (apiClient) {
-        return `http://localhost:${apiClient.grpcPortOnHostMachine}`
-    }
-    return "";
-}
-
-export const makeRestApiRequest = async (url, data, config) => {
-    const response = await axios.post(`${ENGINE_URL}/${url}`, data, config)
-    return response;
-}
-
-export const getEnclavesFromKurtosis = async (token) => {
-    const data = await getEnclavesFromEnclaveManager(token);
+export const getEnclavesFromKurtosis = async (token, apiHost) => {
+    const data = await getEnclavesFromEnclaveManager(token, apiHost);
     if ("enclaveInfo" in data) {
         return Object.keys(data.enclaveInfo).map(key => {
             const enclave = data.enclaveInfo[key]
@@ -46,11 +19,11 @@ export const getEnclavesFromKurtosis = async (token) => {
     return []
 }
 
-export const createEnclave = async (token) => {
+export const createEnclave = async (token, apiHost) => {
     const enclaveName = ""; // TODO We could make this input from the UI
     const apiContainerVersionTag = "";
     const apiContainerLogLevel = "info";
-    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag, token)
+    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag, token, apiHost)
 
     const enclave = response.enclaveInfo;
     return {
@@ -63,7 +36,8 @@ export const createEnclave = async (token) => {
     }
 }
 
-export const getServiceLogs = async (ctrl, enclaveName, serviceUuid) => {
+export const getServiceLogs = async (ctrl, enclaveName, serviceUuid, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
     const args = {
         "enclaveIdentifier": enclaveName,
         "serviceUuidSet": {
@@ -74,7 +48,7 @@ export const getServiceLogs = async (ctrl, enclaveName, serviceUuid) => {
     return enclaveManagerClient.getServiceLogs(args, {signal: ctrl.signal});
 }
 
-export const runStarlark = async (host, port, packageId, args, token) => {
-    const stream = await runStarlarkPackage(host, port, packageId, args, token)
+export const runStarlark = async (host, port, packageId, args, token, apiHost) => {
+    const stream = await runStarlarkPackage(host, port, packageId, args, token, apiHost)
     return stream;
 }
