@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings/kurtosis_backend_server_rpc_api_bindingsconnect"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings/kurtosis_enclave_manager_api_bindingsconnect"
 	"github.com/kurtosis-tech/stacktrace"
@@ -19,8 +20,6 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http"
 	"net/url"
-	"os"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -60,16 +59,15 @@ func NewWebserver() (*WebServer, error) {
 }
 
 func LoadEnforceAuthSetting() (*bool, error) {
-	var enforceAuth = true
-	enforceAuthSettingFromEnv := os.Getenv(KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg)
-	if len(enforceAuthSettingFromEnv) > 1 {
-		enforceAuthFromEnv, err := strconv.ParseBool(enforceAuthSettingFromEnv)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "a value for the '%s' env var was found but it could not be processed into a boolean", KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg)
-		}
-		enforceAuth = enforceAuthFromEnv
+	var enforceAuth = false
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while getting the local context")
 	}
-	logrus.Infof("Successfully set auth enforcement setting: %v", enforceAuth)
+	if store.IsRemote(currentContext) {
+		enforceAuth = true
+	}
+	logrus.Infof("Auth enforcement setting: %v", enforceAuth)
 	return &enforceAuth, nil
 }
 
