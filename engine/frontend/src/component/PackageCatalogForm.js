@@ -10,9 +10,10 @@ import {
     Textarea,
 } from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
-import { useLocation } from "react-router";
+import { useLocation, useParams } from "react-router";
 import {useState} from 'react';
-import { getKurtosisPackages } from '../api/enclave';
+
+const yaml = require("js-yaml")
 
 
 const renderArgs = (args, handleChange, formData, errorData) => {
@@ -26,7 +27,7 @@ const renderArgs = (args, handleChange, formData, errorData) => {
                 placeholder = "string"
                 break
             default:
-                placeholder = "YAML/JSON"
+                placeholder = "object"
         }
         
         return (
@@ -45,6 +46,15 @@ const renderArgs = (args, handleChange, formData, errorData) => {
             </Flex>
         )
     })
+}
+
+const checkValidUndefinedType = (data) => {
+    try {
+        yaml.load(data)
+    } catch (ex) {
+        return false;
+    }
+    return true;
 }
 
 const checkValidStringType = (data) => {
@@ -121,9 +131,10 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
 
             if (type === "string") {
                 valid = checkValidStringType(formData[key])
-                console.log(valid)
             } else if (type === "int") {
                 valid = checkValidIntType(formData[key])
+            } else {
+                valid = checkValidUndefinedType(formData[key])
             }
 
             if (!valid) {

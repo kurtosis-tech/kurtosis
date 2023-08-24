@@ -10,7 +10,7 @@ import {useState} from "react";
 const PackageCatalogRouter = ({addEnclave}) => {
     const navigate = useNavigate()
     const [kurtosisPackages, setKurtosisPackages] = useState([])
-    
+
     useEffect(()=> {
         const fetchPackages = async () => {
             const resp = await getKurtosisPackages()

@@ -15,7 +15,6 @@ import PackageCatalogRouter from './PackageCatalogRouter';
 const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [encalveLoading, setEnclaveLoading] = useState(false)
-
     useEffect(() => {
         setEnclaveLoading(true)
         const fetch = async () => {

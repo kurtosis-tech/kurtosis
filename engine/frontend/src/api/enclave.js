@@ -1,15 +1,12 @@
-//import {EngineServicePromiseClient} from 'kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb'
 import {runStarlarkPackage} from "./container"
 import axios from "axios";
 
 import {EngineService} from  "kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/connect/engine_service_connect";
-
 import {createPromiseClient} from "@bufbuild/connect";
 
 import {
     createConnectTransport,
 } from "@bufbuild/connect-web";
-
 
 const transport = createConnectTransport({
     baseUrl: "http://localhost:9710"
@@ -39,7 +36,9 @@ export const getKurtosisPackages = async () => {
     )
 
     const {data} = respFromGrpc
-    return data.packages;
+
+
+    return data.packages
 }
 
 export const getEnclavesFromKurtosis = async () => {
@@ -66,8 +65,6 @@ export const getEnclavesFromKurtosis = async () => {
 
     return []
 }
-
-
 
 export const createEnclave = async () => {
     const data = {
