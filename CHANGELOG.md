@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.82.2](https://github.com/kurtosis-tech/kurtosis/compare/0.82.1...0.82.2) (2023-08-24)
+
+
+### Features
+
+* make paths relative to support embedding in other contexts ([#1151](https://github.com/kurtosis-tech/kurtosis/issues/1151)) ([74fbe53](https://github.com/kurtosis-tech/kurtosis/commit/74fbe53c07e1dd0c2ae994e2246d1b7033b1bad3))
+
+
+### Bug Fixes
+
+* lower calls to backend by doing get all services more efficiently ([#1143](https://github.com/kurtosis-tech/kurtosis/issues/1143)) ([a2c0dcc](https://github.com/kurtosis-tech/kurtosis/commit/a2c0dcc0bc3874338ac6fbd5c42bf45163a628dc)), closes [#1074](https://github.com/kurtosis-tech/kurtosis/issues/1074)
+
 ## [0.82.1](https://github.com/kurtosis-tech/kurtosis/compare/0.82.0...0.82.1) (2023-08-23)
 
 
