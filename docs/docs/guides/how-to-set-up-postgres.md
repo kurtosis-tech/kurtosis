@@ -8,19 +8,14 @@ toc_max_heading_level: 2
 Introduction
 ------------
 
-Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~5 minutes and will walk you through how to use a Kurtosis package to spin up a distributed system over Docker. Specifically, you will use the [eth2-package][eth2-package] to bootstrap and start-up a private Ethereum testnet. 
-x
-Kurtosis is a build system for test environments that serve two types of users: the author of the environment definition and the consumer or user of the environment definition. This quickstart is intended to put you in the shoes of the consumer - someone who needs a quick and easy way to get a test environment that represents their system holistically. A separate guide is [available here](TODO) to introduce you to the world of environment definition authoring and how one might define and build an environment with Kurtosis for themselves or for their team to use when developing and testing against a distributed system.
+Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you run in this guide is free, public, and does not contain any sensitive data. 
 
 For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, our [introduction page][homepage] will be a great starting point, alongside our [motivations behind starting Kurtosis][why-we-built-kurtosis-explanation].
 
-This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you run in this guide is free, public, and does not contain any sensitive data. 
-
-
 :::tip What You'll Do
 
-- Install Kurtosis and Docker, if you haven't already
-  
+- Start a containerized Postgres database in Kurtosis
+- Seed your database with test data using task sequencing
 - Connect an API server to your database using dynamic service dependencies
 - Parameterize your application setup in order to automate loading data into your API
 :::
@@ -964,7 +959,6 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
 [go-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/go-test
 [ts-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/ts-test
-[eth2-package]: https://github.com/kurtosis-tech/eth2-package/
 
 <!-- Misc -->
 [homepage]: home.md
