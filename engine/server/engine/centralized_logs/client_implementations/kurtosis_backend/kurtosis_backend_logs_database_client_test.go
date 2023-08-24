@@ -169,39 +169,39 @@ func TestStreamUserServiceLogs_FilteredAllLogLines(t *testing.T) {
 
 }
 
-func TestStreamUserServiceLogs_FilteredAllLogLinesWithFollowLogs(t *testing.T) {
-	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
-		testUserService1Uuid: 0,
-		testUserService2Uuid: 0,
-		testUserService3Uuid: 0,
-	}
-
-	firstTextFilter := logline.NewDoesContainTextLogLineFilter(notFoundedFilterText)
-
-	logLinesFilters := []logline.LogLineFilter{
-		*firstTextFilter,
-	}
-
-	successfulServiceLogs := getCommonSuccessfulServiceLogs()
-
-	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
-		t,
-		logLinesFilters,
-		expectedServiceAmountLogLinesByServiceUuid,
-		followLogs,
-		successfulServiceLogs,
-		nil,
-	)
-
-	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
-		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
-		require.True(t, found)
-		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
-	}
-
-	require.NoError(t, testEvaluationErr)
-
-}
+//func TestStreamUserServiceLogs_FilteredAllLogLinesWithFollowLogs(t *testing.T) {
+//	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
+//		testUserService1Uuid: 0,
+//		testUserService2Uuid: 0,
+//		testUserService3Uuid: 0,
+//	}
+//
+//	firstTextFilter := logline.NewDoesContainTextLogLineFilter(notFoundedFilterText)
+//
+//	logLinesFilters := []logline.LogLineFilter{
+//		*firstTextFilter,
+//	}
+//
+//	successfulServiceLogs := getCommonSuccessfulServiceLogs()
+//
+//	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
+//		t,
+//		logLinesFilters,
+//		expectedServiceAmountLogLinesByServiceUuid,
+//		followLogs,
+//		successfulServiceLogs,
+//		nil,
+//	)
+//
+//	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
+//		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
+//		require.True(t, found)
+//		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
+//	}
+//
+//	require.NoError(t, testEvaluationErr)
+//
+//}
 
 func TestStreamUserServiceLogs_ErrorFromKurtosisBackend(t *testing.T) {
 

@@ -162,7 +162,7 @@ func streamServiceLogLines(
 			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v' in enclave '%v", serviceUuid, enclaveUuid)
 			return
 		default:
-			jsonLogStr, err := logsReader.ReadString(newlineRune)
+			jsonLogStr, _, err := logsReader.ReadLine()
 			if err != nil && errors.Is(err, io.EOF) {
 				// exiting stream
 				if shouldFollowLogs {
