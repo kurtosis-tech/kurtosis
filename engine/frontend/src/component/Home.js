@@ -41,7 +41,7 @@ const Home = () => {
                     <Route path="/enclaves/:name" element={<EnclaveInfo enclaves={enclaves}/>} />
                     <Route path="/enclaves/:name/services/:uuid" element={<ServiceInfo/>} />
                     <Route path="/enclaves/:name/files/:fileArtifactName" element={<FileArtifactInfo enclaves={enclaves}/>} />
-                    <Route path="/catalog/*" element={<PackageCatalogRouter/>} />
+                    <Route path="/catalog/*" element={<PackageCatalogRouter addEnclave={addEnclave} />} />
                 </Routes>
             </div>
         </div>

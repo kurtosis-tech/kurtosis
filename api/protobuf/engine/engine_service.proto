@@ -242,6 +242,7 @@ message PackageCatalogResponse {
 message KurtosisPackage {
   repeated PackageCatalogArg args = 1;
   string name = 2;
+  bool required = 3;
 }
 
 message PackageCatalogArg {

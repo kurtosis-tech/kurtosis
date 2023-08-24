@@ -7,7 +7,7 @@ import {getKurtosisPackages} from "../api/enclave";
 import {createEnclave} from "../api/enclave";
 import {useState} from "react";
 
-const PackageCatalogRouter = () => {
+const PackageCatalogRouter = ({addEnclave}) => {
     const navigate = useNavigate()
     const [kurtosisPackages, setKurtosisPackages] = useState([])
     
@@ -22,6 +22,7 @@ const PackageCatalogRouter = () => {
     const createNewEnclave = (runArgs) => {
         const request = async () => {
             const enclave = await createEnclave();
+            addEnclave(enclave)
             navigate("/catalog/progress", {state: {
                 enclave,
                 runArgs,
