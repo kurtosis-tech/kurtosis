@@ -19,17 +19,21 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 	"net/http"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	listenPort                = 8081
-	grpcServerStopGracePeriod = 5 * time.Second
-	engineHostUrl             = "http://localhost:9710"
-	kurtosisCloudApiHost      = "https://cloud.kurtosis.com"
-	kurtosisCloudApiPort      = 8080
-	enforceAuth               = false // This setting is temporary and will be dynamically changed in following work
+	listenPort                                       = 8081
+	grpcServerStopGracePeriod                        = 5 * time.Second
+	engineHostUrl                                    = "http://localhost:9710"
+	kurtosisCloudApiHost                             = "https://cloud.kurtosis.com"
+	kurtosisCloudApiPort                             = 8080
+	enforceAuth                                      = false // This setting is temporary and will be dynamically changed in following work
+	KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg = "KURTOSIS_ENCLAVE_MANAGER_API_ENFORCE_AUTH"
+	failureExitCode                                  = 1
 )
 
 type Authentication struct {
@@ -39,16 +43,36 @@ type Authentication struct {
 
 type WebServer struct {
 	engineServiceClient *kurtosis_engine_rpc_api_bindingsconnect.EngineServiceClient
+	enforceAuth         bool
 }
 
-func NewWebserver() *WebServer {
+func NewWebserver() (*WebServer, error) {
 	engineServiceClient := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceClient(
 		http.DefaultClient,
 		engineHostUrl,
 	)
+	enforceAuth, err := LoadEnforceAuthSetting()
+	if err != nil {
+		return nil, err
+	}
 	return &WebServer{
 		engineServiceClient: &engineServiceClient,
+		enforceAuth:         *enforceAuth,
+	}, nil
+}
+
+func LoadEnforceAuthSetting() (*bool, error) {
+	var enforceAuth = true
+	enforceAuthSettingFromEnv := os.Getenv(KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg)
+	if len(enforceAuthSettingFromEnv) > 1 {
+		enforceAuthFromEnv, err := strconv.ParseBool(enforceAuthSettingFromEnv)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "a value for the '%s' env var was found but it could not be processed into a boolean", KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg)
+		}
+		enforceAuth = enforceAuthFromEnv
 	}
+	logrus.Info("Successfully auth enforcement setting: %s=%b", KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg, enforceAuth)
+	return &enforceAuth, nil
 }
 
 func (c *WebServer) Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error) {
@@ -346,8 +370,12 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 	return nil, stacktrace.NewError("an empty API key was returned from Kurtosis Cloud Backend")
 }
 
-func RunEnclaveManagerApiServer() {
-	srv := NewWebserver()
+func RunEnclaveManagerApiServer() error {
+	srv, err := NewWebserver()
+	if err != nil {
+		logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
+		return err
+	}
 	apiPath, handler := kurtosis_enclave_manager_api_bindingsconnect.NewKurtosisEnclaveManagerServerHandler(srv)
 
 	logrus.Infof("Web server running and listening on port %d", listenPort)
@@ -360,6 +388,7 @@ func RunEnclaveManagerApiServer() {
 	if err := apiServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		logrus.Error("An error occurred running the server", err)
 	}
+	return nil
 }
 
 func getServiceLogsFromEngine(client *connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
