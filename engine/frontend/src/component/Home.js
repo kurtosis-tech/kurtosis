@@ -34,17 +34,11 @@ const queryParamToBool = (value) => {
 const DefaultApiHost = "localhost"
 const DefaultApiPort = 8081
 
-const parseApiHostIntoIp = (apiHost) => {
-    if (apiHost && apiHost !== "") {
-        return apiHost.replaceAll("-", ".");
-    }
-    return undefined;
-}
-
 const createApiUrl = (apiHost, requireHttps) => {
-    const protocol = requireHttps ? "https" : "http"
-    const address = !apiHost ? DefaultApiHost : parseApiHostIntoIp(apiHost);
-    return `${protocol}://${address}:${DefaultApiPort}`;
+    if(requireHttps){
+        return `https://cloud.kurtosis.com/gateway/ips/${apiHost}/ports/${DefaultApiPort}`;
+    }
+    return `http://${DefaultApiHost}:${DefaultApiPort}`;
 }
 
 const Home = () => {
