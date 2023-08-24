@@ -31,9 +31,7 @@ const (
 	engineHostUrl                                    = "http://localhost:9710"
 	kurtosisCloudApiHost                             = "https://cloud.kurtosis.com"
 	kurtosisCloudApiPort                             = 8080
-	enforceAuth                                      = false // This setting is temporary and will be dynamically changed in following work
 	KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg = "KURTOSIS_ENCLAVE_MANAGER_API_ENFORCE_AUTH"
-	failureExitCode                                  = 1
 )
 
 type Authentication struct {
@@ -71,7 +69,7 @@ func LoadEnforceAuthSetting() (*bool, error) {
 		}
 		enforceAuth = enforceAuthFromEnv
 	}
-	logrus.Info("Successfully auth enforcement setting: %s=%b", KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg, enforceAuth)
+	logrus.Infof("Successfully set auth enforcement setting: %v", enforceAuth)
 	return &enforceAuth, nil
 }
 
@@ -111,7 +109,7 @@ func (c *WebServer) ValidateRequestAuthorization(
 }
 
 func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -130,7 +128,7 @@ func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptyp
 	return resp, nil
 }
 func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -191,7 +189,7 @@ func (c *WebServer) GetServiceLogs(
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -253,7 +251,7 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -274,7 +272,7 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 }
 
 func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
