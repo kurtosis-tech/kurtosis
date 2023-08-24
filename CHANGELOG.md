@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.5](https://github.com/kurtosis-tech/kurtosis/compare/0.82.4...0.82.5) (2023-08-24)
+
+
+### Bug Fixes
+
+* get service logs tail ([#1156](https://github.com/kurtosis-tech/kurtosis/issues/1156)) ([734b1a8](https://github.com/kurtosis-tech/kurtosis/commit/734b1a8d7431a6e2c35f7abedef803facdffb56d))
+
 ## [0.82.4](https://github.com/kurtosis-tech/kurtosis/compare/0.82.3...0.82.4) (2023-08-24)
 
 
