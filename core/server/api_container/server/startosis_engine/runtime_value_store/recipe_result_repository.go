@@ -12,6 +12,7 @@ import (
 
 var (
 	recipeResultBucketName = []byte("recipe-result-repository")
+	emptyValue             = []byte{}
 )
 
 type recipeResultRepository struct {
@@ -36,6 +37,26 @@ func getOrCreateNewRecipeResultRepository(enclaveDb *enclave_db.EnclaveDB) (*rec
 	}
 
 	return repository, nil
+}
+
+func (repository *recipeResultRepository) SaveKey(
+	uuid string,
+) error {
+
+	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(recipeResultBucketName)
+
+		uuidKey := getUuidKey(uuid)
+
+		// save it to disk
+		if err := bucket.Put(uuidKey, emptyValue); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while registering key UUID '%s' into the enclave db bucket", uuid)
+		}
+		return nil
+	}); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while registering key UUID '%s' into the enclave db", uuid)
+	}
+	return nil
 }
 
 // Save store recipe result values into the repository, and it only accepts comparables of
@@ -99,6 +120,18 @@ func (repository *recipeResultRepository) Get(
 		// first get the bytes
 		jsonBytes := bucket.Get(uuidKey)
 
+		// check for existence
+		if jsonBytes == nil {
+			return stacktrace.NewError("Recipe result value with keu UUID '%s' does not exist on the recipe result repository", uuid)
+		}
+
+		isEmptyValue := len(jsonBytes) == len(emptyValue)
+
+		// this will the case if the key was saved with an empty value
+		if isEmptyValue {
+			return nil
+		}
+
 		stringifiedValue := map[string]string{}
 
 		if err := json.Unmarshal(jsonBytes, &stringifiedValue); err != nil {
@@ -122,6 +155,8 @@ func (repository *recipeResultRepository) Get(
 	}
 	return value, nil
 }
+
+//TODO implemnent Delete
 
 func getUuidKey(uuid string) []byte {
 	return []byte(uuid)

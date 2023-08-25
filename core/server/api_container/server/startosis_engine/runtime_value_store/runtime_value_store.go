@@ -9,18 +9,25 @@ import (
 )
 
 type RuntimeValueStore struct {
-	recipeResultMap                   map[string]map[string]starlark.Comparable
+	recipeResultMap                   map[string]map[string]starlark.Comparable //TODO remove this map
+	recipeResultRepository            *recipeResultRepository
 	serviceAssociatedValuesRepository *serviceAssociatedValuesRepository
 }
 
 func CreateRuntimeValueStore(enclaveDb *enclave_db.EnclaveDB) (*RuntimeValueStore, error) {
 	associatedValuesRepository, err := getOrCreateNewServiceAssociatedValuesRepository(enclaveDb)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting or creating the new service associated values repository")
+		return nil, stacktrace.Propagate(err, "An error occurred getting or creating the service associated values repository")
+	}
+
+	recipeResultRepositoryObj, err := getOrCreateNewRecipeResultRepository(enclaveDb)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting or creating the recipe result repository")
 	}
 
 	runtimeValueStore := &RuntimeValueStore{
 		recipeResultMap:                   make(map[string]map[string]starlark.Comparable),
+		recipeResultRepository:            recipeResultRepositoryObj,
 		serviceAssociatedValuesRepository: associatedValuesRepository,
 	}
 
@@ -32,7 +39,11 @@ func (re *RuntimeValueStore) CreateValue() (string, error) {
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred while generating uuid for runtime value")
 	}
-	re.recipeResultMap[uuid] = nil
+
+	if err = re.recipeResultRepository.SaveKey(uuid); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred saving key UUID '%s' on the recipe result repository", uuid)
+	}
+
 	return uuid, nil
 }
 
@@ -67,14 +78,17 @@ func (re *RuntimeValueStore) GetOrCreateValueAssociatedWithService(serviceName s
 // SetValue store recipe result values into the runtime value store, and it only accepts comparables of
 // starlark.String and starlark.Int so far, make sure to upgrade the recipe result repository if you
 // want to extend this capability supporting more comparable types
-func (re *RuntimeValueStore) SetValue(uuid string, value map[string]starlark.Comparable) {
-	re.recipeResultMap[uuid] = value
+func (re *RuntimeValueStore) SetValue(uuid string, value map[string]starlark.Comparable) error {
+	if err := re.recipeResultRepository.Save(uuid, value); err != nil {
+		return stacktrace.Propagate(err, "An error occurred saving value '%+v' using UUID key '%s' into the recipe result repository", value, uuid)
+	}
+	return nil
 }
 
 func (re *RuntimeValueStore) GetValue(uuid string) (map[string]starlark.Comparable, error) {
-	value, found := re.recipeResultMap[uuid]
-	if !found {
-		return nil, stacktrace.NewError("Runtime UUID '%v' was not found", uuid)
+	value, err := re.recipeResultRepository.Get(uuid)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting recipe result value with UUID key '%s'", uuid)
 	}
 	if value == nil {
 		return nil, stacktrace.NewError("Runtime UUID '%v' was found, but not set", uuid)

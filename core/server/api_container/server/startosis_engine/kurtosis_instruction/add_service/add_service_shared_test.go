@@ -25,9 +25,10 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
 	runtimeValueName := "value"
-	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{
+	err = runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{
 		runtimeValueName: starlark.MakeInt(8765),
 	})
+	require.NoError(t, err)
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
@@ -60,9 +61,10 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
 	runtimeValueName := "value"
-	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{
+	err = runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{
 		runtimeValueName: starlark.MakeInt(999999),
 	})
+	require.NoError(t, err)
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
@@ -95,9 +97,10 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
 	runtimeValueName := "value"
-	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{
+	err = runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{
 		runtimeValueName: starlark.MakeInt(8765),
 	})
+	require.NoError(t, err)
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
@@ -135,9 +138,10 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
 	valueName := "value"
-	runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{
+	err = runtimeValueStore.SetValue(stringValueUuid, map[string]starlark.Comparable{
 		"value": starlark.String("database-1"),
 	})
+	require.NoError(t, err)
 	stringRuntimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, valueName)
 
 	serviceName := service.ServiceName(stringRuntimeValue)

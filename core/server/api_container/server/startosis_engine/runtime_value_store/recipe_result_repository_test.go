@@ -14,7 +14,8 @@ import (
 const (
 	randomUuid = "abcd12a3948149d9afa2ef93abb4ec52"
 
-	notAcceptedComparableTypeErrorMsg = "Unexpected comparable type"
+	notAcceptedComparableTypeErrorMsg   = "Unexpected comparable type"
+	keyDoesNotExistOnRepositoryErrorMsg = "does not exist on the recipe result repository"
 
 	firstKey            = "mykey"
 	secondKey           = "mySecondKey"
@@ -25,6 +26,17 @@ const (
 var (
 	starlarkIntValue = starlark.MakeInt(30)
 )
+
+func TestRecipeResultSaveKey_Success(t *testing.T) {
+	repository := getRecipeResultRepositoryForTest(t)
+
+	err := repository.SaveKey(randomUuid)
+	require.NoError(t, err)
+
+	value, err := repository.Get(randomUuid)
+	require.NoError(t, err)
+	require.Empty(t, value)
+}
 
 func TestRecipeResultSaveAndGet_Success(t *testing.T) {
 	repository := getRecipeResultRepositoryForTest(t)
@@ -42,6 +54,15 @@ func TestRecipeResultSaveAndGet_Success(t *testing.T) {
 	require.NotNil(t, value)
 
 	require.Equal(t, resultValue, value)
+}
+
+func TestRecipeResultGet_DoesNotExist(t *testing.T) {
+	repository := getRecipeResultRepositoryForTest(t)
+
+	value, err := repository.Get(randomUuid)
+	require.Error(t, err)
+	require.ErrorContains(t, err, keyDoesNotExistOnRepositoryErrorMsg)
+	require.Empty(t, value)
 }
 
 func TestRecipeResultSave_ErrorWhenUsingNotStarlarkStringOrInt(t *testing.T) {
@@ -79,6 +100,8 @@ func TestRecipeResultSave_ErrorWhenUsingNotStarlarkStringOrInt(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
 }
+
+//TODO test for delete
 
 func getRecipeResultRepositoryForTest(t *testing.T) *recipeResultRepository {
 	file, err := os.CreateTemp("/tmp", "*.db")
