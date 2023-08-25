@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.82.5](https://github.com/kurtosis-tech/kurtosis/compare/0.82.4...0.82.5) (2023-08-24)
+
+
+### Bug Fixes
+
+* get service logs tail ([#1156](https://github.com/kurtosis-tech/kurtosis/issues/1156)) ([734b1a8](https://github.com/kurtosis-tech/kurtosis/commit/734b1a8d7431a6e2c35f7abedef803facdffb56d))
+
+## [0.82.4](https://github.com/kurtosis-tech/kurtosis/compare/0.82.3...0.82.4) (2023-08-24)
+
+
+### Features
+
+* use proxy url ([#1158](https://github.com/kurtosis-tech/kurtosis/issues/1158)) ([7c44373](https://github.com/kurtosis-tech/kurtosis/commit/7c44373fc18ce23117fa7c70155c53a94be09e59))
+
+
+### Bug Fixes
+
+* Create portal client daemon client only on remote context. ([#1155](https://github.com/kurtosis-tech/kurtosis/issues/1155)) ([b7ae803](https://github.com/kurtosis-tech/kurtosis/commit/b7ae803f24c47046171188b5bba308f5cb0d51f3))
+
 ## [0.82.3](https://github.com/kurtosis-tech/kurtosis/compare/0.82.2...0.82.3) (2023-08-24)
 
 

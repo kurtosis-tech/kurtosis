@@ -91,131 +91,6 @@ func TestStreamUserServiceLogs_WithFilters(t *testing.T) {
 	require.NoError(t, testEvaluationErr)
 }
 
-func TestStreamUserServiceLogs_WithFiltersAndWithFollowLogs(t *testing.T) {
-
-	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
-		testUserService1Uuid: 1,
-		testUserService2Uuid: 1,
-		testUserService3Uuid: 1,
-	}
-
-	firstTextFilter := logline.NewDoesContainTextLogLineFilter(secondFilterText)
-	regexFilter := logline.NewDoesContainMatchRegexLogLineFilter(secondMatchRegexFilterStr)
-
-	logLinesFilters := []logline.LogLineFilter{
-		*firstTextFilter,
-		*regexFilter,
-	}
-
-	expectedFirstLogLine := "Starting feature 'files manager'"
-
-	underlyingFs := createFullUnderlyingMapFilesystem()
-
-	userServiceUuids := map[service.ServiceUUID]bool{
-		testUserService1Uuid: true,
-		testUserService2Uuid: true,
-		testUserService3Uuid: true,
-	}
-
-	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
-		t,
-		logLinesFilters,
-		userServiceUuids,
-		expectedServiceAmountLogLinesByServiceUuid,
-		followLogs,
-		underlyingFs,
-	)
-
-	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
-		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
-		require.True(t, found)
-		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
-		require.Equal(t, expectedFirstLogLine, serviceLogLines[0].GetContent())
-	}
-
-	require.NoError(t, testEvaluationErr)
-}
-
-func TestStreamUserServiceLogs_FilteredAllLogLines(t *testing.T) {
-
-	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
-		testUserService1Uuid: 0,
-		testUserService2Uuid: 0,
-		testUserService3Uuid: 0,
-	}
-
-	firstTextFilter := logline.NewDoesContainTextLogLineFilter(notFoundedFilterText)
-
-	logLinesFilters := []logline.LogLineFilter{
-		*firstTextFilter,
-	}
-
-	underlyingFs := createFullUnderlyingMapFilesystem()
-
-	userServiceUuids := map[service.ServiceUUID]bool{
-		testUserService1Uuid: true,
-		testUserService2Uuid: true,
-		testUserService3Uuid: true,
-	}
-
-	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
-		t,
-		logLinesFilters,
-		userServiceUuids,
-		expectedServiceAmountLogLinesByServiceUuid,
-		doNotFollowLogs,
-		underlyingFs,
-	)
-
-	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
-		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
-		require.True(t, found)
-		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
-	}
-
-	require.NoError(t, testEvaluationErr)
-}
-
-func TestStreamUserServiceLogs_FilteredAllLogLinesWithFollowLogs(t *testing.T) {
-	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
-		testUserService1Uuid: 0,
-		testUserService2Uuid: 0,
-		testUserService3Uuid: 0,
-	}
-
-	firstTextFilter := logline.NewDoesContainTextLogLineFilter(notFoundedFilterText)
-
-	logLinesFilters := []logline.LogLineFilter{
-		*firstTextFilter,
-	}
-
-	underlyingFs := createFullUnderlyingMapFilesystem()
-
-	userServiceUuids := map[service.ServiceUUID]bool{
-		testUserService1Uuid: true,
-		testUserService2Uuid: true,
-		testUserService3Uuid: true,
-	}
-
-	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
-		t,
-		logLinesFilters,
-		userServiceUuids,
-		expectedServiceAmountLogLinesByServiceUuid,
-		followLogs,
-		underlyingFs,
-	)
-
-	for serviceUuid, serviceLogLines := range receivedUserServiceLogsByUuid {
-		expectedAmountLogLines, found := expectedServiceAmountLogLinesByServiceUuid[serviceUuid]
-		require.True(t, found)
-		require.Equal(t, expectedAmountLogLines, len(serviceLogLines))
-	}
-
-	require.NoError(t, testEvaluationErr)
-
-}
-
 func TestStreamUserServiceLogs_NoLogsFromPersistentVolume(t *testing.T) {
 	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
 		testUserService1Uuid: 0,
@@ -242,7 +117,7 @@ func TestStreamUserServiceLogs_NoLogsFromPersistentVolume(t *testing.T) {
 		logLinesFilters,
 		userServiceUuids,
 		expectedServiceAmountLogLinesByServiceUuid,
-		followLogs,
+		doNotFollowLogs,
 		underlyingFs,
 	)
 
