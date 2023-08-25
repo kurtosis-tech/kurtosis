@@ -11,8 +11,6 @@ const Main = ({totalEnclaves}) => {
         navigate("./enclaves")
     }
 
-    console.log(`total enclaves=${totalEnclaves}`)
-
     return (
         <div className="flex-grow bg-#181926-100 flex-row flex mt-28 w-screen">
             <div className='w-1/3'></div>
