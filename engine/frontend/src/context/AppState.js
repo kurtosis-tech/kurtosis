@@ -10,6 +10,7 @@ const defaultState = {
     apiProtocol: undefined,
     apiHost: undefined,
     apiPort: undefined,
+    webUrl: undefined,
 }
 
 export const AppContext = createContext({

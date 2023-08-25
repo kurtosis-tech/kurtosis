@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings/kurtosis_backend_server_rpc_api_bindingsconnect"
 	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
-	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings/kurtosis_enclave_manager_api_bindingsconnect"
 	"github.com/kurtosis-tech/stacktrace"
@@ -60,14 +59,14 @@ func NewWebserver() (*WebServer, error) {
 
 func LoadEnforceAuthSetting() (*bool, error) {
 	var enforceAuth = false
-	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "an error occurred while getting the local context")
-	}
-	if store.IsRemote(currentContext) {
-		enforceAuth = true
-	}
-	logrus.Infof("Auth enforcement setting: %v", enforceAuth)
+	//currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	//if err != nil {
+	//	return nil, stacktrace.Propagate(err, "an error occurred while getting the local context")
+	//}
+	//if store.IsRemote(currentContext) {
+	//	enforceAuth = true
+	//}
+	//logrus.Infof("Auth enforcement setting: %v", enforceAuth)
 	return &enforceAuth, nil
 }
 

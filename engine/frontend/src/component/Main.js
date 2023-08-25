@@ -8,8 +8,10 @@ const Main = ({totalEnclaves}) => {
         navigate("/enclave/create")
     }
     const handleViewEnvsClick = () => {
-        navigate("/enclaves")
+        navigate("./enclaves")
     }
+
+    console.log(`total enclaves=${totalEnclaves}`)
 
     return (
         <div className="flex-grow bg-#181926-100 flex-row flex mt-28 w-screen">

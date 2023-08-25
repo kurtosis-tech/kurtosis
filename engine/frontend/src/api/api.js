@@ -10,16 +10,20 @@ import {CreateEnclaveArgs} from "enclave-manager-sdk/build/engine_service_pb";
 import {RunStarlarkPackageArgs} from "enclave-manager-sdk/build/api_container_service_pb";
 
 export const createClient = (apiHost) => {
-    const transport = createConnectTransport({baseUrl: apiHost})
-    return createPromiseClient(KurtosisEnclaveManagerServer, transport)
+    if (apiHost && apiHost.length > 0) {
+        const transport = createConnectTransport({baseUrl: apiHost})
+        return createPromiseClient(KurtosisEnclaveManagerServer, transport)
+    }
+    throw "no ApiHost provided"
 }
 
 const createHeaderOptionsWithToken = (token) => {
     const headers = new Headers();
-    if (token) {
+    if (token && token.length > 0) {
         headers.set("Authorization", `Bearer ${token}`);
+        return {headers: headers}
     }
-    return {headers: headers}
+    return {}
 }
 
 export const getEnclavesFromEnclaveManager = async (token, apiHost) => {

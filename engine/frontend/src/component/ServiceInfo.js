@@ -36,7 +36,7 @@ const renderFileArtifacts = (file_artifacts) => {
     })
 }
 
-const ServiceInfo = () => {
+const ServiceInfo = ({baseUrl}) => {
     const navigate = useNavigate();
     const [logs, setLogs] = useState([])
     const {state} = useLocation();
@@ -68,7 +68,8 @@ const ServiceInfo = () => {
     }, [serviceUuid])
 
     const handleServiceClick = (service) => {
-        navigate(`/enclaves/${enclaveName}/services/${service.uuid}`, {state: {services, selected: service}})
+        const fullPath = `../../../enclaves/${enclaveName}/services/${service.uuid}`
+        navigate(fullPath, {state: {services, selected: service}})
     }
 
     return (
