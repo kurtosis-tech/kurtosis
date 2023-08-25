@@ -36,7 +36,7 @@ const renderFileArtifacts = (file_artifacts) => {
     })
 }
 
-const ServiceInfo = ({baseUrl}) => {
+const ServiceInfo = () => {
     const navigate = useNavigate();
     const [logs, setLogs] = useState([])
     const {state} = useLocation();

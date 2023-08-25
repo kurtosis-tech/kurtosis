@@ -6,7 +6,6 @@ export const getEnclavesFromKurtosis = async (token, apiHost) => {
     if ("enclaveInfo" in data) {
         return Object.keys(data.enclaveInfo).map(key => {
             const enclave = data.enclaveInfo[key]
-            console.log("Returning non empty enclave data", enclave)
             return {
                 uuid: enclave.enclaveUuid,
                 name: enclave.name,
