@@ -1,4 +1,4 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import { 
     Grid, 
     GridItem, 
@@ -16,9 +16,15 @@ import { SearchIcon } from '@chakra-ui/icons'
 import PackageCatalogOption from "./PackageCatalogOption";
 import { useNavigate } from "react-router";
 
-const PackageCatalog = ({kurtosisPackages}) => {
+const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
+
+    const [kurtosisPackages, setKurtosisPackages] = useState([])
     const navigate = useNavigate()
     const [chosenPackage, setChosenPackage] = useState(null)
+
+    useEffect(()=> {
+        setKurtosisPackages(defaultPackages)
+    }, [])
 
     const selectPackage = (index) => {
         if (index === chosenPackage) {
@@ -32,6 +38,18 @@ const PackageCatalog = ({kurtosisPackages}) => {
         const kurtosisPackage = kurtosisPackages[chosenPackage]
         navigate("/catalog/form", {state: {kurtosisPackage}})
     }
+
+    const handleSearchEvent = (e) => {
+        const value = e.target.value
+        console.log(value)
+        if (value === "") {
+            setKurtosisPackages(defaultPackages)
+        }
+        const filteredPackages = defaultPackages.filter(pack => pack.name.includes(value))
+        
+        setKurtosisPackages(filteredPackages)
+    }
+
 
     return (
         <div className='w-screen'>
@@ -56,7 +74,7 @@ const PackageCatalog = ({kurtosisPackages}) => {
                         <InputLeftElement pointerEvents='none' >
                             <SearchIcon color='gray.300'/>
                         </InputLeftElement>
-                        <Input placeholder='Package Name' color='gray.300'/>
+                        <Input placeholder='Package Name' color='gray.300' onChange={handleSearchEvent}/>
                     </InputGroup>
                 </GridItem>
                 <GridItem area={'main'} h="100%" overflowY={"scroll"}> 

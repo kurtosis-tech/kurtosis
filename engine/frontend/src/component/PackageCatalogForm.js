@@ -10,7 +10,7 @@ import {
     Textarea,
 } from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
-import { useLocation, useParams } from "react-router";
+import { useLocation } from "react-router";
 import {useState} from 'react';
 
 const yaml = require("js-yaml")
@@ -20,26 +20,37 @@ const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
         let placeholder = "";
         switch(arg.type) {
-            case "int":
-              placeholder = "int"
+            case "INTEGER":
+              placeholder = "INTEGER"
               break;
-            case "string":
-                placeholder = "string"
+            case "STRING":
+                placeholder = "STRING"
+                break
+            case "BOOL":
+                placeholder = "BOOL"
+                break
+            case "FLOAT": 
+                placeholder = "FLOAT"
                 break
             default:
-                placeholder = "object"
+                placeholder = "JSON"
+        }
+
+        // no need to show plan arg as it's internal!
+        if (arg.name === "plan") {
+            return 
         }
         
         return (
             <Flex color={"white"}>
                 <Flex w="15%" mr="3" direction={"column"}>
                     <Text align={"center"} fontSize={"2xl"}> {arg.name} </Text>
-                    {arg.required ? <Text align={"center"} fontSize={"s"} color="red.500"> Required</Text>: null}
+                    {arg.isRequired ? <Text align={"center"} fontSize={"s"} color="red.500"> Required</Text>: null}
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
                 {   errorData[index] ? <Text align={"center"} fontSize={"s"} color="red.500"> Incorrect type, expected {placeholder} </Text> : null}
                     {
-                        ["int", "string"].includes(placeholder) ? <Input placeholder={placeholder} color='gray.300' onChange={e => handleChange(e.target.value, index)} value={formData[index]} borderColor={errorData[index] ? "red.400": null}/> :
+                        ["INTEGER", "STRING", "BOOL", "FLOAT"].includes(placeholder) ? <Input placeholder={placeholder} color='gray.300' onChange={e => handleChange(e.target.value, index)} value={formData[index]} borderColor={errorData[index] ? "red.400": null}/> :
                         <Textarea borderColor={errorData[index] ? "red.400": null} placeholder={placeholder} minHeight={"200px"} onChange={e => handleChange(e.target.value, index)} value={formData[index]}/>
                     }   
                 </Flex>
@@ -50,7 +61,8 @@ const renderArgs = (args, handleChange, formData, errorData) => {
 
 const checkValidUndefinedType = (data) => {
     try {
-        yaml.load(data)
+        const val = yaml.load(data)
+        console.log(val)
     } catch (ex) {
         return false;
     }
@@ -78,7 +90,6 @@ const checkValidStringType = (data) => {
 }
 
 const checkValidIntType = (data) => {
-
     const isNumeric = (value) => {
         return /^-?\d+$/.test(value);
     }
@@ -99,11 +110,21 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const {kurtosisPackage} = state
 
     let initialFormData = {}
-    kurtosisPackage.args.map((arg, index)=> initialFormData[index] = "")
+    kurtosisPackage.args.map(
+        (arg, index)=> {
+            if (arg.name !== "plan") {
+                initialFormData[index] = ""
+            }
+        }
+     )
     const [formData, setFormData] = useState(initialFormData)
 
     let initialErrorData = {}
-    kurtosisPackage.args.map((arg, index)=> initialErrorData[index] = false)
+    kurtosisPackage.args.map((arg, index)=> {
+        if (arg.name !== "plan") {
+            initialErrorData[index] = false
+        }
+    })
     const [errorData, setErrorData] = useState(initialErrorData)
     
     const handleFormDataChange = (value, index) => {
@@ -129,9 +150,9 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             const type = kurtosisPackage.args[key]["type"]
             let valid = true
 
-            if (type === "string") {
+            if (type === "STRING") {
                 valid = checkValidStringType(formData[key])
-            } else if (type === "int") {
+            } else if (type === "INTEGER") {
                 valid = checkValidIntType(formData[key])
             } else {
                 valid = checkValidUndefinedType(formData[key])

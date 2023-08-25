@@ -29,15 +29,9 @@ export const makeRestApiRequest = async ( url, data, config) => {
 }
 
 export const getKurtosisPackages = async () => {
-    const respFromGrpc = await makeRestApiRequest(
-        "engine_api.EngineService/GetPackages",
-       {"field":""},
-       {"headers":{'Content-Type': "application/json"}}
+    const response = await axios.post(`http://localhost:9770/kurtosis_package_indexer.KurtosisPackageIndexer/GetPackages`, {"field":""}, {"headers":{'Content-Type': "application/json"}}
     )
-
-    const {data} = respFromGrpc
-
-
+    const {data} = response
     return data.packages
 }
 
