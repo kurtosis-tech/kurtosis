@@ -31,6 +31,7 @@ const makeUrl = () => {
     let path = window.location.pathname
     if (path.charAt(0) === "/") path = path.substr(1);
     path = path.endsWith('/') ? path.slice(0, -1) : path;
+    if (!path) return ""
     return path;
 }
 const Home = () => {
@@ -139,6 +140,7 @@ const Home = () => {
         if (requireAuth && (!appData.jwtToken || appData.apiHost)) {
             return loading;
         }
+        return element;
     }
 
     const constructPath = (path) => {
@@ -149,19 +151,30 @@ const Home = () => {
             <TitleBar/>
             <div className="flex h-[calc(100vh-4rem)]">
                 <Routes>
-                    <Route exact path={constructPath("/")}
-                           element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}/>
-                    <Route exact path={constructPath("/enclave/*")}
-                           element={checkAuth(<CreateEnclave addEnclave={addEnclave}/>)}/>
-                    <Route exact path={constructPath("/enclaves")}
-                           element={checkAuth(<Enclaves enclaves={enclaves} isLoading={enclaveLoading}
-                                                        baseUrl={urlPath}/>)}/>
+                    <Route exact
+                           path={constructPath("/")}
+                           element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}
+                    />
+                    <Route exact
+                           path={constructPath("/enclaves")}
+                           element={checkAuth(<Enclaves enclaves={enclaves}
+                                                        isLoading={enclaveLoading}
+                               />
+                           )}
+                    />
+                    <Route exact
+                           path={constructPath("/enclave/*")}
+                           element={checkAuth(<CreateEnclave addEnclave={addEnclave}/>)}
+                    />
                     <Route path={constructPath("/enclaves/:name")}
-                           element={checkAuth(<EnclaveInfo enclaves={enclaves}/>)}/>
+                           element={checkAuth(<EnclaveInfo enclaves={enclaves}/>)}
+                    />
                     <Route path={constructPath("/enclaves/:name/services/:uuid")}
-                           element={checkAuth(<ServiceInfo baseUrl={urlPath}/>)}/>
+                           element={checkAuth(<ServiceInfo/>)}
+                    />
                     <Route path={constructPath("/enclaves/:name/files/:fileArtifactName")}
-                           element={checkAuth(<FileArtifactInfo enclaves={enclaves}/>)}/>
+                           element={checkAuth(<FileArtifactInfo enclaves={enclaves}/>)}
+                    />
                 </Routes>
             </div>
         </div>
