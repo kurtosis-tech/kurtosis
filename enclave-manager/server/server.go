@@ -1,9 +1,14 @@
 package server
 
 import (
-	"connectrpc.com/connect"
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
+	"connectrpc.com/connect"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings/kurtosis_core_rpc_api_bindingsconnect"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -17,10 +22,6 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 const (
@@ -349,7 +350,7 @@ func (c *WebServer) GetCloudInstanceConfig(
 	}
 	getInstanceConfigRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs{
-			ApiKey: apiKey,
+			ApiKey:     apiKey,
 			InstanceId: getInstanceResponse.Msg.InstanceId,
 		},
 	}
