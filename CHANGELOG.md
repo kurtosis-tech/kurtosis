@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.6](https://github.com/kurtosis-tech/kurtosis/compare/0.82.5...0.82.6) (2023-08-26)
+
+
+### Bug Fixes
+
+* paths ([#1162](https://github.com/kurtosis-tech/kurtosis/issues/1162)) ([e1a9fb0](https://github.com/kurtosis-tech/kurtosis/commit/e1a9fb013acfb8fdc0f638094ab5c596ada0330c))
+
 ## [0.82.5](https://github.com/kurtosis-tech/kurtosis/compare/0.82.4...0.82.5) (2023-08-24)
 
 
