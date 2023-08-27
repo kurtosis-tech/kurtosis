@@ -23,6 +23,7 @@ const CreateEnclave = ({addEnclave}) => {
                 <Route path="/create"
                        element={<CreateEnclaveModal addEnclave={addEnclave} name={name} setName={setName} args={args}
                                                     setArgs={setArgs} handleSubmit={handleModalSubmit}
+                                                    token={appData.jwtToken}
                                                     apiHost={appData.apiHost}/>}/>
                 <Route path="/progress" element={<CreateEnclaveView args={args} packageId={name} enclave={enclave}/>}/>
             </Routes>

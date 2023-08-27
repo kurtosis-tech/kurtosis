@@ -61,10 +61,10 @@ const Enclaves = ({enclaves, isLoading}) => {
     const navigate = useNavigate()
 
     const handleCreateEnvClick = () => {
-        navigate("create")
+        navigate("/enclave/create")
     }
     const handleClick = (enclaveName) => {
-        navigate(`${enclaveName}`)
+        navigate(`/enclaves/${enclaveName}`)
     }
     console.log("is loading:", isLoading)
     console.log("Updating with enclaves:", JSON.stringify(enclaves))

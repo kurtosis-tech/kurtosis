@@ -5,7 +5,7 @@ const RightPanel = ({isServiceInfo, enclaveName}) => {
     const navigate = useNavigate()
     
     const handleGotoMenu = () => {
-        navigate("./../enclaves")
+        navigate("/enclaves")
     }
     const handleGoToEnclave = () => {
         navigate(`/enclaves/${enclaveName}`)
