@@ -16,7 +16,6 @@ interface IEngineServiceService extends grpc.ServiceDefinition<grpc.UntypedServi
   destroyEnclave: grpc.MethodDefinition<engine_service_pb.DestroyEnclaveArgs, google_protobuf_empty_pb.Empty>;
   clean: grpc.MethodDefinition<engine_service_pb.CleanArgs, engine_service_pb.CleanResponse>;
   getServiceLogs: grpc.MethodDefinition<engine_service_pb.GetServiceLogsArgs, engine_service_pb.GetServiceLogsResponse>;
-  getPackages: grpc.MethodDefinition<google_protobuf_empty_pb.Empty, engine_service_pb.PackageCatalogResponse>;
 }
 
 export const EngineServiceService: IEngineServiceService;
@@ -30,7 +29,6 @@ export interface IEngineServiceServer extends grpc.UntypedServiceImplementation 
   destroyEnclave: grpc.handleUnaryCall<engine_service_pb.DestroyEnclaveArgs, google_protobuf_empty_pb.Empty>;
   clean: grpc.handleUnaryCall<engine_service_pb.CleanArgs, engine_service_pb.CleanResponse>;
   getServiceLogs: grpc.handleServerStreamingCall<engine_service_pb.GetServiceLogsArgs, engine_service_pb.GetServiceLogsResponse>;
-  getPackages: grpc.handleUnaryCall<google_protobuf_empty_pb.Empty, engine_service_pb.PackageCatalogResponse>;
 }
 
 export class EngineServiceClient extends grpc.Client {
@@ -58,7 +56,4 @@ export class EngineServiceClient extends grpc.Client {
   clean(argument: engine_service_pb.CleanArgs, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<engine_service_pb.CleanResponse>): grpc.ClientUnaryCall;
   getServiceLogs(argument: engine_service_pb.GetServiceLogsArgs, metadataOrOptions?: grpc.Metadata | grpc.CallOptions | null): grpc.ClientReadableStream<engine_service_pb.GetServiceLogsResponse>;
   getServiceLogs(argument: engine_service_pb.GetServiceLogsArgs, metadata?: grpc.Metadata | null, options?: grpc.CallOptions | null): grpc.ClientReadableStream<engine_service_pb.GetServiceLogsResponse>;
-  getPackages(argument: google_protobuf_empty_pb.Empty, callback: grpc.requestCallback<engine_service_pb.PackageCatalogResponse>): grpc.ClientUnaryCall;
-  getPackages(argument: google_protobuf_empty_pb.Empty, metadataOrOptions: grpc.Metadata | grpc.CallOptions | null, callback: grpc.requestCallback<engine_service_pb.PackageCatalogResponse>): grpc.ClientUnaryCall;
-  getPackages(argument: google_protobuf_empty_pb.Empty, metadata: grpc.Metadata | null, options: grpc.CallOptions | null, callback: grpc.requestCallback<engine_service_pb.PackageCatalogResponse>): grpc.ClientUnaryCall;
 }

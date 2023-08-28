@@ -63,13 +63,6 @@ export class EngineServiceClient {
     metadata?: grpcWeb.Metadata
   ): grpcWeb.ClientReadableStream<engine_service_pb.GetServiceLogsResponse>;
 
-  getPackages(
-    request: google_protobuf_empty_pb.Empty,
-    metadata: grpcWeb.Metadata | undefined,
-    callback: (err: grpcWeb.RpcError,
-               response: engine_service_pb.PackageCatalogResponse) => void
-  ): grpcWeb.ClientReadableStream<engine_service_pb.PackageCatalogResponse>;
-
 }
 
 export class EngineServicePromiseClient {
@@ -116,11 +109,6 @@ export class EngineServicePromiseClient {
     request: engine_service_pb.GetServiceLogsArgs,
     metadata?: grpcWeb.Metadata
   ): grpcWeb.ClientReadableStream<engine_service_pb.GetServiceLogsResponse>;
-
-  getPackages(
-    request: google_protobuf_empty_pb.Empty,
-    metadata?: grpcWeb.Metadata
-  ): Promise<engine_service_pb.PackageCatalogResponse>;
 
 }
 

@@ -57,9 +57,6 @@ const (
 	// EngineServiceGetServiceLogsProcedure is the fully-qualified name of the EngineService's
 	// GetServiceLogs RPC.
 	EngineServiceGetServiceLogsProcedure = "/engine_api.EngineService/GetServiceLogs"
-	// EngineServiceGetPackagesProcedure is the fully-qualified name of the EngineService's GetPackages
-	// RPC.
-	EngineServiceGetPackagesProcedure = "/engine_api.EngineService/GetPackages"
 )
 
 // EngineServiceClient is a client for the engine_api.EngineService service.
@@ -85,8 +82,6 @@ type EngineServiceClient interface {
 	Clean(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error)
 	// Get service logs
 	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs]) (*connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse], error)
-	// Get Package
-	GetPackages(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.PackageCatalogResponse], error)
 }
 
 // NewEngineServiceClient constructs a client for the engine_api.EngineService service. By default,
@@ -139,11 +134,6 @@ func NewEngineServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			baseURL+EngineServiceGetServiceLogsProcedure,
 			opts...,
 		),
-		getPackages: connect.NewClient[emptypb.Empty, kurtosis_engine_rpc_api_bindings.PackageCatalogResponse](
-			httpClient,
-			baseURL+EngineServiceGetPackagesProcedure,
-			opts...,
-		),
 	}
 }
 
@@ -157,7 +147,6 @@ type engineServiceClient struct {
 	destroyEnclave                             *connect.Client[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty]
 	clean                                      *connect.Client[kurtosis_engine_rpc_api_bindings.CleanArgs, kurtosis_engine_rpc_api_bindings.CleanResponse]
 	getServiceLogs                             *connect.Client[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]
-	getPackages                                *connect.Client[emptypb.Empty, kurtosis_engine_rpc_api_bindings.PackageCatalogResponse]
 }
 
 // GetEngineInfo calls engine_api.EngineService.GetEngineInfo.
@@ -201,11 +190,6 @@ func (c *engineServiceClient) GetServiceLogs(ctx context.Context, req *connect.R
 	return c.getServiceLogs.CallServerStream(ctx, req)
 }
 
-// GetPackages calls engine_api.EngineService.GetPackages.
-func (c *engineServiceClient) GetPackages(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.PackageCatalogResponse], error) {
-	return c.getPackages.CallUnary(ctx, req)
-}
-
 // EngineServiceHandler is an implementation of the engine_api.EngineService service.
 type EngineServiceHandler interface {
 	// Endpoint for getting information about the engine, which is also what we use to verify that the engine has become available
@@ -229,8 +213,6 @@ type EngineServiceHandler interface {
 	Clean(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error)
 	// Get service logs
 	GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error
-	// Get Package
-	GetPackages(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.PackageCatalogResponse], error)
 }
 
 // NewEngineServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -279,11 +261,6 @@ func NewEngineServiceHandler(svc EngineServiceHandler, opts ...connect.HandlerOp
 		svc.GetServiceLogs,
 		opts...,
 	)
-	engineServiceGetPackagesHandler := connect.NewUnaryHandler(
-		EngineServiceGetPackagesProcedure,
-		svc.GetPackages,
-		opts...,
-	)
 	return "/engine_api.EngineService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case EngineServiceGetEngineInfoProcedure:
@@ -302,8 +279,6 @@ func NewEngineServiceHandler(svc EngineServiceHandler, opts ...connect.HandlerOp
 			engineServiceCleanHandler.ServeHTTP(w, r)
 		case EngineServiceGetServiceLogsProcedure:
 			engineServiceGetServiceLogsHandler.ServeHTTP(w, r)
-		case EngineServiceGetPackagesProcedure:
-			engineServiceGetPackagesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -343,8 +318,4 @@ func (UnimplementedEngineServiceHandler) Clean(context.Context, *connect.Request
 
 func (UnimplementedEngineServiceHandler) GetServiceLogs(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetServiceLogs is not implemented"))
-}
-
-func (UnimplementedEngineServiceHandler) GetPackages(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.PackageCatalogResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("engine_api.EngineService.GetPackages is not implemented"))
 }

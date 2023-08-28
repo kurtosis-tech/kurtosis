@@ -28,8 +28,6 @@ service EngineService {
   rpc Clean(CleanArgs) returns (CleanResponse) {};
   // Get service logs
   rpc GetServiceLogs(GetServiceLogsArgs) returns (stream GetServiceLogsResponse) {};
-  // Get Package
-  rpc GetPackages(google.protobuf.Empty) returns (PackageCatalogResponse) {};
 }
 
 // ==============================================================================================
@@ -233,19 +231,4 @@ enum LogLineOperator {
   LogLineOperator_DOES_NOT_CONTAIN_TEXT = 1;
   LogLineOperator_DOES_CONTAIN_MATCH_REGEX = 2;
   LogLineOperator_DOES_NOT_CONTAIN_MATCH_REGEX = 3;
-}
-
-message PackageCatalogResponse {
- repeated KurtosisPackage packages = 1;
-}
-
-message KurtosisPackage {
-  repeated PackageCatalogArg args = 1;
-  string name = 2;
-  bool required = 3;
-}
-
-message PackageCatalogArg {
-  string name = 1;
-  string type = 2;
 }

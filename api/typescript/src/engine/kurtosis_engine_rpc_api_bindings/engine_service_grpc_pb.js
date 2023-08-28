@@ -116,17 +116,6 @@ function deserialize_engine_api_GetServiceLogsResponse(buffer_arg) {
   return engine_service_pb.GetServiceLogsResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
-function serialize_engine_api_PackageCatalogResponse(arg) {
-  if (!(arg instanceof engine_service_pb.PackageCatalogResponse)) {
-    throw new Error('Expected argument of type engine_api.PackageCatalogResponse');
-  }
-  return Buffer.from(arg.serializeBinary());
-}
-
-function deserialize_engine_api_PackageCatalogResponse(buffer_arg) {
-  return engine_service_pb.PackageCatalogResponse.deserializeBinary(new Uint8Array(buffer_arg));
-}
-
 function serialize_engine_api_StopEnclaveArgs(arg) {
   if (!(arg instanceof engine_service_pb.StopEnclaveArgs)) {
     throw new Error('Expected argument of type engine_api.StopEnclaveArgs');
@@ -249,18 +238,6 @@ getServiceLogs: {
     requestDeserialize: deserialize_engine_api_GetServiceLogsArgs,
     responseSerialize: serialize_engine_api_GetServiceLogsResponse,
     responseDeserialize: deserialize_engine_api_GetServiceLogsResponse,
-  },
-  // Get Package
-getPackages: {
-    path: '/engine_api.EngineService/GetPackages',
-    requestStream: false,
-    responseStream: false,
-    requestType: google_protobuf_empty_pb.Empty,
-    responseType: engine_service_pb.PackageCatalogResponse,
-    requestSerialize: serialize_google_protobuf_Empty,
-    requestDeserialize: deserialize_google_protobuf_Empty,
-    responseSerialize: serialize_engine_api_PackageCatalogResponse,
-    responseDeserialize: deserialize_engine_api_PackageCatalogResponse,
   },
 };
 
