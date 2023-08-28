@@ -1,8 +1,9 @@
 ---
-title: Quickstart
-sidebar_label: Quickstart
+title: Quickstart - Package Consumers
+sidebar_label: Quickstart - Consumers
 slug: /quickstart
 toc_max_heading_level: 2
+sidebar_position: 1
 ---
 
 Introduction
@@ -194,44 +195,44 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
 <!--------------------------- Guides ------------------------------------>
-[installing-kurtosis-guide]: ./guides/installing-the-cli.md#ii-install-the-cli
-[installing-docker-guide]: ./guides/installing-the-cli.md#i-install--start-docker
-[upgrading-kurtosis-guide]: ./guides/upgrading-the-cli.md
-[how-to-set-up-postgres-guide]: ./guides/how-to-set-up-postgres.md
+[installing-kurtosis-guide]: ../guides/installing-the-cli.md
+[installing-docker-guide]: ../guides/installing-the-cli.md#i-install--start-docker
+[upgrading-kurtosis-guide]: ../guides/upgrading-the-cli.md
+[how-to-set-up-postgres-guide]: quickstart-author.md
 
 <!--------------------------- Explanations ------------------------------------>
-[architecture-explanation]: ./explanations/architecture.md
-[enclaves-reference]: ./concepts-reference/enclaves.md
-[services-explanation]: ./explanations/architecture.md#services
-[reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
-[why-we-built-kurtosis-explanation]: ./explanations/why-we-built-kurtosis.md
-[how-do-imports-work-explanation]: ./explanations/how-do-kurtosis-imports-work.md
-[why-multi-phase-runs-explanation]: ./explanations/why-multi-phase-runs.md
+[architecture-explanation]: ../explanations/architecture.md
+[enclaves-reference]: ../concepts-reference/enclaves.md
+[services-explanation]: ../explanations/architecture.md#services
+[reusable-environment-definitions-explanation]: ../explanations/reusable-environment-definitions.md
+[why-we-built-kurtosis-explanation]: ../explanations/why-we-built-kurtosis.md
+[how-do-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
+[why-multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
 
 <!--------------------------- Reference ------------------------------------>
 <!-- CLI Commands Reference -->
-[cli-reference]: /cli
-[kurtosis-run-reference]: ./cli-reference/run.md
-[kurtosis-clean-reference]: ./cli-reference/clean.md
-[kurtosis-enclave-inspect-reference]: ./cli-reference/enclave-inspect.md
-[kurtosis-files-upload-reference]: ./cli-reference/files-upload.md
-[kurtosis-feedback-reference]: ./cli-reference/feedback.md
-[kurtosis-twitter]: ./cli-reference/twitter.md
-[starlark-reference]: ./concepts-reference/starlark.md
+[cli-reference]: /cli/
+[kurtosis-run-reference]: ../cli-reference/run.md
+[kurtosis-clean-reference]: ../cli-reference/clean.md
+[kurtosis-enclave-inspect-reference]: ../cli-reference/enclave-inspect.md
+[kurtosis-files-upload-reference]: ../cli-reference/files-upload.md
+[kurtosis-feedback-reference]: ../cli-reference/feedback.md
+[kurtosis-twitter]: ../cli-reference/twitter.md
+[starlark-reference]: ../concepts-reference/starlark.md
 
 <!-- SL Instructions Reference-->
-[request-reference]: ./starlark-reference/plan.md#request
-[exec-reference]: ./starlark-reference/plan.md#exec
+[request-reference]: ../starlark-reference/plan.md#request
+[exec-reference]: ../starlark-reference/plan.md#exec
 
 <!-- Reference -->
-[multi-phase-runs-reference]: ./concepts-reference/multi-phase-runs.md
-[kurtosis-yml-reference]: ./concepts-reference/kurtosis-yml.md
-[packages-reference]: ./concepts-reference/packages.md
-[runnable-packages-reference]: ./concepts-reference/packages.md#runnable-packages
-[locators-reference]: ./concepts-reference/locators.md
-[plan-reference]: ./concepts-reference/plan.md
-[future-references-reference]: ./concepts-reference/future-references.md
-[files-artifacts-reference]: ./concepts-reference/files-artifacts.md
+[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
+[kurtosis-yml-reference]: ../concepts-reference/kurtosis-yml.md
+[packages-reference]: ../concepts-reference/packages.md
+[runnable-packages-reference]: ../concepts-reference/packages.md#runnable-packages
+[locators-reference]: ../concepts-reference/locators.md
+[plan-reference]: ../concepts-reference/plan.md
+[future-references-reference]: ../concepts-reference/future-references.md
+[files-artifacts-reference]: ../concepts-reference/files-artifacts.md
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->
@@ -245,7 +246,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [eth2-package]: https://github.com/kurtosis-tech/eth2-package/
 
 <!-- Misc -->
-[homepage]: home.md
+[homepage]: ../home.md
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
 [bazel-github]: https://github.com/bazelbuild/bazel/

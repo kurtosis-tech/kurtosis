@@ -2,7 +2,8 @@
 title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Seperation (PBS)
 sidebar_label: Launch a testnet with MEV infra
 slug: /how-to-full-mev-with-eth2-package
-toc_max_heading_level: 12
+toc_max_heading_level: 2
+sidebar_position: 12
 ---
 
 :::tip

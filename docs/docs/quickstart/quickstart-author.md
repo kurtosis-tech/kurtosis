@@ -1,15 +1,17 @@
 ---
-title: How to set up a Postgres Database with an API server and automate data loading
-sidebar_label: Set up a Postgres DB & accompanying API server
+title: Quickstart - Package Authors (2/2)
+sidebar_label: Quickstart - Authors (2/2)
 slug: /how-to-set-up-postgres
 toc_max_heading_level: 2
-sidebar_position: 8
+sidebar_position: 2
 ---
 
 Introduction
 ------------
 
 Welcome! This guide will walk you through how a [Kurtosis package][packages-reference] author would define their environment definition using Kurtosis. This guide takes ~15 minutes and will walk you through setting up a basic Postgres database and an API server to automate the loading of data. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you run in this guide is free, public, and does not contain any sensitive data. 
+
+This quickstart is meant for authors of environment definitions and is a continuation of the [quickstart for package consumers][quickstart-consumers]. While you may choose to do the quickstarts in any order, it is recommended that you start with the [quickstart for package consumers][quickstart-consumers] before this one. Doing both is highly recommended to understand how Kurtosis aims to solve the environment definition author-consumer divide to make building distributed systems as easy as building single server applications.
 
 :::tip What You'll Do
 
@@ -171,7 +173,7 @@ b6fc024deefe   postgres   postgres: 5432/tcp -> postgresql://127.0.0.1:59299   R
 ### Review: Run Postgres
 So what actually happened? Three things actually:
 
-1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](./concepts-reference/plan.md) for what you wanted done (in this case, starting a Postgres instance)
+1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](../concepts-reference/plan.md) for what you wanted done (in this case, starting a Postgres instance)
 1. **Validation:** Kurtosis then ran several validations against your plan, including validating that the Postgres image exists
 1. **Execution:** Kurtosis finally executed the validated plan inside the enclave to start a Postgres container
 
@@ -917,43 +919,43 @@ Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtos
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
 <!--------------------------- Guides ------------------------------------>
-[installing-kurtosis-guide]: ./guides/installing-the-cli.md#ii-install-the-cli
-[installing-docker-guide]: ./guides/installing-the-cli.md#i-install--start-docker
-[upgrading-kurtosis-guide]: ./guides/upgrading-the-cli.md
+[installing-kurtosis-guide]: ../guides/installing-the-cli.md#ii-install-the-cli
+[installing-docker-guide]: ../guides/installing-the-cli.md#i-install--start-docker
+[upgrading-kurtosis-guide]: ../guides/upgrading-the-cli.md
 
 <!--------------------------- Explanations ------------------------------------>
-[architecture-explanation]: ./explanations/architecture.md
-[enclaves-reference]: ./concepts-reference/enclaves.md
-[services-explanation]: ./explanations/architecture.md#services
-[reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
-[why-we-built-kurtosis-explanation]: ./explanations/why-we-built-kurtosis.md
-[how-do-imports-work-explanation]: ./explanations/how-do-kurtosis-imports-work.md
-[why-multi-phase-runs-explanation]: ./explanations/why-multi-phase-runs.md
+[architecture-explanation]: ../explanations/architecture.md
+[enclaves-reference]: ../concepts-reference/enclaves.md
+[services-explanation]: ../explanations/architecture.md#services
+[reusable-environment-definitions-explanation]: ../explanations/reusable-environment-definitions.md
+[why-we-built-kurtosis-explanation]: ../explanations/why-we-built-kurtosis.md
+[how-do-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
+[why-multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
 
 <!--------------------------- Reference ------------------------------------>
 <!-- CLI Commands Reference -->
 [cli-reference]: /cli
-[kurtosis-run-reference]: ./cli-reference/run.md
-[kurtosis-clean-reference]: ./cli-reference/clean.md
-[kurtosis-enclave-inspect-reference]: ./cli-reference/enclave-inspect.md
-[kurtosis-files-upload-reference]: ./cli-reference/files-upload.md
-[kurtosis-feedback-reference]: ./cli-reference/feedback.md
-[kurtosis-twitter]: ./cli-reference/twitter.md
-[starlark-reference]: ./concepts-reference/starlark.md
+[kurtosis-run-reference]: ../cli-reference/run.md
+[kurtosis-clean-reference]: ../cli-reference/clean.md
+[kurtosis-enclave-inspect-reference]: ../cli-reference/enclave-inspect.md
+[kurtosis-files-upload-reference]: ../cli-reference/files-upload.md
+[kurtosis-feedback-reference]: ../cli-reference/feedback.md
+[kurtosis-twitter]: ../cli-reference/twitter.md
+[starlark-reference]: ../concepts-reference/starlark.md
 
 <!-- SL Instructions Reference-->
-[request-reference]: ./starlark-reference/plan.md#request
-[exec-reference]: ./starlark-reference/plan.md#exec
+[request-reference]: ../starlark-reference/plan.md#request
+[exec-reference]: ../starlark-reference/plan.md#exec
 
 <!-- Reference -->
-[multi-phase-runs-reference]: ./concepts-reference/multi-phase-runs.md
-[kurtosis-yml-reference]: ./concepts-reference/kurtosis-yml.md
-[packages-reference]: ./concepts-reference/packages.md
-[runnable-packages-reference]: ./concepts-reference/packages.md#runnable-packages
-[locators-reference]: ./concepts-reference/locators.md
-[plan-reference]: ./concepts-reference/plan.md
-[future-references-reference]: ./concepts-reference/future-references.md
-[files-artifacts-reference]: ./concepts-reference/files-artifacts.md
+[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
+[kurtosis-yml-reference]: ../concepts-reference/kurtosis-yml.md
+[packages-reference]: ../concepts-reference/packages.md
+[runnable-packages-reference]: ../concepts-reference/packages.md#runnable-packages
+[locators-reference]: ../concepts-reference/locators.md
+[plan-reference]: ../concepts-reference/plan.md
+[future-references-reference]: ../concepts-reference/future-references.md
+[files-artifacts-reference]: ../concepts-reference/files-artifacts.md
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->
@@ -964,9 +966,10 @@ Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtos
 [cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
 [go-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/go-test
 [ts-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/ts-test
+[quickstart-consumers]: quickstart-consumer.md
 
 <!-- Misc -->
-[homepage]: home.md
+[homepage]: ../home.md
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
 [bazel-github]: https://github.com/bazelbuild/bazel/

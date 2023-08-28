@@ -23,4 +23,4 @@ In our vision, a developer should have a single platform for prototyping, testin
 To read more about our beliefs on reusable environments, [go here][reusable-environment-definitions]. To get started using Kurtosis, see [the quickstart][quickstart].
 
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
-[quickstart]: ../quickstart.md
+[quickstart]: ../quickstart/
