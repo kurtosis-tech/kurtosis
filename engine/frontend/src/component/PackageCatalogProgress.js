@@ -4,21 +4,24 @@ import RightPanel from "./RightPanel";
 import LeftPanel from "./LeftPanel";
 import { LogView } from "./LogView";
 
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
 import LoadingOverlay from "./LoadingOverflow";
-import {useAppContext} from "../context/AppState";
-import app from "../App";
 
 const SERVICE_IS_ADDED = "added with service";
 
-export const CreateEnclaveView = ({packageId, enclave, args}) => {
+const PackageCatalogProgress = ({appData}) => {
+    const location = useLocation()
+    const {state} = location;
+    const enclave = state.enclave;
+    const packageId = state.runArgs.packageId;
+    const args = state.runArgs.args;
+
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
     const [services, setServices] = useState([])
-    const {appData} = useAppContext()
 
     const getServices = async (enclave) => {
         const {services: newServices} = await getEnclaveInformation(enclave.host, enclave.port, appData.jwtToken, appData.apiHost);
@@ -31,8 +34,8 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
         setLoading(true)
         let stream;
         const fetchLogs = async () => {
-          stream = await runStarlark(enclave.host, enclave.port, packageId, args, appData.jwtToken, appData.apiHost);
-          for await (const res of stream) {
+            stream = await runStarlark(enclave.host, enclave.port, packageId, args, appData.jwtToken, appData.apiHost);
+            for await (const res of stream) {
               const result = res["runResponseLine"]
               if (result.case === "instruction") {
                   setLogs(logs => [...logs, result.value.executableInstruction])
@@ -49,11 +52,10 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
                   }
                   setLogs(logs => [...logs, result.value.serializedInstructionResult])
               }
-          }
-          setLoading(false);
+            }
+            setLoading(false)
         }
-
-       fetchLogs();
+        fetchLogs();
     }, [packageId])
 
     const handleServiceClick = (service) => {
@@ -63,7 +65,7 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
     const renderServices = (services, handleClick) => {
         return services.map(service => {
             return (
-                <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={service.name} onClick={()=>handleClick(service)}>
+                <div className={`flex items-center justify-center h-14 text-base bg-green-700`} key={service.name} onClick={()=>handleClick(service)}>
                     <div className='cursor-default text-lg text-white'> {service.name} </div>
                 </div>
             )
@@ -93,3 +95,5 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
         </div>
     )
 }
+
+export default PackageCatalogProgress;
