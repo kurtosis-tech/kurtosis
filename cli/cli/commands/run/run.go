@@ -49,6 +49,8 @@ const (
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
 
+	enclaveProductionModeFlagKey = "production"
+
 	showEnclaveInspectFlagKey = "show-enclave-inspect"
 	showEnclaveInspectDefault = "true"
 
@@ -173,6 +175,13 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_String,
 			Default: defaultExperimentalFeatures,
 		},
+		{
+			Key:       enclaveProductionModeFlagKey,
+			Usage:     "If enabled, services will restart if they fail",
+			Shorthand: "p",
+			Type:      flags.FlagType_Bool,
+			Default:   "false",
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -258,6 +267,11 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFunctionNameFlagKey)
 	}
 
+	isProduction, err := flags.GetBool(enclaveProductionModeFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", enclaveProductionModeFlagKey)
+	}
+
 	experientalFlags, err := parseExperimentalFlag(flags)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFunctionNameFlagKey)
@@ -268,7 +282,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
 	}
 
-	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, metricsClient)
+	enclaveCtx, isNewEnclave, err := getOrCreateEnclaveContext(ctx, userRequestedEnclaveIdentifier, kurtosisCtx, metricsClient, isProduction)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave context for enclave '%v'", userRequestedEnclaveIdentifier)
 	}
@@ -499,6 +513,7 @@ func getOrCreateEnclaveContext(
 	enclaveIdentifierOrName string,
 	kurtosisContext *kurtosis_context.KurtosisContext,
 	metricsClient metrics_client.MetricsClient,
+	isProduction bool,
 ) (*enclaves.EnclaveContext, bool, error) {
 
 	if enclaveIdentifierOrName != autogenerateEnclaveIdentifierKeyword {
@@ -512,7 +527,13 @@ func getOrCreateEnclaveContext(
 		}
 	}
 	logrus.Infof("Creating a new enclave for Starlark to run inside...")
-	enclaveContext, err := kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName)
+	var enclaveContext *enclaves.EnclaveContext
+	var err error
+	if isProduction {
+		enclaveContext, err = kurtosisContext.CreateProductionEnclave(ctx, enclaveIdentifierOrName)
+	} else {
+		enclaveContext, err = kurtosisContext.CreateEnclave(ctx, enclaveIdentifierOrName)
+	}
 	if err != nil {
 		return nil, false, stacktrace.Propagate(err, fmt.Sprintf("Unable to create new enclave with name '%s'", enclaveIdentifierOrName))
 	}
