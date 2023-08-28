@@ -48,7 +48,7 @@ const renderArgs = (args, handleChange, formData, errorData) => {
                     {arg.isRequired ? <Text align={"center"} fontSize={"s"} color="red.500"> Required</Text>: null}
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
-                {   errorData[index] ? <Text align={"center"} fontSize={"s"} color="red.500"> Incorrect type, expected {placeholder} </Text> : null}
+                {   errorData[index].length > 0 ? <Text align={"center"} fontSize={"s"} color="red.500"> {errorData[index]} </Text> : null}
                     {
                         ["INTEGER", "STRING", "BOOL", "FLOAT"].includes(placeholder) ? <Input placeholder={placeholder} color='gray.300' onChange={e => handleChange(e.target.value, index)} value={formData[index]} borderColor={errorData[index] ? "red.400": null}/> :
                         <Textarea borderColor={errorData[index] ? "red.400": null} placeholder={placeholder} minHeight={"200px"} onChange={e => handleChange(e.target.value, index)} value={formData[index]}/>
@@ -122,7 +122,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     let initialErrorData = {}
     kurtosisPackage.args.map((arg, index)=> {
         if (arg.name !== "plan") {
-            initialErrorData[index] = false
+            initialErrorData[index] = ""
         }
     })
     const [errorData, setErrorData] = useState(initialErrorData)
@@ -151,9 +151,8 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
         let errorsFound = {}
 
         Object.keys(formData).filter(key => {
-            const type = kurtosisPackage.args[key]["type"]
+            let type = kurtosisPackage.args[key]["type"]
             let valid = true
-
             if (type === "STRING") {
                 valid = checkValidStringType(formData[key])
             } else if (type === "INTEGER") {
@@ -162,10 +161,30 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 valid = checkValidUndefinedType(formData[key])
             }
 
+            if (type === undefined) {
+                type = "JSON"
+            }
             if (!valid) {
-                errorsFound[key] = true;
+                errorsFound[key] = `Incorrect type, expected ${type}`;
             }
         })
+
+        // Object.keys(formData).filter(key => {
+        //     const type = kurtosisPackage.args[key]["isRequired"]
+        //     let valid = true
+
+        //     if (type === "STRING") {
+        //         valid = checkValidStringType(formData[key])
+        //     } else if (type === "INTEGER") {
+        //         valid = checkValidIntType(formData[key])
+        //     } else {
+        //         valid = checkValidUndefinedType(formData[key])
+        //     }
+
+        //     if (!valid) {
+        //         errorsFound[key] = `Incorrect type, expected ${type}`;
+        //     }
+        // })
 
         if (Object.keys(errorsFound).length === 0) {
             let args = {}
