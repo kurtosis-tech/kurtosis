@@ -162,6 +162,7 @@ func runMain() error {
 				return
 			}
 
+			w.Header().Add("Cache-Control", "no-store")
 			fileServer.ServeHTTP(w, r)
 		})
 
@@ -172,7 +173,8 @@ func runMain() error {
 	}()
 
 	go func() {
-		err = em_api.RunEnclaveManagerApiServer()
+		enforceAuth := serverArgs.OnBastionHost
+		err = em_api.RunEnclaveManagerApiServer(enforceAuth)
 		if err != nil {
 			logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
 			fmt.Fprintln(logrus.StandardLogger().Out, err)

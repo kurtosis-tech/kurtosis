@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.82.7](https://github.com/kurtosis-tech/kurtosis/compare/0.82.6...0.82.7) (2023-08-28)
+
+
+### Features
+
+* add header to instruct clients not to cache ([#1166](https://github.com/kurtosis-tech/kurtosis/issues/1166)) ([ad27761](https://github.com/kurtosis-tech/kurtosis/commit/ad27761f07306a851526b9424458fe5a54b6cd72))
+* Authorize enclave manager requests if the host matches the user's instance host ([#1163](https://github.com/kurtosis-tech/kurtosis/issues/1163)) ([093af33](https://github.com/kurtosis-tech/kurtosis/commit/093af33b4bc9ecf75814ee7c1a2b838379d961fb))
+
+## [0.82.6](https://github.com/kurtosis-tech/kurtosis/compare/0.82.5...0.82.6) (2023-08-26)
+
+
+### Bug Fixes
+
+* paths ([#1162](https://github.com/kurtosis-tech/kurtosis/issues/1162)) ([e1a9fb0](https://github.com/kurtosis-tech/kurtosis/commit/e1a9fb013acfb8fdc0f638094ab5c596ada0330c))
+
 ## [0.82.5](https://github.com/kurtosis-tech/kurtosis/compare/0.82.4...0.82.5) (2023-08-24)
 
 

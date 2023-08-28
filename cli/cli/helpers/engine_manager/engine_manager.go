@@ -453,15 +453,18 @@ func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
 }
 
 func (manager *EngineManager) waitUntilEngineStoppedOrError(ctx context.Context) error {
-	var err error
 	var status EngineStatus
+	var err error
 	for i := 0; i < waitUntilEngineStoppedTries; i += 1 {
 		status, _, _, err = manager.GetEngineStatus(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred checking the status of the engine")
+		}
 		if status == EngineStatus_Stopped {
 			return nil
 		}
 		logrus.Debugf("Waiting engine to report stopped, currently reporting '%v'", status)
 		time.Sleep(waitUntilEngineStoppedCoolOff)
 	}
-	return stacktrace.Propagate(err, "Engine did not report stopped status, last status reported was '%v'", status)
+	return stacktrace.NewError("Engine did not report stopped status, last status reported was '%v'", status)
 }
