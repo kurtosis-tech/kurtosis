@@ -75,13 +75,6 @@ func main() {
 		},
 	})
 
-	//go func() {
-	//	logrus.Info("STARTED DEATH BOMB")
-	//	time.Sleep(20 * time.Second)
-	//	logrus.Warnf("DEATH BOMB EXPLODING")
-	//	panic(nil)
-	//}()
-
 	err := runMain()
 	if err != nil {
 		logrus.Errorf("An error occurred when running the main function:")

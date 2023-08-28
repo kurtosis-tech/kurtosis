@@ -111,6 +111,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	apiContainerLogLevel logrus.Level,
 	//If blank, will use a random one
 	enclaveName string,
+	isProduction bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
@@ -139,7 +140,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred validating enclave name '%v'", enclaveName)
 	}
 
-	if manager.enclavePool != nil {
+	if !isProduction && manager.enclavePool != nil {
 		enclaveInfo, err = manager.enclavePool.GetEnclave(
 			setupCtx,
 			enclaveName,
@@ -159,6 +160,7 @@ func (manager *EnclaveManager) CreateEnclave(
 			apiContainerLogLevel,
 			enclaveName,
 			manager.enclaveEnvVars,
+			isProduction,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(

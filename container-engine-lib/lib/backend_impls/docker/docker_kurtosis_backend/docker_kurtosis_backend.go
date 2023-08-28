@@ -46,11 +46,13 @@ type DockerKurtosisBackend struct {
 	//  (in essence creating APIContainerKurtosisBackend, EngineKurtosisBackend, CLIKurtosisBackend). That way, everything
 	//  will be cleaner. HOWEVER, the reason it's not done this way as of 2022-05-12 is because the CLI still uses some
 	//  KurtosisBackend functionality that it shouldn't (e.g. GetUserServiceLogs). This should all flow through the API
-	//  container API instaed.
+	//  container API instead.
 	// This map is set exactly once, upon creation of the DockerKubernetesBackend, and never modified afterwards. Therefore, it doesn't need to be protected with a mutex (because the FreeIPProviders are themselves threadsafe)
 	enclaveFreeIpProviders map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker
 
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
+
+	productionMode bool
 
 	// Control concurrent access to serviceRegistrations
 	serviceRegistrationMutex *sync.Mutex
@@ -60,6 +62,7 @@ func NewDockerKurtosisBackend(
 	dockerManager *docker_manager.DockerManager,
 	enclaveFreeIpProviders map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker,
 	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
+	productionMode bool,
 ) *DockerKurtosisBackend {
 	dockerNetworkAllocator := docker_network_allocator.NewDockerNetworkAllocator(dockerManager)
 	return &DockerKurtosisBackend{
@@ -68,6 +71,7 @@ func NewDockerKurtosisBackend(
 		objAttrsProvider:              object_attributes_provider.GetDockerObjectAttributesProvider(),
 		enclaveFreeIpProviders:        enclaveFreeIpProviders,
 		serviceRegistrationRepository: serviceRegistrationRepository,
+		productionMode:                productionMode,
 		serviceRegistrationMutex:      &sync.Mutex{},
 	}
 }
@@ -204,6 +208,11 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 
 	logsCollectorAvailabilityChecker := fluentbit.NewFluentbitAvailabilityChecker(logsCollectorIpAddressInEnclaveNetwork, logsCollector.GetPrivateHttpPort().GetNumber())
 
+	var restartPolicy docker_manager.RestartPolicy = docker_manager.NoRestart
+	if backend.productionMode {
+		restartPolicy = docker_manager.RestartOnFailure
+	}
+
 	successfullyStartedService, failedService, err := user_service_functions.StartRegisteredUserServices(
 		ctx,
 		enclaveUuid,
@@ -213,7 +222,8 @@ func (backend *DockerKurtosisBackend) StartRegisteredUserServices(ctx context.Co
 		logsCollectorAvailabilityChecker,
 		backend.objAttrsProvider,
 		freeIpAddrProviderForEnclave,
-		backend.dockerManager)
+		backend.dockerManager,
+		restartPolicy)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unexpected error while starting user service")
 	}
