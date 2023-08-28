@@ -1,9 +1,14 @@
 package server
 
 import (
-	"connectrpc.com/connect"
 	"context"
 	"fmt"
+	"net/http"
+	"net/url"
+	"strings"
+	"time"
+
+	"connectrpc.com/connect"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings/kurtosis_core_rpc_api_bindingsconnect"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -17,19 +22,15 @@ import (
 	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"net/http"
-	"net/url"
-	"strings"
-	"time"
 )
 
 const (
-	listenPort                = 8081
-	grpcServerStopGracePeriod = 5 * time.Second
-	engineHostUrl             = "http://localhost:9710"
-	kurtosisCloudApiHost      = "https://cloud.kurtosis.com"
-	kurtosisCloudApiPort      = 8080
-	enforceAuth               = false // This setting is temporary and will be dynamically changed in following work
+	listenPort                                       = 8081
+	grpcServerStopGracePeriod                        = 5 * time.Second
+	engineHostUrl                                    = "http://localhost:9710"
+	kurtosisCloudApiHost                             = "https://cloud.kurtosis.com"
+	kurtosisCloudApiPort                             = 8080
+	KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg = "KURTOSIS_ENCLAVE_MANAGER_API_ENFORCE_AUTH"
 )
 
 type Authentication struct {
@@ -39,16 +40,18 @@ type Authentication struct {
 
 type WebServer struct {
 	engineServiceClient *kurtosis_engine_rpc_api_bindingsconnect.EngineServiceClient
+	enforceAuth         bool
 }
 
-func NewWebserver() *WebServer {
+func NewWebserver(enforceAuth bool) (*WebServer, error) {
 	engineServiceClient := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceClient(
 		http.DefaultClient,
 		engineHostUrl,
 	)
 	return &WebServer{
 		engineServiceClient: &engineServiceClient,
-	}
+		enforceAuth:         enforceAuth,
+	}, nil
 }
 
 func (c *WebServer) Check(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.HealthCheckRequest]) (*connect.Response[kurtosis_enclave_manager_api_bindings.HealthCheckResponse], error) {
@@ -79,15 +82,29 @@ func (c *WebServer) ValidateRequestAuthorization(
 	if err != nil {
 		return false, stacktrace.Propagate(err, "Failed to convert jwt token to API key")
 	}
-	if auth != nil && len(auth.ApiKey) > 0 {
-		return true, nil
+	if auth == nil || len(auth.ApiKey) == 0 {
+		return false, stacktrace.NewError("An internal error has occurred. An empty API key was found")
 	}
 
-	return false, stacktrace.NewError("An internal error has occurred. An empty API key was found")
+	instanceConfig, err := c.GetCloudInstanceConfig(ctx, auth.ApiKey)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "Failed to retrieve the instance config")
+	}
+	reqHost := header.Get("Host")
+	splitHost := strings.Split(reqHost, ":")
+	if len(splitHost) != 2 {
+		return false, stacktrace.NewError("Host header malformed. host:port format required")
+	}
+	reqHost = splitHost[0]
+	if instanceConfig.LaunchResult.PublicDns != reqHost {
+		return false, stacktrace.NewError("Instance config public dns '%s' does not match the request host '%s'", instanceConfig.LaunchResult.PublicDns, reqHost)
+	}
+
+	return true, nil
 }
 
 func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -106,7 +123,7 @@ func (c *WebServer) GetEnclaves(ctx context.Context, req *connect.Request[emptyp
 	return resp, nil
 }
 func (c *WebServer) GetServices(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetServicesRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.GetServicesResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -167,7 +184,7 @@ func (c *WebServer) GetServiceLogs(
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -229,7 +246,7 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 }
 
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -250,7 +267,7 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 }
 
 func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
-	auth, err := c.ValidateRequestAuthorization(ctx, enforceAuth, req.Header())
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
 	}
@@ -311,6 +328,40 @@ func (c *WebServer) createKurtosisCloudBackendClient(
 	return &client, nil
 }
 
+func (c *WebServer) GetCloudInstanceConfig(
+	ctx context.Context,
+	apiKey string,
+) (*kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse, error) {
+	client, err := c.createKurtosisCloudBackendClient(
+		kurtosisCloudApiHost,
+		kurtosisCloudApiPort,
+	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
+	}
+	getInstanceRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest{
+			ApiKey: apiKey,
+		},
+	}
+	getInstanceResponse, err := (*client).GetOrCreateInstance(ctx, getInstanceRequest)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get the instance")
+	}
+	getInstanceConfigRequest := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]{
+		Msg: &kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs{
+			ApiKey:     apiKey,
+			InstanceId: getInstanceResponse.Msg.InstanceId,
+		},
+	}
+	getInstanceConfigResponse, err := (*client).GetCloudInstanceConfig(ctx, getInstanceConfigRequest)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to get the instance config")
+	}
+
+	return getInstanceConfigResponse.Msg, nil
+}
+
 func (c *WebServer) ConvertJwtTokenToApiKey(
 	ctx context.Context,
 	jwtToken string,
@@ -320,7 +371,7 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 		kurtosisCloudApiPort,
 	)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
+		return nil, stacktrace.Propagate(err, "Failed to create the Cloud backend client")
 	}
 	request := &connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]{
 		Msg: &kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest{
@@ -346,8 +397,12 @@ func (c *WebServer) ConvertJwtTokenToApiKey(
 	return nil, stacktrace.NewError("an empty API key was returned from Kurtosis Cloud Backend")
 }
 
-func RunEnclaveManagerApiServer() {
-	srv := NewWebserver()
+func RunEnclaveManagerApiServer(enforceAuth bool) error {
+	srv, err := NewWebserver(enforceAuth)
+	if err != nil {
+		logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
+		return err
+	}
 	apiPath, handler := kurtosis_enclave_manager_api_bindingsconnect.NewKurtosisEnclaveManagerServerHandler(srv)
 
 	logrus.Infof("Web server running and listening on port %d", listenPort)
@@ -360,6 +415,7 @@ func RunEnclaveManagerApiServer() {
 	if err := apiServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		logrus.Error("An error occurred running the server", err)
 	}
+	return nil
 }
 
 func getServiceLogsFromEngine(client *connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
