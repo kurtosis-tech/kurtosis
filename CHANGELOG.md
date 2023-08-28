@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.9](https://github.com/kurtosis-tech/kurtosis/compare/0.82.8...0.82.9) (2023-08-28)
+
+
+### Features
+
+* added package to loader UI ([#1147](https://github.com/kurtosis-tech/kurtosis/issues/1147)) ([9a2edff](https://github.com/kurtosis-tech/kurtosis/commit/9a2edffd095bfa6b0dc760e974aae3ed7939e0c7))
+
 ## [0.82.8](https://github.com/kurtosis-tech/kurtosis/compare/0.82.7...0.82.8) (2023-08-28)
 
 
