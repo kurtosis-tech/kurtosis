@@ -101,7 +101,30 @@ func TestRecipeResultSave_ErrorWhenUsingNotStarlarkStringOrInt(t *testing.T) {
 	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
 }
 
-//TODO test for delete
+func TestDelete_Success(t *testing.T) {
+	repository := getRecipeResultRepositoryForTest(t)
+
+	resultValue := map[string]starlark.Comparable{
+		firstKey:  starlarkStringValue,
+		secondKey: starlarkIntValue,
+	}
+
+	err := repository.Save(randomUuid, resultValue)
+	require.NoError(t, err)
+
+	value, err := repository.Get(randomUuid)
+	require.NoError(t, err)
+	require.NotNil(t, value)
+
+	require.Equal(t, resultValue, value)
+
+	err = repository.Delete(randomUuid)
+	require.NoError(t, err)
+
+	value, err = repository.Get(randomUuid)
+	require.Error(t, err)
+	require.Empty(t, value)
+}
 
 func getRecipeResultRepositoryForTest(t *testing.T) *recipeResultRepository {
 	file, err := os.CreateTemp("/tmp", "*.db")

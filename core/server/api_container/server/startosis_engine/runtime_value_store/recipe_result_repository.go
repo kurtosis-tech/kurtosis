@@ -156,7 +156,21 @@ func (repository *recipeResultRepository) Get(
 	return value, nil
 }
 
-//TODO implemnent Delete
+func (repository *recipeResultRepository) Delete(uuid string) error {
+	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(recipeResultBucketName)
+
+		uuidKey := getUuidKey(uuid)
+		if err := bucket.Delete(uuidKey); err != nil {
+			return stacktrace.Propagate(err, "An error occurred deleting a recipe result with key '%v' from the recipe result bucket", uuidKey)
+		}
+
+		return nil
+	}); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while deleting a recipe result with key '%v' from the recipe result repository", uuid)
+	}
+	return nil
+}
 
 func getUuidKey(uuid string) []byte {
 	return []byte(uuid)

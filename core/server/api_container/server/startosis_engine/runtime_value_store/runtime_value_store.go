@@ -59,7 +59,10 @@ func (re *RuntimeValueStore) GetOrCreateValueAssociatedWithService(serviceName s
 			return "", stacktrace.Propagate(err, "An error occurred getting associated values for service '%s'", serviceName)
 		}
 		if uuid != "" {
-			delete(re.recipeResultMap, uuid) // deleting old values so that they do not interfere until that are set again
+			// deleting old values so that they do not interfere until that are set again
+			if err := re.recipeResultRepository.Delete(uuid); err != nil {
+				return "", stacktrace.Propagate(err, "An error occurred deleting recipe result with key '%s' from the repository", uuid)
+			}
 			return uuid, nil
 		}
 	}
