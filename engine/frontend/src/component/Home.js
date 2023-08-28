@@ -7,10 +7,11 @@ import FileArtifactInfo from './FileArtifactInfo';
 import Enclaves from "./Enclaves";
 import {getEnclavesFromKurtosis} from "../api/enclave";
 
-import {Route, Routes, useSearchParams} from 'react-router-dom';
+import {createBrowserRouter, Route, RouterProvider} from 'react-router-dom';
 import {useAppContext} from "../context/AppState";
 import LoadingOverlay from "./LoadingOverflow";
 import CreateEnclave from "./CreateEnclave";
+import {createRoutesFromElements} from "react-router";
 
 
 const queryParamToBool = (value) => {
@@ -29,16 +30,14 @@ const createApiUrl = (apiHost, requireProxy) => {
 
 const makeUrl = () => {
     let path = window.location.pathname
-    if (path.charAt(0) === "/") path = path.substr(1);
-    path = path.endsWith('/') ? path.slice(0, -1) : path;
-    if (!path) return ""
+    if (!path || path.length === 0) return "/"
+    if (path.charAt(0) !== "/") path = path + "/"
     return path;
 }
 const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [enclaveLoading, setEnclaveLoading] = useState(false)
     const {appData, setAppData} = useAppContext()
-    const [searchParams, setSearchParams] = useSearchParams();
 
     const loading = (
         <div className="flex-grow bg-#181926-100 flex-row flex mt-28 w-screen">
@@ -78,13 +77,18 @@ const Home = () => {
         }
     }
     window.addEventListener("message", receiveMessage)
+
+    // Using plain JS for now since useLocation requires to be inside Router.
+    const searchParams = new URLSearchParams(window.location.search);
     const requireAuth = queryParamToBool(searchParams.get("require_authentication"))
+    const requestedApiHost = searchParams.get("api_host")
 
     useEffect(() => {
         // At this time requireAuth=true means we are running remote which means connection is going through a TLS protected LB
-        const requestedApiHost = searchParams.get("api_host")
         const requireProxy = requireAuth;
         const apiHost = createApiUrl(requestedApiHost, requireProxy)
+        console.log(`requireProxy=${requireProxy}`)
+        console.log(`apiHost=${apiHost}`)
         if (apiHost && apiHost.length > 0) {
             setAppData({
                 ...appData,
@@ -143,39 +147,49 @@ const Home = () => {
         return element;
     }
 
-    const constructPath = (path) => {
-        return `${urlPath}${path}`
-    }
+    const routes = (
+        <>
+            <Route
+                path="/"
+                element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}
+            />
+            <Route exact
+                   path="/enclaves"
+                   element={checkAuth(<Enclaves enclaves={enclaves}
+                                                isLoading={enclaveLoading}
+                       />
+                   )}
+            />
+            <Route exact
+                   path="/enclave/*"
+                   element={checkAuth(<CreateEnclave addEnclave={addEnclave}/>)}
+            />
+            <Route path="/enclaves/:name"
+                   element={checkAuth(<EnclaveInfo enclaves={enclaves}/>)}
+            />
+            <Route path="/enclaves/:name/services/:uuid"
+                   element={checkAuth(<ServiceInfo/>)}
+            />
+            <Route path="/enclaves/:name/files/:fileArtifactName"
+                   element={checkAuth(<FileArtifactInfo enclaves={enclaves}/>)}
+            />
+        </>
+    )
+
+    console.log("urlPath", urlPath)
+    const router = createBrowserRouter(
+        createRoutesFromElements(routes),
+        {
+            basename: urlPath,
+        }
+    );
+
+
     return (
         <div className="h-screen flex flex-col bg-[#171923]">
             <TitleBar/>
             <div className="flex h-[calc(100vh-4rem)]">
-                <Routes>
-                    <Route exact
-                           path={constructPath("/")}
-                           element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}
-                    />
-                    <Route exact
-                           path={constructPath("/enclaves")}
-                           element={checkAuth(<Enclaves enclaves={enclaves}
-                                                        isLoading={enclaveLoading}
-                               />
-                           )}
-                    />
-                    <Route exact
-                           path={constructPath("/enclave/*")}
-                           element={checkAuth(<CreateEnclave addEnclave={addEnclave}/>)}
-                    />
-                    <Route path={constructPath("/enclaves/:name")}
-                           element={checkAuth(<EnclaveInfo enclaves={enclaves}/>)}
-                    />
-                    <Route path={constructPath("/enclaves/:name/services/:uuid")}
-                           element={checkAuth(<ServiceInfo/>)}
-                    />
-                    <Route path={constructPath("/enclaves/:name/files/:fileArtifactName")}
-                           element={checkAuth(<FileArtifactInfo enclaves={enclaves}/>)}
-                    />
-                </Routes>
+                <RouterProvider router={router}/>
             </div>
         </div>
     );

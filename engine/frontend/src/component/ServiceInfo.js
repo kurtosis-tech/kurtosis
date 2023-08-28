@@ -67,7 +67,7 @@ const ServiceInfo = () => {
     }, [serviceUuid])
 
     const handleServiceClick = (service) => {
-        const fullPath = `../../../enclaves/${enclaveName}/services/${service.uuid}`
+        const fullPath = `/enclaves/${enclaveName}/services/${service.uuid}`
         navigate(fullPath, {state: {services, selected: service}})
     }
 

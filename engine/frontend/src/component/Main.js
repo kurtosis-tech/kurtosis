@@ -8,7 +8,7 @@ const Main = ({totalEnclaves}) => {
         navigate("/enclave/create")
     }
     const handleViewEnvsClick = () => {
-        navigate("./enclaves")
+        navigate("/enclaves")
     }
 
     return (

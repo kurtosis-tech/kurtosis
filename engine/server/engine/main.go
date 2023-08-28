@@ -162,6 +162,7 @@ func runMain() error {
 				return
 			}
 
+			w.Header().Add("Cache-Control", "no-store")
 			fileServer.ServeHTTP(w, r)
 		})
 

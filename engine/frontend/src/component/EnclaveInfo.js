@@ -93,18 +93,18 @@ const EncalveInfo = ({enclaves}) => {
     }, [name, enclaves])
 
     const handleServiceClick = (service, services) => {
-        navigate(`services/${service.uuid}`, {state: {services, selected: service}})
+        navigate(`/enclaves/${name}/services/${service.uuid}`, {state: {services, selected: service}})
     }
 
     const handleLeftPanelClick = (enclaveName) => {
-        navigate(`./../${enclaveName}`, {replace: true})
+        navigate(`/enclaves/${enclaveName}`, {replace: true})
     }
 
     const handleFileArtifactClick = async (fileArtifactName, fileArtifacts) => {
         // console.log("Artifacts: ", fileArtifacts)
         const selected = enclaves.filter(enclave => enclave.name === name);
         if (selected.length > 0) {
-            navigate(`enclaves/${selected[0].name}/files/${fileArtifactName}`, {state: {fileArtifacts}})
+            navigate(`/enclaves/${selected[0].name}/files/${fileArtifactName}`, {state: {fileArtifacts}})
         }
     }
 
