@@ -38,6 +38,7 @@ type APIContainerModeArgs struct {
 	Context        context.Context
 	EnclaveID      enclave.EnclaveUUID
 	APIContainerIP net.IP
+	IsProduction   bool
 }
 
 var (

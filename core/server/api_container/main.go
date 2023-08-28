@@ -75,6 +75,13 @@ func main() {
 		},
 	})
 
+	//go func() {
+	//	logrus.Info("STARTED DEATH BOMB")
+	//	time.Sleep(20 * time.Second)
+	//	logrus.Warnf("DEATH BOMB EXPLODING")
+	//	panic(nil)
+	//}()
+
 	err := runMain()
 	if err != nil {
 		logrus.Errorf("An error occurred when running the main function:")
@@ -129,6 +136,7 @@ func runMain() error {
 			Context:        ctx,
 			EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
 			APIContainerIP: ownIpAddress,
+			IsProduction:   serverArgs.IsProductionEnclave,
 		}
 		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgs, configs.NoRemoteBackendConfig)
 		if err != nil {

@@ -676,7 +676,7 @@ func createStartServiceOperation(
 			volumeMounts,
 		).WithLoggingDriver(
 			fluentdLoggingDriverCnfg,
-		)
+		).WithRestartPolicy(docker_manager.RestartPolicy(""))
 
 		if entrypointArgs != nil {
 			createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)

@@ -163,6 +163,7 @@ func (creator *EnclaveCreator) launchApiContainer(
 			grpcListenPort,
 			creator.apiContainerKurtosisBackendConfigSupplier,
 			enclaveEnvVars,
+			true,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveUuid, apiContainerImageVersionTag)
@@ -176,6 +177,7 @@ func (creator *EnclaveCreator) launchApiContainer(
 		grpcListenPort,
 		creator.apiContainerKurtosisBackendConfigSupplier,
 		enclaveEnvVars,
+		true,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveUuid)

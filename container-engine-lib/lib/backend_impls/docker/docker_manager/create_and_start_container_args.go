@@ -28,6 +28,7 @@ type CreateAndStartContainerArgs struct {
 	loggingDriverConfig                      LoggingDriver
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
 	containerInitEnabled                     bool
+	restartPolicy                            RestartPolicy
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -53,6 +54,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	loggingDriverCnfg                        LoggingDriver
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
 	containerInitEnabled                     bool
+	restartPolicy                            RestartPolicy
 }
 
 /*
@@ -85,6 +87,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		loggingDriverCnfg:                        nil,
 		skipAddingToBridgeNetworkIfStaticIpIsSet: false,
 		containerInitEnabled:                     false,
+		restartPolicy:                            NoRestart,
 	}
 }
 
@@ -111,6 +114,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		loggingDriverConfig:                      builder.loggingDriverCnfg,
 		skipAddingToBridgeNetworkIfStaticIpIsSet: builder.skipAddingToBridgeNetworkIfStaticIpIsSet,
 		containerInitEnabled:                     builder.containerInitEnabled,
+		restartPolicy:                            builder.restartPolicy,
 	}
 }
 
@@ -215,6 +219,12 @@ func (builder *CreateAndStartContainerArgsBuilder) WithMemoryAllocationMegabytes
 // Will configure the container to use and specific logging driver which can be configured using the different implementations
 func (builder *CreateAndStartContainerArgsBuilder) WithLoggingDriver(loggingDriverConfig LoggingDriver) *CreateAndStartContainerArgsBuilder {
 	builder.loggingDriverCnfg = loggingDriverConfig
+	return builder
+}
+
+// Will configure the container to use and specific logging driver which can be configured using the different implementations
+func (builder *CreateAndStartContainerArgsBuilder) WithRestartPolicy(restartPolicy RestartPolicy) *CreateAndStartContainerArgsBuilder {
+	builder.restartPolicy = restartPolicy
 	return builder
 }
 

@@ -68,6 +68,13 @@ var EnclaveAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 			),
 			Type: flags.FlagType_String,
 		},
+		{
+			Key:       "production",
+			Usage:     "Deletes all enclaves, regardless of whether they're already stopped",
+			Shorthand: "p",
+			Type:      flags.FlagType_Bool,
+			Default:   "false",
+		},
 	},
 }
 
