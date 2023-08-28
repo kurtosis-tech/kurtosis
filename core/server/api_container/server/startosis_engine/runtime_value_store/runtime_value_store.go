@@ -9,7 +9,6 @@ import (
 )
 
 type RuntimeValueStore struct {
-	recipeResultMap                   map[string]map[string]starlark.Comparable //TODO remove this map
 	recipeResultRepository            *recipeResultRepository
 	serviceAssociatedValuesRepository *serviceAssociatedValuesRepository
 }
@@ -26,7 +25,6 @@ func CreateRuntimeValueStore(enclaveDb *enclave_db.EnclaveDB) (*RuntimeValueStor
 	}
 
 	runtimeValueStore := &RuntimeValueStore{
-		recipeResultMap:                   make(map[string]map[string]starlark.Comparable),
 		recipeResultRepository:            recipeResultRepositoryObj,
 		serviceAssociatedValuesRepository: associatedValuesRepository,
 	}
