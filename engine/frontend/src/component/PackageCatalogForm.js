@@ -169,22 +169,19 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             }
         })
 
-        // Object.keys(formData).filter(key => {
-        //     const type = kurtosisPackage.args[key]["isRequired"]
-        //     let valid = true
-
-        //     if (type === "STRING") {
-        //         valid = checkValidStringType(formData[key])
-        //     } else if (type === "INTEGER") {
-        //         valid = checkValidIntType(formData[key])
-        //     } else {
-        //         valid = checkValidUndefinedType(formData[key])
-        //     }
-
-        //     if (!valid) {
-        //         errorsFound[key] = `Incorrect type, expected ${type}`;
-        //     }
-        // })
+        Object.keys(formData).filter(key => {
+            let valid = true;
+            const required = kurtosisPackage.args[key]["isRequired"]
+            if (required) {
+                if (formData[key].length === 0) {
+                    valid = false;
+                }
+            }
+            
+            if (!valid) {
+                errorsFound[key] = `This field is required and cannot be empty`;
+            }
+        })
 
         if (Object.keys(errorsFound).length === 0) {
             let args = {}
