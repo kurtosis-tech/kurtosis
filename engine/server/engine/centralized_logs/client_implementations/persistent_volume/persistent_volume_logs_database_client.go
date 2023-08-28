@@ -29,6 +29,8 @@ const (
 	logLabel = "log"
 
 	maxNumLogsToReturn = 200
+
+	endOfJsonLine = "}\n"
 )
 
 type JsonLog map[string]string
@@ -165,14 +167,14 @@ func streamServiceLogLines(
 		default:
 			var jsonLogStr string
 			var readErr error
-			var newStr string
-			endOfJsonLine := "}\n"
+			var jsonLogNewStr string
+
 			for {
-				newStr, readErr = logsReader.ReadString(newlineRune)
-				jsonLogStr = jsonLogStr + newStr
-				if newStr != "" {
-					lastChars := newStr[len(newStr)-2:]
-					if lastChars != endOfJsonLine {
+				jsonLogNewStr, readErr = logsReader.ReadString(newlineRune)
+				jsonLogStr = jsonLogStr + jsonLogNewStr
+				if jsonLogNewStr != "" && len(jsonLogNewStr) > 2 {
+					jsonLogNewStrLastChars := jsonLogNewStr[len(jsonLogNewStr)-2:]
+					if jsonLogNewStrLastChars != endOfJsonLine {
 						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(newlineRune))
 						continue
 					}
