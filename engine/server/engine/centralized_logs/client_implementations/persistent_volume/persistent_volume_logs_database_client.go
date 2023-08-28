@@ -172,9 +172,11 @@ func streamServiceLogLines(
 			for {
 				jsonLogNewStr, readErr = logsReader.ReadString(newlineRune)
 				jsonLogStr = jsonLogStr + jsonLogNewStr
+				// check if it's an uncompleted Json line
 				if jsonLogNewStr != "" && len(jsonLogNewStr) > 2 {
 					jsonLogNewStrLastChars := jsonLogNewStr[len(jsonLogNewStr)-2:]
 					if jsonLogNewStrLastChars != endOfJsonLine {
+						// removes the newline char from the previous part of the json line
 						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(newlineRune))
 						continue
 					}
