@@ -3,12 +3,15 @@ import PackageCatalogForm from './PackageCatalogForm';
 import PackageCatalog from './PackageCatalog';
 import PackageCatalogProgress from "./PackageCatalogProgress";
 import { useEffect } from 'react';
-import {getKurtosisPackages} from "../api/enclave";
+import {getKurtosisPackages} from "../api/packageCatalog";
 import {createEnclave} from "../api/enclave";
 import {useState} from "react";
+import {useAppContext} from "../context/AppState";
+
 
 const PackageCatalogRouter = ({addEnclave}) => {
     const navigate = useNavigate()
+    const {appData} = useAppContext()
     const [kurtosisPackages, setKurtosisPackages] = useState([])
 
     useEffect(()=> {
@@ -21,7 +24,7 @@ const PackageCatalogRouter = ({addEnclave}) => {
 
     const createNewEnclave = (runArgs) => {
         const request = async () => {
-            const enclave = await createEnclave();
+            const enclave = await createEnclave(appData.jwtToken, appData.apiHost);
             addEnclave(enclave)
             navigate("/catalog/progress", {state: {
                 enclave,
@@ -35,7 +38,7 @@ const PackageCatalogRouter = ({addEnclave}) => {
         <div className='h-full w-full flex'>
             <Routes>
                 <Route path="/progress" element={
-                    <PackageCatalogProgress/>
+                    <PackageCatalogProgress appData={appData}/>
                 } />
                 <Route path="/form" element={
                     <PackageCatalogForm handleCreateNewEnclave={createNewEnclave}/>

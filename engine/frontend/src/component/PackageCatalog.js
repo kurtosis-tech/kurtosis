@@ -24,7 +24,7 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
 
     useEffect(()=> {
         setKurtosisPackages(defaultPackages)
-    }, [])
+    }, [defaultPackages.length])
 
     const selectPackage = (index) => {
         if (index === chosenPackage) {
@@ -41,7 +41,6 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
 
     const handleSearchEvent = (e) => {
         const value = e.target.value
-        console.log(value)
         if (value === "") {
             setKurtosisPackages(defaultPackages)
         }

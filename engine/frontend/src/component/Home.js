@@ -131,7 +131,8 @@ const Home = () => {
     }, [appData.apiHost])
 
     const addEnclave = (enclave) => {
-        setEnclaves(enclaves => [...enclaves, enclave])
+        const {created, ...updated} = enclave
+        setEnclaves(enclaves => [...enclaves, updated])
     }
 
     const checkAuth = (element) => {
@@ -149,10 +150,6 @@ const Home = () => {
 
     const routes = (
         <>
-            <Route
-                path="/"
-                element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}
-            />
             <Route exact
                    path="/enclaves"
                    element={checkAuth(<Enclaves enclaves={enclaves}
@@ -173,9 +170,13 @@ const Home = () => {
             <Route path="/enclaves/:name/files/:fileArtifactName"
                    element={checkAuth(<FileArtifactInfo enclaves={enclaves}/>)}
             />
-            <Route 
+            <Route exact
                 path="/catalog/*" 
                 element={checkAuth(<PackageCatalogRouter addEnclave={addEnclave}/>)} 
+            />
+            <Route
+                path="/"
+                element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}
             />
         </>
     )

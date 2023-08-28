@@ -10,7 +10,7 @@ import {
     Textarea,
 } from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import {useState} from 'react';
 
 const yaml = require("js-yaml")
@@ -104,7 +104,7 @@ const checkValidIntType = (data) => {
 }
 
 const PackageCatalogForm = ({handleCreateNewEnclave}) => {
-
+    const navigate = useNavigate()
     const location = useLocation()
     const {state} = location;
     const {kurtosisPackage} = state
@@ -143,6 +143,10 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
         }
     }
 
+    const handleCancelBtn = () => {
+        navigate("/catalog")
+    }
+    
     const handleRunBtn = () => {
         let errorsFound = {}
 
@@ -216,7 +220,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 </GridItem>
                 <GridItem area={'configure'} m="10px">
                     <Flex gap={5}>
-                        <Button colorScheme='red' w="50%" > Cancel </Button>
+                        <Button colorScheme='red' w="50%" onClick={handleCancelBtn}> Cancel </Button>
                         <Button colorScheme='green' w="50%" onClick={handleRunBtn}> Run </Button>
                     </Flex>
                 </GridItem>

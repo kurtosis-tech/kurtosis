@@ -1,14 +1,5 @@
 import {runStarlarkPackage} from "./container"
-import axios from "axios";
-
 import {createClient, createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager} from "./api";
-
-export const getKurtosisPackages = async () => {
-    const response = await axios.post(`http://localhost:9770/kurtosis_package_indexer.KurtosisPackageIndexer/GetPackages`, {"field":""}, {"headers":{'Content-Type': "application/json"}}
-    )
-    const {data} = response
-    return data.packages
-}
 
 export const getEnclavesFromKurtosis = async (token, apiHost) => {
     const data = await getEnclavesFromEnclaveManager(token, apiHost);

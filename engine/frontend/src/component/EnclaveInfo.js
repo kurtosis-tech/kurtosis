@@ -79,7 +79,6 @@ const EncalveInfo = ({enclaves}) => {
         setEnclaveInfoLoading(true)
         const fetch = async () => {
             const selected = enclaves.filter(enclave => enclave.name === name);
-            console.log(appData, selected)
             if (selected.length > 0) {
                 const {
                     services,
