@@ -30,8 +30,8 @@ const createApiUrl = (apiHost, requireProxy) => {
 
 const makeUrl = () => {
     let path = window.location.pathname
-    if (path.charAt(0) !== "/") path = path + "/"
     if (!path || path.length === 0) return "/"
+    if (path.charAt(0) !== "/") path = path + "/"
     return path;
 }
 const Home = () => {
@@ -180,7 +180,7 @@ const Home = () => {
     const router = createBrowserRouter(
         createRoutesFromElements(routes),
         {
-            basename: urlPath,//"/app",
+            basename: urlPath,
         }
     );
 
