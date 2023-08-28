@@ -77,7 +77,7 @@ func TestRecipeResultSave_ErrorWhenUsingNotStarlarkStringOrInt(t *testing.T) {
 	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
 
 	resultValue2 := map[string]starlark.Comparable{
-		secondKey: directory.Directory{},
+		secondKey: directory.Directory{}, // nolint: exhaustruct
 	}
 
 	err = repository.Save(randomUuid, resultValue2)
@@ -85,7 +85,7 @@ func TestRecipeResultSave_ErrorWhenUsingNotStarlarkStringOrInt(t *testing.T) {
 	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
 
 	resultValue3 := map[string]starlark.Comparable{
-		thirdKey: &kurtosis_type_constructor.KurtosisValueTypeDefault{},
+		thirdKey: &kurtosis_type_constructor.KurtosisValueTypeDefault{}, // nolint: exhaustruct
 	}
 
 	err = repository.Save(randomUuid, resultValue3)
