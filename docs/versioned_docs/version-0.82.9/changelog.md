@@ -1,5 +1,42 @@
 # Changelog
 
+## [0.82.9](https://github.com/kurtosis-tech/kurtosis/compare/0.82.8...0.82.9) (2023-08-28)
+
+
+### Features
+
+* added package to loader UI ([#1147](https://github.com/kurtosis-tech/kurtosis/issues/1147)) ([9a2edff](https://github.com/kurtosis-tech/kurtosis/commit/9a2edffd095bfa6b0dc760e974aae3ed7939e0c7))
+
+## [0.82.8](https://github.com/kurtosis-tech/kurtosis/compare/0.82.7...0.82.8) (2023-08-28)
+
+
+### Bug Fixes
+
+* Fix NPE in stacktrace ([#1172](https://github.com/kurtosis-tech/kurtosis/issues/1172)) ([32770ca](https://github.com/kurtosis-tech/kurtosis/commit/32770ca96513d5d4191f6e2f373cadc89120adc9))
+* fix the Discord link used by the `dicord` CLI command ([#1177](https://github.com/kurtosis-tech/kurtosis/issues/1177)) ([39d159a](https://github.com/kurtosis-tech/kurtosis/commit/39d159a5141d18a31ddc97d775bccbdd99c2a7ad)), closes [#1174](https://github.com/kurtosis-tech/kurtosis/issues/1174)
+
+## [0.82.7](https://github.com/kurtosis-tech/kurtosis/compare/0.82.6...0.82.7) (2023-08-28)
+
+
+### Features
+
+* add header to instruct clients not to cache ([#1166](https://github.com/kurtosis-tech/kurtosis/issues/1166)) ([ad27761](https://github.com/kurtosis-tech/kurtosis/commit/ad27761f07306a851526b9424458fe5a54b6cd72))
+* Authorize enclave manager requests if the host matches the user's instance host ([#1163](https://github.com/kurtosis-tech/kurtosis/issues/1163)) ([093af33](https://github.com/kurtosis-tech/kurtosis/commit/093af33b4bc9ecf75814ee7c1a2b838379d961fb))
+
+## [0.82.6](https://github.com/kurtosis-tech/kurtosis/compare/0.82.5...0.82.6) (2023-08-26)
+
+
+### Bug Fixes
+
+* paths ([#1162](https://github.com/kurtosis-tech/kurtosis/issues/1162)) ([e1a9fb0](https://github.com/kurtosis-tech/kurtosis/commit/e1a9fb013acfb8fdc0f638094ab5c596ada0330c))
+
+## [0.82.5](https://github.com/kurtosis-tech/kurtosis/compare/0.82.4...0.82.5) (2023-08-24)
+
+
+### Bug Fixes
+
+* get service logs tail ([#1156](https://github.com/kurtosis-tech/kurtosis/issues/1156)) ([734b1a8](https://github.com/kurtosis-tech/kurtosis/commit/734b1a8d7431a6e2c35f7abedef803facdffb56d))
+
 ## [0.82.4](https://github.com/kurtosis-tech/kurtosis/compare/0.82.3...0.82.4) (2023-08-24)
 
 
