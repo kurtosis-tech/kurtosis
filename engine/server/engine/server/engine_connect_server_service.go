@@ -1,7 +1,7 @@
 package server
 
 import (
-	connect_go "connectrpc.com/connect"
+	"connectrpc.com/connect"
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
@@ -50,14 +50,14 @@ func NewEngineConnectServerService(
 	return service
 }
 
-func (service *EngineConnectServerService) GetEngineInfo(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
+func (service *EngineConnectServerService) GetEngineInfo(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse], error) {
 	result := &kurtosis_engine_rpc_api_bindings.GetEngineInfoResponse{
 		EngineVersion: service.imageVersionTag,
 	}
-	return connect_go.NewResponse(result), nil
+	return connect.NewResponse(result), nil
 }
 
-func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, connectArgs *connect_go.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
+func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	args := connectArgs.Msg
 	logrus.Debugf("args: %+v", args)
 	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
@@ -80,28 +80,28 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 		EnclaveInfo: enclaveInfo,
 	}
 
-	return connect_go.NewResponse(response), nil
+	return connect.NewResponse(response), nil
 }
 
-func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
+func (service *EngineConnectServerService) GetEnclaves(ctx context.Context, _ *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetEnclavesResponse], error) {
 	infoForEnclaves, err := service.enclaveManager.GetEnclaves(ctx)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for enclaves")
 	}
 	response := &kurtosis_engine_rpc_api_bindings.GetEnclavesResponse{EnclaveInfo: infoForEnclaves}
-	return connect_go.NewResponse(response), nil
+	return connect.NewResponse(response), nil
 }
 
-func (service *EngineConnectServerService) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect_go.Request[emptypb.Empty]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {
+func (service *EngineConnectServerService) GetExistingAndHistoricalEnclaveIdentifiers(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse], error) {
 	allIdentifiers, err := service.enclaveManager.GetExistingAndHistoricalEnclaveIdentifiers()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching enclave identifiers")
 	}
 	response := &kurtosis_engine_rpc_api_bindings.GetExistingAndHistoricalEnclaveIdentifiersResponse{AllIdentifiers: allIdentifiers}
-	return connect_go.NewResponse(response), nil
+	return connect.NewResponse(response), nil
 }
 
-func (service *EngineConnectServerService) StopEnclave(ctx context.Context, connectArgs *connect_go.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error) {
+func (service *EngineConnectServerService) StopEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.StopEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
 
@@ -109,20 +109,20 @@ func (service *EngineConnectServerService) StopEnclave(ctx context.Context, conn
 		return nil, stacktrace.Propagate(err, "An error occurred stopping enclave '%v'", enclaveIdentifier)
 	}
 
-	return connect_go.NewResponse(&emptypb.Empty{}), nil
+	return connect.NewResponse(&emptypb.Empty{}), nil
 }
 
-func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, connectArgs *connect_go.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect_go.Response[emptypb.Empty], error) {
+func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
 	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v':", args.EnclaveIdentifier)
 	}
 
-	return connect_go.NewResponse(&emptypb.Empty{}), nil
+	return connect.NewResponse(&emptypb.Empty{}), nil
 }
 
-func (service *EngineConnectServerService) Clean(ctx context.Context, connectArgs *connect_go.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect_go.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error) {
+func (service *EngineConnectServerService) Clean(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error) {
 	args := connectArgs.Msg
 	removedEnclaveUuidsAndNames, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
 	if err != nil {
@@ -130,10 +130,10 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 	}
 
 	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: removedEnclaveUuidsAndNames}
-	return connect_go.NewResponse(response), nil
+	return connect.NewResponse(response), nil
 }
 
-func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, connectArgs *connect_go.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], stream *connect_go.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
+func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], stream *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
 
 	args := connectArgs.Msg
 	enclaveIdentifier := args.GetEnclaveIdentifier()
@@ -234,7 +234,7 @@ func (service *EngineConnectServerService) reportAnyMissingUuidsAndGetNotFoundUu
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	requestedServiceUuids map[user_service.ServiceUUID]bool,
-	stream *connect_go.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
+	stream *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) (map[string]bool, error) {
 	existingServiceUuids, err := service.logsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
 	if err != nil {
