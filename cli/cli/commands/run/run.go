@@ -120,11 +120,10 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: autogenerateEnclaveIdentifierKeyword,
 		},
 		{
-			Key:       parallelismFlagKey,
-			Usage:     "The parallelism level to be used in Starlark commands that supports it",
-			Type:      flags.FlagType_Uint32,
-			Shorthand: "p",
-			Default:   defaultParallelism,
+			Key:     parallelismFlagKey,
+			Usage:   "The parallelism level to be used in Starlark commands that supports it",
+			Type:    flags.FlagType_Uint32,
+			Default: defaultParallelism,
 		},
 		{
 			Key:       verbosityFlagKey,
