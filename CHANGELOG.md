@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.82.8](https://github.com/kurtosis-tech/kurtosis/compare/0.82.7...0.82.8) (2023-08-28)
+
+
+### Bug Fixes
+
+* Fix NPE in stacktrace ([#1172](https://github.com/kurtosis-tech/kurtosis/issues/1172)) ([32770ca](https://github.com/kurtosis-tech/kurtosis/commit/32770ca96513d5d4191f6e2f373cadc89120adc9))
+* fix the Discord link used by the `dicord` CLI command ([#1177](https://github.com/kurtosis-tech/kurtosis/issues/1177)) ([39d159a](https://github.com/kurtosis-tech/kurtosis/commit/39d159a5141d18a31ddc97d775bccbdd99c2a7ad)), closes [#1174](https://github.com/kurtosis-tech/kurtosis/issues/1174)
+
 ## [0.82.7](https://github.com/kurtosis-tech/kurtosis/compare/0.82.6...0.82.7) (2023-08-28)
 
 
