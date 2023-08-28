@@ -9,6 +9,8 @@ use (
 	./core/files_artifacts_expander
 	./core/launcher
 	./core/server
+	./enclave-manager/server
+	./enclave-manager/api/golang
 	./engine/launcher
 	./engine/server
 	./grpc-file-transfer/golang

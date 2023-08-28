@@ -1,0 +1,56 @@
+syntax = "proto3";
+package kurtosis_enclave_manager;
+// NOTE: It sucks that we have this Go-specific logic inside this file (which should be language-agnostic). However, the Protobuf team have
+// taken a hard stance on this being the way it should be done, so we have to do it this way.
+option go_package = "github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang/kurtosis_enclave_manager_api_bindings";
+
+import "google/protobuf/empty.proto";
+import "engine_service.proto";
+import "api_container_service.proto";
+
+service KurtosisEnclaveManagerServer {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc GetEnclaves(google.protobuf.Empty) returns (engine_api.GetEnclavesResponse) {};
+  rpc GetServices(GetServicesRequest) returns (api_container_api.GetServicesResponse) {};
+  rpc GetServiceLogs(engine_api.GetServiceLogsArgs) returns (stream engine_api.GetServiceLogsResponse) {};
+  rpc ListFilesArtifactNamesAndUuids(GetListFilesArtifactNamesAndUuidsRequest) returns (api_container_api.ListFilesArtifactNamesAndUuidsResponse) {};
+  rpc RunStarlarkPackage(RunStarlarkPackageRequest) returns (stream api_container_api.StarlarkRunResponseLine) {};
+  rpc CreateEnclave(engine_api.CreateEnclaveArgs) returns (engine_api.CreateEnclaveResponse) {};
+  rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (api_container_api.InspectFilesArtifactContentsResponse) {}
+}
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;  // Used only by the Watch method.
+  }
+  ServingStatus status = 1;
+}
+
+message GetServicesRequest{
+  string apic_ip_address = 1;
+  int32 apic_port = 2;
+}
+
+message GetListFilesArtifactNamesAndUuidsRequest{
+  string apic_ip_address = 1;
+  int32 apic_port = 2;
+}
+
+message RunStarlarkPackageRequest{
+  string apic_ip_address = 1;
+  int32 apic_port = 2;
+  api_container_api.RunStarlarkPackageArgs RunStarlarkPackageArgs = 3;
+}
+
+message InspectFilesArtifactContentsRequest {
+  string apic_ip_address = 1;
+  int32 apic_port = 2;
+  api_container_api.FilesArtifactNameAndUuid file_names_and_uuid = 3;
+}

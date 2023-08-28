@@ -8,8 +8,8 @@ const LeftPanel = ({heading, renderList, home}) => {
     )}
 
     return (
-        <div className="flex-none bg-slate-800 w-[22rem] border-r border-gray-300">
-            <Heading content={heading} color={"text-green-600"} />
+        <div className="flex-none bg-[#171923] w-[22rem] border-r border-gray-300">
+            <Heading content={heading} color={"text-[#24BA27]"} />
             {
                 (renderList) ?  
                 <div className="h-5/6 m-4 p-2 overflow-auto">
