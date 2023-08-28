@@ -224,7 +224,6 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 
 	apicStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
 	ctxWithCancel, cancel := context.WithCancel(ctx)
-
 	logs := getRuntimeLogsWhenCreatingEnclave(cancel, apicStream)
 	for {
 		select {
