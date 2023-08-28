@@ -2,6 +2,7 @@
 title: Running Kurtosis in Kurtosis Cloud
 sidebar_label: Running in Kurtosis Cloud
 slug: /cloud
+sidebar_position: 7
 ---
 
 Kurtosis Cloud is a fully managed cloud offering and accompanying self-service workflows for a stress-free, easy way to deploy test and dev environments, that live as long as you need them to, directly onto remote infrastructure. By logging into our [cloud portal](https://cloud.kurtosis.com), a cloud instance will be provisioned to run your test and dev enclaves.

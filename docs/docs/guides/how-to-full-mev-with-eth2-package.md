@@ -2,7 +2,7 @@
 title: How to launch a private Ethereum testnet with Flashbot's MEV Boost implementation of Proposer Builder Seperation (PBS)
 sidebar_label: Launch a testnet with MEV infra
 slug: /how-to-full-mev-with-eth2-package
-toc_max_heading_level: 2
+toc_max_heading_level: 12
 ---
 
 :::tip
@@ -92,7 +92,7 @@ You will use the above file by passing it in at runtime, effectively enabling yo
 #### Launch the network with `full MEV`
 Great! You're now ready to bring up your own network. Simply run:
 ```bash
-TODO: FIX kurtosis run --enclave eth-network github.com/kurtosis-tech/eth2-package "$(cat ~/eth2-package-params.json)"
+kurtosis run --enclave eth-network github.com/kurtosis-tech/eth2-package "$(cat ~/eth2-package-params.json)"
 ```
 Kurtosis will then begin to spin up your private Ethereum testnet with `full MEV`. You will see a stream of text get printed in your terminal as Kurtosis begins to generate genesis files, configure the Ethereum nodes, launch a Grafana and Prometheus instance, and bootstrap the network together with the full suite of MEV products from Flashbots. In ~2 minutes, you should see the following output at the end:
 ```bash
@@ -177,7 +177,7 @@ The first section that gets printed contains some basic metadata about the encla
 
 Next, you'll see a section dedicated to [Files Artifacts](https://docs.kurtosis.com/concepts-reference/files-artifacts/), which are Kurtosis' first-class representation of data inside your enclave, stored as compressed TGZ files. You'll notice there are configuration files for the nodes, grafana, and prometheus as well as private keys for pre-funded accounts and genesis-related data. These files artifacts were generated and used by Kurtosis to start the network and abstracts away the complexities and overhead that come with generating validator keys and getting genesis and node config files produced and mounted to the right containers yourself.
 
-Lastly, there is a section called `User Services` which display the number of services (running in Docker containers) that make up your network. You will notice that there are 2 Ethereum nodes, each with a `MEV-Boost` instance spun up & connected to it. In addition to this, you will see the rest of the Flashbots MEV infrastructure including the `mev-relay` suite of services (read more about the `mev-relay` services [here](https://github.com/flashbots/mev-boost-relay/blob/main/ARCHITECTURE.md)) and `mev-flood`. By default, the `eth2-package` also comes with supporting services which include a fork monitor, redis, postgres, grafana, prometheus, a transaction spammer, a testnet-verifier, and the services used to generate genesis data. Both of the Redis and Postgres instances are required for `mev-relay` to function properly.Each of these services are running in Docker containers inside your local enclave & Kurtosis has automatically mapped each container port to your machine's ephemeral ports for seamless interaction with the services running in your enclave.
+Lastly, there is a section called `User Services` which display the number of services (running in Docker containers) that make up your network. You will notice that there are 2 Ethereum nodes, each with a `MEV-Boost` instance spun up & connected to it. In addition to this, you will see the rest of the Flashbots MEV infrastructure including the `mev-relay` suite of services (read more about the `mev-relay` services [here](https://github.com/flashbots/mev-boost-relay/blob/main/ARCHITECTURE.md)) and `mev-flood`. By default, the `eth2-package` also comes with supporting services which include a fork monitor, redis, postgres, grafana, prometheus, a transaction spammer, a testnet-verifier, and the services used to generate genesis data. Both of the Redis and Postgres instances are required for `mev-relay` to function properly. Each of these services are running in Docker containers inside your local enclave & Kurtosis has automatically mapped each container port to your machine's ephemeral ports for seamless interaction with the services running in your enclave.
 
 #### Visit the website to see registered validators and delivered payloads 
 Now that your network is online, you can visit the relay website using the local port mapped to that endpoint. For this example, it will be `127.0.0.1:62930`, but it will be different for you.

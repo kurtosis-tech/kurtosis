@@ -2,7 +2,7 @@
 title: How to build your own private, Ethereum testnet with eth-kurtosis
 sidebar_label: Build your own testnet from scratch
 slug: /how-to-compose-your-own-testnet
-toc_max_heading_level: 2
+toc_max_heading_level: 11
 ---
 
 :::tip

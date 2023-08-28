@@ -3,7 +3,7 @@ title: How to set up an n-node Cassandra environment
 sidebar_label: Setting up an n-node Cassandra cluster
 slug: /how-to-parameterize-cassandra
 toc_max_heading_level: 2
-sidebar_position: 5
+sidebar_position: 9
 ---
 
 Introduction
