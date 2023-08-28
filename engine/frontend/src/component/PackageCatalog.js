@@ -49,7 +49,6 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
         setKurtosisPackages(filteredPackages)
     }
 
-
     return (
         <div className='w-screen'>
             <Grid
@@ -80,7 +79,7 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                     <List spacing={1} padding="10px" h="100%">
                         {
                             kurtosisPackages.map( (kurtosisPackage, index) => {
-                                const bgcolor = (index === chosenPackage) ? 'green.500' : 'gray.300'
+                                const bgcolor = (index === chosenPackage) ? '#24BA27' : 'gray.300'
                                 return (
                                     <ListItem bg={bgcolor} key={index} onClick={() => selectPackage(index)}>
                                         <Center h="70px" w="100%">
@@ -93,7 +92,7 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                     </List>
                 </GridItem>
                 <GridItem area={'configure'} m="10px">
-                    <Button colorScheme='green' w="100%" isDisabled={chosenPackage === null} onClick={handleConfigureButtonClick} >Configure >> </Button>
+                    <Button bg='#24BA27' w="100%" isDisabled={chosenPackage === null} onClick={handleConfigureButtonClick} >Configure >> </Button>
                 </GridItem>
             </Grid>
         </div>

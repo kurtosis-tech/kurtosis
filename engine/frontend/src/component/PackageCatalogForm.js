@@ -221,7 +221,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 <GridItem area={'configure'} m="10px">
                     <Flex gap={5}>
                         <Button colorScheme='red' w="50%" onClick={handleCancelBtn}> Cancel </Button>
-                        <Button colorScheme='green' w="50%" onClick={handleRunBtn}> Run </Button>
+                        <Button bg='#24BA27' w="50%" onClick={handleRunBtn}> Run </Button>
                     </Flex>
                 </GridItem>
             </Grid>
