@@ -12,10 +12,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"regexp"
 )
-
-var kurtosisPackageRegex = regexp.MustCompile(`[\w ,=]+#type:[\w ]+`)
 
 type EngineConnectServerService struct {
 	// The version tag of the engine server image, so it can report its own version

@@ -14,11 +14,6 @@ const PackageCatalogOption = () => {
             navigate("/catalog")
         }
     }
-
-    const handleManualCatalogBtn = () => {
-
-    }
-
     return (
         <Grid
             templateAreas={`"catalog manual"`}
