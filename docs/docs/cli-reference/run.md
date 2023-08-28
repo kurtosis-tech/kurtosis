@@ -112,7 +112,10 @@ run(plan, some_parameter = struct(some_property = "Property value"))
    def start_node(plan,args):
        # your code
    ```
+1. The `--production` flag can be used to make sure services restart in case of failure (default behavior is not restart)
+
 1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
+
 
 <!--------------------------------------- ONLY LINKS BELOW HERE -------------------------------->
 [add-services-reference]: ../starlark-reference/plan.md#add_services
