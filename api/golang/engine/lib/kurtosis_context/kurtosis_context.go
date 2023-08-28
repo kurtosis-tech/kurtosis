@@ -38,7 +38,7 @@ const (
 
 	validUuidMatchesAllowed = 1
 
-	portalIsRequired = false
+	portalIsRequired = true
 )
 
 var (
@@ -83,12 +83,17 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
-	// portal is still optional as it is incubating. For local context, everything will run fine if portal is not
-	// present. For remote context, is it expected that the caller checks that the portal is present before or after
-	// the Kurtosis Context is built, to avoid unexpected failures downstream
-	portalClient, err := CreatePortalDaemonClient(portalIsRequired)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
+	var portalClient portal_api.KurtosisPortalClientClient
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err == nil {
+		if store.IsRemote(currentContext) {
+			portalClient, err = CreatePortalDaemonClient(portalIsRequired)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
+			}
+		}
+	} else {
+		logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
 	}
 
 	kurtosisContext := &KurtosisContext{

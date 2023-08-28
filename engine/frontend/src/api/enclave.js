@@ -1,82 +1,43 @@
-//import {EngineServicePromiseClient} from 'kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/engine_service_grpc_web_pb'
 import {runStarlarkPackage} from "./container"
-import axios from "axios";
+import {createClient, createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager} from "./api";
 
-import {EngineService} from  "kurtosis-sdk/src/engine/kurtosis_engine_rpc_api_bindings/connect/engine_service_connect";
-
-import {createPromiseClient} from "@bufbuild/connect";
-
-import {
-    createConnectTransport,
-} from "@bufbuild/connect-web";
-
-
-const transport = createConnectTransport({
-    baseUrl: "http://localhost:9710"
-})
-
-const engineClient = createPromiseClient(EngineService, transport);
-
-const ENGINE_URL =  "http://localhost:9710"
-
-const createApiPromiseClient = (apiClient) => {
-    if (apiClient) {
-        return `http://localhost:${apiClient.grpcPortOnHostMachine}`
-    }
-    return "";
-}
-
-export const makeRestApiRequest = async ( url, data, config) => {
-    const response = await axios.post(`${ENGINE_URL}/${url}`, data, config)
-    return response;
-}
-
-export const getEnclavesFromKurtosis = async () => {
-    const respFromGrpc = await makeRestApiRequest(
-         "engine_api.EngineService/GetEnclaves",
-        {"field":""},
-        {"headers":{'Content-Type': "application/json"}}
-    )
-
-    const {data} = respFromGrpc
-
+export const getEnclavesFromKurtosis = async (token, apiHost) => {
+    const data = await getEnclavesFromEnclaveManager(token, apiHost);
     if ("enclaveInfo" in data) {
         return Object.keys(data.enclaveInfo).map(key => {
             const enclave = data.enclaveInfo[key]
             return {
                 uuid: enclave.enclaveUuid,
                 name: enclave.name,
-                created: enclave.creationTime,
+                // created: enclave.creationTime,
                 status: enclave.apiContainerStatus,
-                apiClient: createApiPromiseClient(enclave.apiContainerHostMachineInfo)
+                host: enclave.apiContainerInfo.bridgeIpAddress,
+                port: enclave.apiContainerInfo.grpcPortInsideEnclave,
             }
-        })
+        });
     }
-
     return []
 }
 
-export const createEnclave = async () => {
-    const data = {
-        apiContainerVersionTag: "",
-        apiContainerLogLevel: "info",
-        isPartitioningEnabled: false,
-    }
-    const response = await makeRestApiRequest("engine_api.EngineService/CreateEnclave", JSON.stringify(data), {"headers":{'Content-Type': "application/json"}})
+export const createEnclave = async (token, apiHost) => {
+    const enclaveName = ""; // TODO We could make this input from the UI
+    const apiContainerVersionTag = "";
+    const apiContainerLogLevel = "info";
+    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag, token, apiHost)
 
-    const enclave = response.data.enclaveInfo;
-    const apiClient = createApiPromiseClient(enclave.apiContainerHostMachineInfo);
-
+    const enclave = response.enclaveInfo;
     return {
         uuid: enclave.enclaveUuid,
         name: enclave.name,
         created: enclave.creationTime,
         status: enclave.apiContainerStatus,
-        apiClient
+        host: enclave.apiContainerInfo.bridgeIpAddress,
+        port: enclave.apiContainerInfo.grpcPortInsideEnclave,
     }
 }
 
-export const getServiceLogs = async (ctrl, enclaveName, serviceUuid) => {
+export const getServiceLogs = async (ctrl, enclaveName, serviceUuid, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
     const args = {
         "enclaveIdentifier": enclaveName,
         "serviceUuidSet": {
@@ -84,10 +45,10 @@ export const getServiceLogs = async (ctrl, enclaveName, serviceUuid) => {
         },
         followLogs: true,
     }
-    return engineClient.getServiceLogs(args, {signal: ctrl.signal});
+    return enclaveManagerClient.getServiceLogs(args, {signal: ctrl.signal});
 }
 
-export const runStarlark = async(apiClient, packageId, args) => {
-    const stream = await runStarlarkPackage(apiClient, packageId, args)
+export const runStarlark = async (host, port, packageId, args, token, apiHost) => {
+    const stream = await runStarlarkPackage(host, port, packageId, args, token, apiHost)
     return stream;
 }

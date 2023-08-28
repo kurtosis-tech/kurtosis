@@ -659,6 +659,45 @@ func (network *DefaultServiceNetwork) HttpRequestService(ctx context.Context, se
 	return resp, nil
 }
 
+func (network *DefaultServiceNetwork) GetServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error) {
+	network.mutex.Lock()
+	defer network.mutex.Unlock()
+
+	registeredServices, err := network.serviceRegistrationRepository.GetAll()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred getting registered services from the repository")
+	}
+	registeredServiceNames := map[service.ServiceName]bool{}
+	for name := range registeredServices {
+		registeredServiceNames[name] = true
+	}
+
+	registeredServiceUuidsFilters := &service.ServiceFilters{
+		Names:    registeredServiceNames,
+		UUIDs:    nil,
+		Statuses: nil,
+	}
+
+	allServices, err := network.kurtosisBackend.GetUserServices(ctx, network.enclaveUuid, registeredServiceUuidsFilters)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while fetching services from the backend")
+	}
+
+	filteredServicesToRegisteredServices := map[service.ServiceUUID]*service.Service{}
+
+	for name, registration := range registeredServices {
+		uuid := registration.GetUUID()
+		serviceObj, found := allServices[uuid]
+		if !found {
+			return nil, stacktrace.NewError("couldn't find service with uuid '%v' and name '%v' in backend", uuid, name)
+		}
+		serviceObj.GetRegistration().SetStatus(registration.GetStatus())
+		filteredServicesToRegisteredServices[uuid] = serviceObj
+	}
+
+	return filteredServicesToRegisteredServices, nil
+}
+
 func (network *DefaultServiceNetwork) GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error) {
 	network.mutex.Lock()
 	defer network.mutex.Unlock()

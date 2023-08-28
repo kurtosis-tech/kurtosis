@@ -16,12 +16,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -160,6 +162,7 @@ func runMain() error {
 				return
 			}
 
+			w.Header().Add("Cache-Control", "no-store")
 			fileServer.ServeHTTP(w, r)
 		})
 
@@ -169,12 +172,22 @@ func runMain() error {
 		}
 	}()
 
+	go func() {
+		enforceAuth := serverArgs.OnBastionHost
+		err = em_api.RunEnclaveManagerApiServer(enforceAuth)
+		if err != nil {
+			logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			os.Exit(failureExitCode)
+		}
+	}()
+
 	engineConnectServer := server.NewEngineConnectServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
 	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
 
 	logrus.Info("Running server...")
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
-	if err := engineHttpServer.RunServerUntilInterrupted(); err != nil {
+	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 	return nil

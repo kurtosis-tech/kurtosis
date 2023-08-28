@@ -5,8 +5,8 @@ go 1.19
 replace github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang => ../../grpc-file-transfer/golang
 
 require (
+	connectrpc.com/connect v1.11.0
 	github.com/Masterminds/semver/v3 v3.1.1
-	github.com/bufbuild/connect-go v1.10.0
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/kurtosis-tech/kurtosis-portal/api/golang v0.0.0-20230818182330-1a86869414d2
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230803130419-099ee7a4e3dc
@@ -21,6 +21,7 @@ require (
 )
 
 require (
+	connectrpc.com/connect v1.11.0 // indirect
 	github.com/adrg/xdg v0.4.0 // indirect
 	github.com/andybalholm/brotli v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
