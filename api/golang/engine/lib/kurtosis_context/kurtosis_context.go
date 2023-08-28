@@ -114,6 +114,33 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 		EnclaveName:            enclaveName,
 		ApiContainerVersionTag: defaultApiContainerVersionTag,
 		ApiContainerLogLevel:   apiContainerLogLevel.String(),
+		Mode:                   kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST,
+	}
+
+	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave with name '%v'", enclaveName)
+	}
+
+	enclaveContext, err := newEnclaveContextFromEnclaveInfo(ctx, kurtosisCtx.portalClient, response.EnclaveInfo)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from a newly-created enclave; this should never happen")
+	}
+
+	return enclaveContext, nil
+}
+
+// Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
+func (kurtosisCtx *KurtosisContext) CreateProductionEnclave(
+	ctx context.Context,
+	enclaveName string,
+) (*enclaves.EnclaveContext, error) {
+
+	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
+		EnclaveName:            enclaveName,
+		ApiContainerVersionTag: defaultApiContainerVersionTag,
+		ApiContainerLogLevel:   apiContainerLogLevel.String(),
+		Mode:                   kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION,
 	}
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)

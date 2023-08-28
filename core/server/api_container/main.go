@@ -129,6 +129,7 @@ func runMain() error {
 			Context:        ctx,
 			EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
 			APIContainerIP: ownIpAddress,
+			IsProduction:   serverArgs.IsProductionEnclave,
 		}
 		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgs, configs.NoRemoteBackendConfig)
 		if err != nil {
