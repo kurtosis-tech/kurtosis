@@ -210,8 +210,6 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *con
 }
 
 func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
-	logrus.Infof("YOLO: %+v", req)
-
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
 	runPackageArgs := req.Msg.RunStarlarkPackageArgs
 	boolean := true
@@ -226,8 +224,6 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 
 	apicStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
 	ctxWithCancel, cancel := context.WithCancel(ctx)
-
-	logrus.Debugf("Hellooo %+v", serviceRequest)
 	logs := getRuntimeLogsWhenCreatingEnclave(cancel, apicStream)
 	for {
 		select {
