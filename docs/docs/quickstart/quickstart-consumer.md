@@ -76,7 +76,7 @@ Create a file titled: `network_params.json` in your home directory, populate it 
 	"verifications_epoch_limit": 5,
 	"global_client_log_level": "info",
 	"mev_type": "none",
-    # When set to true, Kurtosis will bootstrap and start a Grafana and Prometheus instance alongside other network monitoring tools.
+    // When set to true, Kurtosis will bootstrap and start a Grafana and Prometheus instance alongside other network monitoring tools.
     "launch_additional_services": false,
 }
 ```
