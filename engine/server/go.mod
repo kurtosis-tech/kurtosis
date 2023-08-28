@@ -16,7 +16,7 @@ replace (
 )
 
 require (
-	github.com/kurtosis-tech/kurtosis/api/golang v0.0.0
+	github.com/kurtosis-tech/kurtosis/api/golang v0.81.9
 	github.com/kurtosis-tech/kurtosis/connect-server v0.0.0
 	github.com/kurtosis-tech/kurtosis/container-engine-lib v0.0.0 // local dependency
 	github.com/kurtosis-tech/kurtosis/core/launcher v0.0.0 // local dependency
@@ -74,7 +74,7 @@ require (
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kurtosis-tech/kurtosis/cloud/api/golang v0.0.0-20230823152418-dbff17164c4f // indirect
 	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0 // indirect
-	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0-20230816233608-4b981e813a4e // indirect
+	github.com/kurtosis-tech/kurtosis/enclave-manager/api/golang v0.0.0-20230828153722-32770ca96513 // indirect
 	github.com/kurtosis-tech/kurtosis/kurtosis_version v0.0.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
