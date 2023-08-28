@@ -222,7 +222,7 @@ func (builder *CreateAndStartContainerArgsBuilder) WithLoggingDriver(loggingDriv
 	return builder
 }
 
-// Will configure the container to use and specific logging driver which can be configured using the different implementations
+// Will configure the container restart policy (restart on failure, no restart)
 func (builder *CreateAndStartContainerArgsBuilder) WithRestartPolicy(restartPolicy RestartPolicy) *CreateAndStartContainerArgsBuilder {
 	builder.restartPolicy = restartPolicy
 	return builder

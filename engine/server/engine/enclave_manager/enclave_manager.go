@@ -140,6 +140,7 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred validating enclave name '%v'", enclaveName)
 	}
 
+	// TODO(victor.colombo): Extend enclave pool to have warm production enclaves
 	if !isProduction && manager.enclavePool != nil {
 		enclaveInfo, err = manager.enclavePool.GetEnclave(
 			setupCtx,

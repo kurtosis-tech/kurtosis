@@ -67,4 +67,3 @@ var PrivateIPDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(priva
 var UserServiceGUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(userServiceGuidDockerLabelKeyStr)
 var LogsEnclaveUUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsEnclaveUuidLabelKeyStr)
 var LogsServiceUUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsServiceUuidDockerLabelKey)
-var EnclaveModeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveTypeLabelKeyStr)
