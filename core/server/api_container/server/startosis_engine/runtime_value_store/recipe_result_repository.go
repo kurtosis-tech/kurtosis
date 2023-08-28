@@ -76,7 +76,7 @@ func (repository *recipeResultRepository) Save(
 		for key, comparableValue := range value {
 			//TODO add more kind of comparable types if we want to extend the support
 			//TODO now starlark.Int and starlark.String are enough so far
-			switch comparableValue.(type) {
+			switch valueType := comparableValue.(type) {
 			case starlark.Int:
 				stringifiedValue[key] = comparableValue.String()
 			case starlark.String:
@@ -86,7 +86,7 @@ func (repository *recipeResultRepository) Save(
 				}
 				stringifiedValue[key] = comparableStr.GoString()
 			default:
-				return stacktrace.NewError("Unexpected comparable type on recipe result repository") //TODO improve error message by adding info expected types and received types
+				return stacktrace.NewError("Unexpected comparable type on recipe result repository, only 'starlark.String and slartark.Int' are allowed but '%v' was received.", valueType)
 			}
 		}
 
