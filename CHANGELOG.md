@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.10](https://github.com/kurtosis-tech/kurtosis/compare/0.82.9...0.82.10) (2023-08-28)
+
+
+### Features
+
+* Production mode enclave ([#1171](https://github.com/kurtosis-tech/kurtosis/issues/1171)) ([84e8c71](https://github.com/kurtosis-tech/kurtosis/commit/84e8c7110731c0237c1a9ec5eb7cacfa22b7337b))
+
 ## [0.82.9](https://github.com/kurtosis-tech/kurtosis/compare/0.82.8...0.82.9) (2023-08-28)
 
 
