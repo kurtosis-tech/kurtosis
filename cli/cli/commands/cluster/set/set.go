@@ -69,7 +69,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	} else {
 		clusterSettingPriorToUpdate, err := kurtosis_config_getter.GetKurtosisClusterConfig()
 		if err != nil {
-			logrus.Debugf("Tried to get current cluster setting but failed. This might be due to the fact that we are on an a fresh install of Kurtosis. Error was :\n%v", err.Error())
+			return stacktrace.Propagate(err, "An error occurred while fetching cluster setting for current cluster '%s'; not proceeding further to ensure that Kurtosis doesn't get into a bad state", clusterPriorToUpdate)
 		} else if clusterSettingPriorToUpdate.GetClusterType() == resolved_config.KurtosisClusterType_Docker {
 			stopOldEngine = true
 		}
