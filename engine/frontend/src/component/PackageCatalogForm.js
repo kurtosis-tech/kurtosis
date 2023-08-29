@@ -207,7 +207,6 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             })
 
             const stringifiedArgs = JSON.stringify(args)
-            console.log("stream ", stringifiedArgs)
             const runKurtosisPackageArgs = {
                 packageId: kurtosisPackage.name,
                 args: stringifiedArgs,
