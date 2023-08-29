@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.82.12](https://github.com/kurtosis-tech/kurtosis/compare/0.82.11...0.82.12) (2023-08-29)
+
+
+### Bug Fixes
+
+* `react-scripts` dependency changed  on the engine frontend to fix a vulnerability reported by Dependabot ([#1179](https://github.com/kurtosis-tech/kurtosis/issues/1179)) ([e5e15f6](https://github.com/kurtosis-tech/kurtosis/commit/e5e15f6fd90455380d585c7e2cc7ebf434e1ea88))
+* handle package catalog edge case ([#1187](https://github.com/kurtosis-tech/kurtosis/issues/1187)) ([2a8a4c8](https://github.com/kurtosis-tech/kurtosis/commit/2a8a4c8a9f902ec3444d4ed1964427b81fc13409))
+* ui displays error logs ([#1185](https://github.com/kurtosis-tech/kurtosis/issues/1185)) ([6a2522b](https://github.com/kurtosis-tech/kurtosis/commit/6a2522ba96f9a2ab45dc944f5a1b9bc921d1904d))
+* user service streaming logs when the last line is not a completed JSON line ([#1175](https://github.com/kurtosis-tech/kurtosis/issues/1175)) ([fece446](https://github.com/kurtosis-tech/kurtosis/commit/fece446d97f11219595772ffd0b42917676b74e1))
+
 ## [0.82.11](https://github.com/kurtosis-tech/kurtosis/compare/0.82.10...0.82.11) (2023-08-29)
 
 
