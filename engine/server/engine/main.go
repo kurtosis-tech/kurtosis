@@ -96,7 +96,6 @@ func main() {
 
 func runMain() error {
 	ctx := context.Background()
-
 	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve engine server args from the environment")

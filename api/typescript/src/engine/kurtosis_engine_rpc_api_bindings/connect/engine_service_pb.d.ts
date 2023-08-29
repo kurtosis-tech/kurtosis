@@ -7,6 +7,21 @@ import type { BinaryReadOptions, FieldList, JsonReadOptions, JsonValue, PartialM
 import { Message, proto3 } from "@bufbuild/protobuf";
 
 /**
+ * @generated from enum engine_api.EnclaveMode
+ */
+export declare enum EnclaveMode {
+  /**
+   * @generated from enum value: TEST = 0;
+   */
+  TEST = 0,
+
+  /**
+   * @generated from enum value: PRODUCTION = 1;
+   */
+  PRODUCTION = 1,
+}
+
+/**
  * ==============================================================================================
  *                                            Get Enclaves
  * ==============================================================================================
@@ -156,6 +171,11 @@ export declare class CreateEnclaveArgs extends Message<CreateEnclaveArgs> {
    * @generated from field: string api_container_log_level = 3;
    */
   apiContainerLogLevel: string;
+
+  /**
+   * @generated from field: engine_api.EnclaveMode mode = 4;
+   */
+  mode: EnclaveMode;
 
   constructor(data?: PartialMessage<CreateEnclaveArgs>);
 

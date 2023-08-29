@@ -21,9 +21,10 @@ import (
 )
 
 const (
-	apiContainerVersionFlagKey  = "api-container-version"
-	apiContainerLogLevelFlagKey = "api-container-log-level"
-	enclaveNameFlagKey          = "name"
+	apiContainerVersionFlagKey   = "api-container-version"
+	apiContainerLogLevelFlagKey  = "api-container-log-level"
+	enclaveNameFlagKey           = "name"
+	enclaveProductionModeFlagKey = "production"
 
 	// Signifies that an enclave name should be auto-generated
 	autogenerateEnclaveNameKeyword = ""
@@ -67,6 +68,13 @@ var EnclaveAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCo
 				enclave_consts.AllowedEnclaveNameCharsRegexStr,
 			),
 			Type: flags.FlagType_String,
+		},
+		{
+			Key:       enclaveProductionModeFlagKey,
+			Usage:     "If enabled, services will restart if they fail",
+			Shorthand: "p",
+			Type:      flags.FlagType_Bool,
+			Default:   "false",
 		},
 	},
 }
@@ -116,10 +124,21 @@ func run(
 		logrus.Warn("An error occurred while logging the create enclave event")
 	}
 
+	isProduction, err := flags.GetBool(enclaveProductionModeFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while getting the enclave mode using flag with key '%v'; this is a bug in Kurtosis", enclaveProductionModeFlagKey)
+	}
+
+	mode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+	if isProduction {
+		mode = kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
+	}
+
 	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
 		EnclaveName:            enclaveName,
 		ApiContainerVersionTag: apiContainerVersion,
 		ApiContainerLogLevel:   kurtosisLogLevelStr,
+		Mode:                   mode,
 	}
 	createdEnclaveResponse, err := engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {

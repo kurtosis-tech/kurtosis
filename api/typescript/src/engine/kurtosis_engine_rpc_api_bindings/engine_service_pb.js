@@ -13,13 +13,7 @@
 
 var jspb = require('google-protobuf');
 var goog = jspb;
-var global = (function() {
-  if (this) { return this; }
-  if (typeof window !== 'undefined') { return window; }
-  if (typeof global !== 'undefined') { return global; }
-  if (typeof self !== 'undefined') { return self; }
-  return Function('return this')();
-}.call(null));
+var global = Function('return this')();
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
@@ -36,6 +30,7 @@ goog.exportSymbol('proto.engine_api.EnclaveAPIContainerStatus', null, global);
 goog.exportSymbol('proto.engine_api.EnclaveContainersStatus', null, global);
 goog.exportSymbol('proto.engine_api.EnclaveIdentifiers', null, global);
 goog.exportSymbol('proto.engine_api.EnclaveInfo', null, global);
+goog.exportSymbol('proto.engine_api.EnclaveMode', null, global);
 goog.exportSymbol('proto.engine_api.EnclaveNameAndUuid', null, global);
 goog.exportSymbol('proto.engine_api.GetEnclavesResponse', null, global);
 goog.exportSymbol('proto.engine_api.GetEngineInfoResponse', null, global);
@@ -588,7 +583,8 @@ proto.engine_api.CreateEnclaveArgs.toObject = function(includeInstance, msg) {
   var f, obj = {
     enclaveName: jspb.Message.getFieldWithDefault(msg, 1, ""),
     apiContainerVersionTag: jspb.Message.getFieldWithDefault(msg, 2, ""),
-    apiContainerLogLevel: jspb.Message.getFieldWithDefault(msg, 3, "")
+    apiContainerLogLevel: jspb.Message.getFieldWithDefault(msg, 3, ""),
+    mode: jspb.Message.getFieldWithDefault(msg, 4, 0)
   };
 
   if (includeInstance) {
@@ -637,6 +633,10 @@ proto.engine_api.CreateEnclaveArgs.deserializeBinaryFromReader = function(msg, r
       var value = /** @type {string} */ (reader.readString());
       msg.setApiContainerLogLevel(value);
       break;
+    case 4:
+      var value = /** @type {!proto.engine_api.EnclaveMode} */ (reader.readEnum());
+      msg.setMode(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -684,6 +684,13 @@ proto.engine_api.CreateEnclaveArgs.serializeBinaryToWriter = function(message, w
   if (f.length > 0) {
     writer.writeString(
       3,
+      f
+    );
+  }
+  f = message.getMode();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      4,
       f
     );
   }
@@ -741,6 +748,24 @@ proto.engine_api.CreateEnclaveArgs.prototype.getApiContainerLogLevel = function(
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setApiContainerLogLevel = function(value) {
   return jspb.Message.setProto3StringField(this, 3, value);
+};
+
+
+/**
+ * optional EnclaveMode mode = 4;
+ * @return {!proto.engine_api.EnclaveMode}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.getMode = function() {
+  return /** @type {!proto.engine_api.EnclaveMode} */ (jspb.Message.getFieldWithDefault(this, 4, 0));
+};
+
+
+/**
+ * @param {!proto.engine_api.EnclaveMode} value
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.setMode = function(value) {
+  return jspb.Message.setProto3EnumField(this, 4, value);
 };
 
 
@@ -3605,6 +3630,14 @@ proto.engine_api.LogLineFilter.prototype.setTextPattern = function(value) {
   return jspb.Message.setProto3StringField(this, 2, value);
 };
 
+
+/**
+ * @enum {number}
+ */
+proto.engine_api.EnclaveMode = {
+  TEST: 0,
+  PRODUCTION: 1
+};
 
 /**
  * @enum {number}

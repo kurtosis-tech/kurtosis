@@ -67,7 +67,7 @@ const Enclaves = ({enclaves, isLoading}) => {
         navigate(`/enclaves/${enclaveName}`)
     }
     console.log("is loading:", isLoading)
-    console.log("Updating with enclaves:", JSON.stringify(enclaves))
+    console.log("Updating with enclaves:", enclaves)
     return (
         <div className="flex h-full flex-grow">
             {

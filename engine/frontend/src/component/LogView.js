@@ -7,7 +7,7 @@ export const LogView = ({heading, logs, size="h-[70%]" }) => {
             <div className="overflow-y-auto h-full">
                 <ul className="border border-gray-200 p-2">
                     {logs.map((log, index) => (
-                        <li key={index} className="p-2 border-b border-gray-200">
+                        <li key={index} className="p-2 border-b border-gray-200 text-black">
                         {log}
                         </li>
                     ))}

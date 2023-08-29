@@ -6,6 +6,17 @@
 import { proto3, Timestamp } from "@bufbuild/protobuf";
 
 /**
+ * @generated from enum engine_api.EnclaveMode
+ */
+export const EnclaveMode = proto3.makeEnum(
+  "engine_api.EnclaveMode",
+  [
+    {no: 0, name: "TEST"},
+    {no: 1, name: "PRODUCTION"},
+  ],
+);
+
+/**
  * ==============================================================================================
  *                                            Get Enclaves
  * ==============================================================================================
@@ -80,6 +91,7 @@ export const CreateEnclaveArgs = proto3.makeMessageType(
     { no: 1, name: "enclave_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "api_container_version_tag", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 3, name: "api_container_log_level", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 4, name: "mode", kind: "enum", T: proto3.getEnumType(EnclaveMode) },
   ],
 );
 

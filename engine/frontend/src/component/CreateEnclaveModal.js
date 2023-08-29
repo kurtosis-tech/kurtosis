@@ -1,9 +1,11 @@
 import React, {useState}from 'react';
+import { useNavigate } from 'react-router';
 import {createEnclave} from "../api/enclave";
 
 export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, addEnclave, token, apiHost}) => {
   const [jsonError, setJsonError] = useState("")
-  
+  const navigate = useNavigate();
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
     const fetch = async () => {
@@ -21,11 +23,9 @@ export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, 
     }
   };
 
-
-
   return (
     <div className="flex justify-center w-full h-fit m-14">
-      <form onSubmit={handleFormSubmit} className="bg-gray-100 p-6 rounded-lg shadow-md w-1/3">
+      <form className="bg-gray-100 p-6 rounded-lg shadow-md w-1/3" on>
         <div className="text-center">
           <label className="block mb-4 text-2xl">
             Package Id:
@@ -46,12 +46,22 @@ export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, 
             ></textarea>
             <p className='text-red-300 font-bold'>{jsonError}</p>
           </label>
-          <button
-            type="submit"
-            className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-blue-500 focus:ring-2 focus:ring-offset-2"
-          >
-            Submit
-          </button>
+          <div className="flex row gap-10">
+            <button
+              onClick={handleFormSubmit}
+              type="submit"
+              className="w-[50%] bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-blue-500 focus:ring-2 focus:ring-offset-2"
+            >
+              Submit
+            </button>
+            <button
+              type="back"
+              className="w-[50%] bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:ring-2 focus:ring-offset-2"
+              onClick={() => navigate("/catalog", {replace:true})}
+            >
+              Package Catalog
+            </button>
+          </div>
         </div>
       </form>
     </div>

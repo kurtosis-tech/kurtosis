@@ -62,12 +62,17 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
 	}
 
+	isProduction := false
+	if args.Mode == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
+		isProduction = true
+	}
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		service.imageVersionTag,
 		args.ApiContainerVersionTag,
 		apiContainerLogLevel,
 		args.EnclaveName,
+		isProduction,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.EnclaveName)
