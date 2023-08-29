@@ -25,14 +25,15 @@ const (
 	testUserService2Uuid = "test-user-service-2"
 	testUserService3Uuid = "test-user-service-3"
 
-	logLine1 = "{\"log\":\"Starting feature 'centralized logs'\"}"
-	logLine2 = "{\"log\":\"Starting feature 'runs idempotently'\"}"
-	logLine3 = "{\"log\":\"Starting feature 'apic idempotently'\"}"
-	logLine4 = "{\"log\":\"Starting feature 'files storage'\"}"
-	logLine5 = "{\"log\":\"Starting feature 'files manager'\"}"
-	logLine6 = "{\"log\":\"The enclave was created\"}"
-	logLine7 = "{\"log\":\"User service started\"}"
-	logLine8 = "{\"log\":\"The data have being loaded\"}"
+	logLine1  = "{\"log\":\"Starting feature 'centralized logs'\"}"
+	logLine2  = "{\"log\":\"Starting feature 'runs idempotently'\"}"
+	logLine3a = "{\"log\":\"Starting feature 'apic "
+	logLine3b = "idempotently'\"}"
+	logLine4  = "{\"log\":\"Starting feature 'files storage'\"}"
+	logLine5  = "{\"log\":\"Starting feature 'files manager'\"}"
+	logLine6  = "{\"log\":\"The enclave was created\"}"
+	logLine7  = "{\"log\":\"User service started\"}"
+	logLine8  = "{\"log\":\"The data have being loaded\"}"
 
 	firstFilterText           = "feature"
 	secondFilterText          = "Files"
@@ -301,7 +302,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 }
 
 func createFullUnderlyingMapFilesystem() *fstest.MapFS {
-	logLines := []string{logLine1, logLine2, logLine3, logLine4, logLine5, logLine6, logLine7, logLine8}
+	logLines := []string{logLine1, logLine2, logLine3a, logLine3b, logLine4, logLine5, logLine6, logLine7, logLine8}
 
 	logLinesStr := strings.Join(logLines, "\n")
 

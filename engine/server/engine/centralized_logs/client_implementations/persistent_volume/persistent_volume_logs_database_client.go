@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"strings"
 	"sync"
 )
 
@@ -23,9 +24,13 @@ const (
 	logsStorageDirpath = "/var/log/kurtosis/"
 	filetype           = ".json"
 
+	newlineRune = '\n'
+
 	logLabel = "log"
 
 	maxNumLogsToReturn = 200
+
+	endOfJsonLine = "}\n"
 )
 
 type JsonLog map[string]string
@@ -160,17 +165,33 @@ func streamServiceLogLines(
 			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v' in enclave '%v", serviceUuid, enclaveUuid)
 			return
 		default:
-			jsonLogStr, _, err := logsReader.ReadLine()
-			if err != nil && errors.Is(err, io.EOF) {
-				// exiting stream
-				if shouldFollowLogs {
-					continue
-				} else {
+			var jsonLogStr string
+			var readErr error
+			var jsonLogNewStr string
+
+			for {
+				jsonLogNewStr, readErr = logsReader.ReadString(newlineRune)
+				jsonLogStr = jsonLogStr + jsonLogNewStr
+				// check if it's an uncompleted Json line
+				if jsonLogNewStr != "" && len(jsonLogNewStr) > 2 {
+					jsonLogNewStrLastChars := jsonLogNewStr[len(jsonLogNewStr)-2:]
+					if jsonLogNewStrLastChars != endOfJsonLine {
+						// removes the newline char from the previous part of the json line
+						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(newlineRune))
+						continue
+					}
+				}
+				if readErr != nil && errors.Is(readErr, io.EOF) {
+					if shouldFollowLogs {
+						continue
+					}
+					// exiting stream
 					logrus.Debugf("EOF error returned when reading logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 					return
 				}
+				break
 			}
-			if err != nil {
+			if readErr != nil {
 				streamErrChan <- stacktrace.Propagate(err, "An error occurred reading the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
 				return
 			}
