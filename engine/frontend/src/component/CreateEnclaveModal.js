@@ -59,7 +59,7 @@ export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, 
               isLoading={runningPackage}
               loadingText="Running..."
             >
-              Run
+              Run 
             </Button>
             <button
               type="back"
