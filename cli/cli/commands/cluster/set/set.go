@@ -76,7 +76,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	}
 
 	if stopOldEngine {
-		logrus.Infof("Current cluster seems to be of type '%s'; stopping the engine so that it doesn't interfere with gateway of updated cluster", resolved_config.KurtosisClusterType_Docker.String())
+		logrus.Infof("Current cluster seems to be a local cluster of type '%s'; will stop the engine if its running so that it doesn't interfere with the updated cluster", resolved_config.KurtosisClusterType_Docker.String())
 		engineManagerOldCluster, err := engine_manager.NewEngineManager(ctx)
 		if err != nil {
 			return stacktrace.Propagate(err, "an error occurred while creating an engine manager for current cluster")
