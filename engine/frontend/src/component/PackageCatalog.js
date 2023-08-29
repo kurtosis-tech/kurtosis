@@ -44,7 +44,12 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
         if (value === "") {
             setKurtosisPackages(defaultPackages)
         }
-        const filteredPackages = defaultPackages.filter(pack => pack.name.includes(value))
+        const filteredPackages = defaultPackages.filter(pack => {
+                if ("name" in pack) {
+                    return pack.name.includes(value)
+                }
+            }
+        )
         
         setKurtosisPackages(filteredPackages)
     }
@@ -80,13 +85,15 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                         {
                             kurtosisPackages.map( (kurtosisPackage, index) => {
                                 const bgcolor = (index === chosenPackage) ? '#24BA27' : 'gray.300'
-                                return (
-                                    <ListItem bg={bgcolor} key={index} onClick={() => selectPackage(index)}>
-                                        <Center h="70px" w="100%">
-                                            <Text fontSize={"2xl"} color='blue.800' fontWeight={"bold"}> {kurtosisPackage.name} </Text>
-                                        </Center>
-                                    </ListItem> 
-                                )
+                                if ("name" in kurtosisPackage) {
+                                    return (
+                                        <ListItem bg={bgcolor} key={index} onClick={() => selectPackage(index)}>
+                                            <Center h="70px" w="100%">
+                                                <Text fontSize={"2xl"} color='blue.800' fontWeight={"bold"}> {kurtosisPackage.name} </Text>
+                                            </Center>
+                                        </ListItem> 
+                                    )
+                                }
                             })
                         }
                     </List>
