@@ -31,6 +31,7 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
         setLoading(true)
         let stream;
         const fetchLogs = async () => {
+            console.log("stream ", args)
           stream = await runStarlark(enclave.host, enclave.port, packageId, args, appData.jwtToken, appData.apiHost);
           for await (const res of stream) {
               const result = res["runResponseLine"]
