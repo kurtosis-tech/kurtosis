@@ -1,10 +1,12 @@
 import React, {useState}from 'react';
 import { useNavigate } from 'react-router';
 import {createEnclave} from "../api/enclave";
+import {Button} from "@chakra-ui/react";
 
 export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, addEnclave, token, apiHost}) => {
   const [jsonError, setJsonError] = useState("")
   const navigate = useNavigate();
+  const [runningPackage, setRunningPackage] = useState(false)
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
@@ -17,6 +19,7 @@ export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, 
     try {
       setJsonError("")
       JSON.parse(args)
+      setRunningPackage(true)
       fetch();
     } catch (error) {
       setJsonError("Invalid Json")
@@ -47,13 +50,17 @@ export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, 
             <p className='text-red-300 font-bold'>{jsonError}</p>
           </label>
           <div className="flex row gap-10">
-            <button
+            <Button
               onClick={handleFormSubmit}
               type="submit"
               className="w-[50%] bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-blue-500 focus:ring-2 focus:ring-offset-2"
+              bg='blue.500'
+              w="50%"
+              isLoading={runningPackage}
+              loadingText="Running..."
             >
               Run
-            </button>
+            </Button>
             <button
               type="back"
               className="w-[50%] bg-gray-500 text-white py-2 px-4 rounded-md hover:bg-gray-700 focus:outline-none focus:ring-blue-500 focus:ring-2 focus:ring-offset-2"
