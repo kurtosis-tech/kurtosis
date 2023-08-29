@@ -64,7 +64,7 @@ const ServiceInfo = () => {
                 <div className='flex flex-col h-full space-y-1 bg-white'>
                     <Heading content={`${enclaveName}::${selected.name}`}/>
                     <div className="flex-1">
-                        <div className="text-xl text-left h-fit mb-2 ml-5">
+                        <div className="text-xl text-left h-fit mb-2 ml-5 text-black">
                             Ports
                         </div>
                         <div className="overflow-auto">
@@ -75,7 +75,7 @@ const ServiceInfo = () => {
                                     const url = port.applicationProtocol ? urlWithApplicationString : urlWithoutApplicationString
 
                                     return (
-                                        <div className="h-fit flex flex-row space-x-10 ml-5">
+                                        <div className="h-fit flex flex-row space-x-10 ml-5 text-black">
                                             <div> {port.portName}:</div>
                                             <a href={url} rel="noreferrer" className="grow">
                                                 <u> {url} </u>
