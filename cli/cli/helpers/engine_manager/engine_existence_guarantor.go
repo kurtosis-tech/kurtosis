@@ -187,13 +187,10 @@ func (guarantor *engineExistenceGuarantor) VisitStopped() error {
 // unusual and very bad, so we'd rather fail loudly
 func (guarantor *engineExistenceGuarantor) VisitContainerRunningButServerNotResponding() error {
 	remediationCmd := fmt.Sprintf(
-		"%v %v %v && %v %v %v",
+		"%v %v %v",
 		command_str_consts.KurtosisCmdStr,
 		command_str_consts.EngineCmdStr,
-		command_str_consts.EngineStopCmdStr,
-		command_str_consts.KurtosisCmdStr,
-		command_str_consts.EngineCmdStr,
-		command_str_consts.EngineStartCmdStr,
+		command_str_consts.EngineRestartCmdStr,
 	)
 	return stacktrace.NewError(
 		"We couldn't guarantee that a Kurtosis engine is running because we found a running engine container whose server isn't "+
