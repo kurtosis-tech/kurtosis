@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"strings"
 	"sync"
 
@@ -31,7 +32,7 @@ const (
 func RegisterUserServices(
 	enclaveUuid enclave.EnclaveUUID,
 	servicesToRegister map[service.ServiceName]bool,
-	serviceRegistrationsForEnclave map[service.ServiceUUID]*service.ServiceRegistration,
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	freeIpProvidersForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	serviceRegistrationMutex *sync.Mutex,
 ) (
@@ -50,7 +51,7 @@ func RegisterUserServices(
 		return successfulServicesPool, failedServicesPool, nil
 	}
 
-	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveUuid, servicesToRegister, serviceRegistrationsForEnclave, freeIpProvidersForEnclave)
+	successfulRegistrations, failedRegistrations, err := registerUserServices(enclaveUuid, servicesToRegister, serviceRegistrationRepository, freeIpProvidersForEnclave)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred registering services with Names '%v'", servicesToRegister)
 	}
@@ -60,13 +61,15 @@ func RegisterUserServices(
 // UnregisterUserServices unregisters all services currently registered for this enclave.
 // If the service is not registered for this enclave, it no-ops and the service is returned as "successfully unregistered"
 func UnregisterUserServices(
+	enclaveUuid enclave.EnclaveUUID,
 	serviceUUIDsToUnregister map[service.ServiceUUID]bool,
-	enclaveServiceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	freeIpAddrProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	serviceRegistrationMutex *sync.Mutex,
 ) (
 	map[service.ServiceUUID]bool,
 	map[service.ServiceUUID]error,
+	error,
 ) {
 	serviceRegistrationMutex.Lock()
 	defer serviceRegistrationMutex.Unlock()
@@ -74,7 +77,12 @@ func UnregisterUserServices(
 	servicesFailed := map[service.ServiceUUID]error{}
 
 	if len(serviceUUIDsToUnregister) == 0 {
-		return servicesSuccessfullyUnregistered, servicesFailed
+		return servicesSuccessfullyUnregistered, servicesFailed, nil
+	}
+
+	enclaveServiceRegistrations, err := serviceRegistrationRepository.GetAllEnclaveServiceRegistrations(enclaveUuid)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all enclave service registrations from the repository for enclave with UUID '%v'", enclaveUuid)
 	}
 
 	for serviceUuid := range serviceUUIDsToUnregister {
@@ -85,26 +93,34 @@ func UnregisterUserServices(
 		}
 
 		serviceIpAddr := serviceRegistration.GetPrivateIP()
+
 		if err := freeIpAddrProviderForEnclave.ReleaseIpAddr(serviceIpAddr); err != nil {
 			servicesFailed[serviceUuid] = err
-		} else {
-			delete(enclaveServiceRegistrations, serviceUuid)
-			servicesSuccessfullyUnregistered[serviceUuid] = true
+			continue
 		}
+
+		if err := serviceRegistrationRepository.Delete(serviceRegistration.GetName()); err != nil {
+			servicesFailed[serviceUuid] = err
+			continue
+		}
+
+		servicesSuccessfullyUnregistered[serviceUuid] = true
+
 	}
-	return servicesSuccessfullyUnregistered, servicesFailed
+	return servicesSuccessfullyUnregistered, servicesFailed, nil
 }
 
 func StartRegisteredUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	services map[service.ServiceUUID]*service.ServiceConfig,
-	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	logsCollector *logs_collector.LogsCollector,
 	logsCollectorAvailabilityChecker logs_collector_functions.LogsCollectorAvailabilityChecker,
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	freeIpProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
+	restartPolicy docker_manager.RestartPolicy,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -115,6 +131,12 @@ func StartRegisteredUserServices(
 
 	serviceConfigsToStart := map[service.ServiceUUID]*service.ServiceConfig{}
 	serviceRegistrationsToStart := map[service.ServiceUUID]*service.ServiceRegistration{}
+
+	serviceRegistrations, err := serviceRegistrationRepository.GetAllEnclaveServiceRegistrations(enclaveUuid)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all enclave service registrations from the repository for enclave with UUID '%v'", enclaveUuid)
+	}
+
 	for serviceUuid, serviceConfig := range services {
 		serviceRegistration, found := serviceRegistrations[serviceUuid]
 		if !found {
@@ -143,7 +165,7 @@ func StartRegisteredUserServices(
 			// If the first service to start is stopped, we know that the other ones are too because
 			// of a check done at the service network layer.
 			// Restarting stopped services is a much lighter operation so we branch out to a simpler function
-			return restartUserServices(ctx, enclaveUuid, serviceRegistrationsToStart, dockerManager)
+			return restartUserServices(ctx, enclaveUuid, serviceRegistrationsToStart, serviceRegistrationRepository, dockerManager)
 		}
 	}
 
@@ -197,6 +219,7 @@ func StartRegisteredUserServices(
 		enclaveObjAttrsProvider,
 		freeIpProviderForEnclave,
 		dockerManager,
+		restartPolicy,
 		logsCollectorEnclaveAddr,
 		logsCollectorLabels,
 	)
@@ -207,7 +230,14 @@ func StartRegisteredUserServices(
 	// Add operations to their respective pools
 	for serviceUuid, successfullyStartedService := range successfulStarts {
 		successfulServicesPool[serviceUuid] = successfullyStartedService
-		serviceRegistrations[serviceUuid].SetStatus(service.ServiceStatus_Started)
+		serviceName := successfullyStartedService.GetRegistration().GetName()
+		serviceStatus := service.ServiceStatus_Started
+		if err := serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
+			failedServicesPool[serviceUuid] = stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s'", serviceStatus, serviceName)
+			delete(successfulStarts, serviceUuid)
+			delete(successfulServicesPool, serviceUuid)
+			continue
+		}
 	}
 
 	for serviceUuid, serviceErr := range failedStarts {
@@ -222,7 +252,7 @@ func RemoveRegisteredUserServiceProcesses(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	services map[service.ServiceUUID]bool,
-	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	map[service.ServiceUUID]bool,
@@ -231,6 +261,11 @@ func RemoveRegisteredUserServiceProcesses(
 ) {
 	successfullyRemovedService := map[service.ServiceUUID]bool{}
 	failedServicesPool := map[service.ServiceUUID]error{}
+
+	serviceRegistrations, err := serviceRegistrationRepository.GetAllEnclaveServiceRegistrations(enclaveUuid)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting all enclave service registrations from the repository for enclave with UUID '%v'", enclaveUuid)
+	}
 
 	serviceUuidsToUpdate := map[service.ServiceUUID]bool{}
 	for serviceUuid := range services {
@@ -311,6 +346,7 @@ func restartUserServices(
 	ctx context.Context,
 	enclaveUuid enclave.EnclaveUUID,
 	serviceRegistrations map[service.ServiceUUID]*service.ServiceRegistration,
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	dockerManager *docker_manager.DockerManager,
 ) (
 	map[service.ServiceUUID]*service.Service,
@@ -319,8 +355,10 @@ func restartUserServices(
 ) {
 
 	serviceUuids := map[service.ServiceUUID]bool{}
-	for serviceUuid := range serviceRegistrations {
+	serviceNamesByUuids := map[service.ServiceUUID]service.ServiceName{}
+	for serviceUuid, serviceRegistration := range serviceRegistrations {
 		serviceUuids[serviceUuid] = true
+		serviceNamesByUuids[serviceUuid] = serviceRegistration.GetName()
 	}
 	startServiceFilters := &service.ServiceFilters{
 		Names:    nil,
@@ -369,13 +407,26 @@ func restartUserServices(
 	successfulServices := map[service.ServiceUUID]*service.Service{}
 	for uuidStr := range successfulUuidStrs {
 		serviceUuid := service.ServiceUUID(uuidStr)
-		successfulServices[service.ServiceUUID(serviceUuid)] = service.NewService(
+		serviceName, found := serviceNamesByUuids[serviceUuid]
+		if !found {
+			erroredUuidStrs[uuidStr] = stacktrace.NewError("Expected to find service name by UUID '%v' in map '%+v', but none was found; this is a bug in Kurtosis", serviceUuid, serviceNamesByUuids)
+			continue
+		}
+
+		successfulServices[serviceUuid] = service.NewService(
 			serviceRegistrations[serviceUuid],
 			container_status.ContainerStatus_Running,
 			nil,
 			nil,
-			nil)
-		serviceRegistrations[serviceUuid].SetStatus(service.ServiceStatus_Started)
+			nil,
+		)
+
+		serviceStatus := service.ServiceStatus_Started
+		if err := serviceRegistrationRepository.UpdateStatus(serviceName, serviceStatus); err != nil {
+			erroredUuidStrs[uuidStr] = stacktrace.Propagate(err, "An error occurred while updating service status to '%s' in service registration for service '%s'", serviceStatus, serviceName)
+			delete(successfulServices, serviceUuid)
+			continue
+		}
 	}
 
 	erroredUuids := map[service.ServiceUUID]error{}
@@ -398,6 +449,7 @@ func runStartServiceOperationsInParallel(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
+	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) (
@@ -424,6 +476,7 @@ func runStartServiceOperationsInParallel(
 			enclaveObjAttrsProvider,
 			freeIpAddrProvider,
 			dockerManager,
+			restartPolicy,
 			logsCollectorAddress,
 			logsCollectorLabels,
 		)
@@ -459,6 +512,7 @@ func createStartServiceOperation(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
+	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) operation_parallelizer.Operation {
@@ -627,7 +681,7 @@ func createStartServiceOperation(
 			volumeMounts,
 		).WithLoggingDriver(
 			fluentdLoggingDriverCnfg,
-		)
+		).WithRestartPolicy(restartPolicy)
 
 		if entrypointArgs != nil {
 			createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)
@@ -708,7 +762,7 @@ func checkPrivateAndPublicPortsAreOneToOne(privatePorts map[string]*port_spec.Po
 func registerUserServices(
 	enclaveUuid enclave.EnclaveUUID,
 	serviceNames map[service.ServiceName]bool,
-	serviceRegistrationsForEnclave map[service.ServiceUUID]*service.ServiceRegistration,
+	serviceRegistrationRepository *service_registration.ServiceRegistrationRepository,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker) (map[service.ServiceName]*service.ServiceRegistration, map[service.ServiceName]error, error) {
 	successfulServicesPool := map[service.ServiceName]*service.ServiceRegistration{}
 	failedServicesPool := map[service.ServiceName]error{}
@@ -750,11 +804,16 @@ func registerUserServices(
 			string(serviceName), // in Docker, hostname = serviceName because we're setting the "alias" of the container to serviceName
 		)
 
-		serviceRegistrationsForEnclave[serviceUuid] = registration
+		if err := serviceRegistrationRepository.Save(registration); err != nil {
+			failedRegistrations[serviceName] = stacktrace.Propagate(err, "An error occurred saving service registration '%+v' for service '%s'", registration, serviceName)
+		}
+
 		shouldRemoveRegistration := true
 		defer func() {
 			if shouldRemoveRegistration {
-				delete(serviceRegistrationsForEnclave, serviceUuid)
+				if err := serviceRegistrationRepository.Delete(serviceName); err != nil {
+					logrus.Errorf("We tried to delete the service registration for service  '%s' we had stored but failed:\n%v", serviceName, err)
+				}
 			}
 		}()
 

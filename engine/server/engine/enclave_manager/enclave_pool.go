@@ -18,6 +18,8 @@ const (
 	defaultApiContainerLogLevel = logrus.DebugLevel
 
 	fill = true
+
+	createTestEnclave = false
 )
 
 type EnclavePool struct {
@@ -27,6 +29,7 @@ type EnclavePool struct {
 	fillChan                chan bool
 	engineVersion           string
 	cancelSubRoutineCtxFunc context.CancelFunc
+	enclaveEnvVars          string
 }
 
 // CreateEnclavePool will do the following:
@@ -39,6 +42,7 @@ func CreateEnclavePool(
 	enclaveCreator *EnclaveCreator,
 	poolSize uint8,
 	engineVersion string,
+	enclaveEnvVars string,
 ) (*EnclavePool, error) {
 
 	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
@@ -80,6 +84,7 @@ func CreateEnclavePool(
 		fillChan:                fillChan,
 		engineVersion:           engineVersion,
 		cancelSubRoutineCtxFunc: cancelCtxFunc,
+		enclaveEnvVars:          enclaveEnvVars,
 	}
 
 	go enclavePool.run(ctxWithCancel)
@@ -260,6 +265,8 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_en
 		apiContainerVersion,
 		defaultApiContainerLogLevel,
 		enclaveName,
+		pool.enclaveEnvVars,
+		createTestEnclave,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(

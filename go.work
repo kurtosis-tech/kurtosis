@@ -2,17 +2,20 @@ go 1.19
 
 use (
 	./api/golang
-	./cloud/api/golang
 	./cli/cli
+	./cloud/api/golang
 	./container-engine-lib
 	./contexts-config-store
 	./core/files_artifacts_expander
 	./core/launcher
 	./core/server
+	./enclave-manager/api/golang
+	./enclave-manager/server
 	./engine/launcher
 	./engine/server
 	./grpc-file-transfer/golang
 	./internal_testsuites/golang
 	./kurtosis_version
 	./name_generator
+	connect-server
 )

@@ -129,6 +129,7 @@ func runMain() error {
 			Context:        ctx,
 			EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
 			APIContainerIP: ownIpAddress,
+			IsProduction:   serverArgs.IsProductionEnclave,
 		}
 		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgs, configs.NoRemoteBackendConfig)
 		if err != nil {
@@ -164,7 +165,7 @@ func runMain() error {
 	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
-		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore),
+		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, serverArgs.EnclaveEnvVars),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
 		startosis_engine.NewStartosisExecutor(runtimeValueStore))
 

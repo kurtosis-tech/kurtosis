@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	dockerLabelKeyRegexStr = "^[a-z0-9-.]+$"
+	dockerLabelKeyRegexStr = "^[a-z0-9-._]+$"
 
 	// It doesn't seem Docker actually has a label key length limit, but we implement one of our own for practicality
 	maxLabelLength = 256

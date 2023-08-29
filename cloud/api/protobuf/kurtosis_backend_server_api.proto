@@ -12,7 +12,6 @@ service KurtosisCloudBackendServer {
   rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
   rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
   rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
-  rpc GetOrCreateEnclaveS3Storage(GetOrCreateEnclaveS3StorageRequest) returns (GetOrCreateEnclaveS3StorageResponse) {};
 }
 
 message GetOrCreateApiKeyRequest {
@@ -60,7 +59,13 @@ message GetCloudInstanceConfigResponse {
   string status = 5;
   string created = 6;
   string updated = 7;
-  optional AwsKey user_key = 8; // TODO: remove the optional once the cloud BE/FE are upgraded and released
+
+  // deprecated in favor of aws_environment
+  // TODO: remove it once this is released and the cloud BE is upgraded
+  optional AwsKey user_key = 8;
+
+  // TODO: remove the optional once this is released and the cloud BE is upgraded
+  optional AwsEnvironment aws_environment = 9;
 }
 
 message AwsKey {
@@ -68,13 +73,11 @@ message AwsKey {
   string secret = 2;
 }
 
-message GetOrCreateEnclaveS3StorageRequest {
-  string api_key = 1;
-  string user_id = 2;
-  string enclave_name = 3;
-}
+message AwsEnvironment {
+  string access_key_id = 1;
+  string secret_access_key = 2;
 
-message GetOrCreateEnclaveS3StorageResponse {
-  string bucket_name = 1;
-  string bucket_folder = 2;
+  string bucket_region = 3;
+  string bucket_name = 4;
+  string bucket_user_folder = 5;
 }

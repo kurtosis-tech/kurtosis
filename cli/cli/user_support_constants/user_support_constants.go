@@ -11,7 +11,6 @@ const (
 	Domain                            = "kurtosis.com"
 	OldDomain                         = "kurtosistech.com" //This domain is still used for email accounts
 	DocumentationUrl                  = "https://docs." + Domain
-	DiscordUrl                        = "https://discord.gg/6Jjp9c89z9"
 	GithubRepoUrl                     = "https://github.com/kurtosis-tech/kurtosis"
 	GithubNewIssuesUrl                = GithubRepoUrl + "/issues/new"
 	GitHubChooseNewIssuesUrl          = GithubNewIssuesUrl + "/choose"
@@ -26,7 +25,7 @@ const (
 	MetricsPhilosophyDocs             = DocumentationUrl + "/explanations/metrics-philosophy"
 	HowImportWorksLink                = DocumentationUrl + "/explanations/how-do-kurtosis-imports-work"
 	GoogleRe2SyntaxDocumentation      = "https://github.com/google/re2/wiki/Syntax"
-	KurtosisDiscordUrl                = "https://discord.com/channels/783719264308953108/783719264308953111"
+	KurtosisDiscordUrl                = "https://discord.gg/6Jjp9c89z9"
 	KurtosisOnBoardCalendlyUrl        = "https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding"
 	FeedbackEmail                     = "feedback@" + OldDomain
 	FeedbackEmailLink                 = "mailto:" + FeedbackEmail
@@ -39,9 +38,14 @@ const (
 // List of URLs whose validity will be verified in a test
 var urlsToValidateInTest = []string{
 	DocumentationUrl,
-	DiscordUrl,
+	GithubRepoUrl,
+	GithubNewIssuesUrl,
+	GitHubChooseNewIssuesUrl,
 	GitHubChooseNewIssuesUrlWitLabels,
+	GitHubBugIssueUrl,
+	GitHubFeatureRequestIssueUrl,
 	CLICommandsReferenceURL,
+	GitHubDocsIssueUrl,
 	StarlarkPackagesReferenceURL,
 	StarlarkLocatorsReferenceURL,
 	UpgradeCLIInstructionsPage,

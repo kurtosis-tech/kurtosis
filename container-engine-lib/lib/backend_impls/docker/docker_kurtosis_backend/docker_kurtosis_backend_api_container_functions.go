@@ -4,7 +4,6 @@ import (
 	"context"
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
@@ -147,16 +146,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	for labelKey, labelValue := range apiContainerAttrs.GetLabels() {
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
-
-	//The APIContainer will be configured to send the logs to the Fluentbit logs collector server
-	logCollectorAddr, err := enclaveLogsCollector.GetEnclaveNetworkAddressString()
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred retrieving the log collector address.")
-	}
-	fluentdLoggingDriverCnfg := docker_manager.NewFluentdLoggingDriver(
-		logCollectorAddr,
-		logs_collector_functions.GetKurtosisTrackedLogsCollectorLabels(),
-	)
+	// TODO: configure the APIContainer to send the logs to the Fluentbit logs collector server
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		image,
@@ -174,9 +164,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 	).WithLabels(
 		labelStrs,
-	).WithLoggingDriver(
-		fluentdLoggingDriverCnfg,
-	).Build()
+	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
 	if err = backend.dockerManager.FetchImage(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
@@ -225,7 +213,12 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		return nil, stacktrace.Propagate(err, "An error occurred waiting for the API container's grpc port to become available")
 	}
 
-	result, err := getApiContainerObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings)
+	bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for enclave with id: '%v'", enclaveUuid)
+	}
+
+	result, err := getApiContainerObjectFromContainerInfo(containerId, labelStrs, types.ContainerStatus_Running, hostMachinePortBindings, bridgeNetworkIpAddress)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating an API container object from container with ID '%v'", containerId)
 	}
@@ -244,7 +237,6 @@ func (backend *DockerKurtosisBackend) GetAPIContainers(ctx context.Context, filt
 	for _, apicObj := range matchingApiContainers {
 		matchingApiContainersByEnclaveID[apicObj.GetEnclaveID()] = apicObj
 	}
-
 	return matchingApiContainersByEnclaveID, nil
 }
 
@@ -356,11 +348,17 @@ func (backend *DockerKurtosisBackend) getMatchingApiContainers(ctx context.Conte
 	allMatchingApiContainers := map[string]*api_container.APIContainer{}
 	for _, apiContainer := range allApiContainers {
 		containerId := apiContainer.GetId()
+		bridgeNetworkIpAddress, err := backend.dockerManager.GetContainerIP(ctx, consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, containerId)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred while getting bridge network ip address for container with id: '%v'", containerId)
+		}
+
 		apicObj, err := getApiContainerObjectFromContainerInfo(
 			containerId,
 			apiContainer.GetLabels(),
 			apiContainer.GetStatus(),
 			apiContainer.GetHostPortBindings(),
+			bridgeNetworkIpAddress,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred converting container with ID '%v' into an API container object", apiContainer.GetId())
@@ -391,6 +389,7 @@ func getApiContainerObjectFromContainerInfo(
 	labels map[string]string,
 	containerStatus types.ContainerStatus,
 	allHostMachinePortBindings map[nat.Port]*nat.PortBinding,
+	bridgeNetworkIpAddress string,
 ) (*api_container.APIContainer, error) {
 	enclaveId, found := labels[label_key_consts.EnclaveUUIDDockerLabelKey.GetString()]
 	if !found {
@@ -407,6 +406,11 @@ func getApiContainerObjectFromContainerInfo(
 	privateIpAddr := net.ParseIP(privateIpAddrStr)
 	if privateIpAddr == nil {
 		return nil, stacktrace.NewError("Couldn't parse private IP address string '%v' to an IP", privateIpAddrStr)
+	}
+
+	bridgeNetworkIpAddressAddr := net.ParseIP(bridgeNetworkIpAddress)
+	if privateIpAddr == nil {
+		return nil, stacktrace.NewError("Couldn't parse bridge network IP address string '%v' to an IP", bridgeNetworkIpAddressAddr)
 	}
 
 	privateGrpcPortSpec, err := getPrivateApiContainerPorts(labels)
@@ -444,6 +448,7 @@ func getApiContainerObjectFromContainerInfo(
 		privateGrpcPortSpec,
 		publicIpAddr,
 		publicGrpcPortSpec,
+		bridgeNetworkIpAddressAddr,
 	)
 
 	return result, nil

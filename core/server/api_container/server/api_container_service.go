@@ -12,6 +12,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"io"
 	"math"
 	"net/http"
@@ -27,7 +28,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
@@ -284,10 +284,12 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	filterServiceIdentifiers := args.ServiceIdentifiers
 
-	// if there are any filters we fetch those services only
+	// if there are any filters we fetch those services only - this goes one by one
+	// TODO (maybe) - explore perf differences between individual fetches vs filtering on the APIC side
+	// Note as of 2023-08-23 I(gyani) has only seen instances of fetch everything & fetch one, so we don't need to optimize just yet
 	if len(filterServiceIdentifiers) > 0 {
 		for serviceIdentifier := range filterServiceIdentifiers {
-			serviceInfo, err := apicService.getServiceInfo(ctx, serviceIdentifier)
+			serviceInfo, err := apicService.getServiceInfoForIdentifier(ctx, serviceIdentifier)
 			if err != nil {
 				return nil, stacktrace.Propagate(err, "Failed to get service info for service '%v'", serviceIdentifier)
 			}
@@ -297,14 +299,13 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 		return resp, nil
 	}
 
-	// otherwise we fetch everything
-	for serviceName := range apicService.serviceNetwork.GetServiceNames() {
-		serviceNameStr := string(serviceName)
-		serviceInfo, err := apicService.getServiceInfo(ctx, serviceNameStr)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "Failed to get service info for service '%v'", serviceName)
-		}
-		serviceInfos[serviceNameStr] = serviceInfo
+	allServices, err := apicService.serviceNetwork.GetServices(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while fetching all services from the backend")
+	}
+	serviceInfos, err = getServiceInfosFromServiceObjs(allServices)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while converting the service obj into service info")
 	}
 
 	resp := binding_constructors.NewGetServicesResponse(serviceInfos)
@@ -618,7 +619,7 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 	return resp, nil
 }
 
-func (apicService ApiContainerService) getServiceInfo(ctx context.Context, serviceIdentifier string) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func (apicService ApiContainerService) getServiceInfoForIdentifier(ctx context.Context, serviceIdentifier string) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	serviceObj, err := apicService.serviceNetwork.GetService(
 		ctx,
 		serviceIdentifier,
@@ -626,44 +627,11 @@ func (apicService ApiContainerService) getServiceInfo(ctx context.Context, servi
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting info for service '%v'", serviceIdentifier)
 	}
-	privatePorts := serviceObj.GetPrivatePorts()
-	privateIp := serviceObj.GetRegistration().GetPrivateIP()
-	maybePublicIp := serviceObj.GetMaybePublicIP()
-	maybePublicPorts := serviceObj.GetMaybePublicPorts()
-	serviceUuidStr := string(serviceObj.GetRegistration().GetUUID())
-	serviceNameStr := string(serviceObj.GetRegistration().GetName())
-	serviceStatus, err := convertServiceStatusToServiceInfoStatus(serviceObj.GetRegistration().GetStatus())
+	serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred converting the service status to a service info status")
+		return nil, stacktrace.Propagate(err, "an error occurred while converting service obj for service with id '%v' to service info", serviceIdentifier)
 	}
-
-	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private port specs to API ports")
-	}
-	publicIpAddrStr := missingPublicIpAddrStr
-	if maybePublicIp != nil {
-		publicIpAddrStr = maybePublicIp.String()
-	}
-	publicApiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
-	if maybePublicPorts != nil {
-		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicPorts)
-		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
-		}
-	}
-
-	serviceInfoResponse := binding_constructors.NewServiceInfo(
-		serviceUuidStr,
-		serviceNameStr,
-		uuid_generator.ShortenedUUIDString(serviceUuidStr),
-		privateIp.String(),
-		privateApiPorts,
-		publicIpAddrStr,
-		publicApiPorts,
-		serviceStatus,
-	)
-	return serviceInfoResponse, nil
+	return serviceInfo, nil
 }
 
 func (apicService ApiContainerService) runStarlarkPackageSetup(
@@ -735,6 +703,59 @@ func (apicService ApiContainerService) runStarlark(
 			}
 		}
 	}
+}
+
+func getServiceInfosFromServiceObjs(services map[service.ServiceUUID]*service.Service) (map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
+	for uuid, serviceObj := range services {
+		serviceInfo, err := getServiceInfoFromServiceObj(serviceObj)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "there was an error converting the service obj for service with uuid '%v' and name '%v' to service info", uuid, serviceObj.GetRegistration().GetName())
+		}
+		serviceInfos[serviceInfo.Name] = serviceInfo
+	}
+	return serviceInfos, nil
+}
+
+func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+	privatePorts := serviceObj.GetPrivatePorts()
+	privateIp := serviceObj.GetRegistration().GetPrivateIP()
+	maybePublicIp := serviceObj.GetMaybePublicIP()
+	maybePublicPorts := serviceObj.GetMaybePublicPorts()
+	serviceUuidStr := string(serviceObj.GetRegistration().GetUUID())
+	serviceNameStr := string(serviceObj.GetRegistration().GetName())
+	serviceStatus, err := convertServiceStatusToServiceInfoStatus(serviceObj.GetRegistration().GetStatus())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the service status to a service info status")
+	}
+
+	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred transforming the service's private port specs to API ports")
+	}
+	publicIpAddrStr := missingPublicIpAddrStr
+	if maybePublicIp != nil {
+		publicIpAddrStr = maybePublicIp.String()
+	}
+	publicApiPorts := map[string]*kurtosis_core_rpc_api_bindings.Port{}
+	if maybePublicPorts != nil {
+		publicApiPorts, err = transformPortSpecMapToApiPortsMap(maybePublicPorts)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
+		}
+	}
+
+	serviceInfoResponse := binding_constructors.NewServiceInfo(
+		serviceUuidStr,
+		serviceNameStr,
+		uuid_generator.ShortenedUUIDString(serviceUuidStr),
+		privateIp.String(),
+		privateApiPorts,
+		publicIpAddrStr,
+		publicApiPorts,
+		serviceStatus,
+	)
+	return serviceInfoResponse, nil
 }
 
 func getFileDescriptionsFromArtifact(artifactPath string) ([]*kurtosis_core_rpc_api_bindings.FileArtifactContentsFileDescription, error) {

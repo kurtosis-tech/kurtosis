@@ -24,6 +24,8 @@ pub struct CreateEnclaveArgs {
     /// The API container log level
     #[prost(string, tag = "3")]
     pub api_container_log_level: ::prost::alloc::string::String,
+    #[prost(enumeration = "EnclaveMode", tag = "4")]
+    pub mode: i32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -44,6 +46,9 @@ pub struct EnclaveApiContainerInfo {
     /// The grpc port inside the enclave network that the API container is listening on
     #[prost(uint32, tag = "3")]
     pub grpc_port_inside_enclave: u32,
+    /// this is the bridge ip address that gets assigned to api container
+    #[prost(string, tag = "6")]
+    pub bridge_ip_address: ::prost::alloc::string::String,
 }
 /// Will only be present if the API container is running
 #[allow(clippy::derive_partial_eq_without_eq)]
@@ -215,6 +220,32 @@ pub struct LogLineFilter {
     pub operator: i32,
     #[prost(string, tag = "2")]
     pub text_pattern: ::prost::alloc::string::String,
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum EnclaveMode {
+    Test = 0,
+    Production = 1,
+}
+impl EnclaveMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            EnclaveMode::Test => "TEST",
+            EnclaveMode::Production => "PRODUCTION",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "TEST" => Some(Self::Test),
+            "PRODUCTION" => Some(Self::Production),
+            _ => None,
+        }
+    }
 }
 /// ==============================================================================================
 ///                                             Get Enclaves

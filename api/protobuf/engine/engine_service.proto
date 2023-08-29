@@ -49,6 +49,13 @@ message CreateEnclaveArgs {
   string api_container_version_tag = 2;
   // The API container log level
   string api_container_log_level = 3;
+
+  EnclaveMode mode = 4;
+}
+
+enum EnclaveMode {
+  TEST = 0;
+  PRODUCTION = 1;
 }
 
 message CreateEnclaveResponse {
@@ -94,6 +101,8 @@ message EnclaveAPIContainerInfo {
   string ip_inside_enclave = 2;
   // The grpc port inside the enclave network that the API container is listening on
   uint32 grpc_port_inside_enclave = 3;
+  // this is the bridge ip address that gets assigned to api container
+  string bridge_ip_address = 6;
 }
 
 // Will only be present if the API container is running

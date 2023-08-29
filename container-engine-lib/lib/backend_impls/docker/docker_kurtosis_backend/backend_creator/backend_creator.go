@@ -14,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/free_ip_addr_tracker"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"net"
@@ -37,6 +38,7 @@ type APIContainerModeArgs struct {
 	Context        context.Context
 	EnclaveID      enclave.EnclaveUUID
 	APIContainerIP net.IP
+	IsProduction   bool
 }
 
 var (
@@ -166,7 +168,11 @@ func getDockerKurtosisBackend(
 	// If running within the API container context, detect the network that the API container is running inside
 	// so, we can create the free IP address trackers
 	enclaveFreeIpAddrTrackers := map[enclave.EnclaveUUID]*free_ip_addr_tracker.FreeIpAddrTracker{}
+	productionMode := false
+	// It's only used by API container so can be nil for other contexts
+	var serviceRegistrationRepository *service_registration.ServiceRegistrationRepository
 	if optionalApiContainerModeArgs != nil {
+		productionMode = optionalApiContainerModeArgs.IsProduction
 		enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase()
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred opening local database")
@@ -219,9 +225,14 @@ func getDockerKurtosisBackend(
 		}
 
 		enclaveFreeIpAddrTrackers[enclaveUuid] = freeIpAddrProvider
+
+		serviceRegistrationRepository, err = service_registration.GetOrCreateNewServiceRegistrationRepository(enclaveDb)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating the service registration repository")
+		}
 	}
 
-	dockerKurtosisBackend := docker_kurtosis_backend.NewDockerKurtosisBackend(dockerManager, enclaveFreeIpAddrTrackers)
+	dockerKurtosisBackend := docker_kurtosis_backend.NewDockerKurtosisBackend(dockerManager, enclaveFreeIpAddrTrackers, serviceRegistrationRepository, productionMode)
 
 	wrappedBackend := metrics_reporting.NewMetricsReportingKurtosisBackend(dockerKurtosisBackend)
 

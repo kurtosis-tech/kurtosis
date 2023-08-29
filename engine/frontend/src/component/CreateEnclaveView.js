@@ -2,13 +2,14 @@ import { useEffect, useState } from "react";
 
 import RightPanel from "./RightPanel";
 import LeftPanel from "./LeftPanel";
-import Heading  from "./Heading";
 import { LogView } from "./LogView";
 
 import {useNavigate} from "react-router-dom";
 import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
 import LoadingOverlay from "./LoadingOverflow";
+import {useAppContext} from "../context/AppState";
+import app from "../App";
 
 const SERVICE_IS_ADDED = "added with service";
 
@@ -17,58 +18,47 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
     const [services, setServices] = useState([])
+    const {appData} = useAppContext()
 
-    const getServices = async (apiClient) => {
-        const {services: newServices} = await getEnclaveInformation(apiClient);
+    const getServices = async (enclave) => {
+        const {services: newServices} = await getEnclaveInformation(enclave.host, enclave.port, appData.jwtToken, appData.apiHost);
         if (newServices.length > services.length) {
-            setServices(newServices) 
+            setServices(newServices)
         }
     }
 
     useEffect(() => {
         setLoading(true)
         let stream;
-        const fetch = async () => {
-          stream = await runStarlark(enclave.apiClient, packageId, args);
-          stream.on("data", data => {
-            const result = data.toObject();
-            if (result.instruction && result.instruction.executableInstruction) {
-                setLogs(logs => [...logs, result.instruction.executableInstruction])
-            }
+        const fetchLogs = async () => {
+          stream = await runStarlark(enclave.host, enclave.port, packageId, args, appData.jwtToken, appData.apiHost);
+          for await (const res of stream) {
+              const result = res["runResponseLine"]
+              if (result.case === "instruction") {
+                  setLogs(logs => [...logs, result.value.executableInstruction])
+              }
 
-            if (result.progressInfo && result.progressInfo.currentStepInfoList.length > 0) {
-                let length = result.progressInfo.currentStepInfoList.length;
-                setLogs(logs => [...logs, result.progressInfo.currentStepInfoList[length-1]])
-            } 
-            
-            if (result.instructionResult && result.instructionResult.serializedInstructionResult) {
-                if (result.instructionResult.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
-                    getServices(enclave.apiClient)
-                }
-                setLogs(logs => [...logs, result.instructionResult.serializedInstructionResult])
-            }
+              if (result.case === "progressInfo" && result.value.currentStepInfo.length > 0) {
+                  console.log("progressinfo: ", result)
+                  setLogs(logs => [...logs, result.value.currentStepInfo[result.value.currentStepNumber]])
+              }
 
-            if (result.error) {
-                if (result.error.interpretationError) {
-                    setLogs(logs => [...logs, result.error.interpretationError.errorMessage])
-                }
+              if (result.case === "instructionResult" && result.value.serializedInstructionResult) {
+                  if (result.value.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
+                      getServices(enclave)
+                  }
+                  setLogs(logs => [...logs, result.value.serializedInstructionResult])
+              }
 
-                if (result.error.executionError) {
-                    setLogs(logs => [...logs, result.error.executionError.errorMessage])
-                }
-
-                if (result.error.validationError) {
-                    setLogs(logs => [...logs, result.error.validationError.errorMessage])
-                }
-            }
-          });
-
-          stream.on("end", () => {
-            setLoading(false)
-          });
+              if (result.case === "error") {
+                const errorMessage = result.value.error.value.errorMessage;
+                setLogs(logs => [...logs, errorMessage])
+              }
+          }
+          setLoading(false);
         }
 
-        fetch();
+       fetchLogs();
     }, [packageId])
 
     const handleServiceClick = (service) => {
@@ -78,7 +68,7 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
     const renderServices = (services, handleClick) => {
         return services.map(service => {
             return (
-                <div className={`flex items-center justify-center h-14 text-base bg-green-700`} key={service.name} onClick={()=>handleClick(service)}>
+                <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={service.name} onClick={()=>handleClick(service)}>
                     <div className='cursor-default text-lg text-white'> {service.name} </div>
                 </div>
             )

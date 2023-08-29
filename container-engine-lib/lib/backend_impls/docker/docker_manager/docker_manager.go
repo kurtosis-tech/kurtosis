@@ -133,6 +133,13 @@ const (
 	dontStreamStats        = false
 )
 
+type RestartPolicy string
+
+const (
+	RestartOnFailure = "on-failure"
+	NoRestart        = ""
+)
+
 /*
 InteractiveModeTtySize
 The dimensions of the TTY that the container should output to when in interactive mode
@@ -507,7 +514,8 @@ func (manager *DockerManager) CreateAndStartContainer(
 		args.cpuAllocationMillicpus,
 		args.memoryAllocationMegabytes,
 		args.loggingDriverConfig,
-		args.containerInitEnabled)
+		args.containerInitEnabled,
+		args.restartPolicy)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "Failed to configure host to container mappings from service.")
 	}
@@ -1309,6 +1317,7 @@ func (manager *DockerManager) getContainerHostConfig(
 	memoryAllocationMegabytes uint64,
 	loggingDriverConfig LoggingDriver,
 	useInit bool,
+	restartPolicy RestartPolicy,
 ) (hostConfig *container.HostConfig, err error) {
 
 	bindsList := make([]string, 0, len(bindMounts))
@@ -1332,7 +1341,10 @@ func (manager *DockerManager) getContainerHostConfig(
 		case automaticPublishing:
 			portMap[containerPort] = []nat.PortBinding{
 				// Leaving this struct empty will cause Docker to automatically choose an interface IP & port on the host machine
-				{},
+				{
+					HostIP:   "",
+					HostPort: "",
+				},
 			}
 		case manualPublishing:
 			manualSpec, ok := publishSpec.(*manuallySpecifiedPortPublishSpec)
@@ -1438,7 +1450,7 @@ func (manager *DockerManager) getContainerHostConfig(
 		NetworkMode:     container.NetworkMode(networkMode),
 		PortBindings:    portMap,
 		RestartPolicy: container.RestartPolicy{
-			Name:              "",
+			Name:              string(restartPolicy),
 			MaximumRetryCount: 0,
 		},
 		AutoRemove:      false,

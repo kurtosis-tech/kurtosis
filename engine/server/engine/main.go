@@ -8,22 +8,23 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings/kurtosis_engine_rpc_api_bindingsconnect"
+	connect_server "github.com/kurtosis-tech/kurtosis/connect-server"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/configs"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
+	em_api "github.com/kurtosis-tech/kurtosis/enclave-manager/server"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/kurtosis_backend"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
-	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/rs/cors"
 	"github.com/sirupsen/logrus"
-	"google.golang.org/grpc"
 	"net/http"
 	"os"
 	"path"
@@ -48,6 +49,8 @@ const (
 	webappPortAddr            = ":9711"
 
 	remoteBackendConfigFilename = "remote_backend_config.json"
+	pathToStaticFolder          = "/run/webapp"
+	indexPath                   = "index.html"
 )
 
 // Nil indicates that the KurtosisBackend should not operate in API container mode, which is appropriate here
@@ -93,7 +96,6 @@ func main() {
 
 func runMain() error {
 	ctx := context.Background()
-
 	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve engine server args from the environment")
@@ -129,44 +131,17 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize)
+	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars)
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
-	// TODO: replace with persistent client so that we can get logs even after enclave is stopped
-	logsDatabaseClient := kurtosis_backend.NewKurtosisBackendLogsDatabaseClient(kurtosisBackend)
-
-	engineServerService := server.NewEngineServerService(
-		serverArgs.ImageVersionTag,
-		enclaveManager,
-		serverArgs.MetricsUserID,
-		serverArgs.DidUserAcceptSendingMetrics,
-		logsDatabaseClient,
-	)
-	defer func() {
-		if err := engineServerService.Close(); err != nil {
-			logrus.Errorf("We tried to close the engine server service but something fails. Err:\n%v", err)
-		}
-	}()
-
-	engineServerServiceRegistrationFunc := func(grpcServer *grpc.Server) {
-		kurtosis_engine_rpc_api_bindings.RegisterEngineServiceServer(grpcServer, engineServerService)
-	}
-	engineServer := minimal_grpc_server.NewMinimalGRPCServer(
-		serverArgs.GrpcListenPortNum,
-		grpcServerStopGracePeriod,
-		[]func(*grpc.Server){
-			engineServerServiceRegistrationFunc,
-		},
-	)
+	// osFs is a wrapper around disk
+	osFs := persistent_volume.NewOsVolumeFilesystem()
+	logsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs)
 
 	go func() {
-		pathToStaticFolder := "/run/webapp"
-		indexPath := "index.html"
-
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
-
 		handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			path, err := filepath.Abs(r.URL.Path)
 			if err != nil {
@@ -186,6 +161,7 @@ func runMain() error {
 				return
 			}
 
+			w.Header().Add("Cache-Control", "no-store")
 			fileServer.ServeHTTP(w, r)
 		})
 
@@ -195,8 +171,22 @@ func runMain() error {
 		}
 	}()
 
+	go func() {
+		enforceAuth := serverArgs.OnBastionHost
+		err = em_api.RunEnclaveManagerApiServer(enforceAuth)
+		if err != nil {
+			logrus.Fatal("an error occurred while processing the auth settings, exiting!", err)
+			fmt.Fprintln(logrus.StandardLogger().Out, err)
+			os.Exit(failureExitCode)
+		}
+	}()
+
+	engineConnectServer := server.NewEngineConnectServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
+	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
+
 	logrus.Info("Running server...")
-	if err := engineServer.RunUntilInterrupted(); err != nil {
+	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)
+	if err := engineHttpServer.RunServerUntilInterruptedWithCors(cors.AllowAll()); err != nil {
 		return stacktrace.Propagate(err, "An error occurred running the server.")
 	}
 	return nil
@@ -207,6 +197,7 @@ func getEnclaveManager(
 	kurtosisBackendType args.KurtosisBackendType,
 	engineVersion string,
 	poolSize uint8,
+	enclaveEnvVars string,
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
@@ -224,6 +215,7 @@ func getEnclaveManager(
 		apiContainerKurtosisBackendConfigSupplier,
 		engineVersion,
 		poolSize,
+		enclaveEnvVars,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave manager for backend type '%+v' using pool-size '%v' and engine version '%v'", kurtosisBackendType, poolSize, engineVersion)

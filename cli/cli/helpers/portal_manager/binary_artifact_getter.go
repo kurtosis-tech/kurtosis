@@ -25,7 +25,7 @@ const (
 	portalBinaryFileMode  = 0700
 	portalVersionFileMode = 0600
 	portalTagLatest       = "latest"
-	portalTag             = "0.0.4"
+	portalTag             = "latest"
 
 	osArchitectureSeparator = "_"
 
@@ -66,7 +66,7 @@ func DownloadRequiredKurtosisPortalBinary(ctx context.Context) (bool, error) {
 		return false, defaultToCurrentVersionOrError(currentVersionStrMaybe, err)
 	}
 	if currentVersionMatchesRequired {
-		logrus.Infof("Installed Kurtosis Portal version '%s' is the required one", requiredVersionStr)
+		logrus.Infof("Installed Kurtosis Portal version '%s'", requiredVersionStr)
 		return false, nil
 	}
 

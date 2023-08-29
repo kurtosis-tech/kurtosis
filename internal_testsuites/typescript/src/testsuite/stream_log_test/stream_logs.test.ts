@@ -40,6 +40,9 @@ const LOG_LINES_BY_SERVICE = new Map<ServiceName, ServiceLog[]>([
     [EXAMPLE_SERVICE_NAME, EXAMPLE_SERVICE_LOG_LINES],
 ])
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+const MILLISECONDS_TO_WAIT_FOR_LOGS = 1000
+
 class ServiceLogsRequestInfoAndExpectedResults {
     readonly requestedEnclaveUUID: EnclaveUUID;
     readonly requestedServiceUuids: Set<ServiceUUID>;
@@ -100,6 +103,9 @@ async function TestStreamLogs() {
             throw new Error(`Expected number of added services '${LOG_LINES_BY_SERVICE.size}', but the actual number of added services is '${serviceList.size}'`);
         }
 
+        // It takes some time for logs to persist so we sleep to ensure logs have persisted
+        // Otherwise the test is flaky
+        await sleep(MILLISECONDS_TO_WAIT_FOR_LOGS);
         // ------------------------------------- TEST RUN ----------------------------------------------
 
         const enclaveID: EnclaveUUID = enclaveContext.getEnclaveUuid();

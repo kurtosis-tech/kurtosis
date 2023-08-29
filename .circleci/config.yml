@@ -669,9 +669,9 @@ jobs:
               false
             fi
       - run:
-          name: "Verify Kurtosis cleaned up all its volumes"
+          name: "Verify Kurtosis cleaned up all its volumes (except for the log storage volume, so we can persist service logs)"
           command: |
-            if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l ) -eq 0 ]; then
+            if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l ) -eq 1 ]; then
               docker volume ls
               false
             fi
@@ -774,6 +774,24 @@ jobs:
       - run: "${KURTOSIS_BINPATH} engine restart"
       - run: "${KURTOSIS_BINPATH} engine status"
 
+      # Test APIC restart
+      - when:
+          condition:
+            equal: [ "docker", << parameters.cli-cluster-backend >> ]
+          steps:
+            - run:
+                name: Test APIC restart
+                command: |
+                  ${KURTOSIS_BINPATH} enclave add -n test-apic-restart
+                  ${KURTOSIS_BINPATH} enclave inspect --full-uuids test-apic-restart > /tmp/inspect_output.txt
+                  inspect_output_uuid_line=$(grep "^UUID:" /tmp/inspect_output.txt) 
+                  enclave_uuid=$(echo ${inspect_output_uuid_line:17:54})
+                  ${KURTOSIS_BINPATH} service add test-apic-restart service-test kurtosistech/example-datastore-server
+                  apic_container_id=$(docker ps --filter "label=com.kurtosistech.container-type=api-container" --filter "label=com.kurtosistech.enclave-id=$(echo $enclave_uuid)" --format "{{.ID}}")
+                  docker container restart $(echo $apic_container_id)
+                  ${KURTOSIS_BINPATH} service rm test-apic-restart service-test
+
+      # Clean all at the end
       - run: "${KURTOSIS_BINPATH} clean -a"
 
       # Ensure Kubernetes resources clean up successfully
@@ -810,9 +828,9 @@ jobs:
                     false
                   fi
             - run:
-                name: "Verify Kurtosis cleaned up all its volumes"
+                name: "Verify Kurtosis cleaned up all its volumes (except for the log storage volume, so we can persist service logs)"
                 command: |
-                  if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 0 ]; then
+                  if ! [ $(docker volume ls | grep -v kurtosis-logs-collector-vol | grep -v kurtosis-logs-db-vol | tail -n+2 | wc -l) -eq 1 ]; then
                     docker volume ls
                     false
                   fi

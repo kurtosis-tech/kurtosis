@@ -17,6 +17,7 @@ const (
 
 	containerTypeLabelKeyStr = labelNamespaceStr + "container-type"
 	volumeTypeLabelKeyStr    = labelNamespaceStr + "volume-type"
+	enclaveTypeLabelKeyStr   = labelNamespaceStr + "enclave-type"
 
 	// A label to identify a Kurtosis resource (e.g. network, container, etc.) by its id
 	idLabelKeyStr = labelNamespaceStr + "id"
@@ -29,12 +30,19 @@ const (
 	portSpecsLabelKeyStr = labelNamespaceStr + "ports"
 
 	enclaveIdLabelKeyStr = labelNamespaceStr + "enclave-id"
+
 	// TODO deprecate this in favor of storing in DB
 	enclaveNameLabelKeyStr = labelNamespaceStr + "enclave-name"
 
 	enclaveCreationTime = labelNamespaceStr + "enclave-creation-time"
 
 	privateIpAddrLabelKeyStr = labelNamespaceStr + "private-ip"
+
+	// We create a duplicate of the enclave uuid and service uuid label key because:
+	// the logs aggregator (vector) needs the enclave uuid and service uuid label keys to create the filepath where logs are stored in persistent volume
+	// but vectors template syntax can't interpret the "com.kurtosistech." prefix, so we can't use the existing label keys
+	logsEnclaveUuidLabelKeyStr    = "enclave_uuid"
+	logsServiceUuidDockerLabelKey = "service_uuid"
 )
 
 // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! DO NOT CHANGE THESE VALUES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -57,3 +65,5 @@ var EnclaveNameDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enc
 var EnclaveCreationTimeLabelKey = docker_label_key.MustCreateNewDockerLabelKey(enclaveCreationTime)
 var PrivateIPDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(privateIpAddrLabelKeyStr)
 var UserServiceGUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(userServiceGuidDockerLabelKeyStr)
+var LogsEnclaveUUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsEnclaveUuidLabelKeyStr)
+var LogsServiceUUIDDockerLabelKey = docker_label_key.MustCreateNewDockerLabelKey(logsServiceUuidDockerLabelKey)

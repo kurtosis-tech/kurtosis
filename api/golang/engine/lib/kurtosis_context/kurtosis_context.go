@@ -38,7 +38,7 @@ const (
 
 	validUuidMatchesAllowed = 1
 
-	portalIsRequired = false
+	portalIsRequired = true
 )
 
 var (
@@ -47,6 +47,13 @@ var (
 	apicPortTransportProtocol = portal_api.TransportProtocol_TCP
 
 	EnginePortTransportProtocol = portal_api.TransportProtocol_TCP
+
+	ApicRemoteEndpointType   = portal_api.RemoteEndpointType_Apic
+	EngineRemoteEndpointType = portal_api.RemoteEndpointType_Engine
+	UserServiceEndpointType  = portal_api.RemoteEndpointType_UserService
+
+	ForwardPortWaitUntilReady      = true
+	ForwardPortDoNotWaitUntilReady = false
 )
 
 // Docs available at https://docs.kurtosis.com/sdk#kurtosiscontext
@@ -76,12 +83,17 @@ func NewKurtosisContextFromLocalEngine() (*KurtosisContext, error) {
 		return nil, stacktrace.Propagate(err, "An error occurred validating the Kurtosis engine API version")
 	}
 
-	// portal is still optional as it is incubating. For local context, everything will run fine if portal is not
-	// present. For remote context, is it expected that the caller checks that the portal is present before or after
-	// the Kurtosis Context is built, to avoid unexpected failures downstream
-	portalClient, err := CreatePortalDaemonClient(portalIsRequired)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
+	var portalClient portal_api.KurtosisPortalClientClient
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err == nil {
+		if store.IsRemote(currentContext) {
+			portalClient, err = CreatePortalDaemonClient(portalIsRequired)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "Error building client for Kurtosis Portal daemon")
+			}
+		}
+	} else {
+		logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
 	}
 
 	kurtosisContext := &KurtosisContext{
@@ -102,6 +114,33 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 		EnclaveName:            enclaveName,
 		ApiContainerVersionTag: defaultApiContainerVersionTag,
 		ApiContainerLogLevel:   apiContainerLogLevel.String(),
+		Mode:                   kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST,
+	}
+
+	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave with name '%v'", enclaveName)
+	}
+
+	enclaveContext, err := newEnclaveContextFromEnclaveInfo(ctx, kurtosisCtx.portalClient, response.EnclaveInfo)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating an enclave context from a newly-created enclave; this should never happen")
+	}
+
+	return enclaveContext, nil
+}
+
+// Docs available at https://docs.kurtosis.com/sdk#createenclaveenclaveid-enclaveid-boolean-issubnetworkingenabled---enclavecontextenclavecontext-enclavecontext
+func (kurtosisCtx *KurtosisContext) CreateProductionEnclave(
+	ctx context.Context,
+	enclaveName string,
+) (*enclaves.EnclaveContext, error) {
+
+	createEnclaveArgs := &kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs{
+		EnclaveName:            enclaveName,
+		ApiContainerVersionTag: defaultApiContainerVersionTag,
+		ApiContainerLogLevel:   apiContainerLogLevel.String(),
+		Mode:                   kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION,
 	}
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
@@ -346,12 +385,13 @@ func newEnclaveContextFromEnclaveInfo(
 	portalClient portal_api.KurtosisPortalClientClient,
 	enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo,
 ) (*enclaves.EnclaveContext, error) {
+	// for remote contexts, we need to tunnel the APIC port to the local machine
 	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
 	if err == nil {
 		// for remote contexts, we need to tunnel the APIC port to the local machine
 		if store.IsRemote(currentContext) && portalClient != nil {
 			apicGrpcPort := enclaveInfo.GetApiContainerHostMachineInfo().GetGrpcPortOnHostMachine()
-			forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, &apicPortTransportProtocol)
+			forwardApicPortArgs := portal_constructors.NewForwardPortArgs(apicGrpcPort, apicGrpcPort, ApicRemoteEndpointType, &apicPortTransportProtocol, &ForwardPortWaitUntilReady)
 			if _, err := portalClient.ForwardPort(ctx, forwardApicPortArgs); err != nil {
 				return nil, stacktrace.Propagate(err, "Unable to forward remote API container port to the local machine")
 			}

@@ -61,6 +61,7 @@ type EnclaveManager struct {
 
 	enclaveCreator *EnclaveCreator
 	enclavePool    *EnclavePool
+	enclaveEnvVars string
 }
 
 func CreateEnclaveManager(
@@ -69,6 +70,7 @@ func CreateEnclaveManager(
 	apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier,
 	engineVersion string,
 	poolSize uint8,
+	enclaveEnvVars string,
 ) (*EnclaveManager, error) {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
@@ -79,7 +81,7 @@ func CreateEnclaveManager(
 
 	// The enclave pool feature is only available for Kubernetes so far
 	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
-		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion)
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
 		}
@@ -92,6 +94,7 @@ func CreateEnclaveManager(
 		allExistingAndHistoricalIdentifiers:       []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers{},
 		enclaveCreator:                            enclaveCreator,
 		enclavePool:                               enclavePool,
+		enclaveEnvVars:                            enclaveEnvVars,
 	}
 
 	return enclaveManager, nil
@@ -108,6 +111,7 @@ func (manager *EnclaveManager) CreateEnclave(
 	apiContainerLogLevel logrus.Level,
 	//If blank, will use a random one
 	enclaveName string,
+	isProduction bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
@@ -136,7 +140,8 @@ func (manager *EnclaveManager) CreateEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred validating enclave name '%v'", enclaveName)
 	}
 
-	if manager.enclavePool != nil {
+	// TODO(victor.colombo): Extend enclave pool to have warm production enclaves
+	if !isProduction && manager.enclavePool != nil {
 		enclaveInfo, err = manager.enclavePool.GetEnclave(
 			setupCtx,
 			enclaveName,
@@ -155,6 +160,8 @@ func (manager *EnclaveManager) CreateEnclave(
 			apiContainerImageVersionTag,
 			apiContainerLogLevel,
 			enclaveName,
+			manager.enclaveEnvVars,
+			isProduction,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(
@@ -379,10 +386,16 @@ func getEnclaveApiContainerInformation(
 	if err != nil {
 		return 0, nil, nil, stacktrace.Propagate(err, "An error occurred getting the API container status for enclave '%v'", enclaveId)
 	}
+
+	bridgeIpAddr := ""
+	if apiContainer.GetBridgeNetworkIPAddress() != nil {
+		bridgeIpAddr = apiContainer.GetBridgeNetworkIPAddress().String()
+	}
 	resultApiContainerInfo := &kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerInfo{
 		ContainerId:           "",
 		IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
 		GrpcPortInsideEnclave: uint32(apiContainer.GetPrivateGRPCPort().GetNumber()),
+		BridgeIpAddress:       bridgeIpAddr,
 	}
 	var resultApiContainerHostMachineInfo *kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerHostMachineInfo
 	if resultApiContainerStatus == kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING {

@@ -34,6 +34,10 @@ type APIContainerArgs struct {
 
 	// Should be deserialized differently depending on value of KurtosisBackendType
 	KurtosisBackendConfig interface{} `json:"kurtosisBackendConfig"`
+
+	EnclaveEnvVars string `json:"enclaveEnvVars"`
+
+	IsProductionEnclave bool `json:"isProductionEnclave"`
 }
 
 func (args *APIContainerArgs) UnmarshalJSON(data []byte) error {
@@ -78,6 +82,8 @@ func NewAPIContainerArgs(
 	enclaveDataVolumeDirpath string,
 	kurtosisBackendType KurtosisBackendType,
 	kurtosisBackendConfig interface{},
+	enclaveEnvVars string,
+	isProductionEnclave bool,
 ) (*APIContainerArgs, error) {
 	result := &APIContainerArgs{
 		Version:                  version,
@@ -87,6 +93,8 @@ func NewAPIContainerArgs(
 		EnclaveDataVolumeDirpath: enclaveDataVolumeDirpath,
 		KurtosisBackendType:      kurtosisBackendType,
 		KurtosisBackendConfig:    kurtosisBackendConfig,
+		EnclaveEnvVars:           enclaveEnvVars,
+		IsProductionEnclave:      isProductionEnclave,
 	}
 
 	if err := result.validate(); err != nil {

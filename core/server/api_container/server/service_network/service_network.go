@@ -93,13 +93,15 @@ type ServiceNetwork interface {
 
 	GetService(ctx context.Context, serviceIdentifier string) (*service.Service, error)
 
+	GetServices(ctx context.Context) (map[service.ServiceUUID]*service.Service, error)
+
 	CopyFilesFromService(ctx context.Context, serviceIdentifier string, srcPath string, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 
-	GetServiceNames() map[service.ServiceName]bool
+	GetServiceNames() (map[service.ServiceName]bool, error)
 
 	GetExistingAndHistoricalServiceIdentifiers() (service_identifiers.ServiceIdentifiers, error)
 
-	GetServiceRegistration(serviceName service.ServiceName) (*service.ServiceRegistration, bool)
+	ExistServiceRegistration(serviceName service.ServiceName) (bool, error)
 
 	RenderTemplates(templatesAndDataByDestinationRelFilepath map[string]*render_templates.TemplateData, artifactName string) (enclave_data_directory.FilesArtifactUUID, error)
 

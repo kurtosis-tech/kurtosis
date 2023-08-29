@@ -32,6 +32,9 @@ export class CreateEnclaveArgs extends jspb.Message {
   getApiContainerLogLevel(): string;
   setApiContainerLogLevel(value: string): CreateEnclaveArgs;
 
+  getMode(): EnclaveMode;
+  setMode(value: EnclaveMode): CreateEnclaveArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateEnclaveArgs.AsObject;
   static toObject(includeInstance: boolean, msg: CreateEnclaveArgs): CreateEnclaveArgs.AsObject;
@@ -45,6 +48,7 @@ export namespace CreateEnclaveArgs {
     enclaveName: string,
     apiContainerVersionTag: string,
     apiContainerLogLevel: string,
+    mode: EnclaveMode,
   }
 }
 
@@ -78,6 +82,9 @@ export class EnclaveAPIContainerInfo extends jspb.Message {
   getGrpcPortInsideEnclave(): number;
   setGrpcPortInsideEnclave(value: number): EnclaveAPIContainerInfo;
 
+  getBridgeIpAddress(): string;
+  setBridgeIpAddress(value: string): EnclaveAPIContainerInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveAPIContainerInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveAPIContainerInfo): EnclaveAPIContainerInfo.AsObject;
@@ -91,6 +98,7 @@ export namespace EnclaveAPIContainerInfo {
     containerId: string,
     ipInsideEnclave: string,
     grpcPortInsideEnclave: number,
+    bridgeIpAddress: string,
   }
 }
 
@@ -424,6 +432,10 @@ export namespace LogLineFilter {
   }
 }
 
+export enum EnclaveMode { 
+  TEST = 0,
+  PRODUCTION = 1,
+}
 export enum EnclaveContainersStatus { 
   ENCLAVECONTAINERSSTATUS_EMPTY = 0,
   ENCLAVECONTAINERSSTATUS_RUNNING = 1,

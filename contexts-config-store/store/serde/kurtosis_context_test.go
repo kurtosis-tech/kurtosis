@@ -37,6 +37,7 @@ var (
 					ClientCertificate:    []byte(fakeCert),
 					ClientKey:            []byte(fakeKey),
 				},
+				EnvVars: new(string),
 			},
 		},
 	}
@@ -55,7 +56,8 @@ var (
 			"certificateAuthority":"ZmFrZS1jYQ==",
 			"clientCertificate":"ZmFrZS1jZXJ0", 
 			"clientKey":"ZmFrZS1rZXk="
-		}
+		},
+		"envVars": ""
 	}
 }`
 )

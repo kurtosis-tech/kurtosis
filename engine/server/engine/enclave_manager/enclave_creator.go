@@ -35,6 +35,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 	apiContainerLogLevel logrus.Level,
 	//If blank, will use a random one
 	enclaveName string,
+	enclaveEnvVars string,
+	isProduction bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
 	uuid, err := uuid_generator.GenerateUUIDString()
@@ -72,6 +74,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 		apiContainerLogLevel,
 		enclaveUuid,
 		apiContainerListenGrpcPortNumInsideNetwork,
+		enclaveEnvVars,
+		isProduction,
 	)
 
 	if err != nil {
@@ -112,6 +116,10 @@ func (creator *EnclaveCreator) CreateEnclave(
 	newEnclaveUuidStr := string(newEnclaveUuid)
 	shortenedUuid := uuid_generator.ShortenedUUIDString(newEnclaveUuidStr)
 
+	bridgeIpAddr := ""
+	if apiContainer.GetBridgeNetworkIPAddress() != nil {
+		bridgeIpAddr = apiContainer.GetBridgeNetworkIPAddress().String()
+	}
 	newEnclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:        newEnclaveUuidStr,
 		Name:               newEnclave.GetName(),
@@ -122,6 +130,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 			ContainerId:           "",
 			IpInsideEnclave:       apiContainer.GetPrivateIPAddress().String(),
 			GrpcPortInsideEnclave: uint32(apiContainerListenGrpcPortNumInsideNetwork),
+			BridgeIpAddress:       bridgeIpAddr,
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,
@@ -139,6 +148,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 	logLevel logrus.Level,
 	enclaveUuid enclave.EnclaveUUID,
 	grpcListenPort uint16,
+	enclaveEnvVars string,
+	isProduction bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -154,6 +165,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 			enclaveUuid,
 			grpcListenPort,
 			creator.apiContainerKurtosisBackendConfigSupplier,
+			enclaveEnvVars,
+			isProduction,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveUuid, apiContainerImageVersionTag)
@@ -166,6 +179,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 		enclaveUuid,
 		grpcListenPort,
 		creator.apiContainerKurtosisBackendConfigSupplier,
+		enclaveEnvVars,
+		isProduction,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveUuid)

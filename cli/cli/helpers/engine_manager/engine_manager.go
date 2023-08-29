@@ -2,6 +2,9 @@ package engine_manager
 
 import (
 	"context"
+	"strings"
+	"time"
+
 	portal_constructors "github.com/kurtosis-tech/kurtosis-portal/api/golang/constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -21,8 +24,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"strings"
-	"time"
 )
 
 const (
@@ -40,6 +41,7 @@ type EngineManager struct {
 	engineServerKurtosisBackendConfigSupplier engine_server_launcher.KurtosisBackendConfigSupplier
 	clusterConfig                             *resolved_config.KurtosisClusterConfig
 	onBastionHost                             bool
+	enclaveEnvVars                            string
 	// Make engine IP, port, and protocol configurable in the future
 }
 
@@ -83,10 +85,12 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 	engineBackendConfigSupplier := clusterConfig.GetEngineBackendConfigSupplier()
 
 	onBastionHost := false
+	var enclaveEnvVars string
 	currentContext, _ := store.GetContextsConfigStore().GetCurrentContext()
 	if currentContext != nil {
 		if store.IsRemote(currentContext) {
 			onBastionHost = true
+			enclaveEnvVars = currentContext.GetRemoteContextV0().GetEnvVars()
 		}
 	}
 
@@ -94,8 +98,9 @@ func NewEngineManager(ctx context.Context) (*EngineManager, error) {
 		kurtosisBackend:   kurtosisBackend,
 		shouldSendMetrics: kurtosisConfig.GetShouldSendMetrics(),
 		engineServerKurtosisBackendConfigSupplier: engineBackendConfigSupplier,
-		clusterConfig: clusterConfig,
-		onBastionHost: onBastionHost,
+		clusterConfig:  clusterConfig,
+		onBastionHost:  onBastionHost,
+		enclaveEnvVars: enclaveEnvVars,
 	}, nil
 }
 
@@ -136,7 +141,7 @@ func (manager *EngineManager) GetEngineStatus(
 			if portalManager.IsReachable() {
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(runningEngineIpAndPort.portNum), uint32(runningEngineIpAndPort.portNum), &kurtosis_context.EnginePortTransportProtocol)
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(runningEngineIpAndPort.portNum), uint32(runningEngineIpAndPort.portNum), kurtosis_context.EngineRemoteEndpointType, &kurtosis_context.EnginePortTransportProtocol, &kurtosis_context.ForwardPortWaitUntilReady)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return "", nil, "", stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine")
 				}
@@ -185,6 +190,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithDefaultVersion(ctx cont
 		clusterType,
 		manager.onBastionHost,
 		poolSize,
+		manager.enclaveEnvVars,
 	)
 	// TODO Need to handle the Kubernetes case, where a gateway needs to be started after the engine is started but
 	//  before we can return an EngineClient
@@ -215,6 +221,7 @@ func (manager *EngineManager) StartEngineIdempotentlyWithCustomVersion(ctx conte
 		clusterType,
 		manager.onBastionHost,
 		poolSize,
+		manager.enclaveEnvVars,
 	)
 	engineClient, engineClientCloseFunc, err := manager.startEngineWithGuarantor(ctx, status, engineGuarantor)
 	if err != nil {
@@ -352,11 +359,6 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 	}
 	hostMachinePortBinding := engineGuarantor.getPostVisitingHostMachineIpAndPort()
 
-	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(hostMachinePortBinding)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the running engine; this is very strange and likely indicates a bug in the engine itself")
-	}
-
 	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
 	if err == nil {
 		if store.IsRemote(currentContext) {
@@ -364,7 +366,7 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 			if portalManager.IsReachable() {
 				// Forward the remote engine port to the local machine
 				portalClient := portalManager.GetClient()
-				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(hostMachinePortBinding.portNum), uint32(hostMachinePortBinding.portNum), &kurtosis_context.EnginePortTransportProtocol)
+				forwardEnginePortArgs := portal_constructors.NewForwardPortArgs(uint32(hostMachinePortBinding.portNum), uint32(hostMachinePortBinding.portNum), kurtosis_context.EngineRemoteEndpointType, &kurtosis_context.EnginePortTransportProtocol, &kurtosis_context.ForwardPortWaitUntilReady)
 				if _, err := portalClient.ForwardPort(ctx, forwardEnginePortArgs); err != nil {
 					return nil, nil, stacktrace.Propagate(err, "Unable to forward the remote engine port to the local machine.")
 				}
@@ -372,6 +374,11 @@ func (manager *EngineManager) startEngineWithGuarantor(ctx context.Context, curr
 		}
 	} else {
 		logrus.Warnf("Unable to retrieve current Kurtosis context. This is not critical, it will assume using Kurtosis default context for now.")
+	}
+
+	engineClient, clientCloseFunc, err := getEngineClientFromHostMachineIpAndPort(hostMachinePortBinding)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred connecting to the running engine; this is very strange and likely indicates a bug in the engine itself")
 	}
 
 	clusterType := manager.clusterConfig.GetClusterType()
@@ -446,15 +453,18 @@ func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
 }
 
 func (manager *EngineManager) waitUntilEngineStoppedOrError(ctx context.Context) error {
-	var err error
 	var status EngineStatus
+	var err error
 	for i := 0; i < waitUntilEngineStoppedTries; i += 1 {
 		status, _, _, err = manager.GetEngineStatus(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred checking the status of the engine")
+		}
 		if status == EngineStatus_Stopped {
 			return nil
 		}
 		logrus.Debugf("Waiting engine to report stopped, currently reporting '%v'", status)
 		time.Sleep(waitUntilEngineStoppedCoolOff)
 	}
-	return stacktrace.Propagate(err, "Engine did not report stopped status, last status reported was '%v'", status)
+	return stacktrace.NewError("Engine did not report stopped status, last status reported was '%v'", status)
 }

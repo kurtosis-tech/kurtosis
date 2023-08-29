@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/api/golang/generated"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
@@ -51,15 +52,30 @@ func run(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to read content of context file at '%s'", contextFilePath)
 	}
-	return AddContext(newContextToAdd)
+	return AddContext(newContextToAdd, nil)
 }
 
-func AddContext(newContextToAdd *generated.KurtosisContext) error {
+func AddContext(newContextToAdd *generated.KurtosisContext, envVars *string) error {
 	logrus.Infof("Adding new context '%s'", newContextToAdd.GetName())
 	contextsConfigStore := store.GetContextsConfigStore()
-	if err := contextsConfigStore.AddNewContext(newContextToAdd); err != nil {
+	var enrichedContextData *generated.KurtosisContext
+	if envVars != nil && *envVars != "" {
+		enrichedContextData = golang.NewRemoteV0Context(
+			newContextToAdd.GetUuid(),
+			newContextToAdd.GetName(),
+			newContextToAdd.GetRemoteContextV0().GetHost(),
+			newContextToAdd.GetRemoteContextV0().GetRemotePortalPort(),
+			newContextToAdd.GetRemoteContextV0().GetKurtosisBackendPort(),
+			newContextToAdd.GetRemoteContextV0().GetTunnelPort(),
+			newContextToAdd.GetRemoteContextV0().GetTlsConfig(),
+			envVars,
+		)
+	} else {
+		enrichedContextData = newContextToAdd
+	}
+	if err := contextsConfigStore.AddNewContext(enrichedContextData); err != nil {
 		return stacktrace.Propagate(err, "New context '%s' with UUID '%s' could not be added to the list of "+
-			"contexts already configured", newContextToAdd.GetName(), newContextToAdd.GetUuid().GetValue())
+			"contexts already configured", enrichedContextData.GetName(), enrichedContextData.GetUuid().GetValue())
 	}
 	logrus.Info("Context successfully added")
 	return nil

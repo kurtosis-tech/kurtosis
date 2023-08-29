@@ -8,9 +8,9 @@ import (
 // The following docker labels will be added into the logs stream
 // These are necessary for propagating information for log filtering and retrieval through the logging pipeline
 var LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream = []*docker_label_key.DockerLabelKey{
-	label_key_consts.GUIDDockerLabelKey,
 	label_key_consts.ContainerTypeDockerLabelKey,
-	label_key_consts.EnclaveUUIDDockerLabelKey,
+	label_key_consts.LogsEnclaveUUIDDockerLabelKey,
+	label_key_consts.LogsServiceUUIDDockerLabelKey,
 }
 
 // These are all the logs database Kurtosis tracked Docker Labels used
