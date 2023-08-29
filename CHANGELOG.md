@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.13](https://github.com/kurtosis-tech/kurtosis/compare/0.82.12...0.82.13) (2023-08-29)
+
+
+### Bug Fixes
+
+* hyperlane package error  ([#1193](https://github.com/kurtosis-tech/kurtosis/issues/1193)) ([e5946ad](https://github.com/kurtosis-tech/kurtosis/commit/e5946ad50fb3275cd7b26025c4901629427fbc4d))
+
 ## [0.82.12](https://github.com/kurtosis-tech/kurtosis/compare/0.82.11...0.82.12) (2023-08-29)
 
 
