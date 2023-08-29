@@ -1136,6 +1136,7 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 	logrus.Infof("Is image available locally?: %v", doesImageExistLocally)
 
 	// try and pull latest image even if image exists locally
+	start := time.Now()
 	if doesImageExistLocally {
 		logrus.Infof("Image does exist locally, but attempting to get latest from remote image repository.")
 		err = manager.pullImage(ctx, dockerImage)
@@ -1150,6 +1151,8 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository.", dockerImage)
 		}
 	}
+	timeElapsed := time.Since(start)
+	logrus.Infof("Time to pull  '%v': %v", dockerImage, timeElapsed.Milliseconds())
 
 	return nil
 }
