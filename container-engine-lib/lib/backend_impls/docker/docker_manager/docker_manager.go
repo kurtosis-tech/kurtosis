@@ -1264,9 +1264,9 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 	logrus.Infof("Pulling image '%s'", imageName)
 	var err error
 	logrus.Infof("RUNTIME GO ARCH: %v", runtime.GOARCH)
-	if runtime.GOARCH == "arm64" {
+	if runtime.GOARCH == "amd64" {
 		logrus.Infof("Trying pulling image '%s' for '%s'", imageName, linuxAmd64)
-		logrus.Infof("PULLING IMAGE ARM64 PLATFORM")
+		logrus.Infof("PULLING IMAGE AMD 64 PLATFORM")
 		err, _ = pullImage(context, manager.dockerClientNoTimeout, imageName, linuxAmd64)
 		if err != nil {
 			return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
