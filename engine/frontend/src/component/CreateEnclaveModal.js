@@ -54,6 +54,7 @@ export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, 
               onClick={handleFormSubmit}
               type="submit"
               bg='blue.500'
+              _hover={{ bg: "gray.500", svg: { fill: "black" } }}
               w="50%"
               isLoading={runningPackage}
               loadingText="Running..."
