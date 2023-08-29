@@ -29,6 +29,7 @@ import (
 	"io"
 	"math"
 	"net"
+	"runtime"
 	"strings"
 	"sync"
 	"time"
@@ -1261,20 +1262,23 @@ func (manager *DockerManager) pullImage(context context.Context, imageName strin
 		return stacktrace.Propagate(err, "An error occurred communicating with docker engine")
 	}
 	logrus.Infof("Pulling image '%s'", imageName)
-	err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClientNoTimeout, imageName, defaultPlatform)
-	if err == nil {
-		return nil
+	var err error
+	if runtime.GOARCH == "arm64" {
+		logrus.Debugf("Trying pulling image '%s' for '%s'", imageName, linuxAmd64)
+		err, _ = pullImage(context, manager.dockerClientNoTimeout, imageName, linuxAmd64)
+		if err != nil {
+			return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
+		}
+	} else {
+		err, retryWithLinuxAmd64 := pullImage(context, manager.dockerClientNoTimeout, imageName, defaultPlatform)
+		if err != nil {
+			return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
+		}
+		if err == nil && retryWithLinuxAmd64 {
+			logrus.Debugf("Image '%s' successfully pulled for '%s' which is not the architecture this OS is running on.", imageName, defaultPlatform)
+			return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
+		}
 	}
-	if err != nil && !retryWithLinuxAmd64 {
-		return stacktrace.Propagate(err, "Tried pulling image '%v' but failed", imageName)
-	}
-	// we retry with linux/amd64
-	logrus.Debugf("Retrying pulling image '%s' for '%s'", imageName, linuxAmd64)
-	err, _ = pullImage(context, manager.dockerClientNoTimeout, imageName, linuxAmd64)
-	if err != nil {
-		return stacktrace.Propagate(err, "Had previously failed with a manifest error so tried pulling image '%v' for platform '%v' but failed", imageName, linuxAmd64)
-	}
-	logrus.Warnf("Image '%s' successfully pulled for '%s' which is not the architecture this OS is running on.", imageName, linuxAmd64)
 	return nil
 }
 
