@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.11](https://github.com/kurtosis-tech/kurtosis/compare/0.82.10...0.82.11) (2023-08-29)
+
+
+### Bug Fixes
+
+* it fixes the log font colour; it shows black now on the cloud em  ([#1182](https://github.com/kurtosis-tech/kurtosis/issues/1182)) ([f13de9f](https://github.com/kurtosis-tech/kurtosis/commit/f13de9f61f1125bccf25535d9e90e7a62ea8375c))
+
 ## [0.82.10](https://github.com/kurtosis-tech/kurtosis/compare/0.82.9...0.82.10) (2023-08-28)
 
 
