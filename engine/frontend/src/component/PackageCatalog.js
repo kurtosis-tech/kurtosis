@@ -48,6 +48,7 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                 if ("name" in pack) {
                     return pack.name.includes(value)
                 }
+                return false;
             }
         )
         
