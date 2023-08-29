@@ -1,16 +1,16 @@
-import { 
-    Grid, 
-    GridItem, 
-    Center,  
-    Input, 
-    Flex, 
+import {
+    Grid,
+    GridItem,
+    Center,
+    Input,
+    Flex,
     Button,
     Stack,
     Text,
     Textarea,
 } from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
-import { useLocation, useNavigate } from "react-router";
+import {useLocation, useNavigate} from "react-router";
 import {useState} from 'react';
 
 const yaml = require("js-yaml")
@@ -19,17 +19,17 @@ const yaml = require("js-yaml")
 const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
         let placeholder = "";
-        switch(arg.type) {
+        switch (arg.type) {
             case "INTEGER":
-              placeholder = "INTEGER"
-              break;
+                placeholder = "INTEGER"
+                break;
             case "STRING":
                 placeholder = "STRING"
                 break
             case "BOOL":
                 placeholder = "BOOL"
                 break
-            case "FLOAT": 
+            case "FLOAT":
                 placeholder = "FLOAT"
                 break
             default:
@@ -38,21 +38,27 @@ const renderArgs = (args, handleChange, formData, errorData) => {
 
         // no need to show plan arg as it's internal!
         if (arg.name === "plan") {
-            return 
+            return
         }
-        
+
         return (
             <Flex color={"white"}>
                 <Flex w="15%" mr="3" direction={"column"}>
                     <Text align={"center"} fontSize={"2xl"}> {arg.name} </Text>
-                    {arg.isRequired ? <Text align={"center"} fontSize={"s"} color="red.500"> Required</Text>: null}
+                    {arg.isRequired ? <Text align={"center"} fontSize={"s"} color="red.500"> Required</Text> : null}
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
-                {   errorData[index].length > 0 ? <Text align={"center"} fontSize={"s"} color="red.500"> {errorData[index]} </Text> : null}
+                    {errorData[index].length > 0 ?
+                        <Text align={"center"} fontSize={"s"} color="red.500"> {errorData[index]} </Text> : null}
                     {
-                        ["INTEGER", "STRING", "BOOL", "FLOAT"].includes(placeholder) ? <Input placeholder={placeholder} color='gray.300' onChange={e => handleChange(e.target.value, index)} value={formData[index]} borderColor={errorData[index] ? "red.400": null}/> :
-                        <Textarea borderColor={errorData[index] ? "red.400": null} placeholder={placeholder} minHeight={"200px"} onChange={e => handleChange(e.target.value, index)} value={formData[index]}/>
-                    }   
+                        ["INTEGER", "STRING", "BOOL", "FLOAT"].includes(placeholder) ?
+                            <Input placeholder={placeholder} color='gray.300'
+                                   onChange={e => handleChange(e.target.value, index)} value={formData[index]}
+                                   borderColor={errorData[index] ? "red.400" : null}/> :
+                            <Textarea borderColor={errorData[index] ? "red.400" : null} placeholder={placeholder}
+                                      minHeight={"200px"} onChange={e => handleChange(e.target.value, index)}
+                                      value={formData[index]}/>
+                    }
                 </Flex>
             </Flex>
         )
@@ -98,7 +104,7 @@ const checkValidIntType = (data) => {
     }
     try {
         return isNumeric(data)
-    } catch(ex) {
+    } catch (ex) {
         return false
     }
 }
@@ -108,25 +114,26 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const location = useLocation()
     const {state} = location;
     const {kurtosisPackage} = state
+    const [runningPackage, setRunningPackage] = useState(false)
 
     let initialFormData = {}
     kurtosisPackage.args.map(
-        (arg, index)=> {
+        (arg, index) => {
             if (arg.name !== "plan") {
                 initialFormData[index] = ""
             }
         }
-     )
+    )
     const [formData, setFormData] = useState(initialFormData)
 
     let initialErrorData = {}
-    kurtosisPackage.args.map((arg, index)=> {
+    kurtosisPackage.args.map((arg, index) => {
         if (arg.name !== "plan") {
             initialErrorData[index] = ""
         }
     })
     const [errorData, setErrorData] = useState(initialErrorData)
-    
+
     const handleFormDataChange = (value, index) => {
         const newData = {
             ...formData,
@@ -146,7 +153,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const handleCancelBtn = () => {
         navigate("/catalog")
     }
-    
+
     const handleRunBtn = () => {
         let errorsFound = {}
 
@@ -177,13 +184,14 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                     valid = false;
                 }
             }
-            
+
             if (!valid) {
                 errorsFound[key] = `This field is required and cannot be empty`;
             }
         })
 
         if (Object.keys(errorsFound).length === 0) {
+            setRunningPackage(true)
             let args = {}
             Object.keys(formData).map(key => {
                 const argName = kurtosisPackage.args[key].name
@@ -198,11 +206,11 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             handleCreateNewEnclave(runKurtosisPackageArgs)
 
         } else {
-           const newErrorData = {
-            ...errorData,
-            ...errorsFound
-           }
-           setErrorData(newErrorData)
+            const newErrorData = {
+                ...errorData,
+                ...errorsFound
+            }
+            setErrorData(newErrorData)
         }
     }
 
@@ -222,29 +230,41 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 gap={2}
             >
                 <GridItem area={'option'} pt="1">
-                    <PackageCatalogOption />
+                    <PackageCatalogOption/>
                 </GridItem>
                 <GridItem area={'packageId'} p="1">
                     <Center>
                         <Text color={"white"} fontSize={"4xl"}> {kurtosisPackage.name} </Text>
                     </Center>
                 </GridItem>
-                <GridItem area={'main'} h="100%" overflowY={"scroll"} mt="10"> 
+                <GridItem area={'main'} h="100%" overflowY={"scroll"} mt="10">
                     <Stack spacing={4}>
                         {renderArgs(kurtosisPackage.args, handleFormDataChange, formData, errorData)}
                     </Stack>
                 </GridItem>
                 <GridItem area={'configure'} m="10px">
                     <Flex gap={5}>
-                        <Button colorScheme='red' w="50%" onClick={handleCancelBtn}> Cancel </Button>
-                        <Button bg='#24BA27' w="50%" onClick={handleRunBtn}> Run </Button>
+                        <Button colorScheme='red'
+                                w="50%"
+                                onClick={handleCancelBtn}
+                        >
+                            Go Back
+                        </Button>
+                        <Button bg='#24BA27'
+                                w="50%"
+                                onClick={handleRunBtn}
+                                isLoading={runningPackage}
+                                loadingText="Running..."
+                        >
+                            Run
+                        </Button>
                     </Flex>
                 </GridItem>
             </Grid>
         </div>
     );
-  };
-  export default PackageCatalogForm;
+};
+export default PackageCatalogForm;
 
 
 

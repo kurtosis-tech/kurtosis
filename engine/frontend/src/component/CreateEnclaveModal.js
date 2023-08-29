@@ -52,7 +52,7 @@ export const CreateEnclaveModal = ({handleSubmit, name, setName, args, setArgs, 
               type="submit"
               className="w-[50%] bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 focus:outline-none focus:ring-blue-500 focus:ring-2 focus:ring-offset-2"
             >
-              Submit
+              Run
             </button>
             <button
               type="back"
