@@ -97,18 +97,26 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
-	_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize)
+	engineStatus, _, _, err := engineManagerNewCluster.GetEngineStatus(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "Engine could not be started after cluster was updated. Its status can be retrieved "+
-			"running 'kurtosis %s %s' and it can potentially be started running 'kurtosis %s %s'",
-			command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,
-			command_str_consts.EngineStartCmdStr)
+		return stacktrace.Propagate(err, "an error occurred while getting the status of the engine in the current cluster")
 	}
-	defer func() {
-		if err = engineClientCloseFunc(); err != nil {
-			logrus.Warnf("Error closing the engine client:\n'%v'", err)
+	// we only start in a stopped state, the idempotent visitor gets stuck with engine_manager.EngineStatus_ContainerRunningButServerNotResponding if the gateway isn't running
+	// TODO - fix the idempotent starter longer term
+	if engineStatus == engine_manager.EngineStatus_Stopped {
+		_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize)
+		if err != nil {
+			return stacktrace.Propagate(err, "Engine could not be started after cluster was updated. Its status can be retrieved "+
+				"running 'kurtosis %s %s' and it can potentially be started running 'kurtosis %s %s'",
+				command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,
+				command_str_consts.EngineStartCmdStr)
 		}
-	}()
+		defer func() {
+			if err = engineClientCloseFunc(); err != nil {
+				logrus.Warnf("Error closing the engine client:\n'%v'", err)
+			}
+		}()
+	}
 
 	return nil
 }
