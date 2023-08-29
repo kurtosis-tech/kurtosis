@@ -228,7 +228,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 
 	serviceNameStr := string(serviceName)
 	serviceUuidStr := string(serviceUuid)
-
 	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceNameStr, serviceUuidStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with UUID '%v'", serviceUuid)

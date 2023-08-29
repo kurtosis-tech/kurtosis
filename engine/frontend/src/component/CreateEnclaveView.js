@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 
 import RightPanel from "./RightPanel";
 import LeftPanel from "./LeftPanel";
-import Heading  from "./Heading";
 import { LogView } from "./LogView";
 
 import {useNavigate} from "react-router-dom";
@@ -21,16 +20,14 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
     const [services, setServices] = useState([])
     const {appData} = useAppContext()
 
-    // Not in use anymore?:
-    // const getServices = async (apiClient) => {
-    //     const {services: newServices} = await getEnclaveInformation(apiClient, appData.jwtToken, appData.apiHost);
-    //     if (newServices.length > services.length) {
-    //         setServices(newServices)
-    //     }
-    // }
+    const getServices = async (enclave) => {
+        const {services: newServices} = await getEnclaveInformation(enclave.host, enclave.port, appData.jwtToken, appData.apiHost);
+        if (newServices.length > services.length) {
+            setServices(newServices)
+        }
+    }
 
     useEffect(() => {
-        console.log("how many time?")
         setLoading(true)
         let stream;
         const fetchLogs = async () => {
@@ -48,47 +45,17 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
 
               if (result.case === "instructionResult" && result.value.serializedInstructionResult) {
                   if (result.value.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
-                      //getServices(enclave.apiClient)
+                      getServices(enclave)
                   }
                   setLogs(logs => [...logs, result.value.serializedInstructionResult])
               }
+
+              if (result.case === "error") {
+                const errorMessage = result.value.error.value.errorMessage;
+                setLogs(logs => [...logs, errorMessage])
+              }
           }
-          // stream.on("data", data => {
-          //   const result = data.toObject();
-          //   if (result.instruction && result.instruction.executableInstruction) {
-          //       setLogs(logs => [...logs, result.instruction.executableInstruction])
-          //   }
-          //
-          //   if (result.progressInfo && result.progressInfo.currentStepInfoList.length > 0) {
-          //       let length = result.progressInfo.currentStepInfoList.length;
-          //       setLogs(logs => [...logs, result.progressInfo.currentStepInfoList[length-1]])
-          //   }
-          //
-          //   if (result.instructionResult && result.instructionResult.serializedInstructionResult) {
-          //       if (result.instructionResult.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
-          //           getServices(enclave.apiClient)
-          //       }
-          //       setLogs(logs => [...logs, result.instructionResult.serializedInstructionResult])
-          //   }
-          //
-          //   if (result.error) {
-          //       if (result.error.interpretationError) {
-          //           setLogs(logs => [...logs, result.error.interpretationError.errorMessage])
-          //       }
-          //
-          //       if (result.error.executionError) {
-          //           setLogs(logs => [...logs, result.error.executionError.errorMessage])
-          //       }
-          //
-          //       if (result.error.validationError) {
-          //           setLogs(logs => [...logs, result.error.validationError.errorMessage])
-          //       }
-          //   }
-          // });
-          //
-          // stream.on("end", () => {
-          //   setLoading(false)
-          // });
+          setLoading(false);
         }
 
        fetchLogs();

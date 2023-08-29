@@ -32,6 +32,9 @@ export class CreateEnclaveArgs extends jspb.Message {
   getApiContainerLogLevel(): string;
   setApiContainerLogLevel(value: string): CreateEnclaveArgs;
 
+  getMode(): EnclaveMode;
+  setMode(value: EnclaveMode): CreateEnclaveArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateEnclaveArgs.AsObject;
   static toObject(includeInstance: boolean, msg: CreateEnclaveArgs): CreateEnclaveArgs.AsObject;
@@ -45,6 +48,7 @@ export namespace CreateEnclaveArgs {
     enclaveName: string,
     apiContainerVersionTag: string,
     apiContainerLogLevel: string,
+    mode: EnclaveMode,
   }
 }
 
@@ -428,6 +432,10 @@ export namespace LogLineFilter {
   }
 }
 
+export enum EnclaveMode { 
+  TEST = 0,
+  PRODUCTION = 1,
+}
 export enum EnclaveContainersStatus { 
   ENCLAVECONTAINERSSTATUS_EMPTY = 0,
   ENCLAVECONTAINERSSTATUS_RUNNING = 1,

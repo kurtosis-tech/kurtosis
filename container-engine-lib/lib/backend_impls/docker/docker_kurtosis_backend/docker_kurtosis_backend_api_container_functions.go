@@ -146,7 +146,6 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 	for labelKey, labelValue := range apiContainerAttrs.GetLabels() {
 		labelStrs[labelKey.GetString()] = labelValue.GetString()
 	}
-
 	// TODO: configure the APIContainer to send the logs to the Fluentbit logs collector server
 
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
@@ -165,7 +164,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		ipAddr,
 	).WithLabels(
 		labelStrs,
-	).Build()
+	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
 	if err = backend.dockerManager.FetchImage(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)

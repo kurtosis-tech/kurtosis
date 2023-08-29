@@ -38,6 +38,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 	grpcListenPort uint16,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
 	enclaveEnvVars string,
+	isProductionEnclave bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -50,6 +51,7 @@ func (launcher ApiContainerLauncher) LaunchWithDefaultVersion(
 		grpcListenPort,
 		backendConfigSupplier,
 		enclaveEnvVars,
+		isProductionEnclave,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred launching the API container with default version tag '%v'", kurtosis_version.KurtosisVersion)
@@ -65,6 +67,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 	grpcPortNum uint16,
 	backendConfigSupplier KurtosisBackendConfigSupplier,
 	enclaveEnvVars string,
+	isProductionEnclave bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -79,6 +82,7 @@ func (launcher ApiContainerLauncher) LaunchWithCustomVersion(
 		kurtosisBackendType,
 		kurtosisBackendConfig,
 		enclaveEnvVars,
+		isProductionEnclave,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the API container args")

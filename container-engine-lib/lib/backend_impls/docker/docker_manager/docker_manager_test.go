@@ -91,7 +91,7 @@ func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 		Labels:     map[string]string{},
 		State:      "running",
 		Status:     "",
-		HostConfig: struct {
+		HostConfig: struct { //nolint:exhaustruct
 			NetworkMode string `json:",omitempty"`
 		}{},
 		NetworkSettings: nil,
