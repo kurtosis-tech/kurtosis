@@ -108,6 +108,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const location = useLocation()
     const {state} = location;
     const {kurtosisPackage} = state
+    const [runningPackage, setRunningPackage] = useState(false)
 
     let initialFormData = {}
     kurtosisPackage.args.map(
@@ -184,6 +185,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
         })
 
         if (Object.keys(errorsFound).length === 0) {
+            setRunningPackage(true)
             let args = {}
             Object.keys(formData).map(key => {
                 const argName = kurtosisPackage.args[key].name
@@ -237,7 +239,14 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 <GridItem area={'configure'} m="10px">
                     <Flex gap={5}>
                         <Button colorScheme='red' w="50%" onClick={handleCancelBtn}> Cancel </Button>
-                        <Button bg='#24BA27' w="50%" onClick={handleRunBtn}> Run </Button>
+                        <Button bg='#24BA27'
+                                w="50%"
+                                onClick={handleRunBtn}
+                                isLoading={runningPackage}
+                                loadingText="Running..."
+                        >
+                            Run
+                        </Button>
                     </Flex>
                 </GridItem>
             </Grid>
