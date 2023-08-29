@@ -52,6 +52,11 @@ const PackageCatalogProgress = ({appData}) => {
                   }
                   setLogs(logs => [...logs, result.value.serializedInstructionResult])
               }
+
+              if (result.case === "error") {
+                const errorMessage = result.value.error.value.errorMessage;
+                setLogs(logs => [...logs, errorMessage])
+              }
             }
             setLoading(false)
         }
