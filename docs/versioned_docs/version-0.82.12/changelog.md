@@ -1,5 +1,52 @@
 # Changelog
 
+## [0.82.12](https://github.com/kurtosis-tech/kurtosis/compare/0.82.11...0.82.12) (2023-08-29)
+
+
+### Bug Fixes
+
+* `react-scripts` dependency changed  on the engine frontend to fix a vulnerability reported by Dependabot ([#1179](https://github.com/kurtosis-tech/kurtosis/issues/1179)) ([e5e15f6](https://github.com/kurtosis-tech/kurtosis/commit/e5e15f6fd90455380d585c7e2cc7ebf434e1ea88))
+* handle package catalog edge case ([#1187](https://github.com/kurtosis-tech/kurtosis/issues/1187)) ([2a8a4c8](https://github.com/kurtosis-tech/kurtosis/commit/2a8a4c8a9f902ec3444d4ed1964427b81fc13409))
+* ui displays error logs ([#1185](https://github.com/kurtosis-tech/kurtosis/issues/1185)) ([6a2522b](https://github.com/kurtosis-tech/kurtosis/commit/6a2522ba96f9a2ab45dc944f5a1b9bc921d1904d))
+* user service streaming logs when the last line is not a completed JSON line ([#1175](https://github.com/kurtosis-tech/kurtosis/issues/1175)) ([fece446](https://github.com/kurtosis-tech/kurtosis/commit/fece446d97f11219595772ffd0b42917676b74e1))
+
+## [0.82.11](https://github.com/kurtosis-tech/kurtosis/compare/0.82.10...0.82.11) (2023-08-29)
+
+
+### Bug Fixes
+
+* it fixes the log font colour; it shows black now on the cloud em  ([#1182](https://github.com/kurtosis-tech/kurtosis/issues/1182)) ([f13de9f](https://github.com/kurtosis-tech/kurtosis/commit/f13de9f61f1125bccf25535d9e90e7a62ea8375c))
+
+## [0.82.10](https://github.com/kurtosis-tech/kurtosis/compare/0.82.9...0.82.10) (2023-08-28)
+
+
+### Features
+
+* Production mode enclave ([#1171](https://github.com/kurtosis-tech/kurtosis/issues/1171)) ([84e8c71](https://github.com/kurtosis-tech/kurtosis/commit/84e8c7110731c0237c1a9ec5eb7cacfa22b7337b))
+
+## [0.82.9](https://github.com/kurtosis-tech/kurtosis/compare/0.82.8...0.82.9) (2023-08-28)
+
+
+### Features
+
+* added package to loader UI ([#1147](https://github.com/kurtosis-tech/kurtosis/issues/1147)) ([9a2edff](https://github.com/kurtosis-tech/kurtosis/commit/9a2edffd095bfa6b0dc760e974aae3ed7939e0c7))
+
+## [0.82.8](https://github.com/kurtosis-tech/kurtosis/compare/0.82.7...0.82.8) (2023-08-28)
+
+
+### Bug Fixes
+
+* Fix NPE in stacktrace ([#1172](https://github.com/kurtosis-tech/kurtosis/issues/1172)) ([32770ca](https://github.com/kurtosis-tech/kurtosis/commit/32770ca96513d5d4191f6e2f373cadc89120adc9))
+* fix the Discord link used by the `dicord` CLI command ([#1177](https://github.com/kurtosis-tech/kurtosis/issues/1177)) ([39d159a](https://github.com/kurtosis-tech/kurtosis/commit/39d159a5141d18a31ddc97d775bccbdd99c2a7ad)), closes [#1174](https://github.com/kurtosis-tech/kurtosis/issues/1174)
+
+## [0.82.7](https://github.com/kurtosis-tech/kurtosis/compare/0.82.6...0.82.7) (2023-08-28)
+
+
+### Features
+
+* add header to instruct clients not to cache ([#1166](https://github.com/kurtosis-tech/kurtosis/issues/1166)) ([ad27761](https://github.com/kurtosis-tech/kurtosis/commit/ad27761f07306a851526b9424458fe5a54b6cd72))
+* Authorize enclave manager requests if the host matches the user's instance host ([#1163](https://github.com/kurtosis-tech/kurtosis/issues/1163)) ([093af33](https://github.com/kurtosis-tech/kurtosis/commit/093af33b4bc9ecf75814ee7c1a2b838379d961fb))
+
 ## [0.82.6](https://github.com/kurtosis-tech/kurtosis/compare/0.82.5...0.82.6) (2023-08-26)
 
 
