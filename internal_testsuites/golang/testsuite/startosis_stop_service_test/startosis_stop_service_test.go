@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	testName = "startosis_stop_service_test"
+	testName = "starlark-stop-service"
 
 	serviceName = "example-datastore-stop-service"
 	portId      = "grpc"
