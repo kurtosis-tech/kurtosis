@@ -4,7 +4,52 @@
 ----
 What is Kurtosis?
 =================
-[Kurtosis](https://www.kurtosis.com) is a portable build, packaging, and run system for containerized testing environments. Kurtosis is most useful for building and interacting with private testnets for layer 1 blockchains, and is extensible to include any associated infrastructure that can be containerized.
+[Kurtosis](https://www.kurtosis.com) is a platform for packaging and launching environments of containerized services (distributed applications) with a focus on approachability for the average developer. What Docker did for shipping binaries, Kurtosis aims to do even easier for distributed applications. 
+
+Kurtosis is formed of:
+
+- A configuration language for declaring a distributed application as code with Python syntax ([Starlark](https://github.com/google/starlark-go/blob/master/doc/spec.md))
+- A packaging system, for reusing and sharing distributed application components
+- A runtime that makes a Kurtosis app Just Work on Docker and Kubernetes, locally or in the cloud
+- A set of tools to make working with distributed applications easier (e.g. log aggregation, automatic port forwarding, easy file download, etc.)
+
+Why should I use Kurtosis?
+==========================
+Kurtosis shines when creating and destroying self-contained environments of distributed applications. We've seen this functionality most useful when:
+
+- You're developing on your application and you need to rapidly iterate on it
+- You want to try someone's containerized service or distributed application on your local machine
+- You want to spin up your distributed application in ephemeral environments as part of your integration tests
+- You want to ad-hoc test your application on a big cloud cluster
+- You're the author of a containerized service or distributed application and you want to give your users a one-liner to play with it
+- You want to get an instance of your application running in the cloud without being a Kubernetes expert
+
+Why Kurtosis over Compose, Helmm, Terraform, etc.?
+==================================================
+Here's what our users tell us they like about Kurtosis:
+
+- **It's understandable:** you write code in Python syntax, and you get a distributed system out the other side. Variables and functions keep your code DRY.
+- **It's portable:** you can start working with your application on your local Docker, and get the same thing running on a cloud Kubernetes cluster in seconds.
+- **It can handle imperative dependencies:** for example, "generate these files, then use them when starting this service" is simple
+- **It abstracts away complexity:** This 
+- **
+- **It's fast:** most Kurtosis packages spin up in seconds.
+
+
+
+
+
+Why did you build Kurtosis?
+===========================
+TODO
+- Saw lots of people wrestlign with teh same "distributed systems are hard and complex" problem (k8s, even Docker & Docker Compose)
+- BUT, the world is basically all distributed!
+- Saw opportunity for developers to talk in a tool that's relevant to thm
+- Saw inefficien
+
+
+
+Kurtosis is most useful for building and interacting with private testnets for layer 1 blockchains, and is extensible to include any associated infrastructure that can be containerized.
 
 1. :memo: Engineers write _environment definitions_ to describe how their system should be set up 
 2. :wrench: Kurtosis interprets those _environment definitions_ to build an isolated, ephemeral environment
