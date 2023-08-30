@@ -17,26 +17,24 @@ import PackageCatalogOption from "./PackageCatalogOption";
 import { useNavigate } from "react-router";
 
 const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
-
-    const [kurtosisPackages, setKurtosisPackages] = useState([])
     const navigate = useNavigate()
-    const [chosenPackage, setChosenPackage] = useState(null)
+    const [kurtosisPackages, setKurtosisPackages] = useState([])
+    const [chosenPackage, setChosenPackage] = useState({})
 
     useEffect(()=> {
         setKurtosisPackages(defaultPackages)
     }, [defaultPackages.length])
 
-    const selectPackage = (index) => {
-        if (index === chosenPackage) {
-            setChosenPackage(null)
+    const selectPackage = (selectedPackage) => {
+        if (selectedPackage["name"] === chosenPackage["name"]) {
+            setChosenPackage({})
         } else {
-            setChosenPackage(index)
+            setChosenPackage(selectedPackage)
         }
     }
 
     const handleConfigureButtonClick = () => {
-        const kurtosisPackage = kurtosisPackages[chosenPackage]
-        navigate("/catalog/form", {state: {kurtosisPackage}})
+        navigate("/catalog/form", {state: {kurtosisPackage: chosenPackage}})
     }
 
     const handleSearchEvent = (e) => {
@@ -85,10 +83,10 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                     <List spacing={1} padding="10px" h="100%">
                         {
                             kurtosisPackages.map( (kurtosisPackage, index) => {
-                                const bgcolor = (index === chosenPackage) ? '#24BA27' : 'gray.300'
+                                const bgcolor = (kurtosisPackage.name === chosenPackage.name) ? '#24BA27' : 'gray.300'
                                 if ("name" in kurtosisPackage) {
                                     return (
-                                        <ListItem bg={bgcolor} key={index} onClick={() => selectPackage(index)}>
+                                        <ListItem bg={bgcolor} key={index} onClick={() => selectPackage(kurtosisPackage)}>
                                             <Center h="70px" w="100%">
                                                 <Text fontSize={"2xl"} color='blue.800' fontWeight={"bold"}> {kurtosisPackage.name} </Text>
                                             </Center>
@@ -100,7 +98,7 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                     </List>
                 </GridItem>
                 <GridItem area={'configure'} m="10px">
-                    <Button bg='#24BA27' w="100%" isDisabled={chosenPackage === null} onClick={handleConfigureButtonClick} >Configure >> </Button>
+                    <Button bg='#24BA27' w="100%" isDisabled={Object.keys(chosenPackage).length === 0} onClick={handleConfigureButtonClick} >Configure >> </Button>
                 </GridItem>
             </Grid>
         </div>

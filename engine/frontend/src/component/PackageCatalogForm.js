@@ -107,7 +107,8 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const {state} = location;
     const {kurtosisPackage} = state
     const [runningPackage, setRunningPackage] = useState(false)
-
+    const [enclaveName, setEnclaveName] = useState("")
+    
     let initialFormData = {}
     kurtosisPackage.args.map(
         (arg, index)=> {
@@ -198,7 +199,6 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 if (!["INTEGER", "STRING", "BOOL", "FLOAT"].includes(kurtosisPackage.args[key]["type"])) {
                     try {
                         const val = JSON.parse(value)
-                        console.log(val)
                         args[argName] = val
                     } catch(ex) {
                         console.log("this error should not come up")
