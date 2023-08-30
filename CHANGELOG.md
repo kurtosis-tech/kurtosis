@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.82.14](https://github.com/kurtosis-tech/kurtosis/compare/0.82.13...0.82.14) (2023-08-29)
+
+
+### Features
+
+* add creation dialog 2 ([#1194](https://github.com/kurtosis-tech/kurtosis/issues/1194)) ([b586a8a](https://github.com/kurtosis-tech/kurtosis/commit/b586a8a0aa5f84b2f6d5f8bff3079135d4ffde2e))
+
+## [0.82.13](https://github.com/kurtosis-tech/kurtosis/compare/0.82.12...0.82.13) (2023-08-29)
+
+
+### Bug Fixes
+
+* hyperlane package error  ([#1193](https://github.com/kurtosis-tech/kurtosis/issues/1193)) ([e5946ad](https://github.com/kurtosis-tech/kurtosis/commit/e5946ad50fb3275cd7b26025c4901629427fbc4d))
+
 ## [0.82.12](https://github.com/kurtosis-tech/kurtosis/compare/0.82.11...0.82.12) (2023-08-29)
 
 

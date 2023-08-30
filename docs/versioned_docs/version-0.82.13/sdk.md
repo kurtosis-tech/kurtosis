@@ -19,13 +19,17 @@ KurtosisContext
 A connection to a Kurtosis engine, used for manipulating enclaves.
 
 ### `createEnclave(String enclaveName) -> [EnclaveContext][enclavecontext] enclaveContext`
-Creates a new Kurtosis enclave using the given parameters.
+Creates a new Kurtosis enclave using the given parameters. The enclave will be created in default mode (when services fail, it won't restart)
 
 **Args**
 * `enclaveName`: The name to give the new enclave.
 
 **Returns**
 * `enclaveContext`: An [EnclaveContext][enclavecontext] object representing the new enclave.
+
+### `createProductionEnclave(String enclaveName) -> [EnclaveContext][enclavecontext] enclaveContext`
+Same as above, but creates an enclave in production mode (services will restart upon failure)
+
 
 ### `getEnclaveContext(String enclaveIdentifier) -> [EnclaveContext][enclavecontext] enclaveContext`
 Gets the [EnclaveContext][enclavecontext] object for the given enclave ID.

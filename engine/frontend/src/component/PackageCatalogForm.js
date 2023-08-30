@@ -43,8 +43,8 @@ const renderArgs = (args, handleChange, formData, errorData) => {
         
         return (
             <Flex color={"white"}>
-                <Flex w="15%" mr="3" direction={"column"}>
-                    <Text align={"center"} fontSize={"2xl"}> {arg.name} </Text>
+                <Flex mr="3" direction={"column"} w="15%">
+                    <Text align={"center"} fontSize={"xl"}> {arg.name} </Text>
                     {arg.isRequired ? <Text align={"center"} fontSize={"s"} color="red.500"> Required</Text>: null}
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
@@ -62,7 +62,6 @@ const renderArgs = (args, handleChange, formData, errorData) => {
 const checkValidUndefinedType = (data) => {
     try {
         const val = yaml.load(data)
-        console.log(val)
     } catch (ex) {
         return false;
     }
@@ -82,7 +81,6 @@ const checkValidStringType = (data) => {
         return false
     } catch (ex) {
         if (data.includes("\"") || data.includes("\'")) {
-            console.log(data)
             return false
         }
         return true;
@@ -108,6 +106,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const location = useLocation()
     const {state} = location;
     const {kurtosisPackage} = state
+    const [runningPackage, setRunningPackage] = useState(false)
 
     let initialFormData = {}
     kurtosisPackage.args.map(
@@ -152,6 +151,13 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
 
         Object.keys(formData).filter(key => {
             let type = kurtosisPackage.args[key]["type"]
+            const required = kurtosisPackage.args[key]["isRequired"]
+
+            // if it's optional and empty it's fine
+            if (!required && formData[key].length === 0) {
+                return
+            }
+            
             let valid = true
             if (type === "STRING") {
                 valid = checkValidStringType(formData[key])
@@ -184,12 +190,24 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
         })
 
         if (Object.keys(errorsFound).length === 0) {
+            setRunningPackage(true)
             let args = {}
             Object.keys(formData).map(key => {
                 const argName = kurtosisPackage.args[key].name
                 const value = formData[key]
-                args[argName] = value
+                if (!["INTEGER", "STRING", "BOOL", "FLOAT"].includes(kurtosisPackage.args[key]["type"])) {
+                    try {
+                        const val = JSON.parse(value)
+                        console.log(val)
+                        args[argName] = val
+                    } catch(ex) {
+                        console.log("this error should not come up")
+                    }
+                } else {
+                    args[argName] = value
+                }
             })
+
             const stringifiedArgs = JSON.stringify(args)
             const runKurtosisPackageArgs = {
                 packageId: kurtosisPackage.name,
@@ -229,7 +247,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                         <Text color={"white"} fontSize={"4xl"}> {kurtosisPackage.name} </Text>
                     </Center>
                 </GridItem>
-                <GridItem area={'main'} h="100%" overflowY={"scroll"} mt="10"> 
+                <GridItem area={'main'} h="90%" overflowY={"scroll"} mt="10"> 
                     <Stack spacing={4}>
                         {renderArgs(kurtosisPackage.args, handleFormDataChange, formData, errorData)}
                     </Stack>
@@ -237,7 +255,14 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 <GridItem area={'configure'} m="10px">
                     <Flex gap={5}>
                         <Button colorScheme='red' w="50%" onClick={handleCancelBtn}> Cancel </Button>
-                        <Button bg='#24BA27' w="50%" onClick={handleRunBtn}> Run </Button>
+                        <Button bg='#24BA27'
+                                w="50%"
+                                onClick={handleRunBtn}
+                                isLoading={runningPackage}
+                                loadingText="Running..."
+                        >
+                            Run
+                        </Button>
                     </Flex>
                 </GridItem>
             </Grid>
