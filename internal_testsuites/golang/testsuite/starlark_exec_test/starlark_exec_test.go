@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	testName = "starlark_exec_test"
+	testName = "starlark-exec"
 )
 
 const (
