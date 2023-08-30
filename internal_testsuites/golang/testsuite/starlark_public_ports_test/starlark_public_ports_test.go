@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	testName = "starlark_public_ports_test"
+	testName = "starlark-public-ports-test"
 
 	serviceName         = "example-datastore-server-1"
 	portId              = "grpc"
