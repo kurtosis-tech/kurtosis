@@ -10,5 +10,7 @@ Your distributed applications run in [enclaves][enclaves-reference]. They are is
 kurtosis enclave add
 ```
 
+1. The `--production` flag can be used to make sure services restart in case of failure (default behavior is not restart)
+
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [enclaves-reference]: ../concepts-reference/enclaves.md
