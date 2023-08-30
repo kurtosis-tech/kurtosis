@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.82.15](https://github.com/kurtosis-tech/kurtosis/compare/0.82.14...0.82.15) (2023-08-30)
+
+
+### Bug Fixes
+
+* cluster set doesnt get into a weird state of no cluster being set ([#1055](https://github.com/kurtosis-tech/kurtosis/issues/1055)) ([c647035](https://github.com/kurtosis-tech/kurtosis/commit/c6470356e2939d4834d773a085e4b98c1cd44e7f))
+* enclave name validation to support valid DNS-1035 label rules ([#1204](https://github.com/kurtosis-tech/kurtosis/issues/1204)) ([74845a8](https://github.com/kurtosis-tech/kurtosis/commit/74845a85e627acc5ffc54162973457869fcc0887))
+* make test enclave creation support DNS label rules ([#1202](https://github.com/kurtosis-tech/kurtosis/issues/1202)) ([df61ecc](https://github.com/kurtosis-tech/kurtosis/commit/df61ecc783ade430a434fd129a42c54d1d742263))
+* Point to the engine restart command as part of the context switch failure remediation to not conflict with lower level commands ([#1191](https://github.com/kurtosis-tech/kurtosis/issues/1191)) ([f83e513](https://github.com/kurtosis-tech/kurtosis/commit/f83e513a1f2b0e136d4f61e92d4189125f900fd4))
+* removed the flaky tests ([#1205](https://github.com/kurtosis-tech/kurtosis/issues/1205)) ([b990674](https://github.com/kurtosis-tech/kurtosis/commit/b990674e20696023c22d1e37fa119bce480ce556))
+* this pr fixes the search issue. ([#1201](https://github.com/kurtosis-tech/kurtosis/issues/1201)) ([2a17b1b](https://github.com/kurtosis-tech/kurtosis/commit/2a17b1badd413bee892ff89d2c7697a2c1b32213))
+
+## [0.82.14](https://github.com/kurtosis-tech/kurtosis/compare/0.82.13...0.82.14) (2023-08-29)
+
+
+### Features
+
+* add creation dialog 2 ([#1194](https://github.com/kurtosis-tech/kurtosis/issues/1194)) ([b586a8a](https://github.com/kurtosis-tech/kurtosis/commit/b586a8a0aa5f84b2f6d5f8bff3079135d4ffde2e))
+
+## [0.82.13](https://github.com/kurtosis-tech/kurtosis/compare/0.82.12...0.82.13) (2023-08-29)
+
+
+### Bug Fixes
+
+* hyperlane package error  ([#1193](https://github.com/kurtosis-tech/kurtosis/issues/1193)) ([e5946ad](https://github.com/kurtosis-tech/kurtosis/commit/e5946ad50fb3275cd7b26025c4901629427fbc4d))
+
+## [0.82.12](https://github.com/kurtosis-tech/kurtosis/compare/0.82.11...0.82.12) (2023-08-29)
+
+
+### Bug Fixes
+
+* `react-scripts` dependency changed  on the engine frontend to fix a vulnerability reported by Dependabot ([#1179](https://github.com/kurtosis-tech/kurtosis/issues/1179)) ([e5e15f6](https://github.com/kurtosis-tech/kurtosis/commit/e5e15f6fd90455380d585c7e2cc7ebf434e1ea88))
+* handle package catalog edge case ([#1187](https://github.com/kurtosis-tech/kurtosis/issues/1187)) ([2a8a4c8](https://github.com/kurtosis-tech/kurtosis/commit/2a8a4c8a9f902ec3444d4ed1964427b81fc13409))
+* ui displays error logs ([#1185](https://github.com/kurtosis-tech/kurtosis/issues/1185)) ([6a2522b](https://github.com/kurtosis-tech/kurtosis/commit/6a2522ba96f9a2ab45dc944f5a1b9bc921d1904d))
+* user service streaming logs when the last line is not a completed JSON line ([#1175](https://github.com/kurtosis-tech/kurtosis/issues/1175)) ([fece446](https://github.com/kurtosis-tech/kurtosis/commit/fece446d97f11219595772ffd0b42917676b74e1))
+
+## [0.82.11](https://github.com/kurtosis-tech/kurtosis/compare/0.82.10...0.82.11) (2023-08-29)
+
+
+### Bug Fixes
+
+* it fixes the log font colour; it shows black now on the cloud em  ([#1182](https://github.com/kurtosis-tech/kurtosis/issues/1182)) ([f13de9f](https://github.com/kurtosis-tech/kurtosis/commit/f13de9f61f1125bccf25535d9e90e7a62ea8375c))
+
+## [0.82.10](https://github.com/kurtosis-tech/kurtosis/compare/0.82.9...0.82.10) (2023-08-28)
+
+
+### Features
+
+* Production mode enclave ([#1171](https://github.com/kurtosis-tech/kurtosis/issues/1171)) ([84e8c71](https://github.com/kurtosis-tech/kurtosis/commit/84e8c7110731c0237c1a9ec5eb7cacfa22b7337b))
+
 ## [0.82.9](https://github.com/kurtosis-tech/kurtosis/compare/0.82.8...0.82.9) (2023-08-28)
 
 
