@@ -12,9 +12,7 @@ import (
 )
 
 const (
-	testsuiteNameEnclaveIDFragment = "go-testsuite"
-
-	millisInNanos = 1000
+	testsuiteNameEnclaveIDFragment = "go-test"
 )
 
 func CreateEnclave(t *testing.T, ctx context.Context, testName string) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultDestroyEnclaveFunc func() error, resultErr error) {
