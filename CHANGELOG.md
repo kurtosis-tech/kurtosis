@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.82.15](https://github.com/kurtosis-tech/kurtosis/compare/0.82.14...0.82.15) (2023-08-30)
+
+
+### Bug Fixes
+
+* cluster set doesnt get into a weird state of no cluster being set ([#1055](https://github.com/kurtosis-tech/kurtosis/issues/1055)) ([c647035](https://github.com/kurtosis-tech/kurtosis/commit/c6470356e2939d4834d773a085e4b98c1cd44e7f))
+* enclave name validation to support valid DNS-1035 label rules ([#1204](https://github.com/kurtosis-tech/kurtosis/issues/1204)) ([74845a8](https://github.com/kurtosis-tech/kurtosis/commit/74845a85e627acc5ffc54162973457869fcc0887))
+* make test enclave creation support DNS label rules ([#1202](https://github.com/kurtosis-tech/kurtosis/issues/1202)) ([df61ecc](https://github.com/kurtosis-tech/kurtosis/commit/df61ecc783ade430a434fd129a42c54d1d742263))
+* Point to the engine restart command as part of the context switch failure remediation to not conflict with lower level commands ([#1191](https://github.com/kurtosis-tech/kurtosis/issues/1191)) ([f83e513](https://github.com/kurtosis-tech/kurtosis/commit/f83e513a1f2b0e136d4f61e92d4189125f900fd4))
+* removed the flaky tests ([#1205](https://github.com/kurtosis-tech/kurtosis/issues/1205)) ([b990674](https://github.com/kurtosis-tech/kurtosis/commit/b990674e20696023c22d1e37fa119bce480ce556))
+* this pr fixes the search issue. ([#1201](https://github.com/kurtosis-tech/kurtosis/issues/1201)) ([2a17b1b](https://github.com/kurtosis-tech/kurtosis/commit/2a17b1badd413bee892ff89d2c7697a2c1b32213))
+
 ## [0.82.14](https://github.com/kurtosis-tech/kurtosis/compare/0.82.13...0.82.14) (2023-08-29)
 
 
