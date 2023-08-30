@@ -1,19 +1,14 @@
 package enclave_manager
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 const (
-	firstEnclaveUuidForTest  = "first-enclave-uuid"
 	firstEnclaveNameForTest  = "first-enclave-name"
-	secondEnclaveUuidForTest = "second-enclave-uuid"
 	secondEnclaveNameForTest = "second-enclave-name"
-	theirEnclaveUuidForTest  = "their-enclave-uuid"
 	theirEnclaveNameForTest  = "their-enclave-name"
-	runningEnclaveStatus     = enclave.EnclaveStatus_Running
 )
 
 var (
@@ -25,11 +20,19 @@ var (
 )
 
 func TestValidateEnclaveId_success(t *testing.T) {
-	err := validateEnclaveName("valid.enclave.id-1234567")
+	err := validateEnclaveName("valid-enclave-id-1234567")
 	require.Nil(t, err)
 
-	err = validateEnclaveName("go-testsuite.startosis_remove_service_test.1668628850670949")
+	err = validateEnclaveName("go-testsuite-startosis-remove-service-test-1668628850670949")
 	require.Nil(t, err)
+}
+
+func TestValidateEnclaveId_failureForDotsAndUnderscore(t *testing.T) {
+	err := validateEnclaveName("valid.enclave.id-1234567")
+	require.Error(t, err)
+
+	err = validateEnclaveName("go-testsuite.startosis_remove_service_test.1668628850670949")
+	require.Error(t, err)
 }
 
 func TestValidateEnclaveId_failureInvalidChar(t *testing.T) {
