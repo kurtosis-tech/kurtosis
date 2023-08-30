@@ -29,24 +29,6 @@ def run(plan):
 		}
 	)
 	datastore_1 = plan.add_service(name = SERVICE_NAME, config = config)`
-
-	addServiceCPUValidationTest = `
-CONTAINER_IMAGE = "kurtosistech/example-datastore-server"
-SERVICE_NAME = "` + serviceName + `"
-GRPC_PORT = 1323
-SUCCESS_CODE = 0
-
-def run(plan):
-	config = ServiceConfig(
-		image = CONTAINER_IMAGE,
-		min_cpu=1000000,
-		memory_allocation=256,
-		min_memory=512,
-		ports = {
-			"grpc": PortSpec(number = GRPC_PORT, transport_protocol = "TCP")
-		}
-	)
-	datastore_1 = plan.add_service(name = SERVICE_NAME, config = config)`
 )
 
 func (suite *StartosisAddServiceTestSuite) TestAddServices_FailsIfWeConsumeMoreThanAvailableMemory() {
