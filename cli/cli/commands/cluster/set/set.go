@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
@@ -48,6 +49,15 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	}
 	if err = validateClusterName(clusterName); err != nil {
 		return stacktrace.Propagate(err, "'%s' is not a valid name for Kurtosis cluster", clusterName)
+	}
+
+	contextsConfigStore := store.GetContextsConfigStore()
+	currentKurtosisContext, err := contextsConfigStore.GetCurrentContext()
+	if err != nil {
+		return stacktrace.Propagate(err, "tried fetching the current Kurtosis context but failed, we can't switch clusters without this information. This is a bug in Kurtosis")
+	}
+	if store.IsRemote(currentKurtosisContext) {
+		return stacktrace.NewError("Switching clusters on a remote context is not a permitted operation, please switch to the local context using `kurtosis %s %s default` before switching clusters", command_str_consts.ContextCmdStr, command_str_consts.ContextSwitchCmdStr)
 	}
 
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
