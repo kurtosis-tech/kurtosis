@@ -1,11 +1,9 @@
 package vector
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/stacktrace"
-	"text/template"
 )
 
 const (
@@ -33,7 +31,7 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 		logsStorageVolumeName: logsStorageDirpath,
 	}
 
-	logsAggregatorConfigContentStr, err := vector.getConfigFileContent()
+	logsAggregatorConfigContentStr, err := vector.config.getConfigFileContent()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the Loki server's configuration content")
 	}
@@ -71,21 +69,4 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 	).Build()
 
 	return createAndStartArgs, nil
-}
-
-func (vector *vectorContainerConfigProvider) getConfigFileContent() (string, error) {
-	cngFileTemplate, err := template.New(configFileTemplateName).Parse(configFileTemplate)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred parsing Vector config template '%v'", configFileTemplate)
-	}
-
-	templateStrBuffer := &bytes.Buffer{}
-
-	if err := cngFileTemplate.Execute(templateStrBuffer, vector.config); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred executing the Vector config file template")
-	}
-
-	templateStr := templateStrBuffer.String()
-
-	return templateStr, nil
 }
