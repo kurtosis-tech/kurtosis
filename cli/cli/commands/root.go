@@ -153,7 +153,8 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 func printKurtosisCommandToFile(cmd *cobra.Command, args []string) {
 	fileLogger := out.GetFileLogger()
 	flagsSetByUsers := getFlagsSetByUsers(cmd.Flags())
-	fileLogger.Infof("===== Executing Command: kurtosis %v %v %v =====",
+	fileLogger.Infof("===== Executing Command: %v %v %v %v =====",
+		command_str_consts.KurtosisCmdStr,
 		cmd.Name(),
 		strings.Join(flagsSetByUsers, " "),
 		strings.Join(args, " "))
