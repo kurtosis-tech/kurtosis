@@ -36,12 +36,12 @@ func run(cmd *cobra.Command, args []string) error {
 	keyValuePrinter.Print()
 
 	fmt.Println()
-	fmt.Println(fmt.Sprintf(
-		"To see the engine version (provided it is running): %v %v %v",
+	fmt.Printf(
+		"To see the engine version (provided it is running): %v %v %v\n",
 		command_str_consts.KurtosisCmdStr,
 		command_str_consts.EngineCmdStr,
 		command_str_consts.EngineStatusCmdStr,
-	))
+	)
 
 	return nil
 }
