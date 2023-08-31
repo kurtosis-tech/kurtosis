@@ -8,13 +8,13 @@ import {
     Stack,
     Text,
     Textarea,
+    Checkbox,
 } from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
 import { useLocation, useNavigate } from "react-router";
 import {useState} from 'react';
 
 const yaml = require("js-yaml")
-
 
 const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
@@ -108,6 +108,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const {kurtosisPackage} = state
     const [runningPackage, setRunningPackage] = useState(false)
     const [enclaveName, setEnclaveName] = useState("")
+    const [productionMode, setProductionMode] = useState(false)
     
     let initialFormData = {}
     kurtosisPackage.args.map(
@@ -213,7 +214,8 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 packageId: kurtosisPackage.name,
                 args: stringifiedArgs,
             }
-            handleCreateNewEnclave(runKurtosisPackageArgs)
+
+            handleCreateNewEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
 
         } else {
            const newErrorData = {
@@ -240,15 +242,37 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 gap={2}
             >
                 <GridItem area={'option'} pt="1">
-                    <PackageCatalogOption />
+                    <PackageCatalogOption catalog={true} />
                 </GridItem>
                 <GridItem area={'packageId'} p="1">
-                    <Center>
-                        <Text color={"white"} fontSize={"4xl"}> {kurtosisPackage.name} </Text>
-                    </Center>
+                    <Flex direction={"column"} gap={"2"}>
+                        <Center>
+                            <Text color={"white"} fontSize={"4xl"}> {kurtosisPackage.name} </Text>
+                         </Center>
+                         <Center>
+                            <Checkbox color={"white"} fontSize={"2xl"} isChecked={productionMode} onChange={(e)=>setProductionMode(e.target.checked)}> 
+                                <Text color={"white"} fontSize={"xl"} textAlign={"justify-center"}> 
+                                    Production Mode 
+                                </Text>
+                            </Checkbox>
+                        </Center>
+                    </Flex>
                 </GridItem>
                 <GridItem area={'main'} h="90%" overflowY={"scroll"} mt="10"> 
                     <Stack spacing={4}>
+                        <Flex color={"white"}>
+                            <Flex mr="3" direction={"column"} w="15%">
+                                <Text align={"center"} fontSize={"xl"}> Enclave Name </Text>
+                            </Flex>
+                            <Flex flex="1" mr="3" direction={"column"}>
+                                <Input 
+                                    placeholder={"IF NOT PROVIDED, THIS WILL BE GENERATED AUTOMATICALLY"} 
+                                    color='gray.300' 
+                                    value={enclaveName}
+                                    onChange={(e)=>setEnclaveName(e.target.value)}
+                                />
+                            </Flex>
+                        </Flex>
                         {renderArgs(kurtosisPackage.args, handleFormDataChange, formData, errorData)}
                     </Stack>
                 </GridItem>
