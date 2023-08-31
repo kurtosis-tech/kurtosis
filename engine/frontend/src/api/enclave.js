@@ -19,11 +19,10 @@ export const getEnclavesFromKurtosis = async (token, apiHost) => {
     return []
 }
 
-export const createEnclave = async (token, apiHost) => {
-    const enclaveName = ""; // TODO We could make this input from the UI
+export const createEnclave = async (token, apiHost, enclaveName, productionMode) => {
     const apiContainerVersionTag = "";
     const apiContainerLogLevel = "info";
-    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag, token, apiHost)
+    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag, token, apiHost, productionMode)
 
     const enclave = response.enclaveInfo;
     return {

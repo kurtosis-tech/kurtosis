@@ -22,9 +22,9 @@ const PackageCatalogRouter = ({addEnclave}) => {
         fetchPackages();
     },[])
 
-    const createNewEnclave = (runArgs) => {
+    const createNewEnclave = (runArgs, enclaveName, productionMode) => {
         const request = async () => {
-            const enclave = await createEnclave(appData.jwtToken, appData.apiHost);
+            const enclave = await createEnclave(appData.jwtToken, appData.apiHost, enclaveName, productionMode);
             addEnclave(enclave)
             navigate("/catalog/progress", {state: {
                 enclave,
