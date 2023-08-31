@@ -12,6 +12,10 @@ kurtosis service logs $THE_ENCLAVE_IDENTIFIER $THE_SERVICE_IDENTIFIER
 
 where `$THE_ENCLAVE_IDENTIFIER` and the `$THE_SERVICE_IDENTIFIER` are [resource identifiers](../concepts-reference/resource-identifier.md) for the enclave and service, respectively. The service identifier (name or UUID) is printed upon inspecting an enclave. 
 
+:::note Number of log lines
+By default, logs printed in the terminal from this command are truncated at 200 lines. For a stream of logs, we recommend the `-f` flag. For a snapshot of the logs at a given point in time (e.g. after a change), we recommend the [`kurtosis dump`](./dump.md).
+:::
+
 The following optional arguments can be used:
 1. `-f`, `-follow` can be added to continue following the logs, similar to `tail -f`.
 1. `--match=text` can be used for filtering the log lines containing the text.
