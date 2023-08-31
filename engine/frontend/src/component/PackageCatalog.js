@@ -69,7 +69,7 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                 gap={2}
             >
                 <GridItem area={'option'} pt="1">
-                    <PackageCatalogOption />
+                    <PackageCatalogOption catalog={true}/>
                 </GridItem>
                 <GridItem area={'search'} m="10px">
                     <InputGroup>
