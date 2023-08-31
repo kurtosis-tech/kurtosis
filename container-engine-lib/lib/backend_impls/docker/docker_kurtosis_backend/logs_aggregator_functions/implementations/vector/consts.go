@@ -21,17 +21,18 @@ const (
 	fileSinkIdSuffix = "file"
 	fileTypeId       = "\"file\""
 
-	// We store log files in the volume per-enclave, per-service
+	// We instruct vector to store log files per-week (00-53), per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
 	// https://vector.dev/docs/reference/configuration/template-syntax/
-	uuidLogsFilepath = "\"" + logsStorageDirpath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
+	baseLogsFilepath = "\"" + logsStorageDirpath + "%U/"
 
+	uuidLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
 	// Right now, we store duplicate logs files by service name and service's shortened uuid
 	// This is to enable retrieving logs by name and short uuid after enclaves have been stopped
 	// As right now, when an enclave is stopped all identifier info is lost
 	// TODO: Find a better way to capture or persist identifier info without storing duplicate log files
-	nameLogsFilepath      = "\"" + logsStorageDirpath + "{{ enclave_uuid }}/{{ service_name }}.json\""
-	shortUUIDLogsFilepath = "\"" + logsStorageDirpath + "{{ enclave_uuid }}/{{ service_short_uuid }}.json\""
+	nameLogsFilepath      = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_name }}.json\""
+	shortUUIDLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_short_uuid }}.json\""
 
 	sourceConfigFileTemplateName = "srcVectorConfigFileTemplate"
 	sinkConfigFileTemplateName   = "sinkVectorConfigFileTemplate"
