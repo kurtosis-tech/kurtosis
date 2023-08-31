@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/stacktrace"
@@ -137,7 +138,7 @@ func runMain() error {
 	}
 
 	// osFs is a wrapper around disk
-	osFs := persistent_volume.NewOsVolumeFilesystem()
+	osFs := volume_filesystem.NewOsVolumeFilesystem()
 	logsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs)
 
 	go func() {

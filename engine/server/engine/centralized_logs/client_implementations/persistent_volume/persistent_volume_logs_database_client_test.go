@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/stretchr/testify/require"
@@ -16,6 +17,11 @@ import (
 )
 
 const (
+	// Location of logs on the filesystem of the engine
+	filetype = ".json"
+
+	maxNumLogsToReturn = 200
+
 	// We use this storage path for tests because fstest.MapFS doesn't like forward slashes
 	logsStorageDirpathForTests = "var/log/kurtosis/"
 
@@ -245,7 +251,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 
 	kurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 
-	mockedFs := NewMockedVolumeFilesystem(underlyingFs)
+	mockedFs := volume_filesystem.NewMockedVolumeFilesystem(underlyingFs)
 	logsDatabaseClient := NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, mockedFs)
 
 	userServiceLogsByUuidChan, errChan, receivedCancelCtxFunc, err := logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveUuid, userServiceUuids, logLinesFilters, shouldFollowLogs)

@@ -1,4 +1,4 @@
-package persistent_volume
+package volume_filesystem
 
 import (
 	"io"
