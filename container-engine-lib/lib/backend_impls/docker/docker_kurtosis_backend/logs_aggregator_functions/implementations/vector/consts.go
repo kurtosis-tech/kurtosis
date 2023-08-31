@@ -18,8 +18,8 @@ const (
 	fluentBitSourceType      = "\"fluent\""
 	fluentBitSourceIpAddress = "0.0.0.0"
 
-	fileSinkId = "\"file\""
-	fileTypeId = "\"file\""
+	fileSinkIdSuffix = "file"
+	fileTypeId       = "\"file\""
 
 	// We store log files in the volume per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
