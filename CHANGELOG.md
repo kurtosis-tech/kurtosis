@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.82.16](https://github.com/kurtosis-tech/kurtosis/compare/0.82.15...0.82.16) (2023-08-31)
+
+
+### Features
+
+* added description ([#1214](https://github.com/kurtosis-tech/kurtosis/issues/1214)) ([4a95802](https://github.com/kurtosis-tech/kurtosis/commit/4a95802a86c251d01846cc8350f0cf69ca20a412))
+
+
+### Bug Fixes
+
+* add create enclave name and production mode for enclaves ([#1211](https://github.com/kurtosis-tech/kurtosis/issues/1211)) ([2760f48](https://github.com/kurtosis-tech/kurtosis/commit/2760f486da3941953ef2bfa81bea3115d5a1caa7))
+* made forwarding efficient by reducing calls to Kubernetes ([#1200](https://github.com/kurtosis-tech/kurtosis/issues/1200)) ([4df6a1c](https://github.com/kurtosis-tech/kurtosis/commit/4df6a1c2cb12e0dd9e55dbc51d3c6c2d68917ffd))
+* Remove 'kurtosis version' depending on the engine ([#1207](https://github.com/kurtosis-tech/kurtosis/issues/1207)) ([ab7dc02](https://github.com/kurtosis-tech/kurtosis/commit/ab7dc027df3949f1479502c2697cc351e3341021)), closes [#1206](https://github.com/kurtosis-tech/kurtosis/issues/1206)
+
 ## [0.82.15](https://github.com/kurtosis-tech/kurtosis/compare/0.82.14...0.82.15) (2023-08-30)
 
 
