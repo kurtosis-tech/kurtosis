@@ -14,6 +14,7 @@ import {
 
 import { SearchIcon } from '@chakra-ui/icons'
 import PackageCatalogOption from "./PackageCatalogOption";
+import PackageCatalogMainComponent from "./PackageCatalogMainComponent";
 import { useNavigate } from "react-router";
 
 const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
@@ -53,6 +54,21 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
         setKurtosisPackages(filteredPackages)
     }
 
+    const renderKurtosisPackages = () => (
+        kurtosisPackages.map( (kurtosisPackage, index) => {
+            const bgcolor = (kurtosisPackage.name === chosenPackage.name) ? '#24BA27' : 'gray.300'
+            if ("name" in kurtosisPackage) {
+                return (
+                    <ListItem bg={bgcolor} key={index} onClick={() => selectPackage(kurtosisPackage)}>
+                        <Center h="70px" w="100%">
+                            <Text fontSize={"2xl"} color='blue.800' fontWeight={"bold"}> {kurtosisPackage.name} </Text>
+                        </Center>
+                    </ListItem> 
+                )
+            }
+        })
+    )
+
     return (
         <div className='w-screen'>
             <Grid
@@ -80,22 +96,13 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                     </InputGroup>
                 </GridItem>
                 <GridItem area={'main'} h="100%" overflowY={"scroll"}> 
-                    <List spacing={1} padding="10px" h="100%">
-                        {
-                            kurtosisPackages.map( (kurtosisPackage, index) => {
-                                const bgcolor = (kurtosisPackage.name === chosenPackage.name) ? '#24BA27' : 'gray.300'
-                                if ("name" in kurtosisPackage) {
-                                    return (
-                                        <ListItem bg={bgcolor} key={index} onClick={() => selectPackage(kurtosisPackage)}>
-                                            <Center h="70px" w="100%">
-                                                <Text fontSize={"2xl"} color='blue.800' fontWeight={"bold"}> {kurtosisPackage.name} </Text>
-                                            </Center>
-                                        </ListItem> 
-                                    )
-                                }
-                            })
-                        }
-                    </List>
+                    {
+                        "name" in chosenPackage ? 
+                            <PackageCatalogMainComponent renderKurtosisPackages={renderKurtosisPackages} selectedKurtosisPackage={chosenPackage}/>
+                        : <List spacing={1} padding="10px" h="100%">
+                            {renderKurtosisPackages()}
+                        </List>
+                    } 
                 </GridItem>
                 <GridItem area={'configure'} m="10px">
                     <Button bg='#24BA27' w="100%" isDisabled={Object.keys(chosenPackage).length === 0} onClick={handleConfigureButtonClick} >Configure >> </Button>
