@@ -61,7 +61,11 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while creating metrics client")
 	}
-	defer segmentMetricsClientCloser()
+	defer func() {
+		if err = segmentMetricsClientCloser(); err != nil {
+			logrus.Debugf("an error occurred while closing the metrics client:\n%v", err.Error())
+		}
+	}()
 
 	// We get validation for free by virtue of the KurtosisCommand framework
 	var didUserAcceptSendingMetrics bool
