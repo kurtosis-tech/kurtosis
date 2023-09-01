@@ -77,10 +77,14 @@ func (builtin *kurtosisPlanInstructionInternal) Execute(ctx context.Context) (*s
 	return &result, nil
 }
 
-func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other kurtosis_instruction.KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(otherKurtosisInstructionStr string, other kurtosis_instruction.KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	isAnAbortAllInstruction := builtin.capabilities.TryResolveWith(false, nil, enclaveComponents) == enclave_structure.InstructionIsNotResolvableAbort
 	if isAnAbortAllInstruction {
 		return enclave_structure.InstructionIsNotResolvableAbort
+	}
+
+	if otherKurtosisInstructionStr == "" {
+		return enclave_structure.InstructionIsUnknown
 	}
 
 	if other == nil {
@@ -92,7 +96,7 @@ func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other kurtosis_in
 		return enclave_structure.InstructionIsUnknown
 	}
 
-	instructionsAreEqual := builtin.String() == other.String()
+	instructionsAreEqual := builtin.String() == otherKurtosisInstructionStr
 	return builtin.capabilities.TryResolveWith(instructionsAreEqual, otherPlanInstruction.capabilities, enclaveComponents)
 }
 

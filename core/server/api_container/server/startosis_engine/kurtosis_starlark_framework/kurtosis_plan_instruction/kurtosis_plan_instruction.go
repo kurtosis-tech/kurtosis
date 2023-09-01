@@ -59,12 +59,12 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 		if builtin.instructionPlanMask.HasNext() {
 			_, scheduledInstructionPulledFromMaskMaybe = builtin.instructionPlanMask.Next()
 			if scheduledInstructionPulledFromMaskMaybe != nil {
-				instructionResolutionStatus = instructionWrapper.TryResolveWith(scheduledInstructionPulledFromMaskMaybe.GetInstruction(), builtin.enclaveComponents)
+				instructionResolutionStatus = instructionWrapper.TryResolveWith(scheduledInstructionPulledFromMaskMaybe.GetInstructionStr(), scheduledInstructionPulledFromMaskMaybe.GetInstruction(), builtin.enclaveComponents)
 			} else {
-				instructionResolutionStatus = instructionWrapper.TryResolveWith(nil, builtin.enclaveComponents)
+				instructionResolutionStatus = instructionWrapper.TryResolveWith("", nil, builtin.enclaveComponents)
 			}
 		} else {
-			instructionResolutionStatus = instructionWrapper.TryResolveWith(nil, builtin.enclaveComponents)
+			instructionResolutionStatus = instructionWrapper.TryResolveWith("", nil, builtin.enclaveComponents)
 		}
 
 		switch instructionResolutionStatus {
@@ -74,14 +74,14 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 			return scheduledInstructionPulledFromMaskMaybe.GetReturnedValue(), nil
 		case enclave_structure.InstructionIsUpdate:
 			// otherwise add the instruction as a new one to the plan and return its own returned value
-			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
+			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, instructionWrapper.capabilities, returnedFutureValue); err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to add Kurtosis instruction '%s' at position '%s' to the plan currently being assembled. This is a Kurtosis internal bug",
 					instructionWrapper.String(),
 					instructionWrapper.GetPositionInOriginalScript().String())
 			}
 			return returnedFutureValue, nil
 		case enclave_structure.InstructionIsUnknown:
-			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
+			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, instructionWrapper.capabilities, returnedFutureValue); err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err,
 					"Unable to add Kurtosis instruction '%s' at position '%s' to the plan currently being assembled. This is a Kurtosis internal bug",
 					instructionWrapper.String(),
@@ -98,7 +98,7 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 			builtin.instructionPlanMask.MarkAsInvalid()
 			logrus.Debugf("Marking the plan as invalid as instruction '%s' had the following resolution status: '%s'",
 				instructionWrapper.String(), instructionResolutionStatus)
-			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
+			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, instructionWrapper.capabilities, returnedFutureValue); err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err,
 					"Unable to add Kurtosis instruction '%s' at position '%s' to the plan currently being assembled. This is a Kurtosis internal bug",
 					instructionWrapper.String(),
