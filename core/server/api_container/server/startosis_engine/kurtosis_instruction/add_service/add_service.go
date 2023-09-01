@@ -86,6 +86,9 @@ type AddServiceCapabilities struct {
 	resultUuid string
 }
 
+//TODO lo único que se me ocurre es que haya un método que retorne las storableCapabilities en un formato que se puedan guardar
+//TODO y que luego haya otro metodo que tome ese formato y lo devuelva en el formato que queremos comparar
+
 func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
