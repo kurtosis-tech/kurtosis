@@ -24,13 +24,14 @@ const PackageCatalogMainComponent = ({renderKurtosisPackages, selectedKurtosisPa
                         {renderKurtosisPackages()}
                     </List>
                 </GridItem>
+                <GridItem area={'description'} h="100%" overflowY={"scroll"} className="bg-white"> 
                 {
                     selectedKurtosisPackage.description ? (
-                        <GridItem area={'description'} h="100%" overflowY={"scroll"} bg="red.200"> 
                             <PackageCatalogDescription content={selectedKurtosisPackage.description}/>
-                        </GridItem>
                     ) : <PackageCatalogDescription content={`No Description found for: ${selectedKurtosisPackage.name}`}/>
-                }
+                } 
+                </GridItem>
+                
             </Grid>
     )
 }
