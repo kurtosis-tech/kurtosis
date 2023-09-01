@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
@@ -54,6 +55,13 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for non-greedy arg '%v' but none was found; this is a bug in Kurtosis!", enableDisableStatus)
 	}
+
+	// this client is used when we go from enabled to disabled, the client we get would be segment client
+	enabledToDisabledMetricsClient, enabledToDisabledMetricsClientCloser, err := metrics_client_factory.GetMetricsClient()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating metrics client")
+	}
+	defer enabledToDisabledMetricsClientCloser()
 
 	// We get validation for free by virtue of the KurtosisCommand framework
 	var didUserAcceptSendingMetrics bool
@@ -106,6 +114,20 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 
 	if err := kurtosisConfigStore.SetConfig(kurtosisConfig); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting analytics configuration")
+	}
+
+	if didUserAcceptSendingMetrics {
+		// this client is used when we go from enabled to disabled, the client we get would be segment client
+		disabledToEnabledMetricsClient, disabledToEnabledMetricsClientCloser, err := metrics_client_factory.GetMetricsClient()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while creating metrics client")
+		}
+		defer disabledToEnabledMetricsClientCloser()
+		if err = disabledToEnabledMetricsClient.TrackKurtosisAnalyticsToggle(didUserAcceptSendingMetrics); err != nil {
+			logrus.Debugf("an error occurred while logging metrics toggle event:\n%s", err)
+		}
+	} else {
+		enabledToDisabledMetricsClient.TrackKurtosisAnalyticsToggle(didUserAcceptSendingMetrics)
 	}
 
 	logrus.Infof("Analytics tracking is now %vd", didUserAcceptSendingMetricsStr)
