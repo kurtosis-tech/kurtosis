@@ -8,6 +8,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 )
 
+// This interface is for implementing new algorithms for streaming logs from an underlying Volume filesystem
+// For ex. if the schema for storing logs files changes, a new StreamLogsStrategy should be implemented
+// to pull from logs files based on that schema
 type StreamLogsStrategy interface {
 	StreamLogs(
 		ctx context.Context,

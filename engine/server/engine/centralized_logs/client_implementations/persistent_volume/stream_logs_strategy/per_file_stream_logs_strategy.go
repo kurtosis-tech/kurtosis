@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
@@ -16,20 +17,7 @@ import (
 	"strings"
 )
 
-const (
-	// Location of logs on the filesystem of the engine
-	logsStorageDirpath = "/var/log/kurtosis/"
-	filetype           = ".json"
-
-	newlineRune = '\n'
-
-	logLabel = "log"
-
-	maxNumLogsToReturn = 200
-
-	endOfJsonLine = "}\n"
-)
-
+// This strategy pulls logs from filesytsem where there is a log file per enclave, per service
 type PerFileStreamLogsStrategy struct {
 }
 
@@ -46,7 +34,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 	shouldFollowLogs bool,
 ) {
 	// logs are stored per enclave id, per service uuid, eg. <base path>/123440231421/54325342w2341.json
-	logsFilepath := fmt.Sprintf("%s%s/%s%s", logsStorageDirpath, string(enclaveUuid), string(serviceUuid), filetype)
+	logsFilepath := fmt.Sprintf("%s%s/%s%s", consts.LogsStorageDirpath, string(enclaveUuid), string(serviceUuid), consts.Filetype)
 	logsFile, err := fs.Open(logsFilepath)
 	if err != nil {
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred opening the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
@@ -55,7 +43,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 	logsReader := bufio.NewReader(logsFile)
 
 	numLogsReturned := 0
-	for shouldFollowLogs || numLogsReturned < maxNumLogsToReturn {
+	for shouldFollowLogs || numLogsReturned < consts.MaxNumLogsToReturn {
 		select {
 		case <-ctx.Done():
 			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v' in enclave '%v", serviceUuid, enclaveUuid)
@@ -66,14 +54,14 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 			var jsonLogNewStr string
 
 			for {
-				jsonLogNewStr, readErr = logsReader.ReadString(newlineRune)
+				jsonLogNewStr, readErr = logsReader.ReadString(consts.NewLineRune)
 				jsonLogStr = jsonLogStr + jsonLogNewStr
 				// check if it's an uncompleted Json line
 				if jsonLogNewStr != "" && len(jsonLogNewStr) > 2 {
 					jsonLogNewStrLastChars := jsonLogNewStr[len(jsonLogNewStr)-2:]
-					if jsonLogNewStrLastChars != endOfJsonLine {
+					if jsonLogNewStrLastChars != consts.EndOfJsonLine {
 						// removes the newline char from the previous part of the json line
-						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(newlineRune))
+						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(consts.NewLineRune))
 						continue
 					}
 				}
@@ -105,7 +93,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 			}
 
 			// Then we extract the actual log message using the "log" field
-			logLineStr, found := jsonLog[logLabel]
+			logLineStr, found := jsonLog[consts.LogLabel]
 			if !found {
 				streamErrChan <- stacktrace.NewError("An error retrieving the log field from logs json file. This is a bug in Kurtosis.")
 				return
@@ -131,5 +119,4 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 			numLogsReturned++
 		}
 	}
-
 }

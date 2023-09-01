@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
@@ -17,11 +18,6 @@ import (
 )
 
 const (
-	// Location of logs on the filesystem of the engine
-	filetype = ".json"
-
-	maxNumLogsToReturn = 200
-
 	// We use this storage path for tests because fstest.MapFS doesn't like forward slashes
 	logsStorageDirpathForTests = "var/log/kurtosis/"
 
@@ -41,14 +37,12 @@ const (
 	logLine7  = "{\"log\":\"User service started\"}"
 	logLine8  = "{\"log\":\"The data have being loaded\"}"
 
-	firstFilterText           = "feature"
-	secondFilterText          = "Files"
-	notFoundedFilterText      = "it shouldn't be found in the log lines"
-	firstMatchRegexFilterStr  = "Starting.*idempotently'"
-	secondMatchRegexFilterStr = "[S].*manager"
+	firstFilterText          = "feature"
+	secondFilterText         = "Files"
+	notFoundedFilterText     = "it shouldn't be found in the log lines"
+	firstMatchRegexFilterStr = "Starting.*idempotently'"
 
 	testTimeOut     = 2 * time.Second
-	followLogs      = true
 	doNotFollowLogs = false
 )
 
@@ -138,7 +132,7 @@ func TestStreamUserServiceLogs_NoLogsFromPersistentVolume(t *testing.T) {
 }
 
 func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing.T) {
-	expectedAmountLogLines := maxNumLogsToReturn
+	expectedAmountLogLines := consts.MaxNumLogsToReturn
 
 	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
 		testUserService1Uuid: expectedAmountLogLines,
@@ -156,7 +150,7 @@ func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing
 
 	logLinesStr := strings.Join(logLines, "\n")
 
-	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, string(enclaveUuid), testUserService1Uuid, filetype)
+	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, string(enclaveUuid), testUserService1Uuid, consts.Filetype)
 
 	underlyingFs := &fstest.MapFS{
 		file1: {
@@ -198,7 +192,7 @@ func TestStreamUserServiceLogs_EmptyLogLines(t *testing.T) {
 
 	logLinesStr := ""
 
-	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, string(enclaveUuid), testUserService1Uuid, filetype)
+	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, string(enclaveUuid), testUserService1Uuid, consts.Filetype)
 
 	underlyingFs := &fstest.MapFS{
 		file1: {
@@ -312,9 +306,9 @@ func createFullUnderlyingMapFilesystem() *fstest.MapFS {
 
 	logLinesStr := strings.Join(logLines, "\n")
 
-	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService1Uuid, filetype)
-	file2 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService2Uuid, filetype)
-	file3 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService3Uuid, filetype)
+	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService1Uuid, consts.Filetype)
+	file2 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService2Uuid, consts.Filetype)
+	file3 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService3Uuid, consts.Filetype)
 
 	mapFs := &fstest.MapFS{
 		file1: {
@@ -332,9 +326,9 @@ func createFullUnderlyingMapFilesystem() *fstest.MapFS {
 }
 
 func createEmptyUnderlyingMapFilesystem() *fstest.MapFS {
-	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService1Uuid, filetype)
-	file2 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService2Uuid, filetype)
-	file3 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService3Uuid, filetype)
+	file1 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService1Uuid, consts.Filetype)
+	file2 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService2Uuid, consts.Filetype)
+	file3 := fmt.Sprintf("%s%s/%s%s", logsStorageDirpathForTests, testEnclaveUuid, testUserService3Uuid, consts.Filetype)
 
 	mapFs := &fstest.MapFS{
 		file1: {
