@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_client_factory"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
@@ -54,6 +55,17 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for non-greedy arg '%v' but none was found; this is a bug in Kurtosis!", enableDisableStatus)
 	}
+
+	// this client will send events regardless of the current metrics election
+	segmentMetricsClient, segmentMetricsClientCloser, err := metrics_client_factory.GetSegmentClient()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating metrics client")
+	}
+	defer func() {
+		if err = segmentMetricsClientCloser(); err != nil {
+			logrus.Debugf("an error occurred while closing the metrics client:\n%v", err.Error())
+		}
+	}()
 
 	// We get validation for free by virtue of the KurtosisCommand framework
 	var didUserAcceptSendingMetrics bool
@@ -106,6 +118,10 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 
 	if err := kurtosisConfigStore.SetConfig(kurtosisConfig); err != nil {
 		return stacktrace.Propagate(err, "An error occurred setting analytics configuration")
+	}
+
+	if err = segmentMetricsClient.TrackKurtosisAnalyticsToggle(didUserAcceptSendingMetrics); err != nil {
+		logrus.Debugf("an error occurred while trackikng the kurtosis analytics toggle event:%v\n", err.Error())
 	}
 
 	logrus.Infof("Analytics tracking is now %vd", didUserAcceptSendingMetricsStr)
