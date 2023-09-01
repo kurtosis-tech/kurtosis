@@ -194,7 +194,9 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	instructionResult := strings.Builder{}
 	instructionResult.WriteString(fmt.Sprintf("Successfully added the following '%d' services:", len(startedServices)))
 	for serviceName, serviceObj := range startedAndUpdatedService {
-		fillAddServiceReturnValueWithRuntimeValues(serviceObj, builtin.resultUuids[serviceName], builtin.runtimeValueStore)
+		if err := fillAddServiceReturnValueWithRuntimeValues(serviceObj, builtin.resultUuids[serviceName], builtin.runtimeValueStore); err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred while adding service return values with result key UUID '%s'", builtin.resultUuids[serviceName])
+		}
 		instructionResult.WriteString(fmt.Sprintf("\n  Service '%s' added with UUID '%s'", serviceName, serviceObj.GetRegistration().GetUUID()))
 	}
 	shouldDeleteAllStartedServices = false

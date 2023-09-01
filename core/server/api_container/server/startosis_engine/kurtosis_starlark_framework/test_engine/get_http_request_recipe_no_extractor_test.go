@@ -22,7 +22,9 @@ type getHttpRequestRecipeNoExtractorTestCase struct {
 }
 
 func newGetHttpRequestRecipeNoExtractorTestCase(t *testing.T) *getHttpRequestRecipeNoExtractorTestCase {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	enclaveDb := getEnclaveDBForTest(t)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	require.NoError(t, err)
 
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	serviceNetwork.EXPECT().HttpRequestService(

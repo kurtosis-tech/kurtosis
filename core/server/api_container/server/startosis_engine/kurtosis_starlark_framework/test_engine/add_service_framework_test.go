@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -14,7 +15,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
+	"os"
 	"testing"
 )
 
@@ -34,7 +37,9 @@ func (t *addServiceTestCase) GetId() string {
 
 func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	enclaveDb := getEnclaveDBForTest(t.T)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	require.NoError(t, err)
 
 	serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
 	serviceNetwork.EXPECT().AddService(
@@ -87,4 +92,21 @@ func (t *addServiceTestCase) Assert(interpretationResult starlark.Value, executi
 
 	expectedExecutionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", TestServiceName, TestServiceUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
+}
+
+func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer func() {
+		err = os.Remove(file.Name())
+		require.NoError(t, err)
+	}()
+
+	require.NoError(t, err)
+	db, err := bolt.Open(file.Name(), 0666, nil)
+	require.NoError(t, err)
+	enclaveDb := &enclave_db.EnclaveDB{
+		DB: db,
+	}
+
+	return enclaveDb
 }
