@@ -56,12 +56,12 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "Expected a value for non-greedy arg '%v' but none was found; this is a bug in Kurtosis!", enableDisableStatus)
 	}
 
-	// this client is used when we go from enabled to disabled, the client we get would be segment client
-	enabledToDisabledMetricsClient, enabledToDisabledMetricsClientCloser, err := metrics_client_factory.GetMetricsClient()
+	// this client will send events regardless of the current metrics election
+	segmentMetricsClient, segmentMetricsClientCloser, err := metrics_client_factory.GetMetricsClient()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while creating metrics client")
 	}
-	defer enabledToDisabledMetricsClientCloser()
+	defer segmentMetricsClientCloser()
 
 	// We get validation for free by virtue of the KurtosisCommand framework
 	var didUserAcceptSendingMetrics bool
@@ -116,18 +116,8 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "An error occurred setting analytics configuration")
 	}
 
-	if didUserAcceptSendingMetrics {
-		// this client is used when we go from enabled to disabled, the client we get would be segment client
-		disabledToEnabledMetricsClient, disabledToEnabledMetricsClientCloser, err := metrics_client_factory.GetMetricsClient()
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred while creating metrics client")
-		}
-		defer disabledToEnabledMetricsClientCloser()
-		if err = disabledToEnabledMetricsClient.TrackKurtosisAnalyticsToggle(didUserAcceptSendingMetrics); err != nil {
-			logrus.Debugf("an error occurred while logging metrics toggle event:\n%s", err)
-		}
-	} else {
-		enabledToDisabledMetricsClient.TrackKurtosisAnalyticsToggle(didUserAcceptSendingMetrics)
+	if err = segmentMetricsClient.TrackKurtosisAnalyticsToggle(didUserAcceptSendingMetrics); err != nil {
+		logrus.Debugf("an error occurred while trackikng the kurtosis analytics toggle event:%v\n", err.Error())
 	}
 
 	logrus.Infof("Analytics tracking is now %vd", didUserAcceptSendingMetricsStr)
