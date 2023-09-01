@@ -1,5 +1,55 @@
 # Changelog
 
+## [0.82.18](https://github.com/kurtosis-tech/kurtosis/compare/0.82.17...0.82.18) (2023-09-01)
+
+
+### Bug Fixes
+
+* markdown bug ([#1220](https://github.com/kurtosis-tech/kurtosis/issues/1220)) ([2ce4823](https://github.com/kurtosis-tech/kurtosis/commit/2ce4823718033d0c1c61ab1567107b79de039245))
+
+## [0.82.17](https://github.com/kurtosis-tech/kurtosis/compare/0.82.16...0.82.17) (2023-09-01)
+
+
+### Features
+
+* enable retrieving logs from services in stopped enclaves ([#1213](https://github.com/kurtosis-tech/kurtosis/issues/1213)) ([83c269c](https://github.com/kurtosis-tech/kurtosis/commit/83c269c4a24e377f5446dcda68f0fa4acd4ef7ff))
+* Pass enclave name to Starlark global `kurtosis` module ([#1216](https://github.com/kurtosis-tech/kurtosis/issues/1216)) ([c5f2c97](https://github.com/kurtosis-tech/kurtosis/commit/c5f2c97bb349e114e4e7235ce839b1fb9aa00161))
+* Persist runtime value store ([#1170](https://github.com/kurtosis-tech/kurtosis/issues/1170)) ([cfec9b3](https://github.com/kurtosis-tech/kurtosis/commit/cfec9b3028d9349cf2b102cb1818cf5e2a41f047))
+* track the analytics toggle event ([#1217](https://github.com/kurtosis-tech/kurtosis/issues/1217)) ([10c461f](https://github.com/kurtosis-tech/kurtosis/commit/10c461f7b546cc260540725a64e624d9f99b04f1))
+
+## [0.82.16](https://github.com/kurtosis-tech/kurtosis/compare/0.82.15...0.82.16) (2023-08-31)
+
+
+### Features
+
+* added description ([#1214](https://github.com/kurtosis-tech/kurtosis/issues/1214)) ([4a95802](https://github.com/kurtosis-tech/kurtosis/commit/4a95802a86c251d01846cc8350f0cf69ca20a412))
+
+
+### Bug Fixes
+
+* add create enclave name and production mode for enclaves ([#1211](https://github.com/kurtosis-tech/kurtosis/issues/1211)) ([2760f48](https://github.com/kurtosis-tech/kurtosis/commit/2760f486da3941953ef2bfa81bea3115d5a1caa7))
+* made forwarding efficient by reducing calls to Kubernetes ([#1200](https://github.com/kurtosis-tech/kurtosis/issues/1200)) ([4df6a1c](https://github.com/kurtosis-tech/kurtosis/commit/4df6a1c2cb12e0dd9e55dbc51d3c6c2d68917ffd))
+* Remove 'kurtosis version' depending on the engine ([#1207](https://github.com/kurtosis-tech/kurtosis/issues/1207)) ([ab7dc02](https://github.com/kurtosis-tech/kurtosis/commit/ab7dc027df3949f1479502c2697cc351e3341021)), closes [#1206](https://github.com/kurtosis-tech/kurtosis/issues/1206)
+
+## [0.82.15](https://github.com/kurtosis-tech/kurtosis/compare/0.82.14...0.82.15) (2023-08-30)
+
+
+### Bug Fixes
+
+* cluster set doesnt get into a weird state of no cluster being set ([#1055](https://github.com/kurtosis-tech/kurtosis/issues/1055)) ([c647035](https://github.com/kurtosis-tech/kurtosis/commit/c6470356e2939d4834d773a085e4b98c1cd44e7f))
+* enclave name validation to support valid DNS-1035 label rules ([#1204](https://github.com/kurtosis-tech/kurtosis/issues/1204)) ([74845a8](https://github.com/kurtosis-tech/kurtosis/commit/74845a85e627acc5ffc54162973457869fcc0887))
+* make test enclave creation support DNS label rules ([#1202](https://github.com/kurtosis-tech/kurtosis/issues/1202)) ([df61ecc](https://github.com/kurtosis-tech/kurtosis/commit/df61ecc783ade430a434fd129a42c54d1d742263))
+* Point to the engine restart command as part of the context switch failure remediation to not conflict with lower level commands ([#1191](https://github.com/kurtosis-tech/kurtosis/issues/1191)) ([f83e513](https://github.com/kurtosis-tech/kurtosis/commit/f83e513a1f2b0e136d4f61e92d4189125f900fd4))
+* removed the flaky tests ([#1205](https://github.com/kurtosis-tech/kurtosis/issues/1205)) ([b990674](https://github.com/kurtosis-tech/kurtosis/commit/b990674e20696023c22d1e37fa119bce480ce556))
+* this pr fixes the search issue. ([#1201](https://github.com/kurtosis-tech/kurtosis/issues/1201)) ([2a17b1b](https://github.com/kurtosis-tech/kurtosis/commit/2a17b1badd413bee892ff89d2c7697a2c1b32213))
+
+## [0.82.14](https://github.com/kurtosis-tech/kurtosis/compare/0.82.13...0.82.14) (2023-08-29)
+
+
+### Features
+
+* add creation dialog 2 ([#1194](https://github.com/kurtosis-tech/kurtosis/issues/1194)) ([b586a8a](https://github.com/kurtosis-tech/kurtosis/commit/b586a8a0aa5f84b2f6d5f8bff3079135d4ffde2e))
+
 ## [0.82.13](https://github.com/kurtosis-tech/kurtosis/compare/0.82.12...0.82.13) (2023-08-29)
 
 
