@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
@@ -15,6 +16,8 @@ import (
 )
 
 const (
+	enclaveUuid = enclave.EnclaveUUID("enclave-uuid")
+
 	noInputParams = "{}"
 )
 
@@ -31,6 +34,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	serviceNetwork.EXPECT().GetApiContainerInfo().Maybe().Return(
 		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0"),
 	)
+	serviceNetwork.EXPECT().GetEnclaveUuid().Maybe().Return(enclaveUuid)
 	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, "")
 }
 

@@ -5,8 +5,10 @@ package service_network
 import (
 	context "context"
 
-	exec_result "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	enclave "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	enclave_data_directory "github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+
+	exec_result "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 
 	http "net/http"
 
@@ -301,6 +303,47 @@ func (_c *MockServiceNetwork_GetApiContainerInfo_Call) Return(_a0 *ApiContainerI
 }
 
 func (_c *MockServiceNetwork_GetApiContainerInfo_Call) RunAndReturn(run func() *ApiContainerInfo) *MockServiceNetwork_GetApiContainerInfo_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetEnclaveUuid provides a mock function with given fields:
+func (_m *MockServiceNetwork) GetEnclaveUuid() enclave.EnclaveUUID {
+	ret := _m.Called()
+
+	var r0 enclave.EnclaveUUID
+	if rf, ok := ret.Get(0).(func() enclave.EnclaveUUID); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(enclave.EnclaveUUID)
+	}
+
+	return r0
+}
+
+// MockServiceNetwork_GetEnclaveUuid_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetEnclaveUuid'
+type MockServiceNetwork_GetEnclaveUuid_Call struct {
+	*mock.Call
+}
+
+// GetEnclaveUuid is a helper method to define mock.On call
+func (_e *MockServiceNetwork_Expecter) GetEnclaveUuid() *MockServiceNetwork_GetEnclaveUuid_Call {
+	return &MockServiceNetwork_GetEnclaveUuid_Call{Call: _e.mock.On("GetEnclaveUuid")}
+}
+
+func (_c *MockServiceNetwork_GetEnclaveUuid_Call) Run(run func()) *MockServiceNetwork_GetEnclaveUuid_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockServiceNetwork_GetEnclaveUuid_Call) Return(_a0 enclave.EnclaveUUID) *MockServiceNetwork_GetEnclaveUuid_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockServiceNetwork_GetEnclaveUuid_Call) RunAndReturn(run func() enclave.EnclaveUUID) *MockServiceNetwork_GetEnclaveUuid_Call {
 	_c.Call.Return(run)
 	return _c
 }
