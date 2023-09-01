@@ -92,7 +92,7 @@ You will use the above file by passing it in at runtime, effectively enabling yo
 #### Launch the network with `full MEV`
 Great! You're now ready to bring up your own network. Simply run:
 ```bash
-TODO: FIX kurtosis run --enclave eth-network github.com/kurtosis-tech/eth2-package "$(cat ~/eth2-package-params.json)"
+kurtosis run --enclave eth-network github.com/kurtosis-tech/eth2-package "$(cat ~/eth2-package-params.json)"
 ```
 Kurtosis will then begin to spin up your private Ethereum testnet with `full MEV`. You will see a stream of text get printed in your terminal as Kurtosis begins to generate genesis files, configure the Ethereum nodes, launch a Grafana and Prometheus instance, and bootstrap the network together with the full suite of MEV products from Flashbots. In ~2 minutes, you should see the following output at the end:
 ```bash
