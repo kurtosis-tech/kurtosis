@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.82.17](https://github.com/kurtosis-tech/kurtosis/compare/0.82.16...0.82.17) (2023-09-01)
+
+
+### Features
+
+* enable retrieving logs from services in stopped enclaves ([#1213](https://github.com/kurtosis-tech/kurtosis/issues/1213)) ([83c269c](https://github.com/kurtosis-tech/kurtosis/commit/83c269c4a24e377f5446dcda68f0fa4acd4ef7ff))
+* Pass enclave name to Starlark global `kurtosis` module ([#1216](https://github.com/kurtosis-tech/kurtosis/issues/1216)) ([c5f2c97](https://github.com/kurtosis-tech/kurtosis/commit/c5f2c97bb349e114e4e7235ce839b1fb9aa00161))
+* Persist runtime value store ([#1170](https://github.com/kurtosis-tech/kurtosis/issues/1170)) ([cfec9b3](https://github.com/kurtosis-tech/kurtosis/commit/cfec9b3028d9349cf2b102cb1818cf5e2a41f047))
+* track the analytics toggle event ([#1217](https://github.com/kurtosis-tech/kurtosis/issues/1217)) ([10c461f](https://github.com/kurtosis-tech/kurtosis/commit/10c461f7b546cc260540725a64e624d9f99b04f1))
+
 ## [0.82.16](https://github.com/kurtosis-tech/kurtosis/compare/0.82.15...0.82.16) (2023-08-31)
 
 
