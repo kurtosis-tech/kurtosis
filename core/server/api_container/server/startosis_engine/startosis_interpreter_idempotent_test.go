@@ -29,7 +29,10 @@ type StartosisInterpreterIdempotentTestSuite struct {
 
 func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	enclaveDb := getEnclaveDBForTest(suite.T())
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	require.NoError(suite.T(), err)
+
 	serviceNetwork := service_network.NewMockServiceNetwork(suite.T())
 	serviceNetwork.EXPECT().GetApiContainerInfo().Maybe().Return(
 		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0"),

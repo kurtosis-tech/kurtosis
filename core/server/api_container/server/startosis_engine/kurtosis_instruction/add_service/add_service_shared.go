@@ -24,11 +24,14 @@ const (
 	hostnameRuntimeValue  = "hostname"
 )
 
-func fillAddServiceReturnValueWithRuntimeValues(service *service.Service, resultUuid string, runtimeValueStore *runtime_value_store.RuntimeValueStore) {
-	runtimeValueStore.SetValue(resultUuid, map[string]starlark.Comparable{
+func fillAddServiceReturnValueWithRuntimeValues(service *service.Service, resultUuid string, runtimeValueStore *runtime_value_store.RuntimeValueStore) error {
+	if err := runtimeValueStore.SetValue(resultUuid, map[string]starlark.Comparable{
 		ipAddressRuntimeValue: starlark.String(service.GetRegistration().GetPrivateIP().String()),
 		hostnameRuntimeValue:  starlark.String(service.GetRegistration().GetHostname()),
-	})
+	}); err != nil {
+		return stacktrace.Propagate(err, "An error occurred setting value with key '%s' in the runtime value store", resultUuid)
+	}
+	return nil
 }
 
 func makeAddServiceInterpretationReturnValue(serviceName starlark.String, serviceConfig *service.ServiceConfig, resultUuid string) (*kurtosis_types.Service, *startosis_errors.InterpretationError) {
