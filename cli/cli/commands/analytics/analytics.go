@@ -57,7 +57,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	}
 
 	// this client will send events regardless of the current metrics election
-	segmentMetricsClient, segmentMetricsClientCloser, err := metrics_client_factory.GetMetricsClient()
+	segmentMetricsClient, segmentMetricsClientCloser, err := metrics_client_factory.GetSegmentClient()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while creating metrics client")
 	}
