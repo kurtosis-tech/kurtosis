@@ -129,7 +129,7 @@ func streamServiceLogLines(
 	shouldFollowLogs bool,
 ) {
 	defer wgSenders.Done()
-	streamStrategy := stream_logs_strategy.PerFileStreamLogsStrategy{}
+	streamStrategy := stream_logs_strategy.PerWeekStreamLogsStrategy{}
 	streamStrategy.StreamLogs(
 		ctx,
 		fs,
