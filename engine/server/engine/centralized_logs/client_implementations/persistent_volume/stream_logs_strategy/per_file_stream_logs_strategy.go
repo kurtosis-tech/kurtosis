@@ -21,6 +21,10 @@ import (
 type PerFileStreamLogsStrategy struct {
 }
 
+func NewPerFileStreamLogsStrategy() *PerFileStreamLogsStrategy {
+	return &PerFileStreamLogsStrategy{}
+}
+
 type JsonLog map[string]string
 
 func (strategy *PerFileStreamLogsStrategy) StreamLogs(

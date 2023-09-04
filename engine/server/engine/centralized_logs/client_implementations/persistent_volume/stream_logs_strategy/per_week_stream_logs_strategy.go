@@ -13,10 +13,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"golang.org/x/exp/slices"
 	"io"
 	"strconv"
 	"strings"
-	"time"
 )
 
 const (
@@ -34,6 +34,14 @@ const (
 // [.../28/d3e8832d671f/61830789f03a.json] is the file containing logs from service with uuid 61830789f03a, in enclave with uuid d3e8832d671f,
 // in the 28th week of the current year
 type PerWeekStreamLogsStrategy struct {
+	// Current week of the year based in range 00-53
+	currentWeek int
+}
+
+func NewPerWeekStreamLogsStrategy(currentWeek int) *PerWeekStreamLogsStrategy {
+	return &PerWeekStreamLogsStrategy{
+		currentWeek: currentWeek,
+	}
 }
 
 func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
@@ -46,7 +54,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
 ) {
-	paths := getRetainedLogsFilePaths(fs, defaultRetentionPeriodInWeeks, getCurrentWeek(), string(enclaveUuid), string(serviceUuid))
+	paths := getRetainedLogsFilePaths(fs, defaultRetentionPeriodInWeeks, strategy.currentWeek, string(enclaveUuid), string(serviceUuid))
 	if len(paths) == 0 {
 		streamErrChan <- stacktrace.NewError(
 			`No logs file paths for service '%v' in enclave '%v' were found. 
@@ -90,6 +98,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			var err error
 			var readErr error
 			var jsonLogNewStr string
+			var shouldReturnAfterStreamingLastLine = false
 
 			for {
 				jsonLogNewStr, readErr = logsReader.ReadString(consts.NewLineRune)
@@ -109,12 +118,16 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 					}
 					// exiting stream
 					logrus.Debugf("EOF error returned when reading logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
-					return
+					if jsonLogStr != "" {
+						shouldReturnAfterStreamingLastLine = true
+					} else {
+						return
+					}
 				}
 				break
 			}
-			if readErr != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred reading the logs file for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
+			if readErr != nil && !errors.Is(readErr, io.EOF) {
+				streamErrChan <- stacktrace.Propagate(readErr, "An error occurred reading the logs file for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 				return
 			}
 
@@ -155,6 +168,9 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			}
 			logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
 			numLogsReturned++
+			if shouldReturnAfterStreamingLastLine {
+				return
+			}
 		}
 	}
 }
@@ -164,14 +180,16 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 // Notes:
 // - File paths are of the format '/week/enclave uuid/service uuid.json' where 'week' is %W strftime specifier
 // - The +1 is because we retain an extra week of logs compared to what we promise to retain for safety.
-// - The list of file paths is returned in order of most recent logs to the oldest logs e.g. [ 4/80124/1234.json, /3/801234/1234.json, ...]
-// - If a file path does not exist, the function with exits and returns whatever file paths were found.
+// - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 3/80124/1234.json, /4/801234/1234.json, ...]
+// - If a file path does not exist, the function with exits and returns whatever file paths were found
 func getRetainedLogsFilePaths(
 	filesystem volume_filesystem.VolumeFilesystem,
 	retentionPeriodInWeeks int,
 	currentWeek int,
 	enclaveUuid, serviceUuid string) []string {
 	paths := []string{}
+
+	// get log file paths as far back as they exist
 	for i := 0; i < (retentionPeriodInWeeks + 1); i++ {
 		diff := currentWeek - i
 		var pathWeekStr string
@@ -186,10 +204,9 @@ func getRetainedLogsFilePaths(
 		}
 		paths = append(paths, filePathStr)
 	}
-	return paths
-}
 
-func getCurrentWeek() int {
-	_, week := time.Now().UTC().ISOWeek()
-	return week
+	// reverse for oldest to most recent
+	slices.Reverse(paths)
+
+	return paths
 }

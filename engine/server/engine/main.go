@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
@@ -139,7 +140,9 @@ func runMain() error {
 
 	// osFs is a wrapper around disk
 	osFs := volume_filesystem.NewOsVolumeFilesystem()
-	logsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs)
+	// pulls logs /per enclave/per service id
+	streamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
+	logsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, streamStrategy)
 
 	go func() {
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))

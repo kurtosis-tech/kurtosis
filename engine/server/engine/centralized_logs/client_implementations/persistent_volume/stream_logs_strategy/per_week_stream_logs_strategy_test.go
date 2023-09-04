@@ -51,11 +51,11 @@ func TestGetRetainedLogsFilePaths(t *testing.T) {
 	currentWeek := 17
 
 	expectedLogFilePaths := []string{
-		week17filepath,
-		week16filepath,
-		week15filepath,
-		week14filepath,
 		week13filepath,
+		week14filepath,
+		week15filepath,
+		week16filepath,
+		week17filepath,
 	}
 	logFilePaths := getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, currentWeek, testEnclaveUuid, testUserService1Uuid)
 
@@ -95,11 +95,11 @@ func TestGetRetainedLogsFilePathsAcrossNewYear(t *testing.T) {
 	currentWeek := 2
 
 	expectedLogFilePaths := []string{
-		week2filepath,
-		week1filepath,
-		week0filepath,
-		week53filepath,
 		week52filepath,
+		week53filepath,
+		week0filepath,
+		week1filepath,
+		week2filepath,
 	}
 
 	logFilePaths := getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, currentWeek, testEnclaveUuid, testUserService1Uuid)
@@ -133,9 +133,9 @@ func TestGetRetainedLogsFilePathsWithDiffRetentionPeriod(t *testing.T) {
 	retentionPeriod := 2
 
 	expectedLogFilePaths := []string{
-		week2filepath,
-		week1filepath,
 		week0filepath,
+		week1filepath,
+		week2filepath,
 	}
 	logFilePaths := getRetainedLogsFilePaths(filesystem, retentionPeriod, currentWeek, testEnclaveUuid, testUserService1Uuid)
 

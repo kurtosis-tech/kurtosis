@@ -21,12 +21,19 @@ type persistentVolumeLogsDatabaseClient struct {
 	kurtosisBackend backend_interface.KurtosisBackend
 
 	filesystem volume_filesystem.VolumeFilesystem
+
+	streamStrategy stream_logs_strategy.StreamLogsStrategy
 }
 
-func NewPersistentVolumeLogsDatabaseClient(kurtosisBackend backend_interface.KurtosisBackend, filesystem volume_filesystem.VolumeFilesystem) *persistentVolumeLogsDatabaseClient {
+func NewPersistentVolumeLogsDatabaseClient(
+	kurtosisBackend backend_interface.KurtosisBackend,
+	filesystem volume_filesystem.VolumeFilesystem,
+	streamStrategy stream_logs_strategy.StreamLogsStrategy,
+) *persistentVolumeLogsDatabaseClient {
 	return &persistentVolumeLogsDatabaseClient{
 		kurtosisBackend: kurtosisBackend,
 		filesystem:      filesystem,
+		streamStrategy:  streamStrategy,
 	}
 }
 
@@ -61,7 +68,7 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 		wgSenders.Add(oneSenderAdded)
 		go streamServiceLogLines(
 			ctx,
-			client.filesystem,
+			client,
 			wgSenders,
 			logsByKurtosisUserServiceUuidChan,
 			streamErrChan,
@@ -119,7 +126,7 @@ func (client *persistentVolumeLogsDatabaseClient) FilterExistingServiceUuids(
 // ====================================================================================================
 func streamServiceLogLines(
 	ctx context.Context,
-	fs volume_filesystem.VolumeFilesystem,
+	client *persistentVolumeLogsDatabaseClient,
 	wgSenders *sync.WaitGroup,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	streamErrChan chan error,
@@ -129,10 +136,9 @@ func streamServiceLogLines(
 	shouldFollowLogs bool,
 ) {
 	defer wgSenders.Done()
-	streamStrategy := stream_logs_strategy.PerWeekStreamLogsStrategy{}
-	streamStrategy.StreamLogs(
+	client.streamStrategy.StreamLogs(
 		ctx,
-		fs,
+		client.filesystem,
 		logsByKurtosisUserServiceUuidChan,
 		streamErrChan,
 		enclaveUuid,
