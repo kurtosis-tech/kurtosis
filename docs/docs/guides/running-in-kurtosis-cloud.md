@@ -21,6 +21,11 @@ When provisioning a cloud instance, Kurtosis will create a specific AWS user acc
 
 Services running inside a Kurtosis enclave in Kurtosis Cloud can freely read and write objects from/to this S3 storage.
 
+:::warning All data in S3 is publicly exposed
+Only the user can write to its own S3 space. However, the data is publicly available to whoever knows the key of
+the stored object. No sensitive data should be stored.
+:::
+
 The AWS user key as well as the information on the user S3 space is provided to all Starlark packages running in the 
 cloud via the global `kurtosis` module. The following variables are available inside Starlark and can be passed as 
 environment variables or simple arguments to the services started inside the enclave:
