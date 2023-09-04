@@ -27,8 +27,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/time_module_with_now_disabled"
 	starlarkjson "go.starlark.net/lib/json"
-	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -38,7 +38,9 @@ func Predeclared() starlark.StringDict {
 		// go-starlark add-ons
 		starlarkjson.Module.Name:          starlarkjson.Module,
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
-		time.Module.Name:                  time.Module,
+
+		// go-starlark time module with time.now() disabled
+		time_module_with_now_disabled.TimeNowBuiltinName: time_module_with_now_disabled.GetTimeModuleWithNowDisabled(),
 	}
 }
 
