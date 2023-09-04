@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
@@ -28,7 +29,7 @@ var (
 
 type StartosisExecutor struct {
 	mutex             *sync.Mutex
-	enclavePlan       *instructions_plan.InstructionsPlan
+	enclavePlan       *enclave_plan.EnclavePlan
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
@@ -39,7 +40,7 @@ type ExecutionError struct {
 func NewStartosisExecutor(runtimeValueStore *runtime_value_store.RuntimeValueStore) *StartosisExecutor {
 	return &StartosisExecutor{
 		mutex:             &sync.Mutex{},
-		enclavePlan:       instructions_plan.NewInstructionsPlan(),
+		enclavePlan:       enclave_plan.NewEnclavePlan(),
 		runtimeValueStore: runtimeValueStore,
 	}
 }
@@ -65,13 +66,16 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		logrus.Debugf("Current enclave plan contains %d instuctions. About to process a new plan with %d instructions (dry-run: %v)",
 			executor.enclavePlan.Size(), len(instructionsSequence), dryRun)
 
-		executor.enclavePlan = instructions_plan.NewInstructionsPlan()
+		executor.enclavePlan = enclave_plan.NewEnclavePlan()
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
 
 			if scheduledInstruction.IsImportedFromCurrentEnclavePlan() {
-				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true).ImportedFromCurrentEnclavePlan(true)
+				//scheduledInstruction.Executed(true)
+				//scheduledInstruction.ImportedFromCurrentEnclavePlan(true)
+				//TODO where we should store the instruction??
+				//executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true).ImportedFromCurrentEnclavePlan(true)
 				continue
 			}
 			progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
@@ -103,7 +107,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr)
 				}
 				// mark the instruction as executed and add it to the current instruction plan
-				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
+				//executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
 			}
 		}
 
@@ -122,9 +126,10 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 	return starlarkRunResponseLineStream
 }
 
+/*
 func (executor *StartosisExecutor) GetCurrentEnclavePLan() *instructions_plan.InstructionsPlan {
 	return executor.enclavePlan
-}
+}*/
 
 func sendErrorAndFail(starlarkRunResponseLineStream chan<- *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, err error, msg string, msgArgs ...interface{}) {
 	propagatedErr := stacktrace.Propagate(err, msg, msgArgs...)

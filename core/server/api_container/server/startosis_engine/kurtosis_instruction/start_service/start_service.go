@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -59,6 +60,11 @@ type StartServiceCapabilities struct {
 	serviceName service.ServiceName
 }
 
+func (builtin *StartServiceCapabilities) GetEnclavePlanCapabilities() *enclave_plan.EnclavePlanCapabilities {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (builtin *StartServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
@@ -85,6 +91,6 @@ func (builtin *StartServiceCapabilities) Execute(ctx context.Context, _ *builtin
 	return instructionResult, nil
 }
 
-func (builtin *StartServiceCapabilities) TryResolveWith(_ bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *StartServiceCapabilities) TryResolveWith(_ bool, _ *enclave_plan.EnclavePlanCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	return enclave_structure.InstructionIsNotResolvableAbort
 }

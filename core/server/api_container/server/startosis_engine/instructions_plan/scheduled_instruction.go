@@ -17,8 +17,6 @@ type ScheduledInstruction struct {
 
 	kurtosisInstruction kurtosis_instruction.KurtosisInstruction
 
-	persistableInstructionData *PersistableInstructionData
-
 	returnedValue starlark.Value
 
 	executed bool
@@ -29,14 +27,12 @@ type ScheduledInstruction struct {
 func NewScheduledInstruction(
 	uuid ScheduledInstructionUuid,
 	kurtosisInstruction kurtosis_instruction.KurtosisInstruction,
-	persistableInstructionData *PersistableInstructionData,
 	returnedValue starlark.Value,
 ) *ScheduledInstruction {
 
 	return &ScheduledInstruction{
 		uuid:                           uuid,
 		kurtosisInstruction:            kurtosisInstruction,
-		persistableInstructionData:     persistableInstructionData,
 		returnedValue:                  returnedValue,
 		executed:                       false,
 		importedFromCurrentEnclavePlan: false,
@@ -46,14 +42,6 @@ func NewScheduledInstruction(
 func (instruction *ScheduledInstruction) GetInstruction() kurtosis_instruction.KurtosisInstruction {
 	return instruction.kurtosisInstruction
 }
-
-func (instruction *ScheduledInstruction) GetInstructionStr() string {
-	if instruction.persistableInstructionData != nil {
-		return instruction.persistableInstructionData.GetKurtosisInstructionStr()
-	}
-	return ""
-}
-
 func (instruction *ScheduledInstruction) GetReturnedValue() starlark.Value {
 	return instruction.returnedValue
 }

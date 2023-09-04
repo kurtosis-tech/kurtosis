@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -146,6 +147,11 @@ type RunPythonCapabilities struct {
 	fileArtifactNames   []string
 	pathToFileArtifacts []string
 	wait                string
+}
+
+func (builtin *RunPythonCapabilities) GetEnclavePlanCapabilities() *enclave_plan.EnclavePlanCapabilities {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -328,7 +334,7 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 	return instructionResult, err
 }
 
-func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan.EnclavePlanCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual
 	}

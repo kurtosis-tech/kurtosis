@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
@@ -90,7 +91,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	relativePathtoMainFile string,
 	serializedStarlark string,
 	serializedJsonParams string,
-	currentEnclavePlan *instructions_plan.InstructionsPlan,
+	currentEnclavePlan *enclave_plan.EnclavePlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
@@ -113,6 +114,11 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	}
 	logrus.Debugf("Current enclave state contains %d instructions", len(currentEnclavePlanSequence))
 	logrus.Debugf("Starting iterations to find the best plan to execute given the current state of the enclave")
+
+	currentEnclavePersistablePlanSequence, interpretationErr := currentEnclavePlan.GeneratePlan()
+	if interpretationErr != nil {
+		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
+	}
 
 	// We're going to iterate this way:
 	// 1. Find an instruction in the current enclave plan matching the first instruction of the new plan
@@ -153,7 +159,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 					// the mask is already full, can't recopy more instructions, stop here
 					break
 				}
-				potentialMask.InsertAt(numberOfInstructionCopiedToMask, currentEnclavePlanSequence[copyIdx])
+				potentialMask.InsertAt(numberOfInstructionCopiedToMask, currentEnclavePersistablePlanSequence[copyIdx])
 				numberOfInstructionCopiedToMask += 1
 			}
 			logrus.Debugf("Writing %d instruction at the beginning of the plan mask, leaving %d empty at the end", numberOfInstructionCopiedToMask, potentialMask.Size()-numberOfInstructionCopiedToMask)
@@ -342,7 +348,7 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		return result, nil
 	}
 
-	kurtosisModule, interpretationErr := builtins.KurtosisModule(thread, interpreter.enclaveEnvVars)
+	kurtosisModule, interpretationErr := builtins.KurtosisModule(thread, interpreter.serviceNetwork.GetEnclaveUuid(), interpreter.enclaveEnvVars)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -376,7 +382,7 @@ func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*instru
 	for i := minIndex; i < len(currentEnclaveInstructionsList); i++ {
 		// We just need to compare instructions to see if they match, without needing any enclave specific context here
 		fakeEnclaveComponent := enclave_structure.NewEnclaveComponents()
-		instructionResolutionResult := naiveInstructionsList[0].GetInstruction().TryResolveWith(currentEnclaveInstructionsList[i].GetInstructionStr(), currentEnclaveInstructionsList[i].GetInstruction(), fakeEnclaveComponent)
+		instructionResolutionResult := naiveInstructionsList[0].GetInstruction().TryResolveWith(currentEnclaveInstructionsList[i].GetInstruction(), fakeEnclaveComponent)
 		if instructionResolutionResult == enclave_structure.InstructionIsEqual || instructionResolutionResult == enclave_structure.InstructionIsUpdate {
 			return i
 		}

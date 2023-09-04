@@ -3,7 +3,6 @@ package instructions_plan
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
@@ -28,15 +27,14 @@ func NewInstructionsPlan() *InstructionsPlan {
 	}
 }
 
-func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.KurtosisInstruction, instructionCapabilities kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, returnedValue starlark.Value) error {
+func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.KurtosisInstruction, returnedValue starlark.Value) error {
 	generatedUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to generate a random UUID for instruction '%s' to add it to the plan", instruction.String())
 	}
 
 	scheduledInstructionUuid := ScheduledInstructionUuid(generatedUuid)
-	persistableInstructionData := NewPersistableInstructionData(instruction, instructionCapabilities)
-	scheduledInstruction := NewScheduledInstruction(scheduledInstructionUuid, instruction, persistableInstructionData, returnedValue)
+	scheduledInstruction := NewScheduledInstruction(scheduledInstructionUuid, instruction, returnedValue)
 
 	plan.scheduledInstructionsIndex[scheduledInstructionUuid] = scheduledInstruction
 	plan.instructionsSequence = append(plan.instructionsSequence, scheduledInstructionUuid)
@@ -45,7 +43,7 @@ func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.Ku
 
 func (plan *InstructionsPlan) AddScheduledInstruction(scheduledInstruction *ScheduledInstruction) *ScheduledInstruction {
 	newScheduledInstructionUuid := scheduledInstruction.uuid
-	newScheduledInstruction := NewScheduledInstruction(newScheduledInstructionUuid, scheduledInstruction.kurtosisInstruction, scheduledInstruction.persistableInstructionData, scheduledInstruction.returnedValue)
+	newScheduledInstruction := NewScheduledInstruction(newScheduledInstructionUuid, scheduledInstruction.kurtosisInstruction, scheduledInstruction.returnedValue)
 	newScheduledInstruction.Executed(scheduledInstruction.IsExecuted())
 	newScheduledInstruction.ImportedFromCurrentEnclavePlan(scheduledInstruction.IsImportedFromCurrentEnclavePlan())
 

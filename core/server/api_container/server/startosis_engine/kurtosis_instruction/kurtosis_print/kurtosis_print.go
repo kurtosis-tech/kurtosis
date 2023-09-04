@@ -3,6 +3,7 @@ package kurtosis_print
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -58,6 +59,11 @@ type PrintCapabilities struct {
 	msg starlark.Value
 }
 
+func (builtin *PrintCapabilities) GetEnclavePlanCapabilities() *enclave_plan.EnclavePlanCapabilities {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (builtin *PrintCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	msg, err := builtin_argument.ExtractArgumentValue[starlark.Value](arguments, PrintArgName)
 	if err != nil {
@@ -88,7 +94,7 @@ func (builtin *PrintCapabilities) Execute(_ context.Context, _ *builtin_argument
 	return maybeSerializedArgsWithRuntimeValue, nil
 }
 
-func (builtin *PrintCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *PrintCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan.EnclavePlanCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual
 	}

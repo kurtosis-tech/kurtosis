@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -109,6 +110,11 @@ type RequestCapabilities struct {
 	skipCodeCheck     bool
 }
 
+func (builtin *RequestCapabilities) GetEnclavePlanCapabilities() *enclave_plan.EnclavePlanCapabilities {
+	//TODO implement me
+	panic("implement me")
+}
+
 func (builtin *RequestCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 
 	serviceNameArgumentValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
@@ -184,7 +190,7 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 	return instructionResult, err
 }
 
-func (builtin *RequestCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *RequestCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan.EnclavePlanCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual && enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
 		return enclave_structure.InstructionIsUpdate
 	} else if instructionsAreEqual {

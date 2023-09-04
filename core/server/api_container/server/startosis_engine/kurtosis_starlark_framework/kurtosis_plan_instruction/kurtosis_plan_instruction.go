@@ -1,6 +1,7 @@
 package kurtosis_plan_instruction
 
 import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
@@ -54,43 +55,44 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 			return nil, interpretationErr
 		}
 
-		var scheduledInstructionPulledFromMaskMaybe *instructions_plan.ScheduledInstruction
+		var enclavePlanInstructionFromMaskMaybe *enclave_plan.EnclavePlanInstruction
 		var instructionResolutionStatus enclave_structure.InstructionResolutionStatus
 		if builtin.instructionPlanMask.HasNext() {
-			_, scheduledInstructionPulledFromMaskMaybe = builtin.instructionPlanMask.Next()
-			if scheduledInstructionPulledFromMaskMaybe != nil {
-				instructionResolutionStatus = instructionWrapper.TryResolveWith(scheduledInstructionPulledFromMaskMaybe.GetInstructionStr(), scheduledInstructionPulledFromMaskMaybe.GetInstruction(), builtin.enclaveComponents)
+			_, enclavePlanInstructionFromMaskMaybe = builtin.instructionPlanMask.Next()
+			if enclavePlanInstructionFromMaskMaybe != nil {
+				instructionResolutionStatus = instructionWrapper.TryResolveWith(enclavePlanInstructionFromMaskMaybe, builtin.enclaveComponents)
 			} else {
-				instructionResolutionStatus = instructionWrapper.TryResolveWith("", nil, builtin.enclaveComponents)
+				instructionResolutionStatus = instructionWrapper.TryResolveWith(nil, builtin.enclaveComponents)
 			}
 		} else {
-			instructionResolutionStatus = instructionWrapper.TryResolveWith("", nil, builtin.enclaveComponents)
+			instructionResolutionStatus = instructionWrapper.TryResolveWith(nil, builtin.enclaveComponents)
 		}
 
 		switch instructionResolutionStatus {
 		case enclave_structure.InstructionIsEqual:
 			// add instruction from the mask and mark it as executed but not imported from the current enclave plan
-			builtin.instructionsPlan.AddScheduledInstruction(scheduledInstructionPulledFromMaskMaybe).Executed(true).ImportedFromCurrentEnclavePlan(false)
-			return scheduledInstructionPulledFromMaskMaybe.GetReturnedValue(), nil
+			//TODO I don't know if we have to store this in instructionsPlan or EnclavePlan
+			//builtin.instructionsPlan.AddScheduledInstruction(scheduledInstructionPulledFromMaskMaybe).Executed(true).ImportedFromCurrentEnclavePlan(false)
+			//return scheduledInstructionPulledFromMaskMaybe.GetReturnedValue(), nil //TODO implement returned value
 		case enclave_structure.InstructionIsUpdate:
 			// otherwise add the instruction as a new one to the plan and return its own returned value
-			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, instructionWrapper.capabilities, returnedFutureValue); err != nil {
+			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to add Kurtosis instruction '%s' at position '%s' to the plan currently being assembled. This is a Kurtosis internal bug",
 					instructionWrapper.String(),
 					instructionWrapper.GetPositionInOriginalScript().String())
 			}
 			return returnedFutureValue, nil
 		case enclave_structure.InstructionIsUnknown:
-			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, instructionWrapper.capabilities, returnedFutureValue); err != nil {
+			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err,
 					"Unable to add Kurtosis instruction '%s' at position '%s' to the plan currently being assembled. This is a Kurtosis internal bug",
 					instructionWrapper.String(),
 					instructionWrapper.GetPositionInOriginalScript().String())
 			}
-			if scheduledInstructionPulledFromMaskMaybe != nil {
+			if enclavePlanInstructionFromMaskMaybe != nil {
 				builtin.instructionPlanMask.MarkAsInvalid()
 				logrus.Debugf("Marking the plan as invalid as instruction '%s' differs from '%s'",
-					instructionWrapper.String(), scheduledInstructionPulledFromMaskMaybe.GetInstruction().String())
+					instructionWrapper.String(), enclavePlanInstructionFromMaskMaybe.GetKurtosisInstructionStr())
 			}
 			return returnedFutureValue, nil
 		case enclave_structure.InstructionIsNotResolvableAbort:
@@ -98,7 +100,7 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 			builtin.instructionPlanMask.MarkAsInvalid()
 			logrus.Debugf("Marking the plan as invalid as instruction '%s' had the following resolution status: '%s'",
 				instructionWrapper.String(), instructionResolutionStatus)
-			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, instructionWrapper.capabilities, returnedFutureValue); err != nil {
+			if err := builtin.instructionsPlan.AddInstruction(instructionWrapper, returnedFutureValue); err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err,
 					"Unable to add Kurtosis instruction '%s' at position '%s' to the plan currently being assembled. This is a Kurtosis internal bug",
 					instructionWrapper.String(),
