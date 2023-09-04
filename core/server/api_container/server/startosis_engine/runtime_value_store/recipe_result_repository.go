@@ -65,7 +65,7 @@ func (repository *recipeResultRepository) Save(
 	uuid string,
 	value map[string]starlark.Comparable,
 ) error {
-
+	logrus.Debugf("Saving recipe result '%v' with value '%v' repository", uuid, value)
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(recipeResultBucketName)
 
@@ -103,13 +103,14 @@ func (repository *recipeResultRepository) Save(
 	}); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while saving recipe result value '%+v' with UUID '%s' into the enclave db", value, uuid)
 	}
+	logrus.Debugf("Succesfully saved recipe uuid '%v' on repository", uuid)
 	return nil
 }
 
 func (repository *recipeResultRepository) Get(
 	uuid string,
 ) (map[string]starlark.Comparable, error) {
-
+	logrus.Debugf("Getting recipe result '%v' from repository", uuid)
 	value := map[string]starlark.Comparable{}
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
@@ -153,10 +154,12 @@ func (repository *recipeResultRepository) Get(
 	}); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting the recipe result value with UUID '%s' from the enclave db", uuid)
 	}
+	logrus.Debugf("Succesfully got recipe uuid '%v' with value '%v' from repository", uuid, value)
 	return value, nil
 }
 
 func (repository *recipeResultRepository) Delete(uuid string) error {
+	logrus.Debugf("Deleting recipe uuid '%v' from repository", uuid)
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(recipeResultBucketName)
 
@@ -169,6 +172,7 @@ func (repository *recipeResultRepository) Delete(uuid string) error {
 	}); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while deleting a recipe result with key '%v' from the recipe result repository", uuid)
 	}
+	logrus.Debugf("Succesfully deleted recipe uuid '%v' from repository", uuid)
 	return nil
 }
 

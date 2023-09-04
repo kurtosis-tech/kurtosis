@@ -108,6 +108,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		}
 
 		if !dryRun {
+			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
 			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
 			if err != nil {
 				sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred while replacing the runtime values in the output of the script")
