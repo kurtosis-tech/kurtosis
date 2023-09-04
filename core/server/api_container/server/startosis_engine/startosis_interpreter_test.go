@@ -976,6 +976,17 @@ def run(plan):
 	require.Equal(suite.T(), fmt.Sprintf("Evaluation error: %v\n\tat [3:7]: run\n\tat [0:0]: print", print_builtin.UsePlanFromKurtosisInstructionError), interpretationError.GetErrorMessage())
 }
 
+func (suite *StartosisInterpreterTestSuite) TestStartosisInterpreter_TimeModuleIsntEnabled() {
+	script := `
+def run(plan):
+	time.now()
+`
+
+	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, emptyEnclaveComponents, emptyInstructionsPlanMask)
+	require.NotNil(suite.T(), interpretationError)
+	require.Equal(suite.T(), "Multiple errors caught interpreting the Starlark script. Listing each of them below.\n\tat [3:2]: undefined: time", interpretationError.GetErrorMessage())
+}
+
 // #####################################################################################################################
 //
 //	TEST HELPERS

@@ -13,7 +13,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
 	starlarkjson "go.starlark.net/lib/json"
-	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"reflect"
@@ -157,7 +156,6 @@ func getBasePredeclaredDict(t *testing.T, thread *starlark.Thread) starlark.Stri
 		// go-starlark add-ons
 		starlarkjson.Module.Name:          starlarkjson.Module,
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
-		time.Module.Name:                  time.Module,
 
 		// Kurtosis pre-built module containing Kurtosis constant types
 		builtins.KurtosisModuleName: kurtosisModule,
