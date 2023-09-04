@@ -3,7 +3,7 @@ import remarkGfm from 'remark-gfm'
 
 const PackageCatalogDescription = ({content}) => {
   return (
-    <div className="markdown bg-white" style={{height:"100%"}}>
+    <div className="markdown bg-white prose m-5" style={{height:"100%"}}>
       <ReactMarkdown children={content} remarkPlugins={[remarkGfm]}/>
     </div>
   );

@@ -314,7 +314,7 @@ func getLatestCLIReleaseVersionFromGitHub() (string, error) {
 
 	latestVersion := strings.TrimLeft(responseObject.TagName, optionalSemverPrefix)
 	if latestVersion == "" {
-		return "", stacktrace.Propagate(err, "The latest release version got from GitHub releases is empty")
+		return "", stacktrace.NewError("The latest release version got from GitHub releases is empty")
 	}
 
 	return latestVersion, nil

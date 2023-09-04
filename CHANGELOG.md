@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.18](https://github.com/kurtosis-tech/kurtosis/compare/0.82.17...0.82.18) (2023-09-01)
+
+
+### Bug Fixes
+
+* markdown bug ([#1220](https://github.com/kurtosis-tech/kurtosis/issues/1220)) ([2ce4823](https://github.com/kurtosis-tech/kurtosis/commit/2ce4823718033d0c1c61ab1567107b79de039245))
+
 ## [0.82.17](https://github.com/kurtosis-tech/kurtosis/compare/0.82.16...0.82.17) (2023-09-01)
 
 
