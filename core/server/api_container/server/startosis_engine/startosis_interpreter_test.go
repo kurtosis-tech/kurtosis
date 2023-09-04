@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/time_now_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
@@ -21,7 +22,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/time_module_with_now_disabled"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
 	"net"
@@ -985,7 +985,7 @@ def run(plan):
 
 	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, emptyEnclaveComponents, emptyInstructionsPlanMask)
 	require.NotNil(suite.T(), interpretationError)
-	require.Equal(suite.T(), fmt.Sprintf("Evaluation error: %v\n\tat [3:10]: run\n\tat [0:0]: now", time_module_with_now_disabled.UseRunPythonInsteadOfTimeNowError), interpretationError.GetErrorMessage())
+	require.Equal(suite.T(), fmt.Sprintf("Evaluation error: %v\n\tat [3:10]: run\n\tat [0:0]: now", time_now_builtin.UseRunPythonInsteadOfTimeNowError), interpretationError.GetErrorMessage())
 }
 
 func (suite *StartosisInterpreterTestSuite) TestStarlarkInterpreter_ParseDurationContinuesToWork() {

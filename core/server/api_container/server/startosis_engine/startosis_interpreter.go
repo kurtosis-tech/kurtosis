@@ -345,7 +345,6 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 	}
 
 	predeclared := Predeclared()
-
 	// Add custom Kurtosis module
 	predeclared[builtins.KurtosisModuleName] = kurtosisModule
 
