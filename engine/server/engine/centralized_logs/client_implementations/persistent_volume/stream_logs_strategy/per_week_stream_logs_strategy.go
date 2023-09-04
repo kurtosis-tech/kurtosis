@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/consts"
@@ -13,13 +14,18 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
+	"strconv"
 	"strings"
+	"time"
 )
 
 const (
 	// This is how many weeks we promise to hold logs for
 	// We use this to compute how far back in time we need pull logs
 	defaultRetentionPeriodInWeeks = 4
+
+	// %W strftime specifier is between 00-53
+	maxWeekNum = 54
 )
 
 // This strategy pulls logs from filesytsem where there is a log file per week, per enclave, per service
@@ -40,14 +46,27 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
 ) {
-	logPaths, err := getRetainedLogsFilepaths(fs, defaultRetentionPeriodInWeeks, 5, string(enclaveUuid), string(serviceUuid))
-	if err != nil {
-		streamErrChan <- stacktrace.Propagate(err, "An error retrieving the retained logs filepaths for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
+	paths := getRetainedLogsFilePaths(fs, defaultRetentionPeriodInWeeks, getCurrentWeek(), string(enclaveUuid), string(serviceUuid))
+	if len(paths) == 0 {
+		streamErrChan <- stacktrace.NewError(
+			`No logs file paths for service '%v' in enclave '%v' were found. 
+					This is a bug, indicating either:
+					1) Logs for the current week are not being stored.
+					2) Logs were manually removed.`,
+			serviceUuid, enclaveUuid)
 		return
+	}
+	if len(paths) < defaultRetentionPeriodInWeeks+1 {
+		logrus.Warnf(
+			`We expected to retrieve logs going back '%v' weeks, but instead retrieved logs going back '%v' weeks. 
+					This indicates either:
+					1) The enclave has not been running longer than the log retention period.
+					2)Logs aren't being stored and/or have been removed.`,
+			defaultRetentionPeriodInWeeks+1, len(paths))
 	}
 
 	fileReaders := []io.Reader{}
-	for _, pathStr := range logPaths {
+	for _, pathStr := range paths {
 		logsFile, err := fs.Open(pathStr)
 		if err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred opening the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, pathStr)
@@ -140,20 +159,37 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	}
 }
 
-// [getRetainedLogsFilepaths] returns a list of log filepaths containing logs for [serviceUuid] in [enclaveUuid]
-// going back ([retentionPeriodInWeeks] + 1) back from [currentWeek] where these are 00-53(%U strftime specifier) values
-// denoting the week of the year.
+// [getRetainedLogsFilePaths] returns a list of log file paths containing logs for [serviceUuid] in [enclaveUuid]
+// going back ([retentionPeriodInWeeks] + 1) back from [currentWeek].
 // Notes:
+// - File paths are of the format '/week/enclave uuid/service uuid.json' where 'week' is %W strftime specifier
 // - The +1 is because we retain an extra week of logs compared to what we promise to retain for safety.
-// - The list of filepaths will be returned in order of most recent logs to the oldest logs e.g. [ 4/80124/1234.json, /3/801234/1234.json, ...]
-// Returns error:
-//   - if any of the filepaths don't exist in the underlying filesystem
-//   - if there are less the ([retentionPeriodInWeeks] + 1) log filepaths found
-//     This indicates logs were lost or manually removed.
-func getRetainedLogsFilepaths(
+// - The list of file paths is returned in order of most recent logs to the oldest logs e.g. [ 4/80124/1234.json, /3/801234/1234.json, ...]
+// - If a file path does not exist, the function with exits and returns whatever file paths were found.
+func getRetainedLogsFilePaths(
 	filesystem volume_filesystem.VolumeFilesystem,
 	retentionPeriodInWeeks int,
 	currentWeek int,
-	enclaveUuid, serviceUuid string) ([]string, error) {
-	return []string{}, nil
+	enclaveUuid, serviceUuid string) []string {
+	paths := []string{}
+	for i := 0; i < (retentionPeriodInWeeks + 1); i++ {
+		diff := currentWeek - i
+		var pathWeekStr string
+		if diff >= 0 {
+			pathWeekStr = strconv.Itoa(diff)
+		} else {
+			pathWeekStr = strconv.Itoa(maxWeekNum + diff)
+		}
+		filePathStr := fmt.Sprintf("%s%s/%s/%s%s", consts.LogsStorageDirpath, pathWeekStr, enclaveUuid, serviceUuid, consts.Filetype)
+		if _, err := filesystem.Stat(filePathStr); err != nil {
+			break
+		}
+		paths = append(paths, filePathStr)
+	}
+	return paths
+}
+
+func getCurrentWeek() int {
+	_, week := time.Now().UTC().ISOWeek()
+	return week
 }

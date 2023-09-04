@@ -15,10 +15,14 @@ const (
 // primarily for the purpose of enabling unit testing persistentVolumeLogsDatabaseClient
 type VolumeFilesystem interface {
 	Open(name string) (VolumeFile, error)
+	Stat(name string) (VolumeFileInfo, error)
 }
 
 type VolumeFile interface {
 	io.Reader
+}
+
+type VolumeFileInfo interface {
 }
 
 // OsVolumeFilesystem is an implementation of the filesystem using disk
@@ -30,6 +34,10 @@ func NewOsVolumeFilesystem() *OsVolumeFilesystem {
 
 func (fs *OsVolumeFilesystem) Open(name string) (VolumeFile, error) {
 	return os.Open(name)
+}
+
+func (fs *OsVolumeFilesystem) Stat(name string) (VolumeFileInfo, error) {
+	return os.Stat(name)
 }
 
 // MockedVolumeFilesystem is an implementation used for unit testing
@@ -45,6 +53,15 @@ func NewMockedVolumeFilesystem(fs *fstest.MapFS) *MockedVolumeFilesystem {
 func (fs *MockedVolumeFilesystem) Open(name string) (VolumeFile, error) {
 	// Trim any forward slashes from this filepath
 	// fstest.MapFS doesn't like absolute paths!!!
-	nameWoForwardSlash := strings.TrimLeft(name, forwardSlash)
-	return fs.mapFS.Open(nameWoForwardSlash)
+	return fs.mapFS.Open(trimForwardSlash(name))
+}
+
+func (fs *MockedVolumeFilesystem) Stat(name string) (VolumeFileInfo, error) {
+	// Trim any forward slashes from this filepath
+	// fstest.MapFS doesn't like absolute paths!!!
+	return fs.mapFS.Stat(trimForwardSlash(name))
+}
+
+func trimForwardSlash(name string) string {
+	return strings.TrimLeft(name, forwardSlash)
 }

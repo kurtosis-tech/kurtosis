@@ -24,7 +24,7 @@ const (
 	// We instruct vector to store log files per-week (00-53), per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
 	// https://vector.dev/docs/reference/configuration/template-syntax/
-	baseLogsFilepath = "\"" + logsStorageDirpath + "%U/"
+	baseLogsFilepath = "\"" + logsStorageDirpath + "%W/"
 
 	uuidLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
 	// Right now, we store duplicate logs files by service name and service's shortened uuid
