@@ -122,7 +122,7 @@ func (repository *recipeResultRepository) Get(
 
 		// check for existence
 		if jsonBytes == nil {
-			return stacktrace.NewError("Recipe result value with keu UUID '%s' does not exist on the recipe result repository", uuid)
+			return stacktrace.NewError("Recipe result value with key UUID '%s' does not exist on the recipe result repository", uuid)
 		}
 
 		isEmptyValue := len(jsonBytes) == len(emptyValue)
