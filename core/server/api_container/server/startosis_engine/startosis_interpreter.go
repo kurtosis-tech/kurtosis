@@ -18,6 +18,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/sirupsen/logrus"
 	starlarkjson "go.starlark.net/lib/json"
+	starlarktime "go.starlark.net/lib/time"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -25,6 +26,7 @@ import (
 	"path"
 	"strings"
 	"sync"
+	"time"
 )
 
 const (
@@ -346,10 +348,15 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		return nil, interpretationErr
 	}
 
+	starlarktime.NowFunc = func() time.Time {
+		panic("time.now() is disabled in Starlark; we are working on an inbuilt deterministic version that works with idempotency. In the meantime users are encouraged to use `plan.run_python`")
+	}
+
 	predeclared := starlark.StringDict{
 		// go-starlark add-ons
 		starlarkjson.Module.Name:          starlarkjson.Module,
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
+		starlarktime.Module.Name:          starlarktime.Module,
 
 		// Kurtosis pre-built module containing Kurtosis constant types
 		builtins.KurtosisModuleName: kurtosisModule,
