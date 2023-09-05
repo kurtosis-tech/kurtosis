@@ -83,8 +83,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 
 	logsReader := bufio.NewReader(combinedLogsReader)
 
-	numLogsReturned := 0
-	for shouldFollowLogs || numLogsReturned < consts.MaxNumLogsToReturn {
+	for {
 		select {
 		case <-ctx.Done():
 			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v' in enclave '%v", serviceUuid, enclaveUuid)
@@ -163,7 +162,6 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 				serviceUuid: logLines,
 			}
 			logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
-			numLogsReturned++
 			if shouldReturnAfterStreamingLastLine {
 				return
 			}

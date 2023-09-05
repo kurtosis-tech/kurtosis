@@ -10,8 +10,6 @@ const (
 
 	LogLabel = "log"
 
-	MaxNumLogsToReturn = 200
-
 	EndOfJsonLine = "}\n"
 
 	LogRetentionPeriodInWeeks = 4

@@ -235,7 +235,7 @@ func TestStreamUserServiceLogsPerWeek_NoLogsFromPersistentVolume(t *testing.T) {
 }
 
 func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing.T) {
-	expectedAmountLogLines := consts.MaxNumLogsToReturn
+	expectedAmountLogLines := 10_000
 
 	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
 		testUserService1Uuid: expectedAmountLogLines,
@@ -286,7 +286,7 @@ func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing
 }
 
 func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *testing.T) {
-	expectedAmountLogLines := consts.MaxNumLogsToReturn
+	expectedAmountLogLines := 10_000
 
 	expectedServiceAmountLogLinesByServiceUuid := map[service.ServiceUUID]int{
 		testUserService1Uuid: expectedAmountLogLines,
