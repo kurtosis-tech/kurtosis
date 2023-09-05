@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/consts"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
@@ -47,6 +48,8 @@ const (
 	testTimeOut     = 2000 * time.Second
 	doNotFollowLogs = false
 
+	defaultYear  = 2023
+	defaultDay   = 0 // sunday
 	startingWeek = 4
 
 	// base logs file path/enclave uuid/service uuid <filetype>
@@ -130,7 +133,8 @@ func TestStreamUserServiceLogsPerWeek_WithFilters(t *testing.T) {
 	}
 
 	underlyingFs := createFilledPerWeekFilesystem(startingWeek)
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(startingWeek)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -213,7 +217,8 @@ func TestStreamUserServiceLogsPerWeek_NoLogsFromPersistentVolume(t *testing.T) {
 	}
 
 	underlyingFs := createEmptyPerWeekFilesystem(startingWeek)
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(startingWeek)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -314,7 +319,8 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 			Data: []byte(logLinesStr),
 		},
 	}
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(startingWeek)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -399,7 +405,8 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 			Data: []byte(logLinesStr),
 		},
 	}
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(startingWeek)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -461,7 +468,8 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 			Data: []byte(week3logLinesStr),
 		},
 	}
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(4)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,
@@ -524,7 +532,8 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 			Data: []byte(week3logLinesStr),
 		},
 	}
-	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(4)
+	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
 		t,

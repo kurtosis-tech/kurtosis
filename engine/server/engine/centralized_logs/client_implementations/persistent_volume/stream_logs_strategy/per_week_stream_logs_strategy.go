@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/consts"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
@@ -17,11 +18,11 @@ import (
 	"io"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const (
-	// %W strftime specifier is between 00-53
-	maxWeekNum = 54
+	oneWeekDuration = 7 * 24 * time.Hour
 )
 
 // This strategy pulls logs from filesytsem where there is a log file per week, per enclave, per service
@@ -30,13 +31,12 @@ const (
 // [.../28/d3e8832d671f/61830789f03a.json] is the file containing logs from service with uuid 61830789f03a, in enclave with uuid d3e8832d671f,
 // in the 28th week of the current year
 type PerWeekStreamLogsStrategy struct {
-	// Current week of the year based in range 00-53
-	currentWeek int
+	time logs_clock.LogsClock
 }
 
-func NewPerWeekStreamLogsStrategy(currentWeek int) *PerWeekStreamLogsStrategy {
+func NewPerWeekStreamLogsStrategy(time logs_clock.LogsClock) *PerWeekStreamLogsStrategy {
 	return &PerWeekStreamLogsStrategy{
-		currentWeek: currentWeek,
+		time: time,
 	}
 }
 
@@ -50,7 +50,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
 ) {
-	paths := getRetainedLogsFilePaths(fs, consts.LogRetentionPeriodInWeeks, strategy.currentWeek, string(enclaveUuid), string(serviceUuid))
+	paths := strategy.getRetainedLogsFilePaths(fs, consts.LogRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
 	if len(paths) == 0 {
 		streamErrChan <- stacktrace.NewError(
 			`No logs file paths for service '%v' in enclave '%v' were found. 
@@ -176,23 +176,16 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 // - The +1 is because we retain an extra week of logs compared to what we promise to retain for safety.
 // - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 3/80124/1234.json, /4/801234/1234.json, ...]
 // - If a file path does not exist, the function with exits and returns whatever file paths were found
-func getRetainedLogsFilePaths(
+func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 	filesystem volume_filesystem.VolumeFilesystem,
 	retentionPeriodInWeeks int,
-	currentWeek int,
 	enclaveUuid, serviceUuid string) []string {
 	paths := []string{}
 
 	// get log file paths as far back as they exist
 	for i := 0; i < (retentionPeriodInWeeks + 1); i++ {
-		diff := currentWeek - i
-		var pathWeekStr string
-		if diff >= 0 {
-			pathWeekStr = strconv.Itoa(diff)
-		} else {
-			pathWeekStr = strconv.Itoa(maxWeekNum + diff)
-		}
-		filePathStr := fmt.Sprintf("%s%s/%s/%s%s", consts.LogsStorageDirpath, pathWeekStr, enclaveUuid, serviceUuid, consts.Filetype)
+		_, week := strategy.time.Now().Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
+		filePathStr := fmt.Sprintf("%s%s/%s/%s%s", consts.LogsStorageDirpath, strconv.Itoa(week), enclaveUuid, serviceUuid, consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err != nil {
 			break
 		}
