@@ -17,11 +17,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/sirupsen/logrus"
-	starlarkjson "go.starlark.net/lib/json"
-	"go.starlark.net/lib/time"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
 	"path"
 	"strings"
@@ -347,15 +344,10 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		return nil, interpretationErr
 	}
 
-	predeclared := starlark.StringDict{
-		// go-starlark add-ons
-		starlarkjson.Module.Name:          starlarkjson.Module,
-		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
-		time.Module.Name:                  time.Module,
+	predeclared := Predeclared()
 
-		// Kurtosis pre-built module containing Kurtosis constant types
-		builtins.KurtosisModuleName: kurtosisModule,
-	}
+	// Add custom Kurtosis module
+	predeclared[builtins.KurtosisModuleName] = kurtosisModule
 
 	// Add all Kurtosis helpers
 	for _, kurtosisHelper := range KurtosisHelpers(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache) {
