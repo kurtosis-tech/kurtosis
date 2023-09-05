@@ -29,7 +29,7 @@ const (
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 	logsStorageDirpath                          = "/var/log/kurtosis/"
-	everyWeekCron                               = "00**0"
+	everyWeekCron                               = "0 0 * * 0"
 )
 
 func CreateEngine(
