@@ -2,14 +2,27 @@ package enclave_plan
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_capabilities"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
+const (
+	instructionNameFormat         = "test-instruction-%v"
+	serviceNameStrFormat          = "my-service-test-%v"
+	serviceNameAInList            = service.ServiceName("service-test-A")
+	serviceNameBInList            = service.ServiceName("service-test-B")
+	artifactNameStrFormat         = "my-artifact-test-%v"
+	filesArtifactContentStrFormat = "files artifact N%v content"
+
+	addServiceInstructionStrFormat = "add_service(name=\"%s\", config=ServiceConfig(image=\"kurtosistech/example-datastore-server\"))"
+	returnedValueStrFormat         = "Service(hostname = \"{{kurtosis:%v892804afe9d407cb8975856047ed94b:hostname.runtime_value}}\", ip_address = \"{{kurtosis:%v892804afe9d407cb8975856047ed94b:ip_address.runtime_value}}\", name = \"%s\", ports = {})"
+)
+
 func TestEnclavePlanInstructionMarshallers(t *testing.T) {
-	originalEnclavePlanInstruction := getEnclavePlanInstructionForTest()
+	originalEnclavePlanInstruction := getEnclavePlanInstructionForTest(1)[0]
 
 	marshaledEnclavePlanInstruciton, err := json.Marshal(originalEnclavePlanInstruction)
 	require.NoError(t, err)
@@ -25,34 +38,55 @@ func TestEnclavePlanInstructionMarshallers(t *testing.T) {
 	require.Equal(t, originalEnclavePlanInstruction, newEnclavePlanInstruction)
 }
 
-func getEnclavePlanInstructionForTest() *EnclavePlanInstruction {
+func getEnclavePlanInstructionForTest(amount int) []*EnclavePlanInstruction {
 
-	enclavePlanCapabilities := getEnclavePlanCapabilitiesForTest()
+	allEnclavePlanInstructions := []*EnclavePlanInstruction{}
 
-	privatePlan := &privateEnclavePlanInstruction{
-		KurtosisInstructionStr: "add_service(name=\"test-service-name\", config=ServiceConfig(image=\"kurtosistech/example-datastore-server\"))",
-		Capabilities:           enclavePlanCapabilities,
-		ReturnedValueStr:       "Service(hostname = \"{{kurtosis:7892804afe9d407cb8975856047ed94b:hostname.runtime_value}}\", ip_address = \"{{kurtosis:7892804afe9d407cb8975856047ed94b:ip_address.runtime_value}}\", name = \"test-service-name\", ports = {})",
+	allEnclaveCapabilities := getEnclavePlanCapabilitiesForTest(amount)
+
+	for index, enclavePlanCapabilities := range allEnclaveCapabilities {
+		addServiceInstructionStr := fmt.Sprintf(addServiceInstructionStrFormat, enclavePlanCapabilities.GetServiceName())
+		returnedValueStr := fmt.Sprintf(returnedValueStrFormat, index, index, enclavePlanCapabilities.GetServiceName())
+
+		privatePlan := &privateEnclavePlanInstruction{
+			KurtosisInstructionStr: addServiceInstructionStr,
+			Capabilities:           enclavePlanCapabilities,
+			ReturnedValueStr:       returnedValueStr,
+		}
+
+		newEnclavePlanInstruction := &EnclavePlanInstruction{
+			privateEnclavePlanInstruction: privatePlan,
+		}
+
+		allEnclavePlanInstructions = append(allEnclavePlanInstructions, newEnclavePlanInstruction)
 	}
 
-	return &EnclavePlanInstruction{
-		privateEnclavePlanInstruction: privatePlan,
-	}
+	return allEnclavePlanInstructions
 }
 
-func getEnclavePlanCapabilitiesForTest() *enclave_plan_capabilities.EnclavePlanCapabilities {
+func getEnclavePlanCapabilitiesForTest(amount int) []*enclave_plan_capabilities.EnclavePlanCapabilities {
 
-	builder := enclave_plan_capabilities.NewEnclavePlanCapabilitiesBuilder("test-instruction")
-	builder.WitServiceName("my-service-test")
-	builder.WitServiceNames([]service.ServiceName{
-		"my-service-test-1",
-		"my-service-test-2",
-		"my-service-test-3",
-	})
-	builder.WithArtifactName("my-artifact-test")
-	builder.WithFilesArtifactMD5([]byte("files artifact content"))
+	allEnclavePlanCapabilities := []*enclave_plan_capabilities.EnclavePlanCapabilities{}
 
-	capabilities := builder.Build()
+	for i := 1; i <= amount; i++ {
+		instructionName := fmt.Sprintf(instructionNameFormat, i)
+		serviceName := service.ServiceName(fmt.Sprintf(serviceNameStrFormat, i))
+		artifactName := fmt.Sprintf(artifactNameStrFormat, i)
+		filesArtifactContent := []byte(fmt.Sprintf(filesArtifactContentStrFormat, i))
 
-	return capabilities
+		builder := enclave_plan_capabilities.NewEnclavePlanCapabilitiesBuilder(instructionName)
+		builder.WitServiceName(serviceName)
+		builder.WitServiceNames([]service.ServiceName{
+			serviceNameAInList,
+			serviceNameBInList,
+		})
+		builder.WithArtifactName(artifactName)
+		builder.WithFilesArtifactMD5(filesArtifactContent)
+
+		newCapabilities := builder.Build()
+
+		allEnclavePlanCapabilities = append(allEnclavePlanCapabilities, newCapabilities)
+	}
+
+	return allEnclavePlanCapabilities
 }
