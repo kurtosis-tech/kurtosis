@@ -1,4 +1,4 @@
-package consts
+package volume_consts
 
 const (
 	// Location of logs on the filesystem of the engine

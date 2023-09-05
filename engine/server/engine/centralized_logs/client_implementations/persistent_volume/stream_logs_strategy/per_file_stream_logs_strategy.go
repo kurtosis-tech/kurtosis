@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/consts"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
@@ -38,7 +38,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 	shouldFollowLogs bool,
 ) {
 	// logs are stored per enclave id, per service uuid, eg. <base path>/123440231421/54325342w2341.json
-	logsFilepath := fmt.Sprintf("%s%s/%s%s", consts.LogsStorageDirpath, string(enclaveUuid), string(serviceUuid), consts.Filetype)
+	logsFilepath := fmt.Sprintf("%s%s/%s%s", volume_consts.LogsStorageDirpath, string(enclaveUuid), string(serviceUuid), volume_consts.Filetype)
 	logsFile, err := fs.Open(logsFilepath)
 	if err != nil {
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred opening the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
@@ -57,14 +57,14 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 			var jsonLogNewStr string
 
 			for {
-				jsonLogNewStr, readErr = logsReader.ReadString(consts.NewLineRune)
+				jsonLogNewStr, readErr = logsReader.ReadString(volume_consts.NewLineRune)
 				jsonLogStr = jsonLogStr + jsonLogNewStr
 				// check if it's an uncompleted Json line
 				if jsonLogNewStr != "" && len(jsonLogNewStr) > 2 {
 					jsonLogNewStrLastChars := jsonLogNewStr[len(jsonLogNewStr)-2:]
-					if jsonLogNewStrLastChars != consts.EndOfJsonLine {
+					if jsonLogNewStrLastChars != volume_consts.EndOfJsonLine {
 						// removes the newline char from the previous part of the json line
-						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(consts.NewLineRune))
+						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(volume_consts.NewLineRune))
 						continue
 					}
 				}
@@ -96,7 +96,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 			}
 
 			// Then we extract the actual log message using the "log" field
-			logLineStr, found := jsonLog[consts.LogLabel]
+			logLineStr, found := jsonLog[volume_consts.LogLabel]
 			if !found {
 				streamErrChan <- stacktrace.NewError("An error retrieving the log field from logs json file. This is a bug in Kurtosis.")
 				return

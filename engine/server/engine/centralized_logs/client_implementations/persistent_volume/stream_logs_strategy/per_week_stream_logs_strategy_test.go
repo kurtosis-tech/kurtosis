@@ -2,8 +2,8 @@ package stream_logs_strategy
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/stretchr/testify/require"
 	"strconv"
@@ -17,7 +17,7 @@ const (
 	testEnclaveUuid      = "test-enclave"
 	testUserService1Uuid = "test-user-service-1"
 
-	defaultRetentionPeriodInWeeks = consts.LogRetentionPeriodInWeeks
+	defaultRetentionPeriodInWeeks = volume_consts.LogRetentionPeriodInWeeks
 
 	defaultYear = 2023
 	defaultDay  = 0 // sunday
@@ -218,5 +218,5 @@ func TestGetRetainedLogsFilePathsReturnsCorrectPathsIfWeeksMissing(t *testing.T)
 }
 
 func getWeekFilepathStr(year, week int) string {
-	return fmt.Sprintf(consts.PerWeekFmtStr, logsStorageDirpathForTests, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, consts.Filetype)
+	return fmt.Sprintf(volume_consts.PerWeekFmtStr, logsStorageDirpathForTests, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 }

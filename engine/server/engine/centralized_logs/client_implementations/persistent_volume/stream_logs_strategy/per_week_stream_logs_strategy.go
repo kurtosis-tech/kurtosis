@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
@@ -50,7 +50,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
 ) {
-	paths := strategy.getRetainedLogsFilePaths(fs, consts.LogRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
+	paths := strategy.getRetainedLogsFilePaths(fs, volume_consts.LogRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
 	if len(paths) == 0 {
 		streamErrChan <- stacktrace.NewError(
 			`No logs file paths for service '%v' in enclave '%v' were found. 
@@ -60,13 +60,13 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			serviceUuid, enclaveUuid)
 		return
 	}
-	if len(paths) < consts.LogRetentionPeriodInWeeks+1 {
+	if len(paths) < volume_consts.LogRetentionPeriodInWeeks+1 {
 		logrus.Warnf(
 			`We expected to retrieve logs going back '%v' weeks, but instead retrieved logs going back '%v' weeks. 
 					This indicates either:
 					1) The enclave has not been running longer than the log retention period.
 					2) Logs aren't being stored and/or have been removed.`,
-			consts.LogRetentionPeriodInWeeks+1, len(paths))
+			volume_consts.LogRetentionPeriodInWeeks+1, len(paths))
 	}
 
 	fileReaders := []io.Reader{}
@@ -96,14 +96,14 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			var shouldReturnAfterStreamingLastLine = false
 
 			for {
-				jsonLogNewStr, readErr = logsReader.ReadString(consts.NewLineRune)
+				jsonLogNewStr, readErr = logsReader.ReadString(volume_consts.NewLineRune)
 				jsonLogStr = jsonLogStr + jsonLogNewStr
 				// check if it's an uncompleted Json line
 				if jsonLogNewStr != "" && len(jsonLogNewStr) > 2 {
 					jsonLogNewStrLastChars := jsonLogNewStr[len(jsonLogNewStr)-2:]
-					if jsonLogNewStrLastChars != consts.EndOfJsonLine {
+					if jsonLogNewStrLastChars != volume_consts.EndOfJsonLine {
 						// removes the newline char from the previous part of the json line
-						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(consts.NewLineRune))
+						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(volume_consts.NewLineRune))
 						continue
 					}
 				}
@@ -139,7 +139,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			}
 
 			// Then we extract the actual log message using the "log" field
-			logLineStr, found := jsonLog[consts.LogLabel]
+			logLineStr, found := jsonLog[volume_consts.LogLabel]
 			if !found {
 				streamErrChan <- stacktrace.NewError("An error retrieving the log field from logs json file. This is a bug in Kurtosis.")
 				return
@@ -185,7 +185,7 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 	// get log file paths as far back as they exist
 	for i := 0; i < (retentionPeriodInWeeks + 1); i++ {
 		year, week := strategy.time.Now().Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
-		filePathStr := fmt.Sprintf(consts.PerWeekFmtStr, consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, consts.Filetype)
+		filePathStr := fmt.Sprintf(volume_consts.PerWeekFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err != nil {
 			break
 		}
