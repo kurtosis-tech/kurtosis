@@ -15,6 +15,8 @@ const (
 
 	testEnclaveUuid      = "test-enclave"
 	testUserService1Uuid = "test-user-service-1"
+
+	defaultRetentionPeriodInWeeks = consts.LogRetentionPeriodInWeeks
 )
 
 func TestGetRetainedLogsFilePaths(t *testing.T) {

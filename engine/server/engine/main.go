@@ -140,9 +140,13 @@ func runMain() error {
 
 	// osFs is a wrapper around disk
 	osFs := volume_filesystem.NewOsVolumeFilesystem()
-	// pulls logs /per week/per enclave/per service id
-	streamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(getCurrentWeek())
-	logsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, streamStrategy)
+	// pulls logs per enclave/per service id
+	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
+	perFileLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perFileStreamStrategy)
+
+	// pulls logs /per week/per enclave/per service
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(getCurrentWeek())
+	perWeekLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamStrategy)
 
 	go func() {
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
@@ -185,7 +189,13 @@ func runMain() error {
 		}
 	}()
 
-	engineConnectServer := server.NewEngineConnectServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
+	engineConnectServer := server.NewEngineConnectServerService(
+		serverArgs.ImageVersionTag,
+		enclaveManager,
+		serverArgs.MetricsUserID,
+		serverArgs.DidUserAcceptSendingMetrics,
+		perWeekLogsDatabaseClient,
+		perFileLogsDatabaseClient)
 	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
 
 	logrus.Info("Running server...")

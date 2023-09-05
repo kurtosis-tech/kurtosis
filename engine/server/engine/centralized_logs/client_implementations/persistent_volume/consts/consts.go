@@ -3,7 +3,8 @@ package consts
 const (
 	// Location of logs on the filesystem of the engine
 	LogsStorageDirpath = "/var/log/kurtosis/"
-	Filetype           = ".json"
+
+	Filetype = ".json"
 
 	NewLineRune = '\n'
 

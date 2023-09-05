@@ -29,6 +29,7 @@ const (
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 	logsStorageDirpath                          = "/var/log/kurtosis/"
+	everyWeekCron                               = "00**0"
 )
 
 func CreateEngine(
@@ -267,7 +268,7 @@ func CreateEngine(
 func scheduleLogRemoval() error {
 	logRemover := log_remover.LogRemover{}
 	c := cron.New()
-	_, err := c.AddJob("08***", logRemover)
+	_, err := c.AddJob(everyWeekCron, logRemover)
 	if err != nil {
 		return err
 	}

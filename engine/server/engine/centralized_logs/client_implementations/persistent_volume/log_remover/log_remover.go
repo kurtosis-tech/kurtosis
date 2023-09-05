@@ -19,7 +19,7 @@ func (remover LogRemover) Run() {
 	_, week := time.Now().UTC().ISOWeek()
 
 	// compute the next oldest week
-	diff := week - (consts.LogRetentionPeriodInWeeks + 1)
+	diff := week - (consts.LogRetentionPeriodInWeeks + 1) - 1
 	var weekPastRetentionPeriod int
 	if diff >= 0 {
 		weekPastRetentionPeriod = diff

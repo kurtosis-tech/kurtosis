@@ -20,10 +20,6 @@ import (
 )
 
 const (
-	// This is how many weeks we promise to hold logs for
-	// We use this to compute how far back in time we need pull logs
-	LogRetentionPeriodInWeeks = 4
-
 	// %W strftime specifier is between 00-53
 	maxWeekNum = 54
 )
