@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/time_now_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
@@ -974,6 +975,27 @@ def run(plan):
 	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, emptyEnclaveComponents, emptyInstructionsPlanMask)
 	require.NotNil(suite.T(), interpretationError)
 	require.Equal(suite.T(), fmt.Sprintf("Evaluation error: %v\n\tat [3:7]: run\n\tat [0:0]: print", print_builtin.UsePlanFromKurtosisInstructionError), interpretationError.GetErrorMessage())
+}
+
+func (suite *StartosisInterpreterTestSuite) TestStarlarkInterpreter_TimeNowFailsWithInterpretationErr() {
+	script := `
+def run(plan):
+	time.now()
+`
+
+	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, emptyEnclaveComponents, emptyInstructionsPlanMask)
+	require.NotNil(suite.T(), interpretationError)
+	require.Equal(suite.T(), fmt.Sprintf("Evaluation error: %v\n\tat [3:10]: run\n\tat [0:0]: now", time_now_builtin.UseRunPythonInsteadOfTimeNowError), interpretationError.GetErrorMessage())
+}
+
+func (suite *StartosisInterpreterTestSuite) TestStarlarkInterpreter_ParseDurationContinuesToWork() {
+	script := `
+def run(plan):
+	time.parse_duration("5s")
+`
+
+	_, _, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, emptyEnclaveComponents, emptyInstructionsPlanMask)
+	require.Nil(suite.T(), interpretationError)
 }
 
 // #####################################################################################################################

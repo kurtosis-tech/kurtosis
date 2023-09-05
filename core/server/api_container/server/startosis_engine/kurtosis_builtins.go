@@ -2,6 +2,7 @@ package startosis_engine
 
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
@@ -38,7 +39,9 @@ func Predeclared() starlark.StringDict {
 		// go-starlark add-ons
 		starlarkjson.Module.Name:          starlarkjson.Module,
 		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
-		time.Module.Name:                  time.Module,
+
+		// go-starlark time module with time.now() disabled
+		time.Module.Name: builtins.TimeModuleWithNowDisabled(),
 	}
 }
 
