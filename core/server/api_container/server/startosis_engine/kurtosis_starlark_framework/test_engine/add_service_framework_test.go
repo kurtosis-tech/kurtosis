@@ -87,7 +87,7 @@ func (t *addServiceTestCase) Assert(interpretationResult starlark.Value, executi
 	serviceObj, ok := interpretationResult.(*kurtosis_types.Service)
 	require.True(t, ok, "interpretation result should be a dictionary")
 	require.NotNil(t, serviceObj)
-	expectedServiceObj := fmt.Sprintf(`Service\(hostname = "{{kurtosis:[0-9a-f]{32}:hostname.runtime_value}}", ip_address = "{{kurtosis:[0-9a-f]{32}:ip_address.runtime_value}}", name = "%v", ports = {}\)`, TestServiceName)
+	expectedServiceObj := fmt.Sprintf(`Service\(name="%v", hostname="{{kurtosis:[0-9a-f]{32}:hostname.runtime_value}}", ip_address="{{kurtosis:[0-9a-f]{32}:ip_address.runtime_value}}", ports={}\)`, TestServiceName)
 	require.Regexp(t, expectedServiceObj, serviceObj.String())
 
 	expectedExecutionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", TestServiceName, TestServiceUuid)
