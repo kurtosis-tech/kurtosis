@@ -58,7 +58,10 @@ func makeAddServiceInterpretationReturnValue(serviceName starlark.String, servic
 	}
 	ipAddress := starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, ipAddressRuntimeValue))
 	hostname := starlark.String(fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, hostnameRuntimeValue))
-	returnValue := kurtosis_types.NewService(serviceName, hostname, ipAddress, portSpecsDict)
+	returnValue, interpretationErr := kurtosis_types.CreateService(serviceName, hostname, ipAddress, portSpecsDict)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
 	return returnValue, nil
 }
 

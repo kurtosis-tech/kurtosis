@@ -51,7 +51,7 @@ func NewStartosisExecutor(runtimeValueStore *runtime_value_store.RuntimeValueSto
 // - A regular KurtosisInstruction that was successfully executed
 // - A KurtosisExecutionError if the execution failed
 // - A ProgressInfo to update the current "state" of the execution
-func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, parallelism int, indexOfFirstInstructionInEnclavePlan int, instructionsSequence []*instructions_plan.ScheduledInstruction, serializedScriptOutput string) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	executor.mutex.Lock()
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	ctxWithParallelism := context.WithValue(ctx, startosis_constants.ParallelismParam, parallelism)
@@ -62,18 +62,20 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		}()
 
 		// TODO: for now the plan is append only, as each Starlark run happens on top of whatever exists in the enclave
-		logrus.Debugf("Current enclave plan contains %d instuctions. About to process a new plan with %d instructions (dry-run: %v)",
-			executor.enclavePlan.Size(), len(instructionsSequence), dryRun)
+		logrus.Debugf("Current enclave plan contains %d instuctions. About to process a new plan with %d instructions starting at index %d (dry-run: %v)",
+			executor.enclavePlan.Size(), len(instructionsSequence), indexOfFirstInstructionInEnclavePlan, dryRun)
 
-		executor.enclavePlan = instructions_plan.NewInstructionsPlan()
+		var err error
+		executor.enclavePlan, err = executor.enclavePlan.PartialClone(indexOfFirstInstructionInEnclavePlan)
+		if err != nil {
+			sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred keeping the enclave plan up to date with the current enclave state")
+		}
+
+		logrus.Debugf("Transfered %d instructions from previous enclave plan to keep the enclave state consistent", executor.enclavePlan.Size())
+
 		totalNumberOfInstructions := uint32(len(instructionsSequence))
 		for index, scheduledInstruction := range instructionsSequence {
 			instructionNumber := uint32(index + 1)
-
-			if scheduledInstruction.IsImportedFromCurrentEnclavePlan() {
-				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true).ImportedFromCurrentEnclavePlan(true)
-				continue
-			}
 			progress := binding_constructors.NewStarlarkRunResponseLineFromSinglelineProgressInfo(
 				progressMsg, instructionNumber, totalNumberOfInstructions)
 			starlarkRunResponseLineStream <- progress
@@ -108,6 +110,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		}
 
 		if !dryRun {
+			logrus.Debugf("Serialized script output before runtime value replace: '%v'", serializedScriptOutput)
 			scriptWithValuesReplaced, err := magic_string_helper.ReplaceRuntimeValueInString(serializedScriptOutput, executor.runtimeValueStore)
 			if err != nil {
 				sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred while replacing the runtime values in the output of the script")
