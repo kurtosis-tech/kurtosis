@@ -101,6 +101,20 @@ const checkValidIntType = (data) => {
     }
 }
 
+const checkValidFloatType = (data) => {
+    const  isValidFloat = (value) => {
+        return (/^-?[\d]*(\.[\d]+)?$/g).test(value);
+    }
+    if (data === "undefined") {
+        return false
+    }
+    return isValidFloat(data)
+}
+
+const checkValidBooleanType = (data) => {
+    return ["TRUE", "FALSE"].contains(data)
+}
+
 const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const navigate = useNavigate()
     const location = useLocation()
@@ -165,13 +179,23 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 valid = checkValidStringType(formData[key])
             } else if (type === "INTEGER") {
                 valid = checkValidIntType(formData[key])
+            } else if (type === "BOOL") {
+                valid = checkValidBooleanType(formData[key])
+            } else if (type === "FLOAT") {
+                valid = checkValidFloatType(formData[key])
             } else {
                 valid = checkValidUndefinedType(formData[key])
             }
 
+            let typeToPrint = type 
             if (type === undefined) {
-                type = "JSON"
+                typeToPrint = "JSON"
             }
+            
+            if (type === "BOOL") {
+                typeToPrint = "BOOLEAN (TRUE/FALSE)"
+            }
+
             if (!valid) {
                 errorsFound[key] = `Incorrect type, expected ${type}`;
             }
@@ -204,9 +228,10 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                         val = parseInt(value)
                         args[argName] = val
                     } else if (kurtosisPackage.args[key]["type"] === "BOOL") {
-                        args[argName] = value
+                        args[argName] = (value === "TRUE") ? true : false
                     } else if (kurtosisPackage.args[key]["type"] === "FLOAT") {
-                        args[argName] = value
+                        val = parseFloat(value)
+                        args[argName] = val
                     } else if (kurtosisPackage.args[key]["type"] === "STRING") {
                         args[argName] = value
                     } else {
