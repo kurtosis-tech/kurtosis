@@ -25,8 +25,8 @@ const (
 	oneWeekDuration = 7 * 24 * time.Hour
 )
 
-// This strategy pulls logs from filesytsem where there is a log file per week, per enclave, per service
-// Weeks are denoted 00-53, where 00 is the first week of the year
+// This strategy pulls logs from filesytsem where there is a log file per year, per week, per enclave, per service
+// Weeks are denoted 01-52
 // eg.
 // [.../28/d3e8832d671f/61830789f03a.json] is the file containing logs from service with uuid 61830789f03a, in enclave with uuid d3e8832d671f,
 // in the 28th week of the current year
@@ -184,8 +184,8 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 
 	// get log file paths as far back as they exist
 	for i := 0; i < (retentionPeriodInWeeks + 1); i++ {
-		_, week := strategy.time.Now().Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
-		filePathStr := fmt.Sprintf("%s%s/%s/%s%s", consts.LogsStorageDirpath, strconv.Itoa(week), enclaveUuid, serviceUuid, consts.Filetype)
+		year, week := strategy.time.Now().Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
+		filePathStr := fmt.Sprintf(consts.PerWeekFmtStr, consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err != nil {
 			break
 		}

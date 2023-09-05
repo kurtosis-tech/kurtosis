@@ -13,4 +13,10 @@ const (
 	EndOfJsonLine = "}\n"
 
 	LogRetentionPeriodInWeeks = 4
+
+	// basepath/enclave uuid/service uuid <filetype>
+	PerFileFmtStr = "%s%s/%s%s"
+
+	// basepath/year/week/enclave uuid/service uuid <filetype>
+	PerWeekFmtStr = "%s%s/%s/%s/%s%s"
 )

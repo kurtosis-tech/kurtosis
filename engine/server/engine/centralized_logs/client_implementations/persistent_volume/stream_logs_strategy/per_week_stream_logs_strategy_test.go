@@ -25,12 +25,12 @@ const (
 
 func TestGetRetainedLogsFilePaths(t *testing.T) {
 	// ../week/enclave uuid/service uuid.json
-	week12filepath := getWeekFilepathStr(12)
-	week13filepath := getWeekFilepathStr(13)
-	week14filepath := getWeekFilepathStr(14)
-	week15filepath := getWeekFilepathStr(15)
-	week16filepath := getWeekFilepathStr(16)
-	week17filepath := getWeekFilepathStr(17)
+	week12filepath := getWeekFilepathStr(defaultYear, 12)
+	week13filepath := getWeekFilepathStr(defaultYear, 13)
+	week14filepath := getWeekFilepathStr(defaultYear, 14)
+	week15filepath := getWeekFilepathStr(defaultYear, 15)
+	week16filepath := getWeekFilepathStr(defaultYear, 16)
+	week17filepath := getWeekFilepathStr(defaultYear, 17)
 
 	mapFS := &fstest.MapFS{
 		week12filepath: {
@@ -76,11 +76,11 @@ func TestGetRetainedLogsFilePaths(t *testing.T) {
 
 func TestGetRetainedLogsFilePathsAcrossNewYear(t *testing.T) {
 	// ../week/enclave uuid/service uuid.json
-	week50filepath := getWeekFilepathStr(50)
-	week51filepath := getWeekFilepathStr(51)
-	week52filepath := getWeekFilepathStr(52)
-	week1filepath := getWeekFilepathStr(1)
-	week2filepath := getWeekFilepathStr(2)
+	week50filepath := getWeekFilepathStr(defaultYear-1, 50)
+	week51filepath := getWeekFilepathStr(defaultYear-1, 51)
+	week52filepath := getWeekFilepathStr(defaultYear-1, 52)
+	week1filepath := getWeekFilepathStr(defaultYear, 1)
+	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
 	mapFS := &fstest.MapFS{
 		week50filepath: {
@@ -123,9 +123,9 @@ func TestGetRetainedLogsFilePathsAcrossNewYear(t *testing.T) {
 
 func TestGetRetainedLogsFilePathsWithDiffRetentionPeriod(t *testing.T) {
 	// ../week/enclave uuid/service uuid.json
-	week52filepath := getWeekFilepathStr(52)
-	week1filepath := getWeekFilepathStr(1)
-	week2filepath := getWeekFilepathStr(2)
+	week52filepath := getWeekFilepathStr(defaultYear-1, 52)
+	week1filepath := getWeekFilepathStr(defaultYear, 1)
+	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
 	mapFS := &fstest.MapFS{
 		week52filepath: {
@@ -161,9 +161,9 @@ func TestGetRetainedLogsFilePathsWithDiffRetentionPeriod(t *testing.T) {
 
 func TestGetRetainedLogsFilePathsReturnsErrorIfWeeksMissing(t *testing.T) {
 	// ../week/enclave uuid/service uuid.json
-	week0filepath := getWeekFilepathStr(0)
-	week1filepath := getWeekFilepathStr(1)
-	week2filepath := getWeekFilepathStr(2)
+	week0filepath := getWeekFilepathStr(defaultYear, 0)
+	week1filepath := getWeekFilepathStr(defaultYear, 1)
+	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
 	mapFS := &fstest.MapFS{
 		week0filepath: {
@@ -189,9 +189,9 @@ func TestGetRetainedLogsFilePathsReturnsErrorIfWeeksMissing(t *testing.T) {
 
 func TestGetRetainedLogsFilePathsReturnsCorrectPathsIfWeeksMissing(t *testing.T) {
 	// ../week/enclave uuid/service uuid.json
-	week0filepath := getWeekFilepathStr(0)
-	week1filepath := getWeekFilepathStr(1)
-	week3filepath := getWeekFilepathStr(3)
+	week0filepath := getWeekFilepathStr(defaultYear, 0)
+	week1filepath := getWeekFilepathStr(defaultYear, 1)
+	week3filepath := getWeekFilepathStr(defaultYear, 3)
 
 	mapFS := &fstest.MapFS{
 		week0filepath: {
@@ -217,6 +217,6 @@ func TestGetRetainedLogsFilePathsReturnsCorrectPathsIfWeeksMissing(t *testing.T)
 	require.Equal(t, "/"+week3filepath, logFilePaths[0])
 }
 
-func getWeekFilepathStr(week int) string {
-	return fmt.Sprintf("%s%s/%s/%s%s", logsStorageDirpathForTests, strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, consts.Filetype)
+func getWeekFilepathStr(year, week int) string {
+	return fmt.Sprintf(consts.PerWeekFmtStr, logsStorageDirpathForTests, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, consts.Filetype)
 }

@@ -21,10 +21,10 @@ const (
 	fileSinkIdSuffix = "file"
 	fileTypeId       = "\"file\""
 
-	// We instruct vector to store log files per-week (00-53), per-enclave, per-service
+	// We instruct vector to store log files per-year, per-week (00-53), per-enclave, per-service
 	// To construct the filepath, we utilize vectors template syntax that allows us to reference fields in log events
 	// https://vector.dev/docs/reference/configuration/template-syntax/
-	baseLogsFilepath = "\"" + logsStorageDirpath + "%%U/"
+	baseLogsFilepath = "\"" + logsStorageDirpath + "%%Y/%%U/"
 
 	uuidLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
 
