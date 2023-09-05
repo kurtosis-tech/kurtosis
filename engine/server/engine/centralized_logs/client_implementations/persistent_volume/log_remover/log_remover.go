@@ -9,6 +9,10 @@ import (
 	"time"
 )
 
+const (
+	maxWeekNum = 54
+)
+
 // LogRemover removes logs one week older than the log retention period.
 type LogRemover struct {
 }
@@ -24,7 +28,7 @@ func (remover LogRemover) Run() {
 	if diff >= 0 {
 		weekPastRetentionPeriod = diff
 	} else {
-		weekPastRetentionPeriod = 54 + diff
+		weekPastRetentionPeriod = maxWeekNum + diff
 	}
 
 	// create directory path for that week
