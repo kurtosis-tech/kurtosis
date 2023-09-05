@@ -66,9 +66,8 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	wgSenders := &sync.WaitGroup{}
 	for serviceUuid := range userServiceUuids {
 		wgSenders.Add(oneSenderAdded)
-		go streamServiceLogLines(
+		go client.streamServiceLogLines(
 			ctx,
-			client,
 			wgSenders,
 			logsByKurtosisUserServiceUuidChan,
 			streamErrChan,
@@ -124,9 +123,8 @@ func (client *persistentVolumeLogsDatabaseClient) FilterExistingServiceUuids(
 //	Private helper functions
 //
 // ====================================================================================================
-func streamServiceLogLines(
+func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 	ctx context.Context,
-	client *persistentVolumeLogsDatabaseClient,
 	wgSenders *sync.WaitGroup,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	streamErrChan chan error,
