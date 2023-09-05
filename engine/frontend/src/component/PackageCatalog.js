@@ -50,7 +50,6 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                 return false;
             }
         )
-        
         setKurtosisPackages(filteredPackages)
     }
 

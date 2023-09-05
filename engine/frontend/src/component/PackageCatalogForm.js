@@ -197,16 +197,23 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             Object.keys(formData).map(key => {
                 const argName = kurtosisPackage.args[key].name
                 const value = formData[key]
-                if (!["INTEGER", "STRING", "BOOL", "FLOAT"].includes(kurtosisPackage.args[key]["type"])) {
-                    try {
-                        const val = JSON.parse(value)
+
+                let val; 
+                if (value.length > 0) {
+                    if (kurtosisPackage.args[key]["type"] === "INTEGER") {
+                        val = parseInt(value)
                         args[argName] = val
-                    } catch(ex) {
-                        console.log("this error should not come up")
+                    } else if (kurtosisPackage.args[key]["type"] === "BOOL") {
+                        args[argName] = value
+                    } else if (kurtosisPackage.args[key]["type"] === "FLOAT") {
+                        args[argName] = value
+                    } else if (kurtosisPackage.args[key]["type"] === "STRING") {
+                        args[argName] = value
+                    } else {
+                        val = JSON.parse(value)
+                        args[argName] = val
                     }
-                } else {
-                    args[argName] = value
-                }
+                }    
             })
 
             const stringifiedArgs = JSON.stringify(args)
