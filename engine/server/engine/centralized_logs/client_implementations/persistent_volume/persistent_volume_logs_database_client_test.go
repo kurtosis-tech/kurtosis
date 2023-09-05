@@ -33,7 +33,6 @@ const (
 	logLine2  = "{\"log\":\"Starting feature 'runs idempotently'\"}"
 	logLine3a = "{\"log\":\"Starting feature 'apic "
 	logLine3b = "idempotently'\"}"
-	logLine3  = "{\"log\":\"Starting feature 'apic idempotently'\"}"
 	logLine4  = "{\"log\":\"Starting feature 'files storage'\"}"
 	logLine5  = "{\"log\":\"Starting feature 'files manager'\"}"
 	logLine6  = "{\"log\":\"The enclave was created\"}"
@@ -47,7 +46,8 @@ const (
 
 	testTimeOut     = 2000 * time.Second
 	doNotFollowLogs = false
-	startingWeek    = 4
+
+	startingWeek = 4
 
 	// base logs file path/enclave uuid/service uuid <filetype>
 	perFileFilePathFmtStr = "%s%s/%s%s"

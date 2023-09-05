@@ -15,7 +15,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_remover"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/robfig/cron/v3"
 	"github.com/sirupsen/logrus"
 	"time"
 )
@@ -100,6 +102,12 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err,
 			"An error occurred attempting to create logging components for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
 	}
+
+	err = scheduleLogRemoval()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred attempting to schedule a cron job for removing old logs.")
+	}
+
 	shouldRemoveCentralizedLogComponents := true
 	defer func() {
 		if shouldRemoveCentralizedLogComponents {
@@ -254,4 +262,14 @@ func CreateEngine(
 	shouldRemoveCentralizedLogComponents = false
 	shouldKillEngineContainer = false
 	return result, nil
+}
+
+func scheduleLogRemoval() error {
+	logRemover := log_remover.LogRemover{}
+	c := cron.New()
+	_, err := c.AddJob("08***", logRemover)
+	if err != nil {
+		return err
+	}
+	return nil
 }

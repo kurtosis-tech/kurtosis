@@ -22,7 +22,7 @@ import (
 const (
 	// This is how many weeks we promise to hold logs for
 	// We use this to compute how far back in time we need pull logs
-	defaultRetentionPeriodInWeeks = 4
+	LogRetentionPeriodInWeeks = 4
 
 	// %W strftime specifier is between 00-53
 	maxWeekNum = 54
@@ -54,7 +54,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
 ) {
-	paths := getRetainedLogsFilePaths(fs, defaultRetentionPeriodInWeeks, strategy.currentWeek, string(enclaveUuid), string(serviceUuid))
+	paths := getRetainedLogsFilePaths(fs, consts.LogRetentionPeriodInWeeks, strategy.currentWeek, string(enclaveUuid), string(serviceUuid))
 	if len(paths) == 0 {
 		streamErrChan <- stacktrace.NewError(
 			`No logs file paths for service '%v' in enclave '%v' were found. 
@@ -64,13 +64,13 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			serviceUuid, enclaveUuid)
 		return
 	}
-	if len(paths) < defaultRetentionPeriodInWeeks+1 {
+	if len(paths) < consts.LogRetentionPeriodInWeeks+1 {
 		logrus.Warnf(
 			`We expected to retrieve logs going back '%v' weeks, but instead retrieved logs going back '%v' weeks. 
 					This indicates either:
 					1) The enclave has not been running longer than the log retention period.
-					2)Logs aren't being stored and/or have been removed.`,
-			defaultRetentionPeriodInWeeks+1, len(paths))
+					2) Logs aren't being stored and/or have been removed.`,
+			consts.LogRetentionPeriodInWeeks+1, len(paths))
 	}
 
 	fileReaders := []io.Reader{}

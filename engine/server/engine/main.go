@@ -140,8 +140,8 @@ func runMain() error {
 
 	// osFs is a wrapper around disk
 	osFs := volume_filesystem.NewOsVolumeFilesystem()
-	// pulls logs /per enclave/per service id
-	streamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
+	// pulls logs /per week/per enclave/per service id
+	streamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(getCurrentWeek())
 	logsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, streamStrategy)
 
 	go func() {
@@ -270,4 +270,9 @@ func formatFilenameFunctionForLogs(filename string, functionName string) string 
 	output.WriteString(functionName)
 	output.WriteString("]")
 	return output.String()
+}
+
+func getCurrentWeek() int {
+	_, week := time.Now().UTC().ISOWeek()
+	return week
 }
