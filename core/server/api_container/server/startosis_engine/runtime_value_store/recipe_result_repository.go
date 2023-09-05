@@ -3,6 +3,7 @@ package runtime_value_store
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
@@ -63,7 +64,7 @@ func (repository *recipeResultRepository) SaveKey(
 // starlark.String and starlark.Int so far
 func (repository *recipeResultRepository) Save(
 	uuid string,
-	value map[string]starlark.Comparable,
+	values map[string]starlark.Comparable,
 ) error {
 
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
@@ -73,35 +74,38 @@ func (repository *recipeResultRepository) Save(
 
 		stringifiedValue := map[string]string{}
 
-		for key, comparableValue := range value {
-			//TODO add more kind of comparable types if we want to extend the support
-			//TODO now starlark.Int and starlark.String are enough so far
-			switch valueType := comparableValue.(type) {
-			case starlark.Int:
-				stringifiedValue[key] = comparableValue.String()
-			case starlark.String:
-				comparableStr, ok := comparableValue.(starlark.String)
-				if !ok {
-					return stacktrace.NewError("An error occurred casting comparable type '%v' to Starlark string", comparableValue)
-				}
-				stringifiedValue[key] = comparableStr.GoString()
-			default:
-				return stacktrace.NewError("Unexpected comparable type on recipe result repository, only 'starlark.String and slartark.Int' are allowed but '%v' was received.", valueType)
+		for comparableKey, comparableValue := range values {
+			// the majority of the comparable types can be cast to starlark.Value,
+			newStarlarkValue, ok := comparableValue.(starlark.Value)
+			if !ok {
+				return stacktrace.NewError("Is not possible to cast from Starlark comparable '%v' to Starlark Value", comparableValue)
 			}
+			/*switch newStarlarkValue.(type) {
+			case starlark.String:
+				newStarlarkString, ok := newStarlarkValue.(starlark.String)
+				if !ok {
+					return stacktrace.NewError("An error occurred casting value type '%v' to Starlark string", newStarlarkValue)
+				}
+				stringifiedValue[comparableKey] = newStarlarkString.GoString()
+			default:
+				stringifiedValue[comparableKey] = newStarlarkValue.String()
+			}*/
+			serializedStarlarkValue := startosis_engine.SerializeStarlarkValue(newStarlarkValue)
+			stringifiedValue[comparableKey] = serializedStarlarkValue
 		}
 
 		jsonBytes, err := json.Marshal(stringifiedValue)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred marshalling value '%+v' in the recipe result repository", value)
+			return stacktrace.Propagate(err, "An error occurred marshalling values '%+v' in the recipe result repository", values)
 		}
 
 		// save it to disk
 		if err := bucket.Put(uuidKey, jsonBytes); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while saving recipe result value '%+v' with UUID '%s' into the enclave db bucket", value, uuid)
+			return stacktrace.Propagate(err, "An error occurred while saving recipe result values '%+v' with UUID '%s' into the enclave db bucket", values, uuid)
 		}
 		return nil
 	}); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while saving recipe result value '%+v' with UUID '%s' into the enclave db", value, uuid)
+		return stacktrace.Propagate(err, "An error occurred while saving recipe result values '%+v' with UUID '%s' into the enclave db", values, uuid)
 	}
 	return nil
 }
