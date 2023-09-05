@@ -288,8 +288,3 @@ func formatFilenameFunctionForLogs(filename string, functionName string) string 
 	output.WriteString("]")
 	return output.String()
 }
-
-func getCurrentWeek() int {
-	_, week := time.Now().UTC().ISOWeek()
-	return week
-}
