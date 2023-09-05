@@ -342,7 +342,7 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		return result, nil
 	}
 
-	kurtosisModule, interpretationErr := builtins.KurtosisModule(thread, interpreter.enclaveEnvVars)
+	kurtosisModule, interpretationErr := builtins.KurtosisModule(thread, interpreter.serviceNetwork.GetEnclaveUuid(), interpreter.enclaveEnvVars)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

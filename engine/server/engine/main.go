@@ -197,6 +197,11 @@ func runMain() error {
 		perWeekLogsDatabaseClient,
 		perFileLogsDatabaseClient)
 	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
+	defer func() {
+		if err := engineConnectServer.Close(); err != nil {
+			logrus.Errorf("We tried to close the engine connect server service but something fails. Err:\n%v", err)
+		}
+	}()
 
 	logrus.Info("Running server...")
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)

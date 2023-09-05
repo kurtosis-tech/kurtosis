@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
@@ -59,7 +60,10 @@ type StartosisInterpreterTestSuite struct {
 
 func (suite *StartosisInterpreterTestSuite) SetupTest() {
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
-	suite.runtimeValueStore = runtime_value_store.NewRuntimeValueStore()
+	enclaveDb := getEnclaveDBForTest(suite.T())
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	require.NoError(suite.T(), err)
+	suite.runtimeValueStore = runtimeValueStore
 	suite.serviceNetwork = service_network.NewMockServiceNetwork(suite.T())
 
 	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, "")
@@ -72,6 +76,7 @@ func (suite *StartosisInterpreterTestSuite) SetupTest() {
 		string(testServiceName),
 	)
 	suite.serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Maybe().Return(mockFileArtifactName, nil)
+	suite.serviceNetwork.EXPECT().GetEnclaveUuid().Maybe().Return(enclave.EnclaveUUID(mockEnclaveUuid))
 	suite.serviceNetwork.EXPECT().ExistServiceRegistration(testServiceName).Maybe().Return(true, nil)
 }
 

@@ -27,6 +27,7 @@ const (
 	baseLogsFilepath = "\"" + logsStorageDirpath + "%W/"
 
 	uuidLogsFilepath = baseLogsFilepath + "{{ enclave_uuid }}/{{ service_uuid }}.json\""
+
 	// Right now, we store duplicate logs files by service name and service's shortened uuid
 	// This is to enable retrieving logs by name and short uuid after enclaves have been stopped
 	// As right now, when an enclave is stopped all identifier info is lost

@@ -150,7 +150,7 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 }
 
 func getBasePredeclaredDict(t *testing.T, thread *starlark.Thread) starlark.StringDict {
-	kurtosisModule, err := builtins.KurtosisModule(thread, "")
+	kurtosisModule, err := builtins.KurtosisModule(thread, "", "")
 	require.Nil(t, err)
 	// TODO: refactor this with the one we have in the interpreter
 	predeclared := starlark.StringDict{
