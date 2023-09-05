@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.82.19](https://github.com/kurtosis-tech/kurtosis/compare/0.82.18...0.82.19) (2023-09-05)
+
+
+### Features
+
+* Add starlark.Value serializer/deserializer for enclave persistence ([#1229](https://github.com/kurtosis-tech/kurtosis/issues/1229)) ([45b9330](https://github.com/kurtosis-tech/kurtosis/commit/45b9330892a6559d75e8859ef6b9b3dff1f09b1b))
+
+
+### Bug Fixes
+
+* close engine server which is important for triggering the idle enclaves remotion process ([#1219](https://github.com/kurtosis-tech/kurtosis/issues/1219)) ([912e855](https://github.com/kurtosis-tech/kurtosis/commit/912e8551069da797cdbf86e21046f4444ed42b80))
+* disabled time.now() ([#1231](https://github.com/kurtosis-tech/kurtosis/issues/1231)) ([26e8d40](https://github.com/kurtosis-tech/kurtosis/commit/26e8d40dc08a9e534af814138eec598f9b21b1ac))
+* Does not delete runtime value during idepotent runs ([#1232](https://github.com/kurtosis-tech/kurtosis/issues/1232)) ([a06c247](https://github.com/kurtosis-tech/kurtosis/commit/a06c2473f9f13a3047d09dc74338d27de6ac24f0))
+* fix a sneaky segmentation fault where we were propagating a nil error ([#1222](https://github.com/kurtosis-tech/kurtosis/issues/1222)) ([666f4ee](https://github.com/kurtosis-tech/kurtosis/commit/666f4ee677f76f7828c065046c64394322085d74))
+* fix a typo in recipe result repository ([#1224](https://github.com/kurtosis-tech/kurtosis/issues/1224)) ([94a4b8b](https://github.com/kurtosis-tech/kurtosis/commit/94a4b8bc5fc79b69845ab4493eb70307cf9d7b0f))
+
 ## [0.82.18](https://github.com/kurtosis-tech/kurtosis/compare/0.82.17...0.82.18) (2023-09-01)
 
 
