@@ -45,7 +45,7 @@ const (
 	notFoundedFilterText     = "it shouldn't be found in the log lines"
 	firstMatchRegexFilterStr = "Starting.*idempotently'"
 
-	testTimeOut     = 2000 * time.Second
+	testTimeOut     = 2 * time.Second
 	doNotFollowLogs = false
 
 	defaultYear  = 2023

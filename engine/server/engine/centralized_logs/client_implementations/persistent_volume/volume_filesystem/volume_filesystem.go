@@ -16,6 +16,7 @@ const (
 type VolumeFilesystem interface {
 	Open(name string) (VolumeFile, error)
 	Stat(name string) (VolumeFileInfo, error)
+	RemoveAll(path string) error
 }
 
 type VolumeFile interface {
@@ -40,6 +41,10 @@ func (fs *OsVolumeFilesystem) Stat(name string) (VolumeFileInfo, error) {
 	return os.Stat(name)
 }
 
+func (fs *OsVolumeFilesystem) RemoveAll(path string) error {
+	return os.RemoveAll(path)
+}
+
 // MockedVolumeFilesystem is an implementation used for unit testing
 type MockedVolumeFilesystem struct {
 	// we use an underlying map filesystem that's easy to mock file data with
@@ -60,6 +65,16 @@ func (fs *MockedVolumeFilesystem) Stat(name string) (VolumeFileInfo, error) {
 	// Trim any forward slashes from this filepath
 	// fstest.MapFS doesn't like absolute paths!!!
 	return fs.mapFS.Stat(trimForwardSlash(name))
+}
+
+func (fs *MockedVolumeFilesystem) RemoveAll(path string) error {
+	path = trimForwardSlash(path)
+	for filepath, _ := range *fs.mapFS {
+		if strings.HasPrefix(filepath, path) {
+			delete(*fs.mapFS, filepath)
+		}
+	}
+	return nil
 }
 
 func trimForwardSlash(name string) string {
