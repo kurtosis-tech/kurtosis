@@ -138,7 +138,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			// we found a match
 			// -> First recopy store that index into the plan so that all instructions prior to this match will be
 			// kept in the enclave plan
-			logrus.Debugf("Stored index of mathcing instructions: %d into the new plan. The instructions prior to this index in the enclave plan won't be executed but need to be kept in the enclave plan", matchingInstructionIdx)
+			logrus.Debugf("Stored index of matching instructions: %d into the new plan. The instructions prior to this index in the enclave plan won't be executed but need to be kept in the enclave plan", matchingInstructionIdx)
 			optimizedPlan.SetIndexOfFirstInstruction(matchingInstructionIdx)
 			// -> Then recopy all instructions past this match from the enclave state to the mask
 			// Those instructions are the instructions that will mask the instructions for the newly submitted plan
