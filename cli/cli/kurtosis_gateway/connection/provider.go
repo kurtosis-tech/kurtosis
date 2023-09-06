@@ -27,9 +27,10 @@ const (
 var noWait *port_spec.Wait = nil
 
 type GatewayConnectionProvider struct {
-	config            *restclient.Config
-	kubernetesManager *kubernetes_manager.KubernetesManager
-	providerContext   context.Context
+	config                          *restclient.Config
+	kubernetesManager               *kubernetes_manager.KubernetesManager
+	providerContext                 context.Context
+	enclaveIdToEnclaveNamespaceName map[string]string
 }
 
 func NewGatewayConnectionProvider(ctx context.Context, kubernetesConfig *restclient.Config) (*GatewayConnectionProvider, error) {
@@ -44,9 +45,10 @@ func NewGatewayConnectionProvider(ctx context.Context, kubernetesConfig *restcli
 	kubernetesManager := kubernetes_manager.NewKubernetesManager(clientSet, kubernetesConfig)
 
 	return &GatewayConnectionProvider{
-		config:            kubernetesConfig,
-		kubernetesManager: kubernetesManager,
-		providerContext:   ctx,
+		config:                          kubernetesConfig,
+		kubernetesManager:               kubernetesManager,
+		providerContext:                 ctx,
+		enclaveIdToEnclaveNamespaceName: map[string]string{},
 	}, nil
 }
 
@@ -94,18 +96,16 @@ func (provider *GatewayConnectionProvider) ForEnclaveApiContainer(enclaveInfo *k
 	return apiContainerConnection, nil
 }
 
-func (provider *GatewayConnectionProvider) ForUserServiceIfRunning(enclaveId string, serviceUuid string, servicePortSpecs map[string]*port_spec.PortSpec) (GatewayConnectionToKurtosis, error) {
-	podPortforwardEndpoint, err := provider.getMaybeUserServicePodPortforwardEndpoint(enclaveId, serviceUuid)
+func (provider *GatewayConnectionProvider) ForUserServiceIfRunning(enclaveId string, serviceName string, servicePortSpecs map[string]*port_spec.PortSpec) (GatewayConnectionToKurtosis, error) {
+	enclaveNamespaceName, err := provider.getEnclaveNamespaceNameForEnclaveId(enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to find an api endpoint for Kubernetes portforward to a Kurtosis user service with id '%v' in enclave '%v', instead a non-nil error was returned", enclaveId, serviceUuid)
-	} else if podPortforwardEndpoint == nil {
-		return nil, nil
+		return nil, stacktrace.Propagate(err, "an error occurred while getting the enclave namespace name")
 	}
+	podPortforwardEndpoint := provider.getUserServicePortForwardEndpoint(enclaveNamespaceName, serviceName)
 	userServiceConnection, err := newLocalPortToPodPortConnection(provider.config, podPortforwardEndpoint, servicePortSpecs)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to connect to user service with id '%v', instead a non-nil error was returned", serviceUuid)
+		return nil, stacktrace.Propagate(err, "Expected to be able to connect to user service with name '%v', instead a non-nil error was returned", serviceName)
 	}
-
 	return userServiceConnection, nil
 }
 
@@ -139,19 +139,10 @@ func (provider *GatewayConnectionProvider) getEnginePodPortforwardEndpoint(engin
 }
 
 func (provider *GatewayConnectionProvider) getApiContainerPodPortforwardEndpoint(enclaveId string) (*url.URL, error) {
-	enclaveLabels := map[string]string{
-		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString():          enclaveId,
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-	}
-	enclaveNamespaceList, err := provider.kubernetesManager.GetNamespacesByLabels(provider.providerContext, enclaveLabels)
+	enclaveNamespaceName, err := provider.getEnclaveNamespaceNameForEnclaveId(enclaveId)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get enclaves namespaces with labels '%+v`, instead a non-nil error was returned", enclaveLabels)
+		return nil, stacktrace.Propagate(err, "an error occurred while getting the enclave namespace name")
 	}
-	if len(enclaveNamespaceList.Items) != 1 {
-		return nil, stacktrace.NewError("Expected to find exactly 1 enclave namespace with enclaveId '%v', instead found '%v'", enclaveId, len(enclaveNamespaceList.Items))
-	}
-	enclaveNamespaceName := enclaveNamespaceList.Items[0].Name
 
 	// Get running API Container pods from Kubernetes
 	apiContainerPodLabels := map[string]string{
@@ -170,28 +161,8 @@ func (provider *GatewayConnectionProvider) getApiContainerPodPortforwardEndpoint
 	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(enclaveNamespaceName, apiContainerPodName), nil
 }
 
-func (provider *GatewayConnectionProvider) getMaybeUserServicePodPortforwardEndpoint(enclaveId string, serviceUuid string) (*url.URL, error) {
-	userServiceNamespaceName, err := provider.getEnclaveNamespaceNameForEnclaveId(enclaveId)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get a Kubernetes namespace corresponding to a Kurtosis enclave with id '%v', instead a non-nil error was returned", enclaveId)
-	}
-	userServiceLabels := map[string]string{
-		label_key_consts.GUIDKubernetesLabelKey.GetString():                 serviceUuid,
-		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.UserServiceKurtosisResourceTypeKubernetesLabelValue.GetString(),
-		label_key_consts.AppIDKubernetesLabelKey.GetString():                label_value_consts.AppIDKubernetesLabelValue.GetString(),
-	}
-	runningUserServicePodNames, err := provider.getRunningPodNamesByLabels(userServiceNamespaceName, userServiceLabels)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Expected to be able to get running user service pods with labels '%+v' in namespace '%v', instead a non nil error was returned", runningUserServicePodNames, userServiceNamespaceName)
-	}
-	if len(runningUserServicePodNames) == 0 {
-		// A stopped service has no pod running and no port forward endpoint
-		return nil, nil
-	} else if len(runningUserServicePodNames) != 1 {
-		return nil, stacktrace.NewError("Expected to find exactly 1 running user service pod with guid '%v' in enclave '%v', instead found '%v'", serviceUuid, enclaveId, len(runningUserServicePodNames))
-	}
-	userServicePodName := runningUserServicePodNames[0]
-	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(userServiceNamespaceName, userServicePodName), nil
+func (provider *GatewayConnectionProvider) getUserServicePortForwardEndpoint(enclaveNamespaceName string, serviceName string) *url.URL {
+	return provider.kubernetesManager.GetPodPortforwardEndpointUrl(enclaveNamespaceName, serviceName)
 }
 
 func (provider *GatewayConnectionProvider) getRunningPodNamesByLabels(namespace string, podLabels map[string]string) ([]string, error) {
@@ -211,7 +182,14 @@ func (provider *GatewayConnectionProvider) getRunningPodNamesByLabels(namespace 
 	return runningPodNames, nil
 }
 
+// TODO - this function shouldn't exist when kt- + enclave name is the namespace inside kurtosis
+// https://github.com/kurtosis-tech/kurtosis/issues/1203 - till then we cache it
 func (provider *GatewayConnectionProvider) getEnclaveNamespaceNameForEnclaveId(enclaveId string) (string, error) {
+	enclaveNamespaceName, found := provider.enclaveIdToEnclaveNamespaceName[enclaveId]
+	if found {
+		return enclaveNamespaceName, nil
+	}
+
 	enclaveLabels := map[string]string{
 		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString():          enclaveId,
 		label_key_consts.KurtosisResourceTypeKubernetesLabelKey.GetString(): label_value_consts.EnclaveKurtosisResourceTypeKubernetesLabelValue.GetString(),
@@ -224,5 +202,8 @@ func (provider *GatewayConnectionProvider) getEnclaveNamespaceNameForEnclaveId(e
 	if len(enclaveNamespaceList.Items) != 1 {
 		return "", stacktrace.NewError("Expected to find exactly 1 enclave namespace with enclaveId '%v', instead found '%v'", enclaveId, len(enclaveNamespaceList.Items))
 	}
-	return enclaveNamespaceList.Items[0].Name, nil
+
+	enclaveNamespaceName = enclaveNamespaceList.Items[0].Name
+	provider.enclaveIdToEnclaveNamespaceName[enclaveId] = enclaveNamespaceName
+	return enclaveNamespaceName, nil
 }

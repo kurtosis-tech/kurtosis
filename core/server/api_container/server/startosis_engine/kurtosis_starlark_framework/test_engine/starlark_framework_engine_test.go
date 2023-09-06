@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
@@ -12,10 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
-	starlarkjson "go.starlark.net/lib/json"
-	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 	"reflect"
 	"testing"
 )
@@ -61,6 +57,7 @@ func TestAllRegisteredBuiltins(t *testing.T) {
 	testKurtosisTypeConstructor(t, newPostHttpRequestRecipeMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigMinimalTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCase(t))
+	testKurtosisTypeConstructor(t, newServiceTestCase(t))
 	testKurtosisTypeConstructor(t, newServiceConfigFullTestCaseBackwardCompatible(t))
 	testKurtosisTypeConstructor(t, newReadyConditionsHttpRecipeTestCase(t))
 	testKurtosisTypeConstructor(t, newReadyConditionsExecRecipeTestCase(t))
@@ -150,18 +147,8 @@ func testKurtosisTypeConstructor(t *testing.T, builtin KurtosisTypeConstructorBa
 }
 
 func getBasePredeclaredDict(t *testing.T, thread *starlark.Thread) starlark.StringDict {
-	kurtosisModule, err := builtins.KurtosisModule(thread, "")
-	require.Nil(t, err)
-	// TODO: refactor this with the one we have in the interpreter
-	predeclared := starlark.StringDict{
-		// go-starlark add-ons
-		starlarkjson.Module.Name:          starlarkjson.Module,
-		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
-		time.Module.Name:                  time.Module,
+	predeclared := startosis_engine.Predeclared()
 
-		// Kurtosis pre-built module containing Kurtosis constant types
-		builtins.KurtosisModuleName: kurtosisModule,
-	}
 	// Add all Kurtosis types
 	for _, kurtosisTypeConstructor := range startosis_engine.KurtosisTypeConstructors() {
 		predeclared[kurtosisTypeConstructor.Name()] = kurtosisTypeConstructor

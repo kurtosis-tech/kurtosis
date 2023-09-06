@@ -153,7 +153,8 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 func printKurtosisCommandToFile(cmd *cobra.Command, args []string) {
 	fileLogger := out.GetFileLogger()
 	flagsSetByUsers := getFlagsSetByUsers(cmd.Flags())
-	fileLogger.Infof("===== Executing Command: kurtosis %v %v %v =====",
+	fileLogger.Infof("===== Executing Command: %v %v %v %v =====",
+		command_str_consts.KurtosisCmdStr,
 		cmd.Name(),
 		strings.Join(flagsSetByUsers, " "),
 		strings.Join(args, " "))
@@ -313,7 +314,7 @@ func getLatestCLIReleaseVersionFromGitHub() (string, error) {
 
 	latestVersion := strings.TrimLeft(responseObject.TagName, optionalSemverPrefix)
 	if latestVersion == "" {
-		return "", stacktrace.Propagate(err, "The latest release version got from GitHub releases is empty")
+		return "", stacktrace.NewError("The latest release version got from GitHub releases is empty")
 	}
 
 	return latestVersion, nil

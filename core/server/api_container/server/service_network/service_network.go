@@ -2,6 +2,7 @@ package service_network
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
@@ -114,4 +115,6 @@ type ServiceNetwork interface {
 	GetUniqueNameForFileArtifact() (string, error)
 
 	GetApiContainerInfo() *ApiContainerInfo
+
+	GetEnclaveUuid() enclave.EnclaveUUID
 }

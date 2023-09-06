@@ -70,7 +70,7 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 		switch instructionResolutionStatus {
 		case enclave_structure.InstructionIsEqual:
 			// add instruction from the mask and mark it as executed but not imported from the current enclave plan
-			builtin.instructionsPlan.AddScheduledInstruction(scheduledInstructionPulledFromMaskMaybe).Executed(true).ImportedFromCurrentEnclavePlan(false)
+			builtin.instructionsPlan.AddScheduledInstruction(scheduledInstructionPulledFromMaskMaybe).Executed(true)
 			return scheduledInstructionPulledFromMaskMaybe.GetReturnedValue(), nil
 		case enclave_structure.InstructionIsUpdate:
 			// otherwise add the instruction as a new one to the plan and return its own returned value
