@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	oneWeekDuration = 7 * 24 * time.Hour
+	oneWeek = 7 * 24 * time.Hour
 )
 
 // LogRemover removes logs one week older than the log retention period.
@@ -34,10 +34,10 @@ func (remover LogRemover) Run() {
 	numWeeksBack := volume_consts.LogRetentionPeriodInWeeks + 1
 
 	// compute the next oldest week
-	_, weekToRemove := remover.time.Now().Add(time.Duration(-numWeeksBack) * oneWeekDuration).ISOWeek()
+	year, weekToRemove := remover.time.Now().Add(time.Duration(-numWeeksBack) * oneWeek).ISOWeek()
 
 	// remove directory for that week
-	oldLogsDirPath := fmt.Sprintf("%s%s/", volume_consts.LogsStorageDirpath, strconv.Itoa(weekToRemove))
+	oldLogsDirPath := fmt.Sprintf(volume_consts.PerWeekDirPathStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(weekToRemove))
 	if err := remover.filesystem.RemoveAll(oldLogsDirPath); err != nil {
 		logrus.Warnf("An error occurred removing old logs at the following path '%v': %v\n", oldLogsDirPath, err)
 	}

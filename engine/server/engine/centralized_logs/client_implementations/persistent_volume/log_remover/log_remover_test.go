@@ -17,17 +17,16 @@ const (
 	testEnclaveUuid      = "test-enclave"
 	testUserService1Uuid = "test-user-service-1"
 
-	defaultYear = 2023
-	defaultDay  = 0
+	defaultDay = 0
 )
 
 func TestLogRemover_Run(t *testing.T) {
-	week49filepath := getWeekFilepathStr(49)
-	week50filepath := getWeekFilepathStr(50)
-	week51filepath := getWeekFilepathStr(51)
-	week52filepath := getWeekFilepathStr(52)
-	week1filepath := getWeekFilepathStr(1)
-	week2filepath := getWeekFilepathStr(2)
+	week49filepath := getWeekFilepathStr(2022, 49)
+	week50filepath := getWeekFilepathStr(2022, 50)
+	week51filepath := getWeekFilepathStr(2022, 51)
+	week52filepath := getWeekFilepathStr(2022, 52)
+	week1filepath := getWeekFilepathStr(2023, 1)
+	week2filepath := getWeekFilepathStr(2023, 2)
 
 	mapFs := &fstest.MapFS{
 		week49filepath: {
@@ -53,7 +52,7 @@ func TestLogRemover_Run(t *testing.T) {
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem(mapFs)
 	currentWeek := 2
 
-	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay)
+	mockTime := logs_clock.NewMockLogsClock(2023, currentWeek, defaultDay)
 	logRemover := NewLogRemover(mockFs, mockTime)
 
 	// log remover should remove week 49 logs
@@ -63,6 +62,6 @@ func TestLogRemover_Run(t *testing.T) {
 	require.Error(t, err) // check the file doesn't exist
 }
 
-func getWeekFilepathStr(week int) string {
-	return fmt.Sprintf("%s%s/%s/%s%s", logsStorageDirpathForTests, strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+func getWeekFilepathStr(year, week int) string {
+	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, logsStorageDirpathForTests, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 }

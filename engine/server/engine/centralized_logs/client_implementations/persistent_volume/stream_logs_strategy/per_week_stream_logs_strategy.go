@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	oneWeekDuration = 7 * 24 * time.Hour
+	oneWeek = 7 * 24 * time.Hour
 )
 
 // This strategy pulls logs from filesytsem where there is a log file per year, per week, per enclave, per service
@@ -60,12 +60,10 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			serviceUuid, enclaveUuid)
 		return
 	}
-	if len(paths) < volume_consts.LogRetentionPeriodInWeeks+1 {
+	if len(paths) > volume_consts.LogRetentionPeriodInWeeks+1 {
 		logrus.Warnf(
 			`We expected to retrieve logs going back '%v' weeks, but instead retrieved logs going back '%v' weeks. 
-					This indicates either:
-					1) The enclave has not been running longer than the log retention period.
-					2) Logs aren't being stored and/or have been removed.`,
+					This means logs past the retention period are being returned, likely a bug in Kurtosis.`,
 			volume_consts.LogRetentionPeriodInWeeks+1, len(paths))
 	}
 
@@ -192,8 +190,8 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 
 	// get log file paths as far back as they exist
 	for i := 0; i < (retentionPeriodInWeeks + 1); i++ {
-		year, week := strategy.time.Now().Add(time.Duration(-i) * oneWeekDuration).ISOWeek()
-		filePathStr := fmt.Sprintf(volume_consts.PerWeekFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
+		year, week := strategy.time.Now().Add(time.Duration(-i) * oneWeek).ISOWeek()
+		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err != nil {
 			break
 		}
@@ -208,7 +206,7 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 
 // Returns true if no [logLine] has no timestamp
 func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine JsonLog) (bool, error) {
-	retentionPeriod := strategy.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks-1) * oneWeekDuration)
+	retentionPeriod := strategy.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks-1) * oneWeek)
 	timestampStr, found := logLine[volume_consts.TimestampLabel]
 	if found {
 		timestamp, err := time.Parse(time.RFC3339, timestampStr)

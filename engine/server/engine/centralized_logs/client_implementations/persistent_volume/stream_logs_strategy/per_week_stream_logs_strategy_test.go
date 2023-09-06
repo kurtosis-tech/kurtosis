@@ -234,5 +234,5 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 }
 
 func getWeekFilepathStr(year, week int) string {
-	return fmt.Sprintf(volume_consts.PerWeekFmtStr, logsStorageDirpathForTests, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, logsStorageDirpathForTests, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 }
