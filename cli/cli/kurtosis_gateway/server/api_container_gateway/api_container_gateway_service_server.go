@@ -31,6 +31,9 @@ type ApiContainerGatewayServiceServer struct {
 	// ServiceMap and mutex to protect it
 	mutex                               *sync.Mutex
 	userServiceNameToLocalConnectionMap map[string]*runningLocalServiceConnection
+
+	// User services port forwarding
+	connect kurtosis_core_rpc_api_bindings.Connect
 }
 
 type runningLocalServiceConnection struct {
@@ -56,6 +59,7 @@ func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayC
 		mutex:                               &sync.Mutex{},
 		userServiceNameToLocalConnectionMap: userServiceToLocalConnectionMap,
 		enclaveId:                           enclaveId,
+		connect:                             kurtosis_core_rpc_api_bindings.Connect_CONNECT,
 	}, closeGatewayFunc
 }
 
@@ -68,6 +72,7 @@ func (service *ApiContainerGatewayServiceServer) RunStarlarkScript(args *kurtosi
 	if err := common.ForwardKurtosisExecutionStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamToReadFrom, streamToWriteTo); err != nil {
 		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user")
 	}
+	service.connect = *args.Connect
 	return nil
 }
 
@@ -89,6 +94,7 @@ func (service *ApiContainerGatewayServiceServer) RunStarlarkPackage(args *kurtos
 	if err := common.ForwardKurtosisExecutionStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamToReadFrom, streamToWriteTo); err != nil {
 		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user while executing package '%s'", args.GetPackageId())
 	}
+	service.connect = *args.Connect
 	return nil
 }
 
@@ -100,11 +106,13 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
-	// Clean up the removed services when we have the full list of running services
-	cleanupRemovedServices := len(args.ServiceIdentifiers) == 0
+	if service.connect == kurtosis_core_rpc_api_bindings.Connect_CONNECT {
+		// Clean up the removed services when we have the full list of running services
+		cleanupRemovedServices := len(args.ServiceIdentifiers) == 0
 
-	if err := service.updateServicesLocalConnection(remoteApiContainerResponse.ServiceInfo, cleanupRemovedServices); err != nil {
-		return nil, stacktrace.Propagate(err, "Error updating the services local connection")
+		if err := service.updateServicesLocalConnection(remoteApiContainerResponse.ServiceInfo, cleanupRemovedServices); err != nil {
+			return nil, stacktrace.Propagate(err, "Error updating the services local connection")
+		}
 	}
 
 	return remoteApiContainerResponse, nil
