@@ -10,7 +10,7 @@ const Enclave = ({name, status, created, handleClick, handleDeleteClick}) => {
         <Grid
             templateRows='repeat(3, 1fr)'
             templateColumns='repeat(1, 1fr)'
-            className={`h-48 rounded-md border-4 flex ${backgroundColor} text-white items-center justify-center text-2xl flex-col`}
+            className={`h-48 rounded-md border-4 ${backgroundColor} text-white items-center justify-center text-2xl`}
             onClick={() => handleClick(name)}
         >
             <GridItem colSpan={4} align={"right"} style={{"z-index":100}}>
@@ -27,14 +27,6 @@ const Enclave = ({name, status, created, handleClick, handleDeleteClick}) => {
             <GridItem colSpan={4} bg='papayawhip'>
             </GridItem>
         </Grid>
-        
-        // <div onClick={() => handleClick(name)}
-        //      className={`h-48 p-4 rounded-md border-4 flex ${backgroundColor} text-white items-center justify-center text-2xl flex-col`}>
-        //     <p className="text-3xl"> {name} </p>
-        //     <p className="text-xs"> {created} </p>
-        //     <Button colorScheme='blue'>Button</Button>
-
-        // </div>
     )
 }
 

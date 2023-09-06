@@ -252,11 +252,11 @@ func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kur
 	if !auth {
 		return nil, stacktrace.Propagate(err, "User not authorized")
 	}
-	result, err := (*c.engineServiceClient).DestroyEnclave(ctx, req)
+	_, err = (*c.engineServiceClient).DestroyEnclave(ctx, req)
 	if err != nil {
 		return nil, err
 	}
-	return result, nil
+	return &connect.Response[emptypb.Empty]{}, nil
 
 }
 
