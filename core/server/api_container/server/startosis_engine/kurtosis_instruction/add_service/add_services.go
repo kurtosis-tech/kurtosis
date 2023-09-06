@@ -411,7 +411,7 @@ func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.Service
 	var err error
 	for serviceName, serviceConfig := range serviceConfigs {
 		serviceNameStr := starlark.String(serviceName)
-		resultUuids[serviceName], err = runtimeValueStore.CreateValue()
+		resultUuids[serviceName], err = runtimeValueStore.GetOrCreateValueAssociatedWithService(serviceName)
 		if err != nil {
 			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServicesBuiltinName)
 		}
