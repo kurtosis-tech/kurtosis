@@ -153,15 +153,12 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 				break
 			}
 
-			// ensure this logline is within the retention period
-			retentionPeriod := strategy.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks-1) * oneWeekDuration)
-			timestampStr := jsonLog[volume_consts.TimestampLabel]
-			timestamp, err := time.Parse(time.RFC3339, timestampStr)
+			// ensure this log line is within the retention period if it has a timestamp
+			shouldReturnLogLine, err = strategy.isWithinRetentionPeriod(jsonLog)
 			if err != nil {
-				streamErrChan <- stacktrace.NewError("An error retrieving the timestamp field from logs json log line. This is a bug in Kurtosis.")
-				return
+				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
+				break
 			}
-			shouldReturnLogLine = timestamp.Before(retentionPeriod)
 
 			if !shouldReturnLogLine {
 				break
@@ -207,4 +204,18 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 	slices.Reverse(paths)
 
 	return paths
+}
+
+// Returns true if no [logLine] has no timestamp
+func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine JsonLog) (bool, error) {
+	retentionPeriod := strategy.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks-1) * oneWeekDuration)
+	timestampStr, found := logLine[volume_consts.TimestampLabel]
+	if found {
+		timestamp, err := time.Parse(time.RFC3339, timestampStr)
+		if err != nil {
+			return false, stacktrace.Propagate(err, "An error occurred retrieving the timestamp field from logs json log line. This is a bug in Kurtosis.")
+		}
+		return timestamp.After(retentionPeriod), nil
+	}
+	return true, nil
 }

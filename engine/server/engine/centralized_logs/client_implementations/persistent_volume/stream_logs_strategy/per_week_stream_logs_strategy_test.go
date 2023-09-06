@@ -161,12 +161,12 @@ func TestGetRetainedLogsFilePathsWithDiffRetentionPeriod(t *testing.T) {
 
 func TestGetRetainedLogsFilePathsReturnsErrorIfWeeksMissing(t *testing.T) {
 	// ../week/enclave uuid/service uuid.json
-	week0filepath := getWeekFilepathStr(defaultYear, 0)
+	week52filepath := getWeekFilepathStr(defaultYear, 52)
 	week1filepath := getWeekFilepathStr(defaultYear, 1)
 	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
 	mapFS := &fstest.MapFS{
-		week0filepath: {
+		week52filepath: {
 			Data: []byte{},
 		},
 		week1filepath: {
@@ -189,12 +189,12 @@ func TestGetRetainedLogsFilePathsReturnsErrorIfWeeksMissing(t *testing.T) {
 
 func TestGetRetainedLogsFilePathsReturnsCorrectPathsIfWeeksMissing(t *testing.T) {
 	// ../week/enclave uuid/service uuid.json
-	week0filepath := getWeekFilepathStr(defaultYear, 0)
+	week52filepath := getWeekFilepathStr(defaultYear, 0)
 	week1filepath := getWeekFilepathStr(defaultYear, 1)
 	week3filepath := getWeekFilepathStr(defaultYear, 3)
 
 	mapFS := &fstest.MapFS{
-		week0filepath: {
+		week52filepath: {
 			Data: []byte{},
 		},
 		week1filepath: {
@@ -215,6 +215,22 @@ func TestGetRetainedLogsFilePathsReturnsCorrectPathsIfWeeksMissing(t *testing.T)
 
 	require.Len(t, logFilePaths, 1)
 	require.Equal(t, "/"+week3filepath, logFilePaths[0])
+}
+
+func TestIsWithinRetentionPeriod(t *testing.T) {
+	// this is the 36th week of the yera
+	jsonLogLine := map[string]string{
+		"timestamp": "2023-09-06T00:35:15-04:00",
+	}
+
+	// week 41 would put the log line outside the retention period
+	mockTime := logs_clock.NewMockLogsClock(2023, 41, 0)
+	strategy := NewPerWeekStreamLogsStrategy(mockTime)
+
+	isWithinRetentionPeriod, err := strategy.isWithinRetentionPeriod(jsonLogLine)
+
+	require.NoError(t, err)
+	require.False(t, isWithinRetentionPeriod)
 }
 
 func getWeekFilepathStr(year, week int) string {
