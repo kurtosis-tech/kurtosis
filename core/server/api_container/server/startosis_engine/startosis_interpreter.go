@@ -17,11 +17,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/sirupsen/logrus"
-	starlarkjson "go.starlark.net/lib/json"
-	"go.starlark.net/lib/time"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
-	"go.starlark.net/starlarkstruct"
 	"go.starlark.net/syntax"
 	"path"
 	"strings"
@@ -139,12 +136,10 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 		if matchingInstructionIdx >= 0 {
 			logrus.Debugf("Found an instruction in enclave state at index %d which matches the first instruction of the new instructions plan", matchingInstructionIdx)
 			// we found a match
-			// -> First recopy all enclave state instructions prior to this match to the optimized plan. Those won't
-			// be executed, but they need to be part of the plan to keep the state of the enclave accurate
-			logrus.Debugf("Copying %d instructions from current enclave plan to new plan. Those instructions won't be executed but need to be kept in the enclave plan", matchingInstructionIdx)
-			for i := 0; i < matchingInstructionIdx; i++ {
-				optimizedPlan.AddScheduledInstruction(currentEnclavePlanSequence[i]).ImportedFromCurrentEnclavePlan(true).Executed(true)
-			}
+			// -> First recopy store that index into the plan so that all instructions prior to this match will be
+			// kept in the enclave plan
+			logrus.Debugf("Stored index of matching instructions: %d into the new plan. The instructions prior to this index in the enclave plan won't be executed but need to be kept in the enclave plan", matchingInstructionIdx)
+			optimizedPlan.SetIndexOfFirstInstruction(matchingInstructionIdx)
 			// -> Then recopy all instructions past this match from the enclave state to the mask
 			// Those instructions are the instructions that will mask the instructions for the newly submitted plan
 			numberOfInstructionCopiedToMask := 0
@@ -159,9 +154,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			logrus.Debugf("Writing %d instruction at the beginning of the plan mask, leaving %d empty at the end", numberOfInstructionCopiedToMask, potentialMask.Size()-numberOfInstructionCopiedToMask)
 		} else {
 			// We cannot find any more instructions inside the enclave state matching the first instruction of the plan
-			for _, currentPlanInstruction := range currentEnclavePlanSequence {
-				optimizedPlan.AddScheduledInstruction(currentPlanInstruction).ImportedFromCurrentEnclavePlan(true).Executed(true)
-			}
+			optimizedPlan.SetIndexOfFirstInstruction(currentEnclavePlan.Size())
 			for _, newPlanInstruction := range naiveInstructionsPlanSequence {
 				optimizedPlan.AddScheduledInstruction(newPlanInstruction)
 			}
@@ -347,15 +340,9 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 		return nil, interpretationErr
 	}
 
-	predeclared := starlark.StringDict{
-		// go-starlark add-ons
-		starlarkjson.Module.Name:          starlarkjson.Module,
-		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
-		time.Module.Name:                  time.Module,
-
-		// Kurtosis pre-built module containing Kurtosis constant types
-		builtins.KurtosisModuleName: kurtosisModule,
-	}
+	predeclared := Predeclared()
+	// Add custom Kurtosis module
+	predeclared[builtins.KurtosisModuleName] = kurtosisModule
 
 	// Add all Kurtosis helpers
 	for _, kurtosisHelper := range KurtosisHelpers(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, interpreter.moduleGlobalsCache) {
