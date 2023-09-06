@@ -148,6 +148,8 @@ On MacOS:
 brew install go@1.19
 # Add the Go binary dir to your PATH
 PATH="${BREW_PREFIX}/opt/go@1.19/bin:$PATH"
+# Add the GOPATH bin dir to your PATH
+PATH="${HOME}/go/bin:$PATH"
 ```
 
 #### Goreleaser
@@ -180,6 +182,7 @@ On MacOS:
 ```bash
 brew install protoc-gen-go
 brew install protoc-gen-go-grpc
+go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
 npm install -g ts-protoc-gen
 npm install -g grpc-tools
 ```
