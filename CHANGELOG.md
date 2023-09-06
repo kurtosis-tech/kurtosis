@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.82.20](https://github.com/kurtosis-tech/kurtosis/compare/0.82.19...0.82.20) (2023-09-06)
+
+
+### Bug Fixes
+
+* handle default string value properly ([#1243](https://github.com/kurtosis-tech/kurtosis/issues/1243)) ([6e49059](https://github.com/kurtosis-tech/kurtosis/commit/6e4905973715db54814cf678832a576a89b5fd28))
+* Runtime values created by `add_services` were incorrect in the case of a skipped instruction ([#1239](https://github.com/kurtosis-tech/kurtosis/issues/1239)) ([3412486](https://github.com/kurtosis-tech/kurtosis/commit/341248627daa1be920985137080b8705662f1993))
+
 ## [0.82.19](https://github.com/kurtosis-tech/kurtosis/compare/0.82.18...0.82.19) (2023-09-05)
 
 
