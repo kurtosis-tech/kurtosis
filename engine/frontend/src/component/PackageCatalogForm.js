@@ -103,16 +103,23 @@ const checkValidIntType = (data) => {
 
 const checkValidFloatType = (data) => {
     const  isValidFloat = (value) => {
-        return (/^-?[\d]*(\.[\d]+)?$/g).test(value);
+        return !isNaN(Number(value))
     }
     if (data === "undefined") {
         return false
     }
-    return isValidFloat(data)
+
+    const trimmedData = data.trim()
+    if (trimmedData.length === 0) {
+        return false
+    }
+
+    return isValidFloat(trimmedData)
 }
 
 const checkValidBooleanType = (data) => {
-    return ["TRUE", "FALSE"].contains(data)
+    const trimData = data.trim()
+    return ["TRUE", "FALSE"].includes(trimData.toUpperCase())
 }
 
 const PackageCatalogForm = ({handleCreateNewEnclave}) => {
@@ -197,7 +204,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             }
 
             if (!valid) {
-                errorsFound[key] = `Incorrect type, expected ${type}`;
+                errorsFound[key] = `Incorrect type, expected ${typeToPrint}`;
             }
         })
 
@@ -223,13 +230,18 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 const value = formData[key]
 
                 let val; 
+                let trimmedValue;
                 if (value.length > 0) {
                     if (kurtosisPackage.args[key]["type"] === "INTEGER") {
+                        trimmedValue = value.trim()
                         val = parseInt(value)
                         args[argName] = val
                     } else if (kurtosisPackage.args[key]["type"] === "BOOL") {
-                        args[argName] = (value === "TRUE") ? true : false
+                        trimmedValue = value.trim()
+                        val = value.toUpperCase()
+                        args[argName] = (val === "TRUE") ? true : false
                     } else if (kurtosisPackage.args[key]["type"] === "FLOAT") {
+                        trimmedValue = value.trim()
                         val = parseFloat(value)
                         args[argName] = val
                     } else if (kurtosisPackage.args[key]["type"] === "STRING") {

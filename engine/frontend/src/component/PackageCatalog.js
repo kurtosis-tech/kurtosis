@@ -46,7 +46,8 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
         const filteredPackages = defaultPackages.filter(pack => {
                 if ("name" in pack) {
                     // lowercase everything so that it works for both cases
-                    return pack.name.toLowerCase().includes(value.toLowerCase())
+                    const trimmedValue = value.trim()
+                    return pack.name.toLowerCase().includes(trimmedValue)
                 }
                 return false;
             }
