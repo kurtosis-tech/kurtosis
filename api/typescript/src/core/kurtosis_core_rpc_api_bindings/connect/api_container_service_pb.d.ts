@@ -27,6 +27,30 @@ export declare enum ServiceStatus {
 }
 
 /**
+ * User services port forwarding
+ *
+ * @generated from enum api_container_api.Connect
+ */
+export declare enum Connect {
+  /**
+   * Best effort port forwarding
+   *
+   * @generated from enum value: CONNECT = 0;
+   */
+  CONNECT = 0,
+
+  /**
+   * Port forwarding disabled
+   *
+   * Starlark run fails if the ports cannot be forwarded.
+   * MUST_CONNECT = 2;
+   *
+   * @generated from enum value: NO_CONNECT = 1;
+   */
+  NO_CONNECT = 1,
+}
+
+/**
  * @generated from enum api_container_api.KurtosisFeatureFlag
  */
 export declare enum KurtosisFeatureFlag {
@@ -226,6 +250,13 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
    */
   experimentalFeatures: KurtosisFeatureFlag[];
 
+  /**
+   * User services port forwarding.  Defaults to CONNECT
+   *
+   * @generated from field: optional api_container_api.Connect connect = 7;
+   */
+  connect?: Connect;
+
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
   static readonly runtime: typeof proto3;
@@ -325,6 +356,13 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 11;
    */
   experimentalFeatures: KurtosisFeatureFlag[];
+
+  /**
+   * User services port forwarding.  Defaults to CONNECT
+   *
+   * @generated from field: optional api_container_api.Connect connect = 12;
+   */
+  connect?: Connect;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 

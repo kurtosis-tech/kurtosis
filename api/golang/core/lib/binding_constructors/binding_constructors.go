@@ -39,6 +39,7 @@ func NewRunStarlarkScriptArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	connect kurtosis_core_rpc_api_bindings.Connect,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -49,6 +50,7 @@ func NewRunStarlarkScriptArgs(
 		Parallelism:          parallelismCopy,
 		MainFunctionName:     mainFunctionName,
 		ExperimentalFeatures: experimentalFeatures,
+		Connect:              &connect,
 	}
 }
 
@@ -60,6 +62,7 @@ func NewRunStarlarkPackageArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	connect kurtosis_core_rpc_api_bindings.Connect,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -74,6 +77,7 @@ func NewRunStarlarkPackageArgs(
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFunctionName,
 		ExperimentalFeatures:   experimentalFeatures,
+		Connect:                &connect,
 	}
 }
 
@@ -85,6 +89,7 @@ func NewRunStarlarkRemotePackageArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	connect kurtosis_core_rpc_api_bindings.Connect,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -99,6 +104,7 @@ func NewRunStarlarkRemotePackageArgs(
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFunctionName,
 		ExperimentalFeatures:   experimentalFeatures,
+		Connect:                &connect,
 	}
 }
 

@@ -23,6 +23,7 @@ var global = (function() {
 
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 goog.object.extend(proto, google_protobuf_empty_pb);
+goog.exportSymbol('proto.api_container_api.Connect', null, global);
 goog.exportSymbol('proto.api_container_api.DataChunkMetadata', null, global);
 goog.exportSymbol('proto.api_container_api.DownloadFilesArtifactArgs', null, global);
 goog.exportSymbol('proto.api_container_api.ExecCommandArgs', null, global);
@@ -1462,7 +1463,8 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
     dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
     parallelism: jspb.Message.getFieldWithDefault(msg, 4, 0),
     mainFunctionName: jspb.Message.getFieldWithDefault(msg, 5, ""),
-    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f
+    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
+    connect: jspb.Message.getFieldWithDefault(msg, 7, 0)
   };
 
   if (includeInstance) {
@@ -1524,6 +1526,10 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
       for (var i = 0; i < values.length; i++) {
         msg.addExperimentalFeatures(values[i]);
       }
+      break;
+    case 7:
+      var value = /** @type {!proto.api_container_api.Connect} */ (reader.readEnum());
+      msg.setConnect(value);
       break;
     default:
       reader.skipField();
@@ -1593,6 +1599,13 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
   if (f.length > 0) {
     writer.writePackedEnum(
       6,
+      f
+    );
+  }
+  f = /** @type {!proto.api_container_api.Connect} */ (jspb.Message.getField(message, 7));
+  if (f != null) {
+    writer.writeEnum(
+      7,
       f
     );
   }
@@ -1762,6 +1775,42 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.clearExperimentalFeature
 };
 
 
+/**
+ * optional Connect connect = 7;
+ * @return {!proto.api_container_api.Connect}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getConnect = function() {
+  return /** @type {!proto.api_container_api.Connect} */ (jspb.Message.getFieldWithDefault(this, 7, 0));
+};
+
+
+/**
+ * @param {!proto.api_container_api.Connect} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setConnect = function(value) {
+  return jspb.Message.setField(this, 7, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearConnect = function() {
+  return jspb.Message.setField(this, 7, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasConnect = function() {
+  return jspb.Message.getField(this, 7) != null;
+};
+
+
 
 /**
  * List of repeated fields within this message type.
@@ -1836,7 +1885,8 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     clonePackage: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
     relativePathToMainFile: jspb.Message.getFieldWithDefault(msg, 9, ""),
     mainFunctionName: jspb.Message.getFieldWithDefault(msg, 10, ""),
-    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f
+    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f,
+    connect: jspb.Message.getFieldWithDefault(msg, 12, 0)
   };
 
   if (includeInstance) {
@@ -1914,6 +1964,10 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
       for (var i = 0; i < values.length; i++) {
         msg.addExperimentalFeatures(values[i]);
       }
+      break;
+    case 12:
+      var value = /** @type {!proto.api_container_api.Connect} */ (reader.readEnum());
+      msg.setConnect(value);
       break;
     default:
       reader.skipField();
@@ -2011,6 +2065,13 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f.length > 0) {
     writer.writePackedEnum(
       11,
+      f
+    );
+  }
+  f = /** @type {!proto.api_container_api.Connect} */ (jspb.Message.getField(message, 12));
+  if (f != null) {
+    writer.writeEnum(
+      12,
       f
     );
   }
@@ -2327,6 +2388,42 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.addExperimentalFeatures
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.clearExperimentalFeaturesList = function() {
   return this.setExperimentalFeaturesList([]);
+};
+
+
+/**
+ * optional Connect connect = 12;
+ * @return {!proto.api_container_api.Connect}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getConnect = function() {
+  return /** @type {!proto.api_container_api.Connect} */ (jspb.Message.getFieldWithDefault(this, 12, 0));
+};
+
+
+/**
+ * @param {!proto.api_container_api.Connect} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setConnect = function(value) {
+  return jspb.Message.setField(this, 12, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearConnect = function() {
+  return jspb.Message.setField(this, 12, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.hasConnect = function() {
+  return jspb.Message.getField(this, 12) != null;
 };
 
 
@@ -8512,6 +8609,14 @@ proto.api_container_api.ServiceStatus = {
   STOPPED: 0,
   RUNNING: 1,
   UNKNOWN: 2
+};
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.Connect = {
+  CONNECT: 0,
+  NO_CONNECT: 1
 };
 
 /**

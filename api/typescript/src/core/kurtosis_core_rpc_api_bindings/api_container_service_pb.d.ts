@@ -110,6 +110,11 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   clearExperimentalFeaturesList(): RunStarlarkScriptArgs;
   addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkScriptArgs;
 
+  getConnect(): Connect;
+  setConnect(value: Connect): RunStarlarkScriptArgs;
+  hasConnect(): boolean;
+  clearConnect(): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -126,6 +131,7 @@ export namespace RunStarlarkScriptArgs {
     parallelism?: number,
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
+    connect?: Connect,
   }
 
   export enum DryRunCase { 
@@ -136,6 +142,11 @@ export namespace RunStarlarkScriptArgs {
   export enum ParallelismCase { 
     _PARALLELISM_NOT_SET = 0,
     PARALLELISM = 4,
+  }
+
+  export enum ConnectCase { 
+    _CONNECT_NOT_SET = 0,
+    CONNECT = 7,
   }
 }
 
@@ -180,6 +191,11 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   clearExperimentalFeaturesList(): RunStarlarkPackageArgs;
   addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkPackageArgs;
 
+  getConnect(): Connect;
+  setConnect(value: Connect): RunStarlarkPackageArgs;
+  hasConnect(): boolean;
+  clearConnect(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -202,6 +218,7 @@ export namespace RunStarlarkPackageArgs {
     relativePathToMainFile: string,
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
+    connect?: Connect,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -223,6 +240,11 @@ export namespace RunStarlarkPackageArgs {
   export enum ClonePackageCase { 
     _CLONE_PACKAGE_NOT_SET = 0,
     CLONE_PACKAGE = 8,
+  }
+
+  export enum ConnectCase { 
+    _CONNECT_NOT_SET = 0,
+    CONNECT = 12,
   }
 }
 
@@ -1080,6 +1102,10 @@ export enum ServiceStatus {
   STOPPED = 0,
   RUNNING = 1,
   UNKNOWN = 2,
+}
+export enum Connect { 
+  CONNECT = 0,
+  NO_CONNECT = 1,
 }
 export enum KurtosisFeatureFlag { 
   NO_INSTRUCTIONS_CACHING = 0,

@@ -18,6 +18,19 @@ export const ServiceStatus = proto3.makeEnum(
 );
 
 /**
+ * User services port forwarding
+ *
+ * @generated from enum api_container_api.Connect
+ */
+export const Connect = proto3.makeEnum(
+  "api_container_api.Connect",
+  [
+    {no: 0, name: "CONNECT"},
+    {no: 1, name: "NO_CONNECT"},
+  ],
+);
+
+/**
  * @generated from enum api_container_api.KurtosisFeatureFlag
  */
 export const KurtosisFeatureFlag = proto3.makeEnum(
@@ -89,6 +102,7 @@ export const RunStarlarkScriptArgs = proto3.makeMessageType(
     { no: 4, name: "parallelism", kind: "scalar", T: 5 /* ScalarType.INT32 */, opt: true },
     { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 7, name: "connect", kind: "enum", T: proto3.getEnumType(Connect), opt: true },
   ],
 );
 
@@ -108,6 +122,7 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 9, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 10, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 11, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 12, name: "connect", kind: "enum", T: proto3.getEnumType(Connect), opt: true },
   ],
 );
 

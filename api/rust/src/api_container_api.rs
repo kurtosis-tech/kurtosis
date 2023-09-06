@@ -113,6 +113,9 @@ pub struct RunStarlarkScriptArgs {
     pub main_function_name: ::prost::alloc::string::String,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "6")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    /// User services port forwarding.  Defaults to CONNECT
+    #[prost(enumeration = "Connect", optional, tag = "7")]
+    pub connect: ::core::option::Option<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -143,6 +146,9 @@ pub struct RunStarlarkPackageArgs {
     pub main_function_name: ::prost::alloc::string::String,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "11")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    /// User services port forwarding.  Defaults to CONNECT
+    #[prost(enumeration = "Connect", optional, tag = "12")]
+    pub connect: ::core::option::Option<i32>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -578,6 +584,38 @@ impl ServiceStatus {
             "STOPPED" => Some(Self::Stopped),
             "RUNNING" => Some(Self::Running),
             "UNKNOWN" => Some(Self::Unknown),
+            _ => None,
+        }
+    }
+}
+/// User services port forwarding
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum Connect {
+    /// Best effort port forwarding
+    Connect = 0,
+    /// Port forwarding disabled
+    ///
+    /// Starlark run fails if the ports cannot be forwarded.
+    /// MUST_CONNECT = 2;
+    NoConnect = 1,
+}
+impl Connect {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Connect::Connect => "CONNECT",
+            Connect::NoConnect => "NO_CONNECT",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "CONNECT" => Some(Self::Connect),
+            "NO_CONNECT" => Some(Self::NoConnect),
             _ => None,
         }
     }
