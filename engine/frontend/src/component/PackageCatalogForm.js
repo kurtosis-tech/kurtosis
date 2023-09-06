@@ -95,7 +95,8 @@ const checkValidIntType = (data) => {
         return false
     }
     try {
-        return isNumeric(data)
+        const trimmedData = data.trim()
+        return isNumeric(trimmedData)
     } catch(ex) {
         return false
     }
