@@ -42,6 +42,22 @@ Adding services in parallel is a great way to speed up how quickly your distribu
 
 However, when it comes to adding multiple services from different packages, you must do so within the `plan.add_services` instruction with the configuration for each service in a dictionary. You cannot currently import multiple packages (using locators) and run them in parallel without using the `plan.add_services` instruction because the call to `run` each of those imported packages starts the service itself.
 
+As an example, if you have a `serviceA.star` file that looks like this:
+```
+def run()...
+
+def getConfig()...
+```
+
+Then you can technically add services from `serviceA.star` in parallel into your package with:
+```
+a = import_module("/serviceA.star")
+
+def run():
+   a_config = a.getConfig()
+   plan.add_services({"a": a_config})
+``` 
+
 Does Kurtosis expose ports to the public internet?
 --------------------------------------------------
 Kurtosis does not allow you to expose any ports in your enclave to the internet. Service ports in enclaves are automatically mapped to ports on your local machine.
