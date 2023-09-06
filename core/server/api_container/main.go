@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_value_serde"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
@@ -162,7 +163,11 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	predeclared := startosis_engine.Predeclared()
+	kurtosisTypeConstructors := startosis_engine.KurtosisTypeConstructors()
+	starlarkValueSerde := starlark_value_serde.NewStarlarkValueSerde(predeclared, kurtosisTypeConstructors)
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb, starlarkValueSerde)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
 	}

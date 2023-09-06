@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_value_serde"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )
@@ -13,13 +14,13 @@ type RuntimeValueStore struct {
 	serviceAssociatedValuesRepository *serviceAssociatedValuesRepository
 }
 
-func CreateRuntimeValueStore(enclaveDb *enclave_db.EnclaveDB) (*RuntimeValueStore, error) {
+func CreateRuntimeValueStore(enclaveDb *enclave_db.EnclaveDB, starlarkValueSerde *starlark_value_serde.StarlarkValueSerde) (*RuntimeValueStore, error) {
 	associatedValuesRepository, err := getOrCreateNewServiceAssociatedValuesRepository(enclaveDb)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting or creating the service associated values repository")
 	}
 
-	recipeResultRepositoryObj, err := getOrCreateNewRecipeResultRepository(enclaveDb)
+	recipeResultRepositoryObj, err := getOrCreateNewRecipeResultRepository(enclaveDb, starlarkValueSerde)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting or creating the recipe result repository")
 	}
@@ -57,10 +58,6 @@ func (re *RuntimeValueStore) GetOrCreateValueAssociatedWithService(serviceName s
 			return "", stacktrace.Propagate(err, "An error occurred getting associated values for service '%s'", serviceName)
 		}
 		if uuid != "" {
-			// deleting old values so that they do not interfere until that are set again
-			if err := re.recipeResultRepository.Delete(uuid); err != nil {
-				return "", stacktrace.Propagate(err, "An error occurred deleting recipe result with key '%s' from the repository", uuid)
-			}
 			return uuid, nil
 		}
 	}

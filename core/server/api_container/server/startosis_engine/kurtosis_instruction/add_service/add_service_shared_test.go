@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_value_serde"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
@@ -19,7 +20,7 @@ const (
 
 func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb, starlark_value_serde.GetStarlarkValueSerdeForTest())
 	require.NoError(t, err)
 
 	stringValueUuid, err := runtimeValueStore.CreateValue()
@@ -56,7 +57,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 
 func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb, starlark_value_serde.GetStarlarkValueSerdeForTest())
 	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
@@ -92,7 +93,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 
 func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb, starlark_value_serde.GetStarlarkValueSerdeForTest())
 	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")
@@ -133,7 +134,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 
 func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb, starlark_value_serde.GetStarlarkValueSerdeForTest())
 	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err, "error creating a runtime value UUID")

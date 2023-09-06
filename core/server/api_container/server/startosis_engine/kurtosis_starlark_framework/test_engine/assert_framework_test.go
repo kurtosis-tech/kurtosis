@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_value_serde"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
 	"testing"
@@ -36,7 +37,7 @@ func (t assertTestCase) GetId() string {
 
 func (t assertTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb, starlark_value_serde.GetStarlarkValueSerdeForTest())
 	require.NoError(t, err)
 	err = runtimeValueStore.SetValue(t.runtimeValueUuid, map[string]starlark.Comparable{
 		"value": starlark.String(runtimeValueValue),

@@ -2,11 +2,14 @@ package runtime_value_store
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_value_serde"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
+	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkjson"
+	"go.starlark.net/starlarkstruct"
 	"os"
 	"testing"
 )
@@ -14,7 +17,6 @@ import (
 const (
 	randomUuid = "abcd12a3948149d9afa2ef93abb4ec52"
 
-	notAcceptedComparableTypeErrorMsg   = "Unexpected comparable type"
 	keyDoesNotExistOnRepositoryErrorMsg = "does not exist on the recipe result repository"
 
 	firstKey            = "mykey"
@@ -24,7 +26,8 @@ const (
 )
 
 var (
-	starlarkIntValue = starlark.MakeInt(30)
+	starlarkIntValue  = starlark.MakeInt(30)
+	starlarkBoolValue = starlark.Bool(true)
 )
 
 func TestRecipeResultSaveKey_Success(t *testing.T) {
@@ -44,6 +47,7 @@ func TestRecipeResultSaveAndGet_Success(t *testing.T) {
 	resultValue := map[string]starlark.Comparable{
 		firstKey:  starlarkStringValue,
 		secondKey: starlarkIntValue,
+		thirdKey:  starlarkBoolValue,
 	}
 
 	err := repository.Save(randomUuid, resultValue)
@@ -63,42 +67,6 @@ func TestRecipeResultGet_DoesNotExist(t *testing.T) {
 	require.Error(t, err)
 	require.ErrorContains(t, err, keyDoesNotExistOnRepositoryErrorMsg)
 	require.Empty(t, value)
-}
-
-func TestRecipeResultSave_ErrorWhenUsingNotStarlarkStringOrInt(t *testing.T) {
-	repository := getRecipeResultRepositoryForTest(t)
-
-	resultValue := map[string]starlark.Comparable{
-		firstKey: starlark.Bool(true),
-	}
-
-	err := repository.Save(randomUuid, resultValue)
-	require.Error(t, err)
-	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
-
-	resultValue2 := map[string]starlark.Comparable{
-		secondKey: directory.Directory{}, // nolint: exhaustruct
-	}
-
-	err = repository.Save(randomUuid, resultValue2)
-	require.Error(t, err)
-	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
-
-	resultValue3 := map[string]starlark.Comparable{
-		thirdKey: &kurtosis_type_constructor.KurtosisValueTypeDefault{}, // nolint: exhaustruct
-	}
-
-	err = repository.Save(randomUuid, resultValue3)
-	require.Error(t, err)
-	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
-
-	resultValue4 := map[string]starlark.Comparable{
-		thirdKey: &starlark.Dict{},
-	}
-
-	err = repository.Save(randomUuid, resultValue4)
-	require.Error(t, err)
-	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
 }
 
 func TestDelete_Success(t *testing.T) {
@@ -139,8 +107,25 @@ func getRecipeResultRepositoryForTest(t *testing.T) *recipeResultRepository {
 	enclaveDb := &enclave_db.EnclaveDB{
 		DB: db,
 	}
-	repository, err := getOrCreateNewRecipeResultRepository(enclaveDb)
+	repository, err := getOrCreateNewRecipeResultRepository(enclaveDb, getStarlarkValueSerdeForTest())
 	require.NoError(t, err)
 
 	return repository
+}
+
+func getStarlarkValueSerdeForTest() *starlark_value_serde.StarlarkValueSerde {
+	starlarkValueSerde := starlark_value_serde.NewStarlarkValueSerde(getPredeclaredForTest(), []*starlark.Builtin{})
+	return starlarkValueSerde
+}
+
+// this should match the Predeclared() func in Kurtosis Builtins, which is not used here for import cycle reasons
+func getPredeclaredForTest() starlark.StringDict {
+	return starlark.StringDict{
+		// go-starlark add-ons
+		starlarkjson.Module.Name:          starlarkjson.Module,
+		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
+
+		// go-starlark time module with time.now() disabled
+		time.Module.Name: builtins.TimeModuleWithNowDisabled(),
+	}
 }

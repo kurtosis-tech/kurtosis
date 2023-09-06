@@ -1,10 +1,14 @@
-package startosis_engine
+package starlark_value_serde
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	port_spec2 "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/stretchr/testify/require"
+	starlarkjson "go.starlark.net/lib/json"
+	"go.starlark.net/lib/time"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 	"testing"
@@ -13,10 +17,12 @@ import (
 func TestStarlarkValueSerde_Integer(t *testing.T) {
 	val := starlark.MakeInt(42)
 
-	serializedStarlarkValue := SerializeStarlarkValue(val)
+	starlarkValueSerde := getStarlarkValueSerdeForTest()
+
+	serializedStarlarkValue := starlarkValueSerde.SerializeStarlarkValue(val)
 	require.Equal(t, "42", serializedStarlarkValue)
 
-	deserializedStarlarkValue, interpretationErr := DeserializeStarlarkValue(serializedStarlarkValue)
+	deserializedStarlarkValue, interpretationErr := starlarkValueSerde.DeserializeStarlarkValue(serializedStarlarkValue)
 	require.Nil(t, interpretationErr)
 	require.Equal(t, val, deserializedStarlarkValue)
 }
@@ -24,10 +30,12 @@ func TestStarlarkValueSerde_Integer(t *testing.T) {
 func TestStarlarkValueSerde_String(t *testing.T) {
 	val := starlark.String("Hello world")
 
-	serializedStarlarkValue := SerializeStarlarkValue(val)
+	starlarkValueSerde := getStarlarkValueSerdeForTest()
+
+	serializedStarlarkValue := starlarkValueSerde.SerializeStarlarkValue(val)
 	require.Equal(t, `"Hello world"`, serializedStarlarkValue)
 
-	deserializedStarlarkValue, interpretationErr := DeserializeStarlarkValue(serializedStarlarkValue)
+	deserializedStarlarkValue, interpretationErr := starlarkValueSerde.DeserializeStarlarkValue(serializedStarlarkValue)
 	require.Nil(t, interpretationErr)
 	require.Equal(t, val, deserializedStarlarkValue)
 }
@@ -40,10 +48,12 @@ func TestStarlarkValueSerde_Dict(t *testing.T) {
 		"blah": starlark.String("blah"),
 	})))
 
-	serializedStarlarkValue := SerializeStarlarkValue(val)
+	starlarkValueSerde := getStarlarkValueSerdeForTest()
+
+	serializedStarlarkValue := starlarkValueSerde.SerializeStarlarkValue(val)
 	require.Equal(t, `{"hello": "world", "answer": 42, "nested": struct(blah = "blah")}`, serializedStarlarkValue)
 
-	deserializedStarlarkValue, interpretationErr := DeserializeStarlarkValue(serializedStarlarkValue)
+	deserializedStarlarkValue, interpretationErr := starlarkValueSerde.DeserializeStarlarkValue(serializedStarlarkValue)
 	require.Nil(t, interpretationErr)
 	require.Equal(t, val, deserializedStarlarkValue)
 }
@@ -71,7 +81,24 @@ func TestStarlarkValueSerde_Service(t *testing.T) {
 	expectedSerializedServiceObj := `Service(name="test-service", hostname="test-service-hostname", ip_address="192.168.0.22", ports={"http": PortSpec(number=443, transport_protocol="TCP", wait="10s")})`
 	require.Equal(t, expectedSerializedServiceObj, serializedStarlarkValue)
 
-	deserializedStarlarkValue, interpretationErr := DeserializeStarlarkValue(serializedStarlarkValue)
+	deserializedStarlarkValue, interpretationErr := DeserializeStarlarkValue(serializedStarlarkValue, getPredeclaredForTest(), startosis_engine.KurtosisTypeConstructors())
 	require.Nil(t, interpretationErr)
 	require.Equal(t, serviceObj.String(), deserializedStarlarkValue.String())
+}
+
+func getStarlarkValueSerdeForTest() *StarlarkValueSerde {
+	starlarkValueSerde := NewStarlarkValueSerde(getPredeclaredForTest(), []*starlark.Builtin{})
+	return starlarkValueSerde
+}
+
+// this should match the Predeclared() func in Kurtosis Builtins, which is not used here for import cycle reasons
+func getPredeclaredForTest() starlark.StringDict {
+	return starlark.StringDict{
+		// go-starlark add-ons
+		starlarkjson.Module.Name:          starlarkjson.Module,
+		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make), // extension to build struct in starlark
+
+		// go-starlark time module with time.now() disabled
+		time.Module.Name: builtins.TimeModuleWithNowDisabled(),
+	}
 }

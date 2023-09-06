@@ -3,12 +3,11 @@ package runtime_value_store
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_value_serde"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
-	"strconv"
 )
 
 var (
@@ -17,10 +16,14 @@ var (
 )
 
 type recipeResultRepository struct {
-	enclaveDb *enclave_db.EnclaveDB
+	enclaveDb          *enclave_db.EnclaveDB
+	starlarkValueSerde *starlark_value_serde.StarlarkValueSerde
 }
 
-func getOrCreateNewRecipeResultRepository(enclaveDb *enclave_db.EnclaveDB) (*recipeResultRepository, error) {
+func getOrCreateNewRecipeResultRepository(
+	enclaveDb *enclave_db.EnclaveDB,
+	starlarkValueSerde *starlark_value_serde.StarlarkValueSerde,
+) (*recipeResultRepository, error) {
 	if err := enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(recipeResultBucketName)
 		if err != nil {
@@ -34,7 +37,8 @@ func getOrCreateNewRecipeResultRepository(enclaveDb *enclave_db.EnclaveDB) (*rec
 	}
 
 	repository := &recipeResultRepository{
-		enclaveDb: enclaveDb,
+		enclaveDb:          enclaveDb,
+		starlarkValueSerde: starlarkValueSerde,
 	}
 
 	return repository, nil
@@ -66,7 +70,7 @@ func (repository *recipeResultRepository) Save(
 	uuid string,
 	values map[string]starlark.Comparable,
 ) error {
-
+	logrus.Debugf("Saving recipe result '%v' with value '%v' repository", uuid, values)
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(recipeResultBucketName)
 
@@ -75,22 +79,7 @@ func (repository *recipeResultRepository) Save(
 		stringifiedValue := map[string]string{}
 
 		for comparableKey, comparableValue := range values {
-			// the majority of the comparable types can be cast to starlark.Value,
-			newStarlarkValue, ok := comparableValue.(starlark.Value)
-			if !ok {
-				return stacktrace.NewError("Is not possible to cast from Starlark comparable '%v' to Starlark Value", comparableValue)
-			}
-			/*switch newStarlarkValue.(type) {
-			case starlark.String:
-				newStarlarkString, ok := newStarlarkValue.(starlark.String)
-				if !ok {
-					return stacktrace.NewError("An error occurred casting value type '%v' to Starlark string", newStarlarkValue)
-				}
-				stringifiedValue[comparableKey] = newStarlarkString.GoString()
-			default:
-				stringifiedValue[comparableKey] = newStarlarkValue.String()
-			}*/
-			serializedStarlarkValue := startosis_engine.SerializeStarlarkValue(newStarlarkValue)
+			serializedStarlarkValue := repository.starlarkValueSerde.SerializeStarlarkValue(comparableValue)
 			stringifiedValue[comparableKey] = serializedStarlarkValue
 		}
 
@@ -107,13 +96,14 @@ func (repository *recipeResultRepository) Save(
 	}); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while saving recipe result values '%+v' with UUID '%s' into the enclave db", values, uuid)
 	}
+	logrus.Debugf("Succesfully saved recipe uuid '%v' on repository", uuid)
 	return nil
 }
 
 func (repository *recipeResultRepository) Get(
 	uuid string,
 ) (map[string]starlark.Comparable, error) {
-
+	logrus.Debugf("Getting recipe result '%v' from repository", uuid)
 	value := map[string]starlark.Comparable{}
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
@@ -143,12 +133,15 @@ func (repository *recipeResultRepository) Get(
 		}
 
 		for key, stringifiedComparable := range stringifiedValue {
-			var comparableValue starlark.Comparable
-			comparableInt, err := strconv.Atoi(stringifiedComparable)
+
+			deserializedValue, err := repository.starlarkValueSerde.DeserializeStarlarkValue(stringifiedComparable)
 			if err != nil {
-				comparableValue = starlark.String(stringifiedComparable)
-			} else {
-				comparableValue = starlark.MakeInt(comparableInt)
+				return stacktrace.Propagate(err, "An error occurred deserializing comparable value string '%s'", stringifiedComparable)
+			}
+
+			comparableValue, ok := deserializedValue.(starlark.Comparable)
+			if !ok {
+				return stacktrace.NewError("An error occurred while trying to cast starlark.Value '%v' to starlark.Comparable, this is a bug in Kurtosis", deserializedValue)
 			}
 			value[key] = comparableValue
 		}
@@ -157,10 +150,12 @@ func (repository *recipeResultRepository) Get(
 	}); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting the recipe result value with UUID '%s' from the enclave db", uuid)
 	}
+	logrus.Debugf("Succesfully got recipe uuid '%v' with value '%v' from repository", uuid, value)
 	return value, nil
 }
 
 func (repository *recipeResultRepository) Delete(uuid string) error {
+	logrus.Debugf("Deleting recipe uuid '%v' from repository", uuid)
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(recipeResultBucketName)
 
@@ -173,6 +168,7 @@ func (repository *recipeResultRepository) Delete(uuid string) error {
 	}); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while deleting a recipe result with key '%v' from the recipe result repository", uuid)
 	}
+	logrus.Debugf("Succesfully deleted recipe uuid '%v' from repository", uuid)
 	return nil
 }
 

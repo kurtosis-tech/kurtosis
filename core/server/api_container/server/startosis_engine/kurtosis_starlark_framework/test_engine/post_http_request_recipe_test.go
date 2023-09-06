@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_value_serde"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"io"
@@ -27,7 +28,7 @@ type postHttpRequestRecipeTestCase struct {
 
 func newPostHttpRequestRecipeTestCase(t *testing.T) *postHttpRequestRecipeTestCase {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb, starlark_value_serde.GetStarlarkValueSerdeForTest())
 	require.NoError(t, err)
 
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
