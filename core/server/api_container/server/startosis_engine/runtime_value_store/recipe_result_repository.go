@@ -140,18 +140,7 @@ func (repository *recipeResultRepository) Get(
 		}
 
 		for key, stringifiedComparable := range stringifiedValue {
-			var comparableValue starlark.Comparable
-			comparableInt, err := strconv.Atoi(stringifiedComparable)
-			if err != nil {
-				comparableBool, err := strconv.ParseBool(stringifiedComparable)
-				if err != nil {
-					comparableValue = starlark.String(stringifiedComparable)
-				} else {
-					comparableValue = starlark.Bool(comparableBool)
-				}
-			} else {
-				comparableValue = starlark.MakeInt(comparableInt)
-			}
+			comparableValue := getComparableFromValueString(stringifiedComparable)
 			value[key] = comparableValue
 		}
 
@@ -183,4 +172,20 @@ func (repository *recipeResultRepository) Delete(uuid string) error {
 
 func getUuidKey(uuid string) []byte {
 	return []byte(uuid)
+}
+
+func getComparableFromValueString(stringifiedComparable string) starlark.Comparable {
+	var comparableValue starlark.Comparable
+	comparableInt, err := strconv.Atoi(stringifiedComparable)
+	if err != nil {
+		comparableBool, err := strconv.ParseBool(stringifiedComparable)
+		if err != nil {
+			comparableValue = starlark.String(stringifiedComparable)
+		} else {
+			comparableValue = starlark.Bool(comparableBool)
+		}
+	} else {
+		comparableValue = starlark.MakeInt(comparableInt)
+	}
+	return comparableValue
 }
