@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.82.21](https://github.com/kurtosis-tech/kurtosis/compare/0.82.20...0.82.21) (2023-09-06)
+
+
+### Bug Fixes
+
+* the runtime value store now supports `starlark.Bool` value types ([#1249](https://github.com/kurtosis-tech/kurtosis/issues/1249)) ([825f7cd](https://github.com/kurtosis-tech/kurtosis/commit/825f7cdb7b77bfb3a88d658b839141f965ca4fb6))
+
 ## [0.82.20](https://github.com/kurtosis-tech/kurtosis/compare/0.82.19...0.82.20) (2023-09-06)
 
 
