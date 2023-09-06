@@ -60,7 +60,7 @@ func (repository *recipeResultRepository) SaveKey(
 }
 
 // Save store recipe result values into the repository, and it only accepts comparables of
-// starlark.String and starlark.Int so far
+// starlark.String, starlark.Int and starlark.Bool so far
 func (repository *recipeResultRepository) Save(
 	uuid string,
 	value map[string]starlark.Comparable,
@@ -75,9 +75,9 @@ func (repository *recipeResultRepository) Save(
 
 		for key, comparableValue := range value {
 			//TODO add more kind of comparable types if we want to extend the support
-			//TODO now starlark.Int and starlark.String are enough so far
+			//TODO now starlark.Int, starlark.String and starlark.Bool are enough so far
 			switch valueType := comparableValue.(type) {
-			case starlark.Int:
+			case starlark.Int, starlark.Bool:
 				stringifiedValue[key] = comparableValue.String()
 			case starlark.String:
 				comparableStr, ok := comparableValue.(starlark.String)
@@ -143,7 +143,12 @@ func (repository *recipeResultRepository) Get(
 			var comparableValue starlark.Comparable
 			comparableInt, err := strconv.Atoi(stringifiedComparable)
 			if err != nil {
-				comparableValue = starlark.String(stringifiedComparable)
+				comparableBool, err := strconv.ParseBool(stringifiedComparable)
+				if err != nil {
+					comparableValue = starlark.String(stringifiedComparable)
+				} else {
+					comparableValue = starlark.Bool(comparableBool)
+				}
 			} else {
 				comparableValue = starlark.MakeInt(comparableInt)
 			}
