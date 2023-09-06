@@ -1,4 +1,4 @@
-package enclave_plan
+package instructions_plan
 
 import (
 	"encoding/json"
@@ -30,7 +30,7 @@ func TestEnclavePlanInstructionMarshallers(t *testing.T) {
 
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct
-	newEnclavePlanInstruction := &EnclavePlanInstruction{}
+	newEnclavePlanInstruction := &EnclavePlanInstructionImpl{}
 
 	err = json.Unmarshal(marshaledEnclavePlanInstruciton, newEnclavePlanInstruction)
 	require.NoError(t, err)
@@ -38,9 +38,9 @@ func TestEnclavePlanInstructionMarshallers(t *testing.T) {
 	require.Equal(t, originalEnclavePlanInstruction, newEnclavePlanInstruction)
 }
 
-func getEnclavePlanInstructionForTest(amount int) []*EnclavePlanInstruction {
+func getEnclavePlanInstructionForTest(amount int) []*EnclavePlanInstructionImpl {
 
-	allEnclavePlanInstructions := []*EnclavePlanInstruction{}
+	allEnclavePlanInstructions := []*EnclavePlanInstructionImpl{}
 
 	allEnclaveCapabilities := getEnclavePlanCapabilitiesForTest(amount)
 
@@ -54,7 +54,7 @@ func getEnclavePlanInstructionForTest(amount int) []*EnclavePlanInstruction {
 			ReturnedValueStr:       returnedValueStr,
 		}
 
-		newEnclavePlanInstruction := &EnclavePlanInstruction{
+		newEnclavePlanInstruction := &EnclavePlanInstructionImpl{
 			privateEnclavePlanInstruction: privatePlan,
 		}
 

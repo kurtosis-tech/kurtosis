@@ -29,14 +29,23 @@ type KurtosisPlanInstructionWrapper struct {
 
 	// TODO: This can be changed to KurtosisPlanInstructionInternal when we get rid of KurtosisInstruction
 	instructionsPlan *instructions_plan.InstructionsPlan
+
+	enclavePlanInstructionRepository *instructions_plan.EnclavePlanInstructionRepository
 }
 
-func NewKurtosisPlanInstructionWrapper(instruction *KurtosisPlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents, instructionPlanMask *resolver.InstructionsPlanMask, instructionsPlan *instructions_plan.InstructionsPlan) *KurtosisPlanInstructionWrapper {
+func NewKurtosisPlanInstructionWrapper(
+	instruction *KurtosisPlanInstruction,
+	enclaveComponents *enclave_structure.EnclaveComponents,
+	instructionPlanMask *resolver.InstructionsPlanMask,
+	instructionsPlan *instructions_plan.InstructionsPlan,
+	enclavePlanInstructionRepository *instructions_plan.EnclavePlanInstructionRepository,
+) *KurtosisPlanInstructionWrapper {
 	return &KurtosisPlanInstructionWrapper{
-		KurtosisPlanInstruction: instruction,
-		enclaveComponents:       enclaveComponents,
-		instructionPlanMask:     instructionPlanMask,
-		instructionsPlan:        instructionsPlan,
+		KurtosisPlanInstruction:          instruction,
+		enclaveComponents:                enclaveComponents,
+		instructionPlanMask:              instructionPlanMask,
+		instructionsPlan:                 instructionsPlan,
+		enclavePlanInstructionRepository: enclavePlanInstructionRepository,
 	}
 }
 
@@ -58,8 +67,13 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 		var instructionResolutionStatus enclave_structure.InstructionResolutionStatus
 		if builtin.instructionPlanMask.HasNext() {
 			_, scheduledInstructionPulledFromMaskMaybe = builtin.instructionPlanMask.Next()
+			scheduledInstructionUuid := scheduledInstructionPulledFromMaskMaybe.GetUuid()
+			enclavePlanInstruction, err := builtin.enclavePlanInstructionRepository.Get(scheduledInstructionUuid)
+			if err != nil {
+				return nil, stacktrace.Propagate(err, "An error occurred getting the enclave plan instruction with scheduled instruction UUID '%v'", scheduledInstructionUuid)
+			}
 			if scheduledInstructionPulledFromMaskMaybe != nil {
-				instructionResolutionStatus = instructionWrapper.TryResolveWith(scheduledInstructionPulledFromMaskMaybe.GetInstruction(), builtin.enclaveComponents)
+				instructionResolutionStatus = instructionWrapper.TryResolveWith(enclavePlanInstruction, builtin.enclaveComponents)
 			} else {
 				instructionResolutionStatus = instructionWrapper.TryResolveWith(nil, builtin.enclaveComponents)
 			}

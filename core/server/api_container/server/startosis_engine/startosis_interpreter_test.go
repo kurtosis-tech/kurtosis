@@ -67,7 +67,10 @@ func (suite *StartosisInterpreterTestSuite) SetupTest() {
 	suite.runtimeValueStore = runtimeValueStore
 	suite.serviceNetwork = service_network.NewMockServiceNetwork(suite.T())
 
-	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, "")
+	enclavePlanInstructionRepository, err := instructions_plan.GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
+	require.NoError(suite.T(), err)
+
+	suite.interpreter = NewStartosisInterpreter(suite.serviceNetwork, suite.packageContentProvider, suite.runtimeValueStore, "", enclavePlanInstructionRepository)
 
 	service.NewServiceRegistration(
 		testServiceName,

@@ -1,8 +1,7 @@
-package enclave_plan
+package instructions_plan
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"os"
@@ -43,7 +42,7 @@ func TestSaveAndGetAll_Success(t *testing.T) {
 
 	for k, originalEnclavePlanInstruction := range originalEnclavePlanInstructions {
 		uuidStr := allUuid[k]
-		uuid := instructions_plan.ScheduledInstructionUuid(uuidStr)
+		uuid := ScheduledInstructionUuid(uuidStr)
 		err := repository.Save(uuid, originalEnclavePlanInstruction)
 		require.NoError(t, err)
 	}
@@ -75,7 +74,7 @@ func TestSize_Success(t *testing.T) {
 
 //TODO implement GetAll Test
 
-func getRepositoryForTest(t *testing.T) *enclavePlanInstructionRepository {
+func getRepositoryForTest(t *testing.T) *EnclavePlanInstructionRepository {
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer func() {
 		err = os.Remove(file.Name())
@@ -88,7 +87,7 @@ func getRepositoryForTest(t *testing.T) *enclavePlanInstructionRepository {
 	enclaveDb := &enclave_db.EnclaveDB{
 		DB: db,
 	}
-	repository, err := getOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
+	repository, err := GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
 	require.NoError(t, err)
 
 	return repository

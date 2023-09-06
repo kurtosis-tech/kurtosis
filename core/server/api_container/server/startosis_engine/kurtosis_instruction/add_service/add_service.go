@@ -88,10 +88,13 @@ type AddServiceCapabilities struct {
 }
 
 func (builtin *AddServiceCapabilities) GetEnclavePlanCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities {
-	builder := enclave_plan_capabilities.NewEnclavePlanCapabilitiesBuilder(AddServicesBuiltinName)
-	builder.WitServiceName(builtin.serviceName)
-	return builder.Build()
+	enclavePlanCapabilitiesBuilder := enclave_plan_capabilities.NewEnclavePlanCapabilitiesBuilder(AddServiceBuiltinName)
+	enclavePlanCapabilitiesBuilder.WitServiceName(builtin.serviceName)
+	return enclavePlanCapabilitiesBuilder.Build()
 }
+
+//TODO lo único que se me ocurre es que haya un método que retorne las storableCapabilities en un formato que se puedan guardar
+//TODO y que luego haya otro metodo que tome ese formato y lo devuelva en el formato que queremos comparar
 
 func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
@@ -159,15 +162,13 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
 	}
 
-	if err := fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred while adding service return values with result key UUID '%s'", builtin.resultUuid)
-	}
+	fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore)
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
 	return instructionResult, nil
 }
 
 func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_capabilities.EnclavePlanCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
-	// if other instruction is nil or other instruction is not an add_service instruction, status is unknown
+	// if other capabilities is nil or other instruction is not an add_service instruction, status is unknown
 	if other == nil {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown

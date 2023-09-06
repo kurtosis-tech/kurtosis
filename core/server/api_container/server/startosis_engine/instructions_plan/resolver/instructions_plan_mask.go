@@ -1,6 +1,8 @@
 package resolver
 
-import "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
+import (
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
+)
 
 type InstructionsPlanMask struct {
 	readIdx               int
@@ -16,7 +18,10 @@ func NewInstructionsPlanMask(size int) *InstructionsPlanMask {
 	}
 }
 
-func (mask *InstructionsPlanMask) InsertAt(idx int, instruction *instructions_plan.ScheduledInstruction) {
+func (mask *InstructionsPlanMask) InsertAt(
+	idx int,
+	instruction *instructions_plan.ScheduledInstruction,
+) {
 	mask.scheduledInstructions[idx] = instruction
 }
 

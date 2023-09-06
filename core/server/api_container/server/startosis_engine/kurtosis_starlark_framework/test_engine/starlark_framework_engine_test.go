@@ -73,7 +73,13 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 	instructionFromBuiltin := builtin.GetInstruction()
 	emptyEnclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyInstructionsPlanMask := resolver.NewInstructionsPlanMask(0)
-	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, emptyEnclaveComponents, emptyInstructionsPlanMask, instructionsPlan)
+
+	enclaveDb := getEnclaveDBForTest(t)
+
+	enclavePlanInstructionRepository, err := instructions_plan.GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
+	require.NoError(t, err)
+
+	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, emptyEnclaveComponents, emptyInstructionsPlanMask, instructionsPlan, enclavePlanInstructionRepository)
 	predeclared[instructionWrapper.GetName()] = starlark.NewBuiltin(instructionWrapper.GetName(), instructionWrapper.CreateBuiltin())
 
 	starlarkCode := builtin.GetStarlarkCode()

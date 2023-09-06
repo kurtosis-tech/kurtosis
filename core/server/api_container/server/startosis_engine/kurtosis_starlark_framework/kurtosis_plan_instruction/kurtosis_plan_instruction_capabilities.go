@@ -17,7 +17,7 @@ type KurtosisPlanInstructionCapabilities interface {
 
 	Execute(ctx context.Context, arguments *builtin_argument.ArgumentValuesSet) (string, error)
 
-	TryResolveWith(instructionsAreEqual bool, other KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
+	TryResolveWith(instructionsAreEqual bool, other *enclave_plan_capabilities.EnclavePlanCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
 
 	GetEnclavePlanCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities
 }

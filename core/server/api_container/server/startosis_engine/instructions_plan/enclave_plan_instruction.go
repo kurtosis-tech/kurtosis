@@ -1,4 +1,4 @@
-package enclave_plan
+package instructions_plan
 
 import (
 	"encoding/json"
@@ -6,7 +6,7 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
-type EnclavePlanInstruction struct {
+type EnclavePlanInstructionImpl struct {
 	// we do this way in order to have exported fields which can be marshalled
 	// and an unexported type for encapsulation
 	privateEnclavePlanInstruction *privateEnclavePlanInstruction
@@ -18,38 +18,38 @@ type privateEnclavePlanInstruction struct {
 	ReturnedValueStr       string
 }
 
-func NewEnclavePlanInstruction(
+func NewEnclavePlanInstructionImpl(
 	kurtosisInstructionStr string,
 	capabilities *enclave_plan_capabilities.EnclavePlanCapabilities,
 	returnedValueStr string,
-) *EnclavePlanInstruction {
+) *EnclavePlanInstructionImpl {
 	privatePlan := &privateEnclavePlanInstruction{
 		KurtosisInstructionStr: kurtosisInstructionStr,
 		Capabilities:           capabilities,
 		ReturnedValueStr:       returnedValueStr,
 	}
-	return &EnclavePlanInstruction{
+	return &EnclavePlanInstructionImpl{
 		privateEnclavePlanInstruction: privatePlan,
 	}
 }
 
-func (instruction *EnclavePlanInstruction) GetKurtosisInstructionStr() string {
+func (instruction *EnclavePlanInstructionImpl) GetKurtosisInstructionStr() string {
 	return instruction.privateEnclavePlanInstruction.KurtosisInstructionStr
 }
 
-func (instruction *EnclavePlanInstruction) GetCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities {
+func (instruction *EnclavePlanInstructionImpl) GetCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities {
 	return instruction.privateEnclavePlanInstruction.Capabilities
 }
 
-func (instruction *EnclavePlanInstruction) GetReturnedValueStr() string {
+func (instruction *EnclavePlanInstructionImpl) GetReturnedValueStr() string {
 	return instruction.privateEnclavePlanInstruction.ReturnedValueStr
 }
 
-func (instruction *EnclavePlanInstruction) MarshalJSON() ([]byte, error) {
+func (instruction *EnclavePlanInstructionImpl) MarshalJSON() ([]byte, error) {
 	return json.Marshal(instruction.privateEnclavePlanInstruction)
 }
 
-func (instruction *EnclavePlanInstruction) UnmarshalJSON(data []byte) error {
+func (instruction *EnclavePlanInstructionImpl) UnmarshalJSON(data []byte) error {
 
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct

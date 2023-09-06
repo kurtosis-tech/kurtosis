@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_capabilities"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -79,6 +80,11 @@ type AddServicesCapabilities struct {
 	readyConditions map[service.ServiceName]*service_config.ReadyCondition
 
 	resultUuids map[service.ServiceName]string
+}
+
+func (builtin *AddServicesCapabilities) GetEnclavePlanCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (builtin *AddServicesCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -194,16 +200,14 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	instructionResult := strings.Builder{}
 	instructionResult.WriteString(fmt.Sprintf("Successfully added the following '%d' services:", len(startedServices)))
 	for serviceName, serviceObj := range startedAndUpdatedService {
-		if err := fillAddServiceReturnValueWithRuntimeValues(serviceObj, builtin.resultUuids[serviceName], builtin.runtimeValueStore); err != nil {
-			return "", stacktrace.Propagate(err, "An error occurred while adding service return values with result key UUID '%s'", builtin.resultUuids[serviceName])
-		}
+		fillAddServiceReturnValueWithRuntimeValues(serviceObj, builtin.resultUuids[serviceName], builtin.runtimeValueStore)
 		instructionResult.WriteString(fmt.Sprintf("\n  Service '%s' added with UUID '%s'", serviceName, serviceObj.GetRegistration().GetUUID()))
 	}
 	shouldDeleteAllStartedServices = false
 	return instructionResult.String(), nil
 }
 
-func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_capabilities.EnclavePlanCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		for serviceName := range builtin.serviceConfigs {
 			enclaveComponents.AddService(serviceName, enclave_structure.ComponentWasLeftIntact)
@@ -217,8 +221,7 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		}
 		return enclave_structure.InstructionIsUnknown
 	}
-	otherAddServicesCapabilities, ok := other.(*AddServicesCapabilities)
-	if !ok {
+	if AddServicesBuiltinName != other.GetInstructionTypeStr() {
 		for serviceName := range builtin.serviceConfigs {
 			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsNew)
 		}
@@ -229,7 +232,7 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 	// instruction it's being compared to, so we check that first
 	atLeastOneFilehasBeenUpdated := false
 	previouslyAddedService := map[service.ServiceName]bool{}
-	for serviceName := range otherAddServicesCapabilities.serviceConfigs {
+	for _, serviceName := range other.GetServiceNames() {
 		previouslyAddedService[serviceName] = false
 	}
 	for serviceName, serviceConfig := range builtin.serviceConfigs {

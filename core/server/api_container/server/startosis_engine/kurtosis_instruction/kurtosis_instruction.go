@@ -34,5 +34,5 @@ type KurtosisInstruction interface {
 	ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error
 
 	// TryResolveWith assesses whether the instruction can be resolved with the one passed as an argument.
-	TryResolveWith(other KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
+	TryResolveWith(other EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
 }

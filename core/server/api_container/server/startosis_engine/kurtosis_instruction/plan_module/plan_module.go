@@ -18,10 +18,11 @@ func PlanModule(
 	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionsPlanMask *resolver.InstructionsPlanMask,
 	kurtosisPlanInstructions []*kurtosis_plan_instruction.KurtosisPlanInstruction,
+	enclavePlanInstructionRepository *instructions_plan.EnclavePlanInstructionRepository,
 ) *starlarkstruct.Module {
 	moduleBuiltins := starlark.StringDict{}
 	for _, planInstruction := range kurtosisPlanInstructions {
-		wrappedPlanInstruction := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(planInstruction, enclaveComponents, instructionsPlanMask, instructionsPlan)
+		wrappedPlanInstruction := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(planInstruction, enclaveComponents, instructionsPlanMask, instructionsPlan, enclavePlanInstructionRepository)
 		moduleBuiltins[planInstruction.GetName()] = starlark.NewBuiltin(planInstruction.GetName(), wrappedPlanInstruction.CreateBuiltin())
 	}
 

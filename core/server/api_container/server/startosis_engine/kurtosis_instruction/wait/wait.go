@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_capabilities"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
@@ -128,6 +129,11 @@ type WaitCapabilities struct {
 	timeout     time.Duration
 
 	resultUuid string
+}
+
+func (builtin *WaitCapabilities) GetEnclavePlanCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities {
+	//TODO implement me
+	panic("implement me")
 }
 
 func (builtin *WaitCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -261,9 +267,7 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 		)
 	}
 
-	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult); err != nil {
-		return "", stacktrace.Propagate(err, "An error occurred setting value '%+v' using key UUID '%s' in the runtime value store", lastResult, builtin.resultUuid)
-	}
+	builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult)
 
 	instructionResult := fmt.Sprintf(
 		"Wait took %d tries (%v in total). Assertion passed with following:\n%s",
@@ -275,7 +279,7 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 	return instructionResult, nil
 }
 
-func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_capabilities.EnclavePlanCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual && enclaveComponents.HasServiceBeenUpdated(builtin.serviceName) {
 		return enclave_structure.InstructionIsUpdate
 	} else if instructionsAreEqual {

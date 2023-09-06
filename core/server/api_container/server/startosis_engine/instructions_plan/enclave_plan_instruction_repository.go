@@ -1,9 +1,8 @@
-package enclave_plan
+package instructions_plan
 
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
@@ -18,11 +17,11 @@ var (
 	instructionsSequenceKey          = []byte(instructionsSequenceKeyStr)
 )
 
-type enclavePlanInstructionRepository struct {
+type EnclavePlanInstructionRepository struct {
 	enclaveDb *enclave_db.EnclaveDB
 }
 
-func getOrCreateNewEnclavePlanInstructionRepository(enclaveDb *enclave_db.EnclaveDB) (*enclavePlanInstructionRepository, error) {
+func GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb *enclave_db.EnclaveDB) (*EnclavePlanInstructionRepository, error) {
 	if err := enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(enclavePlanInstructionBucketName)
 		if err != nil {
@@ -35,16 +34,16 @@ func getOrCreateNewEnclavePlanInstructionRepository(enclaveDb *enclave_db.Enclav
 		return nil, stacktrace.Propagate(err, "An error occurred while building the enclave plan instruction repository")
 	}
 
-	repository := &enclavePlanInstructionRepository{
+	repository := &EnclavePlanInstructionRepository{
 		enclaveDb: enclaveDb,
 	}
 
 	return repository, nil
 }
 
-func (repository *enclavePlanInstructionRepository) Save(
-	uuid instructions_plan.ScheduledInstructionUuid,
-	instruction *EnclavePlanInstruction,
+func (repository *EnclavePlanInstructionRepository) Save(
+	uuid ScheduledInstructionUuid,
+	instruction *EnclavePlanInstructionImpl,
 ) error {
 
 	currentInstructionSequence, err := repository.getInstructionsSequence()
@@ -78,10 +77,10 @@ func (repository *enclavePlanInstructionRepository) Save(
 	return nil
 }
 
-func (repository *enclavePlanInstructionRepository) Get(
-	uuid instructions_plan.ScheduledInstructionUuid,
-) (*EnclavePlanInstruction, error) {
-	instruction := &EnclavePlanInstruction{}
+func (repository *EnclavePlanInstructionRepository) Get(
+	uuid ScheduledInstructionUuid,
+) (*EnclavePlanInstructionImpl, error) {
+	instruction := &EnclavePlanInstructionImpl{}
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(enclavePlanInstructionBucketName)
@@ -111,14 +110,14 @@ func (repository *enclavePlanInstructionRepository) Get(
 }
 
 // GetAll returns all the enclave plan instructions stored in the order that these were stored, from the first one to the last one
-func (repository *enclavePlanInstructionRepository) GetAll() ([]*EnclavePlanInstruction, error) {
+func (repository *EnclavePlanInstructionRepository) GetAll() ([]*EnclavePlanInstructionImpl, error) {
 
 	instructionSequence, err := repository.getInstructionsSequence()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the enclave plan instruction sequence from the repository")
 	}
 
-	allEnclavePlanInstructionsMap := map[instructions_plan.ScheduledInstructionUuid]*EnclavePlanInstruction{}
+	allEnclavePlanInstructionsMap := map[ScheduledInstructionUuid]*EnclavePlanInstructionImpl{}
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(enclavePlanInstructionBucketName)
@@ -135,9 +134,9 @@ func (repository *enclavePlanInstructionRepository) GetAll() ([]*EnclavePlanInst
 				return stacktrace.NewError("Expected to get a non nil enclave plan instruction with UUID '%s' from the repository but a nil value was returned instead", keyStr)
 			}
 
-			uuid := instructions_plan.ScheduledInstructionUuid(keyStr)
+			uuid := ScheduledInstructionUuid(keyStr)
 
-			instruction := &EnclavePlanInstruction{}
+			instruction := &EnclavePlanInstructionImpl{}
 			if err := json.Unmarshal(instructionBytes, &instruction); err != nil {
 				return stacktrace.Propagate(err, "An error occurred unmarshalling the enclave plan instruction with UUID '%s' from the repository", keyStr)
 			}
@@ -164,7 +163,7 @@ func (repository *enclavePlanInstructionRepository) GetAll() ([]*EnclavePlanInst
 				" this is a bug in Kurtosis", len(instructionSequence), len(allEnclavePlanInstructionsMap))
 	}
 
-	allEnclavePlanInstructions := []*EnclavePlanInstruction{}
+	allEnclavePlanInstructions := []*EnclavePlanInstructionImpl{}
 
 	for _, uuid := range instructionSequence {
 		allEnclavePlanInstructions = append(allEnclavePlanInstructions, allEnclavePlanInstructionsMap[uuid])
@@ -173,7 +172,7 @@ func (repository *enclavePlanInstructionRepository) GetAll() ([]*EnclavePlanInst
 	return allEnclavePlanInstructions, nil
 }
 
-func (repository *enclavePlanInstructionRepository) Size() (int, error) {
+func (repository *EnclavePlanInstructionRepository) Size() (int, error) {
 	var size int
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
@@ -191,10 +190,10 @@ func (repository *enclavePlanInstructionRepository) Size() (int, error) {
 	return size, nil
 }
 
-func (repository *enclavePlanInstructionRepository) addNewInstructionUuidInTheSequence(
+func (repository *EnclavePlanInstructionRepository) addNewInstructionUuidInTheSequence(
 	tx *bolt.Tx,
-	currentInstructionSequence []instructions_plan.ScheduledInstructionUuid,
-	uuid instructions_plan.ScheduledInstructionUuid,
+	currentInstructionSequence []ScheduledInstructionUuid,
+	uuid ScheduledInstructionUuid,
 ) error {
 
 	newInstructionSequence := append(currentInstructionSequence, uuid)
@@ -215,8 +214,8 @@ func (repository *enclavePlanInstructionRepository) addNewInstructionUuidInTheSe
 
 }
 
-func (repository *enclavePlanInstructionRepository) getInstructionsSequence() ([]instructions_plan.ScheduledInstructionUuid, error) {
-	instructionsSequence := []instructions_plan.ScheduledInstructionUuid{}
+func (repository *EnclavePlanInstructionRepository) getInstructionsSequence() ([]ScheduledInstructionUuid, error) {
+	instructionsSequence := []ScheduledInstructionUuid{}
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(enclavePlanInstructionBucketName)
@@ -240,6 +239,6 @@ func (repository *enclavePlanInstructionRepository) getInstructionsSequence() ([
 	return instructionsSequence, nil
 }
 
-func getUuidKey(uuid instructions_plan.ScheduledInstructionUuid) []byte {
+func getUuidKey(uuid ScheduledInstructionUuid) []byte {
 	return []byte(uuid)
 }

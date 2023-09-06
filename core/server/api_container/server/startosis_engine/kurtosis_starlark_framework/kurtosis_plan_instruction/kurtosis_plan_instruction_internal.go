@@ -77,7 +77,7 @@ func (builtin *kurtosisPlanInstructionInternal) Execute(ctx context.Context) (*s
 	return &result, nil
 }
 
-func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other kurtosis_instruction.KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other kurtosis_instruction.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	isAnAbortAllInstruction := builtin.capabilities.TryResolveWith(false, nil, enclaveComponents) == enclave_structure.InstructionIsNotResolvableAbort
 	if isAnAbortAllInstruction {
 		return enclave_structure.InstructionIsNotResolvableAbort
@@ -87,13 +87,8 @@ func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other kurtosis_in
 		return enclave_structure.InstructionIsUnknown
 	}
 
-	otherPlanInstruction, ok := other.(*kurtosisPlanInstructionInternal)
-	if !ok {
-		return enclave_structure.InstructionIsUnknown
-	}
-
-	instructionsAreEqual := builtin.String() == other.String()
-	return builtin.capabilities.TryResolveWith(instructionsAreEqual, otherPlanInstruction.capabilities, enclaveComponents)
+	instructionsAreEqual := builtin.String() == other.GetKurtosisInstructionStr()
+	return builtin.capabilities.TryResolveWith(instructionsAreEqual, other.GetCapabilities(), enclaveComponents)
 }
 
 func (builtin *kurtosisPlanInstructionInternal) interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string) (starlark.Value, *startosis_errors.InterpretationError) {

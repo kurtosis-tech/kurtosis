@@ -90,6 +90,10 @@ func (plan *InstructionsPlan) GeneratePlan() ([]*ScheduledInstruction, *startosi
 	return generatedPlan, nil
 }
 
+func (plan *InstructionsPlan) GetInstructionsSequence() []ScheduledInstructionUuid {
+	return plan.instructionsSequence
+}
+
 func (plan *InstructionsPlan) Size() int {
 	return len(plan.instructionsSequence)
 }
