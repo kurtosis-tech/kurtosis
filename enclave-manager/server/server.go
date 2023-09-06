@@ -244,6 +244,22 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 	}
 }
 
+func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+	result, err := (*c.engineServiceClient).DestroyEnclave(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+
+}
+
 func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {

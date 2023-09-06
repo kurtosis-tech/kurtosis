@@ -1,19 +1,44 @@
 import {useNavigate} from "react-router-dom";
 import NoData from "./NoData";
 import LoadingOverlay from "./LoadingOverflow";
+import {removeEnclave} from "../api/enclave";
+import { Grid, GridItem, Center, Button, Tooltip } from '@chakra-ui/react'
 
-const Enclave = ({name, status, created, handleClick}) => {
+const Enclave = ({name, status, created, handleClick, handleDeleteClick}) => {
     const backgroundColor = status === 1 ? "bg-[#24BA27]" : "bg-red-600"
     return (
-        <div onClick={() => handleClick(name)}
-             className={`h-48 p-4 rounded-md border-4 flex ${backgroundColor} text-white items-center justify-center text-2xl flex-col`}>
-            <p className="text-3xl"> {name} </p>
-            <p className="text-xs"> {created} </p>
-        </div>
+        <Grid
+            templateRows='repeat(3, 1fr)'
+            templateColumns='repeat(1, 1fr)'
+            className={`h-48 rounded-md border-4 flex ${backgroundColor} text-white items-center justify-center text-2xl flex-col`}
+            onClick={() => handleClick(name)}
+        >
+            <GridItem colSpan={4} align={"right"} style={{"z-index":100}}>
+                <Button colorScheme="red" color="white" mr="2" onClick={(e)=>{
+                    e.stopPropagation()
+                    handleDeleteClick(name)
+                }}> Delete </Button>
+            </GridItem>
+            <GridItem colSpan={4}>
+                <Center>
+                    <p className="text-3xl"> {name} </p>
+                </Center>
+            </GridItem>
+            <GridItem colSpan={4} bg='papayawhip'>
+            </GridItem>
+        </Grid>
+        
+        // <div onClick={() => handleClick(name)}
+        //      className={`h-48 p-4 rounded-md border-4 flex ${backgroundColor} text-white items-center justify-center text-2xl flex-col`}>
+        //     <p className="text-3xl"> {name} </p>
+        //     <p className="text-xs"> {created} </p>
+        //     <Button colorScheme='blue'>Button</Button>
+
+        // </div>
     )
 }
 
-const EnclaveMainComponent = ({enclaves, handleClick}) => (
+const EnclaveMainComponent = ({enclaves, handleClick, handleDeleteClick}) => (
     <div className='grid grid-cols-2 gap-4 flex-1'>
         {
             enclaves.map(enclave => {
@@ -24,6 +49,7 @@ const EnclaveMainComponent = ({enclaves, handleClick}) => (
                         status={enclave.status}
                         created={enclave.created}
                         handleClick={handleClick}
+                        handleDeleteClick={handleDeleteClick}
                     />
                 )
             })
@@ -31,7 +57,7 @@ const EnclaveMainComponent = ({enclaves, handleClick}) => (
     </div>
 )
 
-const EnclaveComponent = ({enclaves, handleClick, handleCreateEnvClick}) => {
+const EnclaveComponent = ({enclaves, handleClick, handleCreateEnvClick, handleDeleteClick}) => {
     return (
         <div className="flex-1 bg-[#171923] overflow-auto">
             {
@@ -51,13 +77,13 @@ const EnclaveComponent = ({enclaves, handleClick, handleCreateEnvClick}) => {
                         </div>
                     </div>
                     :
-                    <EnclaveMainComponent enclaves={enclaves} handleClick={handleClick}/>
+                    <EnclaveMainComponent enclaves={enclaves} handleClick={handleClick} handleDeleteClick={handleDeleteClick}/>
             }
         </div>
     )
 }
 
-const Enclaves = ({enclaves, isLoading}) => {
+const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
     const navigate = useNavigate()
 
     const handleCreateEnvClick = () => {
@@ -66,12 +92,13 @@ const Enclaves = ({enclaves, isLoading}) => {
     const handleClick = (enclaveName) => {
         navigate(`/enclaves/${enclaveName}`)
     }
+
     console.log("is loading:", isLoading)
     console.log("Updating with enclaves:", enclaves)
     return (
         <div className="flex h-full flex-grow">
             {
-                (isLoading) ? <LoadingOverlay/> : <EnclaveComponent enclaves={enclaves} handleClick={handleClick} handleCreateEnvClick={handleCreateEnvClick}/>
+                (isLoading) ? <LoadingOverlay/> : <EnclaveComponent enclaves={enclaves} handleClick={handleClick} handleCreateEnvClick={handleCreateEnvClick} handleDeleteClick={handleDeleteClick}/>
             }
         </div>
     ) 

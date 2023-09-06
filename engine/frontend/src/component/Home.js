@@ -6,13 +6,12 @@ import ServiceInfo from "./ServiceInfo";
 import FileArtifactInfo from './FileArtifactInfo';
 import PackageCatalogRouter from './PackageCatalogRouter';
 import Enclaves from "./Enclaves";
-import {getEnclavesFromKurtosis} from "../api/enclave";
+import {getEnclavesFromKurtosis, removeEnclave} from "../api/enclave";
 import {createBrowserRouter, Route, RouterProvider} from 'react-router-dom';
 import {useAppContext} from "../context/AppState";
 import LoadingOverlay from "./LoadingOverflow";
 import CreateEnclave from "./CreateEnclave";
 import {createRoutesFromElements} from "react-router";
-
 
 const queryParamToBool = (value) => {
     return ((value + '').toLowerCase() === 'true')
@@ -38,6 +37,15 @@ const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [enclaveLoading, setEnclaveLoading] = useState(false)
     const {appData, setAppData} = useAppContext()
+
+    const handleDeleteClick = (enclaveName) => {
+        const filteredEnclaves = enclaves.filter(enclave => enclave.name !== enclaveName)
+        const makeRequest = async () => {
+            await removeEnclave(appData.jwtToken, appData.apiHost)
+            setEnclaves(filteredEnclaves)
+        }
+        makeRequest()
+    }
 
     const loading = (
         <div className="flex-grow bg-#181926-100 flex-row flex mt-28 w-screen">
@@ -154,6 +162,7 @@ const Home = () => {
                    path="/enclaves"
                    element={checkAuth(<Enclaves enclaves={enclaves}
                                                 isLoading={enclaveLoading}
+                                                handleDeleteClick={handleDeleteClick}
                        />
                    )}
             />
