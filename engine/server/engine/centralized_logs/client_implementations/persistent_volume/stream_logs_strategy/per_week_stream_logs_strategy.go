@@ -146,20 +146,20 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			}
 			logLine := logline.NewLogLine(logLineStr)
 
-			// Then we filter by checking if the log message is valid based on requested filters
-			shouldReturnLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
+			// Then we filter by checking if the log message is valid based on requested filtersr
+			validLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
 			if err != nil {
 				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 				break
 			}
-
 			// ensure this log line is within the retention period if it has a timestamp
-			shouldReturnLogLine, err = strategy.isWithinRetentionPeriod(jsonLog)
+			withinRetention, err := strategy.isWithinRetentionPeriod(jsonLog)
 			if err != nil {
 				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 				break
 			}
 
+			shouldReturnLogLine := validLogLine && withinRetention
 			if !shouldReturnLogLine {
 				break
 			}

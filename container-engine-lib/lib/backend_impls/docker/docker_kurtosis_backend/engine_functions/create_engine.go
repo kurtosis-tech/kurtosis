@@ -30,10 +30,11 @@ const (
 	maxWaitForEngineAvailabilityRetries         = 10
 	timeBetweenWaitForEngineAvailabilityRetries = 1 * time.Second
 	logsStorageDirpath                          = "/var/log/kurtosis/"
+	removeLogsWaitHours                         = 6
 )
 
 var (
-	logRemovalTicker = time.NewTicker(6 * time.Hour)
+	logRemovalTicker = time.NewTicker(removeLogsWaitHours * time.Hour)
 )
 
 func CreateEngine(
@@ -109,17 +110,13 @@ func CreateEngine(
 	}
 
 	// schedule log removal for log retention
-	osFs := volume_filesystem.NewOsVolumeFilesystem()
-	realTime := logs_clock.NewRealClock()
-	logRemover := log_remover.NewLogRemover(osFs, realTime)
 	go func() {
-		for {
-			select {
+		osFs := volume_filesystem.NewOsVolumeFilesystem()
+		realTime := logs_clock.NewRealClock()
+		logRemover := log_remover.NewLogRemover(osFs, realTime)
 
-			// attempt to remove logs every six hours
-			case <-logRemovalTicker.C:
-				logRemover.Run()
-			}
+		for range logRemovalTicker.C {
+			logRemover.Run()
 		}
 	}()
 

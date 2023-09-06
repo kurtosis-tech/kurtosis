@@ -2,6 +2,10 @@ package logs_clock
 
 import "time"
 
+const (
+	daysInWeek = 7
+)
+
 // This interface is for enabling unit testing for log operations that rely on time
 // specifically log retention features
 type LogsClock interface {
@@ -39,7 +43,7 @@ func (clock *MockLogsClock) Now() time.Time {
 	startOfYear := time.Date(clock.year, time.January, 1, 0, 0, 0, 0, time.UTC)
 
 	// Calculate the number of days to add to reach the start of the desired week.
-	daysToAdd := time.Duration(clock.week * 7)
+	daysToAdd := time.Duration(clock.week * daysInWeek)
 
 	// Calculate the start of the desired week by adding days to the start of the year.
 	startOfWeek := startOfYear.Add(daysToAdd * 24 * time.Hour)
