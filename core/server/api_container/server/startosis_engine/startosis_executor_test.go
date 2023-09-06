@@ -44,10 +44,6 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	executor := NewStartosisExecutor(runtimeValueStore)
 
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
-	instruction0 := createMockInstruction(t, "instruction0", executeSuccessfully)
-	scheduledInstruction0 := instructions_plan.NewScheduledInstruction("instruction0", instruction0, starlark.None).Executed(true).ImportedFromCurrentEnclavePlan(true)
-	instructionsPlan.AddScheduledInstruction(scheduledInstruction0)
-
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	scheduledInstruction1 := instructions_plan.NewScheduledInstruction("instruction1", instruction1, starlark.None).Executed(true)
 	instructionsPlan.AddScheduledInstruction(scheduledInstruction1)
@@ -60,8 +56,6 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	require.Equal(t, executor.enclavePlan.Size(), 0) // check that the enclave plan is empty prior to execution
 
 	_, serializedInstruction, err := executeSynchronously(t, executor, executeForReal, instructionsPlan)
-	instruction0.AssertNumberOfCalls(t, "GetCanonicalInstruction", 0) // skipped directly
-	instruction0.AssertNumberOfCalls(t, "Execute", 0)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 0) // not executed as it was already executed
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -80,7 +74,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 			dummyPosition.ToAPIType(), "instruction3", "instruction3()", noInstructionArgsForTesting, isSkipped),
 	}
 	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
-	require.Equal(t, executor.enclavePlan.Size(), 4) // check that the enclave plan now contains the 4 instructions
+	require.Equal(t, executor.enclavePlan.Size(), 3) // check that the enclave plan now contains the 4 instructions
 }
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
@@ -182,7 +176,7 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 	scheduledInstructions, err := instructionsPlan.GeneratePlan()
 	require.Nil(t, err)
 
-	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, scheduledInstructions, noScriptOutputObject)
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, 0, scheduledInstructions, noScriptOutputObject)
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()
