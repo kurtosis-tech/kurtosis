@@ -69,7 +69,7 @@ func (fs *MockedVolumeFilesystem) Stat(name string) (VolumeFileInfo, error) {
 
 func (fs *MockedVolumeFilesystem) RemoveAll(path string) error {
 	path = trimForwardSlash(path)
-	for filepath, _ := range *fs.mapFS {
+	for filepath := range *fs.mapFS {
 		if strings.HasPrefix(filepath, path) {
 			delete(*fs.mapFS, filepath)
 		}

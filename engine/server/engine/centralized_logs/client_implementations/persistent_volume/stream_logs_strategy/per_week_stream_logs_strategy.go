@@ -152,6 +152,17 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 				break
 			}
+
+			// ensure this logline is within the retention period
+			retentionPeriod := strategy.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks-1) * oneWeekDuration)
+			timestampStr := jsonLog[volume_consts.TimestampLabel]
+			timestamp, err := time.Parse(time.RFC3339, timestampStr)
+			if err != nil {
+				streamErrChan <- stacktrace.NewError("An error retrieving the timestamp field from logs json log line. This is a bug in Kurtosis.")
+				return
+			}
+			shouldReturnLogLine = timestamp.Before(retentionPeriod)
+
 			if !shouldReturnLogLine {
 				break
 			}

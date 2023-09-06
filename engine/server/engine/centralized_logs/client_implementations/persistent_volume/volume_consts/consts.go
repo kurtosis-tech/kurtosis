@@ -8,7 +8,8 @@ const (
 
 	NewLineRune = '\n'
 
-	LogLabel = "log"
+	LogLabel       = "log"
+	TimestampLabel = "timestamp"
 
 	EndOfJsonLine = "}\n"
 
