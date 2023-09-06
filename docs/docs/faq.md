@@ -31,3 +31,33 @@ Currently, Kurtosis only supports Dockerhub. If your project or team requires a 
 Does Kurtosis pull a container image down each time I run a package?
 --------------------------------------------------------------------
 Kurtosis will always first check the local cache for a given container image for each `kurtosis run` before pulling the image from an external registry (e.g. Dockerhub).
+
+Will Kurtosis be able to run my package remotely from a private Github repository?
+----------------------------------------------------------------------------------
+No, Kurtosis is currently unable to run packages that reside in a private Github repository. Please file a [Github issue on our repository](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=feature+request&projects=&template=feature-request.yml) if you believe you need this workflow!
+
+Can I add multiple services in parallel to my enclave via composition?
+------------------------------------------------------
+Adding services in parallel is a great way to speed up how quickly your distributed system gets instantiated inside your enclave. By default, the [`add_services`](./starlark-reference/plan.md#add_services) instruction adds services in parallel with a default parallelism of 4 (which can be increased with the `--parallelism` flag). 
+
+However, when it comes to adding multiple services from different packages, you must do so within the `plan.add_services` instruction with the configuration for each service in a dictionary. You cannot currently import multiple packages (using locators) and run them in parallel without using the `plan.add_services` instruction because the call to `run` each of those imported packages starts the service itself.
+
+As an example, if you have a `serviceA.star` file that looks like this:
+```
+def run()...
+
+def getConfig()...
+```
+
+Then you can technically add services from `serviceA.star` in parallel into your package with:
+```
+a = import_module("/serviceA.star")
+
+def run():
+   a_config = a.getConfig()
+   plan.add_services({"a": a_config})
+``` 
+
+Does Kurtosis expose ports to the public internet?
+--------------------------------------------------
+Kurtosis does not allow you to expose any ports in your enclave to the internet. Service ports in enclaves are automatically mapped to ports on your local machine.
