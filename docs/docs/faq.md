@@ -49,7 +49,7 @@ def run()...
 def getConfig()...
 ```
 
-Then you can technically add services from `service.star` in parallel into your package with:
+Then you can technically add services from `serviceA.star` in parallel into your package with:
 ```
 a = import_module("/serviceA.star")
 
