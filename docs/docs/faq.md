@@ -61,3 +61,16 @@ def run():
 Does Kurtosis expose ports to the public internet?
 --------------------------------------------------
 Kurtosis does not allow you to expose any ports in your enclave to the internet. Service ports in enclaves are automatically mapped to ports on your local machine.
+
+How do I pin a specific version of an upstream/dependent package that I want to import into my own package?
+-----------------------------------------------------------------------------------------------------------
+To pin the specific version of a dependent package, simply do:
+```py
+# Import remote code from another package using an absolute import for a specific version of 1.0
+database = import_module("github.com/foo/bar/src/postgres.star@1.0")
+
+# Import local code from the same package using a relative import for a specific package version of 2.0
+nginx = import_module("/nginx.star@2.0")
+```
+
+More details can be found in the [`import_module()` Starlark reference](./starlark-reference/import-module.md)
