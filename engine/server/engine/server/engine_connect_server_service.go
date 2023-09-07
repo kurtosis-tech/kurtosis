@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	logRetentionFeatureReleaseTime = time.Date(2023, 9, 5, 0, 0, 0, 0, time.UTC)
+	logRetentionFeatureReleaseTime = time.Date(2023, 9, 7, 13, 0, 0, 0, time.UTC)
 )
 
 type EngineConnectServerService struct {
