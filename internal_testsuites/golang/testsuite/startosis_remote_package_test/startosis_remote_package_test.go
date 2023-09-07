@@ -24,6 +24,7 @@ const (
 
 var (
 	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
+	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 func TestStartosisRemotePackage(t *testing.T) {
@@ -40,7 +41,7 @@ func TestStartosisRemotePackage(t *testing.T) {
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Starlark Package: '%v'", remotePackage)
 
-	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, executeParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, executeParams, defaultDryRun, defaultParallelism, noExperimentalFeature, connectConnect)
 	require.NoError(t, err, "Unexpected error executing starlark package")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")

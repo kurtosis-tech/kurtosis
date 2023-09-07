@@ -3,6 +3,7 @@ package start
 import (
 	"context"
 	"fmt"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -43,6 +44,7 @@ def run(plan, args):
 
 var (
 	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
+	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 var ServiceStartCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -112,7 +114,7 @@ func run(
 
 func startServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
 	serviceNameString := fmt.Sprintf(`{"service_name": "%s"}`, serviceName)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, serviceNameString, doNotDryRun, defaultParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, serviceNameString, doNotDryRun, defaultParallelism, noExperimentalFeature, connectConnect)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for starting service")
 	}

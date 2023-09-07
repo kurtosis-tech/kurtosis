@@ -2,15 +2,16 @@ package startosis_package_test
 
 import (
 	"context"
+	"os"
+	"path"
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
-	"os"
-	"path"
-	"testing"
 )
 
 const (
@@ -24,6 +25,7 @@ const (
 
 var (
 	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
+	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 type StartosisPackageTestSuite struct {
@@ -72,5 +74,6 @@ func (suite *StartosisPackageTestSuite) RunPackageWithParams(ctx context.Context
 		defaultDryRun,
 		defaultParallelism,
 		noExperimentalFeature,
+		connectConnect,
 	)
 }

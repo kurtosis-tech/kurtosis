@@ -43,16 +43,16 @@ PATH_TO_MOUNT_RENDERED_CONFIG="` + renderedConfigMountPath + `"
 RENDER_RELATIVE_PATH = "` + renderedConfigRelativePath + `"
 
 def run(plan, args):
-	plan.print("Hello " + args["greeting"]) 
+	plan.print("Hello " + args["greeting"])
 	plan.print("Adding service " + DATASTORE_SERVICE_NAME + ".")
-	
+
 	config = ServiceConfig(
 		image = DATASTORE_IMAGE,
 		ports = {
 			DATASTORE_PORT_ID: PortSpec(number = DATASTORE_PORT_NUMBER, transport_protocol = DATASTORE_PORT_PROTOCOL)
 		}
 	)
-	
+
 	result = plan.add_service(name = DATASTORE_SERVICE_NAME, config = config)
 	plan.print("Service " + result.name + " deployed successfully.")
 	plan.exec(
@@ -67,26 +67,26 @@ def run(plan, args):
 		),
 		service_name = DATASTORE_SERVICE_NAME,
 	)
-	
+
 	artifact_name = plan.store_service_files(name = "stored-file", service_name = DATASTORE_SERVICE_NAME, src = DIR_OF_FILE_TO_BE_CREATED)
 	plan.print("Stored file at " + artifact_name)
-	
+
 	template_str = read_file(TEMPLATE_FILE_TO_RENDER)
-	
+
 	template_data = {
 		"CLNodesMetricsInfo" : [{"name" : "foo", "path": "/foo/path", "url": "foobar.com"}]
 	}
-	
+
 	template_data_by_path = {
 		RENDER_RELATIVE_PATH : struct(
 			template= template_str,
 			data= template_data
 		)
 	}
-	
+
 	rendered_artifact = plan.render_templates(template_data_by_path, "rendered-file")
 	plan.print("Rendered file to " + rendered_artifact)
-	
+
 	dependent_config = ServiceConfig(
 		image = DATASTORE_IMAGE,
 		ports = {
@@ -106,6 +106,7 @@ def run(plan, args):
 
 var (
 	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
+	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 func TestStartosis(t *testing.T) {
@@ -123,7 +124,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, startosisScript, greetingsArg, defaultDryRun, defaultParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, startosisScript, greetingsArg, defaultDryRun, defaultParallelism, noExperimentalFeature, connectConnect)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")
@@ -188,12 +189,12 @@ Deployed example-datastore-server-2 successfully
 # A scrape configuration containing exactly one endpoint to scrape:
 # Here it's Prometheus itself.
 scrape_configs:
-   
+
    - job_name: 'foo'
      metrics_path: /foo/path
      static_configs:
        - targets: ['foobar.com']
-   
+
    - job_name: 'beacon-metrics-gazer'
      metrics_path: '/metrics'
      static_configs:

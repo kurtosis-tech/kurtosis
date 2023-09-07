@@ -4,6 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math/rand"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_consts"
@@ -19,14 +28,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"math/rand"
-	"net/http"
-	"os"
-	"path"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -118,6 +119,7 @@ var (
 	emptyCmdArgs                 = []string{}
 	emptyEnvVars                 = map[string]string{}
 	noExperimentalFeature        = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
+	connectConnect               = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 var fileServerPortSpec = &kurtosis_core_rpc_api_bindings.Port{
@@ -160,7 +162,7 @@ func AddService(
 def run(plan):
 	plan.add_service(name = "%s", config = %s)
 `, serviceName, serviceConfigStarlark)
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature, connectConnect)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}
@@ -189,7 +191,7 @@ func RemoveService(
 def run(plan):
 	plan.remove_service(name = "%s")
 `, serviceName)
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature, connectConnect)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to remove service")
 	}
@@ -337,7 +339,7 @@ func AddAPIService(ctx context.Context, serviceName services.ServiceName, enclav
 }
 
 func RunScriptWithDefaultConfig(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, script string) (*enclaves.StarlarkRunResult, error) {
-	return enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, script, emptyParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
+	return enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, script, emptyParams, defaultDryRun, defaultParallelism, noExperimentalFeature, connectConnect)
 }
 
 func SetupSimpleEnclaveAndRunScript(t *testing.T, ctx context.Context, testName string, script string) (*enclaves.StarlarkRunResult, error) {
@@ -662,7 +664,7 @@ func createDatastoreClient(ipAddr string, portNum uint16) (datastore_rpc_api_bin
 
 func waitForFileServerAvailability(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName, portId string, endpoint string, initialDelayMilliseconds uint32, timeoutMilliseconds uint32) error {
 	starlarkParams := fmt.Sprintf(waitForGetAvaliabilityStalarkScriptParams, serviceName, portId, endpoint, initialDelayMilliseconds, timeoutMilliseconds)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, waitForGetAvaliabilityStalarkScript, starlarkParams, false, defaultParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, waitForGetAvaliabilityStalarkScript, starlarkParams, false, defaultParallelism, noExperimentalFeature, connectConnect)
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error has occurred getting endpoint availability using Starlark")
 	}

@@ -30,6 +30,7 @@ const (
 
 var (
 	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
+	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
@@ -67,7 +68,7 @@ func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
 	// Note: the result extracted from the recipe inside Starlark contains a newline char at the end.
 	// We need to add it here manually to have matching hashes
 	params := fmt.Sprintf(`{"file_hash": "%s\n"}`, randomFileHexHash)
-	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, params, defaultDryRun, defaultParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkPackageBlocking(ctx, packageDirpath, useDefaultMainFile, useDefaultFunctionName, params, defaultDryRun, defaultParallelism, noExperimentalFeature, connectConnect)
 	require.NoError(t, err, "Unexpected error executing Starlark package")
 
 	// the package itself runs the assertion here. If the file hash computed withing the enclave with md5sum differs
