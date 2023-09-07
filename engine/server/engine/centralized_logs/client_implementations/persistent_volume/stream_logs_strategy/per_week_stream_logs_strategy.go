@@ -53,9 +53,8 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	paths := strategy.getRetainedLogsFilePaths(fs, volume_consts.LogRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
 	if len(paths) == 0 {
 		streamErrChan <- stacktrace.NewError(
-			`No logs file paths for service '%v' in enclave '%v' were found. 
-					This is a bug, indicating either:
-					1) Logs for the current week are not being stored.
+			`No logs file paths for service '%v' in enclave '%v' were found. This means either:
+					1) No logs for this service were detected/stored.
 					2) Logs were manually removed.`,
 			serviceUuid, enclaveUuid)
 		return
