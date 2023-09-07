@@ -22,6 +22,7 @@
     "enclave-manager-sdk": "../../enclave-manager/api/typescript/",
     "framer-motion": "^10.16.1",
     "google-protobuf": "^3.21.2",
+    "js-yaml": "^4.1.0",
     "kurtosis-sdk": "../../api/typescript/",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
