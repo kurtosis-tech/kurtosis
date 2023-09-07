@@ -42,19 +42,19 @@ Adding services in parallel is a great way to speed up how quickly your distribu
 
 However, when it comes to adding multiple services from different packages, you must do so within the `plan.add_services` instruction with the configuration for each service in a dictionary. You cannot currently import multiple packages (using locators) and run them in parallel without using the `plan.add_services` instruction because the call to `run` each of those imported packages starts the service itself.
 
-As an example, if you have a `service_a.star` file that looks like this:
-```py
+As an example, if you have a `serviceA.star` file that looks like this:
+```
 def run()...
 
-def get_config()...
+def getConfig()...
 ```
 
-Then you can technically add services from `service_a.star` in parallel into your package with:
-```py
-a = import_module("./service_a.star")
+Then you can technically add services from `service.star` in parallel into your package with:
+```
+a = import_module("/serviceA.star")
 
 def run():
-   a_config = a.get_gonfig()
+   a_config = a.getConfig()
    plan.add_services({"a": a_config})
 ``` 
 
