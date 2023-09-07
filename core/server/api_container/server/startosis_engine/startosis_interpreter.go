@@ -11,12 +11,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
-	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/resolve"
 	"go.starlark.net/starlark"
@@ -58,7 +58,7 @@ type StartosisInterpreter struct {
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider            startosis_packages.PackageContentProvider
 	enclaveEnvVars                   string
-	enclavePlanInstructionRepository *instructions_plan.EnclavePlanInstructionRepository
+	enclavePlanInstructionRepository *enclave_plan_instruction.EnclavePlanInstructionRepository
 }
 
 type SerializedInterpretationOutput string
@@ -68,7 +68,7 @@ func NewStartosisInterpreter(
 	moduleContentProvider startosis_packages.PackageContentProvider,
 	runtimeValueStore *runtime_value_store.RuntimeValueStore,
 	enclaveVarEnvs string,
-	enclavePlanInstructionRepository *instructions_plan.EnclavePlanInstructionRepository,
+	enclavePlanInstructionRepository *enclave_plan_instruction.EnclavePlanInstructionRepository,
 ) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                            &sync.Mutex{},
@@ -169,7 +169,14 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			// We cannot find any more instructions inside the enclave state matching the first instruction of the plan
 			optimizedPlan.SetIndexOfFirstInstruction(currentInstructionsPlan.Size())
 			for _, newPlanInstruction := range naiveInstructionsPlanSequence {
+
 				optimizedPlan.AddScheduledInstruction(newPlanInstruction)
+				kurtosisInstructionStr := newPlanInstruction.GetInstruction().String()
+				enclaveCapabilities := newPlanInstruction.GetInstruction().GetCapabilites().GetEnclavePlanCapabilities()
+				enclavePlanInstruction := enclave_plan_instruction.NewEnclavePlanInstructionImpl(kurtosisInstructionStr, enclaveCapabilities)
+				if err := interpreter.enclavePlanInstructionRepository.Save(newPlanInstruction.GetUuid(), enclavePlanInstruction); err != nil {
+					return startosis_constants.NoOutputObject, nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred saving enclave instruction plan '%+v' with scheduled instruction with UUID '%s'", enclavePlanInstruction, newPlanInstruction.GetUuid()).ToAPIType()
+				}
 			}
 			logrus.Debugf("Exhausted all possibilities. Concatenated the previous enclave plan with the new plan to obtain a %d instructions plan", optimizedPlan.Size())
 			return naiveInstructionsPlanSerializedScriptOutput, optimizedPlan, nil
@@ -373,7 +380,7 @@ func findFirstEqualInstructionPastIndex(
 	currentEnclaveInstructionsList []*instructions_plan.ScheduledInstruction,
 	naiveInstructionsList []*instructions_plan.ScheduledInstruction,
 	minIndex int,
-	enclavePlanInstructionRepository *instructions_plan.EnclavePlanInstructionRepository,
+	enclavePlanInstructionRepository *enclave_plan_instruction.EnclavePlanInstructionRepository,
 ) (int, error) {
 	if len(naiveInstructionsList) == 0 {
 		return -1, nil // no result as the naiveInstructionsList is empty
@@ -382,12 +389,12 @@ func findFirstEqualInstructionPastIndex(
 		// We just need to compare instructions to see if they match, without needing any enclave specific context here
 		fakeEnclaveComponent := enclave_structure.NewEnclaveComponents()
 
-		scheduledInstructionUuid := currentEnclaveInstructionsList[i].GetUuid()
-
-		enclavePlanInstruction, err := enclavePlanInstructionRepository.Get(scheduledInstructionUuid)
+		/*enclavePlanInstruction, err := enclavePlanInstructionRepository.Get(scheduledInstructionUuid)
 		if err != nil {
 			return 0, stacktrace.Propagate(err, "An error occurred getting the enclave plan instruction with scheduled instruction UUID '%v'", scheduledInstructionUuid)
-		}
+		}*/
+
+		enclavePlanInstruction := enclave_plan_instruction.NewEnclavePlanInstructionImpl(currentEnclaveInstructionsList[i].GetInstruction().String(), currentEnclaveInstructionsList[i].GetInstruction().GetCapabilites().GetEnclavePlanCapabilities())
 
 		instructionResolutionResult := naiveInstructionsList[0].GetInstruction().TryResolveWith(enclavePlanInstruction, fakeEnclaveComponent)
 		if instructionResolutionResult == enclave_structure.InstructionIsEqual || instructionResolutionResult == enclave_structure.InstructionIsUpdate {

@@ -127,6 +127,49 @@ func (_c *MockKurtosisInstruction_GetCanonicalInstruction_Call) RunAndReturn(run
 	return _c
 }
 
+// GetCapabilites provides a mock function with given fields:
+func (_m *MockKurtosisInstruction) GetCapabilites() kurtosis_instruction.EnclavePlanCapabilitiesProvider {
+	ret := _m.Called()
+
+	var r0 kurtosis_instruction.EnclavePlanCapabilitiesProvider
+	if rf, ok := ret.Get(0).(func() kurtosis_instruction.EnclavePlanCapabilitiesProvider); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(kurtosis_instruction.EnclavePlanCapabilitiesProvider)
+		}
+	}
+
+	return r0
+}
+
+// MockKurtosisInstruction_GetCapabilites_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCapabilites'
+type MockKurtosisInstruction_GetCapabilites_Call struct {
+	*mock.Call
+}
+
+// GetCapabilites is a helper method to define mock.On call
+func (_e *MockKurtosisInstruction_Expecter) GetCapabilites() *MockKurtosisInstruction_GetCapabilites_Call {
+	return &MockKurtosisInstruction_GetCapabilites_Call{Call: _e.mock.On("GetCapabilites")}
+}
+
+func (_c *MockKurtosisInstruction_GetCapabilites_Call) Run(run func()) *MockKurtosisInstruction_GetCapabilites_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockKurtosisInstruction_GetCapabilites_Call) Return(_a0 kurtosis_instruction.EnclavePlanCapabilitiesProvider) *MockKurtosisInstruction_GetCapabilites_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockKurtosisInstruction_GetCapabilites_Call) RunAndReturn(run func() kurtosis_instruction.EnclavePlanCapabilitiesProvider) *MockKurtosisInstruction_GetCapabilites_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetPositionInOriginalScript provides a mock function with given fields:
 func (_m *MockKurtosisInstruction) GetPositionInOriginalScript() *kurtosis_starlark_framework.KurtosisBuiltinPosition {
 	ret := _m.Called()

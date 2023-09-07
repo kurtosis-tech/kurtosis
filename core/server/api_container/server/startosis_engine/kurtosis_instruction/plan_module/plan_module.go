@@ -4,6 +4,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
@@ -18,7 +19,7 @@ func PlanModule(
 	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionsPlanMask *resolver.InstructionsPlanMask,
 	kurtosisPlanInstructions []*kurtosis_plan_instruction.KurtosisPlanInstruction,
-	enclavePlanInstructionRepository *instructions_plan.EnclavePlanInstructionRepository,
+	enclavePlanInstructionRepository *enclave_plan_instruction.EnclavePlanInstructionRepository,
 ) *starlarkstruct.Module {
 	moduleBuiltins := starlark.StringDict{}
 	for _, planInstruction := range kurtosisPlanInstructions {

@@ -1,8 +1,8 @@
-package instructions_plan
+package enclave_plan_instruction
 
 import (
 	"encoding/json"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_capabilities"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_capabilities"
 	"github.com/kurtosis-tech/stacktrace"
 )
 
@@ -15,18 +15,15 @@ type EnclavePlanInstructionImpl struct {
 type privateEnclavePlanInstruction struct {
 	KurtosisInstructionStr string
 	Capabilities           *enclave_plan_capabilities.EnclavePlanCapabilities
-	ReturnedValueStr       string
 }
 
 func NewEnclavePlanInstructionImpl(
 	kurtosisInstructionStr string,
 	capabilities *enclave_plan_capabilities.EnclavePlanCapabilities,
-	returnedValueStr string,
 ) *EnclavePlanInstructionImpl {
 	privatePlan := &privateEnclavePlanInstruction{
 		KurtosisInstructionStr: kurtosisInstructionStr,
 		Capabilities:           capabilities,
-		ReturnedValueStr:       returnedValueStr,
 	}
 	return &EnclavePlanInstructionImpl{
 		privateEnclavePlanInstruction: privatePlan,
@@ -39,10 +36,6 @@ func (instruction *EnclavePlanInstructionImpl) GetKurtosisInstructionStr() strin
 
 func (instruction *EnclavePlanInstructionImpl) GetCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities {
 	return instruction.privateEnclavePlanInstruction.Capabilities
-}
-
-func (instruction *EnclavePlanInstructionImpl) GetReturnedValueStr() string {
-	return instruction.privateEnclavePlanInstruction.ReturnedValueStr
 }
 
 func (instruction *EnclavePlanInstructionImpl) MarshalJSON() ([]byte, error) {

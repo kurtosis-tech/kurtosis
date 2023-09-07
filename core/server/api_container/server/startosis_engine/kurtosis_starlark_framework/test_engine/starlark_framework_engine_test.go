@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/stretchr/testify/require"
@@ -76,7 +77,7 @@ func testKurtosisPlanInstruction(t *testing.T, builtin KurtosisPlanInstructionBa
 
 	enclaveDb := getEnclaveDBForTest(t)
 
-	enclavePlanInstructionRepository, err := instructions_plan.GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
+	enclavePlanInstructionRepository, err := enclave_plan_instruction.GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
 	require.NoError(t, err)
 
 	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, emptyEnclaveComponents, emptyInstructionsPlanMask, instructionsPlan, enclavePlanInstructionRepository)

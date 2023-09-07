@@ -1,10 +1,10 @@
-package instructions_plan
+package enclave_plan_instruction
 
 import (
 	"encoding/json"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_capabilities"
+	enclave_plan_capabilities2 "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_capabilities"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -44,14 +44,12 @@ func getEnclavePlanInstructionForTest(amount int) []*EnclavePlanInstructionImpl 
 
 	allEnclaveCapabilities := getEnclavePlanCapabilitiesForTest(amount)
 
-	for index, enclavePlanCapabilities := range allEnclaveCapabilities {
+	for _, enclavePlanCapabilities := range allEnclaveCapabilities {
 		addServiceInstructionStr := fmt.Sprintf(addServiceInstructionStrFormat, enclavePlanCapabilities.GetServiceName())
-		returnedValueStr := fmt.Sprintf(returnedValueStrFormat, index, index, enclavePlanCapabilities.GetServiceName())
 
 		privatePlan := &privateEnclavePlanInstruction{
 			KurtosisInstructionStr: addServiceInstructionStr,
 			Capabilities:           enclavePlanCapabilities,
-			ReturnedValueStr:       returnedValueStr,
 		}
 
 		newEnclavePlanInstruction := &EnclavePlanInstructionImpl{
@@ -64,9 +62,9 @@ func getEnclavePlanInstructionForTest(amount int) []*EnclavePlanInstructionImpl 
 	return allEnclavePlanInstructions
 }
 
-func getEnclavePlanCapabilitiesForTest(amount int) []*enclave_plan_capabilities.EnclavePlanCapabilities {
+func getEnclavePlanCapabilitiesForTest(amount int) []*enclave_plan_capabilities2.EnclavePlanCapabilities {
 
-	allEnclavePlanCapabilities := []*enclave_plan_capabilities.EnclavePlanCapabilities{}
+	allEnclavePlanCapabilities := []*enclave_plan_capabilities2.EnclavePlanCapabilities{}
 
 	for i := 1; i <= amount; i++ {
 		instructionName := fmt.Sprintf(instructionNameFormat, i)
@@ -74,9 +72,9 @@ func getEnclavePlanCapabilitiesForTest(amount int) []*enclave_plan_capabilities.
 		artifactName := fmt.Sprintf(artifactNameStrFormat, i)
 		filesArtifactContent := []byte(fmt.Sprintf(filesArtifactContentStrFormat, i))
 
-		builder := enclave_plan_capabilities.NewEnclavePlanCapabilitiesBuilder(instructionName)
-		builder.WitServiceName(serviceName)
-		builder.WitServiceNames([]service.ServiceName{
+		builder := enclave_plan_capabilities2.NewEnclavePlanCapabilitiesBuilder(instructionName)
+		builder.WithServiceName(serviceName)
+		builder.WithServiceNames([]service.ServiceName{
 			serviceNameAInList,
 			serviceNameBInList,
 		})

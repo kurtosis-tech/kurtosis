@@ -4,10 +4,10 @@ import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_capabilities"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_capabilities"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
@@ -111,8 +111,9 @@ type RequestCapabilities struct {
 }
 
 func (builtin *RequestCapabilities) GetEnclavePlanCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities {
-	//TODO implement me
-	panic("implement me")
+	enclavePlanCapabilitiesBuilder := enclave_plan_capabilities.NewEnclavePlanCapabilitiesBuilder(RequestBuiltinName)
+	enclavePlanCapabilitiesBuilder.WithServiceName(builtin.serviceName)
+	return enclavePlanCapabilitiesBuilder.Build()
 }
 
 func (builtin *RequestCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {

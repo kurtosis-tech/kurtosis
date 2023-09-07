@@ -3,6 +3,8 @@ package kurtosis_plan_instruction
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_instruction"
+
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -30,7 +32,7 @@ type KurtosisPlanInstructionWrapper struct {
 	// TODO: This can be changed to KurtosisPlanInstructionInternal when we get rid of KurtosisInstruction
 	instructionsPlan *instructions_plan.InstructionsPlan
 
-	enclavePlanInstructionRepository *instructions_plan.EnclavePlanInstructionRepository
+	enclavePlanInstructionRepository *enclave_plan_instruction.EnclavePlanInstructionRepository
 }
 
 func NewKurtosisPlanInstructionWrapper(
@@ -38,7 +40,7 @@ func NewKurtosisPlanInstructionWrapper(
 	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionPlanMask *resolver.InstructionsPlanMask,
 	instructionsPlan *instructions_plan.InstructionsPlan,
-	enclavePlanInstructionRepository *instructions_plan.EnclavePlanInstructionRepository,
+	enclavePlanInstructionRepository *enclave_plan_instruction.EnclavePlanInstructionRepository,
 ) *KurtosisPlanInstructionWrapper {
 	return &KurtosisPlanInstructionWrapper{
 		KurtosisPlanInstruction:          instruction,

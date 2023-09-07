@@ -41,8 +41,8 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor, sizeErr := CreateStartosisExecutor(runtimeValueStore, enclaveDb)
-	require.NoError(t, sizeErr)
+	executor := NewStartosisExecutor(runtimeValueStore)
+	require.NotNil(t, executor)
 
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
@@ -54,10 +54,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
 	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
 
-	size, sizeErr := executor.instructionsPlan.Size()
-	require.NoError(t, sizeErr)
-
-	require.Equal(t, size, 0) // check that the enclave plan is empty prior to execution
+	require.Equal(t, executor.enclavePlan.Size(), 0) // check that the enclave plan is empty prior to execution
 
 	_, serializedInstruction, err := executeSynchronously(t, executor, executeForReal, instructionsPlan)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -78,9 +75,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 			dummyPosition.ToAPIType(), "instruction3", "instruction3()", noInstructionArgsForTesting, isSkipped),
 	}
 	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
-	size, sizeErr = executor.instructionsPlan.Size()
-	require.NoError(t, sizeErr)
-	require.Equal(t, size, 3) // check that the enclave plan now contains the 4 instructions
+	require.Equal(t, executor.enclavePlan.Size(), 3) // check that the enclave plan now contains the 4 instructions
 }
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
@@ -88,8 +83,8 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
 	require.NoError(t, err)
 
-	executor, err := CreateStartosisExecutor(runtimeValueStore, enclaveDb)
-	require.NoError(t, err)
+	executor := NewStartosisExecutor(runtimeValueStore)
+	require.NotNil(t, executor)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
@@ -131,8 +126,8 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor, sizeErr := CreateStartosisExecutor(runtimeValueStore, enclaveDb)
-	require.NoError(t, sizeErr)
+	executor := NewStartosisExecutor(runtimeValueStore)
+	require.NotNil(t, executor)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)

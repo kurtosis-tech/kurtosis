@@ -1,4 +1,4 @@
-package instructions_plan
+package enclave_plan_instruction
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
@@ -32,47 +32,6 @@ func TestSaveAndGet_Success(t *testing.T) {
 
 	require.Equal(t, originalEnclavePlanInstruction, enclavePlanInstructionFromRepository)
 }
-
-func TestSaveAndGetAll_Success(t *testing.T) {
-	repository := getRepositoryForTest(t)
-
-	originalEnclavePlanInstructions := getEnclavePlanInstructionForTest(4)
-
-	require.NotNil(t, originalEnclavePlanInstructions)
-
-	for k, originalEnclavePlanInstruction := range originalEnclavePlanInstructions {
-		uuidStr := allUuid[k]
-		uuid := ScheduledInstructionUuid(uuidStr)
-		err := repository.Save(uuid, originalEnclavePlanInstruction)
-		require.NoError(t, err)
-	}
-	enclavePlanInstructionsFromRepository, err := repository.GetAll()
-	require.NoError(t, err)
-
-	require.Len(t, enclavePlanInstructionsFromRepository, 4)
-	require.EqualValues(t, originalEnclavePlanInstructions, enclavePlanInstructionsFromRepository)
-}
-
-func TestSize_Success(t *testing.T) {
-	repository := getRepositoryForTest(t)
-
-	originalEnclavePlanInstruction := getEnclavePlanInstructionForTest(1)[0]
-
-	require.NotNil(t, originalEnclavePlanInstruction)
-
-	err := repository.Save(firstUuidForTest, originalEnclavePlanInstruction)
-	require.NoError(t, err)
-
-	err = repository.Save(secondUuidForTest, originalEnclavePlanInstruction)
-	require.NoError(t, err)
-
-	size, err := repository.Size()
-	require.NoError(t, err)
-
-	require.Equal(t, 2, size)
-}
-
-//TODO implement GetAll Test
 
 func getRepositoryForTest(t *testing.T) *EnclavePlanInstructionRepository {
 	file, err := os.CreateTemp("/tmp", "*.db")

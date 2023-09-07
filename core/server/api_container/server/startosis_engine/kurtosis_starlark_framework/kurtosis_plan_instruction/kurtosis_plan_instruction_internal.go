@@ -31,6 +31,10 @@ func newKurtosisPlanInstructionInternal(internalBuiltin *kurtosis_starlark_frame
 	}
 }
 
+func (builtin *kurtosisPlanInstructionInternal) GetCapabilites() kurtosis_instruction.EnclavePlanCapabilitiesProvider {
+	return builtin.capabilities
+}
+
 func (builtin *kurtosisPlanInstructionInternal) GetCanonicalInstruction(isSkipped bool) *kurtosis_core_rpc_api_bindings.StarlarkInstruction {
 	args := make([]*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg, len(builtin.GetArguments().GetDefinition()))
 	for idx, argument := range builtin.GetArguments().GetDefinition() {

@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_capabilities"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"go.starlark.net/starlark"
 )
@@ -35,4 +36,10 @@ type KurtosisInstruction interface {
 
 	// TryResolveWith assesses whether the instruction can be resolved with the one passed as an argument.
 	TryResolveWith(other EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
+
+	GetCapabilites() EnclavePlanCapabilitiesProvider
+}
+
+type EnclavePlanCapabilitiesProvider interface {
+	GetEnclavePlanCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities
 }

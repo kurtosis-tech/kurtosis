@@ -21,12 +21,12 @@ func NewEnclavePlanCapabilitiesBuilder(
 	return builder
 }
 
-func (builder *EnclavePlanCapabilitiesBuilder) WitServiceName(serviceName service.ServiceName) *EnclavePlanCapabilitiesBuilder {
+func (builder *EnclavePlanCapabilitiesBuilder) WithServiceName(serviceName service.ServiceName) *EnclavePlanCapabilitiesBuilder {
 	builder.serviceName = serviceName
 	return builder
 }
 
-func (builder *EnclavePlanCapabilitiesBuilder) WitServiceNames(serviceNames []service.ServiceName) *EnclavePlanCapabilitiesBuilder {
+func (builder *EnclavePlanCapabilitiesBuilder) WithServiceNames(serviceNames []service.ServiceName) *EnclavePlanCapabilitiesBuilder {
 	builder.serviceNames = serviceNames
 	return builder
 }
