@@ -24,7 +24,8 @@ const (
 )
 
 var (
-	starlarkIntValue = starlark.MakeInt(30)
+	starlarkIntValue  = starlark.MakeInt(30)
+	starlarkBoolValue = starlark.Bool(true)
 )
 
 func TestRecipeResultSaveKey_Success(t *testing.T) {
@@ -44,6 +45,7 @@ func TestRecipeResultSaveAndGet_Success(t *testing.T) {
 	resultValue := map[string]starlark.Comparable{
 		firstKey:  starlarkStringValue,
 		secondKey: starlarkIntValue,
+		thirdKey:  starlarkBoolValue,
 	}
 
 	err := repository.Save(randomUuid, resultValue)
@@ -65,22 +67,14 @@ func TestRecipeResultGet_DoesNotExist(t *testing.T) {
 	require.Empty(t, value)
 }
 
-func TestRecipeResultSave_ErrorWhenUsingNotStarlarkStringOrInt(t *testing.T) {
+func TestRecipeResultSave_ErrorWhenUsingNotStarlarkStringIntorBool(t *testing.T) {
 	repository := getRecipeResultRepositoryForTest(t)
-
-	resultValue := map[string]starlark.Comparable{
-		firstKey: starlark.Bool(true),
-	}
-
-	err := repository.Save(randomUuid, resultValue)
-	require.Error(t, err)
-	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
 
 	resultValue2 := map[string]starlark.Comparable{
 		secondKey: directory.Directory{}, // nolint: exhaustruct
 	}
 
-	err = repository.Save(randomUuid, resultValue2)
+	err := repository.Save(randomUuid, resultValue2)
 	require.Error(t, err)
 	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
 

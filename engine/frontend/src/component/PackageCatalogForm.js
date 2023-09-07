@@ -95,10 +95,32 @@ const checkValidIntType = (data) => {
         return false
     }
     try {
-        return isNumeric(data)
+        const trimmedData = data.trim()
+        return isNumeric(trimmedData)
     } catch(ex) {
         return false
     }
+}
+
+const checkValidFloatType = (data) => {
+    const  isValidFloat = (value) => {
+        return !isNaN(Number(value))
+    }
+    if (data === "undefined") {
+        return false
+    }
+
+    const trimmedData = data.trim()
+    if (trimmedData.length === 0) {
+        return false
+    }
+
+    return isValidFloat(trimmedData)
+}
+
+const checkValidBooleanType = (data) => {
+    const trimData = data.trim()
+    return ["TRUE", "FALSE"].includes(trimData.toUpperCase())
 }
 
 const PackageCatalogForm = ({handleCreateNewEnclave}) => {
@@ -165,15 +187,25 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 valid = checkValidStringType(formData[key])
             } else if (type === "INTEGER") {
                 valid = checkValidIntType(formData[key])
+            } else if (type === "BOOL") {
+                valid = checkValidBooleanType(formData[key])
+            } else if (type === "FLOAT") {
+                valid = checkValidFloatType(formData[key])
             } else {
                 valid = checkValidUndefinedType(formData[key])
             }
 
+            let typeToPrint = type 
             if (type === undefined) {
-                type = "JSON"
+                typeToPrint = "JSON"
             }
+            
+            if (type === "BOOL") {
+                typeToPrint = "BOOLEAN (TRUE/FALSE)"
+            }
+
             if (!valid) {
-                errorsFound[key] = `Incorrect type, expected ${type}`;
+                errorsFound[key] = `Incorrect type, expected ${typeToPrint}`;
             }
         })
 
@@ -197,16 +229,29 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             Object.keys(formData).map(key => {
                 const argName = kurtosisPackage.args[key].name
                 const value = formData[key]
-                if (!["INTEGER", "STRING", "BOOL", "FLOAT"].includes(kurtosisPackage.args[key]["type"])) {
-                    try {
-                        const val = JSON.parse(value)
+
+                let val; 
+                let trimmedValue;
+                if (value.length > 0) {
+                    if (kurtosisPackage.args[key]["type"] === "INTEGER") {
+                        trimmedValue = value.trim()
+                        val = parseInt(value)
                         args[argName] = val
-                    } catch(ex) {
-                        console.log("this error should not come up")
+                    } else if (kurtosisPackage.args[key]["type"] === "BOOL") {
+                        trimmedValue = value.trim()
+                        val = value.toUpperCase()
+                        args[argName] = (val === "TRUE") ? true : false
+                    } else if (kurtosisPackage.args[key]["type"] === "FLOAT") {
+                        trimmedValue = value.trim()
+                        val = parseFloat(value)
+                        args[argName] = val
+                    } else if (kurtosisPackage.args[key]["type"] === "STRING") {
+                        args[argName] = value
+                    } else {
+                        val = JSON.parse(value)
+                        args[argName] = val
                     }
-                } else {
-                    args[argName] = value
-                }
+                }    
             })
 
             const stringifiedArgs = JSON.stringify(args)

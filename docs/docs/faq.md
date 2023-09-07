@@ -26,7 +26,7 @@ Kurtosis will first try to use your locally cached container images before pulli
 
 Does Kurtosis support other container registries or libraries?
 --------------------------------------------------------------
-Currently, Kurtosis only supports Dockerhub. If your project or team requires a different type of container registry, please let us know by [filing an issue in our Github](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=feature+request&projects=&template=feature-request.yml) or letting us know in [Discord](https://discord.gg/jJFG7XBqcY). 
+Currently, Kurtosis supports any public container registry (Dockerhub, Google Cloud Container Registry, etc.). If your project or team requires using a private container registry, please let us know by [filing an issue in our Github](https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=&labels=feature+request&projects=&template=feature-request.yml) or letting us know in [Discord](https://discord.gg/jJFG7XBqcY). 
 
 Does Kurtosis pull a container image down each time I run a package?
 --------------------------------------------------------------------
