@@ -38,7 +38,7 @@ const Home = () => {
     const [enclaveLoading, setEnclaveLoading] = useState(false)
     const {appData, setAppData} = useAppContext()
 
-    const handleDeleteClick = (enclaveName) => {
+    const handleDeleteClick = async (enclaveName) => {
         const makeRequest = async () => {
             try {
                 const filteredEnclaves = enclaves.filter(enclave => enclave.name !== enclaveName)
@@ -49,7 +49,7 @@ const Home = () => {
                 alert(`Sorry, unexpected error occurred while removing enclave with name: ${enclaveName}`)
             }
         }
-        makeRequest()
+        await makeRequest()
     }
 
     const loading = (
