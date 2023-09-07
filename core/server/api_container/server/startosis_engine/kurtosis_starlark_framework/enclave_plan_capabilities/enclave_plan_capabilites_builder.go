@@ -17,6 +17,10 @@ func NewEnclavePlanCapabilitiesBuilder(
 ) *EnclavePlanCapabilitiesBuilder {
 	builder := &EnclavePlanCapabilitiesBuilder{
 		instructionTypeStr: instructionTypeStr,
+		serviceName:        "",
+		serviceNames:       []service.ServiceName{},
+		artifactName:       "",
+		filesArtifactMD5:   []byte{},
 	}
 	return builder
 }

@@ -31,6 +31,8 @@ func TestEnclavePlanCapabilitiesMarshallers(t *testing.T) {
 
 func TestEnclavePlanCapabilitiesMarshallers_WithAllZeroValues(t *testing.T) {
 	originalEnclavePlanCapabilities := &EnclavePlanCapabilities{
+		// Suppressing exhaustruct requirement because we want an object with zero values
+		// nolint: exhaustruct
 		privateEnclavePlanCapabilities: &privateEnclavePlanCapabilities{},
 	}
 

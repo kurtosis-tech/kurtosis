@@ -67,6 +67,8 @@ func (repository *EnclavePlanInstructionRepository) Save(
 func (repository *EnclavePlanInstructionRepository) Get(
 	uuid instructions_plan.ScheduledInstructionUuid,
 ) (*EnclavePlanInstructionImpl, error) {
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
 	instruction := &EnclavePlanInstructionImpl{}
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {

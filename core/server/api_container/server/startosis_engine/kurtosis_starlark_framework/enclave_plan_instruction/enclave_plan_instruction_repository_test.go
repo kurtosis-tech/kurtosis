@@ -9,13 +9,8 @@ import (
 )
 
 const (
-	firstUuidForTest  = "abdc4cb3948149d9afa2ef93abb4ec56"
-	secondUuidForTest = "31c6a6cb3948149d9afa2ef93abb47e9a"
-	thirdUuidForTest  = "a5b6a6cb3948149d9afa2ef93abb5d6e"
-	fourthUuidForTest = "c4c1b7cb3948149d9afa2ef93a4e5eb2a"
+	firstUuidForTest = "abdc4cb3948149d9afa2ef93abb4ec56"
 )
-
-var allUuid = []string{firstUuidForTest, secondUuidForTest, thirdUuidForTest, fourthUuidForTest}
 
 func TestSaveAndGet_Success(t *testing.T) {
 	repository := getRepositoryForTest(t)
