@@ -3,6 +3,9 @@ package add
 import (
 	"context"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
@@ -20,8 +23,6 @@ import (
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"strconv"
-	"strings"
 )
 
 const (
@@ -343,7 +344,7 @@ func run(
 			strings.Join(stringifiedPortMapping, portMappingSeparatorForLogs))
 	}
 	logrus.Infof("Successfully mapped %d ports. The service is reachable locally on its ephemeral port numbers",
-			len(successfullyMappedPorts))
+		len(successfullyMappedPorts))
 
 	fmt.Printf("Service ID: %v\n", serviceName)
 	if len(privatePorts) > 0 {
