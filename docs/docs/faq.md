@@ -65,7 +65,7 @@ Kurtosis does not allow you to expose any ports in your enclave to the internet.
 How do I pin a specific version of package that my package depends on?
 -----------------------------------------------------------------------------------------------------------
 To pin the specific version of a dependent package, simply do:
-```py
+```python
 # Import remote code from another package using an absolute import for a specific version of 1.0
 database = import_module("github.com/foo/bar/src/postgres.star@1.0")
 ```
