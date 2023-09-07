@@ -228,7 +228,7 @@ Gets the current status of the container running the enclave represented by this
 
 EnclaveContext
 --------------
-This Kurtosis-provided class is the lowest-level representation of a Kurtosis enclave, and provides methods for inspecting and manipulating the contents of the enclave. 
+This Kurtosis-provided class is the lowest-level representation of a Kurtosis enclave, and provides methods for inspecting and manipulating the contents of the enclave.
 
 ### `getEnclaveUuid() -> EnclaveUuid`
 Gets the UUID of the enclave that this [EnclaveContext][enclavecontext] object represents.
@@ -236,7 +236,7 @@ Gets the UUID of the enclave that this [EnclaveContext][enclavecontext] object r
 ### `getEnclaveName() -> String`
 Gets the name of the enclave that this [EnclaveContext][enclavecontext] object represents.
 
-### `runStarlarkScript(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun, List<String> experimentalFeatureFlags) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkScript(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun, List<String> experimentalFeatureFlags, String connect) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a provided Starlark script inside the enclave.
 
@@ -246,12 +246,13 @@ Run a provided Starlark script inside the enclave.
 * `serializedStarlarkScript`: The Starlark script provided as a string
 * `dryRun`: When set to true, the Kurtosis instructions are not executed.
 * `experimentalFeatureFlags`: List of experimental features to turn on for this run. Leave empty to leave any experimental feature disabled.
+* `connect`: When set to 'CONNECT', the user service ports are forwarded.  When set to 'NO_CONNECT', the user service ports are not forwarded.
 
 **Returns**
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkPackage(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, List<String> experimentalFeatureFlags) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkPackage(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, List<String> experimentalFeatureFlags, String connect) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a provided Starlark script inside the enclave.
 
@@ -263,12 +264,13 @@ Run a provided Starlark script inside the enclave.
 * `serializedParams`: The parameters to pass to the package for the run. It should be a serialized JSON string.
 * `dryRun`: When set to true, the Kurtosis instructions are not executed.
 * `experimentalFeatureFlags`: List of experimental features to turn on for this run. Leave empty to leave any experimental feature disabled.
+* `connect`: When set to 'CONNECT', the user service ports are forwarded.  When set to 'NO_CONNECT', the user service ports are not forwarded.
 
 **Returns**
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkRemotePackage(String packageId, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkRemotePackage(String packageId, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, String connect) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a Starlark script hosted in a remote github.com repo inside the enclave.
 
@@ -279,20 +281,21 @@ Run a Starlark script hosted in a remote github.com repo inside the enclave.
 * `mainFunctionName`: The main function name, an empty string can be passed to use the default value 'run'.
 * `serializedParams`: The parameters to pass to the package for the run. It should be a serialized JSON string.
 * `dryRun`: When set to true, the Kurtosis instructions are not executed.
+* `connect`: When set to 'CONNECT', the user service ports are forwarded.  When set to 'NO_CONNECT', the user service ports are not forwarded.
 
 **Returns**
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkScriptBlocking(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun) -> (StarlarkRunResult runResult, Error error)`
+### `runStarlarkScriptBlocking(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun, String connect) -> (StarlarkRunResult runResult, Error error)`
 
 Convenience wrapper around [EnclaveContext.runStarlarkScript][enclavecontext_runstarlarkscript], that blocks until the execution of the script is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
-### `runStarlarkPackageBlocking(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun) -> (StarlarkRunResult runResult, Error error)`
+### `runStarlarkPackageBlocking(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, String connect) -> (StarlarkRunResult runResult, Error error)`
 
 Convenience wrapper around [EnclaveContext.runStarlarkPackage][enclavecontext_runstarlarkpackage], that blocks until the execution of the package is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
-### `runStarlarkRemotePackageBlocking(String packageId, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun) -> (StarlarkRunResult runResult, Error error)`
+### `runStarlarkRemotePackageBlocking(String packageId, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, String connect) -> (StarlarkRunResult runResult, Error error)`
 
 Convenience wrapper around [EnclaveContext.runStarlarkRemotePackage][enclavecontext_runstarlarkremotepackage], that blocks until the execution of the package is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
@@ -384,7 +387,7 @@ This is a union object representing a single line returned by Kurtosis' Starlark
 Each line is one of:
 
 ### [StarlarkInstruction][starlarkinstruction] `instruction`
-An instruction that is _about to be_ executed. 
+An instruction that is _about to be_ executed.
 
 ### [StarlarkInstructionResult][starlarkinstructionresult] `instructionResult`
 The result of an instruction that was successfully executed
@@ -555,7 +558,7 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec
-  
+
 [loglinefilter]: #loglinefilter
 [google_re2_syntax_docs]: https://github.com/google/re2/wiki/Syntax
 
