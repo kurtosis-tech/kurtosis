@@ -189,12 +189,12 @@ Deployed example-datastore-server-2 successfully
 # A scrape configuration containing exactly one endpoint to scrape:
 # Here it's Prometheus itself.
 scrape_configs:
-
+   
    - job_name: 'foo'
      metrics_path: /foo/path
      static_configs:
        - targets: ['foobar.com']
-
+   
    - job_name: 'beacon-metrics-gazer'
      metrics_path: '/metrics'
      static_configs:
