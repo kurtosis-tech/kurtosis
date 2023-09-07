@@ -31,7 +31,7 @@ func (t execTestCase2) GetId() string {
 func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 
 	serviceNetwork.EXPECT().RunExec(

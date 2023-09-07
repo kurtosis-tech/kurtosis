@@ -22,7 +22,7 @@ type execRecipeTestCase struct {
 
 func newExecRecipeTestCase(t *testing.T) *execRecipeTestCase {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
 	serviceNetwork.EXPECT().RunExec(
