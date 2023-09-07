@@ -107,6 +107,17 @@ message ServiceInfo {
 // ==============================================================================================
 //                               Execute Starlark Arguments
 // ==============================================================================================
+
+// User services port forwarding
+enum Connect {
+  // Best effort port forwarding
+  CONNECT = 0;
+  // Port forwarding disabled
+  NO_CONNECT = 1;
+  // Starlark run fails if the ports cannot be forwarded.
+  // MUST_CONNECT = 2;
+}
+
 message RunStarlarkScriptArgs {
   string serialized_script = 1;
 
@@ -125,16 +136,6 @@ message RunStarlarkScriptArgs {
 
   // User services port forwarding.  Defaults to CONNECT
   optional Connect connect = 7;
-}
-
-// User services port forwarding
-enum Connect {
-  // Best effort port forwarding
-  CONNECT = 0;
-  // Port forwarding disabled
-  NO_CONNECT = 1;
-  // Starlark run fails if the ports cannot be forwarded.
-  // MUST_CONNECT = 2;
 }
 
 message RunStarlarkPackageArgs {

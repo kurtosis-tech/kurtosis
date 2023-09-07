@@ -25,7 +25,10 @@ import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ServiceInfo,
     RunStarlarkScriptArgs,
-    RunStarlarkPackageArgs, FilesArtifactNameAndUuid, KurtosisFeatureFlag,
+    RunStarlarkPackageArgs,
+    FilesArtifactNameAndUuid,
+    KurtosisFeatureFlag,
+    Connect,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
@@ -104,6 +107,7 @@ export class EnclaveContext {
         serializedParams: string,
         dryRun: boolean,
         experimentalFeatures: Array<KurtosisFeatureFlag>,
+        connect: Connect,
     ): Promise<Result<Readable, Error>> {
         const args = new RunStarlarkScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
@@ -111,6 +115,7 @@ export class EnclaveContext {
         args.setDryRun(dryRun)
         args.setMainFunctionName(mainFunctionName)
         args.setExperimentalFeaturesList(experimentalFeatures)
+        args.setConnect(connect)
         const scriptRunResult : Result<Readable, Error> = await this.backend.runStarlarkScript(args)
         if (scriptRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark script \n${scriptRunResult.error}`))
@@ -125,8 +130,9 @@ export class EnclaveContext {
         serializedParams: string,
         dryRun: boolean,
         experimentalFeatures: Array<KurtosisFeatureFlag>,
+        connect: Connect,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkScript(mainFunctionName, serializedStartosisScript, serializedParams, dryRun, experimentalFeatures)
+        const runAsyncResponse = await this.runStarlarkScript(mainFunctionName, serializedStartosisScript, serializedParams, dryRun, experimentalFeatures, connect)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
@@ -141,8 +147,9 @@ export class EnclaveContext {
         mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
+        connect: Connect,
     ): Promise<Result<Readable, Error>> {
-        const args = await this.assembleRunStarlarkPackageArg(packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun)
+        const args = await this.assembleRunStarlarkPackageArg(packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, connect)
         if (args.isErr()) {
             return err(new Error(`Unexpected error while assembling arguments to pass to the Starlark executor \n${args.error}`))
         }
@@ -160,8 +167,9 @@ export class EnclaveContext {
         mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
+        connect: Connect,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkPackage(packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun)
+        const runAsyncResponse = await this.runStarlarkPackage(packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, connect)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
@@ -176,6 +184,7 @@ export class EnclaveContext {
         mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
+        connect: Connect,
     ): Promise<Result<Readable, Error>> {
         const args = new RunStarlarkPackageArgs();
         args.setPackageId(packageId)
@@ -184,6 +193,7 @@ export class EnclaveContext {
         args.setRemote(true)
         args.setRelativePathToMainFile(relativePathToMainFile)
         args.setMainFunctionName(mainFunctionName)
+        args.setConnect(connect)
         const remotePackageRunResult : Result<Readable, Error> = await this.backend.runStarlarkPackage(args)
         if (remotePackageRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark package \n${remotePackageRunResult.error}`))
@@ -198,8 +208,9 @@ export class EnclaveContext {
         mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
+        connect: Connect,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkRemotePackage(packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun)
+        const runAsyncResponse = await this.runStarlarkRemotePackage(packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, connect)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
@@ -370,6 +381,7 @@ export class EnclaveContext {
         mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
+        connect: Connect,
         ): Promise<Result<RunStarlarkPackageArgs, Error>> {
         const kurtosisYamlFilepath = path.join(packageRootPath, KURTOSIS_YAML_FILENAME)
 
@@ -391,6 +403,7 @@ export class EnclaveContext {
         args.setDryRun(dryRun)
         args.setRelativePathToMainFile(relativePathToMainFile)
         args.setMainFunctionName(mainFunctionName)
+        args.setConnect(connect)
         return ok(args)
     }
 }

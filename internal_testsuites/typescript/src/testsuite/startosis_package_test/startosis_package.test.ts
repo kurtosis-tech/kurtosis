@@ -1,6 +1,7 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {
     DEFAULT_DRY_RUN,
+    DEFAULT_CONNECT,
     JEST_TIMEOUT_MS,
 } from "./shared_constants";
 import * as path from "path";
@@ -36,7 +37,8 @@ test("Test valid Starlark package with input", async () => {
             DEFAULT_REL_PATH_TO_MAIN_FILE,
             DEFAULT_STARLARK_RUN_FUNC_NAME,
             params,
-            DEFAULT_DRY_RUN
+            DEFAULT_DRY_RUN,
+            DEFAULT_CONNECT,
         )
 
         if (runResult.isErr()) {
@@ -78,7 +80,8 @@ test("Test valid Starlark package with input - missing key in params", async () 
             DEFAULT_REL_PATH_TO_MAIN_FILE,
             DEFAULT_STARLARK_RUN_FUNC_NAME,
             params,
-            DEFAULT_DRY_RUN
+            DEFAULT_DRY_RUN,
+            DEFAULT_CONNECT,
         )
 
         if (runResult.isErr()) {

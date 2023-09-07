@@ -45,6 +45,7 @@ const DEFAULT_RUN_FUNCTION_NAME = "run"
 const STARLARK_SCRIPT_NO_PARAM = "{}"
 const STARLARK_NO_DRY_RUN = false
 const NO_EXPERIMENTAL_FEATURE: Array<KurtosisFeatureFlag> = []
+const CONNECT_CONNECT = 0
 
 const DATASTORE_PORT_NUMBER = datastoreApi.LISTEN_PORT
 const DATASTORE_PORT_PROTOCOL = "TCP"
@@ -241,7 +242,7 @@ export async function waitForHealthy(
 
 export async function waitForGetAvailabilityStarlarkScript(enclaveContext: EnclaveContext, serviceName: string, portId: string, endpoint: string, interval: number, timeout: number) : Promise<Result<StarlarkRunResult, Error>> {
     const params = `{ "service_name": "${serviceName}", "port_id": "${portId}", "endpoint": "/${endpoint}", "interval": "${interval}ms", "timeout": "${timeout}ms"}`
-    return enclaveContext.runStarlarkScriptBlocking(DEFAULT_RUN_FUNCTION_NAME, WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, params, false, NO_EXPERIMENTAL_FEATURE)
+    return enclaveContext.runStarlarkScriptBlocking(DEFAULT_RUN_FUNCTION_NAME, WAIT_FOR_GET_AVAILABILITY_STARLARK_SCRIPT, params, false, NO_EXPERIMENTAL_FEATURE, CONNECT_CONNECT)
 }
 
 export async function startFileServer(fileServerServiceName: ServiceName, filesArtifactUuid: string, pathToCheckOnFileServer: string, enclaveCtx: EnclaveContext): Promise<Result<StartFileServerResponse, Error>> {
@@ -301,7 +302,7 @@ export async function checkFileContents(ipAddress: string, portNum: number, file
 export async function addServiceViaStarlark(enclaveContext: EnclaveContext, serviceName: string, starlarkServiceConfig: string): Promise<Result<ServiceContext, Error>> {
     const addServiceScript = `def run(plan):
 	plan.add_service(
-		name="${serviceName}", 
+		name="${serviceName}",
 		config=${starlarkServiceConfig},
 	)
 `
@@ -312,6 +313,7 @@ export async function addServiceViaStarlark(enclaveContext: EnclaveContext, serv
         STARLARK_SCRIPT_NO_PARAM,
         STARLARK_NO_DRY_RUN,
         NO_EXPERIMENTAL_FEATURE,
+        CONNECT_CONNECT,
     )
     const starlarkScriptRunResult = await starlarkScriptRunResultPromise
 
