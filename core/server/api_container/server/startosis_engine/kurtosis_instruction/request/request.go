@@ -186,7 +186,9 @@ func (builtin *RequestCapabilities) Execute(ctx context.Context, _ *builtin_argu
 	if !builtin.skipCodeCheck && !builtin.isAcceptableCode(result) {
 		return "", stacktrace.NewError("Request returned status code '%v' that is not part of the acceptable status codes '%v'", result["code"], builtin.acceptableCodes)
 	}
-	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
+	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, result); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred setting value '%+v' using key UUID '%s' in the runtime value store", result, builtin.resultUuid)
+	}
 	instructionResult := builtin.httpRequestRecipe.ResultMapToString(result)
 	return instructionResult, err
 }
