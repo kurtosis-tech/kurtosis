@@ -62,7 +62,7 @@ Does Kurtosis expose ports to the public internet?
 --------------------------------------------------
 Kurtosis does not allow you to expose any ports in your enclave to the internet. Service ports in enclaves are automatically mapped to ports on your local machine.
 
-How do I pin a specific version of an upstream/dependent package that I want to import into my own package?
+How do I pin a specific version of package that my package depends on?
 -----------------------------------------------------------------------------------------------------------
 To pin the specific version of a dependent package, simply do:
 ```py
