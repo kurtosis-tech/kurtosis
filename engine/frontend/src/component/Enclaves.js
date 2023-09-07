@@ -79,14 +79,13 @@ const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
     const navigate = useNavigate()
 
     const handleCreateEnvClick = () => {
-        navigate("/enclave/create")
+        navigate("/catalog")
     }
+
     const handleClick = (enclaveName) => {
         navigate(`/enclaves/${enclaveName}`)
     }
 
-    console.log("is loading:", isLoading)
-    console.log("Updating with enclaves:", enclaves)
     return (
         <div className="flex h-full flex-grow">
             {

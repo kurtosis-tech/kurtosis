@@ -39,9 +39,8 @@ const Home = () => {
     const {appData, setAppData} = useAppContext()
 
     const handleDeleteClick = (enclaveName) => {
-        console.log("name ", enclaveName)
-        const filteredEnclaves = enclaves.filter(enclave => enclave.name !== enclaveName)
         const makeRequest = async () => {
+            const filteredEnclaves = enclaves.filter(enclave => enclave.name !== enclaveName)
             await removeEnclave(appData.jwtToken, appData.apiHost, enclaveName)
             setEnclaves(filteredEnclaves)
         }
