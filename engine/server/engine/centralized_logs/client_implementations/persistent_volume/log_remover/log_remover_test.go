@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	logsStorageDirpathForTests = "var/log/kurtosis/"
-
 	testEnclaveUuid      = "test-enclave"
 	testUserService1Uuid = "test-user-service-1"
 
@@ -63,5 +61,5 @@ func TestLogRemover_Run(t *testing.T) {
 }
 
 func getWeekFilepathStr(year, week int) string {
-	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, logsStorageDirpathForTests, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 }

@@ -38,7 +38,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 	shouldFollowLogs bool,
 ) {
 	// logs are stored per enclave id, per service uuid, eg. <base path>/123440231421/54325342w2341.json
-	logsFilepath := fmt.Sprintf("%s%s/%s%s", volume_consts.LogsStorageDirpath, string(enclaveUuid), string(serviceUuid), volume_consts.Filetype)
+	logsFilepath := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, string(enclaveUuid), string(serviceUuid), volume_consts.Filetype)
 	logsFile, err := fs.Open(logsFilepath)
 	if err != nil {
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred opening the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
