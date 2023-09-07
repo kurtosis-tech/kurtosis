@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 )
 
+// nolint: gomnd
 var (
 	TestEnclaveUuid = enclave.EnclaveUUID("test-enclave-uuid")
 
@@ -31,7 +32,6 @@ var (
 	TestPrivateApplicationProtocol = "https"
 	TestWaitConfiguration          = "2s"
 	TestWaitDefaultValue           = "2m"
-	TestWaitNotValidEmptyString    = ""
 
 	TestPublicPortId              = "endpoints"
 	TestPublicPortNumber          = uint16(80)

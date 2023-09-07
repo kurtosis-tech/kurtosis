@@ -5,44 +5,27 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/add_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
-	"os"
 	"testing"
 )
 
 type addServiceTestCase struct {
 	*testing.T
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newAddServiceTestCase(t *testing.T) *addServiceTestCase {
-	return &addServiceTestCase{
-		T: t,
-	}
-}
-
-func (t *addServiceTestCase) GetId() string {
-	return add_service.AddServiceBuiltinName
-}
-
-func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-
-	serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
-	serviceNetwork.EXPECT().AddService(
+func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
+	suite.serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
+	suite.serviceNetwork.EXPECT().AddService(
 		mock.Anything,
 		TestServiceName,
 		mock.MatchedBy(func(serviceConfig *service.ServiceConfig) bool {
@@ -63,7 +46,7 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 			)
 
 			actualServiceConfig := serviceConfig
-			assert.Equal(t, expectedServiceConfig, actualServiceConfig)
+			suite.Assert().Equal(expectedServiceConfig, actualServiceConfig)
 			return true
 		}),
 	).Times(1).Return(
@@ -71,7 +54,15 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 		nil,
 	)
 
-	return add_service.NewAddService(serviceNetwork, runtimeValueStore)
+	suite.run(&addServiceTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
+}
+
+func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return add_service.NewAddService(t.serviceNetwork, t.runtimeValueStore)
 }
 
 func (t *addServiceTestCase) GetStarlarkCode() string {
@@ -92,21 +83,4 @@ func (t *addServiceTestCase) Assert(interpretationResult starlark.Value, executi
 
 	expectedExecutionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", TestServiceName, TestServiceUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
-}
-
-func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {
-	file, err := os.CreateTemp("/tmp", "*.db")
-	defer func() {
-		err = os.Remove(file.Name())
-		require.NoError(t, err)
-	}()
-
-	require.NoError(t, err)
-	db, err := bolt.Open(file.Name(), 0666, nil)
-	require.NoError(t, err)
-	enclaveDb := &enclave_db.EnclaveDB{
-		DB: db,
-	}
-
-	return enclaveDb
 }

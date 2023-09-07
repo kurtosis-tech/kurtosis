@@ -13,32 +13,29 @@ import (
 
 type removeServiceTestCase struct {
 	*testing.T
+	serviceNetwork *service_network.MockServiceNetwork
 }
 
-func newRemoveServiceTestCase(t *testing.T) *removeServiceTestCase {
-	return &removeServiceTestCase{
-		T: t,
-	}
-}
-
-func (t removeServiceTestCase) GetId() string {
-	return remove_service.RemoveServiceBuiltinName
-}
-
-func (t removeServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-
-	serviceNetwork.EXPECT().RemoveService(
+func (suite *KurtosisPlanInstructionTestSuite) TestRemoveService() {
+	suite.serviceNetwork.EXPECT().RemoveService(
 		mock.Anything,
 		string(TestServiceName),
 	).Times(1).Return(
 		TestServiceUuid,
 		nil,
 	)
-	return remove_service.NewRemoveService(serviceNetwork)
+
+	suite.run(&removeServiceTestCase{
+		T:              suite.T(),
+		serviceNetwork: suite.serviceNetwork,
+	})
 }
 
-func (t removeServiceTestCase) GetStarlarkCode() string {
+func (t *removeServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return remove_service.NewRemoveService(t.serviceNetwork)
+}
+
+func (t *removeServiceTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q)", remove_service.RemoveServiceBuiltinName, remove_service.ServiceNameArgName, TestServiceName)
 }
 
@@ -46,7 +43,7 @@ func (t *removeServiceTestCase) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-func (t removeServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *removeServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 
 	expectedExecutionResult := fmt.Sprintf("Service '%s' with service UUID '%s' removed", TestServiceName, TestServiceUuid)

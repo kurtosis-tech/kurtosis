@@ -6,9 +6,6 @@ import (
 )
 
 type KurtosisPlanInstructionBaseTest interface {
-	// GetId is a unique identifier for this test that will be used in errors when a test fails.
-	GetId() string
-
 	// GetInstruction should return the instruction this test is testing
 	GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction
 

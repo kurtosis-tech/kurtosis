@@ -16,14 +16,10 @@ type readyConditionsExecRecipeTestCase struct {
 	*testing.T
 }
 
-func newReadyConditionsExecRecipeTestCase(t *testing.T) *readyConditionsExecRecipeTestCase {
-	return &readyConditionsExecRecipeTestCase{
-		T: t,
-	}
-}
-
-func (t *readyConditionsExecRecipeTestCase) GetId() string {
-	return service_config.ReadyConditionTypeName
+func (suite *KurtosisTypeConstructorTestSuite) TestReadyConditionsExecRecipe() {
+	suite.run(&readyConditionsExecRecipeTestCase{
+		T: suite.T(),
+	})
 }
 
 func (t *readyConditionsExecRecipeTestCase) GetStarlarkCode() string {

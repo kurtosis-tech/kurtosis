@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -14,24 +14,14 @@ import (
 
 type uploadFilesUpdateTestCase struct {
 	*testing.T
+	serviceNetwork         *service_network.MockServiceNetwork
+	packageContentProvider startosis_packages.PackageContentProvider
 }
 
-func newUploadFilesUpdateTestCase(t *testing.T) *uploadFilesUpdateTestCase {
-	return &uploadFilesUpdateTestCase{
-		T: t,
-	}
-}
+func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesUpdate() {
+	suite.Require().Nil(suite.packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
 
-func (t *uploadFilesUpdateTestCase) GetId() string {
-	return upload_files.UploadFilesBuiltinName
-}
-
-func (t *uploadFilesUpdateTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	require.Nil(t, packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
-
-	serviceNetwork.EXPECT().GetFilesArtifactMd5(
+	suite.serviceNetwork.EXPECT().GetFilesArtifactMd5(
 		TestArtifactName,
 	).Times(1).Return(
 		TestArtifactUuid,
@@ -39,7 +29,7 @@ func (t *uploadFilesUpdateTestCase) GetInstruction() *kurtosis_plan_instruction.
 		true,
 		nil,
 	)
-	serviceNetwork.EXPECT().UpdateFilesArtifact(
+	suite.serviceNetwork.EXPECT().UpdateFilesArtifact(
 		TestArtifactUuid,
 		mock.Anything, // data gets written to disk and compressed to it's a bit tricky to replicate here.
 		mock.Anything, // and same for the hash
@@ -47,10 +37,18 @@ func (t *uploadFilesUpdateTestCase) GetInstruction() *kurtosis_plan_instruction.
 		nil,
 	)
 
-	return upload_files.NewUploadFiles(serviceNetwork, packageContentProvider)
+	suite.run(&uploadFilesUpdateTestCase{
+		T:                      suite.T(),
+		serviceNetwork:         suite.serviceNetwork,
+		packageContentProvider: suite.packageContentProvider,
+	})
 }
 
-func (t uploadFilesUpdateTestCase) GetStarlarkCode() string {
+func (t *uploadFilesUpdateTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return upload_files.NewUploadFiles(t.serviceNetwork, t.packageContentProvider)
+}
+
+func (t *uploadFilesUpdateTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName, upload_files.ArtifactNameArgName, TestArtifactName)
 }
 
