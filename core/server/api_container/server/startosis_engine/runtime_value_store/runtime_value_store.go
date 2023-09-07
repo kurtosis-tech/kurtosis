@@ -4,16 +4,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
 )
 
 type RuntimeValueStore struct {
+	starlarkValueSerde                *kurtosis_types.StarlarkValueSerde
 	recipeResultRepository            *recipeResultRepository
 	serviceAssociatedValuesRepository *serviceAssociatedValuesRepository
 }
 
-func CreateRuntimeValueStore(enclaveDb *enclave_db.EnclaveDB) (*RuntimeValueStore, error) {
+func CreateRuntimeValueStore(starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveDb *enclave_db.EnclaveDB) (*RuntimeValueStore, error) {
 	associatedValuesRepository, err := getOrCreateNewServiceAssociatedValuesRepository(enclaveDb)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting or creating the service associated values repository")
@@ -25,6 +27,7 @@ func CreateRuntimeValueStore(enclaveDb *enclave_db.EnclaveDB) (*RuntimeValueStor
 	}
 
 	runtimeValueStore := &RuntimeValueStore{
+		starlarkValueSerde:                starlarkValueSerde,
 		recipeResultRepository:            recipeResultRepositoryObj,
 		serviceAssociatedValuesRepository: associatedValuesRepository,
 	}
