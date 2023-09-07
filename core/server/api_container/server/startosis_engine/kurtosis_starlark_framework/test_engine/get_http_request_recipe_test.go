@@ -27,7 +27,7 @@ type getHttpRequestRecipeTestCase struct {
 
 func newGetHttpRequestRecipeTestCase(t *testing.T) *getHttpRequestRecipeTestCase {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 
 	serviceNetwork := service_network.NewMockServiceNetwork(t)

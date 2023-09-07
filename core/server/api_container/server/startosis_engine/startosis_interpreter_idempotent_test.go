@@ -31,7 +31,7 @@ type StartosisInterpreterIdempotentTestSuite struct {
 func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
 	enclaveDb := getEnclaveDBForTest(suite.T())
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(suite.T(), err)
 
 	enclavePlanInstructionRepository, err := enclave_plan_instruction.GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)

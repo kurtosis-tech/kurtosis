@@ -21,7 +21,7 @@ var testIntRuntimeValue = starlark.MakeInt(0)
 
 func TestGetOrReplaceRuntimeValueFromString_BasicFetch(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
@@ -41,7 +41,7 @@ func TestGetOrReplaceRuntimeValueFromString_BasicFetch(t *testing.T) {
 
 func TestGetOrReplaceRuntimeValueFromString_Interpolated(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
@@ -61,7 +61,7 @@ func TestGetOrReplaceRuntimeValueFromString_Interpolated(t *testing.T) {
 
 func TestReplaceRuntimeValueFromString(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)

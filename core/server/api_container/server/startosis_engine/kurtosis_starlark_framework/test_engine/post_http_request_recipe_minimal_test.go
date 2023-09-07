@@ -23,7 +23,7 @@ type postHttpRequestRecipeMinimalTestCase struct {
 
 func newPostHttpRequestRecipeMinimalTestCase(t *testing.T) *postHttpRequestRecipeMinimalTestCase {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 
 	serviceNetwork := service_network.NewMockServiceNetwork(t)
