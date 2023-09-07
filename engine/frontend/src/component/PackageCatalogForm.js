@@ -1,18 +1,10 @@
-import {
-    Grid,
-    GridItem,
-    Center,
-    Input,
-    Flex,
-    Button,
-    Stack,
-    Text,
-    Textarea,
-    Checkbox,
-} from '@chakra-ui/react'
+import {Button, Center, Checkbox, Flex, Grid, GridItem, Input, Stack, Text, Textarea, Tooltip,} from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
 import {useLocation, useNavigate} from "react-router";
 import {useState} from 'react';
+import startCase from 'lodash/startCase'
+import {InfoOutlineIcon} from '@chakra-ui/icons'
+
 
 const yaml = require("js-yaml")
 
@@ -44,20 +36,48 @@ const renderArgs = (args, handleChange, formData, errorData) => {
         return (
             <Flex color={"white"}>
                 <Flex mr="3" direction={"column"} w="15%">
-                    <Text align={"center"} fontSize={"xl"}> {arg.name} </Text>
-                    {arg.isRequired ? <Text align={"center"} fontSize={"s"} color="red.500"> Required</Text> : null}
+                    <Text marginLeft={3}
+                          align={"right"}
+                          fontSize={"l"}
+                    >
+                        {startCase(arg.name)}
+                        <Text
+                            fontSize={"l"}
+                            as="span"
+                            color={"red"}
+                        >
+                            <Tooltip label="Required variable">
+                                <span>{arg.isRequired ? " *" : null}</span>
+                            </Tooltip>
+
+                        </Text>
+                        <Tooltip label="Some text coming here soon">
+                            <InfoOutlineIcon marginLeft={2}/>
+                        </Tooltip>
+
+                    </Text>
+                    <Text marginLeft={3} as='kbd' fontSize='xs' align={"right"}>{placeholder.toLowerCase()}</Text>
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
                     {errorData[index].length > 0 ?
-                        <Text align={"center"} fontSize={"s"} color="red.500"> {errorData[index]} </Text> : null}
+                        <Text marginLeft={3} align={"left"} fontSize={"xs"}
+                              color="red.500"> {errorData[index]} </Text> : null}
                     {
                         ["INTEGER", "STRING", "BOOL", "FLOAT"].includes(placeholder) ?
-                            <Input placeholder={placeholder} color='gray.300'
-                                   onChange={e => handleChange(e.target.value, index)} value={formData[index]}
-                                   borderColor={errorData[index] ? "red.400" : null}/> :
-                            <Textarea borderColor={errorData[index] ? "red.400" : null} placeholder={placeholder}
-                                      minHeight={"200px"} onChange={e => handleChange(e.target.value, index)}
-                                      value={formData[index]}/>
+                            <Input
+                                // placeholder={placeholder.toLowerCase()}
+                                color='gray.300'
+                                onChange={e => handleChange(e.target.value, index)}
+                                value={formData[index]}
+                                borderColor={errorData[index] ? "red.400" : null}
+                            /> :
+                            <Textarea
+                                borderColor={errorData[index] ? "red.400" : null}
+                                // placeholder={placeholder.toLowerCase()}
+                                minHeight={"200px"}
+                                onChange={e => handleChange(e.target.value, index)}
+                                value={formData[index]}
+                            />
                     }
                 </Flex>
             </Flex>
@@ -298,27 +318,44 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 <GridItem area={'packageId'} p="1">
                     <Flex direction={"column"} gap={"2"}>
                         <Center>
-                            <Text color={"white"} fontSize={"4xl"}> {kurtosisPackage.name} </Text>
+                            <Text color={"white"} fontSize={"2xl"}> {kurtosisPackage.name} </Text>
                         </Center>
-                        <Center>
-                            <Checkbox color={"white"} fontSize={"2xl"} isChecked={productionMode}
-                                      onChange={(e) => setProductionMode(e.target.checked)}>
-                                <Text color={"white"} fontSize={"xl"} textAlign={"justify-center"}>
-                                    Production Mode
-                                </Text>
-                            </Checkbox>
-                        </Center>
+                        <Checkbox
+                            marginLeft={2}
+                            color={"white"}
+                            fontSize={"xl"}
+                            isChecked={productionMode}
+                            onChange={(e) => setProductionMode(e.target.checked)}
+                        >
+                            <Text>
+                                Restart services
+                                <Tooltip
+                                    label="When enabled, Kurtosis will automatically restart any services that crash in side the enclave">
+                                    <InfoOutlineIcon marginLeft={2}/>
+                                </Tooltip>
+
+                            </Text>
+                        </Checkbox>
                     </Flex>
                 </GridItem>
                 <GridItem area={'main'} h="90%" overflowY={"scroll"} mt="10">
                     <Stack spacing={4}>
                         <Flex color={"white"}>
                             <Flex mr="3" direction={"column"} w="15%">
-                                <Text align={"center"} fontSize={"xl"}> Enclave Name </Text>
+                                <Text
+                                    marginLeft={3}
+                                    align={"right"}
+                                    fontSize={"l"}
+                                >Enclave Name
+                                    <Tooltip label="Leave empty to auto-generate an enclave name">
+                                        <InfoOutlineIcon marginLeft={2}/>
+                                    </Tooltip>
+                                </Text>
                             </Flex>
                             <Flex flex="1" mr="3" direction={"column"}>
+
                                 <Input
-                                    placeholder={"IF NOT PROVIDED, THIS WILL BE GENERATED AUTOMATICALLY"}
+                                    // placeholder={"Leave empty to use auto-generated"}
                                     color='gray.300'
                                     value={enclaveName}
                                     onChange={(e) => setEnclaveName(e.target.value)}
