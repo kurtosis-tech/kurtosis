@@ -53,10 +53,10 @@ func (plan *InstructionsPlan) GetIndexOfFirstInstruction() int {
 	return plan.indexOfFirstInstruction
 }
 
-func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.KurtosisInstruction, returnedValue starlark.Value) error {
+func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.KurtosisInstruction, returnedValue starlark.Value) (*ScheduledInstruction, error) {
 	generatedUuid, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
-		return stacktrace.Propagate(err, "Unable to generate a random UUID for instruction '%s' to add it to the plan", instruction.String())
+		return nil, stacktrace.Propagate(err, "Unable to generate a random UUID for instruction '%s' to add it to the plan", instruction.String())
 	}
 
 	scheduledInstructionUuid := ScheduledInstructionUuid(generatedUuid)
@@ -64,7 +64,7 @@ func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.Ku
 
 	plan.scheduledInstructionsIndex[scheduledInstructionUuid] = scheduledInstruction
 	plan.instructionsSequence = append(plan.instructionsSequence, scheduledInstructionUuid)
-	return nil
+	return scheduledInstruction, nil
 }
 
 func (plan *InstructionsPlan) AddScheduledInstruction(scheduledInstruction *ScheduledInstruction) *ScheduledInstruction {

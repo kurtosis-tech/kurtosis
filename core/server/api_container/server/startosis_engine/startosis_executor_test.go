@@ -51,8 +51,10 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
 	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully)
-	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
-	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
+	_, addInstErr := instructionsPlan.AddInstruction(instruction2, starlark.None)
+	require.NoError(t, addInstErr)
+	_, addInstErr = instructionsPlan.AddInstruction(instruction3, starlark.None)
+	require.NoError(t, addInstErr)
 
 	require.Equal(t, executor.enclavePlan.Size(), 0) // check that the enclave plan is empty prior to execution
 
@@ -90,9 +92,12 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
 	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully)
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
-	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
-	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
-	require.NoError(t, instructionsPlan.AddInstruction(instruction3, starlark.None))
+	_, addInsErr := instructionsPlan.AddInstruction(instruction1, starlark.None)
+	require.NoError(t, addInsErr)
+	_, addInsErr = instructionsPlan.AddInstruction(instruction2, starlark.None)
+	require.NoError(t, addInsErr)
+	_, addInsErr = instructionsPlan.AddInstruction(instruction3, starlark.None)
+	require.NoError(t, addInsErr)
 
 	_, serializedInstruction, executionError := executeSynchronously(t, executor, executeForReal, instructionsPlan)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -132,8 +137,10 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
-	require.NoError(t, instructionsPlan.AddInstruction(instruction1, starlark.None))
-	require.NoError(t, instructionsPlan.AddInstruction(instruction2, starlark.None))
+	_, addInsErr := instructionsPlan.AddInstruction(instruction1, starlark.None)
+	require.NoError(t, addInsErr)
+	_, addInsErr = instructionsPlan.AddInstruction(instruction2, starlark.None)
+	require.NoError(t, addInsErr)
 
 	_, serializedInstruction, err := executeSynchronously(t, executor, doDryRun, instructionsPlan)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)

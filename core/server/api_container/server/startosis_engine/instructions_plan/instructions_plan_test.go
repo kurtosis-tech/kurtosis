@@ -12,7 +12,8 @@ func TestAddInstruction(t *testing.T) {
 
 	instruction1 := mock_instruction.NewMockKurtosisInstruction(t)
 	instruction1ReturnedValue := starlark.None
-	require.NoError(t, plan.AddInstruction(instruction1, instruction1ReturnedValue))
+	_, err := plan.AddInstruction(instruction1, instruction1ReturnedValue)
+	require.NoError(t, err)
 
 	require.Len(t, plan.instructionsSequence, 1)
 	scheduledInstructionUuid := plan.instructionsSequence[0]

@@ -324,6 +324,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		}
 		return serializedOutputObject, newInstructionsPlan, nil
 	}
+
 	return startosis_constants.NoOutputObject, newInstructionsPlan, nil
 }
 
