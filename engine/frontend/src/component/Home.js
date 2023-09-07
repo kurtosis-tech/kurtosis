@@ -40,9 +40,14 @@ const Home = () => {
 
     const handleDeleteClick = (enclaveName) => {
         const makeRequest = async () => {
-            const filteredEnclaves = enclaves.filter(enclave => enclave.name !== enclaveName)
-            await removeEnclave(appData.jwtToken, appData.apiHost, enclaveName)
-            setEnclaves(filteredEnclaves)
+            try {
+                const filteredEnclaves = enclaves.filter(enclave => enclave.name !== enclaveName)
+                await removeEnclave(appData.jwtToken, appData.apiHost, enclaveName)
+                setEnclaves(filteredEnclaves)
+            } catch (ex) {
+                console.log(ex)
+                alert(`Sorry, unexpected error occurred while removing enclave with name: ${enclaveName}`)
+            }
         }
         makeRequest()
     }

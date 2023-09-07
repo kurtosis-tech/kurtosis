@@ -5,7 +5,7 @@ import {removeEnclave} from "../api/enclave";
 import { Grid, GridItem, Center, Button, Tooltip } from '@chakra-ui/react'
 
 const Enclave = ({name, status, created, handleClick, handleDeleteClick}) => {
-    const backgroundColor = status === 1 ? "bg-[#24BA27]" : "bg-red-600"
+    const backgroundColor = status === 1 ? "bg-[#24BA27]" : "bg-red-500"
     return (
         <Grid
             templateRows='repeat(3, 1fr)'
@@ -14,7 +14,7 @@ const Enclave = ({name, status, created, handleClick, handleDeleteClick}) => {
             onClick={() => handleClick(name)}
         >
             <GridItem colSpan={4} align={"right"} style={{"z-index":100}}>
-                <Button colorScheme="red" color="white" mr="2" onClick={(e)=>{
+                <Button bg="red.600" _hover={{ bg: "red.700"}} color="white" mr="2" onClick={(e)=>{
                     e.stopPropagation()
                     handleDeleteClick(name)
                 }}> Delete </Button>
