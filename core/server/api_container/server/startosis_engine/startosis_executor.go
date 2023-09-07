@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/stacktrace"
@@ -27,20 +28,25 @@ var (
 )
 
 type StartosisExecutor struct {
-	mutex             *sync.Mutex
-	enclavePlan       *instructions_plan.InstructionsPlan
-	runtimeValueStore *runtime_value_store.RuntimeValueStore
+	mutex                            *sync.Mutex
+	enclavePlan                      *instructions_plan.InstructionsPlan
+	runtimeValueStore                *runtime_value_store.RuntimeValueStore
+	enclavePlanInstructionRepository *enclave_plan_instruction.EnclavePlanInstructionRepository
 }
 
 type ExecutionError struct {
 	Error string
 }
 
-func NewStartosisExecutor(runtimeValueStore *runtime_value_store.RuntimeValueStore) *StartosisExecutor {
+func NewStartosisExecutor(
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	enclavePlanInstructionRepository *enclave_plan_instruction.EnclavePlanInstructionRepository,
+) *StartosisExecutor {
 	return &StartosisExecutor{
-		mutex:             &sync.Mutex{},
-		enclavePlan:       instructions_plan.NewInstructionsPlan(),
-		runtimeValueStore: runtimeValueStore,
+		mutex:                            &sync.Mutex{},
+		enclavePlan:                      instructions_plan.NewInstructionsPlan(),
+		runtimeValueStore:                runtimeValueStore,
+		enclavePlanInstructionRepository: enclavePlanInstructionRepository,
 	}
 }
 
@@ -87,7 +93,18 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 			if !dryRun {
 				var err error
 				var instructionOutput *string
-				if scheduledInstruction.IsExecuted() {
+				var isExecuted bool
+
+				enclavePlanInstruction, err := executor.enclavePlanInstructionRepository.Get(scheduledInstruction.GetUuid())
+				if err != nil {
+					sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred checking if there is an enclave instruction plan with scheduled instruction UUID '%v'", scheduledInstruction.GetUuid())
+				}
+
+				if enclavePlanInstruction != nil {
+					isExecuted = enclavePlanInstruction.IsExecuted()
+				}
+
+				if isExecuted {
 					// instruction already executed within this enclave. Do not run it
 					instructionOutput = &skippedInstructionOutput
 				} else {
@@ -106,6 +123,19 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				}
 				// mark the instruction as executed and add it to the current instruction plan
 				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
+
+				if enclavePlanInstruction == nil {
+					enclavePlanInstruction = enclave_plan_instruction.NewEnclavePlanInstructionImpl(scheduledInstruction.GetInstruction().String(), scheduledInstruction.GetInstruction().GetCapabilites().GetEnclavePlanCapabilities())
+					enclavePlanInstruction.Executed(true)
+					if err := executor.enclavePlanInstructionRepository.Save(scheduledInstruction.GetUuid(), enclavePlanInstruction); err != nil {
+						sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred while saving enclave instruction plan with UUID '%v'", scheduledInstruction.GetUuid())
+					}
+				} else {
+					if err := executor.enclavePlanInstructionRepository.Executed(scheduledInstruction.GetUuid(), true); err != nil {
+						sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred while setting enclave instruction plan with UUID '%v' has executed", scheduledInstruction.GetUuid())
+					}
+				}
+
 			}
 		}
 

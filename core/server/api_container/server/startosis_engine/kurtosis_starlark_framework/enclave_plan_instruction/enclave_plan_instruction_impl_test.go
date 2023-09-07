@@ -50,6 +50,7 @@ func getEnclavePlanInstructionForTest(amount int) []*EnclavePlanInstructionImpl 
 		privatePlan := &privateEnclavePlanInstruction{
 			KurtosisInstructionStr: addServiceInstructionStr,
 			Capabilities:           enclavePlanCapabilities,
+			Executed:               true,
 		}
 
 		newEnclavePlanInstruction := &EnclavePlanInstructionImpl{

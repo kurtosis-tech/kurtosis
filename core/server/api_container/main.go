@@ -180,7 +180,7 @@ func runMain() error {
 	startosisRunner := startosis_engine.NewStartosisRunner(
 		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, serverArgs.EnclaveEnvVars, enclavePlanInstructionRepository),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
-		startosis_engine.NewStartosisExecutor(runtimeValueStore))
+		startosis_engine.NewStartosisExecutor(runtimeValueStore, enclavePlanInstructionRepository))
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(

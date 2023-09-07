@@ -7,4 +7,6 @@ import (
 type EnclavePlanInstruction interface {
 	GetKurtosisInstructionStr() string
 	GetCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities
+	Executed(isExecuted bool)
+	IsExecuted() bool
 }

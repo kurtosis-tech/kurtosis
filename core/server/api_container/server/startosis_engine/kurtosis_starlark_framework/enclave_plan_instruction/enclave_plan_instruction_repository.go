@@ -64,35 +64,91 @@ func (repository *EnclavePlanInstructionRepository) Save(
 	return nil
 }
 
+func (repository *EnclavePlanInstructionRepository) Executed(
+	uuid instructions_plan.ScheduledInstructionUuid,
+	isExecuted bool,
+) error {
+
+	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
+		instruction, err := get(tx, uuid)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting enclave instruction plan with UUID '%v'", uuid)
+		}
+
+		if instruction == nil {
+			return stacktrace.Propagate(err, "Imposible to set if the enclave instruction plan with UUID '%v' was executed because it doesn't exist in the repository", uuid)
+		}
+
+		instruction.Executed(isExecuted)
+
+		bucket := tx.Bucket(enclavePlanInstructionBucketName)
+
+		uuidKey := getUuidKey(uuid)
+
+		jsonBytes, err := json.Marshal(instruction)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred marshalling enclave plan instruction '%+v' in the enclave plan instruction repository", instruction)
+		}
+
+		// save it to disk
+		if err := bucket.Put(uuidKey, jsonBytes); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction '%+v' with UUID '%s' into the enclave db bucket", instruction, uuid)
+		}
+
+		return nil
+	}); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while setting executed field to '%v' for enclave plan instruction with UUID '%s' into the enclave db", isExecuted, uuid)
+	}
+	return nil
+}
+
+// Get returns an instruction with UUID if exist or nil if it doesn't
 func (repository *EnclavePlanInstructionRepository) Get(
 	uuid instructions_plan.ScheduledInstructionUuid,
 ) (*EnclavePlanInstructionImpl, error) {
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct
 	instruction := &EnclavePlanInstructionImpl{}
+	var err error
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(enclavePlanInstructionBucketName)
 
-		bucket.Sequence()
-
-		uuidKey := getUuidKey(uuid)
-
-		// first get the bytes
-		jsonBytes := bucket.Get(uuidKey)
-
-		// check for existence
-		if jsonBytes == nil {
-			return stacktrace.NewError("Enclave plan instruction with key UUID '%s' does not exist on the enclave plan instruction repository", uuid)
-		}
-
-		if err := json.Unmarshal(jsonBytes, &instruction); err != nil {
-			return stacktrace.Propagate(err, "An error occurred unmarshalling the enclave plan instruction with UUID '%s' from the repository", uuid)
+		instruction, err = get(tx, uuid)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting enclave instruction plan with UUID '%v'", uuid)
 		}
 
 		return nil
 	}); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while getting the enclave plan instruction with UUID '%s' from the enclave db", uuid)
+	}
+
+	return instruction, nil
+}
+
+func get(
+	tx *bolt.Tx,
+	uuid instructions_plan.ScheduledInstructionUuid,
+) (*EnclavePlanInstructionImpl, error) {
+	// Suppressing exhaustruct requirement because we want an object with zero values
+	// nolint: exhaustruct
+	instruction := &EnclavePlanInstructionImpl{}
+
+	bucket := tx.Bucket(enclavePlanInstructionBucketName)
+
+	bucket.Sequence()
+
+	uuidKey := getUuidKey(uuid)
+
+	// first get the bytes
+	jsonBytes := bucket.Get(uuidKey)
+
+	if jsonBytes == nil {
+		return nil, nil
+	}
+
+	if err := json.Unmarshal(jsonBytes, &instruction); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling the enclave plan instruction with UUID '%s' from the repository", uuid)
 	}
 
 	return instruction, nil

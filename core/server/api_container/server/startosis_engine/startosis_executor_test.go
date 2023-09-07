@@ -9,6 +9,8 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_capabilities"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/enclave_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -31,6 +33,12 @@ const (
 	noParallelism        = 1
 )
 
+type dummyInstructionCapabilites struct{}
+
+func (dummy *dummyInstructionCapabilites) GetEnclavePlanCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities {
+	return enclave_plan_capabilities.NewEnclavePlanCapabilitiesBuilder("dummy-instruction-capabilities").Build()
+}
+
 var (
 	dummyPosition               = kurtosis_starlark_framework.NewKurtosisBuiltinPosition("dummyFile", 12, 1)
 	noInstructionArgsForTesting []*kurtosis_core_rpc_api_bindings.StarlarkInstructionArg
@@ -41,13 +49,21 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor := NewStartosisExecutor(runtimeValueStore)
+	enclavePlanInstructionRepository, repoErr := enclave_plan_instruction.GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
+	require.NoError(t, repoErr)
+
+	executor := NewStartosisExecutor(runtimeValueStore, enclavePlanInstructionRepository)
 	require.NotNil(t, executor)
 
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	scheduledInstruction1 := instructions_plan.NewScheduledInstruction("instruction1", instruction1, starlark.None).Executed(true)
 	instructionsPlan.AddScheduledInstruction(scheduledInstruction1)
+
+	enclavePlanInstruction := enclave_plan_instruction.NewEnclavePlanInstructionImpl(scheduledInstruction1.GetInstruction().String(), scheduledInstruction1.GetInstruction().GetCapabilites().GetEnclavePlanCapabilities())
+	enclavePlanInstruction.Executed(true)
+	saveErr := enclavePlanInstructionRepository.Save(scheduledInstruction1.GetUuid(), enclavePlanInstruction)
+	require.NoError(t, saveErr)
 
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
 	instruction3 := createMockInstruction(t, "instruction3", executeSuccessfully)
@@ -85,7 +101,10 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 
-	executor := NewStartosisExecutor(runtimeValueStore)
+	enclavePlanInstructionRepository, err := enclave_plan_instruction.GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
+	require.NoError(t, err)
+
+	executor := NewStartosisExecutor(runtimeValueStore, enclavePlanInstructionRepository)
 	require.NotNil(t, executor)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
@@ -131,7 +150,10 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor := NewStartosisExecutor(runtimeValueStore)
+	enclavePlanInstructionRepository, repoErr := enclave_plan_instruction.GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
+	require.NoError(t, repoErr)
+
+	executor := NewStartosisExecutor(runtimeValueStore, enclavePlanInstructionRepository)
 	require.NotNil(t, executor)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
@@ -169,6 +191,8 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 	instruction.EXPECT().GetCanonicalInstruction(mock.Anything).Maybe().Return(canonicalInstruction)
 	instruction.EXPECT().GetPositionInOriginalScript().Maybe().Return(dummyPosition)
 	instruction.EXPECT().String().Maybe().Return(stringifiedInstruction)
+	dummyInstructionCapabilities := &dummyInstructionCapabilites{}
+	instruction.EXPECT().GetCapabilites().Maybe().Return(dummyInstructionCapabilities)
 
 	if executeSuccessfully {
 		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil, nil)

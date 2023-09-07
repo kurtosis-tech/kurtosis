@@ -15,6 +15,7 @@ type EnclavePlanInstructionImpl struct {
 type privateEnclavePlanInstruction struct {
 	KurtosisInstructionStr string
 	Capabilities           *enclave_plan_capabilities.EnclavePlanCapabilities
+	Executed               bool
 }
 
 func NewEnclavePlanInstructionImpl(
@@ -24,6 +25,7 @@ func NewEnclavePlanInstructionImpl(
 	privatePlan := &privateEnclavePlanInstruction{
 		KurtosisInstructionStr: kurtosisInstructionStr,
 		Capabilities:           capabilities,
+		Executed:               false,
 	}
 	return &EnclavePlanInstructionImpl{
 		privateEnclavePlanInstruction: privatePlan,
@@ -36,6 +38,14 @@ func (instruction *EnclavePlanInstructionImpl) GetKurtosisInstructionStr() strin
 
 func (instruction *EnclavePlanInstructionImpl) GetCapabilities() *enclave_plan_capabilities.EnclavePlanCapabilities {
 	return instruction.privateEnclavePlanInstruction.Capabilities
+}
+
+func (instruction *EnclavePlanInstructionImpl) Executed(isExecuted bool) {
+	instruction.privateEnclavePlanInstruction.Executed = isExecuted
+}
+
+func (instruction *EnclavePlanInstructionImpl) IsExecuted() bool {
+	return instruction.privateEnclavePlanInstruction.Executed
 }
 
 func (instruction *EnclavePlanInstructionImpl) MarshalJSON() ([]byte, error) {

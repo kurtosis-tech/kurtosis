@@ -88,6 +88,10 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 		case enclave_structure.InstructionIsEqual:
 			// add instruction from the mask and mark it as executed but not imported from the current enclave plan
 			builtin.instructionsPlan.AddScheduledInstruction(scheduledInstructionPulledFromMaskMaybe).Executed(true)
+
+			if err := builtin.enclavePlanInstructionRepository.Executed(scheduledInstructionPulledFromMaskMaybe.GetUuid(), true); err != nil {
+				return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred setting enclave instruction plan with UUID '%v' has executed", scheduledInstructionPulledFromMaskMaybe.GetUuid())
+			}
 			return scheduledInstructionPulledFromMaskMaybe.GetReturnedValue(), nil
 		case enclave_structure.InstructionIsUpdate:
 			// otherwise add the instruction as a new one to the plan and return its own returned value
