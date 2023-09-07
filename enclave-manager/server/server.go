@@ -159,22 +159,31 @@ func (c *WebServer) GetServiceLogs(
 	str *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) error {
 
-	result, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
+	engineClient, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	logs := getServiceLogsFromEngine(result)
+	logsToFrontendChannel := make(chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse)
+	go func() {
+		defer close(logsToFrontendChannel)
+		for engineClient.Receive() {
+			res := engineClient.Msg()
+			logsToFrontendChannel <- res
+		}
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
-			err := result.Close()
+			logrus.Debug("Closing the engine client after receiving abort signal from the client")
+			err := engineClient.Close()
 			if err != nil {
 				logrus.Errorf("Error ocurred: %+v", err)
+				return err
 			}
-			close(logs)
 			return nil
-		case resp := <-logs:
+		case resp := <-logsToFrontendChannel:
 			errWhileSending := str.Send(resp)
 			if errWhileSending != nil {
 				return errWhileSending
