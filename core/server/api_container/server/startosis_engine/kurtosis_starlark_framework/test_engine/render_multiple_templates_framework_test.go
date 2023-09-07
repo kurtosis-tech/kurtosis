@@ -62,7 +62,7 @@ func (t renderMultipleTemplatesTestCase) GetId() string {
 
 func (t renderMultipleTemplatesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(enclaveDb)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 
 	return render_templates.NewRenderTemplatesInstruction(t.serviceNetwork, runtimeValueStore)
