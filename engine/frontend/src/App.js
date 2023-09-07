@@ -3,7 +3,7 @@ import Home from './component/Home';
 import { ChakraProvider } from '@chakra-ui/react'
 
 const App = () => {
-  console.log("Enclave Manager version: 2023-08-28-9")
+  console.log("Enclave Manager version: 2023-08-28-10")
   return (
     <ChakraProvider>
       <div className="h-screen w-screen">
