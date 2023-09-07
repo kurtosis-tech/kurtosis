@@ -317,7 +317,9 @@ func (builtin *RunPythonCapabilities) Execute(ctx context.Context, _ *builtin_ar
 		runResultCodeKey:   starlark.MakeInt(int(runPythonExecutionResult.GetExitCode())),
 	}
 
-	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
+	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, result); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred setting value '%+v' using key UUID '%s' in the runtime value store", result, builtin.resultUuid)
+	}
 	instructionResult := resultMapToString(result, RunPythonBuiltinName)
 
 	// throw an error as execution of the command failed

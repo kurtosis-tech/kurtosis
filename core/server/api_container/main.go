@@ -168,8 +168,6 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
 	}
 
-	startosisExecutor := startosis_engine.NewStartosisExecutor(runtimeValueStore)
-
 	enclavePlanInstructionRepository, err := enclave_plan_instruction.GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting or creating the enclave plan instruction repository")
@@ -179,7 +177,7 @@ func runMain() error {
 	startosisRunner := startosis_engine.NewStartosisRunner(
 		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, serverArgs.EnclaveEnvVars, enclavePlanInstructionRepository),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
-		startosisExecutor,
+		startosis_engine.NewStartosisExecutor(runtimeValueStore),
 	)
 
 	//Creation of ApiContainerService

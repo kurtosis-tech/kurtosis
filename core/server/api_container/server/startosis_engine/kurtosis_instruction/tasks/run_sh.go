@@ -221,7 +221,9 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 		runResultCodeKey:   starlark.MakeInt(int(createDefaultDirectoryResult.GetExitCode())),
 	}
 
-	builtin.runtimeValueStore.SetValue(builtin.resultUuid, result)
+	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, result); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred setting value '%+v' using key UUID '%s' in the runtime value store", result, builtin.resultUuid)
+	}
 	instructionResult := resultMapToString(result, RunShBuiltinName)
 
 	// throw an error as execution of the command failed

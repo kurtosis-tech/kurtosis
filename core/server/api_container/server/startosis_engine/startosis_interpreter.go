@@ -96,7 +96,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	relativePathtoMainFile string,
 	serializedStarlark string,
 	serializedJsonParams string,
-	currentInstructionsPlan *instructions_plan.InstructionsPlan,
+	currentEnclavePlan *instructions_plan.InstructionsPlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
@@ -113,7 +113,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	}
 	logrus.Debugf("First interpretation of package generated %d instructions", len(naiveInstructionsPlanSequence))
 
-	currentEnclavePlanSequence, interpretationErr := currentInstructionsPlan.GeneratePlan()
+	currentEnclavePlanSequence, interpretationErr := currentEnclavePlan.GeneratePlan()
 	if interpretationErr != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
 	}
@@ -131,9 +131,9 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	//     - If it's successful, then we've found the optimized plan
 	//     - if it's not successful, then the mask is not compatible with the package. Go back to step 1
 	var firstPossibleIndexForMatchingInstruction int
-	if currentInstructionsPlan.Size() > naiveInstructionsPlan.Size() {
+	if currentEnclavePlan.Size() > naiveInstructionsPlan.Size() {
 
-		firstPossibleIndexForMatchingInstruction = currentInstructionsPlan.Size() - naiveInstructionsPlan.Size()
+		firstPossibleIndexForMatchingInstruction = currentEnclavePlan.Size() - naiveInstructionsPlan.Size()
 	}
 	for {
 		// initialize an empty optimized plan and an empty the mask
@@ -167,7 +167,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			logrus.Debugf("Writing %d instruction at the beginning of the plan mask, leaving %d empty at the end", numberOfInstructionCopiedToMask, potentialMask.Size()-numberOfInstructionCopiedToMask)
 		} else {
 			// We cannot find any more instructions inside the enclave state matching the first instruction of the plan
-			optimizedPlan.SetIndexOfFirstInstruction(currentInstructionsPlan.Size())
+			optimizedPlan.SetIndexOfFirstInstruction(currentEnclavePlan.Size())
 			for _, newPlanInstruction := range naiveInstructionsPlanSequence {
 
 				optimizedPlan.AddScheduledInstruction(newPlanInstruction)
@@ -389,11 +389,6 @@ func findFirstEqualInstructionPastIndex(
 	for i := minIndex; i < len(currentEnclaveInstructionsList); i++ {
 		// We just need to compare instructions to see if they match, without needing any enclave specific context here
 		fakeEnclaveComponent := enclave_structure.NewEnclaveComponents()
-
-		/*enclavePlanInstruction, err := enclavePlanInstructionRepository.Get(scheduledInstructionUuid)
-		if err != nil {
-			return 0, stacktrace.Propagate(err, "An error occurred getting the enclave plan instruction with scheduled instruction UUID '%v'", scheduledInstructionUuid)
-		}*/
 
 		enclavePlanInstruction := enclave_plan_instruction.NewEnclavePlanInstructionImpl(currentEnclaveInstructionsList[i].GetInstruction().String(), currentEnclaveInstructionsList[i].GetInstruction().GetCapabilites().GetEnclavePlanCapabilities())
 

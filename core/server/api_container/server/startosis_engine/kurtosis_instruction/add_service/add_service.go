@@ -93,9 +93,6 @@ func (builtin *AddServiceCapabilities) GetEnclavePlanCapabilities() *enclave_pla
 	return enclavePlanCapabilitiesBuilder.Build()
 }
 
-//TODO lo único que se me ocurre es que haya un método que retorne las storableCapabilities en un formato que se puedan guardar
-//TODO y que luego haya otro metodo que tome ese formato y lo devuelva en el formato que queremos comparar
-
 func (builtin *AddServiceCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	serviceName, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ServiceNameArgName)
 	if err != nil {
@@ -162,7 +159,9 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
 	}
 
-	fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore)
+	if err := fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while adding service return values with result key UUID '%s'", builtin.resultUuid)
+	}
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
 	return instructionResult, nil
 }
