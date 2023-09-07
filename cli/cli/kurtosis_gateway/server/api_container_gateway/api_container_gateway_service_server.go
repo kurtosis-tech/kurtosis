@@ -2,12 +2,12 @@ package api_container_gateway
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/common"
 	"io"
 	"sync"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/common"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -59,7 +59,7 @@ func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayC
 		mutex:                               &sync.Mutex{},
 		userServiceNameToLocalConnectionMap: userServiceToLocalConnectionMap,
 		enclaveId:                           enclaveId,
-		userServiceConnect:                             kurtosis_core_rpc_api_bindings.Connect_CONNECT,
+		userServiceConnect:                  kurtosis_core_rpc_api_bindings.Connect_CONNECT,
 	}, closeGatewayFunc
 }
 
