@@ -51,7 +51,7 @@ def getConfig()...
 
 Then you can technically add services from `serviceA.star` in parallel into your package with:
 ```
-a = import_module("/serviceA.star")
+a = import_module("./serviceA.star")
 
 def run():
    a_config = a.getConfig()
@@ -68,9 +68,6 @@ To pin the specific version of a dependent package, simply do:
 ```py
 # Import remote code from another package using an absolute import for a specific version of 1.0
 database = import_module("github.com/foo/bar/src/postgres.star@1.0")
-
-# Import local code from the same package using a relative import for a specific package version of 2.0
-nginx = import_module("/nginx.star@2.0")
 ```
 
 More details can be found in the [`import_module()` Starlark reference](./starlark-reference/import-module.md)
