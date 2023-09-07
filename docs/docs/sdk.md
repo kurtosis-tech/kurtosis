@@ -543,9 +543,9 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 [servicelog]: #servicelog
 
 [enclavecontext]: #enclavecontext
-[enclavecontext_runstarlarkscript]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags---streamstarlarkrunresponseline-responselines-error-error
-[enclavecontext_runstarlarkpackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags---streamstarlarkrunresponseline-responselines-error-error
-[enclavecontext_runstarlarkremotepackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags---streamstarlarkrunresponseline-responselines-error-error
+[enclavecontext_runstarlarkscript]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags-string-connect---streamstarlarkrunresponseline-responselines-error-error
+[enclavecontext_runstarlarkpackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags-string-connect---streamstarlarkrunresponseline-responselines-error-error
+[enclavecontext_runstarlarkremotepackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags-string-connect---streamstarlarkrunresponseline-responselines-error-error
 
 [starlarkrunresponseline]: #starlarkrunresponseline
 [starlarkinstruction]: #starlarkinstruction
