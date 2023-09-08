@@ -1,13 +1,90 @@
-import {Button, Center, Checkbox, Flex, Grid, GridItem, Input, Stack, Text, Textarea, Tooltip,} from '@chakra-ui/react'
+import {
+    Box,
+    Button,
+    Center,
+    Checkbox,
+    Flex,
+    Grid,
+    GridItem, HStack,
+    Input, InputGroup, InputLeftAddon, Spacer,
+    Stack,
+    Text,
+    Textarea,
+    Tooltip,
+} from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
 import {useLocation, useNavigate} from "react-router";
-import {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import startCase from 'lodash/startCase'
 import {InfoOutlineIcon} from '@chakra-ui/icons'
+import {ObjectInput} from 'react-object-input'
 
 
 const yaml = require("js-yaml")
+const KeyValueTable = (dataCallBack) => {
+    const [value, setValue] = useState({})
 
+    useEffect(() => {
+        dataCallBack(JSON.stringify(value))
+    }, [value])
+
+    return (
+        <Box
+            border="1px"
+            borderColor='gray.700'
+            borderRadius="7"
+            margin={"1px"}
+            padding={1}
+        >
+            <ObjectInput
+                obj={value}
+                onChange={setValue}
+                renderItem={(key, value, updateKey, updateValue, deleteProperty) => (
+                    <Box
+                        margin={1}
+                    >
+                        <HStack
+                            spacing={1}
+                            direction="row"
+                        >
+                            <InputGroup>
+                                <InputLeftAddon children='Key'/>
+                                <Input
+                                    type="text"
+                                    value={key}
+                                    onChange={e => updateKey(e.target.value)}
+                                    size="md"
+                                    variant='filled'
+                                    // htmlSize={10} width='auto'
+                                />
+                            </InputGroup>
+
+                            <InputGroup>
+                                <InputLeftAddon children='Value'/>
+                                <Input
+                                    type="text"
+                                    value={value || ''} // value will be undefined for new rows
+                                    onChange={e => updateValue(e.target.value)}
+                                    size="md"
+                                    variant='filled'
+                                    // htmlSize={10} width='auto'
+                                />
+                            </InputGroup>
+                            <Button
+                                // margin={"10px"}
+                                onClick={deleteProperty}
+                            >
+                                x
+                            </Button>
+                        </HStack>
+                    </Box>
+                )}
+                renderAdd={addItem => <Button margin={1} onClick={addItem}>Add item</Button>}
+                // renderEmpty={() => <p></p>}
+            />
+        </Box>
+    )
+}
 const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
         let placeholder = "";
@@ -24,6 +101,9 @@ const renderArgs = (args, handleChange, formData, errorData) => {
             case "FLOAT":
                 placeholder = "FLOAT"
                 break
+            case "KEY_VALUE":
+                placeholder = "KEY_VALUE"
+                break
             default:
                 placeholder = "JSON"
         }
@@ -33,8 +113,13 @@ const renderArgs = (args, handleChange, formData, errorData) => {
             return
         }
 
+        // REMOVE: JUST FOR TESTING
+        if(arg.name === "remote_chains"){
+            placeholder="KEY_VALUE"
+        }
+
         return (
-            <Flex color={"white"}>
+            <Flex color={"white"} key={`entry-${index}`}>
                 <Flex mr="3" direction={"column"} w="15%">
                     <Text marginLeft={3}
                           align={"right"}
@@ -62,28 +147,45 @@ const renderArgs = (args, handleChange, formData, errorData) => {
                     {errorData[index].length > 0 ?
                         <Text marginLeft={3} align={"left"} fontSize={"xs"}
                               color="red.500"> {errorData[index]} </Text> : null}
-                    {
-                        ["INTEGER", "STRING", "BOOL", "FLOAT"].includes(placeholder) ?
-                            <Input
-                                // placeholder={placeholder.toLowerCase()}
-                                color='gray.300'
-                                onChange={e => handleChange(e.target.value, index)}
-                                value={formData[index]}
-                                borderColor={errorData[index] ? "red.400" : null}
-                            /> :
-                            <Textarea
-                                borderColor={errorData[index] ? "red.400" : null}
-                                // placeholder={placeholder.toLowerCase()}
-                                minHeight={"200px"}
-                                onChange={e => handleChange(e.target.value, index)}
-                                value={formData[index]}
-                            />
-                    }
+                    {renderSingleArg(placeholder, errorData, formData, index, handleChange)}
                 </Flex>
             </Flex>
         )
     })
 }
+
+const renderSingleArg = (type, errorData, formData, index, handleChange) => {
+    switch (type) {
+        case "INTEGER":
+        case "STRING":
+        case "BOOL":
+        case "FLOAT":
+            return (
+                <Input
+                    color='gray.300'
+                    onChange={e => handleChange(e.target.value, index)}
+                    value={formData[index]}
+                    borderColor={errorData[index] ? "red.400" : null}
+                />
+            )
+
+        case "JSON":
+            return (
+                <Textarea
+                    borderColor={errorData[index] ? "red.400" : null}
+                    minHeight={"200px"}
+                    onChange={e => handleChange(e.target.value, index)}
+                    value={formData[index]}
+                />
+            )
+        case "KEY_VALUE":
+            return KeyValueTable((data) => handleChange(data, index))
+
+        default:
+            return <p key={`data-${index}`}>Unsupported data type encountered</p>
+    }
+}
+
 
 const checkValidUndefinedType = (data) => {
     try {
@@ -159,7 +261,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const [productionMode, setProductionMode] = useState(false)
 
     let initialFormData = {}
-    kurtosisPackage.args.map(
+    kurtosisPackage.args.forEach(
         (arg, index) => {
             if (arg.name !== "plan") {
                 initialFormData[index] = ""
@@ -353,9 +455,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                                 </Text>
                             </Flex>
                             <Flex flex="1" mr="3" direction={"column"}>
-
                                 <Input
-                                    // placeholder={"Leave empty to use auto-generated"}
                                     color='gray.300'
                                     value={enclaveName}
                                     onChange={(e) => setEnclaveName(e.target.value)}
