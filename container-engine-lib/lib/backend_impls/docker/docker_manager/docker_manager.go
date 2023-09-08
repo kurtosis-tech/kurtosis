@@ -1121,6 +1121,9 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	return result, nil
 }
 
+// [FetchImage] always attempts to retrieve the latest [dockerImage].
+// If retrieving the latest [dockerImage] fails, the local image will be used.
+// Returns error, if no local image is available after retrieving latest fails.
 func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string) error {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
@@ -1136,14 +1139,13 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 	logrus.Infof("Is image available locally?: %v", doesImageExistLocally)
 
 	// try and pull latest image even if image exists locally
-	start := time.Now()
 	if doesImageExistLocally {
 		logrus.Infof("Image does exist locally, but attempting to get latest from remote image repository.")
 		err = manager.pullImage(ctx, dockerImage)
 		if err != nil {
 			logrus.Infof("Failed to pull Docker image '%v' from remote image repository. Going to use available local image.", dockerImage)
 		} else {
-			logrus.Infof("Latest image successfully pulled from remote to local")
+			logrus.Infof("Latest image successfully pulled from remote to local.")
 		}
 	} else {
 		err = manager.pullImage(ctx, dockerImage)
@@ -1151,8 +1153,35 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository.", dockerImage)
 		}
 	}
-	timeElapsed := time.Since(start)
-	logrus.Infof("Time to pull  '%v': %v", dockerImage, timeElapsed.Milliseconds())
+
+	return nil
+}
+
+// [FetchLocalImage] uses the local [dockerImage] if it's available.
+// If unavailable, will attempt to fetch the latest image.
+// Returns error if local [dockerImage] is unavailable and pulling image fails.
+func (manager *DockerManager) FetchLocalImage(ctx context.Context, dockerImage string) error {
+	// if the image name doesn't have version information we concatenate `:latest`
+	// this behavior is similar to CreateAndStartContainer above
+	// this allows us to be deterministic in our behaviour
+	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
+		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
+	}
+	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
+	}
+	logrus.Tracef("Is image available locally?: %v", doesImageExistLocally)
+
+	if !doesImageExistLocally {
+		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
+		err = manager.pullImage(ctx, dockerImage)
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
+		}
+		logrus.Tracef("Image successfully pulled from remote to local")
+	}
 
 	return nil
 }
