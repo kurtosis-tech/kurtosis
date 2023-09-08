@@ -28,16 +28,14 @@ var (
 type importModuleTestCase struct {
 	*testing.T
 
+	// store the cache inside the test object such that we can check its state in Assert()
 	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
 	packageContentProvider startosis_packages.PackageContentProvider
 }
 
 func (suite *KurtosisHelperTestSuite) TestImportFile() {
-	// store the cache inside the test object such that we can check its state in Assert()
 	// start with an empty cache to validate it gets populated
-	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{
-		//importModule_fileInModule: startosis_packages.NewPackageCacheEntry(importModule_mockStarlarkModule, nil),
-	}
+	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
 
 	suite.packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
 	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(kurtosisHelperThreadName, TestModuleFileName).Return(TestModuleFileName, nil)
