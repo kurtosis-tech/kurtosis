@@ -21,13 +21,8 @@ type postHttpRequestRecipeMinimalTestCase struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newPostHttpRequestRecipeMinimalTestCase(t *testing.T) *postHttpRequestRecipeMinimalTestCase {
-	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	serviceNetwork.EXPECT().HttpRequestService(
+func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipeMinimal() {
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		string(TestServiceName),
 		TestPrivatePortId,
@@ -55,15 +50,11 @@ func newPostHttpRequestRecipeMinimalTestCase(t *testing.T) *postHttpRequestRecip
 		nil,
 	)
 
-	return &postHttpRequestRecipeMinimalTestCase{
-		T:                 t,
-		serviceNetwork:    serviceNetwork,
-		runtimeValueStore: runtimeValueStore,
-	}
-}
-
-func (t *postHttpRequestRecipeMinimalTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", recipe.PostHttpRecipeTypeName, "minimal")
+	suite.run(&postHttpRequestRecipeMinimalTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
 func (t *postHttpRequestRecipeMinimalTestCase) GetStarlarkCode() string {

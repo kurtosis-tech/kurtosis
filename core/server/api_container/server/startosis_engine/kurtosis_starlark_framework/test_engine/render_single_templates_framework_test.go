@@ -21,38 +21,33 @@ const (
 type renderSingleTemplateTestCase struct {
 	*testing.T
 
-	serviceNetwork *service_network.MockServiceNetwork
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newRenderSingleTemplateTestCase(t *testing.T) *renderSingleTemplateTestCase {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
+func (suite *KurtosisPlanInstructionTestSuite) TestRenderSingleTemplate() {
 	// We expect double quotes for the serialized JSON, for some reasons... See arg_parser.encodeStarlarkObjectAsJSON
 	dataWithDoubleQuote := fmt.Sprintf("%q", renderTemplate_SingleTemplate_data)
 	templateData, err := render_templates2.CreateTemplateData(renderTemplate_SingleTemplate_template, dataWithDoubleQuote)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	templateAndData := map[string]*render_templates2.TemplateData{
 		renderTemplate_SingleTemplate_filePath: templateData,
 	}
 
-	serviceNetwork.EXPECT().RenderTemplates(templateAndData, TestArtifactName).Times(1).Return(TestArtifactUuid, nil)
-	return &renderSingleTemplateTestCase{
-		T:              t,
-		serviceNetwork: serviceNetwork,
-	}
+	suite.serviceNetwork.EXPECT().RenderTemplates(templateAndData, TestArtifactName).Times(1).Return(TestArtifactUuid, nil)
+
+	suite.run(&renderSingleTemplateTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
-func (t renderSingleTemplateTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", render_templates.RenderTemplatesBuiltinName, "SingleTemplate")
+func (t *renderSingleTemplateTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return render_templates.NewRenderTemplatesInstruction(t.serviceNetwork, t.runtimeValueStore)
 }
 
-func (t renderSingleTemplateTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-	return render_templates.NewRenderTemplatesInstruction(t.serviceNetwork, runtimeValueStore)
-}
-
-func (t renderSingleTemplateTestCase) GetStarlarkCode() string {
+func (t *renderSingleTemplateTestCase) GetStarlarkCode() string {
 	configValue := fmt.Sprintf(`{%q: struct(data=%q, template=%q)}`, renderTemplate_SingleTemplate_filePath, renderTemplate_SingleTemplate_data, renderTemplate_SingleTemplate_template)
 	return fmt.Sprintf(`%s(%s=%s, %s=%q)`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue, render_templates.ArtifactNameArgName, TestArtifactName)
 }
@@ -61,7 +56,7 @@ func (t *renderSingleTemplateTestCase) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-func (t renderSingleTemplateTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *renderSingleTemplateTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(TestArtifactName), interpretationResult)
 
 	expectedExecutionResult := fmt.Sprintf("Templates artifact name '%s' rendered with artifact UUID '%s'", TestArtifactName, TestArtifactUuid)

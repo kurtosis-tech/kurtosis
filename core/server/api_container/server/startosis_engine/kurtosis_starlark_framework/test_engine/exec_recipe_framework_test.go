@@ -20,12 +20,8 @@ type execRecipeTestCase struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newExecRecipeTestCase(t *testing.T) *execRecipeTestCase {
-	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	serviceNetwork.EXPECT().RunExec(
+func (suite *KurtosisTypeConstructorTestSuite) TestExecRecipe() {
+	suite.serviceNetwork.EXPECT().RunExec(
 		mock.Anything,
 		string(TestServiceName),
 		[]string{"echo", "run"},
@@ -33,15 +29,12 @@ func newExecRecipeTestCase(t *testing.T) *execRecipeTestCase {
 		exec_result.NewExecResult(0, "run"),
 		nil,
 	)
-	return &execRecipeTestCase{
-		T:                 t,
-		serviceNetwork:    serviceNetwork,
-		runtimeValueStore: runtimeValueStore,
-	}
-}
 
-func (t *execRecipeTestCase) GetId() string {
-	return recipe.ExecRecipeTypeName
+	suite.run(&execRecipeTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
 func (t *execRecipeTestCase) GetTypeConstructor() *kurtosis_type_constructor.KurtosisTypeConstructor {

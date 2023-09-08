@@ -13,31 +13,28 @@ import (
 
 type stopServiceTestCase struct {
 	*testing.T
+	serviceNetwork *service_network.MockServiceNetwork
 }
 
-func newStopServiceTestCase(t *testing.T) *stopServiceTestCase {
-	return &stopServiceTestCase{
-		T: t,
-	}
-}
-
-func (t stopServiceTestCase) GetId() string {
-	return stop_service.StopServiceBuiltinName
-}
-
-func (t stopServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-
-	serviceNetwork.EXPECT().StopService(
+func (suite *KurtosisPlanInstructionTestSuite) TestStopService() {
+	suite.serviceNetwork.EXPECT().StopService(
 		mock.Anything,
 		string(TestServiceName),
 	).Times(1).Return(
 		nil,
 	)
-	return stop_service.NewStopService(serviceNetwork)
+
+	suite.run(&stopServiceTestCase{
+		T:              suite.T(),
+		serviceNetwork: suite.serviceNetwork,
+	})
 }
 
-func (t stopServiceTestCase) GetStarlarkCode() string {
+func (t *stopServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return stop_service.NewStopService(t.serviceNetwork)
+}
+
+func (t *stopServiceTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q)", stop_service.StopServiceBuiltinName, stop_service.ServiceNameArgName, TestServiceName)
 }
 
@@ -45,7 +42,7 @@ func (t *stopServiceTestCase) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-func (t stopServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *stopServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 
 	expectedExecutionResult := fmt.Sprintf("Service '%s' stopped", TestServiceName)

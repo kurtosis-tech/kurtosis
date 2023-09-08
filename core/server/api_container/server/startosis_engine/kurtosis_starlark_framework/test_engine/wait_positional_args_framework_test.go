@@ -17,27 +17,14 @@ import (
 
 // This test case is for testing positional arguments retro-compatibility for those script
 // that are using the recipe value as the first positional argument
-type waitTestCase2 struct {
+type waitWithPositionalArgsTestCase struct {
 	*testing.T
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newWaitTestCase2(t *testing.T) *waitTestCase2 {
-	return &waitTestCase2{
-		T: t,
-	}
-}
-
-func (t *waitTestCase2) GetId() string {
-	return wait.WaitBuiltinName
-}
-
-func (t *waitTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-
-	serviceNetwork.EXPECT().HttpRequestService(
+func (suite *KurtosisPlanInstructionTestSuite) TestWaitWithPositionalArgs() {
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		string(waitRecipeTestCaseServiceName),
 		waitRecipePortId,
@@ -65,20 +52,28 @@ func (t *waitTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlan
 		nil,
 	)
 
-	return wait.NewWait(serviceNetwork, runtimeValueStore)
+	suite.run(&waitWithPositionalArgsTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
-func (t *waitTestCase2) GetStarlarkCode() string {
+func (t *waitWithPositionalArgsTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return wait.NewWait(t.serviceNetwork, t.runtimeValueStore)
+}
+
+func (t *waitWithPositionalArgsTestCase) GetStarlarkCode() string {
 	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
 	return fmt.Sprintf("%s(%q, %s, %q, %q, %s, %q, %q)", wait.WaitBuiltinName, waitRecipeTestCaseServiceName, recipeStr, waitValueField, waitAssertion, waitTargetValue, waitInterval, waitTimeout)
 }
 
-func (t *waitTestCase2) GetStarlarkCodeForAssertion() string {
+func (t *waitWithPositionalArgsTestCase) GetStarlarkCodeForAssertion() string {
 	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
 	return fmt.Sprintf("%s(%s=%q, %s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.ServiceNameArgName, waitRecipeTestCaseServiceName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout)
 }
 
-func (t *waitTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *waitWithPositionalArgsTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResult := `{"body": "{{kurtosis:[0-9a-f]{32}:body.runtime_value}}", "code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "extract.key": "{{kurtosis:[0-9a-f]{32}:extract.key.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResult, interpretationResult.String())
 
