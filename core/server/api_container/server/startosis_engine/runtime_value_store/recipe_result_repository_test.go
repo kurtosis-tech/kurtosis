@@ -21,6 +21,7 @@ const (
 	secondKey           = "mySecondKey"
 	thirdKey            = "myThirdKey"
 	fourthKey           = "myFourthKey"
+	fifthKey            = "fifthKey"
 	starlarkStringValue = starlark.String("my-value")
 )
 
@@ -55,11 +56,11 @@ func TestRecipeResultSaveAndGet_Success(t *testing.T) {
 	require.Nil(t, interpretationErr)
 
 	resultValue := map[string]string{
-		firstKey:   starlarkStringValue.GoString(),
-		secondKey:  starlarkIntValue.String(),
-		thirdKey:   starlarkBoolValue.String(),
-		fourthKey:  startosisPortSpecType.String(),
-		"fifthKey": startosisDirectoryType.String(),
+		firstKey:  starlarkStringValue.GoString(),
+		secondKey: starlarkIntValue.String(),
+		thirdKey:  starlarkBoolValue.String(),
+		fourthKey: startosisPortSpecType.String(),
+		fifthKey:  startosisDirectoryType.String(),
 	}
 
 	err := repository.Save(randomUuid, resultValue)
