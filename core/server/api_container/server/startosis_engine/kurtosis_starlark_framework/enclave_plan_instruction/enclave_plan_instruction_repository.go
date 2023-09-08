@@ -62,6 +62,10 @@ func (repository *EnclavePlanInstructionRepository) Save(
 			return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction '%+v' with UUID '%s' into the enclave db bucket", instruction, uuid)
 		}
 
+		if err := repository.addInstructionInSequence(tx, uuid); err != nil {
+			return stacktrace.Propagate(err, "An error occurred adding the instruction UUID '%v' into the repository instruction sequence", uuid)
+		}
+
 		return nil
 	}); err != nil {
 		return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction '%+v' with UUID '%s' into the enclave db", instruction, uuid)
@@ -131,7 +135,63 @@ func (repository *EnclavePlanInstructionRepository) Get(
 	return instruction, nil
 }
 
-//TODO GET aLL but skip instruction sequence key
+// GetAll returns the instruction in the order that these where stored
+func (repository *EnclavePlanInstructionRepository) GetAll() ([]*EnclavePlanInstructionImpl, error) {
+	allInstructionsByUuid := map[instructions_plan.ScheduledInstructionUuid]*EnclavePlanInstructionImpl{}
+
+	var instructionsSequence []instructions_plan.ScheduledInstructionUuid
+
+	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(enclavePlanInstructionBucketName)
+
+		instructionsSequenceFromDb, err := repository.getInstructionSequence(tx)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting the instruction sequence from the repository")
+		}
+
+		instructionsSequence = instructionsSequenceFromDb
+
+		if err := bucket.ForEach(func(uuidKey, instructionBytes []byte) error {
+			uuidStr := string(uuidKey)
+			uuid := instructions_plan.ScheduledInstructionUuid(uuidStr)
+
+			// nolint: exhaustruct
+			newInstruction := &EnclavePlanInstructionImpl{}
+
+			if err := json.Unmarshal(instructionBytes, &newInstruction); err != nil {
+				return stacktrace.Propagate(err, "An error occurred unmarshalling the enclave plan instruction with UUID '%s' from the repository", uuid)
+			}
+
+			allInstructionsByUuid[uuid] = newInstruction
+
+			return nil
+		}); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while iterating the service registration repository to get all registrations")
+		}
+
+		return nil
+	}); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting all service registrations from the service registration repository")
+	}
+
+	if len(instructionsSequence) != len(allInstructionsByUuid) {
+		return nil, stacktrace.NewError("Expected that instructionsSequence '%+v' and allInstructionsByUuid '%+v' have same len, this is a bug in Kurtosis", instructionsSequence, allInstructionsByUuid)
+	}
+
+	allInstructions := []*EnclavePlanInstructionImpl{}
+
+	for k, uuid := range instructionsSequence {
+
+		instructionToAdd, found := allInstructionsByUuid[uuid]
+		if !found {
+			return nil, stacktrace.NewError("Expected to find instruction with UUID '%v from the repository but it was not found, it's a bug in Kurtosis'", uuid)
+		}
+
+		allInstructions = append(allInstructions, instructionToAdd)
+	}
+
+	return allInstructions, nil
+}
 
 func get(
 	tx *bolt.Tx,
@@ -159,58 +219,47 @@ func get(
 	return instruction, nil
 }
 
-func (repository *EnclavePlanInstructionRepository) addInstructionInSequence(uuid instructions_plan.ScheduledInstructionUuid) error {
-	instructionSequence, err := repository.getInstructionSequence()
+// addInstructionInSequence must receive an Update transaction as the first argument
+func (repository *EnclavePlanInstructionRepository) addInstructionInSequence(tx *bolt.Tx, uuid instructions_plan.ScheduledInstructionUuid) error {
+	instructionSequence, err := repository.getInstructionSequence(tx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the instruction sequence from the repository")
 	}
 
 	newInstructionSequence := append(instructionSequence, uuid)
 
-	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket(enclavePlanInstructionBucketName)
+	bucket := tx.Bucket(enclavePlanInstructionBucketName)
 
-		// first get the bytes
-		jsonBytes, err := json.Marshal(newInstructionSequence)
-		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred marshalling enclave plan instruction sequence '%+v' in the enclave plan instruction repository", newInstructionSequence)
-		}
+	// first get the bytes
+	jsonBytes, err := json.Marshal(newInstructionSequence)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred marshalling enclave plan instruction sequence '%+v' in the enclave plan instruction repository", newInstructionSequence)
+	}
 
-		// save it to disk
-		if err := bucket.Put(instructionsSequenceKey, jsonBytes); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction sequence '%+v' into the enclave db bucket", newInstructionSequence, uuid)
-		}
-
-		return nil
-	}); err != nil {
-		return stacktrace.Propagate(err, "An error occurred adding the instruction UUID '%v' into the enclave plan repository instruction sequence", uuid)
+	// save it to disk
+	if err := bucket.Put(instructionsSequenceKey, jsonBytes); err != nil {
+		return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction sequence '%+v' into the enclave db bucket", newInstructionSequence, uuid)
 	}
 
 	return nil
 }
 
-func (repository *EnclavePlanInstructionRepository) getInstructionSequence() ([]instructions_plan.ScheduledInstructionUuid, error) {
+func (repository *EnclavePlanInstructionRepository) getInstructionSequence(tx *bolt.Tx) ([]instructions_plan.ScheduledInstructionUuid, error) {
 	instructionSequence := []instructions_plan.ScheduledInstructionUuid{}
 
-	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
+	bucket := tx.Bucket(enclavePlanInstructionBucketName)
 
-		bucket := tx.Bucket(enclavePlanInstructionBucketName)
+	// first get the bytes
+	jsonBytes := bucket.Get(instructionsSequenceKey)
 
-		// first get the bytes
-		jsonBytes := bucket.Get(instructionsSequenceKey)
-
-		if jsonBytes == nil {
-			return nil
-		}
-
-		if err := json.Unmarshal(jsonBytes, &instructionSequence); err != nil {
-			return stacktrace.Propagate(err, "An error occurred unmarshalling the enclave plan instruction sequence")
-		}
-
-		return nil
-	}); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting the enclave plan instruction sequence from the enclave db")
+	if jsonBytes == nil {
+		return instructionSequence, nil
 	}
+
+	if err := json.Unmarshal(jsonBytes, &instructionSequence); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling the enclave plan instruction sequence")
+	}
+
 	return instructionSequence, nil
 }
 
