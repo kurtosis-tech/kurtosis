@@ -151,9 +151,15 @@ func (repository *EnclavePlanInstructionRepository) GetAll() ([]*EnclavePlanInst
 
 		instructionsSequence = instructionsSequenceFromDb
 
-		if err := bucket.ForEach(func(uuidKey, instructionBytes []byte) error {
-			uuidStr := string(uuidKey)
-			uuid := instructions_plan.ScheduledInstructionUuid(uuidStr)
+		if err := bucket.ForEach(func(keyBytes, instructionBytes []byte) error {
+			keyStr := string(keyBytes)
+
+			// skip the instruction sequence record
+			if keyStr == instructionSequenceKeyStr {
+				return nil
+			}
+
+			uuid := instructions_plan.ScheduledInstructionUuid(keyStr)
 
 			// nolint: exhaustruct
 			newInstruction := &EnclavePlanInstructionImpl{}
@@ -166,12 +172,12 @@ func (repository *EnclavePlanInstructionRepository) GetAll() ([]*EnclavePlanInst
 
 			return nil
 		}); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while iterating the service registration repository to get all registrations")
+			return stacktrace.Propagate(err, "An error occurred while iterating the enclave plan instruction repository to get all instructions")
 		}
 
 		return nil
 	}); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting all service registrations from the service registration repository")
+		return nil, stacktrace.Propagate(err, "An error occurred while getting all enclave plan instructions from the repository")
 	}
 
 	if len(instructionsSequence) != len(allInstructionsByUuid) {
@@ -180,7 +186,7 @@ func (repository *EnclavePlanInstructionRepository) GetAll() ([]*EnclavePlanInst
 
 	allInstructions := []*EnclavePlanInstructionImpl{}
 
-	for k, uuid := range instructionsSequence {
+	for _, uuid := range instructionsSequence {
 
 		instructionToAdd, found := allInstructionsByUuid[uuid]
 		if !found {
@@ -238,7 +244,7 @@ func (repository *EnclavePlanInstructionRepository) addInstructionInSequence(tx 
 
 	// save it to disk
 	if err := bucket.Put(instructionsSequenceKey, jsonBytes); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction sequence '%+v' into the enclave db bucket", newInstructionSequence, uuid)
+		return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction sequence '%+v' into the enclave db bucket", newInstructionSequence)
 	}
 
 	return nil
