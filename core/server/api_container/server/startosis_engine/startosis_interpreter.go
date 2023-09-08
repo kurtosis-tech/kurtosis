@@ -171,12 +171,15 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 			for _, newPlanInstruction := range naiveInstructionsPlanSequence {
 
 				optimizedPlan.AddScheduledInstruction(newPlanInstruction)
+
 				kurtosisInstructionStr := newPlanInstruction.GetInstruction().String()
+
 				enclaveCapabilities := newPlanInstruction.GetInstruction().GetCapabilites().GetEnclavePlanCapabilities()
 				enclavePlanInstruction := enclave_plan_instruction.NewEnclavePlanInstructionImpl(kurtosisInstructionStr, enclaveCapabilities)
-				if err := interpreter.enclavePlanInstructionRepository.Save(newPlanInstruction.GetUuid(), enclavePlanInstruction); err != nil {
+				if err := interpreter.enclavePlanInstructionRepository.SaveIfNotExist(enclavePlanInstruction); err != nil {
 					return startosis_constants.NoOutputObject, nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred saving enclave instruction plan '%+v' with scheduled instruction with UUID '%s'", enclavePlanInstruction, newPlanInstruction.GetUuid()).ToAPIType()
 				}
+
 			}
 			logrus.Debugf("Exhausted all possibilities. Concatenated the previous enclave plan with the new plan to obtain a %d instructions plan", optimizedPlan.Size())
 			return naiveInstructionsPlanSerializedScriptOutput, optimizedPlan, nil

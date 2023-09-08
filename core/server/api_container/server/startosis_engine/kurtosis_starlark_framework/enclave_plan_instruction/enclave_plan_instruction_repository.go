@@ -3,7 +3,6 @@ package enclave_plan_instruction
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
@@ -37,15 +36,26 @@ func GetOrCreateNewEnclavePlanInstructionRepository(enclaveDb *enclave_db.Enclav
 	return repository, nil
 }
 
-func (repository *EnclavePlanInstructionRepository) Save(
-	uuid instructions_plan.ScheduledInstructionUuid,
+// SaveIfNotExist will save the instruction if it doesn't exist otherwise it will do nothing
+func (repository *EnclavePlanInstructionRepository) SaveIfNotExist(
 	instruction *EnclavePlanInstructionImpl,
 ) error {
 
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
+
+		instructionStr := instruction.GetKurtosisInstructionStr()
+
+		instructionFromDB, err := get(tx, instructionStr)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred getting enclave instruction plan")
+		}
+		if instructionFromDB != nil {
+			return nil
+		}
+
 		bucket := tx.Bucket(enclavePlanInstructionBucketName)
 
-		uuidKey := getUuidKey(uuid)
+		instructionKey := getInstructionKey(instructionStr)
 
 		jsonBytes, err := json.Marshal(instruction)
 		if err != nil {
@@ -53,37 +63,37 @@ func (repository *EnclavePlanInstructionRepository) Save(
 		}
 
 		// save it to disk
-		if err := bucket.Put(uuidKey, jsonBytes); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction '%+v' with UUID '%s' into the enclave db bucket", instruction, uuid)
+		if err := bucket.Put(instructionKey, jsonBytes); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction '%+v' with key '%s' into the enclave db bucket", instruction, instructionKey)
 		}
 
 		return nil
 	}); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction '%+v' with UUID '%s' into the enclave db", instruction, uuid)
+		return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction '%+v' into the enclave db", instruction)
 	}
 	return nil
 }
 
 func (repository *EnclavePlanInstructionRepository) Executed(
-	uuid instructions_plan.ScheduledInstructionUuid,
+	scheduledInstructionStr string,
 	isExecuted bool,
 ) error {
 
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
-		instruction, err := get(tx, uuid)
+		instruction, err := get(tx, scheduledInstructionStr)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting enclave instruction plan with UUID '%v'", uuid)
+			return stacktrace.Propagate(err, "An error occurred getting enclave instruction plan")
 		}
 
 		if instruction == nil {
-			return stacktrace.Propagate(err, "Imposible to set if the enclave instruction plan with UUID '%v' was executed because it doesn't exist in the repository", uuid)
+			return stacktrace.Propagate(err, "Imposible to set if the enclave instruction plan '%s' was executed because it doesn't exist in the repository", instruction.GetKurtosisInstructionStr())
 		}
 
 		instruction.Executed(isExecuted)
 
 		bucket := tx.Bucket(enclavePlanInstructionBucketName)
 
-		uuidKey := getUuidKey(uuid)
+		instructionKey := getInstructionKey(scheduledInstructionStr)
 
 		jsonBytes, err := json.Marshal(instruction)
 		if err != nil {
@@ -91,20 +101,20 @@ func (repository *EnclavePlanInstructionRepository) Executed(
 		}
 
 		// save it to disk
-		if err := bucket.Put(uuidKey, jsonBytes); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction '%+v' with UUID '%s' into the enclave db bucket", instruction, uuid)
+		if err := bucket.Put(instructionKey, jsonBytes); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction '%+v' into the enclave db bucket", instruction)
 		}
 
 		return nil
 	}); err != nil {
-		return stacktrace.Propagate(err, "An error occurred while setting executed field to '%v' for enclave plan instruction with UUID '%s' into the enclave db", isExecuted, uuid)
+		return stacktrace.Propagate(err, "An error occurred while setting executed field to '%v' for enclave plan instruction into the enclave db", isExecuted)
 	}
 	return nil
 }
 
 // Get returns an instruction with UUID if exist or nil if it doesn't
 func (repository *EnclavePlanInstructionRepository) Get(
-	uuid instructions_plan.ScheduledInstructionUuid,
+	scheduledInstructionStr string,
 ) (*EnclavePlanInstructionImpl, error) {
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct
@@ -113,14 +123,14 @@ func (repository *EnclavePlanInstructionRepository) Get(
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
 
-		instruction, err = get(tx, uuid)
+		instruction, err = get(tx, scheduledInstructionStr)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred getting enclave instruction plan with UUID '%v'", uuid)
+			return stacktrace.Propagate(err, "An error occurred getting enclave instruction plan from the repository")
 		}
 
 		return nil
 	}); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred while getting the enclave plan instruction with UUID '%s' from the enclave db", uuid)
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the enclave plan instruction from the enclave db")
 	}
 
 	return instruction, nil
@@ -128,7 +138,7 @@ func (repository *EnclavePlanInstructionRepository) Get(
 
 func get(
 	tx *bolt.Tx,
-	uuid instructions_plan.ScheduledInstructionUuid,
+	scheduledInstructionStr string,
 ) (*EnclavePlanInstructionImpl, error) {
 	// Suppressing exhaustruct requirement because we want an object with zero values
 	// nolint: exhaustruct
@@ -136,24 +146,22 @@ func get(
 
 	bucket := tx.Bucket(enclavePlanInstructionBucketName)
 
-	bucket.Sequence()
-
-	uuidKey := getUuidKey(uuid)
+	instructionKey := getInstructionKey(scheduledInstructionStr)
 
 	// first get the bytes
-	jsonBytes := bucket.Get(uuidKey)
+	jsonBytes := bucket.Get(instructionKey)
 
 	if jsonBytes == nil {
 		return nil, nil
 	}
 
 	if err := json.Unmarshal(jsonBytes, &instruction); err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling the enclave plan instruction with UUID '%s' from the repository", uuid)
+		return nil, stacktrace.Propagate(err, "An error occurred unmarshalling the enclave plan instruction with hash key '%s' from the repository", string(instructionKey))
 	}
 
 	return instruction, nil
 }
 
-func getUuidKey(uuid instructions_plan.ScheduledInstructionUuid) []byte {
-	return []byte(uuid)
+func getInstructionKey(instructionStr string) []byte {
+	return []byte(instructionStr)
 }

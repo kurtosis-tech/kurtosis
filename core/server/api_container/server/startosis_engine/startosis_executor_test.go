@@ -62,7 +62,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
 	enclavePlanInstruction := enclave_plan_instruction.NewEnclavePlanInstructionImpl(scheduledInstruction1.GetInstruction().String(), scheduledInstruction1.GetInstruction().GetCapabilites().GetEnclavePlanCapabilities())
 	enclavePlanInstruction.Executed(true)
-	saveErr := enclavePlanInstructionRepository.Save(scheduledInstruction1.GetUuid(), enclavePlanInstruction)
+	saveErr := enclavePlanInstructionRepository.SaveIfNotExist(enclavePlanInstruction)
 	require.NoError(t, saveErr)
 
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
@@ -121,7 +121,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 	_, serializedInstruction, executionError := executeSynchronously(t, executor, executeForReal, instructionsPlan)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 1)
-	instruction2.AssertNumberOfCalls(t, "String", 1)
+	instruction2.AssertNumberOfCalls(t, "String", 2)
 	instruction2.AssertNumberOfCalls(t, "Execute", 1)
 	// nothing called for instruction 3 because instruction 2 threw an error
 	instruction3.AssertNumberOfCalls(t, "GetCanonicalInstruction", 0)

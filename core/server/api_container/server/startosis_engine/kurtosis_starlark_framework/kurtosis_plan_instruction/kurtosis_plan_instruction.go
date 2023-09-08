@@ -70,10 +70,10 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 			_, scheduledInstructionPulledFromMaskMaybe = builtin.instructionPlanMask.Next()
 			if scheduledInstructionPulledFromMaskMaybe != nil {
 
-				scheduledInstructionUuid := scheduledInstructionPulledFromMaskMaybe.GetUuid()
-				enclavePlanInstruction, err := builtin.enclavePlanInstructionRepository.Get(scheduledInstructionUuid)
+				scheduledInstructionStr := scheduledInstructionPulledFromMaskMaybe.GetInstruction().String()
+				enclavePlanInstruction, err := builtin.enclavePlanInstructionRepository.Get(scheduledInstructionStr)
 				if err != nil {
-					return nil, stacktrace.Propagate(err, "An error occurred getting the enclave plan instruction with scheduled instruction UUID '%v'", scheduledInstructionUuid)
+					return nil, stacktrace.Propagate(err, "An error occurred getting the enclave plan instruction with scheduled instruction UUID '%v'", scheduledInstructionStr)
 				}
 
 				instructionResolutionStatus = instructionWrapper.TryResolveWith(enclavePlanInstruction, builtin.enclaveComponents)
@@ -89,7 +89,7 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 			// add instruction from the mask and mark it as executed but not imported from the current enclave plan
 			builtin.instructionsPlan.AddScheduledInstruction(scheduledInstructionPulledFromMaskMaybe).Executed(true)
 
-			if err := builtin.enclavePlanInstructionRepository.Executed(scheduledInstructionPulledFromMaskMaybe.GetUuid(), true); err != nil {
+			if err := builtin.enclavePlanInstructionRepository.Executed(scheduledInstructionPulledFromMaskMaybe.GetInstruction().String(), true); err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred setting enclave instruction plan with UUID '%v' has executed", scheduledInstructionPulledFromMaskMaybe.GetUuid())
 			}
 			return scheduledInstructionPulledFromMaskMaybe.GetReturnedValue(), nil
@@ -115,12 +115,12 @@ func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *star
 					instructionWrapper.String(), scheduledInstructionPulledFromMaskMaybe.GetInstruction().String())
 			}
 			kurtosisInstructionStr := scheduledInstruction.GetInstruction().String()
+
 			enclaveCapabilities := scheduledInstruction.GetInstruction().GetCapabilites().GetEnclavePlanCapabilities()
 			enclavePlanInstruction := enclave_plan_instruction.NewEnclavePlanInstructionImpl(kurtosisInstructionStr, enclaveCapabilities)
-			if err := builtin.enclavePlanInstructionRepository.Save(scheduledInstruction.GetUuid(), enclavePlanInstruction); err != nil {
+			if err := builtin.enclavePlanInstructionRepository.SaveIfNotExist(enclavePlanInstruction); err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred saving enclave instruction plan '%+v' with scheduled instruction with UUID '%s'", enclavePlanInstruction, scheduledInstruction.GetUuid())
 			}
-
 			return returnedFutureValue, nil
 		case enclave_structure.InstructionIsNotResolvableAbort:
 			// if the instructions differs, then the mask is invalid

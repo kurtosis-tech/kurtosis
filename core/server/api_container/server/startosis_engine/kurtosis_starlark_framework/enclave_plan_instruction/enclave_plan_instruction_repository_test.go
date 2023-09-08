@@ -19,10 +19,10 @@ func TestSaveAndGet_Success(t *testing.T) {
 
 	require.NotNil(t, originalEnclavePlanInstruction)
 
-	err := repository.Save(firstUuidForTest, originalEnclavePlanInstruction)
+	err := repository.SaveIfNotExist(originalEnclavePlanInstruction)
 	require.NoError(t, err)
 
-	enclavePlanInstructionFromRepository, err := repository.Get(firstUuidForTest)
+	enclavePlanInstructionFromRepository, err := repository.Get(originalEnclavePlanInstruction.GetKurtosisInstructionStr())
 	require.NoError(t, err)
 
 	require.Equal(t, originalEnclavePlanInstruction, enclavePlanInstructionFromRepository)

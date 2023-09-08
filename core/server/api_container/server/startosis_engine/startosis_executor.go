@@ -95,9 +95,10 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				var instructionOutput *string
 				var isExecuted bool
 
-				enclavePlanInstruction, err := executor.enclavePlanInstructionRepository.Get(scheduledInstruction.GetUuid())
+				instructionStr := scheduledInstruction.GetInstruction().String()
+				enclavePlanInstruction, err := executor.enclavePlanInstructionRepository.Get(instructionStr)
 				if err != nil {
-					sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred checking if there is an enclave instruction plan with scheduled instruction UUID '%v'", scheduledInstruction.GetUuid())
+					sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred checking if there is an enclave instruction plan")
 				}
 
 				if enclavePlanInstruction != nil {
@@ -127,11 +128,11 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 				if enclavePlanInstruction == nil {
 					enclavePlanInstruction = enclave_plan_instruction.NewEnclavePlanInstructionImpl(scheduledInstruction.GetInstruction().String(), scheduledInstruction.GetInstruction().GetCapabilites().GetEnclavePlanCapabilities())
 					enclavePlanInstruction.Executed(true)
-					if err := executor.enclavePlanInstructionRepository.Save(scheduledInstruction.GetUuid(), enclavePlanInstruction); err != nil {
+					if err := executor.enclavePlanInstructionRepository.SaveIfNotExist(enclavePlanInstruction); err != nil {
 						sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred while saving enclave instruction plan with UUID '%v'", scheduledInstruction.GetUuid())
 					}
 				} else {
-					if err := executor.enclavePlanInstructionRepository.Executed(scheduledInstruction.GetUuid(), true); err != nil {
+					if err := executor.enclavePlanInstructionRepository.Executed(scheduledInstruction.GetInstruction().String(), true); err != nil {
 						sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred while setting enclave instruction plan with UUID '%v' has executed", scheduledInstruction.GetUuid())
 					}
 				}
