@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/assert"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/recipe"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/stacktrace"
@@ -13,6 +14,25 @@ import (
 )
 
 const bufferedChannelSize = 2
+
+func NewDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
+	starlarkThread := newStarlarkThread("starlark-value-serde-for-test-thread")
+	starlarkEnv := starlark.StringDict{}
+
+	serde := kurtosis_types.NewStarlarkValueSerde(starlarkThread, starlarkEnv)
+
+	return serde
+}
+
+func newStarlarkThread(name string) *starlark.Thread {
+	return &starlark.Thread{
+		Name:       name,
+		Print:      nil,
+		Load:       nil,
+		OnMaxSteps: nil,
+		Steps:      0,
+	}
+}
 
 func ExecuteServiceAssertionWithRecipe(
 	ctx context.Context,
