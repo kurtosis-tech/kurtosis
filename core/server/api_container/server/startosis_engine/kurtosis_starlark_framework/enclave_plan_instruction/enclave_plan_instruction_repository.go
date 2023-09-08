@@ -9,8 +9,13 @@ import (
 	bolt "go.etcd.io/bbolt"
 )
 
+const (
+	instructionSequenceKeyStr = "instructions-sequence"
+)
+
 var (
 	enclavePlanInstructionBucketName = []byte("enclave-plan-instruction-repository")
+	instructionsSequenceKey          = []byte(instructionSequenceKeyStr)
 )
 
 type EnclavePlanInstructionRepository struct {
@@ -126,6 +131,8 @@ func (repository *EnclavePlanInstructionRepository) Get(
 	return instruction, nil
 }
 
+//TODO GET aLL but skip instruction sequence key
+
 func get(
 	tx *bolt.Tx,
 	uuid instructions_plan.ScheduledInstructionUuid,
@@ -135,8 +142,6 @@ func get(
 	instruction := &EnclavePlanInstructionImpl{}
 
 	bucket := tx.Bucket(enclavePlanInstructionBucketName)
-
-	bucket.Sequence()
 
 	uuidKey := getUuidKey(uuid)
 
@@ -152,6 +157,61 @@ func get(
 	}
 
 	return instruction, nil
+}
+
+func (repository *EnclavePlanInstructionRepository) addInstructionInSequence(uuid instructions_plan.ScheduledInstructionUuid) error {
+	instructionSequence, err := repository.getInstructionSequence()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the instruction sequence from the repository")
+	}
+
+	newInstructionSequence := append(instructionSequence, uuid)
+
+	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket(enclavePlanInstructionBucketName)
+
+		// first get the bytes
+		jsonBytes, err := json.Marshal(newInstructionSequence)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred marshalling enclave plan instruction sequence '%+v' in the enclave plan instruction repository", newInstructionSequence)
+		}
+
+		// save it to disk
+		if err := bucket.Put(instructionsSequenceKey, jsonBytes); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while saving enclave plan instruction sequence '%+v' into the enclave db bucket", newInstructionSequence, uuid)
+		}
+
+		return nil
+	}); err != nil {
+		return stacktrace.Propagate(err, "An error occurred adding the instruction UUID '%v' into the enclave plan repository instruction sequence", uuid)
+	}
+
+	return nil
+}
+
+func (repository *EnclavePlanInstructionRepository) getInstructionSequence() ([]instructions_plan.ScheduledInstructionUuid, error) {
+	instructionSequence := []instructions_plan.ScheduledInstructionUuid{}
+
+	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
+
+		bucket := tx.Bucket(enclavePlanInstructionBucketName)
+
+		// first get the bytes
+		jsonBytes := bucket.Get(instructionsSequenceKey)
+
+		if jsonBytes == nil {
+			return nil
+		}
+
+		if err := json.Unmarshal(jsonBytes, &instructionSequence); err != nil {
+			return stacktrace.Propagate(err, "An error occurred unmarshalling the enclave plan instruction sequence")
+		}
+
+		return nil
+	}); err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the enclave plan instruction sequence from the enclave db")
+	}
+	return instructionSequence, nil
 }
 
 func getUuidKey(uuid instructions_plan.ScheduledInstructionUuid) []byte {
