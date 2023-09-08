@@ -22,7 +22,7 @@ Great question, check out our [roadmap page](./roadmap.md) for the latest detail
 
 Why am I getting rate limited by Dockerhub when pulling images?
 ---------------------------------------------------------------
-Kurtosis will first try to use your locally cached container images before pulling any image from Dockerhub. If you are getting rate limited by Dockerhub when pulling images, it likely means you have exceeded the [limits set by Docker](https://docs.docker.com/docker-hub/download-rate-limit/). 
+If you are getting rate limited by Dockerhub when pulling images, it likely means you have exceeded the [limits set by Docker](https://docs.docker.com/docker-hub/download-rate-limit/). 
 
 Does Kurtosis support other container registries or libraries?
 --------------------------------------------------------------
@@ -30,7 +30,7 @@ Currently, Kurtosis supports any public container registry (Dockerhub, Google Cl
 
 Does Kurtosis pull a container image down each time I run a package?
 --------------------------------------------------------------------
-Kurtosis will always first check the local cache for a given container image for each `kurtosis run` before pulling the image from an external registry (e.g. Dockerhub).
+Kurtosis will always attempt to pull the latest image from an external registry (e.g. Dockerhub) for each `kurtosis run`. If the image pull fails and the image exists locally, Kurtosis will use the local image.
 
 Will Kurtosis be able to run my package remotely from a private Github repository?
 ----------------------------------------------------------------------------------
