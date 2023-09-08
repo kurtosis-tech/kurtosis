@@ -6,9 +6,6 @@ import (
 )
 
 type KurtosisHelperBaseTest interface {
-	// GetId is a unique identifier for this test that will be used in errors when a test fails.
-	GetId() string
-
 	// GetHelper should return the helper this test is testing
 	GetHelper() *kurtosis_helper.KurtosisHelper
 

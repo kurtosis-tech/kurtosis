@@ -3,6 +3,7 @@ package test_engine
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/exec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -13,28 +14,18 @@ import (
 	"testing"
 )
 
-// This test case is for testing positional arguments
-type execTestCase2 struct {
+const (
+	execServiceName = service.ServiceName("test-service")
+)
+
+type execWithNamedArgsTestCase struct {
 	*testing.T
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newExecTestCase2(t *testing.T) *execTestCase2 {
-	return &execTestCase2{
-		T: t,
-	}
-}
-
-func (t execTestCase2) GetId() string {
-	return exec.ExecBuiltinName
-}
-
-func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-
-	serviceNetwork.EXPECT().RunExec(
+func (suite *KurtosisPlanInstructionTestSuite) TestExecWithNamedArgs() {
+	suite.serviceNetwork.EXPECT().RunExec(
 		mock.Anything,
 		string(execServiceName),
 		[]string{"mkdir", "-p", "/tmp/store"},
@@ -43,20 +34,27 @@ func (t execTestCase2) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanI
 		nil,
 	)
 
-	return exec.NewExec(serviceNetwork, runtimeValueStore)
+	suite.run(&execWithNamedArgsTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
-func (t execTestCase2) GetStarlarkCode() string {
-	recipe := `ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`
-	return fmt.Sprintf("%s(%q, %s)", exec.ExecBuiltinName, execServiceName, recipe)
+func (t *execWithNamedArgsTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return exec.NewExec(t.serviceNetwork, t.runtimeValueStore)
 }
 
-func (t *execTestCase2) GetStarlarkCodeForAssertion() string {
+func (t *execWithNamedArgsTestCase) GetStarlarkCode() string {
 	recipe := `ExecRecipe(command=["mkdir", "-p", "/tmp/store"])`
 	return fmt.Sprintf("%s(%s=%q, %s=%s)", exec.ExecBuiltinName, exec.ServiceNameArgName, execServiceName, exec.RecipeArgName, recipe)
 }
 
-func (t execTestCase2) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *execWithNamedArgsTestCase) GetStarlarkCodeForAssertion() string {
+	return ""
+}
+
+func (t *execWithNamedArgsTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResultMap := `{"code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "output": "{{kurtosis:[0-9a-f]{32}:output.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResultMap, interpretationResult.String())
 

@@ -29,6 +29,8 @@ const (
 
 	noScriptOutputObject = ""
 	noParallelism        = 1
+
+	enclaveDbFilePerm = 0666
 )
 
 var (
@@ -202,7 +204,7 @@ func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {
 	}()
 
 	require.NoError(t, err)
-	db, err := bolt.Open(file.Name(), 0666, nil)
+	db, err := bolt.Open(file.Name(), enclaveDbFilePerm, nil)
 	require.NoError(t, err)
 	enclaveDb := &enclave_db.EnclaveDB{
 		DB: db,

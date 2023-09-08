@@ -5,9 +5,6 @@ import (
 )
 
 type KurtosisTypeConstructorBaseTest interface {
-	// GetId is a unique identifier for this test that will be used in errors when a test fails.
-	GetId() string
-
 	// GetStarlarkCode should return the Starlark code corresponding to the type constructor being tested.
 	GetStarlarkCode() string
 

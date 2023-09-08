@@ -19,20 +19,15 @@ type serviceConfigFullTestCase struct {
 	serviceNetwork *service_network.MockServiceNetwork
 }
 
-func newServiceConfigFullTestCase(t *testing.T) *serviceConfigFullTestCase {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	serviceNetwork.EXPECT().GetApiContainerInfo().Times(1).Return(
+func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFull() {
+	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Times(1).Return(
 		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), 0, "0.0.0"),
 	)
 
-	return &serviceConfigFullTestCase{
-		T:              t,
-		serviceNetwork: serviceNetwork,
-	}
-}
-
-func (t *serviceConfigFullTestCase) GetId() string {
-	return service_config.ServiceConfigTypeName
+	suite.run(&serviceConfigFullTestCase{
+		T:              suite.T(),
+		serviceNetwork: suite.serviceNetwork,
+	})
 }
 
 func (t *serviceConfigFullTestCase) GetStarlarkCode() string {

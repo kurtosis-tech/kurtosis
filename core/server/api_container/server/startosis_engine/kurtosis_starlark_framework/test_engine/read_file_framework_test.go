@@ -16,18 +16,14 @@ type readFileTestCase struct {
 	packageContentProvider *startosis_packages.MockPackageContentProvider
 }
 
-func newReadFileTestCase(t *testing.T) *readFileTestCase {
-	packageContentProvider := startosis_packages.NewMockPackageContentProvider(t)
-	packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(frameworkTestThreadName, TestModuleFileName).Return(TestModuleFileName, nil)
-	packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
-	return &readFileTestCase{
-		T:                      t,
-		packageContentProvider: packageContentProvider,
-	}
-}
+func (suite *KurtosisHelperTestSuite) TestReadFile() {
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(kurtosisHelperThreadName, TestModuleFileName).Return(TestModuleFileName, nil)
+	suite.packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
 
-func (t *readFileTestCase) GetId() string {
-	return read_file.ReadFileBuiltinName
+	suite.run(&readFileTestCase{
+		T:                      suite.T(),
+		packageContentProvider: suite.packageContentProvider,
+	})
 }
 
 func (t *readFileTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
@@ -43,7 +39,7 @@ func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
 }
 
 func (t *readFileTestCase) Assert(result starlark.Value) {
-	t.packageContentProvider.AssertCalled(t, "GetAbsoluteLocatorForRelativeModuleLocator", frameworkTestThreadName, TestModuleFileName)
+	t.packageContentProvider.AssertCalled(t, "GetAbsoluteLocatorForRelativeModuleLocator", kurtosisHelperThreadName, TestModuleFileName)
 	t.packageContentProvider.AssertCalled(t, "GetModuleContents", TestModuleFileName)
 	require.Equal(t, result, starlark.String("Hello World!"))
 }
