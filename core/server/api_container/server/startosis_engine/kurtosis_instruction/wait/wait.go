@@ -261,7 +261,9 @@ func (builtin *WaitCapabilities) Execute(ctx context.Context, _ *builtin_argumen
 		)
 	}
 
-	builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult)
+	if err := builtin.runtimeValueStore.SetValue(builtin.resultUuid, lastResult); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred setting value '%+v' using key UUID '%s' in the runtime value store", lastResult, builtin.resultUuid)
+	}
 
 	instructionResult := fmt.Sprintf(
 		"Wait took %d tries (%v in total). Assertion passed with following:\n%s",

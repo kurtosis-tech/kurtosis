@@ -25,11 +25,8 @@ type getHttpRequestRecipeTestCase struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newGetHttpRequestRecipeTestCase(t *testing.T) *getHttpRequestRecipeTestCase {
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	serviceNetwork.EXPECT().HttpRequestService(
+func (suite *KurtosisTypeConstructorTestSuite) TestGetHttpRequestRecipe() {
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		string(TestServiceName),
 		TestPrivatePortId,
@@ -57,15 +54,11 @@ func newGetHttpRequestRecipeTestCase(t *testing.T) *getHttpRequestRecipeTestCase
 		nil,
 	)
 
-	return &getHttpRequestRecipeTestCase{
-		T:                 t,
-		serviceNetwork:    serviceNetwork,
-		runtimeValueStore: runtimeValueStore,
-	}
-}
-
-func (t *getHttpRequestRecipeTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", recipe.GetHttpRecipeTypeName, "with_extractors")
+	suite.run(&getHttpRequestRecipeTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
 func (t *getHttpRequestRecipeTestCase) GetStarlarkCode() string {

@@ -21,8 +21,8 @@ const PackageCatalogProgress = ({appData}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
+    
     const [services, setServices] = useState([])
-
     const getServices = async (enclave) => {
         const {services: newServices} = await getEnclaveInformation(enclave.host, enclave.port, appData.jwtToken, appData.apiHost);
         if (newServices.length > services.length) {

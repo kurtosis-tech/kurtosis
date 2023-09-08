@@ -5,13 +5,16 @@ import (
 	"errors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
+	"os"
 	"strings"
 	"testing"
 )
@@ -26,6 +29,8 @@ const (
 
 	noScriptOutputObject = ""
 	noParallelism        = 1
+
+	enclaveDbFilePerm = 0666
 )
 
 var (
@@ -34,14 +39,13 @@ var (
 )
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
+	enclaveDb := getEnclaveDBForTest(t)
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor := NewStartosisExecutor(runtime_value_store.NewRuntimeValueStore())
+	executor := NewStartosisExecutor(runtimeValueStore)
 
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
-	instruction0 := createMockInstruction(t, "instruction0", executeSuccessfully)
-	scheduledInstruction0 := instructions_plan.NewScheduledInstruction("instruction0", instruction0, starlark.None).Executed(true).ImportedFromCurrentEnclavePlan(true)
-	instructionsPlan.AddScheduledInstruction(scheduledInstruction0)
-
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	scheduledInstruction1 := instructions_plan.NewScheduledInstruction("instruction1", instruction1, starlark.None).Executed(true)
 	instructionsPlan.AddScheduledInstruction(scheduledInstruction1)
@@ -54,8 +58,6 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	require.Equal(t, executor.enclavePlan.Size(), 0) // check that the enclave plan is empty prior to execution
 
 	_, serializedInstruction, err := executeSynchronously(t, executor, executeForReal, instructionsPlan)
-	instruction0.AssertNumberOfCalls(t, "GetCanonicalInstruction", 0) // skipped directly
-	instruction0.AssertNumberOfCalls(t, "Execute", 0)
 	instruction1.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
 	instruction1.AssertNumberOfCalls(t, "Execute", 0) // not executed as it was already executed
 	instruction2.AssertNumberOfCalls(t, "GetCanonicalInstruction", 1)
@@ -74,11 +76,15 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 			dummyPosition.ToAPIType(), "instruction3", "instruction3()", noInstructionArgsForTesting, isSkipped),
 	}
 	require.Equal(t, expectedSerializedInstructions, serializedInstruction)
-	require.Equal(t, executor.enclavePlan.Size(), 4) // check that the enclave plan now contains the 4 instructions
+	require.Equal(t, executor.enclavePlan.Size(), 3) // check that the enclave plan now contains the 4 instructions
 }
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
-	executor := NewStartosisExecutor(runtime_value_store.NewRuntimeValueStore())
+	enclaveDb := getEnclaveDBForTest(t)
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+	require.NoError(t, err)
+
+	executor := NewStartosisExecutor(runtimeValueStore)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
@@ -116,7 +122,11 @@ instruction2()
 }
 
 func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
-	executor := NewStartosisExecutor(runtime_value_store.NewRuntimeValueStore())
+	enclaveDb := getEnclaveDBForTest(t)
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+	require.NoError(t, createRuntimeValueStoreErr)
+
+	executor := NewStartosisExecutor(runtimeValueStore)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
@@ -168,7 +178,7 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 	scheduledInstructions, err := instructionsPlan.GeneratePlan()
 	require.Nil(t, err)
 
-	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, scheduledInstructions, noScriptOutputObject)
+	executionResponseLines := executor.Execute(context.Background(), dryRun, noParallelism, 0, scheduledInstructions, noScriptOutputObject)
 	for executionResponseLine := range executionResponseLines {
 		if executionResponseLine.GetError() != nil {
 			return scriptOutput.String(), serializedInstructions, executionResponseLine.GetError().GetExecutionError()
@@ -184,4 +194,21 @@ func executeSynchronously(t *testing.T, executor *StartosisExecutor, dryRun bool
 		}
 	}
 	return scriptOutput.String(), serializedInstructions, nil
+}
+
+func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {
+	file, err := os.CreateTemp("/tmp", "*.db")
+	defer func() {
+		err = os.Remove(file.Name())
+		require.NoError(t, err)
+	}()
+
+	require.NoError(t, err)
+	db, err := bolt.Open(file.Name(), enclaveDbFilePerm, nil)
+	require.NoError(t, err)
+	enclaveDb := &enclave_db.EnclaveDB{
+		DB: db,
+	}
+
+	return enclaveDb
 }

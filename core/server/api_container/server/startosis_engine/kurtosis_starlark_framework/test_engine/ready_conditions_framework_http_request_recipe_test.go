@@ -16,14 +16,10 @@ type readyConditionsHttpRecipeTestCase struct {
 	*testing.T
 }
 
-func newReadyConditionsHttpRecipeTestCase(t *testing.T) *readyConditionsHttpRecipeTestCase {
-	return &readyConditionsHttpRecipeTestCase{
-		T: t,
-	}
-}
-
-func (t *readyConditionsHttpRecipeTestCase) GetId() string {
-	return service_config.ReadyConditionTypeName
+func (suite *KurtosisTypeConstructorTestSuite) TestReadyConditionsHttpRecipe() {
+	suite.run(&readyConditionsHttpRecipeTestCase{
+		T: suite.T(),
+	})
 }
 
 func (t *readyConditionsHttpRecipeTestCase) GetStarlarkCode() string {

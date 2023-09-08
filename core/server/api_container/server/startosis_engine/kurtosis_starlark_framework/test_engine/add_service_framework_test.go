@@ -11,7 +11,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -20,24 +19,13 @@ import (
 
 type addServiceTestCase struct {
 	*testing.T
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newAddServiceTestCase(t *testing.T) *addServiceTestCase {
-	return &addServiceTestCase{
-		T: t,
-	}
-}
-
-func (t *addServiceTestCase) GetId() string {
-	return add_service.AddServiceBuiltinName
-}
-
-func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-
-	serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
-	serviceNetwork.EXPECT().AddService(
+func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
+	suite.serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
+	suite.serviceNetwork.EXPECT().AddService(
 		mock.Anything,
 		TestServiceName,
 		mock.MatchedBy(func(serviceConfig *service.ServiceConfig) bool {
@@ -58,7 +46,7 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 			)
 
 			actualServiceConfig := serviceConfig
-			assert.Equal(t, expectedServiceConfig, actualServiceConfig)
+			suite.Assert().Equal(expectedServiceConfig, actualServiceConfig)
 			return true
 		}),
 	).Times(1).Return(
@@ -66,7 +54,15 @@ func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtosi
 		nil,
 	)
 
-	return add_service.NewAddService(serviceNetwork, runtimeValueStore)
+	suite.run(&addServiceTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
+}
+
+func (t *addServiceTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return add_service.NewAddService(t.serviceNetwork, t.runtimeValueStore)
 }
 
 func (t *addServiceTestCase) GetStarlarkCode() string {
@@ -82,7 +78,7 @@ func (t *addServiceTestCase) Assert(interpretationResult starlark.Value, executi
 	serviceObj, ok := interpretationResult.(*kurtosis_types.Service)
 	require.True(t, ok, "interpretation result should be a dictionary")
 	require.NotNil(t, serviceObj)
-	expectedServiceObj := fmt.Sprintf(`Service\(hostname = "{{kurtosis:[0-9a-f]{32}:hostname.runtime_value}}", ip_address = "{{kurtosis:[0-9a-f]{32}:ip_address.runtime_value}}", name = "%v", ports = {}\)`, TestServiceName)
+	expectedServiceObj := fmt.Sprintf(`Service\(name="%v", hostname="{{kurtosis:[0-9a-f]{32}:hostname.runtime_value}}", ip_address="{{kurtosis:[0-9a-f]{32}:ip_address.runtime_value}}", ports={}\)`, TestServiceName)
 	require.Regexp(t, expectedServiceObj, serviceObj.String())
 
 	expectedExecutionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", TestServiceName, TestServiceUuid)

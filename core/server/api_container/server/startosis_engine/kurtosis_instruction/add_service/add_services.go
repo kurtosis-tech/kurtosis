@@ -194,7 +194,9 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	instructionResult := strings.Builder{}
 	instructionResult.WriteString(fmt.Sprintf("Successfully added the following '%d' services:", len(startedServices)))
 	for serviceName, serviceObj := range startedAndUpdatedService {
-		fillAddServiceReturnValueWithRuntimeValues(serviceObj, builtin.resultUuids[serviceName], builtin.runtimeValueStore)
+		if err := fillAddServiceReturnValueWithRuntimeValues(serviceObj, builtin.resultUuids[serviceName], builtin.runtimeValueStore); err != nil {
+			return "", stacktrace.Propagate(err, "An error occurred while adding service return values with result key UUID '%s'", builtin.resultUuids[serviceName])
+		}
 		instructionResult.WriteString(fmt.Sprintf("\n  Service '%s' added with UUID '%s'", serviceName, serviceObj.GetRegistration().GetUUID()))
 	}
 	shouldDeleteAllStartedServices = false
@@ -409,7 +411,7 @@ func makeAddServicesInterpretationReturnValue(serviceConfigs map[service.Service
 	var err error
 	for serviceName, serviceConfig := range serviceConfigs {
 		serviceNameStr := starlark.String(serviceName)
-		resultUuids[serviceName], err = runtimeValueStore.CreateValue()
+		resultUuids[serviceName], err = runtimeValueStore.GetOrCreateValueAssociatedWithService(serviceName)
 		if err != nil {
 			return nil, nil, startosis_errors.WrapWithInterpretationError(err, "Unable to create runtime value to hold '%v' command return values", AddServicesBuiltinName)
 		}

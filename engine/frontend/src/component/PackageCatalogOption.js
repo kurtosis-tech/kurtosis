@@ -6,14 +6,14 @@ import {
 
 import { useNavigate, useLocation} from 'react-router';
 
-const PackageCatalogOption = () => {
+const PackageCatalogOption = ({catalog}) => {
     const navigate = useNavigate();
-    const location = useLocation();
     const handleCatalogForm = () => {
-        if (!(location.pathname.includes("catalog"))) {
+        if (!catalog) {
             navigate("/catalog")
         }
     }
+
     return (
         <Grid
             templateAreas={`"catalog manual"`}
@@ -26,7 +26,7 @@ const PackageCatalogOption = () => {
             gap={2}
         >
             <GridItem area={'catalog'}>
-                <Center h="100%" w="100%" color='white' bg="#24BA27" p="2" onClick={handleCatalogForm}> 
+                <Center border={catalog ? "2px": null} h="100%" w="100%" color='white' bg="#24BA27" p="2" onClick={handleCatalogForm}> 
                     Catalog
                 </Center>
             </GridItem>

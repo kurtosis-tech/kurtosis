@@ -14,14 +14,10 @@ type portSpecFullTestCase struct {
 	*testing.T
 }
 
-func newPortSpecFullTestCase(t *testing.T) *portSpecFullTestCase {
-	return &portSpecFullTestCase{
-		T: t,
-	}
-}
-
-func (t *portSpecFullTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", port_spec.PortSpecTypeName, "full")
+func (suite *KurtosisTypeConstructorTestSuite) TestPortSpecFull() {
+	suite.run(&portSpecFullTestCase{
+		T: suite.T(),
+	})
 }
 
 func (t *portSpecFullTestCase) GetStarlarkCode() string {

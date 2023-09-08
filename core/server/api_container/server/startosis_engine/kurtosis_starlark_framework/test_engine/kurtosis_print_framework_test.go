@@ -17,23 +17,20 @@ const (
 
 type printTestCase struct {
 	*testing.T
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newPrintTestCase(t *testing.T) *printTestCase {
-	return &printTestCase{
-		T: t,
-	}
-}
-
-func (t *printTestCase) GetId() string {
-	return kurtosis_print.PrintBuiltinName
+func (suite *KurtosisPlanInstructionTestSuite) TestPrint() {
+	suite.run(&printTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
 func (t *printTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-
-	return kurtosis_print.NewPrint(serviceNetwork, runtimeValueStore)
+	return kurtosis_print.NewPrint(t.serviceNetwork, t.runtimeValueStore)
 }
 
 func (t *printTestCase) GetStarlarkCode() string {

@@ -26,45 +26,42 @@ const (
 type renderMultipleTemplatesTestCase struct {
 	*testing.T
 
-	serviceNetwork *service_network.MockServiceNetwork
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newRenderMultipleTemplatesTestCase(t *testing.T) *renderMultipleTemplatesTestCase {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-
+func (suite *KurtosisPlanInstructionTestSuite) TestRenderMultipleTemplates() {
 	// We expect double quotes for the serialized JSON, for some reasons... See arg_parser.encodeStarlarkObjectAsJSON
 	data1WithDoubleQuote := fmt.Sprintf("%q", renderTemplate_MultipleTemplates_1_data)
 	templateData1, err := render_templates2.CreateTemplateData(renderTemplate_MultipleTemplates_1_template, data1WithDoubleQuote)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	data2WithDoubleQuote := fmt.Sprintf("%q", renderTemplate_MultipleTemplates_2_data)
 	templateData2, err := render_templates2.CreateTemplateData(renderTemplate_MultipleTemplates_2_template, data2WithDoubleQuote)
-	require.Nil(t, err)
+	suite.Require().Nil(err)
 	templatesAndData := map[string]*render_templates2.TemplateData{
 		renderTemplate_MultipleTemplates_1_filePath: templateData1,
 		renderTemplate_MultipleTemplates_2_filePath: templateData2,
 	}
 
-	serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
+	suite.serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
 		mockedFileArtifactName,
 		nil,
 	)
 
-	serviceNetwork.EXPECT().RenderTemplates(templatesAndData, mockedFileArtifactName).Times(1).Return(TestArtifactUuid, nil)
-	return &renderMultipleTemplatesTestCase{
-		T:              t,
-		serviceNetwork: serviceNetwork,
-	}
+	suite.serviceNetwork.EXPECT().RenderTemplates(templatesAndData, mockedFileArtifactName).Times(1).Return(TestArtifactUuid, nil)
+
+	suite.run(&renderMultipleTemplatesTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
-func (t renderMultipleTemplatesTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", render_templates.RenderTemplatesBuiltinName, "MultipleTemplates")
+func (t *renderMultipleTemplatesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return render_templates.NewRenderTemplatesInstruction(t.serviceNetwork, t.runtimeValueStore)
 }
 
-func (t renderMultipleTemplatesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return render_templates.NewRenderTemplatesInstruction(t.serviceNetwork, runtime_value_store.NewRuntimeValueStore())
-}
-
-func (t renderMultipleTemplatesTestCase) GetStarlarkCode() string {
+func (t *renderMultipleTemplatesTestCase) GetStarlarkCode() string {
 	configValue := `{"/fizz/buzz/test.txt": struct(data="{\"LastName\": \"Doe\"}", template="Hello {{.LastName}}"), "/foo/bar/test.txt": struct(data="{\"Name\": \"John\"}", template="Hello {{.Name}}")}`
 	return fmt.Sprintf(`%s(%s=%s)`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue)
 }
@@ -73,7 +70,7 @@ func (t *renderMultipleTemplatesTestCase) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-func (t renderMultipleTemplatesTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *renderMultipleTemplatesTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.String(mockedFileArtifactName), interpretationResult)
 
 	expectedExecutionResult := fmt.Sprintf("Templates artifact name '%v' rendered with artifact UUID '%s'", mockedFileArtifactName, TestArtifactUuid)

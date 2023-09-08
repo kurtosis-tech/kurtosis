@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	testName = "startosis_remove_service_test"
+	testName = "remove-service"
 
 	serviceName = "example-datastore-server-1"
 	portId      = "grpc"

@@ -20,18 +20,9 @@ const (
 )
 
 func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
-
-	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
-	isClusterSet, err := clusterSettingStore.HasClusterSetting()
+	metricsUserId, clusterType, err := getMetricsUserIdAndClusterType()
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "Failed to check if cluster setting has been set.")
-	}
-	clusterType := resolved_config.DefaultDockerClusterName
-	if isClusterSet {
-		clusterType, err = clusterSettingStore.GetClusterSetting()
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Cluster is set but config couldn't be fetched")
-		}
+		return nil, nil, stacktrace.Propagate(err, "an error occurred while getting metrics user id and cluster type")
 	}
 
 	kurtosisConfigStore := kurtosis_config.GetKurtosisConfigStore()
@@ -39,6 +30,7 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 	if err != nil {
 		return nil, nil, stacktrace.NewError("An error occurred while determining whether configuration already exists")
 	}
+
 	var sendUserMetrics bool
 	if hasConfig {
 		kurtosisConfig, err := kurtosisConfigStore.GetConfig()
@@ -48,12 +40,6 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 		sendUserMetrics = kurtosisConfig.GetShouldSendMetrics()
 	} else {
 		sendUserMetrics = defaults.SendMetricsByDefault
-	}
-
-	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
-	metricsUserId, err := metricsUserIdStore.GetUserID()
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occurred while getting the users metrics id")
 	}
 
 	logger := logrus.StandardLogger()
@@ -73,4 +59,55 @@ func GetMetricsClient() (metrics_client.MetricsClient, func() error, error) {
 	}
 
 	return metricsClient, metricsClientCloseFunc, nil
+}
+
+// GetSegmentClient use this method only if you are sure that you want to send metrics otherwise use GetMetricsClient
+func GetSegmentClient() (metrics_client.MetricsClient, func() error, error) {
+	metricsUserId, clusterType, err := getMetricsUserIdAndClusterType()
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "an error occurred while getting metrics user id and cluster type")
+	}
+	// this is force set to true in order to get the segment client
+	sendUserMetrics := true
+
+	logger := logrus.StandardLogger()
+	metricsClient, metricsClientCloseFunc, err := metrics_client.CreateMetricsClient(
+		source.KurtosisCLISource,
+		kurtosis_version.KurtosisVersion,
+		metricsUserId,
+		clusterType,
+		sendUserMetrics,
+		shouldFlushMetricsClientQueueOnEachEvent,
+		do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
+		logrus_logger_converter.ConvertLogrusLoggerToAnalyticsLogger(logger),
+	)
+
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred while creating the metrics client")
+	}
+
+	return metricsClient, metricsClientCloseFunc, nil
+}
+
+func getMetricsUserIdAndClusterType() (string, string, error) {
+	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
+	isClusterSet, err := clusterSettingStore.HasClusterSetting()
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "Failed to check if cluster setting has been set.")
+	}
+	clusterType := resolved_config.DefaultDockerClusterName
+	if isClusterSet {
+		clusterType, err = clusterSettingStore.GetClusterSetting()
+		if err != nil {
+			return "", "", stacktrace.Propagate(err, "Cluster is set but config couldn't be fetched")
+		}
+	}
+
+	metricsUserIdStore := metrics_user_id_store.GetMetricsUserIDStore()
+	metricsUserId, err := metricsUserIdStore.GetUserID()
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "An error occurred while getting the users metrics id")
+	}
+
+	return metricsUserId, clusterType, nil
 }

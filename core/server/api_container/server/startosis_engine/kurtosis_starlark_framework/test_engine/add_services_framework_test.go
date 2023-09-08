@@ -10,7 +10,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
@@ -23,25 +22,14 @@ import (
 
 type addServicesTestCase struct {
 	*testing.T
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newAddServicesTestCase(t *testing.T) *addServicesTestCase {
-	return &addServicesTestCase{
-		T: t,
-	}
-}
-
-func (t *addServicesTestCase) GetId() string {
-	return add_service.AddServicesBuiltinName
-}
-
-func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
-
-	serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
-	serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName2).Times(1).Return(false, nil)
-	serviceNetwork.EXPECT().UpdateServices(
+func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
+	suite.serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
+	suite.serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName2).Times(1).Return(false, nil)
+	suite.serviceNetwork.EXPECT().UpdateServices(
 		mock.Anything,
 		map[service.ServiceName]*service.ServiceConfig{},
 		mock.Anything,
@@ -50,12 +38,12 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		map[service.ServiceName]error{},
 		nil,
 	)
-	serviceNetwork.EXPECT().AddServices(
+	suite.serviceNetwork.EXPECT().AddServices(
 		mock.Anything,
 		mock.MatchedBy(func(configs map[service.ServiceName]*service.ServiceConfig) bool {
-			require.Len(t, configs, 2)
-			require.Contains(t, configs, TestServiceName)
-			require.Contains(t, configs, TestServiceName2)
+			suite.Require().Len(configs, 2)
+			suite.Require().Contains(configs, TestServiceName)
+			suite.Require().Contains(configs, TestServiceName2)
 
 			expectedServiceConfig1 := service.NewServiceConfig(
 				TestContainerImageName,
@@ -73,7 +61,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 				0,
 			)
 			actualServiceConfig1 := configs[TestServiceName]
-			assert.Equal(t, expectedServiceConfig1, actualServiceConfig1)
+			suite.Assert().Equal(expectedServiceConfig1, actualServiceConfig1)
 
 			expectedServiceConfig2 := service.NewServiceConfig(
 				TestContainerImageName,
@@ -91,7 +79,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 				0,
 			)
 			actualServiceConfig2 := configs[TestServiceName2]
-			assert.Equal(t, expectedServiceConfig2, actualServiceConfig2)
+			suite.Assert().Equal(expectedServiceConfig2, actualServiceConfig2)
 			return true
 		}),
 		mock.Anything,
@@ -104,7 +92,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		nil,
 	)
 
-	serviceNetwork.EXPECT().HttpRequestService(
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		string(TestServiceName),
 		TestReadyConditionsRecipePortId,
@@ -132,7 +120,7 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		TLS:              nil,
 	}, nil)
 
-	serviceNetwork.EXPECT().HttpRequestService(
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		string(TestServiceName2),
 		TestReadyConditions2RecipePortId,
@@ -190,7 +178,15 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 		TLS:              nil,
 	}, nil)
 
-	return add_service.NewAddServices(serviceNetwork, runtimeValueStore)
+	suite.run(&addServicesTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
+}
+
+func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return add_service.NewAddServices(t.serviceNetwork, t.runtimeValueStore)
 }
 
 func (t *addServicesTestCase) GetStarlarkCode() string {

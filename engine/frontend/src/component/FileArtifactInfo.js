@@ -155,7 +155,7 @@ const FileArtifactInfo = ({enclaves}) => {
         <div className='flex flex-col h-[90%] space-y-1 overflow-auto'>
             {
                 (Object.keys(detailInfo).length !== 0) ?
-                    <div className="flex h-3/4 flex-col">
+                    <div className="flex h-3/4 flex-col text-black">
                         <p className="text-lg font-bold text-right"> Size: {detailInfo.size}B </p>
                         <p className="break-all overflow-y-auto"> {detailInfo.textPreview.length > 0 ? detailInfo.textPreview :
                             <h2 className="text-2xl text-center mt-20 text-red-800 font-bold">No Preview
