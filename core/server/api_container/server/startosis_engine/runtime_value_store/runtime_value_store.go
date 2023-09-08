@@ -75,23 +75,45 @@ func (re *RuntimeValueStore) GetOrCreateValueAssociatedWithService(serviceName s
 	return uuid, nil
 }
 
-// SetValue store recipe result values into the runtime value store, and it only accepts comparables of
-// starlark.String, starlark.Int, and starlark.Bool so far, make sure to upgrade the recipe result repository if you
-// want to extend this capability supporting more comparable types
 func (re *RuntimeValueStore) SetValue(uuid string, value map[string]starlark.Comparable) error {
-	if err := re.recipeResultRepository.Save(uuid, value); err != nil {
-		return stacktrace.Propagate(err, "An error occurred saving value '%+v' using UUID key '%s' into the recipe result repository", value, uuid)
+
+	stringifiedValue := map[string]string{}
+
+	for uuidStr, starlarkComparable := range value {
+		starlarkValueStr := re.starlarkValueSerde.Serialize(starlarkComparable)
+		stringifiedValue[uuidStr] = starlarkValueStr
+	}
+
+	if err := re.recipeResultRepository.Save(uuid, stringifiedValue); err != nil {
+		return stacktrace.Propagate(err, "An error occurred saving value with string format '%+v' using UUID key '%s' into the recipe result repository", stringifiedValue, uuid)
 	}
 	return nil
 }
 
 func (re *RuntimeValueStore) GetValue(uuid string) (map[string]starlark.Comparable, error) {
-	value, err := re.recipeResultRepository.Get(uuid)
+	stringifiedValue, err := re.recipeResultRepository.Get(uuid)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting recipe result value with UUID key '%s'", uuid)
 	}
-	if value == nil {
+	if len(stringifiedValue) == 0 {
 		return nil, stacktrace.NewError("Runtime UUID '%v' was found, but not set", uuid)
 	}
+
+	value := map[string]starlark.Comparable{}
+
+	for uuidStr, valueStr := range stringifiedValue {
+		starlarkValue, err := re.starlarkValueSerde.Deserialize(valueStr)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred deserializing stringified value '%v'", valueStr)
+		}
+
+		starlarkComparable, ok := starlarkValue.(starlark.Comparable)
+		if !ok {
+			return nil, stacktrace.NewError("Failed to cast Starlark value '%s' to Starlark comparable type", starlarkValue)
+		}
+
+		value[uuidStr] = starlarkComparable
+	}
+
 	return value, nil
 }
