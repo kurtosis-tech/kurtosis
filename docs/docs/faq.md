@@ -22,7 +22,7 @@ Great question, check out our [roadmap page](./roadmap.md) for the latest detail
 
 Why am I getting rate limited by Dockerhub when pulling images?
 ---------------------------------------------------------------
-Kurtosis will first try to use your locally cached container images before pulling any image from Dockerhub. If you are getting rate limited by Dockerhub when pulling images, it likely means you have exceeded the [limits set by Docker](https://docs.docker.com/docker-hub/download-rate-limit/). 
+If you are getting rate limited by Dockerhub when pulling images, it likely means you have exceeded the [limits set by Docker](https://docs.docker.com/docker-hub/download-rate-limit/). 
 
 Does Kurtosis support other container registries or libraries?
 --------------------------------------------------------------
@@ -30,7 +30,7 @@ Currently, Kurtosis supports any public container registry (Dockerhub, Google Cl
 
 Does Kurtosis pull a container image down each time I run a package?
 --------------------------------------------------------------------
-Kurtosis will always first check the local cache for a given container image for each `kurtosis run` before pulling the image from an external registry (e.g. Dockerhub).
+Kurtosis will always attempt to pull the latest image from an external registry (e.g. Dockerhub) for each `kurtosis run`. If the image pull fails and the image exists locally, Kurtosis will use the local image.
 
 Will Kurtosis be able to run my package remotely from a private Github repository?
 ----------------------------------------------------------------------------------
@@ -42,19 +42,18 @@ Adding services in parallel is a great way to speed up how quickly your distribu
 
 However, when it comes to adding multiple services from different packages, you must do so within the `plan.add_services` instruction with the configuration for each service in a dictionary. You cannot currently import multiple packages (using locators) and run them in parallel without using the `plan.add_services` instruction because the call to `run` each of those imported packages starts the service itself.
 
-As an example, if you have a `serviceA.star` file that looks like this:
-```
+As an example, if you have a `service_a.star` file that looks like this:
+```python
 def run()...
 
-def getConfig()...
+def get_config()...
 ```
-
-Then you can technically add services from `serviceA.star` in parallel into your package with:
-```
-a = import_module("/serviceA.star")
+Then you can add services from `service_a.star` in parallel into your `main.star` package with:
+```python
+a = import_module("./service_a.star")
 
 def run():
-   a_config = a.getConfig()
+   a_config = a.get_config()
    plan.add_services({"a": a_config})
 ``` 
 

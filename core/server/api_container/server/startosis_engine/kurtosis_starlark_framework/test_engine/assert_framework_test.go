@@ -18,34 +18,30 @@ const (
 type assertTestCase struct {
 	*testing.T
 
-	runtimeValueUuid string
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
+	runtimeValueUuid  string
 }
 
-func newAssertTestCase(t *testing.T) *assertTestCase {
+func (suite *KurtosisPlanInstructionTestSuite) TestAssert() {
 	runtimeValueUuid, err := uuid_generator.GenerateUUIDString()
-	require.Nil(t, err)
-	return &assertTestCase{
-		T:                t,
-		runtimeValueUuid: runtimeValueUuid,
-	}
-}
-
-func (t assertTestCase) GetId() string {
-	return assert.AssertBuiltinName
-}
-
-func (t assertTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-	err = runtimeValueStore.SetValue(t.runtimeValueUuid, map[string]starlark.Comparable{
+	suite.Require().Nil(err)
+	err = suite.runtimeValueStore.SetValue(runtimeValueUuid, map[string]starlark.Comparable{
 		"value": starlark.String(runtimeValueValue),
 	})
-	require.NoError(t, err)
-	return assert.NewAssert(runtimeValueStore)
+	suite.Require().NoError(err)
+
+	suite.run(&assertTestCase{
+		T:                 suite.T(),
+		runtimeValueUuid:  runtimeValueUuid,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
-func (t assertTestCase) GetStarlarkCode() string {
+func (t *assertTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return assert.NewAssert(t.runtimeValueStore)
+}
+
+func (t *assertTestCase) GetStarlarkCode() string {
 	runtimeValue := fmt.Sprintf("{{kurtosis:%s:value.runtime_value}}", t.runtimeValueUuid)
 	assertion := "=="
 	targetValue := runtimeValueValue
@@ -56,7 +52,7 @@ func (t *assertTestCase) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-func (t assertTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *assertTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 	expectedExecutionResult := fmt.Sprintf(`Assertion succeeded. Value is '%q'.`, runtimeValueValue)
 	require.Equal(t, expectedExecutionResult, *executionResult)

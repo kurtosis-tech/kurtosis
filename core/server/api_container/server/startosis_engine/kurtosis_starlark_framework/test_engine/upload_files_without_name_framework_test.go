@@ -5,7 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/upload_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -15,29 +15,19 @@ import (
 
 type uploadFilesWithoutNameTestCase struct {
 	*testing.T
+	serviceNetwork         *service_network.MockServiceNetwork
+	packageContentProvider startosis_packages.PackageContentProvider
 }
 
-func newUploadFilesWithoutNameTestCase(t *testing.T) *uploadFilesWithoutNameTestCase {
-	return &uploadFilesWithoutNameTestCase{
-		T: t,
-	}
-}
+func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesWithoutName() {
+	suite.Require().Nil(suite.packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
 
-func (t *uploadFilesWithoutNameTestCase) GetId() string {
-	return upload_files.UploadFilesBuiltinName
-}
-
-func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	packageContentProvider := mock_package_content_provider.NewMockPackageContentProvider()
-	require.Nil(t, packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
-
-	serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
+	suite.serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
 		mockedFileArtifactName,
 		nil,
 	)
 
-	serviceNetwork.EXPECT().GetFilesArtifactMd5(
+	suite.serviceNetwork.EXPECT().GetFilesArtifactMd5(
 		mockedFileArtifactName,
 	).Times(1).Return(
 		enclave_data_directory.FilesArtifactUUID(""),
@@ -45,7 +35,7 @@ func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruc
 		false,
 		nil,
 	)
-	serviceNetwork.EXPECT().UploadFilesArtifact(
+	suite.serviceNetwork.EXPECT().UploadFilesArtifact(
 		mock.Anything, // data gets written to disk and compressed to it's a bit tricky to replicate here.
 		mock.Anything, // and same for the hash
 		mockedFileArtifactName,
@@ -54,10 +44,18 @@ func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruc
 		nil,
 	)
 
-	return upload_files.NewUploadFiles(serviceNetwork, packageContentProvider)
+	suite.run(&uploadFilesWithoutNameTestCase{
+		T:                      suite.T(),
+		serviceNetwork:         suite.serviceNetwork,
+		packageContentProvider: suite.packageContentProvider,
+	})
 }
 
-func (t uploadFilesWithoutNameTestCase) GetStarlarkCode() string {
+func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return upload_files.NewUploadFiles(t.serviceNetwork, t.packageContentProvider)
+}
+
+func (t *uploadFilesWithoutNameTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName)
 }
 

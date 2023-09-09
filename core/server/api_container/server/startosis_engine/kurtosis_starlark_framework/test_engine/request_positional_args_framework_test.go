@@ -2,7 +2,6 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/request"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_plan_instruction"
@@ -16,38 +15,14 @@ import (
 	"testing"
 )
 
-const (
-	requestTestCaseServiceName = service.ServiceName("web-server")
-	requestPortId              = "port_id"
-	requestMethod              = "GET"
-	requestContentType         = ""
-	requestEndpoint            = "/"
-	requestBody                = ""
-
-	requestResponseBody = `{"value": "Hello World!"}`
-)
-
-type requestTestCase1 struct {
+type requestWithPositionalArgsTestCase struct {
 	*testing.T
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newRequestTestCase1(t *testing.T) *requestTestCase1 {
-	return &requestTestCase1{
-		T: t,
-	}
-}
-
-func (t *requestTestCase1) GetId() string {
-	return request.RequestBuiltinName
-}
-
-func (t *requestTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-
-	serviceNetwork.EXPECT().HttpRequestService(
+func (suite *KurtosisPlanInstructionTestSuite) TestRequestWithPositionalArgs() {
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		string(requestTestCaseServiceName),
 		requestPortId,
@@ -75,19 +50,28 @@ func (t *requestTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisP
 		nil,
 	)
 
-	return request.NewRequest(serviceNetwork, runtimeValueStore)
+	suite.run(&requestWithPositionalArgsTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
-func (t *requestTestCase1) GetStarlarkCode() string {
+func (t *requestWithPositionalArgsTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return request.NewRequest(t.serviceNetwork, t.runtimeValueStore)
+}
+
+func (t *requestWithPositionalArgsTestCase) GetStarlarkCode() string {
+	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestEndpoint)
+	return fmt.Sprintf("%s(%q, %s)", request.RequestBuiltinName, requestTestCaseServiceName, recipe)
+}
+
+func (t *requestWithPositionalArgsTestCase) GetStarlarkCodeForAssertion() string {
 	recipe := fmt.Sprintf(`GetHttpRequestRecipe(port_id=%q, endpoint=%q, extract={"key": ".value"})`, requestPortId, requestEndpoint)
 	return fmt.Sprintf("%s(%s=%q, %s=%s)", request.RequestBuiltinName, request.ServiceNameArgName, requestTestCaseServiceName, request.RecipeArgName, recipe)
 }
 
-func (t *requestTestCase1) GetStarlarkCodeForAssertion() string {
-	return ""
-}
-
-func (t *requestTestCase1) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *requestWithPositionalArgsTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResultMap := `{"body": "{{kurtosis:[0-9a-f]{32}:body.runtime_value}}", "code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "extract.key": "{{kurtosis:[0-9a-f]{32}:extract.key.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResultMap, interpretationResult.String())
 

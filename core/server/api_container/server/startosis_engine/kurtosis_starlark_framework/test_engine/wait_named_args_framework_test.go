@@ -33,27 +33,14 @@ const (
 	waitRecipeResponseBody = `{"value": "Hello world!"}`
 )
 
-type waitTestCase1 struct {
+type waitWithNamedArgsTestCase struct {
 	*testing.T
+	serviceNetwork    *service_network.MockServiceNetwork
+	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newWaitTestCase1(t *testing.T) *waitTestCase1 {
-	return &waitTestCase1{
-		T: t,
-	}
-}
-
-func (t *waitTestCase1) GetId() string {
-	return wait.WaitBuiltinName
-}
-
-func (t *waitTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	enclaveDb := getEnclaveDBForTest(t.T)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-
-	serviceNetwork.EXPECT().HttpRequestService(
+func (suite *KurtosisPlanInstructionTestSuite) TestWaitWithNamedArgs() {
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		string(waitRecipeTestCaseServiceName),
 		waitRecipePortId,
@@ -81,19 +68,27 @@ func (t *waitTestCase1) GetInstruction() *kurtosis_plan_instruction.KurtosisPlan
 		nil,
 	)
 
-	return wait.NewWait(serviceNetwork, runtimeValueStore)
+	suite.run(&waitWithNamedArgsTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
-func (t *waitTestCase1) GetStarlarkCode() string {
+func (t *waitWithNamedArgsTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return wait.NewWait(t.serviceNetwork, t.runtimeValueStore)
+}
+
+func (t *waitWithNamedArgsTestCase) GetStarlarkCode() string {
 	recipeStr := fmt.Sprintf(`PostHttpRequestRecipe(port_id=%q, endpoint=%q, body=%q, content_type=%q, extract={"key": ".value"})`, waitRecipePortId, waitRecipeEndpoint, waitRecipeBody, waitRecipeContentType)
 	return fmt.Sprintf("%s(%s=%q, %s=%s, %s=%q, %s=%q, %s=%s, %s=%q, %s=%q)", wait.WaitBuiltinName, wait.ServiceNameArgName, waitRecipeTestCaseServiceName, wait.RecipeArgName, recipeStr, wait.ValueFieldArgName, waitValueField, wait.AssertionArgName, waitAssertion, wait.TargetArgName, waitTargetValue, wait.IntervalArgName, waitInterval, wait.TimeoutArgName, waitTimeout)
 }
 
-func (t *waitTestCase1) GetStarlarkCodeForAssertion() string {
+func (t *waitWithNamedArgsTestCase) GetStarlarkCodeForAssertion() string {
 	return ""
 }
 
-func (t *waitTestCase1) Assert(interpretationResult starlark.Value, executionResult *string) {
+func (t *waitWithNamedArgsTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	expectedInterpretationResult := `{"body": "{{kurtosis:[0-9a-f]{32}:body.runtime_value}}", "code": "{{kurtosis:[0-9a-f]{32}:code.runtime_value}}", "extract.key": "{{kurtosis:[0-9a-f]{32}:extract.key.runtime_value}}"}`
 	require.Regexp(t, expectedInterpretationResult, interpretationResult.String())
 

@@ -21,13 +21,8 @@ type getHttpRequestRecipeNoExtractorTestCase struct {
 	runtimeValueStore *runtime_value_store.RuntimeValueStore
 }
 
-func newGetHttpRequestRecipeNoExtractorTestCase(t *testing.T) *getHttpRequestRecipeNoExtractorTestCase {
-	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	require.NoError(t, err)
-
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	serviceNetwork.EXPECT().HttpRequestService(
+func (suite *KurtosisTypeConstructorTestSuite) TestGetHttpRequestRecipeNoExtractor() {
+	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
 		string(TestServiceName),
 		TestPrivatePortId,
@@ -55,15 +50,11 @@ func newGetHttpRequestRecipeNoExtractorTestCase(t *testing.T) *getHttpRequestRec
 		nil,
 	)
 
-	return &getHttpRequestRecipeNoExtractorTestCase{
-		T:                 t,
-		serviceNetwork:    serviceNetwork,
-		runtimeValueStore: runtimeValueStore,
-	}
-}
-
-func (t *getHttpRequestRecipeNoExtractorTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", recipe.GetHttpRecipeTypeName, "no_extractors")
+	suite.run(&getHttpRequestRecipeNoExtractorTestCase{
+		T:                 suite.T(),
+		serviceNetwork:    suite.serviceNetwork,
+		runtimeValueStore: suite.runtimeValueStore,
+	})
 }
 
 func (t *getHttpRequestRecipeNoExtractorTestCase) GetStarlarkCode() string {

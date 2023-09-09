@@ -28,34 +28,30 @@ var (
 type importModuleTestCase struct {
 	*testing.T
 
-	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry
-}
-
-func newImportModuleTestCase(t *testing.T) *importModuleTestCase {
 	// store the cache inside the test object such that we can check its state in Assert()
-	// start with an empty cache to validate it gets populated
-	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{
-		//importModule_fileInModule: startosis_packages.NewPackageCacheEntry(importModule_mockStarlarkModule, nil),
-	}
-	return &importModuleTestCase{
-		T:                 t,
-		moduleGlobalCache: moduleGlobalCache,
-	}
+	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
+	packageContentProvider startosis_packages.PackageContentProvider
 }
 
-func (t *importModuleTestCase) GetId() string {
-	return import_module.ImportModuleBuiltinName
+func (suite *KurtosisHelperTestSuite) TestImportFile() {
+	// start with an empty cache to validate it gets populated
+	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
+
+	suite.packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(kurtosisHelperThreadName, TestModuleFileName).Return(TestModuleFileName, nil)
+
+	suite.run(&importModuleTestCase{
+		T:                      suite.T(),
+		moduleGlobalCache:      moduleGlobalCache,
+		packageContentProvider: suite.packageContentProvider,
+	})
 }
 
 func (t *importModuleTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
-	packageContentProvider := startosis_packages.NewMockPackageContentProvider(t)
-	packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
-	packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(frameworkTestThreadName, TestModuleFileName).Return(TestModuleFileName, nil)
-
 	recursiveInterpret := func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		return importModule_mockStarlarkModule.Members, nil
 	}
-	return import_module.NewImportModule(recursiveInterpret, packageContentProvider, t.moduleGlobalCache)
+	return import_module.NewImportModule(recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache)
 }
 
 func (t *importModuleTestCase) GetStarlarkCode() string {
