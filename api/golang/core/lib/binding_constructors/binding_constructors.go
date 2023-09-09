@@ -379,6 +379,5 @@ func NewConnectServicesArgs(connect kurtosis_core_rpc_api_bindings.Connect) *kur
 }
 
 func NewConnectServicesResponse() *kurtosis_core_rpc_api_bindings.ConnectServicesResponse {
-	return &kurtosis_core_rpc_api_bindings.ConnectServicesResponse{
-	}
+	return &kurtosis_core_rpc_api_bindings.ConnectServicesResponse{}
 }
