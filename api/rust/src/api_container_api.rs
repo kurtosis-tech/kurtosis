@@ -92,9 +92,6 @@ pub struct ServiceInfo {
     #[prost(enumeration = "ServiceStatus", tag = "8")]
     pub service_status: i32,
 }
-/// ==============================================================================================
-///                                Execute Starlark Arguments
-/// ==============================================================================================
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RunStarlarkScriptArgs {
@@ -113,9 +110,6 @@ pub struct RunStarlarkScriptArgs {
     pub main_function_name: ::prost::alloc::string::String,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "6")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
-    /// User services port forwarding.  Defaults to CONNECT
-    #[prost(enumeration = "Connect", optional, tag = "7")]
-    pub connect: ::core::option::Option<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -146,9 +140,6 @@ pub struct RunStarlarkPackageArgs {
     pub main_function_name: ::prost::alloc::string::String,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "11")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
-    /// User services port forwarding.  Defaults to CONNECT
-    #[prost(enumeration = "Connect", optional, tag = "12")]
-    pub connect: ::core::option::Option<i32>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -559,6 +550,15 @@ pub struct FileArtifactContentsFileDescription {
     #[prost(string, optional, tag = "3")]
     pub text_preview: ::core::option::Option<::prost::alloc::string::String>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ConnectServicesArgs {
+    #[prost(enumeration = "Connect", tag = "1")]
+    pub connect: i32,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ConnectServicesResponse {}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ServiceStatus {
@@ -1155,6 +1155,37 @@ pub mod api_container_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        /// User services port forwarding
+        pub async fn connect_services(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ConnectServicesArgs>,
+        ) -> std::result::Result<
+            tonic::Response<super::ConnectServicesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/api_container_api.ApiContainerService/ConnectServices",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "api_container_api.ApiContainerService",
+                        "ConnectServices",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -1281,6 +1312,14 @@ pub mod api_container_service_server {
             request: tonic::Request<super::InspectFilesArtifactContentsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::InspectFilesArtifactContentsResponse>,
+            tonic::Status,
+        >;
+        /// User services port forwarding
+        async fn connect_services(
+            &self,
+            request: tonic::Request<super::ConnectServicesArgs>,
+        ) -> std::result::Result<
+            tonic::Response<super::ConnectServicesResponse>,
             tonic::Status,
         >;
     }
@@ -2027,6 +2066,52 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = InspectFilesArtifactContentsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/api_container_api.ApiContainerService/ConnectServices" => {
+                    #[allow(non_camel_case_types)]
+                    struct ConnectServicesSvc<T: ApiContainerService>(pub Arc<T>);
+                    impl<
+                        T: ApiContainerService,
+                    > tonic::server::UnaryService<super::ConnectServicesArgs>
+                    for ConnectServicesSvc<T> {
+                        type Response = super::ConnectServicesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ConnectServicesArgs>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).connect_services(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ConnectServicesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

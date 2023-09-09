@@ -47,6 +47,9 @@ service ApiContainerService {
   rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (ListFilesArtifactNamesAndUuidsResponse) {}
 
   rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (InspectFilesArtifactContentsResponse) {}
+  
+  // User services port forwarding
+  rpc ConnectServices(ConnectServicesArgs) returns (ConnectServicesResponse) {};
 }
 
 // ==============================================================================================
@@ -133,9 +136,6 @@ message RunStarlarkScriptArgs {
   string main_function_name = 5;
 
   repeated KurtosisFeatureFlag experimental_features = 6;
-
-  // User services port forwarding.  Defaults to CONNECT
-  optional Connect connect = 7;
 }
 
 message RunStarlarkPackageArgs {
@@ -172,9 +172,6 @@ message RunStarlarkPackageArgs {
   string main_function_name = 10;
 
   repeated KurtosisFeatureFlag experimental_features = 11;
-
-  // User services port forwarding.  Defaults to CONNECT
-  optional Connect connect = 12;
 }
 
 enum KurtosisFeatureFlag {
@@ -470,4 +467,15 @@ message FileArtifactContentsFileDescription {
   uint64 size = 2;
   // A bit of text content, if the file allows (similar to UNIX's 'head')
   optional string text_preview = 3;
+}
+
+// ==============================================================================================
+//                               Connect to configure user services port forwarding
+// ==============================================================================================
+
+message ConnectServicesArgs {
+  Connect connect = 1;
+}
+
+message ConnectServicesResponse {
 }

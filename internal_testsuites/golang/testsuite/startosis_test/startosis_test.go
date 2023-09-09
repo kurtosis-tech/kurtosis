@@ -106,7 +106,6 @@ def run(plan, args):
 
 var (
 	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
-	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 func TestStartosis(t *testing.T) {
@@ -124,7 +123,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, startosisScript, greetingsArg, defaultDryRun, defaultParallelism, noExperimentalFeature, connectConnect)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, startosisScript, greetingsArg, defaultDryRun, defaultParallelism, noExperimentalFeature)
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")

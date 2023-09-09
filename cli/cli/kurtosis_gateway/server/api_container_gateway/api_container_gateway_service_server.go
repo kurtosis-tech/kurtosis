@@ -72,7 +72,6 @@ func (service *ApiContainerGatewayServiceServer) RunStarlarkScript(args *kurtosi
 	if err := common.ForwardKurtosisExecutionStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamToReadFrom, streamToWriteTo); err != nil {
 		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user")
 	}
-	service.userServiceConnect = *args.Connect
 	return nil
 }
 
@@ -94,7 +93,6 @@ func (service *ApiContainerGatewayServiceServer) RunStarlarkPackage(args *kurtos
 	if err := common.ForwardKurtosisExecutionStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine](streamToReadFrom, streamToWriteTo); err != nil {
 		return stacktrace.Propagate(err, "Error forwarding stream from Kurtosis core back to the user while executing package '%s'", args.GetPackageId())
 	}
-	service.userServiceConnect = *args.Connect
 	return nil
 }
 
@@ -115,6 +113,17 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 		}
 	}
 
+	return remoteApiContainerResponse, nil
+}
+
+func (service *ApiContainerGatewayServiceServer) ConnectServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ConnectServicesArgs) (*kurtosis_core_rpc_api_bindings.ConnectServicesResponse, error) {
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.ConnectServices(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+	service.userServiceConnect = args.Connect
 	return remoteApiContainerResponse, nil
 }
 

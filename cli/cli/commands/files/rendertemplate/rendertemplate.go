@@ -77,7 +77,6 @@ def run(plan, args):
 
 var (
 	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
-	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -227,7 +226,7 @@ func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.Enc
 		return "", stacktrace.Propagate(err, "An error has occurred when parsing input params to render template Starlark command")
 	}
 	params := fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, params, doNotDryRun, noParallelism, noExperimentalFeature, connectConnect)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, params, doNotDryRun, noParallelism, noExperimentalFeature)
 	if runResult.ExecutionError != nil {
 		return "", stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
 	}

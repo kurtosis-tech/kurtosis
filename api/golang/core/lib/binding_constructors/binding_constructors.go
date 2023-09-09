@@ -39,7 +39,6 @@ func NewRunStarlarkScriptArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
-	connect kurtosis_core_rpc_api_bindings.Connect,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -50,7 +49,6 @@ func NewRunStarlarkScriptArgs(
 		Parallelism:          parallelismCopy,
 		MainFunctionName:     mainFunctionName,
 		ExperimentalFeatures: experimentalFeatures,
-		Connect:              &connect,
 	}
 }
 
@@ -62,7 +60,6 @@ func NewRunStarlarkPackageArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
-	connect kurtosis_core_rpc_api_bindings.Connect,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -77,7 +74,6 @@ func NewRunStarlarkPackageArgs(
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFunctionName,
 		ExperimentalFeatures:   experimentalFeatures,
-		Connect:                &connect,
 	}
 }
 
@@ -89,7 +85,6 @@ func NewRunStarlarkRemotePackageArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
-	connect kurtosis_core_rpc_api_bindings.Connect,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -104,7 +99,6 @@ func NewRunStarlarkRemotePackageArgs(
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFunctionName,
 		ExperimentalFeatures:   experimentalFeatures,
-		Connect:                &connect,
 	}
 }
 
@@ -369,5 +363,22 @@ func NewStoreWebFilesArtifactArgs(url string, name string) *kurtosis_core_rpc_ap
 func DownloadFilesArtifactArgs(fileIdentifier string) *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs {
 	return &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
 		Identifier: fileIdentifier,
+	}
+}
+
+// ==============================================================================================
+//
+//	Connect Services arguments and response to configure user services port forwarding
+//
+// ==============================================================================================
+
+func NewConnectServicesArgs(connect kurtosis_core_rpc_api_bindings.Connect) *kurtosis_core_rpc_api_bindings.ConnectServicesArgs {
+	return &kurtosis_core_rpc_api_bindings.ConnectServicesArgs{
+		Connect: connect,
+	}
+}
+
+func NewConnectServicesResponse() *kurtosis_core_rpc_api_bindings.ConnectServicesResponse {
+	return &kurtosis_core_rpc_api_bindings.ConnectServicesResponse{
 	}
 }

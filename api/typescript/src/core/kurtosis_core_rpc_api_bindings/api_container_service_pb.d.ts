@@ -110,11 +110,6 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   clearExperimentalFeaturesList(): RunStarlarkScriptArgs;
   addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkScriptArgs;
 
-  getConnect(): Connect;
-  setConnect(value: Connect): RunStarlarkScriptArgs;
-  hasConnect(): boolean;
-  clearConnect(): RunStarlarkScriptArgs;
-
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -131,7 +126,6 @@ export namespace RunStarlarkScriptArgs {
     parallelism?: number,
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
-    connect?: Connect,
   }
 
   export enum DryRunCase { 
@@ -142,11 +136,6 @@ export namespace RunStarlarkScriptArgs {
   export enum ParallelismCase { 
     _PARALLELISM_NOT_SET = 0,
     PARALLELISM = 4,
-  }
-
-  export enum ConnectCase { 
-    _CONNECT_NOT_SET = 0,
-    CONNECT = 7,
   }
 }
 
@@ -191,11 +180,6 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   clearExperimentalFeaturesList(): RunStarlarkPackageArgs;
   addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkPackageArgs;
 
-  getConnect(): Connect;
-  setConnect(value: Connect): RunStarlarkPackageArgs;
-  hasConnect(): boolean;
-  clearConnect(): RunStarlarkPackageArgs;
-
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -218,7 +202,6 @@ export namespace RunStarlarkPackageArgs {
     relativePathToMainFile: string,
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
-    connect?: Connect,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -240,11 +223,6 @@ export namespace RunStarlarkPackageArgs {
   export enum ClonePackageCase { 
     _CLONE_PACKAGE_NOT_SET = 0,
     CLONE_PACKAGE = 8,
-  }
-
-  export enum ConnectCase { 
-    _CONNECT_NOT_SET = 0,
-    CONNECT = 12,
   }
 }
 
@@ -1095,6 +1073,38 @@ export namespace FileArtifactContentsFileDescription {
   export enum TextPreviewCase { 
     _TEXT_PREVIEW_NOT_SET = 0,
     TEXT_PREVIEW = 3,
+  }
+}
+
+export class ConnectServicesArgs extends jspb.Message {
+  getConnect(): Connect;
+  setConnect(value: Connect): ConnectServicesArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ConnectServicesArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: ConnectServicesArgs): ConnectServicesArgs.AsObject;
+  static serializeBinaryToWriter(message: ConnectServicesArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ConnectServicesArgs;
+  static deserializeBinaryFromReader(message: ConnectServicesArgs, reader: jspb.BinaryReader): ConnectServicesArgs;
+}
+
+export namespace ConnectServicesArgs {
+  export type AsObject = {
+    connect: Connect,
+  }
+}
+
+export class ConnectServicesResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ConnectServicesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ConnectServicesResponse): ConnectServicesResponse.AsObject;
+  static serializeBinaryToWriter(message: ConnectServicesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ConnectServicesResponse;
+  static deserializeBinaryFromReader(message: ConnectServicesResponse, reader: jspb.BinaryReader): ConnectServicesResponse;
+}
+
+export namespace ConnectServicesResponse {
+  export type AsObject = {
   }
 }
 

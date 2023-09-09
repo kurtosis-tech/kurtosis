@@ -110,7 +110,6 @@ var (
 		serviceAddSpec,
 	)
 	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
-	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -293,7 +292,7 @@ func run(
 	starlarkScript := fmt.Sprintf(`def run(plan):
 	plan.add_service(name = "%s", config = %s)
 `, serviceName, serviceConfigStarlark)
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature, connectConnect)
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}

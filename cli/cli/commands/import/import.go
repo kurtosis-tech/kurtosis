@@ -57,7 +57,6 @@ const (
 	doNotShowFullUuids    = false
 	doNotDryRun           = false
 	noParallelism         = 1
-	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 var ImportCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -298,7 +297,7 @@ func createEnclave(ctx context.Context, kurtosisCtx *kurtosis_context.KurtosisCo
 
 // TODO(victor.colombo): This should be part of the SDK, since we implement this over and over again
 func runStarlark(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, starlarkScript string) error {
-	responseLineChan, cancelFunc, err := enclaveCtx.RunStarlarkScript(ctx, defaultMainFunction, starlarkScript, noStarlarkParams, doNotDryRun, noParallelism, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}, connectConnect)
+	responseLineChan, cancelFunc, err := enclaveCtx.RunStarlarkScript(ctx, defaultMainFunction, starlarkScript, noStarlarkParams, doNotDryRun, noParallelism, []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}

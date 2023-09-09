@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { DownloadFilesArtifactArgs, ExecCommandArgs, ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse, GetServicesArgs, GetServicesResponse, InspectFilesArtifactContentsRequest, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkRunResponseLine, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse, StreamedDataChunk, UploadFilesArtifactResponse, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "./api_container_service_pb.js";
+import { ConnectServicesArgs, ConnectServicesResponse, DownloadFilesArtifactArgs, ExecCommandArgs, ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse, GetServicesArgs, GetServicesResponse, InspectFilesArtifactContentsRequest, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkRunResponseLine, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse, StreamedDataChunk, UploadFilesArtifactResponse, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "./api_container_service_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -160,6 +160,17 @@ export const ApiContainerService = {
       name: "InspectFilesArtifactContents",
       I: InspectFilesArtifactContentsRequest,
       O: InspectFilesArtifactContentsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * User services port forwarding
+     *
+     * @generated from rpc api_container_api.ApiContainerService.ConnectServices
+     */
+    connectServices: {
+      name: "ConnectServices",
+      I: ConnectServicesArgs,
+      O: ConnectServicesResponse,
       kind: MethodKind.Unary,
     },
   }

@@ -87,10 +87,6 @@ export const ServiceInfo = proto3.makeMessageType(
 );
 
 /**
- * ==============================================================================================
- *                               Execute Starlark Arguments
- * ==============================================================================================
- *
  * @generated from message api_container_api.RunStarlarkScriptArgs
  */
 export const RunStarlarkScriptArgs = proto3.makeMessageType(
@@ -102,7 +98,6 @@ export const RunStarlarkScriptArgs = proto3.makeMessageType(
     { no: 4, name: "parallelism", kind: "scalar", T: 5 /* ScalarType.INT32 */, opt: true },
     { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
-    { no: 7, name: "connect", kind: "enum", T: proto3.getEnumType(Connect), opt: true },
   ],
 );
 
@@ -122,7 +117,6 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 9, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 10, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 11, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
-    { no: 12, name: "connect", kind: "enum", T: proto3.getEnumType(Connect), opt: true },
   ],
 );
 
@@ -536,5 +530,23 @@ export const FileArtifactContentsFileDescription = proto3.makeMessageType(
     { no: 2, name: "size", kind: "scalar", T: 4 /* ScalarType.UINT64 */ },
     { no: 3, name: "text_preview", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
+);
+
+/**
+ * @generated from message api_container_api.ConnectServicesArgs
+ */
+export const ConnectServicesArgs = proto3.makeMessageType(
+  "api_container_api.ConnectServicesArgs",
+  () => [
+    { no: 1, name: "connect", kind: "enum", T: proto3.getEnumType(Connect) },
+  ],
+);
+
+/**
+ * @generated from message api_container_api.ConnectServicesResponse
+ */
+export const ConnectServicesResponse = proto3.makeMessageType(
+  "api_container_api.ConnectServicesResponse",
+  [],
 );
 

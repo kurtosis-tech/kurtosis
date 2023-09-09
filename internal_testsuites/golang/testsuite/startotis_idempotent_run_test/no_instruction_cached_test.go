@@ -23,7 +23,6 @@ const (
 
 var (
 	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
-	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 func TestStartosisIdempotentRun_RunSameScriptTwice(t *testing.T) {
@@ -169,7 +168,7 @@ func TestStartosisIdempotentRun_DeactivateInstructionsCaching(t *testing.T) {
 	deactivateInstructionsCaching := []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{
 		kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag_NO_INSTRUCTIONS_CACHING,
 	}
-	run2result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, runFunctionName, scriptToRun, noParams, noDryRun, noParallelism, deactivateInstructionsCaching, connectConnect)
+	run2result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, runFunctionName, scriptToRun, noParams, noDryRun, noParallelism, deactivateInstructionsCaching)
 	require.NoError(t, err)
 
 	require.Nil(t, run2result.InterpretationError)
@@ -183,7 +182,7 @@ func TestStartosisIdempotentRun_DeactivateInstructionsCaching(t *testing.T) {
 }
 
 func mustRunStarlarkScript(t *testing.T, enclaveCtx *enclaves.EnclaveContext, ctx context.Context, script string) string {
-	result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, runFunctionName, script, noParams, noDryRun, noParallelism, noExperimentalFeature, connectConnect)
+	result, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, runFunctionName, script, noParams, noDryRun, noParallelism, noExperimentalFeature)
 	require.NoError(t, err)
 
 	require.Nil(t, result.InterpretationError)

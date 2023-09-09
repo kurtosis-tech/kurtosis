@@ -25,7 +25,6 @@ const (
 
 var (
 	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
-	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 type StartosisPackageTestSuite struct {
@@ -74,6 +73,5 @@ func (suite *StartosisPackageTestSuite) RunPackageWithParams(ctx context.Context
 		defaultDryRun,
 		defaultParallelism,
 		noExperimentalFeature,
-		connectConnect,
 	)
 }

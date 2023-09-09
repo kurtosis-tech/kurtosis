@@ -59,7 +59,6 @@ def run(plan, args):
 
 var (
 	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
-	connectConnect        = kurtosis_core_rpc_api_bindings.Connect_CONNECT
 )
 
 var FilesStoreServiceCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -163,7 +162,7 @@ func storeServiceFileStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.E
 		template = starlarkTemplateWithoutArtifactName
 	}
 	params := fmt.Sprintf(`{"service_name": "%s", "src": "%s", "name": "%s"}`, serviceName, filePath, artifactName)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, params, false, noParallelism, noExperimentalFeature, connectConnect)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, params, false, noParallelism, noExperimentalFeature)
 	if err != nil {
 		return nil, stacktrace.Propagate(
 			err,
