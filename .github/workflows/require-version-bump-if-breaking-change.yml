@@ -18,4 +18,6 @@ jobs:
         with:
           ref: 'main'
           path: 'tmp'
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
       - run: apidiff -m $GITHUB_WORKSPACE/api/golang $GITHUB_WORKSPACE/tmp/api/golang
