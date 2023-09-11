@@ -21,7 +21,7 @@ func CreateRuntimeValueStore(starlarkValueSerde *kurtosis_types.StarlarkValueSer
 		return nil, stacktrace.Propagate(err, "An error occurred getting or creating the service associated values repository")
 	}
 
-	recipeResultRepositoryObj, err := getOrCreateNewRecipeResultRepository(enclaveDb)
+	recipeResultRepositoryObj, err := getOrCreateNewRecipeResultRepository(enclaveDb, starlarkValueSerde)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting or creating the recipe result repository")
 	}
@@ -75,9 +75,6 @@ func (re *RuntimeValueStore) GetOrCreateValueAssociatedWithService(serviceName s
 	return uuid, nil
 }
 
-// SetValue store recipe result values into the runtime value store, and it only accepts comparables of
-// starlark.String, starlark.Int, and starlark.Bool so far, make sure to upgrade the recipe result repository if you
-// want to extend this capability supporting more comparable types
 func (re *RuntimeValueStore) SetValue(uuid string, value map[string]starlark.Comparable) error {
 	if err := re.recipeResultRepository.Save(uuid, value); err != nil {
 		return stacktrace.Propagate(err, "An error occurred saving value '%+v' using UUID key '%s' into the recipe result repository", value, uuid)
@@ -90,8 +87,9 @@ func (re *RuntimeValueStore) GetValue(uuid string) (map[string]starlark.Comparab
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting recipe result value with UUID key '%s'", uuid)
 	}
-	if value == nil {
+	if len(value) == 0 {
 		return nil, stacktrace.NewError("Runtime UUID '%v' was found, but not set", uuid)
 	}
+
 	return value, nil
 }

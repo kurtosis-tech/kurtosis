@@ -8,6 +8,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
@@ -40,7 +41,10 @@ var (
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
 	executor := NewStartosisExecutor(runtimeValueStore)
@@ -81,7 +85,10 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(t, err)
 
 	executor := NewStartosisExecutor(runtimeValueStore)
@@ -123,7 +130,10 @@ instruction2()
 
 func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
 	executor := NewStartosisExecutor(runtimeValueStore)
