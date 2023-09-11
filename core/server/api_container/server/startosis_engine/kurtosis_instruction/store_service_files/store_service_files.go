@@ -14,7 +14,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"golang.org/x/exp/slices"
 )
 
 const (
@@ -134,14 +133,13 @@ func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqua
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
-	instructionType, _, filesArtifactNames, _ := builtin.GetPersistableAttributes()
-	if instructionType != other.Type {
+	if other.Type != StoreServiceFilesBuiltinName {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
 
 	// if artifact names don't match, status is unknown, instructions can't be resolved together
-	if !slices.Equal(other.FilesArtifactNames, filesArtifactNames) {
+	if !other.HasOnlyFilesArtifactName(builtin.artifactName) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
@@ -163,9 +161,13 @@ func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqua
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *StoreServiceFilesCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+func (builtin *StoreServiceFilesCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	// No need for the MD5 here because "store_service_files" is an atomic operation at the service_network level.
 	// Here we just consider that if the service has been updated, we store the file again (b/c it the content might
 	// have changed), otherwise we don't
-	return StoreServiceFilesBuiltinName, []string{}, []string{builtin.artifactName}, [][]byte{}
+	builder.SetType(
+		StoreServiceFilesBuiltinName,
+	).AddFilesArtifact(
+		builtin.artifactName, nil,
+	)
 }

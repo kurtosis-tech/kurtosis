@@ -23,6 +23,8 @@ import (
 )
 
 const (
+	starlarkValueSerdeThreadName = "test-serde-thread"
+
 	enclaveUuid = enclave.EnclaveUUID("enclave-uuid")
 
 	noInputParams = "{}"
@@ -41,7 +43,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	suite.Require().NoError(err)
 
 	thread := &starlark.Thread{
-		Name:       "test-serde-thread",
+		Name:       starlarkValueSerdeThreadName,
 		Print:      nil,
 		Load:       nil,
 		OnMaxSteps: nil,
@@ -436,16 +438,12 @@ func (suite *StartosisInterpreterIdempotentTestSuite) convertInstructionPlanToEn
 	instructionPlanSequence, interpretationErr := instructionPlan.GeneratePlan()
 	suite.Require().Nil(interpretationErr)
 	for _, instruction := range instructionPlanSequence {
-		instructionType, starlarkCode, serviceNames, filesArtifactNames, filesArtifactMd5s := instruction.GetInstruction().GetPersistableAttributes()
-		enclavePlanInstruction := enclave_plan_persistence.NewEnclavePlanInstruction(
+		enclavePlanInstruction, err := instruction.GetInstruction().GetPersistableAttributes().SetUuid(
 			uuid.New().String(),
-			instructionType,
-			starlarkCode,
+		).SetReturnedValue(
 			"None", // the returnedValue does not matter for those tests as we're testing only the interpretation phase
-			serviceNames,
-			filesArtifactNames,
-			filesArtifactMd5s,
-		)
+		).Build()
+		suite.Require().NoError(err)
 		enclavePlan.AppendInstruction(enclavePlanInstruction)
 	}
 	return enclavePlan

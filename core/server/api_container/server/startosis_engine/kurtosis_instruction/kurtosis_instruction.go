@@ -27,12 +27,8 @@ type KurtosisInstruction interface {
 	// TryResolveWith assesses whether the instruction can be resolved with the one passed as an argument.
 	TryResolveWith(other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
 
-	// GetPersistableAttributes returns the instruction attributes that needs to be persisted in the enclave plan
-	// to power idempotent runs. This right now is composed of:
-	// - The instruction type (i.e. add_service, exec, wait, assert, etc)
-	// - The starlark code of the instruction to be able to check for instruction equality
-	// - The list of service names this instruction affects (adds, removes, updates)
-	// - The list of files artifact names this instruction affects (adds, removes, updates)
-	// - Optionally the list of files artifact MD5 this instruction affects, corresponding to the files artifacts names, in order
-	GetPersistableAttributes() (string, string, []string, []string, [][]byte)
+	// GetPersistableAttributes returns an EnclavePlanInstruction object which contains all the persistable attributes
+	// for this instruction. Persistable attributes are what will be written to the enclave database so that even
+	// if the APIC is restarted, idempotent runs will continue to work.
+	GetPersistableAttributes() *enclave_plan_persistence.EnclavePlanInstructionBuilder
 }

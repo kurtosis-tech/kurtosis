@@ -3,6 +3,7 @@ package startosis_engine
 import (
 	"context"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
@@ -162,7 +163,10 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 	instruction.EXPECT().GetCanonicalInstruction(mock.Anything).Maybe().Return(canonicalInstruction)
 	instruction.EXPECT().GetPositionInOriginalScript().Maybe().Return(dummyPosition)
 	instruction.EXPECT().String().Maybe().Return(stringifiedInstruction)
-	instruction.EXPECT().GetPersistableAttributes().Maybe().Return(instructionName, stringifiedInstruction, []string{}, []string{}, [][]byte{})
+	instruction.EXPECT().GetPersistableAttributes().Maybe().Return(
+		enclave_plan_persistence.NewEnclavePlanInstructionBuilder().SetUuid(uuid.New().String()).SetType(instructionName).SetStarlarkCode(stringifiedInstruction).SetReturnedValue("None"),
+		nil,
+	)
 
 	if executeSuccessfully {
 		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil, nil)

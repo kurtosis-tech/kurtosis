@@ -242,8 +242,8 @@ func (builtin *RunShCapabilities) TryResolveWith(instructionsAreEqual bool, _ *e
 	return enclave_structure.InstructionIsUnknown
 }
 
-func (builtin *RunShCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
-	return RunShBuiltinName, []string{}, []string{}, [][]byte{}
+func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(RunShBuiltinName)
 }
 
 func getCommandToRun(builtin *RunShCapabilities) (string, error) {

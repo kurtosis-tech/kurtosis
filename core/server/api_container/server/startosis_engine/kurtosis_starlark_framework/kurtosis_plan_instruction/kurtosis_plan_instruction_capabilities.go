@@ -19,5 +19,7 @@ type KurtosisPlanInstructionCapabilities interface {
 
 	TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
 
-	GetPersistableAttributes() (string, []string, []string, [][]byte)
+	// FillPersistableAttributes adds to the builder the attributes of the instruction that needs to be persisted to the
+	// enclave database to power idempotent runs.
+	FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder)
 }

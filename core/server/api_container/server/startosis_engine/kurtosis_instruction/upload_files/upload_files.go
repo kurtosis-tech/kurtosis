@@ -15,9 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
-	"k8s.io/utils/strings/slices"
 	"os"
 )
 
@@ -169,14 +167,14 @@ func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
-	instructionType, _, filesArtifactNames, filesArtifactMd5s := builtin.GetPersistableAttributes()
-	if instructionType != other.Type {
+
+	if other.Type != UploadFilesBuiltinName {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
 
 	// if artifact names don't match, status is unknown, instructions can't be resolved together
-	if !slices.Equal(filesArtifactNames, other.FilesArtifactNames) {
+	if !other.HasOnlyFilesArtifactName(builtin.artifactName) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
@@ -189,8 +187,7 @@ func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool
 
 	// From here the instructions are equal
 	// If the hash of the files don't match, the instruction needs to be re-run
-	logrus.Warnf("Comparing file hash: '%s' and '%s'", filesArtifactMd5s[0], other.FilesArtifactMd5s[0])
-	if len(filesArtifactMd5s) != 1 || len(other.FilesArtifactMd5s) != 1 || !bytes.Equal(filesArtifactMd5s[0], other.FilesArtifactMd5s[0]) {
+	if !other.HasOnlyFilesArtifactMd5(builtin.filesArtifactMd5) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsUpdated)
 		return enclave_structure.InstructionIsUpdate
 	}
@@ -198,6 +195,10 @@ func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *UploadFilesCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
-	return UploadFilesBuiltinName, []string{}, []string{builtin.artifactName}, [][]byte{builtin.filesArtifactMd5}
+func (builtin *UploadFilesCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(
+		UploadFilesBuiltinName,
+	).AddFilesArtifact(
+		builtin.artifactName, builtin.filesArtifactMd5,
+	)
 }

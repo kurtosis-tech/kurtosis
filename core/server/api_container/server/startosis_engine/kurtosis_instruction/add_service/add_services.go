@@ -219,8 +219,7 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		return enclave_structure.InstructionIsUnknown
 	}
 
-	instructionType, _, _, _ := builtin.GetPersistableAttributes()
-	if instructionType != other.Type {
+	if other.Type != AddServicesBuiltinName {
 		for serviceName := range builtin.serviceConfigs {
 			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsNew)
 		}
@@ -277,12 +276,11 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *AddServicesCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
-	serviceNames := []string{}
+func (builtin *AddServicesCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(AddServicesBuiltinName)
 	for serviceName := range builtin.serviceConfigs {
-		serviceNames = append(serviceNames, string(serviceName))
+		builder.AddServiceName(serviceName)
 	}
-	return AddServicesBuiltinName, serviceNames, []string{}, [][]byte{}
 }
 
 func (builtin *AddServicesCapabilities) removeAllStartedServices(

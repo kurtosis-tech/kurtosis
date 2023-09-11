@@ -16,7 +16,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
-	"k8s.io/utils/strings/slices"
 	"reflect"
 )
 
@@ -168,14 +167,13 @@ func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 		return enclave_structure.InstructionIsUnknown
 	}
 
-	instructionType, serviceNames, _, _ := builtin.GetPersistableAttributes()
-	if instructionType != other.Type {
+	if other.Type != AddServiceBuiltinName {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
 
 	// if service names don't match, status is unknown, instructions can't be resolved together
-	if !slices.Equal(other.ServiceNames, serviceNames) {
+	if !other.HasOnlyServiceName(builtin.serviceName) {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
@@ -203,8 +201,12 @@ func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *AddServiceCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
-	return AddServiceBuiltinName, []string{string(builtin.serviceName)}, []string{}, [][]byte{}
+func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(
+		AddServiceBuiltinName,
+	).AddServiceName(
+		builtin.serviceName,
+	)
 }
 
 func validateAndConvertConfigAndReadyCondition(

@@ -19,7 +19,6 @@ import (
 	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"golang.org/x/exp/slices"
 	"reflect"
 )
 
@@ -138,14 +137,13 @@ func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual 
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
-	instructionType, _, filesArtifactNames, _ := builtin.GetPersistableAttributes()
-	if instructionType != other.Type {
+	if other.Type != RenderTemplatesBuiltinName {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
 
 	// if artifact names don't match, status is unknown, instructions can't be resolved together
-	if !slices.Equal(other.FilesArtifactNames, filesArtifactNames) {
+	if !other.HasOnlyFilesArtifactName(builtin.artifactName) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
@@ -159,11 +157,15 @@ func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual 
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *RenderTemplatesCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+func (builtin *RenderTemplatesCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
 	// technically, we need the MD5 of the files artifact here but because the template is passed in plaintext to the
 	// instruction the check for instruction equality also checks that the content of the artifact is identical.
 	// So we can safely ignore the MD5
-	return RenderTemplatesBuiltinName, []string{}, []string{builtin.artifactName}, [][]byte{}
+	builder.SetType(
+		RenderTemplatesBuiltinName,
+	).AddFilesArtifact(
+		builtin.artifactName, nil,
+	)
 }
 
 func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*render_templates.TemplateData, *startosis_errors.InterpretationError) {

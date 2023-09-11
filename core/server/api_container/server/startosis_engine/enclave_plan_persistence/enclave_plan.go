@@ -47,7 +47,7 @@ func Load(enclaveDb *enclave_db.EnclaveDB) (*EnclavePlan, error) {
 		return nil
 	})
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred reading enclave plan value from enclave databse")
+		return nil, stacktrace.Propagate(err, "An error occurred reading enclave plan value from enclave database")
 	}
 	if persistedEnclavePlanSerializedMaybe == nil {
 		// No enclave plan persisted for this enclave just yet, return an empty plan

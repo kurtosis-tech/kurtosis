@@ -94,6 +94,10 @@ func (builtin *RemoveServiceCapabilities) TryResolveWith(_ bool, _ *enclave_plan
 	return enclave_structure.InstructionIsNotResolvableAbort
 }
 
-func (builtin *RemoveServiceCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
-	return RemoveServiceBuiltinName, []string{}, []string{}, [][]byte{}
+func (builtin *RemoveServiceCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(
+		RemoveServiceBuiltinName,
+	).AddServiceName(
+		builtin.serviceName,
+	)
 }

@@ -91,9 +91,10 @@ func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other *enclave_pl
 	return builtin.capabilities.TryResolveWith(instructionsAreEqual, other, enclaveComponents)
 }
 
-func (builtin *kurtosisPlanInstructionInternal) GetPersistableAttributes() (string, string, []string, []string, [][]byte) {
-	instructionType, serviceNames, filesArtifactNames, filesArtifactMd5s := builtin.capabilities.GetPersistableAttributes()
-	return instructionType, builtin.String(), serviceNames, filesArtifactNames, filesArtifactMd5s
+func (builtin *kurtosisPlanInstructionInternal) GetPersistableAttributes() *enclave_plan_persistence.EnclavePlanInstructionBuilder {
+	enclavePlaneInstructionBuilder := enclave_plan_persistence.NewEnclavePlanInstructionBuilder()
+	builtin.capabilities.FillPersistableAttributes(enclavePlaneInstructionBuilder)
+	return enclavePlaneInstructionBuilder.SetStarlarkCode(builtin.String())
 }
 
 func (builtin *kurtosisPlanInstructionInternal) interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string) (starlark.Value, *startosis_errors.InterpretationError) {

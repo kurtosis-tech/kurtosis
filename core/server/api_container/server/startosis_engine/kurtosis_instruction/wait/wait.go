@@ -285,6 +285,6 @@ func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ *en
 	return enclave_structure.InstructionIsUnknown
 }
 
-func (builtin *WaitCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
-	return WaitBuiltinName, []string{}, []string{}, [][]byte{}
+func (builtin *WaitCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(WaitBuiltinName)
 }

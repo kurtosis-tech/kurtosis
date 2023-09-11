@@ -120,19 +120,16 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					}
 					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr)
 				}
-				// mark the instruction as executed and add it to the current instruction plan
-				instructionType, instructionStarlarkCode, serviceNames, filesArtifactNames, filesArtifactMd5s := scheduledInstruction.GetInstruction().GetPersistableAttributes()
-				executor.enclavePlan.AppendInstruction(
-					enclave_plan_persistence.NewEnclavePlanInstruction(
-						string(scheduledInstruction.GetUuid()),
-						instructionType,
-						instructionStarlarkCode,
-						executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
-						serviceNames,
-						filesArtifactNames,
-						filesArtifactMd5s,
-					),
-				)
+				// add the instruction into the current enclave plan
+				enclavePlanInstruction, err := scheduledInstruction.GetInstruction().GetPersistableAttributes().SetUuid(
+					string(scheduledInstruction.GetUuid()),
+				).SetReturnedValue(
+					executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
+				).Build()
+				if err != nil {
+					sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred persisting instruction (number %d) at %v after it's been executed:\n%v", instructionNumber, instruction.GetPositionInOriginalScript().String(), instruction.String())
+				}
+				executor.enclavePlan.AppendInstruction(enclavePlanInstruction)
 			}
 		}
 
