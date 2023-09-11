@@ -13,10 +13,10 @@ type EnclavePlanInstruction struct {
 
 	FilesArtifactNames []string `json:"filesArtifactNames"`
 
-	FilesArtifactMd5s []string `json:"filesArtifactMd5s"`
+	FilesArtifactMd5s [][]byte `json:"filesArtifactMd5s"` // FSA byte arrays are automatically serialized as base64 encoded strings
 }
 
-func NewEnclavePlanInstruction(uuid string, instructionType string, starlarkCode string, returnedValue string, serviceNames []string, filesArtifactNames []string, filesArtifactMd5s []string) *EnclavePlanInstruction {
+func NewEnclavePlanInstruction(uuid string, instructionType string, starlarkCode string, returnedValue string, serviceNames []string, filesArtifactNames []string, filesArtifactMd5s [][]byte) *EnclavePlanInstruction {
 	return &EnclavePlanInstruction{
 		Uuid:               uuid,
 		Type:               instructionType,

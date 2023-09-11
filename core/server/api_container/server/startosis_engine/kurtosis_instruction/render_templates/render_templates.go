@@ -159,11 +159,11 @@ func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual 
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *RenderTemplatesCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
+func (builtin *RenderTemplatesCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
 	// technically, we need the MD5 of the files artifact here but because the template is passed in plaintext to the
 	// instruction the check for instruction equality also checks that the content of the artifact is identical.
 	// So we can safely ignore the MD5
-	return RenderTemplatesBuiltinName, []string{}, []string{builtin.artifactName}, []string{}
+	return RenderTemplatesBuiltinName, []string{}, []string{builtin.artifactName}, [][]byte{}
 }
 
 func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*render_templates.TemplateData, *startosis_errors.InterpretationError) {

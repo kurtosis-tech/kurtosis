@@ -129,15 +129,15 @@ func (_c *MockKurtosisInstruction_GetCanonicalInstruction_Call) RunAndReturn(run
 }
 
 // GetPersistableAttributes provides a mock function with given fields:
-func (_m *MockKurtosisInstruction) GetPersistableAttributes() (string, string, []string, []string, []string) {
+func (_m *MockKurtosisInstruction) GetPersistableAttributes() (string, string, []string, []string, [][]byte) {
 	ret := _m.Called()
 
 	var r0 string
 	var r1 string
 	var r2 []string
 	var r3 []string
-	var r4 []string
-	if rf, ok := ret.Get(0).(func() (string, string, []string, []string, []string)); ok {
+	var r4 [][]byte
+	if rf, ok := ret.Get(0).(func() (string, string, []string, []string, [][]byte)); ok {
 		return rf()
 	}
 	if rf, ok := ret.Get(0).(func() string); ok {
@@ -168,11 +168,11 @@ func (_m *MockKurtosisInstruction) GetPersistableAttributes() (string, string, [
 		}
 	}
 
-	if rf, ok := ret.Get(4).(func() []string); ok {
+	if rf, ok := ret.Get(4).(func() [][]byte); ok {
 		r4 = rf()
 	} else {
 		if ret.Get(4) != nil {
-			r4 = ret.Get(4).([]string)
+			r4 = ret.Get(4).([][]byte)
 		}
 	}
 
@@ -196,12 +196,12 @@ func (_c *MockKurtosisInstruction_GetPersistableAttributes_Call) Run(run func())
 	return _c
 }
 
-func (_c *MockKurtosisInstruction_GetPersistableAttributes_Call) Return(_a0 string, _a1 string, _a2 []string, _a3 []string, _a4 []string) *MockKurtosisInstruction_GetPersistableAttributes_Call {
+func (_c *MockKurtosisInstruction_GetPersistableAttributes_Call) Return(_a0 string, _a1 string, _a2 []string, _a3 []string, _a4 [][]byte) *MockKurtosisInstruction_GetPersistableAttributes_Call {
 	_c.Call.Return(_a0, _a1, _a2, _a3, _a4)
 	return _c
 }
 
-func (_c *MockKurtosisInstruction_GetPersistableAttributes_Call) RunAndReturn(run func() (string, string, []string, []string, []string)) *MockKurtosisInstruction_GetPersistableAttributes_Call {
+func (_c *MockKurtosisInstruction_GetPersistableAttributes_Call) RunAndReturn(run func() (string, string, []string, []string, [][]byte)) *MockKurtosisInstruction_GetPersistableAttributes_Call {
 	_c.Call.Return(run)
 	return _c
 }

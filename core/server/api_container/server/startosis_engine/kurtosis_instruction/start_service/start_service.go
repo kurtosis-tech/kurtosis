@@ -90,6 +90,6 @@ func (builtin *StartServiceCapabilities) TryResolveWith(_ bool, _ *enclave_plan_
 	return enclave_structure.InstructionIsNotResolvableAbort
 }
 
-func (builtin *StartServiceCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
-	return StartServiceBuiltinName, []string{string(builtin.serviceName)}, []string{}, []string{}
+func (builtin *StartServiceCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+	return StartServiceBuiltinName, []string{string(builtin.serviceName)}, []string{}, [][]byte{}
 }

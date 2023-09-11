@@ -15,6 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"k8s.io/utils/strings/slices"
 	"os"
@@ -188,7 +189,8 @@ func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool
 
 	// From here the instructions are equal
 	// If the hash of the files don't match, the instruction needs to be re-run
-	if !slices.Equal(filesArtifactMd5s, other.FilesArtifactMd5s) {
+	logrus.Warnf("Comparing file hash: '%s' and '%s'", filesArtifactMd5s[0], other.FilesArtifactMd5s[0])
+	if len(filesArtifactMd5s) != 1 || len(other.FilesArtifactMd5s) != 1 || !bytes.Equal(filesArtifactMd5s[0], other.FilesArtifactMd5s[0]) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsUpdated)
 		return enclave_structure.InstructionIsUpdate
 	}
@@ -196,6 +198,6 @@ func (builtin *UploadFilesCapabilities) TryResolveWith(instructionsAreEqual bool
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *UploadFilesCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
-	return UploadFilesBuiltinName, []string{}, []string{builtin.artifactName}, []string{string(builtin.filesArtifactMd5)}
+func (builtin *UploadFilesCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+	return UploadFilesBuiltinName, []string{}, []string{builtin.artifactName}, [][]byte{builtin.filesArtifactMd5}
 }

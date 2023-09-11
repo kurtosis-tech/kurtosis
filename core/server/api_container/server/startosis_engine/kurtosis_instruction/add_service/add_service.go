@@ -203,8 +203,8 @@ func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *AddServiceCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
-	return AddServiceBuiltinName, []string{string(builtin.serviceName)}, []string{}, []string{}
+func (builtin *AddServiceCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+	return AddServiceBuiltinName, []string{string(builtin.serviceName)}, []string{}, [][]byte{}
 }
 
 func validateAndConvertConfigAndReadyCondition(

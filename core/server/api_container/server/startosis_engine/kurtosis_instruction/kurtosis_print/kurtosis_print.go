@@ -96,6 +96,6 @@ func (builtin *PrintCapabilities) TryResolveWith(instructionsAreEqual bool, _ *e
 	return enclave_structure.InstructionIsUnknown
 }
 
-func (builtin *PrintCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
-	return PrintBuiltinName, []string{}, []string{}, []string{}
+func (builtin *PrintCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+	return PrintBuiltinName, []string{}, []string{}, [][]byte{}
 }

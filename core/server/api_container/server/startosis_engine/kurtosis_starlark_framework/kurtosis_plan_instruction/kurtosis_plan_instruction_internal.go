@@ -91,7 +91,7 @@ func (builtin *kurtosisPlanInstructionInternal) TryResolveWith(other *enclave_pl
 	return builtin.capabilities.TryResolveWith(instructionsAreEqual, other, enclaveComponents)
 }
 
-func (builtin *kurtosisPlanInstructionInternal) GetPersistableAttributes() (string, string, []string, []string, []string) {
+func (builtin *kurtosisPlanInstructionInternal) GetPersistableAttributes() (string, string, []string, []string, [][]byte) {
 	instructionType, serviceNames, filesArtifactNames, filesArtifactMd5s := builtin.capabilities.GetPersistableAttributes()
 	return instructionType, builtin.String(), serviceNames, filesArtifactNames, filesArtifactMd5s
 }

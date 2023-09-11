@@ -197,8 +197,8 @@ func (builtin *RequestCapabilities) TryResolveWith(instructionsAreEqual bool, _ 
 	return enclave_structure.InstructionIsUnknown
 }
 
-func (builtin *RequestCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
-	return RequestBuiltinName, []string{}, []string{}, []string{}
+func (builtin *RequestCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+	return RequestBuiltinName, []string{}, []string{}, [][]byte{}
 }
 
 func (builtin *RequestCapabilities) isAcceptableCode(recipeResult map[string]starlark.Comparable) bool {

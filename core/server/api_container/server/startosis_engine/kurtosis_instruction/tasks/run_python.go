@@ -338,8 +338,8 @@ func (builtin *RunPythonCapabilities) TryResolveWith(instructionsAreEqual bool, 
 	return enclave_structure.InstructionIsUnknown
 }
 
-func (builtin *RunPythonCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
-	return RunPythonBuiltinName, []string{}, []string{}, []string{}
+func (builtin *RunPythonCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+	return RunPythonBuiltinName, []string{}, []string{}, [][]byte{}
 }
 
 func setupRequiredPackages(ctx context.Context, builtin *RunPythonCapabilities) (*exec_result.ExecResult, error) {

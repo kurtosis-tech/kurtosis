@@ -162,7 +162,7 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 	instruction.EXPECT().GetCanonicalInstruction(mock.Anything).Maybe().Return(canonicalInstruction)
 	instruction.EXPECT().GetPositionInOriginalScript().Maybe().Return(dummyPosition)
 	instruction.EXPECT().String().Maybe().Return(stringifiedInstruction)
-	instruction.EXPECT().GetPersistableAttributes().Maybe().Return(instructionName, stringifiedInstruction, []string{}, []string{}, []string{})
+	instruction.EXPECT().GetPersistableAttributes().Maybe().Return(instructionName, stringifiedInstruction, []string{}, []string{}, [][]byte{})
 
 	if executeSuccessfully {
 		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil, nil)

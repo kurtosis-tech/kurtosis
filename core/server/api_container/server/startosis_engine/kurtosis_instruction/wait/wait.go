@@ -285,6 +285,6 @@ func (builtin *WaitCapabilities) TryResolveWith(instructionsAreEqual bool, _ *en
 	return enclave_structure.InstructionIsUnknown
 }
 
-func (builtin *WaitCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
-	return WaitBuiltinName, []string{}, []string{}, []string{}
+func (builtin *WaitCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+	return WaitBuiltinName, []string{}, []string{}, [][]byte{}
 }

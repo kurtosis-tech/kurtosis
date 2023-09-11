@@ -151,8 +151,8 @@ func (builtin *AssertCapabilities) TryResolveWith(instructionsAreEqual bool, _ *
 	return enclave_structure.InstructionIsUnknown
 }
 
-func (builtin *AssertCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
-	return AssertBuiltinName, []string{}, []string{}, []string{}
+func (builtin *AssertCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
+	return AssertBuiltinName, []string{}, []string{}, [][]byte{}
 }
 
 // Assert verifies whether the currentValue matches the targetValue w.r.t. the assertion operator

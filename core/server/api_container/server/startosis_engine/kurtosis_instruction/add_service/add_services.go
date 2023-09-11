@@ -277,12 +277,12 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *AddServicesCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
+func (builtin *AddServicesCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
 	serviceNames := []string{}
 	for serviceName := range builtin.serviceConfigs {
 		serviceNames = append(serviceNames, string(serviceName))
 	}
-	return AddServicesBuiltinName, serviceNames, []string{}, []string{}
+	return AddServicesBuiltinName, serviceNames, []string{}, [][]byte{}
 }
 
 func (builtin *AddServicesCapabilities) removeAllStartedServices(

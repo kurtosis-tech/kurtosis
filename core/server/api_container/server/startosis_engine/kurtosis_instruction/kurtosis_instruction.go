@@ -34,5 +34,5 @@ type KurtosisInstruction interface {
 	// - The list of service names this instruction affects (adds, removes, updates)
 	// - The list of files artifact names this instruction affects (adds, removes, updates)
 	// - Optionally the list of files artifact MD5 this instruction affects, corresponding to the files artifacts names, in order
-	GetPersistableAttributes() (string, string, []string, []string, []string)
+	GetPersistableAttributes() (string, string, []string, []string, [][]byte)
 }

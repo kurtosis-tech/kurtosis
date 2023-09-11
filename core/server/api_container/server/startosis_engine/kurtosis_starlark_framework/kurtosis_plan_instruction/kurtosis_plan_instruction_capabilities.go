@@ -19,5 +19,5 @@ type KurtosisPlanInstructionCapabilities interface {
 
 	TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
 
-	GetPersistableAttributes() (string, []string, []string, []string)
+	GetPersistableAttributes() (string, []string, []string, [][]byte)
 }

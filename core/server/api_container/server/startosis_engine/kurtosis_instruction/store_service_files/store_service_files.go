@@ -163,9 +163,9 @@ func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqua
 	return enclave_structure.InstructionIsEqual
 }
 
-func (builtin *StoreServiceFilesCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
+func (builtin *StoreServiceFilesCapabilities) GetPersistableAttributes() (string, []string, []string, [][]byte) {
 	// No need for the MD5 here because "store_service_files" is an atomic operation at the service_network level.
 	// Here we just consider that if the service has been updated, we store the file again (b/c it the content might
 	// have changed), otherwise we don't
-	return StoreServiceFilesBuiltinName, []string{}, []string{builtin.artifactName}, []string{}
+	return StoreServiceFilesBuiltinName, []string{}, []string{builtin.artifactName}, [][]byte{}
 }
