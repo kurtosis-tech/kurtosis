@@ -1,45 +1,90 @@
 
-<img src="./logo.png" width="1200">
+<img src="./readme-static-files/logo.png" width="1200">
 
 ----
 
 What is Kurtosis?
 =================
-[Kurtosis](https://www.kurtosis.com) is a platform for packaging and launching environments of containerized services (distributed applications) with a focus on approachability for the average developer. What Docker did for shipping binaries, Kurtosis aims to do even easier for distributed applications. 
+[Kurtosis](https://www.kurtosis.com) is a platform for packaging and launching environments of containerized services ("distributed applications") with a focus on approachability for the average developer. What Docker did for shipping binaries, Kurtosis aims to do even better for distributed applications. 
 
 Kurtosis is formed of:
 
-- A configuration language for declaring a distributed application as code with Python syntax ([Starlark](https://github.com/google/starlark-go/blob/master/doc/spec.md))
-- A packaging system, for reusing and sharing distributed application components
-- A runtime that makes a Kurtosis app Just Work on Docker and Kubernetes, locally or in the cloud
-- A set of tools to make working with distributed applications easier (e.g. log aggregation, automatic port forwarding, easy file download, etc.)
+- A language for declaring distributed application in Python syntax ([Starlark](https://github.com/google/starlark-go/blob/master/doc/spec.md))
+- A packaging system for sharing and reusing distributed application components
+- A runtime that makes a Kurtosis app Just Work, independent of whether it's running on Docker or Kubernetes, local or in the cloud
+- A set of tools to ease common distributed app development needs (e.g. a log aggregator to ease log-diving, automatic port-forwarding to ease connectivity, a `kurtosis service shell` command to ease container filesystem exploration, etc.)
 
 Why should I use Kurtosis?
 ==========================
-Kurtosis shines when creating and destroying self-contained environments of distributed applications. We've seen this functionality most useful when:
+Kurtosis shines when creating, working with, and destroying self-contained distributed application environments. Currently, our users report this to be most useful when:
 
 - You're developing on your application and you need to rapidly iterate on it
 - You want to try someone's containerized service or distributed application on your local machine
 - You want to spin up your distributed application in ephemeral environments as part of your integration tests
 - You want to ad-hoc test your application on a big cloud cluster
-- You're the author of a containerized service or distributed application and you want to give your users a one-liner to play with it
+- You're the author of a containerized service or distributed application and you want to give your users a one-liner to try it
 - You want to get an instance of your application running in the cloud without being a Kubernetes expert
+
+If you're in web3, we have even more specific web3 usecases [here](https://web3.kurtosis.com).
 
 How do I get going?
 ===================
+To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install).
 
-Why Kurtosis over Compose, Helmm, Terraform, etc.?
-==================================================
+Then, run the [Redis voting app Kurtosis package](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app):
+
+```bash
+kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
+```
+
+<img src="./readme-static-files/redis-voting-app-run-output.png">
+
+Finally, open the `http` link printed in the last line in your browser.
+
+If you have an issue or feature request, we'd love to hear about it through one of the following:
+
+- [Asking for help on our Discord server][discord]
+- Filing an issue on our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) (which can also be done via `kurtosis feedback --bug` or `kurtosis feedback --feature`)
+- [Messaging us on Twitter][twitter]
+
+### Going further
+
+To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis] or one of these packages:
+
+- [Ethereum](https://github.com/kurtosis-tech/eth2-package): A fully functional private Ethereum network in Kurtosis, with parameters for MEV and any client combination.
+- [DIVE](https://github.com/HugoByte/DIVE): A CLI + Kurtosis package by [Hugobyte](https://hugobyte.com) for the ICON ecosystem that can spin up EVM, Cosmos, or JVM networks with a bridge between them.
+- [NEAR](https://github.com/kurtosis-tech/near-package): A private NEAR network in Kurtosis.
+
+To learn about how to write Kurtosis packages, check out our [quickstart][quickstart-reference].
+
+To read about how Kurtosis works, see [our documentation][docs].
+
+To see where we're going with the product, check out the roadmap [here](https://github.com/kurtosis-tech/kurtosis/wiki/Short%E2%80%90term-Roadmap).
+
+Why Kurtosis over Compose, Helm, Terraform, etc.?
+=================================================
+These tools have been around for over a decade, yet most developers still struggle to build distributed applications. Why? In a sentence: building distributed applications is hard, and these tools don't make it easy enough for the average developer.
+
+Some of our observations:
+
+- No tool works across the whole software lifecycle: Compose is good at quick local environments and bad at Prod environments, while Helm and Terraform are the opposite. This often means a dedicated DevOps team handles Prod deployment, leading to the same "throw it across the wall" problems the DevOps movement was founded around.
+- Compose, Helm, and Terraform all struggle to do sequential "first this, then this" logic necessary for many prototyping workflows.
+- All three are difficult to make DRY through sharing and reuse.
+- All three tend to leave resources hanging around that the developer needs to manually clean up.
+- Compose and Helm tend to favor "run it and see what happens" over validation & error-checking, resulting in long dev and debug cycles.
+- A surprising number of developers don't understand how Docker works, and [most don't understand Kubernetes or Terraform][stackoverflow-2022-developer-survey--other-tools].
+
 Here's what our users tell us they like about Kurtosis:
 
 - **It's understandable:** you write code in Python syntax, and you get your distributed application the other side. Variables and functions keep your code DRY.
-- **It's portable:** you can start with your application on your local Docker, and in seconds get the same thing on your friend's laptop or a Kubernetes cluster in the cloud.
-- **It can handle imperative dependencies:** for example, "generate these files, then use them when starting this service".
-- **It abstracts away complexity while being configurable:** instantiating a distributed application is as simple as calling its function with the parameters you want. For example, instantiating a Postgres package with modified username and password:
+- **It's portable:** your application runs with a one-liner independent of where you run it. You can build your application on your local Docker, and in seconds get the same thing on your friend's laptop or a Kubernetes cluster in the cloud.
+- **It can handle sequential dependencies:** for example, "first generate these files, then use them when starting a service".
+- **It's reliable and reproducible:** Kurtosis started as a testing tool and is built to be safe: deterministic execution order, validation to catch errors before runtime, built-in support for inter-service dependencies and readiness checks, etc. Your distributed app should spin up the same way, every time.
+- **It abstracts away complexity while being configurable:** instantiating a distributed application is as simple as calling its function with the parameters you want. For example, instantiating a Postgres server with modified username and password:
 
   On the CLI...
   ```bash
-  kurtosis run github.com/kurtosis-tech/postgres-package '{"username": "bobmarley", "password": "buffalosoldier"}'
+  kurtosis run github.com/kurtosis-tech/postgres-package '{"user": "bobmarley", "password": "buffalosoldier"}'
   ```
 
   Inside an environment definition...
@@ -47,101 +92,8 @@ Here's what our users tell us they like about Kurtosis:
   postgres = import_module("github.com/kurtosis-tech/postgres-package/main.star")
 
   def run(plan):
-    postgres.run(plan, username = "bobmarley", password = "buffalosoldier")
+    postgres.run(plan, user = "bobmarley", password = "buffalosoldier")
   ```
-- **It's fast:** most Kurtosis packages spin up in seconds.
-
-Why did you build Kurtosis?
-===========================
-TODO
-- Saw lots of people wrestlign with teh same "distributed systems are hard and complex" problem (k8s, even Docker & Docker Compose)
-- BUT, the world is basically all distributed!
-- Saw opportunity for developers to talk in a tool that's relevant to thm
-- Saw inefficien
-
-
-
-Kurtosis is most useful for building and interacting with private testnets for layer 1 blockchains, and is extensible to include any associated infrastructure that can be containerized.
-
-1. :memo: Engineers write _environment definitions_ to describe how their system should be set up 
-2. :wrench: Kurtosis interprets those _environment definitions_ to build an isolated, ephemeral environment
-3. 🏠 Engineers get a reproducible, composable, and portable environment for all their testing and development needs
-
-Why should I use Kurtosis?
-==========================
-Kurtosis is valuable to blockchain infrastructure developers because, when compared to alternatives, our _environment definitions_ are:
-* 🧱 **Modular** - parts of the system can be combined or be taken apart at the container level
-* ✏️ **Easy to write** - we know `.yaml` doesn't cut it, so we use a Python dialect called Starlark, written and used by Google ([Bazel](https://bazel.build/)) and Meta ([Buck](https://buck2.build/))
-* 🪜 **Sequential** - catering to the specific node-bootstrapping needs of blockchains
-* 📈 **Scale-able** - operate at any scale you need, limited only by the underlying hardware
-* 🔌 **Integratable** - plug & play integration with your existing infrastructure & made to be built on top of
-* ♻️ **Reproducable** - Completely deterministic and idempotent: given the same inputs, the system will start up the exact same way, every time
-* 🆓 **Open source** - Kurtosis is transparent and will be free, forever
-
-Still curious?
-==============
-* Kurtosis Web3 use cases [here](https://web3.kurtosis.com).
-* Learn about "why Kurtosis?" [here](https://docs.kurtosis.com/#why-use-kurtosis).
-* To read about the architecture, go [here](https://docs.kurtosis.com/explanations/architecture).
-* To get a peek at where we're going with the product, check out the roadmap [here](https://github.com/kurtosis-tech/kurtosis/wiki/Short%E2%80%90term-Roadmap).
-* For real examples, go [here](https://github.com/kurtosis-tech/awesome-kurtosis)
-
-Kurtosis Kloud Early Access
-===========================
-
-If you're looking to run Kurtosis environments on the cloud, look no further! 
-We're excited to launch an early access offering for Kurtosis Kloud. Once you [sign up](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H), we'll reach out to you with the next steps.
-
-Running Kurtosis
-================
-
-### Install
-
-Follow the instructions [here](https://docs.kurtosis.com/install).
-
-### Run
-Kurtosis create ephemeral multi-container environments called [enclaves][enclave] using [Starlark](https://docs.kurtosis.com/concepts-reference/starlark). These can be bundled together into [packages](https://docs.kurtosis.com/concepts-reference/packages). Let's run one now:
-
-```bash
-kurtosis run github.com/kurtosis-tech/awesome-kurtosis/redis-voting-app
-```
-
-```console
-INFO[2023-03-28T15:27:31-03:00] Creating a new enclave for Starlark to run inside...
-INFO[2023-03-28T15:27:34-03:00] Enclave 'nameless-fjord' created successfully
-
-> print msg="Spinning up the Redis Package"
-Spinning up the Redis Package
-
-> add_service service_name="redis" config=ServiceConfig(image="redis:alpine", ports={"client": PortSpec(number=6379, transport_protocol="TCP")})
-Service 'redis' added with service UUID '3ca8b4c1c8344b2c96be1b988ba12a02'
-
-> add_service service_name="voting-app" config=ServiceConfig(image="mcr.microsoft.com/azuredocs/azure-vote-front:v1", ports={"http": PortSpec(number=80, transport_protocol="TCP")}, env_vars={"REDIS": "{{kurtosis:5045f2098e4846b88efefbf2689b5538:hostname.runtime_value}}"})
-Service 'voting-app' added with service UUID '8a8c18860df1440ca7bdc96fd511fb2a'
-
-Starlark code successfully run. No output was returned.
-INFO[2023-03-28T15:28:08-03:00] =======================================================
-INFO[2023-03-28T15:28:08-03:00] ||          Created enclave: nameless-fjord          ||
-INFO[2023-03-28T15:28:08-03:00] =======================================================
-Name:            nameless-fjord
-UUID:            6babc3090ad0
-Status:          RUNNING
-Creation Time:   Tue, 28 Mar 2023 15:27:31 -03
-
-========================================= Files Artifacts =========================================
-UUID   Name
-
-========================================== User Services ==========================================
-UUID           Name         Ports                                 Status
-3ca8b4c1c834   redis        client: 6379/tcp -> 127.0.0.1:58508   RUNNING
-8a8c18860df1   voting-app   http: 80/tcp -> 127.0.0.1:58511       RUNNING
-```
-
-If this piqued your interest, you might like our [quickstart][quickstart-reference].
-
-### More Examples
-
-Further examples can be found in our [`awesome-kurtosis` repo][awesome-kurtosis].
 
 Contributing to Kurtosis
 ========================
@@ -327,25 +279,6 @@ kurtosis enclave add
 
 </details>
 
-
-Featured Community Packages
---------------------
-
-- [DIVE](https://github.com/HugoByte/DIVE): A Kurtosis package for the ICON ecosystem including an ICON node and an Ethereum node. Developed and maintained by [Hugobyte](https://hugobyte.com)
-
-
-Community and support
-=====================
-
-Kurtosis is a free and source-available product maintained by the [Kurtosis][kurtosis-tech] team. We'd love to hear from you and help where we can. You can engage with our team and our community in the following ways:
-
-- Giving feedback via the `kurtosis feedback` command
-- Filing an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose)
-- [Joining our Discord server][discord]
-- [Following us on Twitter][twitter]
-- Emailing us via the CLI: `kurtosis feedback --email`
-- [Hop on a call to chat with us](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding)
-
 <!-------- ONLY LINKS BELOW THIS POINT -------->
 [enclave]: https://docs.kurtosis.com/explanations/architecture#enclaves
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis#readme
@@ -355,3 +288,4 @@ Kurtosis is a free and source-available product maintained by the [Kurtosis][kur
 [docs]: https://docs.kurtosis.com
 [twitter]: https://twitter.com/KurtosisTech
 [starlark-explanation]: https://docs.kurtosis.com/explanations/starlark
+[stackoverflow-2022-developer-survey--other-tools]: https://survey.stackoverflow.co/2022/#most-popular-technologies-tools-tech-prof
