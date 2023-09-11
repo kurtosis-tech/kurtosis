@@ -4,15 +4,13 @@ sidebar_label: run
 slug: /run
 ---
 
-Kurtosis can be used to run a Starlark script or a [runnable package](../concepts-reference/packages.md) in an enclave.
+Kurtosis can be used to run a Starlark script or a [runnable package](../concepts-reference/packages.md) inside an enclave. 
 
 A single Starlark script can be ran with:
 
 ```bash
 kurtosis run script.star
 ```
-
-Adding the `--dry-run` flag will print the changes without executing them.
 
 A [Kurtosis package](../concepts-reference/packages.md) on your local machine can be run with:
 
@@ -38,7 +36,10 @@ Package behaviour can be customized by passing in JSON-serialized arguments when
 For example, if your package's `run` function looks like this...
 
 ```python
-def run(plan, some_parameter, some_other_parameter="Default value"):
+def run(plan, 
+        some_parameter, 
+        some_other_parameter="Default value"
+        ):
 ```
 
 ...then you can pass in values for `some_parameter` and `some_other_parameter` like so:
@@ -71,9 +72,15 @@ kurtosis run github.com/USERNAME/REPO '{"some_parameter": {"_kurtosis_parser": "
 ```python
 run(plan, some_parameter = struct(some_property = "Property value"))
 ```
-:::
 
-### Extra Configuration
+### Using Idempotent Runs
+Kurtosis supports idempotent runs by default. This means that Kurtosis will optimize each run of a Starlark script or package based on what has already been run in a given enclave, reducing execution time and resources. In other words, if you run the same Starlark script or package twice, Kurtosis will only apply the differences on the 2nd run. 
+
+To use idempotent runs, you must run your Starlark script or package on the *same* enclave for Kurtosis to apply the differences using the [`--enclave` flag](#extra-configuration-and-flags) (i.e. `kurtosis run script.star --enclave $THE_ENCLAVE_IDENTIFIER `. If you run your Starlark script or package without this `--enclave` flag, Kurtosis will instead spin up a brand new enclave for you.
+
+To learn more about what idempotent runs are, go [here](../concepts-reference/idempotent-runs.md) and for more details on how Kurtosis handles idempotent runs under the hood, go [here](../explanations/how-do-idempotent-runs-work.md).
+
+### Extra Configuration and Flags
 
 `kurtosis run` has additional flags that can further modify its behaviour:
 
@@ -89,7 +96,7 @@ run(plan, some_parameter = struct(some_property = "Property value"))
    ```bash
    kurtosis run main.star --main-function-name start_node
    ```
-
+   
    Where `start_node` is a function defined in `main.star` like so:
    ```python
    # --------------- main.star --------------------
@@ -99,22 +106,20 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 1. The `--main-file` flag sets the main file in which Kurtosis looks for the main function defined via the `--main-function-name` flag. This can be thought of as the entrypoint file. This flag takes a filepath **relative to the package's root**, and defaults to `main.star`. For example, if your package is `github.com/my-org/my-package` but your main file is located in subdirectories like `github.com/my-org/my-package/src/internal/my-file.star`, you should set this flag like `--main-file src/internal/my-file.star`.
 
    Example of using the `--main-function-name` flag
-
+   
    For example, to run the `start_node` function in a `main.star` file, simple use:
    ```bash
    kurtosis run main.star --main-function-name start_node
    ```
-
+   
    Where `start_node` is a function defined in `main.star` like so:
-
+   
    ```python
    # main.star code
    def start_node(plan,args):
        # your code
    ```
 1. The `--production` flag can be used to make sure services restart in case of failure (default behavior is not restart)
-
-1. The `--no-connect` flag can be used to disable user services port forwarding (default behavior is to forward the ports)
 
 1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
 
