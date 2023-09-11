@@ -2,6 +2,8 @@ import {ok, err, Result, Err} from "neverthrow";
 import type {ClientReadableStream, ServiceError} from "@grpc/grpc-js";
 import * as google_protobuf_empty_pb from "google-protobuf/google/protobuf/empty_pb";
 import {
+    ConnectServicesArgs,
+    ConnectServicesResponse,
     DataChunkMetadata,
     DownloadFilesArtifactArgs,
     ExecCommandArgs,
@@ -320,5 +322,29 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
         const hasher = crypto.createHash(HASH_ALGORITHM)
         hasher.update(data)
         return hasher.digest(HASH_ENCODING)
+    }
+
+    public async connectServices(connectServicesArgs: ConnectServicesArgs): Promise<Result<ConnectServicesResponse, Error>> {
+        const promiseGetServices: Promise<Result<ConnectServicesResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.connectServices(connectServicesArgs, (error: ServiceError | null, response?: ConnectServicesResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const resultConnectServices: Result<ConnectServicesResponse, Error> = await promiseGetServices;
+        if (resultConnectServices.isErr()) {
+            return err(resultConnectServices.error);
+        }
+
+        const connectServicesResponse = resultConnectServices.value;
+        return ok(connectServicesResponse)
     }
 }

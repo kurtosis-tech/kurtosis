@@ -70,6 +70,55 @@ func (ServiceStatus) EnumDescriptor() ([]byte, []int) {
 	return file_api_container_service_proto_rawDescGZIP(), []int{0}
 }
 
+// User services port forwarding
+type Connect int32
+
+const (
+	// Best effort port forwarding
+	Connect_CONNECT Connect = 0
+	// Port forwarding disabled
+	Connect_NO_CONNECT Connect = 1
+)
+
+// Enum value maps for Connect.
+var (
+	Connect_name = map[int32]string{
+		0: "CONNECT",
+		1: "NO_CONNECT",
+	}
+	Connect_value = map[string]int32{
+		"CONNECT":    0,
+		"NO_CONNECT": 1,
+	}
+)
+
+func (x Connect) Enum() *Connect {
+	p := new(Connect)
+	*p = x
+	return p
+}
+
+func (x Connect) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (Connect) Descriptor() protoreflect.EnumDescriptor {
+	return file_api_container_service_proto_enumTypes[1].Descriptor()
+}
+
+func (Connect) Type() protoreflect.EnumType {
+	return &file_api_container_service_proto_enumTypes[1]
+}
+
+func (x Connect) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use Connect.Descriptor instead.
+func (Connect) EnumDescriptor() ([]byte, []int) {
+	return file_api_container_service_proto_rawDescGZIP(), []int{1}
+}
+
 type KurtosisFeatureFlag int32
 
 const (
@@ -97,11 +146,11 @@ func (x KurtosisFeatureFlag) String() string {
 }
 
 func (KurtosisFeatureFlag) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_container_service_proto_enumTypes[1].Descriptor()
+	return file_api_container_service_proto_enumTypes[2].Descriptor()
 }
 
 func (KurtosisFeatureFlag) Type() protoreflect.EnumType {
-	return &file_api_container_service_proto_enumTypes[1]
+	return &file_api_container_service_proto_enumTypes[2]
 }
 
 func (x KurtosisFeatureFlag) Number() protoreflect.EnumNumber {
@@ -110,7 +159,7 @@ func (x KurtosisFeatureFlag) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use KurtosisFeatureFlag.Descriptor instead.
 func (KurtosisFeatureFlag) EnumDescriptor() ([]byte, []int) {
-	return file_api_container_service_proto_rawDescGZIP(), []int{1}
+	return file_api_container_service_proto_rawDescGZIP(), []int{2}
 }
 
 type Port_TransportProtocol int32
@@ -146,11 +195,11 @@ func (x Port_TransportProtocol) String() string {
 }
 
 func (Port_TransportProtocol) Descriptor() protoreflect.EnumDescriptor {
-	return file_api_container_service_proto_enumTypes[2].Descriptor()
+	return file_api_container_service_proto_enumTypes[3].Descriptor()
 }
 
 func (Port_TransportProtocol) Type() protoreflect.EnumType {
-	return &file_api_container_service_proto_enumTypes[2]
+	return &file_api_container_service_proto_enumTypes[3]
 }
 
 func (x Port_TransportProtocol) Number() protoreflect.EnumNumber {
@@ -357,11 +406,6 @@ func (x *ServiceInfo) GetServiceStatus() ServiceStatus {
 	return ServiceStatus_STOPPED
 }
 
-// ==============================================================================================
-//
-//	Execute Starlark Arguments
-//
-// ==============================================================================================
 type RunStarlarkScriptArgs struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -2685,6 +2729,91 @@ func (x *FileArtifactContentsFileDescription) GetTextPreview() string {
 	return ""
 }
 
+type ConnectServicesArgs struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Connect Connect `protobuf:"varint,1,opt,name=connect,proto3,enum=api_container_api.Connect" json:"connect,omitempty"`
+}
+
+func (x *ConnectServicesArgs) Reset() {
+	*x = ConnectServicesArgs{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_container_service_proto_msgTypes[37]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConnectServicesArgs) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectServicesArgs) ProtoMessage() {}
+
+func (x *ConnectServicesArgs) ProtoReflect() protoreflect.Message {
+	mi := &file_api_container_service_proto_msgTypes[37]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectServicesArgs.ProtoReflect.Descriptor instead.
+func (*ConnectServicesArgs) Descriptor() ([]byte, []int) {
+	return file_api_container_service_proto_rawDescGZIP(), []int{37}
+}
+
+func (x *ConnectServicesArgs) GetConnect() Connect {
+	if x != nil {
+		return x.Connect
+	}
+	return Connect_CONNECT
+}
+
+type ConnectServicesResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+}
+
+func (x *ConnectServicesResponse) Reset() {
+	*x = ConnectServicesResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_api_container_service_proto_msgTypes[38]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *ConnectServicesResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ConnectServicesResponse) ProtoMessage() {}
+
+func (x *ConnectServicesResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_api_container_service_proto_msgTypes[38]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ConnectServicesResponse.ProtoReflect.Descriptor instead.
+func (*ConnectServicesResponse) Descriptor() ([]byte, []int) {
+	return file_api_container_service_proto_rawDescGZIP(), []int{38}
+}
+
 var File_api_container_service_proto protoreflect.FileDescriptor
 
 var file_api_container_service_proto_rawDesc = []byte{
@@ -3107,13 +3236,22 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x70, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x48, 0x00, 0x52,
 	0x0b, 0x74, 0x65, 0x78, 0x74, 0x50, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77, 0x88, 0x01, 0x01, 0x42,
 	0x0f, 0x0a, 0x0d, 0x5f, 0x74, 0x65, 0x78, 0x74, 0x5f, 0x70, 0x72, 0x65, 0x76, 0x69, 0x65, 0x77,
-	0x2a, 0x36, 0x0a, 0x0d, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75,
-	0x73, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x54, 0x4f, 0x50, 0x50, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b,
-	0x0a, 0x07, 0x52, 0x55, 0x4e, 0x4e, 0x49, 0x4e, 0x47, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x55,
-	0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x02, 0x2a, 0x32, 0x0a, 0x13, 0x4b, 0x75, 0x72, 0x74,
+	0x22, 0x4b, 0x0a, 0x13, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69,
+	0x63, 0x65, 0x73, 0x41, 0x72, 0x67, 0x73, 0x12, 0x34, 0x0a, 0x07, 0x63, 0x6f, 0x6e, 0x6e, 0x65,
+	0x63, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x1a, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63,
+	0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6e,
+	0x6e, 0x65, 0x63, 0x74, 0x52, 0x07, 0x63, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x22, 0x19, 0x0a,
+	0x17, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73,
+	0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x2a, 0x36, 0x0a, 0x0d, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x53, 0x74, 0x61, 0x74, 0x75, 0x73, 0x12, 0x0b, 0x0a, 0x07, 0x53, 0x54, 0x4f,
+	0x50, 0x50, 0x45, 0x44, 0x10, 0x00, 0x12, 0x0b, 0x0a, 0x07, 0x52, 0x55, 0x4e, 0x4e, 0x49, 0x4e,
+	0x47, 0x10, 0x01, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x02,
+	0x2a, 0x26, 0x0a, 0x07, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x12, 0x0b, 0x0a, 0x07, 0x43,
+	0x4f, 0x4e, 0x4e, 0x45, 0x43, 0x54, 0x10, 0x00, 0x12, 0x0e, 0x0a, 0x0a, 0x4e, 0x4f, 0x5f, 0x43,
+	0x4f, 0x4e, 0x4e, 0x45, 0x43, 0x54, 0x10, 0x01, 0x2a, 0x32, 0x0a, 0x13, 0x4b, 0x75, 0x72, 0x74,
 	0x6f, 0x73, 0x69, 0x73, 0x46, 0x65, 0x61, 0x74, 0x75, 0x72, 0x65, 0x46, 0x6c, 0x61, 0x67, 0x12,
 	0x1b, 0x0a, 0x17, 0x4e, 0x4f, 0x5f, 0x49, 0x4e, 0x53, 0x54, 0x52, 0x55, 0x43, 0x54, 0x49, 0x4f,
-	0x4e, 0x53, 0x5f, 0x43, 0x41, 0x43, 0x48, 0x49, 0x4e, 0x47, 0x10, 0x00, 0x32, 0x8e, 0x0d, 0x0a,
+	0x4e, 0x53, 0x5f, 0x43, 0x41, 0x43, 0x48, 0x49, 0x4e, 0x47, 0x10, 0x00, 0x32, 0xf7, 0x0d, 0x0a,
 	0x13, 0x41, 0x70, 0x69, 0x43, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x53, 0x65, 0x72,
 	0x76, 0x69, 0x63, 0x65, 0x12, 0x6d, 0x0a, 0x11, 0x52, 0x75, 0x6e, 0x53, 0x74, 0x61, 0x72, 0x6c,
 	0x61, 0x72, 0x6b, 0x53, 0x63, 0x72, 0x69, 0x70, 0x74, 0x12, 0x28, 0x2e, 0x61, 0x70, 0x69, 0x5f,
@@ -3218,13 +3356,20 @@ var file_api_container_service_proto_rawDesc = []byte{
 	0x73, 0x74, 0x1a, 0x37, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e,
 	0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x49, 0x6e, 0x73, 0x70, 0x65, 0x63, 0x74, 0x46, 0x69,
 	0x6c, 0x65, 0x73, 0x41, 0x72, 0x74, 0x69, 0x66, 0x61, 0x63, 0x74, 0x43, 0x6f, 0x6e, 0x74, 0x65,
-	0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x52, 0x5a,
-	0x50, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62, 0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x75, 0x72, 0x74,
-	0x6f, 0x73, 0x69, 0x73, 0x2d, 0x74, 0x65, 0x63, 0x68, 0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73,
-	0x69, 0x73, 0x2f, 0x61, 0x70, 0x69, 0x2f, 0x67, 0x6f, 0x6c, 0x61, 0x6e, 0x67, 0x2f, 0x63, 0x6f,
-	0x72, 0x65, 0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x5f, 0x63, 0x6f, 0x72, 0x65,
-	0x5f, 0x72, 0x70, 0x63, 0x5f, 0x61, 0x70, 0x69, 0x5f, 0x62, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67,
-	0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
+	0x6e, 0x74, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x12, 0x67, 0x0a,
+	0x0f, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73,
+	0x12, 0x26, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63, 0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72,
+	0x5f, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6e, 0x6e, 0x65, 0x63, 0x74, 0x53, 0x65, 0x72, 0x76,
+	0x69, 0x63, 0x65, 0x73, 0x41, 0x72, 0x67, 0x73, 0x1a, 0x2a, 0x2e, 0x61, 0x70, 0x69, 0x5f, 0x63,
+	0x6f, 0x6e, 0x74, 0x61, 0x69, 0x6e, 0x65, 0x72, 0x5f, 0x61, 0x70, 0x69, 0x2e, 0x43, 0x6f, 0x6e,
+	0x6e, 0x65, 0x63, 0x74, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x73, 0x52, 0x65, 0x73, 0x70,
+	0x6f, 0x6e, 0x73, 0x65, 0x22, 0x00, 0x42, 0x52, 0x5a, 0x50, 0x67, 0x69, 0x74, 0x68, 0x75, 0x62,
+	0x2e, 0x63, 0x6f, 0x6d, 0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x2d, 0x74, 0x65,
+	0x63, 0x68, 0x2f, 0x6b, 0x75, 0x72, 0x74, 0x6f, 0x73, 0x69, 0x73, 0x2f, 0x61, 0x70, 0x69, 0x2f,
+	0x67, 0x6f, 0x6c, 0x61, 0x6e, 0x67, 0x2f, 0x63, 0x6f, 0x72, 0x65, 0x2f, 0x6b, 0x75, 0x72, 0x74,
+	0x6f, 0x73, 0x69, 0x73, 0x5f, 0x63, 0x6f, 0x72, 0x65, 0x5f, 0x72, 0x70, 0x63, 0x5f, 0x61, 0x70,
+	0x69, 0x5f, 0x62, 0x69, 0x6e, 0x64, 0x69, 0x6e, 0x67, 0x73, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74,
+	0x6f, 0x33,
 }
 
 var (
@@ -3239,116 +3384,122 @@ func file_api_container_service_proto_rawDescGZIP() []byte {
 	return file_api_container_service_proto_rawDescData
 }
 
-var file_api_container_service_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_api_container_service_proto_msgTypes = make([]protoimpl.MessageInfo, 41)
+var file_api_container_service_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
+var file_api_container_service_proto_msgTypes = make([]protoimpl.MessageInfo, 43)
 var file_api_container_service_proto_goTypes = []interface{}{
 	(ServiceStatus)(0),                                         // 0: api_container_api.ServiceStatus
-	(KurtosisFeatureFlag)(0),                                   // 1: api_container_api.KurtosisFeatureFlag
-	(Port_TransportProtocol)(0),                                // 2: api_container_api.Port.TransportProtocol
-	(*Port)(nil),                                               // 3: api_container_api.Port
-	(*ServiceInfo)(nil),                                        // 4: api_container_api.ServiceInfo
-	(*RunStarlarkScriptArgs)(nil),                              // 5: api_container_api.RunStarlarkScriptArgs
-	(*RunStarlarkPackageArgs)(nil),                             // 6: api_container_api.RunStarlarkPackageArgs
-	(*StarlarkRunResponseLine)(nil),                            // 7: api_container_api.StarlarkRunResponseLine
-	(*StarlarkWarning)(nil),                                    // 8: api_container_api.StarlarkWarning
-	(*StarlarkInstruction)(nil),                                // 9: api_container_api.StarlarkInstruction
-	(*StarlarkInstructionResult)(nil),                          // 10: api_container_api.StarlarkInstructionResult
-	(*StarlarkInstructionArg)(nil),                             // 11: api_container_api.StarlarkInstructionArg
-	(*StarlarkInstructionPosition)(nil),                        // 12: api_container_api.StarlarkInstructionPosition
-	(*StarlarkError)(nil),                                      // 13: api_container_api.StarlarkError
-	(*StarlarkInterpretationError)(nil),                        // 14: api_container_api.StarlarkInterpretationError
-	(*StarlarkValidationError)(nil),                            // 15: api_container_api.StarlarkValidationError
-	(*StarlarkExecutionError)(nil),                             // 16: api_container_api.StarlarkExecutionError
-	(*StarlarkRunProgress)(nil),                                // 17: api_container_api.StarlarkRunProgress
-	(*StarlarkRunFinishedEvent)(nil),                           // 18: api_container_api.StarlarkRunFinishedEvent
-	(*GetServicesArgs)(nil),                                    // 19: api_container_api.GetServicesArgs
-	(*GetServicesResponse)(nil),                                // 20: api_container_api.GetServicesResponse
-	(*ServiceIdentifiers)(nil),                                 // 21: api_container_api.ServiceIdentifiers
-	(*GetExistingAndHistoricalServiceIdentifiersResponse)(nil), // 22: api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
-	(*ExecCommandArgs)(nil),                                    // 23: api_container_api.ExecCommandArgs
-	(*ExecCommandResponse)(nil),                                // 24: api_container_api.ExecCommandResponse
-	(*WaitForHttpGetEndpointAvailabilityArgs)(nil),             // 25: api_container_api.WaitForHttpGetEndpointAvailabilityArgs
-	(*WaitForHttpPostEndpointAvailabilityArgs)(nil),            // 26: api_container_api.WaitForHttpPostEndpointAvailabilityArgs
-	(*StreamedDataChunk)(nil),                                  // 27: api_container_api.StreamedDataChunk
-	(*DataChunkMetadata)(nil),                                  // 28: api_container_api.DataChunkMetadata
-	(*UploadFilesArtifactResponse)(nil),                        // 29: api_container_api.UploadFilesArtifactResponse
-	(*DownloadFilesArtifactArgs)(nil),                          // 30: api_container_api.DownloadFilesArtifactArgs
-	(*StoreWebFilesArtifactArgs)(nil),                          // 31: api_container_api.StoreWebFilesArtifactArgs
-	(*StoreWebFilesArtifactResponse)(nil),                      // 32: api_container_api.StoreWebFilesArtifactResponse
-	(*StoreFilesArtifactFromServiceArgs)(nil),                  // 33: api_container_api.StoreFilesArtifactFromServiceArgs
-	(*StoreFilesArtifactFromServiceResponse)(nil),              // 34: api_container_api.StoreFilesArtifactFromServiceResponse
-	(*FilesArtifactNameAndUuid)(nil),                           // 35: api_container_api.FilesArtifactNameAndUuid
-	(*ListFilesArtifactNamesAndUuidsResponse)(nil),             // 36: api_container_api.ListFilesArtifactNamesAndUuidsResponse
-	(*InspectFilesArtifactContentsRequest)(nil),                // 37: api_container_api.InspectFilesArtifactContentsRequest
-	(*InspectFilesArtifactContentsResponse)(nil),               // 38: api_container_api.InspectFilesArtifactContentsResponse
-	(*FileArtifactContentsFileDescription)(nil),                // 39: api_container_api.FileArtifactContentsFileDescription
-	nil,                   // 40: api_container_api.ServiceInfo.PrivatePortsEntry
-	nil,                   // 41: api_container_api.ServiceInfo.MaybePublicPortsEntry
-	nil,                   // 42: api_container_api.GetServicesArgs.ServiceIdentifiersEntry
-	nil,                   // 43: api_container_api.GetServicesResponse.ServiceInfoEntry
-	(*emptypb.Empty)(nil), // 44: google.protobuf.Empty
+	(Connect)(0),                                               // 1: api_container_api.Connect
+	(KurtosisFeatureFlag)(0),                                   // 2: api_container_api.KurtosisFeatureFlag
+	(Port_TransportProtocol)(0),                                // 3: api_container_api.Port.TransportProtocol
+	(*Port)(nil),                                               // 4: api_container_api.Port
+	(*ServiceInfo)(nil),                                        // 5: api_container_api.ServiceInfo
+	(*RunStarlarkScriptArgs)(nil),                              // 6: api_container_api.RunStarlarkScriptArgs
+	(*RunStarlarkPackageArgs)(nil),                             // 7: api_container_api.RunStarlarkPackageArgs
+	(*StarlarkRunResponseLine)(nil),                            // 8: api_container_api.StarlarkRunResponseLine
+	(*StarlarkWarning)(nil),                                    // 9: api_container_api.StarlarkWarning
+	(*StarlarkInstruction)(nil),                                // 10: api_container_api.StarlarkInstruction
+	(*StarlarkInstructionResult)(nil),                          // 11: api_container_api.StarlarkInstructionResult
+	(*StarlarkInstructionArg)(nil),                             // 12: api_container_api.StarlarkInstructionArg
+	(*StarlarkInstructionPosition)(nil),                        // 13: api_container_api.StarlarkInstructionPosition
+	(*StarlarkError)(nil),                                      // 14: api_container_api.StarlarkError
+	(*StarlarkInterpretationError)(nil),                        // 15: api_container_api.StarlarkInterpretationError
+	(*StarlarkValidationError)(nil),                            // 16: api_container_api.StarlarkValidationError
+	(*StarlarkExecutionError)(nil),                             // 17: api_container_api.StarlarkExecutionError
+	(*StarlarkRunProgress)(nil),                                // 18: api_container_api.StarlarkRunProgress
+	(*StarlarkRunFinishedEvent)(nil),                           // 19: api_container_api.StarlarkRunFinishedEvent
+	(*GetServicesArgs)(nil),                                    // 20: api_container_api.GetServicesArgs
+	(*GetServicesResponse)(nil),                                // 21: api_container_api.GetServicesResponse
+	(*ServiceIdentifiers)(nil),                                 // 22: api_container_api.ServiceIdentifiers
+	(*GetExistingAndHistoricalServiceIdentifiersResponse)(nil), // 23: api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
+	(*ExecCommandArgs)(nil),                                    // 24: api_container_api.ExecCommandArgs
+	(*ExecCommandResponse)(nil),                                // 25: api_container_api.ExecCommandResponse
+	(*WaitForHttpGetEndpointAvailabilityArgs)(nil),             // 26: api_container_api.WaitForHttpGetEndpointAvailabilityArgs
+	(*WaitForHttpPostEndpointAvailabilityArgs)(nil),            // 27: api_container_api.WaitForHttpPostEndpointAvailabilityArgs
+	(*StreamedDataChunk)(nil),                                  // 28: api_container_api.StreamedDataChunk
+	(*DataChunkMetadata)(nil),                                  // 29: api_container_api.DataChunkMetadata
+	(*UploadFilesArtifactResponse)(nil),                        // 30: api_container_api.UploadFilesArtifactResponse
+	(*DownloadFilesArtifactArgs)(nil),                          // 31: api_container_api.DownloadFilesArtifactArgs
+	(*StoreWebFilesArtifactArgs)(nil),                          // 32: api_container_api.StoreWebFilesArtifactArgs
+	(*StoreWebFilesArtifactResponse)(nil),                      // 33: api_container_api.StoreWebFilesArtifactResponse
+	(*StoreFilesArtifactFromServiceArgs)(nil),                  // 34: api_container_api.StoreFilesArtifactFromServiceArgs
+	(*StoreFilesArtifactFromServiceResponse)(nil),              // 35: api_container_api.StoreFilesArtifactFromServiceResponse
+	(*FilesArtifactNameAndUuid)(nil),                           // 36: api_container_api.FilesArtifactNameAndUuid
+	(*ListFilesArtifactNamesAndUuidsResponse)(nil),             // 37: api_container_api.ListFilesArtifactNamesAndUuidsResponse
+	(*InspectFilesArtifactContentsRequest)(nil),                // 38: api_container_api.InspectFilesArtifactContentsRequest
+	(*InspectFilesArtifactContentsResponse)(nil),               // 39: api_container_api.InspectFilesArtifactContentsResponse
+	(*FileArtifactContentsFileDescription)(nil),                // 40: api_container_api.FileArtifactContentsFileDescription
+	(*ConnectServicesArgs)(nil),                                // 41: api_container_api.ConnectServicesArgs
+	(*ConnectServicesResponse)(nil),                            // 42: api_container_api.ConnectServicesResponse
+	nil,                                                        // 43: api_container_api.ServiceInfo.PrivatePortsEntry
+	nil,                                                        // 44: api_container_api.ServiceInfo.MaybePublicPortsEntry
+	nil,                                                        // 45: api_container_api.GetServicesArgs.ServiceIdentifiersEntry
+	nil,                                                        // 46: api_container_api.GetServicesResponse.ServiceInfoEntry
+	(*emptypb.Empty)(nil),                                      // 47: google.protobuf.Empty
 }
 var file_api_container_service_proto_depIdxs = []int32{
-	2,  // 0: api_container_api.Port.transport_protocol:type_name -> api_container_api.Port.TransportProtocol
-	40, // 1: api_container_api.ServiceInfo.private_ports:type_name -> api_container_api.ServiceInfo.PrivatePortsEntry
-	41, // 2: api_container_api.ServiceInfo.maybe_public_ports:type_name -> api_container_api.ServiceInfo.MaybePublicPortsEntry
+	3,  // 0: api_container_api.Port.transport_protocol:type_name -> api_container_api.Port.TransportProtocol
+	43, // 1: api_container_api.ServiceInfo.private_ports:type_name -> api_container_api.ServiceInfo.PrivatePortsEntry
+	44, // 2: api_container_api.ServiceInfo.maybe_public_ports:type_name -> api_container_api.ServiceInfo.MaybePublicPortsEntry
 	0,  // 3: api_container_api.ServiceInfo.service_status:type_name -> api_container_api.ServiceStatus
-	1,  // 4: api_container_api.RunStarlarkScriptArgs.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
-	1,  // 5: api_container_api.RunStarlarkPackageArgs.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
-	9,  // 6: api_container_api.StarlarkRunResponseLine.instruction:type_name -> api_container_api.StarlarkInstruction
-	13, // 7: api_container_api.StarlarkRunResponseLine.error:type_name -> api_container_api.StarlarkError
-	17, // 8: api_container_api.StarlarkRunResponseLine.progress_info:type_name -> api_container_api.StarlarkRunProgress
-	10, // 9: api_container_api.StarlarkRunResponseLine.instruction_result:type_name -> api_container_api.StarlarkInstructionResult
-	18, // 10: api_container_api.StarlarkRunResponseLine.run_finished_event:type_name -> api_container_api.StarlarkRunFinishedEvent
-	8,  // 11: api_container_api.StarlarkRunResponseLine.warning:type_name -> api_container_api.StarlarkWarning
-	12, // 12: api_container_api.StarlarkInstruction.position:type_name -> api_container_api.StarlarkInstructionPosition
-	11, // 13: api_container_api.StarlarkInstruction.arguments:type_name -> api_container_api.StarlarkInstructionArg
-	14, // 14: api_container_api.StarlarkError.interpretation_error:type_name -> api_container_api.StarlarkInterpretationError
-	15, // 15: api_container_api.StarlarkError.validation_error:type_name -> api_container_api.StarlarkValidationError
-	16, // 16: api_container_api.StarlarkError.execution_error:type_name -> api_container_api.StarlarkExecutionError
-	42, // 17: api_container_api.GetServicesArgs.service_identifiers:type_name -> api_container_api.GetServicesArgs.ServiceIdentifiersEntry
-	43, // 18: api_container_api.GetServicesResponse.service_info:type_name -> api_container_api.GetServicesResponse.ServiceInfoEntry
-	21, // 19: api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse.allIdentifiers:type_name -> api_container_api.ServiceIdentifiers
-	28, // 20: api_container_api.StreamedDataChunk.metadata:type_name -> api_container_api.DataChunkMetadata
-	35, // 21: api_container_api.ListFilesArtifactNamesAndUuidsResponse.file_names_and_uuids:type_name -> api_container_api.FilesArtifactNameAndUuid
-	35, // 22: api_container_api.InspectFilesArtifactContentsRequest.file_names_and_uuid:type_name -> api_container_api.FilesArtifactNameAndUuid
-	39, // 23: api_container_api.InspectFilesArtifactContentsResponse.file_descriptions:type_name -> api_container_api.FileArtifactContentsFileDescription
-	3,  // 24: api_container_api.ServiceInfo.PrivatePortsEntry.value:type_name -> api_container_api.Port
-	3,  // 25: api_container_api.ServiceInfo.MaybePublicPortsEntry.value:type_name -> api_container_api.Port
-	4,  // 26: api_container_api.GetServicesResponse.ServiceInfoEntry.value:type_name -> api_container_api.ServiceInfo
-	5,  // 27: api_container_api.ApiContainerService.RunStarlarkScript:input_type -> api_container_api.RunStarlarkScriptArgs
-	27, // 28: api_container_api.ApiContainerService.UploadStarlarkPackage:input_type -> api_container_api.StreamedDataChunk
-	6,  // 29: api_container_api.ApiContainerService.RunStarlarkPackage:input_type -> api_container_api.RunStarlarkPackageArgs
-	19, // 30: api_container_api.ApiContainerService.GetServices:input_type -> api_container_api.GetServicesArgs
-	44, // 31: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:input_type -> google.protobuf.Empty
-	23, // 32: api_container_api.ApiContainerService.ExecCommand:input_type -> api_container_api.ExecCommandArgs
-	25, // 33: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:input_type -> api_container_api.WaitForHttpGetEndpointAvailabilityArgs
-	26, // 34: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:input_type -> api_container_api.WaitForHttpPostEndpointAvailabilityArgs
-	27, // 35: api_container_api.ApiContainerService.UploadFilesArtifact:input_type -> api_container_api.StreamedDataChunk
-	30, // 36: api_container_api.ApiContainerService.DownloadFilesArtifact:input_type -> api_container_api.DownloadFilesArtifactArgs
-	31, // 37: api_container_api.ApiContainerService.StoreWebFilesArtifact:input_type -> api_container_api.StoreWebFilesArtifactArgs
-	33, // 38: api_container_api.ApiContainerService.StoreFilesArtifactFromService:input_type -> api_container_api.StoreFilesArtifactFromServiceArgs
-	44, // 39: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:input_type -> google.protobuf.Empty
-	37, // 40: api_container_api.ApiContainerService.InspectFilesArtifactContents:input_type -> api_container_api.InspectFilesArtifactContentsRequest
-	7,  // 41: api_container_api.ApiContainerService.RunStarlarkScript:output_type -> api_container_api.StarlarkRunResponseLine
-	44, // 42: api_container_api.ApiContainerService.UploadStarlarkPackage:output_type -> google.protobuf.Empty
-	7,  // 43: api_container_api.ApiContainerService.RunStarlarkPackage:output_type -> api_container_api.StarlarkRunResponseLine
-	20, // 44: api_container_api.ApiContainerService.GetServices:output_type -> api_container_api.GetServicesResponse
-	22, // 45: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:output_type -> api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
-	24, // 46: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
-	44, // 47: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:output_type -> google.protobuf.Empty
-	44, // 48: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:output_type -> google.protobuf.Empty
-	29, // 49: api_container_api.ApiContainerService.UploadFilesArtifact:output_type -> api_container_api.UploadFilesArtifactResponse
-	27, // 50: api_container_api.ApiContainerService.DownloadFilesArtifact:output_type -> api_container_api.StreamedDataChunk
-	32, // 51: api_container_api.ApiContainerService.StoreWebFilesArtifact:output_type -> api_container_api.StoreWebFilesArtifactResponse
-	34, // 52: api_container_api.ApiContainerService.StoreFilesArtifactFromService:output_type -> api_container_api.StoreFilesArtifactFromServiceResponse
-	36, // 53: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:output_type -> api_container_api.ListFilesArtifactNamesAndUuidsResponse
-	38, // 54: api_container_api.ApiContainerService.InspectFilesArtifactContents:output_type -> api_container_api.InspectFilesArtifactContentsResponse
-	41, // [41:55] is the sub-list for method output_type
-	27, // [27:41] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	2,  // 4: api_container_api.RunStarlarkScriptArgs.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
+	2,  // 5: api_container_api.RunStarlarkPackageArgs.experimental_features:type_name -> api_container_api.KurtosisFeatureFlag
+	10, // 6: api_container_api.StarlarkRunResponseLine.instruction:type_name -> api_container_api.StarlarkInstruction
+	14, // 7: api_container_api.StarlarkRunResponseLine.error:type_name -> api_container_api.StarlarkError
+	18, // 8: api_container_api.StarlarkRunResponseLine.progress_info:type_name -> api_container_api.StarlarkRunProgress
+	11, // 9: api_container_api.StarlarkRunResponseLine.instruction_result:type_name -> api_container_api.StarlarkInstructionResult
+	19, // 10: api_container_api.StarlarkRunResponseLine.run_finished_event:type_name -> api_container_api.StarlarkRunFinishedEvent
+	9,  // 11: api_container_api.StarlarkRunResponseLine.warning:type_name -> api_container_api.StarlarkWarning
+	13, // 12: api_container_api.StarlarkInstruction.position:type_name -> api_container_api.StarlarkInstructionPosition
+	12, // 13: api_container_api.StarlarkInstruction.arguments:type_name -> api_container_api.StarlarkInstructionArg
+	15, // 14: api_container_api.StarlarkError.interpretation_error:type_name -> api_container_api.StarlarkInterpretationError
+	16, // 15: api_container_api.StarlarkError.validation_error:type_name -> api_container_api.StarlarkValidationError
+	17, // 16: api_container_api.StarlarkError.execution_error:type_name -> api_container_api.StarlarkExecutionError
+	45, // 17: api_container_api.GetServicesArgs.service_identifiers:type_name -> api_container_api.GetServicesArgs.ServiceIdentifiersEntry
+	46, // 18: api_container_api.GetServicesResponse.service_info:type_name -> api_container_api.GetServicesResponse.ServiceInfoEntry
+	22, // 19: api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse.allIdentifiers:type_name -> api_container_api.ServiceIdentifiers
+	29, // 20: api_container_api.StreamedDataChunk.metadata:type_name -> api_container_api.DataChunkMetadata
+	36, // 21: api_container_api.ListFilesArtifactNamesAndUuidsResponse.file_names_and_uuids:type_name -> api_container_api.FilesArtifactNameAndUuid
+	36, // 22: api_container_api.InspectFilesArtifactContentsRequest.file_names_and_uuid:type_name -> api_container_api.FilesArtifactNameAndUuid
+	40, // 23: api_container_api.InspectFilesArtifactContentsResponse.file_descriptions:type_name -> api_container_api.FileArtifactContentsFileDescription
+	1,  // 24: api_container_api.ConnectServicesArgs.connect:type_name -> api_container_api.Connect
+	4,  // 25: api_container_api.ServiceInfo.PrivatePortsEntry.value:type_name -> api_container_api.Port
+	4,  // 26: api_container_api.ServiceInfo.MaybePublicPortsEntry.value:type_name -> api_container_api.Port
+	5,  // 27: api_container_api.GetServicesResponse.ServiceInfoEntry.value:type_name -> api_container_api.ServiceInfo
+	6,  // 28: api_container_api.ApiContainerService.RunStarlarkScript:input_type -> api_container_api.RunStarlarkScriptArgs
+	28, // 29: api_container_api.ApiContainerService.UploadStarlarkPackage:input_type -> api_container_api.StreamedDataChunk
+	7,  // 30: api_container_api.ApiContainerService.RunStarlarkPackage:input_type -> api_container_api.RunStarlarkPackageArgs
+	20, // 31: api_container_api.ApiContainerService.GetServices:input_type -> api_container_api.GetServicesArgs
+	47, // 32: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:input_type -> google.protobuf.Empty
+	24, // 33: api_container_api.ApiContainerService.ExecCommand:input_type -> api_container_api.ExecCommandArgs
+	26, // 34: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:input_type -> api_container_api.WaitForHttpGetEndpointAvailabilityArgs
+	27, // 35: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:input_type -> api_container_api.WaitForHttpPostEndpointAvailabilityArgs
+	28, // 36: api_container_api.ApiContainerService.UploadFilesArtifact:input_type -> api_container_api.StreamedDataChunk
+	31, // 37: api_container_api.ApiContainerService.DownloadFilesArtifact:input_type -> api_container_api.DownloadFilesArtifactArgs
+	32, // 38: api_container_api.ApiContainerService.StoreWebFilesArtifact:input_type -> api_container_api.StoreWebFilesArtifactArgs
+	34, // 39: api_container_api.ApiContainerService.StoreFilesArtifactFromService:input_type -> api_container_api.StoreFilesArtifactFromServiceArgs
+	47, // 40: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:input_type -> google.protobuf.Empty
+	38, // 41: api_container_api.ApiContainerService.InspectFilesArtifactContents:input_type -> api_container_api.InspectFilesArtifactContentsRequest
+	41, // 42: api_container_api.ApiContainerService.ConnectServices:input_type -> api_container_api.ConnectServicesArgs
+	8,  // 43: api_container_api.ApiContainerService.RunStarlarkScript:output_type -> api_container_api.StarlarkRunResponseLine
+	47, // 44: api_container_api.ApiContainerService.UploadStarlarkPackage:output_type -> google.protobuf.Empty
+	8,  // 45: api_container_api.ApiContainerService.RunStarlarkPackage:output_type -> api_container_api.StarlarkRunResponseLine
+	21, // 46: api_container_api.ApiContainerService.GetServices:output_type -> api_container_api.GetServicesResponse
+	23, // 47: api_container_api.ApiContainerService.GetExistingAndHistoricalServiceIdentifiers:output_type -> api_container_api.GetExistingAndHistoricalServiceIdentifiersResponse
+	25, // 48: api_container_api.ApiContainerService.ExecCommand:output_type -> api_container_api.ExecCommandResponse
+	47, // 49: api_container_api.ApiContainerService.WaitForHttpGetEndpointAvailability:output_type -> google.protobuf.Empty
+	47, // 50: api_container_api.ApiContainerService.WaitForHttpPostEndpointAvailability:output_type -> google.protobuf.Empty
+	30, // 51: api_container_api.ApiContainerService.UploadFilesArtifact:output_type -> api_container_api.UploadFilesArtifactResponse
+	28, // 52: api_container_api.ApiContainerService.DownloadFilesArtifact:output_type -> api_container_api.StreamedDataChunk
+	33, // 53: api_container_api.ApiContainerService.StoreWebFilesArtifact:output_type -> api_container_api.StoreWebFilesArtifactResponse
+	35, // 54: api_container_api.ApiContainerService.StoreFilesArtifactFromService:output_type -> api_container_api.StoreFilesArtifactFromServiceResponse
+	37, // 55: api_container_api.ApiContainerService.ListFilesArtifactNamesAndUuids:output_type -> api_container_api.ListFilesArtifactNamesAndUuidsResponse
+	39, // 56: api_container_api.ApiContainerService.InspectFilesArtifactContents:output_type -> api_container_api.InspectFilesArtifactContentsResponse
+	42, // 57: api_container_api.ApiContainerService.ConnectServices:output_type -> api_container_api.ConnectServicesResponse
+	43, // [43:58] is the sub-list for method output_type
+	28, // [28:43] is the sub-list for method input_type
+	28, // [28:28] is the sub-list for extension type_name
+	28, // [28:28] is the sub-list for extension extendee
+	0,  // [0:28] is the sub-list for field type_name
 }
 
 func init() { file_api_container_service_proto_init() }
@@ -3801,6 +3952,30 @@ func file_api_container_service_proto_init() {
 				return nil
 			}
 		}
+		file_api_container_service_proto_msgTypes[37].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConnectServicesArgs); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_api_container_service_proto_msgTypes[38].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*ConnectServicesResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
 	}
 	file_api_container_service_proto_msgTypes[2].OneofWrappers = []interface{}{}
 	file_api_container_service_proto_msgTypes[3].OneofWrappers = []interface{}{
@@ -3828,8 +4003,8 @@ func file_api_container_service_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_api_container_service_proto_rawDesc,
-			NumEnums:      3,
-			NumMessages:   41,
+			NumEnums:      4,
+			NumMessages:   43,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -39,8 +39,6 @@ type StartosisInterpreterIdempotentTestSuite struct {
 func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
 	enclaveDb := getEnclaveDBForTest(suite.T())
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
-	suite.Require().NoError(err)
 
 	thread := &starlark.Thread{
 		Name:       starlarkValueSerdeThreadName,
@@ -56,6 +54,9 @@ func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 		port_spec.PortSpecTypeName:     starlark.NewBuiltin(port_spec.PortSpecTypeName, port_spec.NewPortSpecType().CreateBuiltin()),
 	}
 	starlarkValueSerde := kurtosis_types.NewStarlarkValueSerde(thread, starlarkEnv)
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(starlarkValueSerde, enclaveDb)
+	require.NoError(suite.T(), err)
 
 	serviceNetwork := service_network.NewMockServiceNetwork(suite.T())
 	serviceNetwork.EXPECT().GetApiContainerInfo().Maybe().Return(

@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/kurtosis_print"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/remove_service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/store_service_files"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
@@ -62,7 +63,10 @@ type StartosisInterpreterTestSuite struct {
 func (suite *StartosisInterpreterTestSuite) SetupTest() {
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
 	enclaveDb := getEnclaveDBForTest(suite.T())
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(suite.T(), err)
 	suite.runtimeValueStore = runtimeValueStore
 	suite.serviceNetwork = service_network.NewMockServiceNetwork(suite.T())
