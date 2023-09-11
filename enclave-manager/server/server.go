@@ -164,6 +164,7 @@ func (c *WebServer) GetServiceLogs(
 	}
 
 	for engineClient.Receive() {
+		logrus.Infof("ENGINE CLIENT RECEIVE: %v", engineClient.Receive())
 		select {
 		case <-ctx.Done():
 			logrus.Debug("Closing the engine client after receiving abort signal from the client")
@@ -175,11 +176,15 @@ func (c *WebServer) GetServiceLogs(
 			return nil
 		default:
 			resp := engineClient.Msg()
+			logrus.Infof("ENGINE CLIENT MSG: %v", resp)
 			errWhileSending := str.Send(resp)
 			if errWhileSending != nil {
 				return errWhileSending
 			}
 		}
+	}
+	if engineClient.Err() != nil {
+		return engineClient.Err()
 	}
 
 	return nil
