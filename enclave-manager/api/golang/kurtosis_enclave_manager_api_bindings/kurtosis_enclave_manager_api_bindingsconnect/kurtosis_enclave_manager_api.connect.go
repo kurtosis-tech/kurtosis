@@ -61,6 +61,9 @@ const (
 	// KurtosisEnclaveManagerServerInspectFilesArtifactContentsProcedure is the fully-qualified name of
 	// the KurtosisEnclaveManagerServer's InspectFilesArtifactContents RPC.
 	KurtosisEnclaveManagerServerInspectFilesArtifactContentsProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/InspectFilesArtifactContents"
+	// KurtosisEnclaveManagerServerDestroyEnclaveProcedure is the fully-qualified name of the
+	// KurtosisEnclaveManagerServer's DestroyEnclave RPC.
+	KurtosisEnclaveManagerServerDestroyEnclaveProcedure = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/DestroyEnclave"
 )
 
 // KurtosisEnclaveManagerServerClient is a client for the
@@ -74,6 +77,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest]) (*connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine], error)
 	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
 	InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error)
+	DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerClient constructs a client for the
@@ -127,6 +131,11 @@ func NewKurtosisEnclaveManagerServerClient(httpClient connect.HTTPClient, baseUR
 			baseURL+KurtosisEnclaveManagerServerInspectFilesArtifactContentsProcedure,
 			opts...,
 		),
+		destroyEnclave: connect.NewClient[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisEnclaveManagerServerDestroyEnclaveProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -140,6 +149,7 @@ type kurtosisEnclaveManagerServerClient struct {
 	runStarlarkPackage             *connect.Client[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest, kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]
 	createEnclave                  *connect.Client[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse]
 	inspectFilesArtifactContents   *connect.Client[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest, kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse]
+	destroyEnclave                 *connect.Client[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, emptypb.Empty]
 }
 
 // Check calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.Check.
@@ -185,6 +195,11 @@ func (c *kurtosisEnclaveManagerServerClient) InspectFilesArtifactContents(ctx co
 	return c.inspectFilesArtifactContents.CallUnary(ctx, req)
 }
 
+// DestroyEnclave calls kurtosis_enclave_manager.KurtosisEnclaveManagerServer.DestroyEnclave.
+func (c *kurtosisEnclaveManagerServerClient) DestroyEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
+	return c.destroyEnclave.CallUnary(ctx, req)
+}
+
 // KurtosisEnclaveManagerServerHandler is an implementation of the
 // kurtosis_enclave_manager.KurtosisEnclaveManagerServer service.
 type KurtosisEnclaveManagerServerHandler interface {
@@ -196,6 +211,7 @@ type KurtosisEnclaveManagerServerHandler interface {
 	RunStarlarkPackage(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error
 	CreateEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error)
 	InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error)
+	DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisEnclaveManagerServerHandler builds an HTTP handler from the service implementation. It
@@ -244,6 +260,11 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 		svc.InspectFilesArtifactContents,
 		opts...,
 	)
+	kurtosisEnclaveManagerServerDestroyEnclaveHandler := connect.NewUnaryHandler(
+		KurtosisEnclaveManagerServerDestroyEnclaveProcedure,
+		svc.DestroyEnclave,
+		opts...,
+	)
 	return "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisEnclaveManagerServerCheckProcedure:
@@ -262,6 +283,8 @@ func NewKurtosisEnclaveManagerServerHandler(svc KurtosisEnclaveManagerServerHand
 			kurtosisEnclaveManagerServerCreateEnclaveHandler.ServeHTTP(w, r)
 		case KurtosisEnclaveManagerServerInspectFilesArtifactContentsProcedure:
 			kurtosisEnclaveManagerServerInspectFilesArtifactContentsHandler.ServeHTTP(w, r)
+		case KurtosisEnclaveManagerServerDestroyEnclaveProcedure:
+			kurtosisEnclaveManagerServerDestroyEnclaveHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -301,4 +324,8 @@ func (UnimplementedKurtosisEnclaveManagerServerHandler) CreateEnclave(context.Co
 
 func (UnimplementedKurtosisEnclaveManagerServerHandler) InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_enclave_manager_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.InspectFilesArtifactContents is not implemented"))
+}
+
+func (UnimplementedKurtosisEnclaveManagerServerHandler) DestroyEnclave(context.Context, *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_enclave_manager.KurtosisEnclaveManagerServer.DestroyEnclave is not implemented"))
 }

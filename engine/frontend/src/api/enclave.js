@@ -1,5 +1,5 @@
 import {runStarlarkPackage} from "./container"
-import {createClient, createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager} from "./api";
+import {createClient, createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager, removeEnclaveFromEnclaveManager} from "./api";
 
 export const getEnclavesFromKurtosis = async (token, apiHost) => {
     const data = await getEnclavesFromEnclaveManager(token, apiHost);
@@ -18,6 +18,13 @@ export const getEnclavesFromKurtosis = async (token, apiHost) => {
     }
     return []
 }
+
+export const removeEnclave = async (token, apiHost, enclaveName) => {
+    const response = await removeEnclaveFromEnclaveManager(enclaveName, token, apiHost)
+    const enclave = response.enclaveInfo;
+    return {}
+}
+
 
 export const createEnclave = async (token, apiHost, enclaveName, productionMode) => {
     const apiContainerVersionTag = "";
