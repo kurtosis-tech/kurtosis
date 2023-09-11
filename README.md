@@ -2,6 +2,7 @@
 <img src="./logo.png" width="1200">
 
 ----
+
 What is Kurtosis?
 =================
 [Kurtosis](https://www.kurtosis.com) is a platform for packaging and launching environments of containerized services (distributed applications) with a focus on approachability for the average developer. What Docker did for shipping binaries, Kurtosis aims to do even easier for distributed applications. 
@@ -24,20 +25,31 @@ Kurtosis shines when creating and destroying self-contained environments of dist
 - You're the author of a containerized service or distributed application and you want to give your users a one-liner to play with it
 - You want to get an instance of your application running in the cloud without being a Kubernetes expert
 
+How do I get going?
+===================
+
 Why Kurtosis over Compose, Helmm, Terraform, etc.?
 ==================================================
 Here's what our users tell us they like about Kurtosis:
 
-- **It's understandable:** you write code in Python syntax, and you get a distributed system out the other side. Variables and functions keep your code DRY.
-- **It's portable:** you can start working with your application on your local Docker, and get the same thing running on a cloud Kubernetes cluster in seconds.
-- **It can handle imperative dependencies:** for example, "generate these files, then use them when starting this service" is simple
-- **It abstracts away complexity:** This 
-- **
+- **It's understandable:** you write code in Python syntax, and you get your distributed application the other side. Variables and functions keep your code DRY.
+- **It's portable:** you can start with your application on your local Docker, and in seconds get the same thing on your friend's laptop or a Kubernetes cluster in the cloud.
+- **It can handle imperative dependencies:** for example, "generate these files, then use them when starting this service".
+- **It abstracts away complexity while being configurable:** instantiating a distributed application is as simple as calling its function with the parameters you want. For example, instantiating a Postgres package with modified username and password:
+
+  On the CLI...
+  ```bash
+  kurtosis run github.com/kurtosis-tech/postgres-package '{"username": "bobmarley", "password": "buffalosoldier"}'
+  ```
+
+  Inside an environment definition...
+  ```python
+  postgres = import_module("github.com/kurtosis-tech/postgres-package/main.star")
+
+  def run(plan):
+    postgres.run(plan, username = "bobmarley", password = "buffalosoldier")
+  ```
 - **It's fast:** most Kurtosis packages spin up in seconds.
-
-
-
-
 
 Why did you build Kurtosis?
 ===========================
