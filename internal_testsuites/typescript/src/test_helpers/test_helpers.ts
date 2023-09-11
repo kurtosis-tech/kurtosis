@@ -301,7 +301,7 @@ export async function checkFileContents(ipAddress: string, portNum: number, file
 export async function addServiceViaStarlark(enclaveContext: EnclaveContext, serviceName: string, starlarkServiceConfig: string): Promise<Result<ServiceContext, Error>> {
     const addServiceScript = `def run(plan):
 	plan.add_service(
-		name="${serviceName}", 
+		name="${serviceName}",
 		config=${starlarkServiceConfig},
 	)
 `

@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.82.22](https://github.com/kurtosis-tech/kurtosis/compare/0.82.21...0.82.22) (2023-09-11)
+
+
+### Features
+
+* always pull latest image ([#1267](https://github.com/kurtosis-tech/kurtosis/issues/1267)) ([6706809](https://github.com/kurtosis-tech/kurtosis/commit/670680980957f5eaa5b0ec01ed0ee9b8973d58e7))
+* CLI run command option to disable user services port forwarding ([#1252](https://github.com/kurtosis-tech/kurtosis/issues/1252)) ([1c94378](https://github.com/kurtosis-tech/kurtosis/commit/1c94378b9342bbe07647d8c61c47197f5aafcc18)), closes [#1236](https://github.com/kurtosis-tech/kurtosis/issues/1236)
+* retain logs for x weeks ([#1235](https://github.com/kurtosis-tech/kurtosis/issues/1235)) ([5f50c8c](https://github.com/kurtosis-tech/kurtosis/commit/5f50c8cc8bf9e5d99570c1c618a5ec367ed194a2))
+
+
+### Bug Fixes
+
+* inline upgrade warning ([#1254](https://github.com/kurtosis-tech/kurtosis/issues/1254)) ([33ef03a](https://github.com/kurtosis-tech/kurtosis/commit/33ef03a5c3553778d60597cc177893a0c50d6076)), closes [#1244](https://github.com/kurtosis-tech/kurtosis/issues/1244)
+
 ## [0.82.21](https://github.com/kurtosis-tech/kurtosis/compare/0.82.20...0.82.21) (2023-09-06)
 
 

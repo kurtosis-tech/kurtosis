@@ -5,6 +5,8 @@
 
 import { Result } from "neverthrow";
 import {
+    ConnectServicesArgs,
+    ConnectServicesResponse,
     DownloadFilesArtifactArgs,
     ExecCommandArgs,
     ExecCommandResponse,
@@ -37,4 +39,5 @@ export interface GenericApiContainerClient {
     downloadFilesArtifact(downloadFilesArtifactArgs: DownloadFilesArtifactArgs): Promise<Result<Uint8Array, Error>>
     getExistingAndHistoricalServiceIdentifiers(): Promise<Result<GetExistingAndHistoricalServiceIdentifiersResponse, Error>>
     getAllFilesArtifactNamesAndUuids(): Promise<Result<ListFilesArtifactNamesAndUuidsResponse, Error>>
+    connectServices(connectServicesArgs: ConnectServicesArgs): Promise<Result<ConnectServicesResponse, Error>>
 }

@@ -2,8 +2,7 @@ package runtime_value_store
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
@@ -14,13 +13,14 @@ import (
 const (
 	randomUuid = "abcd12a3948149d9afa2ef93abb4ec52"
 
-	notAcceptedComparableTypeErrorMsg   = "Unexpected comparable type"
 	keyDoesNotExistOnRepositoryErrorMsg = "does not exist on the recipe result repository"
 
 	firstKey            = "mykey"
 	secondKey           = "mySecondKey"
 	thirdKey            = "myThirdKey"
 	starlarkStringValue = starlark.String("my-value")
+
+	starlarkThreadName = "recipe-result-repository-test-starlark-thread"
 )
 
 var (
@@ -67,34 +67,6 @@ func TestRecipeResultGet_DoesNotExist(t *testing.T) {
 	require.Empty(t, value)
 }
 
-func TestRecipeResultSave_ErrorWhenUsingNotStarlarkStringIntorBool(t *testing.T) {
-	repository := getRecipeResultRepositoryForTest(t)
-
-	resultValue2 := map[string]starlark.Comparable{
-		secondKey: directory.Directory{}, // nolint: exhaustruct
-	}
-
-	err := repository.Save(randomUuid, resultValue2)
-	require.Error(t, err)
-	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
-
-	resultValue3 := map[string]starlark.Comparable{
-		thirdKey: &kurtosis_type_constructor.KurtosisValueTypeDefault{}, // nolint: exhaustruct
-	}
-
-	err = repository.Save(randomUuid, resultValue3)
-	require.Error(t, err)
-	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
-
-	resultValue4 := map[string]starlark.Comparable{
-		thirdKey: &starlark.Dict{},
-	}
-
-	err = repository.Save(randomUuid, resultValue4)
-	require.Error(t, err)
-	require.ErrorContains(t, err, notAcceptedComparableTypeErrorMsg)
-}
-
 func TestDelete_Success(t *testing.T) {
 	repository := getRecipeResultRepositoryForTest(t)
 
@@ -133,8 +105,26 @@ func getRecipeResultRepositoryForTest(t *testing.T) *recipeResultRepository {
 	enclaveDb := &enclave_db.EnclaveDB{
 		DB: db,
 	}
-	repository, err := getOrCreateNewRecipeResultRepository(enclaveDb)
+
+	dummySerde := newDummyStarlarkValueSerDeForTest()
+
+	repository, err := getOrCreateNewRecipeResultRepository(enclaveDb, dummySerde)
 	require.NoError(t, err)
 
 	return repository
+}
+
+func newDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
+	starlarkThread := &starlark.Thread{
+		Name:       starlarkThreadName,
+		Print:      nil,
+		Load:       nil,
+		OnMaxSteps: nil,
+		Steps:      0,
+	}
+	starlarkEnv := starlark.StringDict{}
+
+	serde := kurtosis_types.NewStarlarkValueSerde(starlarkThread, starlarkEnv)
+
+	return serde
 }
