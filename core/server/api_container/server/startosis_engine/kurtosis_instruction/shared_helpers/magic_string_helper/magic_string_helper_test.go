@@ -3,6 +3,7 @@ package magic_string_helper
 import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
@@ -15,13 +16,17 @@ const (
 	testStringRuntimeValue         = starlark.String("test_string")
 	testRuntimeValueField          = "field.subfield"
 	testExpectedInterpolatedString = starlark.String("test_string is not 0")
+	starlarkThreadName             = "starlark-value-serde-for-test-in-magic-helper-thread"
 )
 
 var testIntRuntimeValue = starlark.MakeInt(0)
 
 func TestGetOrReplaceRuntimeValueFromString_BasicFetch(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := newDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
@@ -41,7 +46,10 @@ func TestGetOrReplaceRuntimeValueFromString_BasicFetch(t *testing.T) {
 
 func TestGetOrReplaceRuntimeValueFromString_Interpolated(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := newDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
@@ -61,7 +69,10 @@ func TestGetOrReplaceRuntimeValueFromString_Interpolated(t *testing.T) {
 
 func TestReplaceRuntimeValueFromString(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := newDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(t, err)
 	stringValueUuid, err := runtimeValueStore.CreateValue()
 	require.Nil(t, err)
@@ -94,4 +105,19 @@ func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {
 	}
 
 	return enclaveDb
+}
+
+func newDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
+	starlarkThread := &starlark.Thread{
+		Name:       starlarkThreadName,
+		Print:      nil,
+		Load:       nil,
+		OnMaxSteps: nil,
+		Steps:      0,
+	}
+	starlarkEnv := starlark.StringDict{}
+
+	serde := kurtosis_types.NewStarlarkValueSerde(starlarkThread, starlarkEnv)
+
+	return serde
 }

@@ -3,11 +3,11 @@ package runtime_value_store
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
-	"strconv"
 )
 
 var (
@@ -16,10 +16,14 @@ var (
 )
 
 type recipeResultRepository struct {
-	enclaveDb *enclave_db.EnclaveDB
+	enclaveDb          *enclave_db.EnclaveDB
+	starlarkValueSerde *kurtosis_types.StarlarkValueSerde
 }
 
-func getOrCreateNewRecipeResultRepository(enclaveDb *enclave_db.EnclaveDB) (*recipeResultRepository, error) {
+func getOrCreateNewRecipeResultRepository(
+	enclaveDb *enclave_db.EnclaveDB,
+	starlarkValueSerde *kurtosis_types.StarlarkValueSerde,
+) (*recipeResultRepository, error) {
 	if err := enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(recipeResultBucketName)
 		if err != nil {
@@ -33,7 +37,8 @@ func getOrCreateNewRecipeResultRepository(enclaveDb *enclave_db.EnclaveDB) (*rec
 	}
 
 	repository := &recipeResultRepository{
-		enclaveDb: enclaveDb,
+		enclaveDb:          enclaveDb,
+		starlarkValueSerde: starlarkValueSerde,
 	}
 
 	return repository, nil
@@ -59,8 +64,6 @@ func (repository *recipeResultRepository) SaveKey(
 	return nil
 }
 
-// Save store recipe result values into the repository, and it only accepts comparables of
-// starlark.String, starlark.Int and starlark.Bool so far
 func (repository *recipeResultRepository) Save(
 	uuid string,
 	value map[string]starlark.Comparable,
@@ -73,31 +76,19 @@ func (repository *recipeResultRepository) Save(
 
 		stringifiedValue := map[string]string{}
 
-		for key, comparableValue := range value {
-			//TODO add more kind of comparable types if we want to extend the support
-			//TODO now starlark.Int, starlark.String and starlark.Bool are enough so far
-			switch valueType := comparableValue.(type) {
-			case starlark.Int, starlark.Bool:
-				stringifiedValue[key] = comparableValue.String()
-			case starlark.String:
-				comparableStr, ok := comparableValue.(starlark.String)
-				if !ok {
-					return stacktrace.NewError("An error occurred casting comparable type '%v' to Starlark string", comparableValue)
-				}
-				stringifiedValue[key] = comparableStr.GoString()
-			default:
-				return stacktrace.NewError("Unexpected comparable type on recipe result repository, only 'starlark.String and slartark.Int' are allowed but '%v' was received.", valueType)
-			}
+		for uuidStr, starlarkComparable := range value {
+			starlarkValueStr := repository.starlarkValueSerde.Serialize(starlarkComparable)
+			stringifiedValue[uuidStr] = starlarkValueStr
 		}
 
 		jsonBytes, err := json.Marshal(stringifiedValue)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred marshalling value '%+v' in the recipe result repository", value)
+			return stacktrace.Propagate(err, "An error occurred marshalling value '%+v' in the recipe result repository", stringifiedValue)
 		}
 
 		// save it to disk
 		if err := bucket.Put(uuidKey, jsonBytes); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while saving recipe result value '%+v' with UUID '%s' into the enclave db bucket", value, uuid)
+			return stacktrace.Propagate(err, "An error occurred while saving recipe result value '%+v' with UUID '%s' into the enclave db bucket", stringifiedValue, uuid)
 		}
 		return nil
 	}); err != nil {
@@ -139,9 +130,18 @@ func (repository *recipeResultRepository) Get(
 			return stacktrace.Propagate(err, "An error occurred unmarshalling the recipe result value with UUID '%s' from the repository", uuid)
 		}
 
-		for key, stringifiedComparable := range stringifiedValue {
-			comparableValue := getComparableFromValueString(stringifiedComparable)
-			value[key] = comparableValue
+		for uuidStr, valueStr := range stringifiedValue {
+			starlarkValue, err := repository.starlarkValueSerde.Deserialize(valueStr)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred deserializing the stringified value '%v'", valueStr)
+			}
+
+			starlarkComparable, ok := starlarkValue.(starlark.Comparable)
+			if !ok {
+				return stacktrace.NewError("Failed to cast Starlark value '%s' to Starlark comparable type", starlarkValue)
+			}
+
+			value[uuidStr] = starlarkComparable
 		}
 
 		return nil
@@ -172,20 +172,4 @@ func (repository *recipeResultRepository) Delete(uuid string) error {
 
 func getUuidKey(uuid string) []byte {
 	return []byte(uuid)
-}
-
-func getComparableFromValueString(stringifiedComparable string) starlark.Comparable {
-	var comparableValue starlark.Comparable
-	comparableInt, err := strconv.Atoi(stringifiedComparable)
-	if err != nil {
-		comparableBool, err := strconv.ParseBool(stringifiedComparable)
-		if err != nil {
-			comparableValue = starlark.String(stringifiedComparable)
-		} else {
-			comparableValue = starlark.Bool(comparableBool)
-		}
-	} else {
-		comparableValue = starlark.MakeInt(comparableInt)
-	}
-	return comparableValue
 }
