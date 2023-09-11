@@ -76,7 +76,7 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 ### Using Idempotent Runs
 Kurtosis supports idempotent runs by default. This means that Kurtosis will optimize each run of a Starlark script or package based on what has already been run in a given enclave, reducing execution time and resources. In other words, if you run the same Starlark script or package twice, Kurtosis will only apply the differences on the 2nd run. 
 
-To use idempotent runs, you must run your Starlark script or package on the *same* enclave for Kurtosis to apply the differences using the [`--enclave` flag](#extra-configuration-and-flags) (i.e. `kurtosis run script.star --enclave $THE_ENCLAVE_IDENTIFIER `. If you run your Starlark script or package without this `--enclave` flag, Kurtosis will instead spin up a brand new enclave for you.
+To use idempotent runs, you must run your Starlark script or package on the *same* enclave for Kurtosis to apply the differences using the [`--enclave` flag to specify the enclave to use on that particular run](#extra-configuration-and-flags) (i.e. `kurtosis run script.star --enclave $THE_ENCLAVE_IDENTIFIER`). If you run your Starlark script or package without this `--enclave` flag, Kurtosis will spin up a brand new enclave for you instead.
 
 To learn more about what idempotent runs are, go [here](../concepts-reference/idempotent-runs.md) and for more details on how Kurtosis handles idempotent runs under the hood, go [here](../explanations/how-do-idempotent-runs-work.md).
 
@@ -120,6 +120,8 @@ To learn more about what idempotent runs are, go [here](../concepts-reference/id
        # your code
    ```
 1. The `--production` flag can be used to make sure services restart in case of failure (default behavior is not restart)
+
+1. The `--no-connect` flag can be used to disable user services port forwarding (default behavior is to forward the ports)
 
 1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
 
