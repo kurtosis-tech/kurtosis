@@ -1,11 +1,10 @@
-name: gofmt
+name: Check proto breaks
 
 on:
   pull_request:
 
 jobs:
-  gofmt:
-    name: gofmt
+  check-proto-break:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/setup-go@v3
@@ -13,4 +12,6 @@ jobs:
         go-version: 1.19
     - run: go install github.com/bufbuild/buf/cmd/buf@v1.26.1
     - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
     - run: buf breaking --path ./api/protobuf/ --against '.git#branch=main'
