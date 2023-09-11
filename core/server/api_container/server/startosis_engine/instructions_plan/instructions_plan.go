@@ -30,21 +30,6 @@ func NewInstructionsPlan() *InstructionsPlan {
 	}
 }
 
-func (plan *InstructionsPlan) PartialClone(indexOfFirstInstructionToNotClone int) (*InstructionsPlan, error) {
-	newPlan := NewInstructionsPlan()
-	for idx, instructionUuid := range plan.instructionsSequence {
-		if idx >= indexOfFirstInstructionToNotClone {
-			return newPlan, nil
-		}
-		instructionToTransfer, found := plan.scheduledInstructionsIndex[instructionUuid]
-		if !found {
-			return nil, stacktrace.NewError("Instruction with UUID '%s' was part of the instruction sequence but could not be found in the instruction index. This is a Kurtosis internal issue", instructionUuid)
-		}
-		newPlan.AddScheduledInstruction(instructionToTransfer)
-	}
-	return newPlan, nil
-}
-
 func (plan *InstructionsPlan) SetIndexOfFirstInstruction(indexOfFirstInstruction int) {
 	plan.indexOfFirstInstruction = indexOfFirstInstruction
 }

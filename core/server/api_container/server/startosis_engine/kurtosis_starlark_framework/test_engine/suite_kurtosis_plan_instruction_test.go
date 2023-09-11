@@ -57,7 +57,7 @@ func (suite *KurtosisPlanInstructionTestSuite) run(builtin KurtosisPlanInstructi
 	instructionFromBuiltin := builtin.GetInstruction()
 	emptyEnclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyInstructionsPlanMask := resolver.NewInstructionsPlanMask(0)
-	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, emptyEnclaveComponents, emptyInstructionsPlanMask, instructionsPlan)
+	instructionWrapper := kurtosis_plan_instruction.NewKurtosisPlanInstructionWrapper(instructionFromBuiltin, emptyEnclaveComponents, nil, emptyInstructionsPlanMask, instructionsPlan)
 	suite.starlarkEnv[instructionWrapper.GetName()] = starlark.NewBuiltin(instructionWrapper.GetName(), instructionWrapper.CreateBuiltin())
 
 	starlarkCode := builtin.GetStarlarkCode()

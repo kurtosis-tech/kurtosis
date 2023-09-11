@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network/render_templates"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -18,6 +19,7 @@ import (
 	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"golang.org/x/exp/slices"
 	"reflect"
 )
 
@@ -130,20 +132,20 @@ func (builtin *RenderTemplatesCapabilities) Execute(_ context.Context, _ *builti
 	return instructionResult, nil
 }
 
-func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	// if other instruction is nil or other instruction is not an add_service instruction, status is unknown
 	if other == nil {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
-	otherRenderTemplateCapabilities, ok := other.(*RenderTemplatesCapabilities)
-	if !ok {
+	instructionType, _, filesArtifactNames, _ := builtin.GetPersistableAttributes()
+	if instructionType != other.Type {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
 
 	// if artifact names don't match, status is unknown, instructions can't be resolved together
-	if otherRenderTemplateCapabilities.artifactName != builtin.artifactName {
+	if !slices.Equal(other.FilesArtifactNames, filesArtifactNames) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
@@ -155,6 +157,13 @@ func (builtin *RenderTemplatesCapabilities) TryResolveWith(instructionsAreEqual 
 	}
 	enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentWasLeftIntact)
 	return enclave_structure.InstructionIsEqual
+}
+
+func (builtin *RenderTemplatesCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
+	// technically, we need the MD5 of the files artifact here but because the template is passed in plaintext to the
+	// instruction the check for instruction equality also checks that the content of the artifact is identical.
+	// So we can safely ignore the MD5
+	return RenderTemplatesBuiltinName, []string{}, []string{builtin.artifactName}, []string{}
 }
 
 func parseTemplatesAndData(templatesAndData *starlark.Dict) (map[string]*render_templates.TemplateData, *startosis_errors.InterpretationError) {

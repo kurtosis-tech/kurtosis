@@ -5,8 +5,11 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/stacktrace"
@@ -27,20 +30,24 @@ var (
 )
 
 type StartosisExecutor struct {
-	mutex             *sync.Mutex
-	enclavePlan       *instructions_plan.InstructionsPlan
-	runtimeValueStore *runtime_value_store.RuntimeValueStore
+	mutex              *sync.Mutex
+	starlarkValueSerde *kurtosis_types.StarlarkValueSerde
+	enclavePlan        *enclave_plan_persistence.EnclavePlan
+	enclaveDb          *enclave_db.EnclaveDB
+	runtimeValueStore  *runtime_value_store.RuntimeValueStore
 }
 
 type ExecutionError struct {
 	Error string
 }
 
-func NewStartosisExecutor(runtimeValueStore *runtime_value_store.RuntimeValueStore) *StartosisExecutor {
+func NewStartosisExecutor(starlarkValueSerde *kurtosis_types.StarlarkValueSerde, runtimeValueStore *runtime_value_store.RuntimeValueStore, enclavePlan *enclave_plan_persistence.EnclavePlan, enclaveDb *enclave_db.EnclaveDB) *StartosisExecutor {
 	return &StartosisExecutor{
-		mutex:             &sync.Mutex{},
-		enclavePlan:       instructions_plan.NewInstructionsPlan(),
-		runtimeValueStore: runtimeValueStore,
+		mutex:              &sync.Mutex{},
+		starlarkValueSerde: starlarkValueSerde,
+		enclaveDb:          enclaveDb,
+		enclavePlan:        enclavePlan,
+		runtimeValueStore:  runtimeValueStore,
 	}
 }
 
@@ -65,11 +72,20 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 		logrus.Debugf("Current enclave plan contains %d instuctions. About to process a new plan with %d instructions starting at index %d (dry-run: %v)",
 			executor.enclavePlan.Size(), len(instructionsSequence), indexOfFirstInstructionInEnclavePlan, dryRun)
 
-		var err error
-		executor.enclavePlan, err = executor.enclavePlan.PartialClone(indexOfFirstInstructionInEnclavePlan)
-		if err != nil {
-			sendErrorAndFail(starlarkRunResponseLineStream, err, "An error occurred keeping the enclave plan up to date with the current enclave state")
-		}
+		executor.enclavePlan = executor.enclavePlan.PartialDeepClone(indexOfFirstInstructionInEnclavePlan)
+
+		defer func() {
+			// TODO: we now perist the plan at the end of the execution. We could persist it everytime an instruction
+			//  is executed, to be resilient to the APIC being stopped in the middle of a Starlark script execution
+			//  Or we could even persist it only when the APIC is stopped. This seems to be a good middle ground, but
+			//  can be tuned according the our future needs
+			logrus.Infof("Persisting enclave plan composed of %d instructions into enclave database", executor.enclavePlan.Size())
+			if err := executor.enclavePlan.Persist(executor.enclaveDb); err != nil {
+				logrus.Errorf("An error occurred persisting the enclave plan at the end of the execution of the" +
+					"package. The enclave will continue to run, but next runs of Starlark package might not be executed" +
+					"as expected.")
+			}
+		}()
 
 		logrus.Debugf("Transfered %d instructions from previous enclave plan to keep the enclave state consistent", executor.enclavePlan.Size())
 
@@ -105,7 +121,18 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInstructionResult(instructionOutputStr)
 				}
 				// mark the instruction as executed and add it to the current instruction plan
-				executor.enclavePlan.AddScheduledInstruction(scheduledInstruction).Executed(true)
+				instructionType, instructionStarlarkCode, serviceNames, filesArtifactNames, filesArtifactMd5s := scheduledInstruction.GetInstruction().GetPersistableAttributes()
+				executor.enclavePlan.AppendInstruction(
+					enclave_plan_persistence.NewEnclavePlanInstruction(
+						string(scheduledInstruction.GetUuid()),
+						instructionType,
+						instructionStarlarkCode,
+						executor.starlarkValueSerde.Serialize(scheduledInstruction.GetReturnedValue()),
+						serviceNames,
+						filesArtifactNames,
+						filesArtifactMd5s,
+					),
+				)
 			}
 		}
 
@@ -125,7 +152,7 @@ func (executor *StartosisExecutor) Execute(ctx context.Context, dryRun bool, par
 	return starlarkRunResponseLineStream
 }
 
-func (executor *StartosisExecutor) GetCurrentEnclavePLan() *instructions_plan.InstructionsPlan {
+func (executor *StartosisExecutor) GetCurrentEnclavePLan() *enclave_plan_persistence.EnclavePlan {
 	return executor.enclavePlan
 }
 

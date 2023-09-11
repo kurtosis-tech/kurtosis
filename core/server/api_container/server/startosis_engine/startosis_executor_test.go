@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -43,7 +44,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor := NewStartosisExecutor(runtimeValueStore)
+	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
@@ -84,7 +85,7 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T)
 	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, err)
 
-	executor := NewStartosisExecutor(runtimeValueStore)
+	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
@@ -126,7 +127,7 @@ func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor := NewStartosisExecutor(runtimeValueStore)
+	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
@@ -161,6 +162,7 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 	instruction.EXPECT().GetCanonicalInstruction(mock.Anything).Maybe().Return(canonicalInstruction)
 	instruction.EXPECT().GetPositionInOriginalScript().Maybe().Return(dummyPosition)
 	instruction.EXPECT().String().Maybe().Return(stringifiedInstruction)
+	instruction.EXPECT().GetPersistableAttributes().Maybe().Return(instructionName, stringifiedInstruction, []string{}, []string{}, []string{})
 
 	if executeSuccessfully {
 		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil, nil)

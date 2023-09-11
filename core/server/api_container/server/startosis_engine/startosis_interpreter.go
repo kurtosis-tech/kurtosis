@@ -7,10 +7,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/print_builtin"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/plan_module"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/package_io"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
@@ -54,6 +56,7 @@ type StartosisInterpreter struct {
 	serviceNetwork     service_network.ServiceNetwork
 	recipeExecutor     *runtime_value_store.RuntimeValueStore
 	moduleGlobalsCache map[string]*startosis_packages.ModuleCacheEntry
+	starlarkValueSerde *kurtosis_types.StarlarkValueSerde
 	// TODO AUTH there will be a leak here in case people with different repo visibility access a module
 	moduleContentProvider startosis_packages.PackageContentProvider
 	enclaveEnvVars        string
@@ -61,7 +64,7 @@ type StartosisInterpreter struct {
 
 type SerializedInterpretationOutput string
 
-func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, enclaveVarEnvs string) *StartosisInterpreter {
+func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, moduleContentProvider startosis_packages.PackageContentProvider, runtimeValueStore *runtime_value_store.RuntimeValueStore, starlarkValueSerde *kurtosis_types.StarlarkValueSerde, enclaveVarEnvs string) *StartosisInterpreter {
 	return &StartosisInterpreter{
 		mutex:                 &sync.Mutex{},
 		serviceNetwork:        serviceNetwork,
@@ -69,6 +72,7 @@ func NewStartosisInterpreter(serviceNetwork service_network.ServiceNetwork, modu
 		moduleGlobalsCache:    make(map[string]*startosis_packages.ModuleCacheEntry),
 		moduleContentProvider: moduleContentProvider,
 		enclaveEnvVars:        enclaveVarEnvs,
+		starlarkValueSerde:    starlarkValueSerde,
 	}
 }
 
@@ -87,7 +91,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	relativePathtoMainFile string,
 	serializedStarlark string,
 	serializedJsonParams string,
-	currentEnclavePlan *instructions_plan.InstructionsPlan,
+	currentEnclavePlan *enclave_plan_persistence.EnclavePlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
@@ -104,7 +108,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	}
 	logrus.Debugf("First interpretation of package generated %d instructions", len(naiveInstructionsPlanSequence))
 
-	currentEnclavePlanSequence, interpretationErr := currentEnclavePlan.GeneratePlan()
+	currentEnclavePlanSequence := currentEnclavePlan.GeneratePlan()
 	if interpretationErr != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
 	}
@@ -258,7 +262,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
 			kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
-			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, instructionsPlanMask, kurtosisPlanInstructions)
+			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, interpreter.starlarkValueSerde, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}
 
@@ -356,14 +360,14 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 	return &predeclared, nil
 }
 
-func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*instructions_plan.ScheduledInstruction, naiveInstructionsList []*instructions_plan.ScheduledInstruction, minIndex int) int {
+func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*enclave_plan_persistence.EnclavePlanInstruction, naiveInstructionsList []*instructions_plan.ScheduledInstruction, minIndex int) int {
 	if len(naiveInstructionsList) == 0 {
 		return -1 // no result as the naiveInstructionsList is empty
 	}
 	for i := minIndex; i < len(currentEnclaveInstructionsList); i++ {
 		// We just need to compare instructions to see if they match, without needing any enclave specific context here
 		fakeEnclaveComponent := enclave_structure.NewEnclaveComponents()
-		instructionResolutionResult := naiveInstructionsList[0].GetInstruction().TryResolveWith(currentEnclaveInstructionsList[i].GetInstruction(), fakeEnclaveComponent)
+		instructionResolutionResult := naiveInstructionsList[0].GetInstruction().TryResolveWith(currentEnclaveInstructionsList[i], fakeEnclaveComponent)
 		if instructionResolutionResult == enclave_structure.InstructionIsEqual || instructionResolutionResult == enclave_structure.InstructionIsUpdate {
 			return i
 		}

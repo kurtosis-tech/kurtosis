@@ -5,6 +5,7 @@ import (
 	"fmt"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -13,6 +14,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
 	"go.starlark.net/starlark"
+	"golang.org/x/exp/slices"
 )
 
 const (
@@ -126,20 +128,20 @@ func (builtin *StoreServiceFilesCapabilities) Execute(ctx context.Context, _ *bu
 	return instructionResult, nil
 }
 
-func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	// if other instruction is nil or other instruction is not an add_service instruction, status is unknown
 	if other == nil {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
-	otherStoreServiceFilesCapabilities, ok := other.(*StoreServiceFilesCapabilities)
-	if !ok {
+	instructionType, _, filesArtifactNames, _ := builtin.GetPersistableAttributes()
+	if instructionType != other.Type {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
 
 	// if artifact names don't match, status is unknown, instructions can't be resolved together
-	if otherStoreServiceFilesCapabilities.artifactName != builtin.artifactName {
+	if !slices.Equal(other.FilesArtifactNames, filesArtifactNames) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
@@ -159,4 +161,11 @@ func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqua
 
 	enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentWasLeftIntact)
 	return enclave_structure.InstructionIsEqual
+}
+
+func (builtin *StoreServiceFilesCapabilities) GetPersistableAttributes() (string, []string, []string, []string) {
+	// No need for the MD5 here because "store_service_files" is an atomic operation at the service_network level.
+	// Here we just consider that if the service has been updated, we store the file again (b/c it the content might
+	// have changed), otherwise we don't
+	return StoreServiceFilesBuiltinName, []string{}, []string{builtin.artifactName}, []string{}
 }
