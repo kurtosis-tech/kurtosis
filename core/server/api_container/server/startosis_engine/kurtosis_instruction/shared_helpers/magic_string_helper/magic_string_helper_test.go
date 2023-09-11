@@ -16,6 +16,7 @@ const (
 	testStringRuntimeValue         = starlark.String("test_string")
 	testRuntimeValueField          = "field.subfield"
 	testExpectedInterpolatedString = starlark.String("test_string is not 0")
+	starlarkThreadName             = "starlark-value-serde-for-test-in-magic-helper-thread"
 )
 
 var testIntRuntimeValue = starlark.MakeInt(0)
@@ -107,20 +108,16 @@ func getEnclaveDBForTest(t *testing.T) *enclave_db.EnclaveDB {
 }
 
 func newDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
-	starlarkThread := newStarlarkThread("starlark-value-serde-for-test-in-magic-helper-thread")
-	starlarkEnv := starlark.StringDict{}
-
-	serde := kurtosis_types.NewStarlarkValueSerde(starlarkThread, starlarkEnv)
-
-	return serde
-}
-
-func newStarlarkThread(name string) *starlark.Thread {
-	return &starlark.Thread{
-		Name:       name,
+	starlarkThread := &starlark.Thread{
+		Name:       starlarkThreadName,
 		Print:      nil,
 		Load:       nil,
 		OnMaxSteps: nil,
 		Steps:      0,
 	}
+	starlarkEnv := starlark.StringDict{}
+
+	serde := kurtosis_types.NewStarlarkValueSerde(starlarkThread, starlarkEnv)
+
+	return serde
 }
