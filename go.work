@@ -4,6 +4,7 @@ use (
 	./api/golang
 	./cli/cli
 	./cloud/api/golang
+	./connect-server
 	./container-engine-lib
 	./contexts-config-store
 	./core/files_artifacts_expander
@@ -17,5 +18,4 @@ use (
 	./internal_testsuites/golang
 	./kurtosis_version
 	./name_generator
-	connect-server
 )
