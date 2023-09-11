@@ -23,7 +23,7 @@ Kurtosis shines when creating, working with, and destroying self-contained distr
 - You want to spin up your distributed application in ephemeral environments as part of your integration tests
 - You want to ad-hoc test your application on a big cloud cluster
 - You're the author of a containerized service or distributed application and you want to give your users a one-liner to try it
-- You want to get an instance of your application running in the cloud without being a Kubernetes expert
+- You want to get an instance of your application running in the cloud without provisioning or administering a Kubernetes cluster
 
 If you're in web3, we have even more specific web3 usecases [here](https://web3.kurtosis.com).
 
