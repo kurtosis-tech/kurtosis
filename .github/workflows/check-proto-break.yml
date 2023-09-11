@@ -7,6 +7,13 @@ jobs:
   check-proto-break:
     runs-on: ubuntu-latest
     steps:
+    - name: Check if PR is breaking
+      run: |
+        title="${{ github.event.pull_request.title }}"
+        if [[ "$title" == *'!'* ]]; then
+          echo "PR is a breaking change"
+          exit 0
+        fi
     - uses: actions/setup-go@v3
       with:
         go-version: 1.19
