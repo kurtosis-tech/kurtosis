@@ -87,6 +87,13 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.InspectFilesArtifactContentsResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.InspectFilesArtifactContentsResponse>;
 
+  connectServices(
+    request: api_container_service_pb.ConnectServicesArgs,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.ConnectServicesResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.ConnectServicesResponse>;
+
 }
 
 export class ApiContainerServicePromiseClient {
@@ -153,6 +160,11 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.InspectFilesArtifactContentsRequest,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.InspectFilesArtifactContentsResponse>;
+
+  connectServices(
+    request: api_container_service_pb.ConnectServicesArgs,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.ConnectServicesResponse>;
 
 }
 

@@ -18,6 +18,19 @@ export const ServiceStatus = proto3.makeEnum(
 );
 
 /**
+ * User services port forwarding
+ *
+ * @generated from enum api_container_api.Connect
+ */
+export const Connect = proto3.makeEnum(
+  "api_container_api.Connect",
+  [
+    {no: 0, name: "CONNECT"},
+    {no: 1, name: "NO_CONNECT"},
+  ],
+);
+
+/**
  * @generated from enum api_container_api.KurtosisFeatureFlag
  */
 export const KurtosisFeatureFlag = proto3.makeEnum(
@@ -74,10 +87,6 @@ export const ServiceInfo = proto3.makeMessageType(
 );
 
 /**
- * ==============================================================================================
- *                               Execute Starlark Arguments
- * ==============================================================================================
- *
  * @generated from message api_container_api.RunStarlarkScriptArgs
  */
 export const RunStarlarkScriptArgs = proto3.makeMessageType(
@@ -521,5 +530,23 @@ export const FileArtifactContentsFileDescription = proto3.makeMessageType(
     { no: 2, name: "size", kind: "scalar", T: 4 /* ScalarType.UINT64 */ },
     { no: 3, name: "text_preview", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
+);
+
+/**
+ * @generated from message api_container_api.ConnectServicesArgs
+ */
+export const ConnectServicesArgs = proto3.makeMessageType(
+  "api_container_api.ConnectServicesArgs",
+  () => [
+    { no: 1, name: "connect", kind: "enum", T: proto3.getEnumType(Connect) },
+  ],
+);
+
+/**
+ * @generated from message api_container_api.ConnectServicesResponse
+ */
+export const ConnectServicesResponse = proto3.makeMessageType(
+  "api_container_api.ConnectServicesResponse",
+  [],
 );
 

@@ -4,6 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math/rand"
+	"net/http"
+	"os"
+	"path"
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/golang/protobuf/ptypes/empty"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/example-api-server/api/golang/example_api_server_rpc_api_consts"
@@ -19,14 +28,6 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"io"
-	"math/rand"
-	"net/http"
-	"os"
-	"path"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
