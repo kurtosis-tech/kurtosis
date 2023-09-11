@@ -1,0 +1,21 @@
+name: Do Not Merge If Breaking Change
+
+on:
+  pull_request:
+    types: [synchronize, opened, reopened, labeled, unlabeled]
+
+jobs:
+  do-not-merge-if-breaking:
+    name: gofmt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@v3
+        with:
+          go-version: 1.19
+      - uses: actions/checkout@v3
+      - run: go install golang.org/x/exp/cmd/apidiff
+      - uses: actions/checkout@v3
+        with:
+          ref: 'main'
+          path: '/tmp'
+      - run: apidiff -m ./api/golang ./tmp/api/golang
