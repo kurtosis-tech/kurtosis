@@ -2,6 +2,10 @@ name: Check proto breaks
 
 on:
   pull_request:
+    types:
+    - opened
+    - synchronize
+    - edited
 
 jobs:
   check-proto-break:
