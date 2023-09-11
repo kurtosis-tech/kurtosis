@@ -61,6 +61,8 @@ To read about how Kurtosis works, see [our documentation][docs].
 
 To see where we're going with the product, check out the roadmap [here](https://github.com/kurtosis-tech/kurtosis/wiki/Short%E2%80%90term-Roadmap).
 
+Got more questions? Drop them in our [Github Discussions](https://github.com/kurtosis-tech/kurtosis/discussions/new?category=q-a) where we, or other community members, can help answer.
+
 Why Kurtosis over Compose, Helm, or Terraform?
 ==============================================
 These tools have been around for over a decade, yet most developers still struggle to build distributed applications. Why? In a sentence: building distributed applications is hard, and these tools still haven't made it easy enough for the average developer.
