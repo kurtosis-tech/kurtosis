@@ -91,6 +91,7 @@ var ImportCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisComman
 			Usage:     "If enabled, only converts Docker Compose into Starlark without running it",
 			Type:      flags.FlagType_Bool,
 		},
+		// TODO: Add connect flag similar to the run command.
 	},
 	Args: []*args.ArgConfig{
 		file_system_path_arg.NewFilepathOrDirpathArg(

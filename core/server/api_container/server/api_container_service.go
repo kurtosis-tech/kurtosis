@@ -312,6 +312,11 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 	return resp, nil
 }
 
+func (apicService ApiContainerService) ConnectServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ConnectServicesArgs) (*kurtosis_core_rpc_api_bindings.ConnectServicesResponse, error) {
+	resp := binding_constructors.NewConnectServicesResponse()
+	return resp, nil
+}
+
 func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifiers(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse, error) {
 	allIdentifiers, err := apicService.serviceNetwork.GetExistingAndHistoricalServiceIdentifiers()
 	if err != nil {

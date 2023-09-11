@@ -13,27 +13,16 @@ import (
 
 type storeServiceFilesWithoutNameTestCase struct {
 	*testing.T
+	serviceNetwork *service_network.MockServiceNetwork
 }
 
-func newStoreServiceFilesWithoutNameTestCase(t *testing.T) *storeServiceFilesWithoutNameTestCase {
-	return &storeServiceFilesWithoutNameTestCase{
-		T: t,
-	}
-}
-
-func (t *storeServiceFilesWithoutNameTestCase) GetId() string {
-	return store_service_files.StoreServiceFilesBuiltinName
-}
-
-func (t *storeServiceFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-
-	serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
+func (suite *KurtosisPlanInstructionTestSuite) TestStoreServiceFilesWithoutName() {
+	suite.serviceNetwork.EXPECT().GetUniqueNameForFileArtifact().Times(1).Return(
 		mockedFileArtifactName,
 		nil,
 	)
 
-	serviceNetwork.EXPECT().CopyFilesFromService(
+	suite.serviceNetwork.EXPECT().CopyFilesFromService(
 		mock.Anything,
 		string(TestServiceName),
 		TestSrcPath,
@@ -43,7 +32,14 @@ func (t *storeServiceFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_i
 		nil,
 	)
 
-	return store_service_files.NewStoreServiceFiles(serviceNetwork)
+	suite.run(&storeServiceFilesWithoutNameTestCase{
+		T:              suite.T(),
+		serviceNetwork: suite.serviceNetwork,
+	})
+}
+
+func (t *storeServiceFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return store_service_files.NewStoreServiceFiles(t.serviceNetwork)
 }
 
 func (t *storeServiceFilesWithoutNameTestCase) GetStarlarkCode() string {

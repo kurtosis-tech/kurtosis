@@ -5,6 +5,28 @@ var grpc = require('@grpc/grpc-js');
 var api_container_service_pb = require('./api_container_service_pb.js');
 var google_protobuf_empty_pb = require('google-protobuf/google/protobuf/empty_pb.js');
 
+function serialize_api_container_api_ConnectServicesArgs(arg) {
+  if (!(arg instanceof api_container_service_pb.ConnectServicesArgs)) {
+    throw new Error('Expected argument of type api_container_api.ConnectServicesArgs');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_ConnectServicesArgs(buffer_arg) {
+  return api_container_service_pb.ConnectServicesArgs.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
+function serialize_api_container_api_ConnectServicesResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.ConnectServicesResponse)) {
+    throw new Error('Expected argument of type api_container_api.ConnectServicesResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_ConnectServicesResponse(buffer_arg) {
+  return api_container_service_pb.ConnectServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_DownloadFilesArtifactArgs(arg) {
   if (!(arg instanceof api_container_service_pb.DownloadFilesArtifactArgs)) {
     throw new Error('Expected argument of type api_container_api.DownloadFilesArtifactArgs');
@@ -403,6 +425,18 @@ storeFilesArtifactFromService: {
     requestDeserialize: deserialize_api_container_api_InspectFilesArtifactContentsRequest,
     responseSerialize: serialize_api_container_api_InspectFilesArtifactContentsResponse,
     responseDeserialize: deserialize_api_container_api_InspectFilesArtifactContentsResponse,
+  },
+  // User services port forwarding
+connectServices: {
+    path: '/api_container_api.ApiContainerService/ConnectServices',
+    requestStream: false,
+    responseStream: false,
+    requestType: api_container_service_pb.ConnectServicesArgs,
+    responseType: api_container_service_pb.ConnectServicesResponse,
+    requestSerialize: serialize_api_container_api_ConnectServicesArgs,
+    requestDeserialize: deserialize_api_container_api_ConnectServicesArgs,
+    responseSerialize: serialize_api_container_api_ConnectServicesResponse,
+    responseDeserialize: deserialize_api_container_api_ConnectServicesResponse,
   },
 };
 

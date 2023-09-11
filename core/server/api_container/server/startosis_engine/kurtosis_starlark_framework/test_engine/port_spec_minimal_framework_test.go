@@ -14,14 +14,10 @@ type portSpecMinimalTestCase struct {
 	*testing.T
 }
 
-func newPortSpecMinimalTestCase(t *testing.T) *portSpecMinimalTestCase {
-	return &portSpecMinimalTestCase{
-		T: t,
-	}
-}
-
-func (t *portSpecMinimalTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", port_spec_starlark.PortSpecTypeName, "full")
+func (suite *KurtosisTypeConstructorTestSuite) TestPortSpecMinimal() {
+	suite.run(&portSpecMinimalTestCase{
+		T: suite.T(),
+	})
 }
 
 func (t *portSpecMinimalTestCase) GetStarlarkCode() string {

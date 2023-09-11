@@ -17,20 +17,15 @@ type serviceConfigFullTestCaseBackwardCompatible struct {
 	serviceNetwork *service_network.MockServiceNetwork
 }
 
-func newServiceConfigFullTestCaseBackwardCompatible(t *testing.T) *serviceConfigFullTestCaseBackwardCompatible {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	serviceNetwork.EXPECT().GetApiContainerInfo().Times(1).Return(
+func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigFullBackwardCompatible() {
+	suite.serviceNetwork.EXPECT().GetApiContainerInfo().Times(1).Return(
 		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), 0, "0.0.0"),
 	)
 
-	return &serviceConfigFullTestCaseBackwardCompatible{
-		T:              t,
-		serviceNetwork: serviceNetwork,
-	}
-}
-
-func (t *serviceConfigFullTestCaseBackwardCompatible) GetId() string {
-	return service_config.ServiceConfigTypeName
+	suite.run(&serviceConfigFullTestCaseBackwardCompatible{
+		T:              suite.T(),
+		serviceNetwork: suite.serviceNetwork,
+	})
 }
 
 func (t *serviceConfigFullTestCaseBackwardCompatible) GetStarlarkCode() string {

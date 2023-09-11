@@ -8,13 +8,13 @@ import {
     Stack,
     Text,
     Textarea,
+    Checkbox,
 } from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
 import { useLocation, useNavigate } from "react-router";
 import {useState} from 'react';
 
 const yaml = require("js-yaml")
-
 
 const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
@@ -95,10 +95,32 @@ const checkValidIntType = (data) => {
         return false
     }
     try {
-        return isNumeric(data)
+        const trimmedData = data.trim()
+        return isNumeric(trimmedData)
     } catch(ex) {
         return false
     }
+}
+
+const checkValidFloatType = (data) => {
+    const  isValidFloat = (value) => {
+        return !isNaN(Number(value))
+    }
+    if (data === "undefined") {
+        return false
+    }
+
+    const trimmedData = data.trim()
+    if (trimmedData.length === 0) {
+        return false
+    }
+
+    return isValidFloat(trimmedData)
+}
+
+const checkValidBooleanType = (data) => {
+    const trimData = data.trim()
+    return ["TRUE", "FALSE"].includes(trimData.toUpperCase())
 }
 
 const PackageCatalogForm = ({handleCreateNewEnclave}) => {
@@ -108,6 +130,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const {kurtosisPackage} = state
     const [runningPackage, setRunningPackage] = useState(false)
     const [enclaveName, setEnclaveName] = useState("")
+    const [productionMode, setProductionMode] = useState(false)
     
     let initialFormData = {}
     kurtosisPackage.args.map(
@@ -164,15 +187,25 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 valid = checkValidStringType(formData[key])
             } else if (type === "INTEGER") {
                 valid = checkValidIntType(formData[key])
+            } else if (type === "BOOL") {
+                valid = checkValidBooleanType(formData[key])
+            } else if (type === "FLOAT") {
+                valid = checkValidFloatType(formData[key])
             } else {
                 valid = checkValidUndefinedType(formData[key])
             }
 
+            let typeToPrint = type 
             if (type === undefined) {
-                type = "JSON"
+                typeToPrint = "JSON"
             }
+            
+            if (type === "BOOL") {
+                typeToPrint = "BOOLEAN (TRUE/FALSE)"
+            }
+
             if (!valid) {
-                errorsFound[key] = `Incorrect type, expected ${type}`;
+                errorsFound[key] = `Incorrect type, expected ${typeToPrint}`;
             }
         })
 
@@ -196,16 +229,29 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             Object.keys(formData).map(key => {
                 const argName = kurtosisPackage.args[key].name
                 const value = formData[key]
-                if (!["INTEGER", "STRING", "BOOL", "FLOAT"].includes(kurtosisPackage.args[key]["type"])) {
-                    try {
-                        const val = JSON.parse(value)
+
+                let val; 
+                let trimmedValue;
+                if (value.length > 0) {
+                    if (kurtosisPackage.args[key]["type"] === "INTEGER") {
+                        trimmedValue = value.trim()
+                        val = parseInt(value)
                         args[argName] = val
-                    } catch(ex) {
-                        console.log("this error should not come up")
+                    } else if (kurtosisPackage.args[key]["type"] === "BOOL") {
+                        trimmedValue = value.trim()
+                        val = value.toUpperCase()
+                        args[argName] = (val === "TRUE") ? true : false
+                    } else if (kurtosisPackage.args[key]["type"] === "FLOAT") {
+                        trimmedValue = value.trim()
+                        val = parseFloat(value)
+                        args[argName] = val
+                    } else if (kurtosisPackage.args[key]["type"] === "STRING") {
+                        args[argName] = value
+                    } else {
+                        val = JSON.parse(value)
+                        args[argName] = val
                     }
-                } else {
-                    args[argName] = value
-                }
+                }    
             })
 
             const stringifiedArgs = JSON.stringify(args)
@@ -213,7 +259,8 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 packageId: kurtosisPackage.name,
                 args: stringifiedArgs,
             }
-            handleCreateNewEnclave(runKurtosisPackageArgs)
+
+            handleCreateNewEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
 
         } else {
            const newErrorData = {
@@ -240,15 +287,37 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 gap={2}
             >
                 <GridItem area={'option'} pt="1">
-                    <PackageCatalogOption />
+                    <PackageCatalogOption catalog={true} />
                 </GridItem>
                 <GridItem area={'packageId'} p="1">
-                    <Center>
-                        <Text color={"white"} fontSize={"4xl"}> {kurtosisPackage.name} </Text>
-                    </Center>
+                    <Flex direction={"column"} gap={"2"}>
+                        <Center>
+                            <Text color={"white"} fontSize={"4xl"}> {kurtosisPackage.name} </Text>
+                         </Center>
+                         <Center>
+                            <Checkbox color={"white"} fontSize={"2xl"} isChecked={productionMode} onChange={(e)=>setProductionMode(e.target.checked)}> 
+                                <Text color={"white"} fontSize={"xl"} textAlign={"justify-center"}> 
+                                    Production Mode 
+                                </Text>
+                            </Checkbox>
+                        </Center>
+                    </Flex>
                 </GridItem>
                 <GridItem area={'main'} h="90%" overflowY={"scroll"} mt="10"> 
                     <Stack spacing={4}>
+                        <Flex color={"white"}>
+                            <Flex mr="3" direction={"column"} w="15%">
+                                <Text align={"center"} fontSize={"xl"}> Enclave Name </Text>
+                            </Flex>
+                            <Flex flex="1" mr="3" direction={"column"}>
+                                <Input 
+                                    placeholder={"IF NOT PROVIDED, THIS WILL BE GENERATED AUTOMATICALLY"} 
+                                    color='gray.300' 
+                                    value={enclaveName}
+                                    onChange={(e)=>setEnclaveName(e.target.value)}
+                                />
+                            </Flex>
+                        </Flex>
                         {renderArgs(kurtosisPackage.args, handleFormDataChange, formData, errorData)}
                     </Stack>
                 </GridItem>
