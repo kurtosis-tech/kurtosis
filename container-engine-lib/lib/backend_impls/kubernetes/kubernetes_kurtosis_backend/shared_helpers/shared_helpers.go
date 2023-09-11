@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/gammazero/workerpool"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
@@ -18,22 +19,23 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_port_spec_serializer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 
-	"github.com/sirupsen/logrus"
 	"io"
-	apiv1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/intstr"
 	"net"
 	"os"
 	"path"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
+	apiv1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // !!!WARNING!!!
@@ -248,7 +250,7 @@ func GetMatchingUserServiceObjectsAndKubernetesResources(
 				continue
 			}
 
-			if _, found := filters.Statuses[kubernetesService.GetStatus()]; !found {
+			if _, found := filters.Statuses[kubernetesService.GetContainer().GetStatus()]; !found {
 				continue
 			}
 		}
@@ -433,10 +435,10 @@ func GetUserServiceObjectsFromKubernetesResources(
 			// This means that there  used to be a Pod but it was stopped/removed
 			resultObj.Service = service.NewService(
 				serviceRegistrationObj,
-				container_status.ContainerStatus_Stopped,
 				privatePorts,
 				servicePublicIp,
 				servicePublicPorts,
+				container.NewContainer(container.ContainerStatus_Stopped, "", nil, nil, nil),
 			)
 			continue
 		}
@@ -448,10 +450,10 @@ func GetUserServiceObjectsFromKubernetesResources(
 
 		resultObj.Service = service.NewService(
 			serviceRegistrationObj,
-			containerStatus,
 			privatePorts,
 			servicePublicIp,
 			servicePublicPorts,
+			container.NewContainer(containerStatus, "", nil, nil, nil),
 		)
 	}
 
@@ -515,9 +517,9 @@ func GetPrivatePortsAndValidatePortExistence(kubernetesService *apiv1.Service, e
 	return privatePortSpecs, nil
 }
 
-func GetContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus, error) {
+func GetContainerStatusFromPod(pod *apiv1.Pod) (container.ContainerStatus, error) {
 	// TODO Rename this; this shouldn't be called "ContainerStatus" since there's no longer a 1:1 mapping between container:kurtosis_object
-	status := container_status.ContainerStatus_Stopped
+	status := container.ContainerStatus_Stopped
 
 	if pod != nil {
 		podPhase := pod.Status.Phase
@@ -527,7 +529,7 @@ func GetContainerStatusFromPod(pod *apiv1.Pod) (container_status.ContainerStatus
 			return status, stacktrace.NewError("No is-pod-running determination found for pod phase '%v' on pod '%v'; this is a bug in Kurtosis", podPhase, pod.Name)
 		}
 		if isPodRunning {
-			status = container_status.ContainerStatus_Running
+			status = container.ContainerStatus_Running
 		}
 	}
 	return status, nil

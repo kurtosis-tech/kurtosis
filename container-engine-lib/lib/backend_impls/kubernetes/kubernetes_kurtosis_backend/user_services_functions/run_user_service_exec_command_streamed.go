@@ -2,9 +2,10 @@ package user_services_functions
 
 import (
 	"context"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_manager"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -54,12 +55,12 @@ func RunUserServiceExecCommandWithStreamedOutput(
 			cmd,
 			serviceUuid)
 	}
-	if userServiceKubernetesService.GetStatus() != container_status.ContainerStatus_Running {
+	if userServiceKubernetesService.GetContainer().GetStatus() != container.ContainerStatus_Running {
 		return nil, nil, stacktrace.NewError(
 			"Cannot execute command '%+v' on service '%v' because the service status is '%v'",
 			cmd,
 			serviceUuid,
-			userServiceKubernetesService.GetStatus().String())
+			userServiceKubernetesService.GetContainer().GetStatus().String())
 	}
 
 	userServiceKubernetesPod := userServiceKubernetesResource.KubernetesResources.Pod

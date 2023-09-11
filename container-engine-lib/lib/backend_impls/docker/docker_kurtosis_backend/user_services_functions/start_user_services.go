@@ -2,18 +2,19 @@ package user_service_functions
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 	"strings"
 	"sync"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/service_registration"
 
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_operation_parallelizer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -415,10 +416,10 @@ func restartUserServices(
 
 		successfulServices[serviceUuid] = service.NewService(
 			serviceRegistrations[serviceUuid],
-			container_status.ContainerStatus_Running,
 			nil,
 			nil,
 			nil,
+			container.NewContainer(container.ContainerStatus_Running, "", nil, nil, nil),
 		)
 
 		serviceStatus := service.ServiceStatus_Started
@@ -725,10 +726,11 @@ func createStartServiceOperation(
 
 		serviceObjectPtr := service.NewService(
 			serviceRegistration,
-			container_status.ContainerStatus_Running,
 			privatePorts,
 			maybePublicIp,
-			maybePublicPortSpecs)
+			maybePublicPortSpecs,
+			container.NewContainer(container.ContainerStatus_Running, "", nil, nil, nil),
+		)
 
 		shouldDeleteVolumes = false
 		shouldKillContainer = false

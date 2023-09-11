@@ -12,7 +12,6 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"io"
 	"math"
 	"net/http"
@@ -22,10 +21,12 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -552,7 +553,7 @@ func (apicService ApiContainerService) waitForEndpointAvailability(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting service '%v'", serviceIdStr)
 	}
-	if serviceObj.GetStatus() != container_status.ContainerStatus_Running {
+	if serviceObj.GetContainer().GetStatus() != container.ContainerStatus_Running {
 		return stacktrace.NewError("Service '%v' isn't running so can never become available", serviceIdStr)
 	}
 	privateIp := serviceObj.GetRegistration().GetPrivateIP()
