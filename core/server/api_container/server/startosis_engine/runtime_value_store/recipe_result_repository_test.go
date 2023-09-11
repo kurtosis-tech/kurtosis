@@ -1,10 +1,8 @@
 package runtime_value_store
 
 import (
-	port_spec_core "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/directory"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/stretchr/testify/require"
 	bolt "go.etcd.io/bbolt"
 	"go.starlark.net/starlark"
@@ -20,9 +18,9 @@ const (
 	firstKey            = "mykey"
 	secondKey           = "mySecondKey"
 	thirdKey            = "myThirdKey"
-	fourthKey           = "myFourthKey"
-	fifthKey            = "fifthKey"
 	starlarkStringValue = starlark.String("my-value")
+
+	starlarkThreadName = "recipe-result-repository-test-starlark-thread"
 )
 
 var (
@@ -44,23 +42,10 @@ func TestRecipeResultSaveKey_Success(t *testing.T) {
 func TestRecipeResultSaveAndGet_Success(t *testing.T) {
 	repository := getRecipeResultRepositoryForTest(t)
 
-	startosisPortSpecType, interpretationErr := port_spec.CreatePortSpec(
-		uint16(443),
-		port_spec_core.TransportProtocol_TCP,
-		nil,
-		"10s",
-	)
-	require.Nil(t, interpretationErr)
-
-	startosisDirectoryType, interpretationErr := directory.CreateDirectoryFromFilesArtifact("fake-file-artifact-name")
-	require.Nil(t, interpretationErr)
-
-	resultValue := map[string]string{
-		firstKey:  starlarkStringValue.GoString(),
-		secondKey: starlarkIntValue.String(),
-		thirdKey:  starlarkBoolValue.String(),
-		fourthKey: startosisPortSpecType.String(),
-		fifthKey:  startosisDirectoryType.String(),
+	resultValue := map[string]starlark.Comparable{
+		firstKey:  starlarkStringValue,
+		secondKey: starlarkIntValue,
+		thirdKey:  starlarkBoolValue,
 	}
 
 	err := repository.Save(randomUuid, resultValue)
@@ -85,9 +70,9 @@ func TestRecipeResultGet_DoesNotExist(t *testing.T) {
 func TestDelete_Success(t *testing.T) {
 	repository := getRecipeResultRepositoryForTest(t)
 
-	resultValue := map[string]string{
-		firstKey:  starlarkStringValue.GoString(),
-		secondKey: starlarkIntValue.String(),
+	resultValue := map[string]starlark.Comparable{
+		firstKey:  starlarkStringValue,
+		secondKey: starlarkIntValue,
 	}
 
 	err := repository.Save(randomUuid, resultValue)
@@ -120,8 +105,26 @@ func getRecipeResultRepositoryForTest(t *testing.T) *recipeResultRepository {
 	enclaveDb := &enclave_db.EnclaveDB{
 		DB: db,
 	}
-	repository, err := getOrCreateNewRecipeResultRepository(enclaveDb)
+
+	dummySerde := newDummyStarlarkValueSerDeForTest()
+
+	repository, err := getOrCreateNewRecipeResultRepository(enclaveDb, dummySerde)
 	require.NoError(t, err)
 
 	return repository
+}
+
+func newDummyStarlarkValueSerDeForTest() *kurtosis_types.StarlarkValueSerde {
+	starlarkThread := &starlark.Thread{
+		Name:       starlarkThreadName,
+		Print:      nil,
+		Load:       nil,
+		OnMaxSteps: nil,
+		Steps:      0,
+	}
+	starlarkEnv := starlark.StringDict{}
+
+	serde := kurtosis_types.NewStarlarkValueSerde(starlarkThread, starlarkEnv)
+
+	return serde
 }

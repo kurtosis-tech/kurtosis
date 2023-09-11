@@ -3,9 +3,11 @@ package runtime_value_store
 import (
 	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	bolt "go.etcd.io/bbolt"
+	"go.starlark.net/starlark"
 )
 
 var (
@@ -14,10 +16,14 @@ var (
 )
 
 type recipeResultRepository struct {
-	enclaveDb *enclave_db.EnclaveDB
+	enclaveDb          *enclave_db.EnclaveDB
+	starlarkValueSerde *kurtosis_types.StarlarkValueSerde
 }
 
-func getOrCreateNewRecipeResultRepository(enclaveDb *enclave_db.EnclaveDB) (*recipeResultRepository, error) {
+func getOrCreateNewRecipeResultRepository(
+	enclaveDb *enclave_db.EnclaveDB,
+	starlarkValueSerde *kurtosis_types.StarlarkValueSerde,
+) (*recipeResultRepository, error) {
 	if err := enclaveDb.Update(func(tx *bolt.Tx) error {
 		bucket, err := tx.CreateBucketIfNotExists(recipeResultBucketName)
 		if err != nil {
@@ -31,7 +37,8 @@ func getOrCreateNewRecipeResultRepository(enclaveDb *enclave_db.EnclaveDB) (*rec
 	}
 
 	repository := &recipeResultRepository{
-		enclaveDb: enclaveDb,
+		enclaveDb:          enclaveDb,
+		starlarkValueSerde: starlarkValueSerde,
 	}
 
 	return repository, nil
@@ -59,7 +66,7 @@ func (repository *recipeResultRepository) SaveKey(
 
 func (repository *recipeResultRepository) Save(
 	uuid string,
-	value map[string]string,
+	value map[string]starlark.Comparable,
 ) error {
 	logrus.Debugf("Saving recipe result '%v' with value '%v' repository", uuid, value)
 	if err := repository.enclaveDb.Update(func(tx *bolt.Tx) error {
@@ -67,14 +74,21 @@ func (repository *recipeResultRepository) Save(
 
 		uuidKey := getUuidKey(uuid)
 
-		jsonBytes, err := json.Marshal(value)
+		stringifiedValue := map[string]string{}
+
+		for uuidStr, starlarkComparable := range value {
+			starlarkValueStr := repository.starlarkValueSerde.Serialize(starlarkComparable)
+			stringifiedValue[uuidStr] = starlarkValueStr
+		}
+
+		jsonBytes, err := json.Marshal(stringifiedValue)
 		if err != nil {
-			return stacktrace.Propagate(err, "An error occurred marshalling value '%+v' in the recipe result repository", value)
+			return stacktrace.Propagate(err, "An error occurred marshalling value '%+v' in the recipe result repository", stringifiedValue)
 		}
 
 		// save it to disk
 		if err := bucket.Put(uuidKey, jsonBytes); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while saving recipe result value '%+v' with UUID '%s' into the enclave db bucket", value, uuid)
+			return stacktrace.Propagate(err, "An error occurred while saving recipe result value '%+v' with UUID '%s' into the enclave db bucket", stringifiedValue, uuid)
 		}
 		return nil
 	}); err != nil {
@@ -86,9 +100,9 @@ func (repository *recipeResultRepository) Save(
 
 func (repository *recipeResultRepository) Get(
 	uuid string,
-) (map[string]string, error) {
+) (map[string]starlark.Comparable, error) {
 	logrus.Debugf("Getting recipe result '%v' from repository", uuid)
-	value := map[string]string{}
+	value := map[string]starlark.Comparable{}
 
 	if err := repository.enclaveDb.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket(recipeResultBucketName)
@@ -110,8 +124,24 @@ func (repository *recipeResultRepository) Get(
 			return nil
 		}
 
-		if err := json.Unmarshal(jsonBytes, &value); err != nil {
+		stringifiedValue := map[string]string{}
+
+		if err := json.Unmarshal(jsonBytes, &stringifiedValue); err != nil {
 			return stacktrace.Propagate(err, "An error occurred unmarshalling the recipe result value with UUID '%s' from the repository", uuid)
+		}
+
+		for uuidStr, valueStr := range stringifiedValue {
+			starlarkValue, err := repository.starlarkValueSerde.Deserialize(valueStr)
+			if err != nil {
+				return stacktrace.Propagate(err, "An error occurred deserializing the stringified value '%v'", valueStr)
+			}
+
+			starlarkComparable, ok := starlarkValue.(starlark.Comparable)
+			if !ok {
+				return stacktrace.NewError("Failed to cast Starlark value '%s' to Starlark comparable type", starlarkValue)
+			}
+
+			value[uuidStr] = starlarkComparable
 		}
 
 		return nil
