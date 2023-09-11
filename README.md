@@ -29,7 +29,7 @@ If you're in web3, we have even more specific web3 usecases [here](https://web3.
 
 How do I get going?
 ===================
-To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install).
+To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install). _Note that we're working on a cloud-hosted version of Kurtosis that doesn't require any local installation; if this is interesting to you then let us know [here](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H) and we'll let you know when it's available._
 
 Then, run the [Redis voting app Kurtosis package](https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app):
 
@@ -61,18 +61,18 @@ To read about how Kurtosis works, see [our documentation][docs].
 
 To see where we're going with the product, check out the roadmap [here](https://github.com/kurtosis-tech/kurtosis/wiki/Short%E2%80%90term-Roadmap).
 
-Why Kurtosis over Compose, Helm, Terraform, etc.?
-=================================================
-These tools have been around for over a decade, yet most developers still struggle to build distributed applications. Why? In a sentence: building distributed applications is hard, and these tools don't make it easy enough for the average developer.
+Why Kurtosis over Compose, Helm, or Terraform?
+==============================================
+These tools have been around for over a decade, yet most developers still struggle to build distributed applications. Why? In a sentence: building distributed applications is hard, and these tools still haven't made it easy enough for the average developer.
 
 Some of our observations:
 
-- No tool works across the whole software lifecycle: Compose is good at quick local environments and bad at Prod environments, while Helm and Terraform are the opposite. This often means a dedicated DevOps team handles Prod deployment, leading to the same "throw it across the wall" problems the DevOps movement was founded around.
-- Compose, Helm, and Terraform all struggle to do sequential "first this, then this" logic necessary for many prototyping workflows.
-- All three are difficult to make [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) through sharing and reuse.
+- No tool works across the whole software lifecycle: Compose is oriented around quick local environments rather than Prod environments, while Helm and Terraform are the opposite. This often means a dedicated DevOps team handles Prod deployment, leading to the same "throw it across the wall" problem the DevOps movement was founded around.
+- Compose, Helm, and Terraform use fully declarative paradigms, making difficult the sequential "first this, then this" logic necessary for many prototyping workflows.
+- The inherently declarative nature of all three make [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) difficult, leading to frequent copy-pasting.
 - All three tend to leave resources hanging around that the developer needs to manually clean up.
-- Compose and Helm tend to favor "run it and see what happens" over validation & error-checking, resulting in long dev and debug cycles.
-- A surprising number of developers don't understand how Docker works, and [most don't understand Kubernetes or Terraform][stackoverflow-2022-developer-survey--other-tools].
+- Compose and Helm favor "run it and see what happens" over validation & error-checking, resulting in debugging time and longer dev cycles.
+- A significant percentage of developers don't understand how Docker works, and [most don't understand Kubernetes or Terraform][stackoverflow-2022-developer-survey--other-tools].
 
 Here's what our users tell us they like about Kurtosis:
 
