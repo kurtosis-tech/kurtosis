@@ -734,6 +734,11 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the service status to a service info status")
 	}
+	serviceContainer := serviceObj.GetContainer()
+	serviceInfoContainerStatus, err := convertContainerStatusToServiceInfoContainerStatus(serviceContainer.GetStatus())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the service container status to a service info container status")
+	}
 
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
 	if err != nil {
@@ -750,6 +755,13 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 			return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
 		}
 	}
+	serviceInfoContainer := &kurtosis_core_rpc_api_bindings.Container{
+		Status: serviceInfoContainerStatus,
+		ImageName: serviceContainer.GetImageName(),
+		EntrypointArgs: serviceContainer.GetEntrypointArgs(),
+		CmdArgs: serviceContainer.GetCmdArgs(),
+		EnvVars: serviceContainer.GetEnvVars(),
+	}
 
 	serviceInfoResponse := binding_constructors.NewServiceInfo(
 		serviceUuidStr,
@@ -760,6 +772,7 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		publicIpAddrStr,
 		publicApiPorts,
 		serviceStatus,
+		serviceInfoContainer,
 	)
 	return serviceInfoResponse, nil
 }
@@ -834,5 +847,16 @@ func convertServiceStatusToServiceInfoStatus(serviceStatus service.ServiceStatus
 		return kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED, nil
 	default:
 		return kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN, stacktrace.NewError("Failed to convert service status %v", serviceStatus)
+	}
+}
+
+func convertContainerStatusToServiceInfoContainerStatus(containerStatus container.ContainerStatus) (kurtosis_core_rpc_api_bindings.Container_Status, error) {
+	switch containerStatus {
+	case container.ContainerStatus_Running:
+		return kurtosis_core_rpc_api_bindings.Container_RUNNING, nil
+	case container.ContainerStatus_Stopped:
+		return kurtosis_core_rpc_api_bindings.Container_STOPPED, nil
+	default:
+		return kurtosis_core_rpc_api_bindings.Container_UNKNOWN, stacktrace.NewError("Failed to convert container status %v", containerStatus)
 	}
 }
