@@ -19,7 +19,7 @@ Why should I use Kurtosis?
 Kurtosis shines when creating, working with, and destroying self-contained distributed application environments. Currently, our users report this to be most useful when:
 
 - You're developing on your application and you need to rapidly iterate on it
-- You want to try someone's containerized service or distributed application on your local machine
+- You want to try someone's containerized service or distributed application without setting up an environment, dependencies, etc.
 - You want to spin up your distributed application in ephemeral environments as part of your integration tests
 - You want to ad-hoc test your application on a big cloud cluster
 - You're the author of a containerized service or distributed application and you want to give your users a one-liner to try it
@@ -51,7 +51,7 @@ If you have an issue or feature request, we'd love to hear about it through one 
 
 To try more Kurtosis packages just like this one, check out the [`awesome-kurtosis` repo][awesome-kurtosis] or one of these packages:
 
-- [Ethereum](https://github.com/kurtosis-tech/eth2-package): A fully functional private Ethereum network in Kurtosis, with parameters for MEV and any client combination.
+- [Ethereum](https://github.com/kurtosis-tech/eth2-package): fully functional private Ethereum network in Kurtosis with Flashbots MEV-boost, any EL and CL client combination, and a collection of network monitoring tools.
 - [DIVE](https://github.com/HugoByte/DIVE): A CLI + Kurtosis package by [Hugobyte](https://hugobyte.com) for the ICON ecosystem that can spin up EVM, Cosmos, or JVM networks with a bridge between them.
 - [NEAR](https://github.com/kurtosis-tech/near-package): A private NEAR network in Kurtosis.
 
@@ -69,7 +69,7 @@ Some of our observations:
 
 - No tool works across the whole software lifecycle: Compose is good at quick local environments and bad at Prod environments, while Helm and Terraform are the opposite. This often means a dedicated DevOps team handles Prod deployment, leading to the same "throw it across the wall" problems the DevOps movement was founded around.
 - Compose, Helm, and Terraform all struggle to do sequential "first this, then this" logic necessary for many prototyping workflows.
-- All three are difficult to make DRY through sharing and reuse.
+- All three are difficult to make [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) through sharing and reuse.
 - All three tend to leave resources hanging around that the developer needs to manually clean up.
 - Compose and Helm tend to favor "run it and see what happens" over validation & error-checking, resulting in long dev and debug cycles.
 - A surprising number of developers don't understand how Docker works, and [most don't understand Kubernetes or Terraform][stackoverflow-2022-developer-survey--other-tools].
