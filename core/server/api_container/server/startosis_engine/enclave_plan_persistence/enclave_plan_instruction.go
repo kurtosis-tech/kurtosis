@@ -55,12 +55,13 @@ func (enclavePlanInstruction *EnclavePlanInstruction) HasOnlyFilesArtifactMd5(fi
 
 func (enclavePlanInstruction *EnclavePlanInstruction) Clone() *EnclavePlanInstruction {
 	clonedServiceNames := make([]string, len(enclavePlanInstruction.ServiceNames))
-	for idx, serviceName := range enclavePlanInstruction.ServiceNames {
-		clonedServiceNames[idx] = serviceName
-	}
+	copy(enclavePlanInstruction.ServiceNames, clonedServiceNames)
+
 	clonedFilesArtifacts := make(map[string][]byte, len(enclavePlanInstruction.FilesArtifacts))
 	for filesArtifactName, filesArtifactMd5 := range enclavePlanInstruction.FilesArtifacts {
-		clonedFilesArtifacts[filesArtifactName] = filesArtifactMd5
+		clonedFilesArtifactMd5 := make([]byte, len(filesArtifactMd5))
+		copy(filesArtifactMd5, clonedFilesArtifactMd5)
+		clonedFilesArtifacts[filesArtifactName] = clonedFilesArtifactMd5
 	}
 	return &EnclavePlanInstruction{
 		Uuid:           enclavePlanInstruction.Uuid,
