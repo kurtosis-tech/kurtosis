@@ -2,6 +2,7 @@ package kurtosis_plan_instruction
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -16,5 +17,9 @@ type KurtosisPlanInstructionCapabilities interface {
 
 	Execute(ctx context.Context, arguments *builtin_argument.ArgumentValuesSet) (string, error)
 
-	TryResolveWith(instructionsAreEqual bool, other KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
+	TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
+
+	// FillPersistableAttributes adds to the builder the attributes of the instruction that needs to be persisted to the
+	// enclave database to power idempotent runs.
+	FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder)
 }

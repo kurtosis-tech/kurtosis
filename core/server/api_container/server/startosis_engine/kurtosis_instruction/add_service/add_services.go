@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -203,7 +204,7 @@ func (builtin *AddServicesCapabilities) Execute(ctx context.Context, _ *builtin_
 	return instructionResult.String(), nil
 }
 
-func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		for serviceName := range builtin.serviceConfigs {
 			enclaveComponents.AddService(serviceName, enclave_structure.ComponentWasLeftIntact)
@@ -217,8 +218,8 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		}
 		return enclave_structure.InstructionIsUnknown
 	}
-	otherAddServicesCapabilities, ok := other.(*AddServicesCapabilities)
-	if !ok {
+
+	if other.Type != AddServicesBuiltinName {
 		for serviceName := range builtin.serviceConfigs {
 			enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsNew)
 		}
@@ -227,10 +228,10 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 
 	// The instruction can be re-run only if the set of added services is a superset of what was added by the
 	// instruction it's being compared to, so we check that first
-	atLeastOneFilehasBeenUpdated := false
+	atLeastOneFileHasBeenUpdated := false
 	previouslyAddedService := map[service.ServiceName]bool{}
-	for serviceName := range otherAddServicesCapabilities.serviceConfigs {
-		previouslyAddedService[serviceName] = false
+	for _, serviceName := range other.ServiceNames {
+		previouslyAddedService[service.ServiceName(serviceName)] = false
 	}
 	for serviceName, serviceConfig := range builtin.serviceConfigs {
 		if _, found := previouslyAddedService[serviceName]; found {
@@ -242,7 +243,7 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		if filesArtifactsExpansion != nil {
 			for _, filesArtifactName := range filesArtifactsExpansion.ServiceDirpathsToArtifactIdentifiers {
 				if enclaveComponents.HasFilesArtifactBeenUpdated(filesArtifactName) {
-					atLeastOneFilehasBeenUpdated = true
+					atLeastOneFileHasBeenUpdated = true
 				}
 			}
 		}
@@ -257,7 +258,7 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		}
 	}
 
-	if !instructionsAreEqual || atLeastOneFilehasBeenUpdated {
+	if !instructionsAreEqual || atLeastOneFileHasBeenUpdated {
 		for serviceName := range builtin.serviceConfigs {
 			if _, found := previouslyAddedService[serviceName]; found {
 				enclaveComponents.AddService(serviceName, enclave_structure.ComponentIsUpdated)
@@ -273,6 +274,13 @@ func (builtin *AddServicesCapabilities) TryResolveWith(instructionsAreEqual bool
 		enclaveComponents.AddService(serviceName, enclave_structure.ComponentWasLeftIntact)
 	}
 	return enclave_structure.InstructionIsEqual
+}
+
+func (builtin *AddServicesCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(AddServicesBuiltinName)
+	for serviceName := range builtin.serviceConfigs {
+		builder.AddServiceName(serviceName)
+	}
 }
 
 func (builtin *AddServicesCapabilities) removeAllStartedServices(

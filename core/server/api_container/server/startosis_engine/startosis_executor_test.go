@@ -3,11 +3,14 @@ package startosis_engine
 import (
 	"context"
 	"errors"
+	"github.com/google/uuid"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/mock_instruction"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/stretchr/testify/mock"
@@ -40,10 +43,13 @@ var (
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor := NewStartosisExecutor(runtimeValueStore)
+	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
 	instructionsPlan := instructions_plan.NewInstructionsPlan()
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
@@ -81,10 +87,13 @@ func TestExecuteKurtosisInstructions_ExecuteForReal_Success(t *testing.T) {
 
 func TestExecuteKurtosisInstructions_ExecuteForReal_FailureHalfWay(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(t, err)
 
-	executor := NewStartosisExecutor(runtimeValueStore)
+	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", throwOnExecute)
@@ -123,10 +132,13 @@ instruction2()
 
 func TestExecuteKurtosisInstructions_DoDryRun(t *testing.T) {
 	enclaveDb := getEnclaveDBForTest(t)
-	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(nil, enclaveDb)
+
+	dummySerde := shared_helpers.NewDummyStarlarkValueSerDeForTest()
+
+	runtimeValueStore, createRuntimeValueStoreErr := runtime_value_store.CreateRuntimeValueStore(dummySerde, enclaveDb)
 	require.NoError(t, createRuntimeValueStoreErr)
 
-	executor := NewStartosisExecutor(runtimeValueStore)
+	executor := NewStartosisExecutor(nil, runtimeValueStore, enclave_plan_persistence.NewEnclavePlan(), enclaveDb)
 
 	instruction1 := createMockInstruction(t, "instruction1", executeSuccessfully)
 	instruction2 := createMockInstruction(t, "instruction2", executeSuccessfully)
@@ -161,6 +173,10 @@ func createMockInstruction(t *testing.T, instructionName string, executeSuccessf
 	instruction.EXPECT().GetCanonicalInstruction(mock.Anything).Maybe().Return(canonicalInstruction)
 	instruction.EXPECT().GetPositionInOriginalScript().Maybe().Return(dummyPosition)
 	instruction.EXPECT().String().Maybe().Return(stringifiedInstruction)
+	instruction.EXPECT().GetPersistableAttributes().Maybe().Return(
+		enclave_plan_persistence.NewEnclavePlanInstructionBuilder().SetUuid(uuid.New().String()).SetType(instructionName).SetStarlarkCode(stringifiedInstruction).SetReturnedValue("None"),
+		nil,
+	)
 
 	if executeSuccessfully {
 		instruction.EXPECT().Execute(mock.Anything).Maybe().Return(nil, nil)

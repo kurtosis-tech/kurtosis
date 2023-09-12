@@ -31,6 +31,10 @@ func NewScheduledInstruction(uuid ScheduledInstructionUuid, kurtosisInstruction 
 	}
 }
 
+func (instruction *ScheduledInstruction) GetUuid() ScheduledInstructionUuid {
+	return instruction.uuid
+}
+
 func (instruction *ScheduledInstruction) GetInstruction() kurtosis_instruction.KurtosisInstruction {
 	return instruction.kurtosisInstruction
 }

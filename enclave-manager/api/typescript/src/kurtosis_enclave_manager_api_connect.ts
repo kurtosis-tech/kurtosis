@@ -5,7 +5,7 @@
 
 import { GetListFilesArtifactNamesAndUuidsRequest, GetServicesRequest, HealthCheckRequest, HealthCheckResponse, InspectFilesArtifactContentsRequest, RunStarlarkPackageRequest } from "./kurtosis_enclave_manager_api_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
-import { CreateEnclaveArgs, CreateEnclaveResponse, GetEnclavesResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
+import { CreateEnclaveArgs, CreateEnclaveResponse, DestroyEnclaveArgs, GetEnclavesResponse, GetServiceLogsArgs, GetServiceLogsResponse } from "./engine_service_pb.js";
 import { GetServicesResponse, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, StarlarkRunResponseLine } from "./api_container_service_pb.js";
 
 /**
@@ -84,6 +84,15 @@ export const KurtosisEnclaveManagerServer = {
       name: "InspectFilesArtifactContents",
       I: InspectFilesArtifactContentsRequest,
       O: InspectFilesArtifactContentsResponse,
+      kind: MethodKind.Unary,
+    },
+    /**
+     * @generated from rpc kurtosis_enclave_manager.KurtosisEnclaveManagerServer.DestroyEnclave
+     */
+    destroyEnclave: {
+      name: "DestroyEnclave",
+      I: DestroyEnclaveArgs,
+      O: Empty,
       kind: MethodKind.Unary,
     },
   }

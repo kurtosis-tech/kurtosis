@@ -2,12 +2,12 @@ package api_container_gateway
 
 import (
 	"context"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/common"
 	"io"
 	"sync"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/connection"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_gateway/server/common"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -31,6 +31,9 @@ type ApiContainerGatewayServiceServer struct {
 	// ServiceMap and mutex to protect it
 	mutex                               *sync.Mutex
 	userServiceNameToLocalConnectionMap map[string]*runningLocalServiceConnection
+
+	// User services port forwarding
+	userServiceConnect kurtosis_core_rpc_api_bindings.Connect
 }
 
 type runningLocalServiceConnection struct {
@@ -56,6 +59,7 @@ func NewEnclaveApiContainerGatewayServer(connectionProvider *connection.GatewayC
 		mutex:                               &sync.Mutex{},
 		userServiceNameToLocalConnectionMap: userServiceToLocalConnectionMap,
 		enclaveId:                           enclaveId,
+		userServiceConnect:                  kurtosis_core_rpc_api_bindings.Connect_CONNECT,
 	}, closeGatewayFunc
 }
 
@@ -100,13 +104,26 @@ func (service *ApiContainerGatewayServiceServer) GetServices(ctx context.Context
 		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
 	}
 
-	// Clean up the removed services when we have the full list of running services
-	cleanupRemovedServices := len(args.ServiceIdentifiers) == 0
+	if service.userServiceConnect == kurtosis_core_rpc_api_bindings.Connect_CONNECT {
+		// Clean up the removed services when we have the full list of running services
+		cleanupRemovedServices := len(args.ServiceIdentifiers) == 0
 
-	if err := service.updateServicesLocalConnection(remoteApiContainerResponse.ServiceInfo, cleanupRemovedServices); err != nil {
-		return nil, stacktrace.Propagate(err, "Error updating the services local connection")
+		if err := service.updateServicesLocalConnection(remoteApiContainerResponse.ServiceInfo, cleanupRemovedServices); err != nil {
+			return nil, stacktrace.Propagate(err, "Error updating the services local connection")
+		}
 	}
 
+	return remoteApiContainerResponse, nil
+}
+
+func (service *ApiContainerGatewayServiceServer) ConnectServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ConnectServicesArgs) (*kurtosis_core_rpc_api_bindings.ConnectServicesResponse, error) {
+	service.mutex.Lock()
+	defer service.mutex.Unlock()
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.ConnectServices(ctx, args)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+	service.userServiceConnect = args.Connect
 	return remoteApiContainerResponse, nil
 }
 

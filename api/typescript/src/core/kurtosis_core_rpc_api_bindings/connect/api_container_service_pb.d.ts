@@ -27,6 +27,30 @@ export declare enum ServiceStatus {
 }
 
 /**
+ * User services port forwarding
+ *
+ * @generated from enum api_container_api.Connect
+ */
+export declare enum Connect {
+  /**
+   * Best effort port forwarding
+   *
+   * @generated from enum value: CONNECT = 0;
+   */
+  CONNECT = 0,
+
+  /**
+   * Port forwarding disabled
+   *
+   * Starlark run fails if the ports cannot be forwarded.
+   * MUST_CONNECT = 2;
+   *
+   * @generated from enum value: NO_CONNECT = 1;
+   */
+  NO_CONNECT = 1,
+}
+
+/**
  * @generated from enum api_container_api.KurtosisFeatureFlag
  */
 export declare enum KurtosisFeatureFlag {
@@ -183,10 +207,6 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
 }
 
 /**
- * ==============================================================================================
- *                               Execute Starlark Arguments
- * ==============================================================================================
- *
  * @generated from message api_container_api.RunStarlarkScriptArgs
  */
 export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs> {
@@ -1491,5 +1511,48 @@ export declare class FileArtifactContentsFileDescription extends Message<FileArt
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): FileArtifactContentsFileDescription;
 
   static equals(a: FileArtifactContentsFileDescription | PlainMessage<FileArtifactContentsFileDescription> | undefined, b: FileArtifactContentsFileDescription | PlainMessage<FileArtifactContentsFileDescription> | undefined): boolean;
+}
+
+/**
+ * @generated from message api_container_api.ConnectServicesArgs
+ */
+export declare class ConnectServicesArgs extends Message<ConnectServicesArgs> {
+  /**
+   * @generated from field: api_container_api.Connect connect = 1;
+   */
+  connect: Connect;
+
+  constructor(data?: PartialMessage<ConnectServicesArgs>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.ConnectServicesArgs";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ConnectServicesArgs;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ConnectServicesArgs;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ConnectServicesArgs;
+
+  static equals(a: ConnectServicesArgs | PlainMessage<ConnectServicesArgs> | undefined, b: ConnectServicesArgs | PlainMessage<ConnectServicesArgs> | undefined): boolean;
+}
+
+/**
+ * @generated from message api_container_api.ConnectServicesResponse
+ */
+export declare class ConnectServicesResponse extends Message<ConnectServicesResponse> {
+  constructor(data?: PartialMessage<ConnectServicesResponse>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.ConnectServicesResponse";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): ConnectServicesResponse;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): ConnectServicesResponse;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): ConnectServicesResponse;
+
+  static equals(a: ConnectServicesResponse | PlainMessage<ConnectServicesResponse> | undefined, b: ConnectServicesResponse | PlainMessage<ConnectServicesResponse> | undefined): boolean;
 }
 

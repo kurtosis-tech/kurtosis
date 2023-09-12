@@ -15,6 +15,10 @@ import TabItem from '@theme/TabItem';
 
 The instructions in this guide will walk you through installing the latest version of Kurtosis. 
 
+:::info
+We're working on a cloud-hosted version of Kurtosis that doesn't require installing anything. If this interests you, let us know [here](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H) and we'll let you know when it's ready!
+:::
+
 If you already have Kurtosis installed and you're looking to upgrade to latest, [see here][upgrade-guide].
 
 If you're looking to install a historical version instead, [see here][install-historical-guide].

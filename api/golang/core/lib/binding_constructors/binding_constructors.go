@@ -365,3 +365,19 @@ func DownloadFilesArtifactArgs(fileIdentifier string) *kurtosis_core_rpc_api_bin
 		Identifier: fileIdentifier,
 	}
 }
+
+// ==============================================================================================
+//
+//	Connect Services arguments and response to configure user services port forwarding
+//
+// ==============================================================================================
+
+func NewConnectServicesArgs(connect kurtosis_core_rpc_api_bindings.Connect) *kurtosis_core_rpc_api_bindings.ConnectServicesArgs {
+	return &kurtosis_core_rpc_api_bindings.ConnectServicesArgs{
+		Connect: connect,
+	}
+}
+
+func NewConnectServicesResponse() *kurtosis_core_rpc_api_bindings.ConnectServicesResponse {
+	return &kurtosis_core_rpc_api_bindings.ConnectServicesResponse{}
+}
