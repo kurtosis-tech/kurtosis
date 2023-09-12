@@ -27,8 +27,10 @@ type KurtosisInstruction interface {
 	// TryResolveWith assesses whether the instruction can be resolved with the one passed as an argument.
 	TryResolveWith(other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
 
-	// GetPersistableAttributes returns an EnclavePlanInstruction object which contains all the persistable attributes
+	// GetPersistableAttributes returns an EnclavePlanInstructionBuilder object which contains the persistable attributes
 	// for this instruction. Persistable attributes are what will be written to the enclave database so that even
 	// if the APIC is restarted, idempotent runs will continue to work.
+	// It returns a builder and not the built object b/c the caller of this method might want to set some attributes
+	// itself. In the current case, this is called in the executor, and it sets the UUID and the returned value.
 	GetPersistableAttributes() *enclave_plan_persistence.EnclavePlanInstructionBuilder
 }
