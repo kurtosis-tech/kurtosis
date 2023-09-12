@@ -96,14 +96,14 @@ services will be rolled back and the instruction will return an execution error.
 
 :::
 
-assert
+verify
 ------
 
-The `assert` instruction throws an [Execution phase error][multi-phase-runs-reference] if the defined assertion fails.
+The `verify` instruction throws an [Execution phase error][multi-phase-runs-reference] if the defined verification fails.
 
 ```python
-plan.assert(
-    # The value currently being asserted.
+plan.verify(
+    # The value currently being verified.
     # MANDATORY
     value = "test1",
 
@@ -117,7 +117,7 @@ plan.assert(
     target_value = "test2",
 ) # This fails in runtime given that "test1" == "test2" is false
 
-plan.assert(
+plan.verify(
     # Value can also be a runtime value derived from a `get_value` call
     value = response["body"],
     assertion = "==",
@@ -127,7 +127,7 @@ plan.assert(
 
 :::caution
 
-Asserts are typed, so running
+Verifications are typed, so running
 
 ```python
 plan.assert(

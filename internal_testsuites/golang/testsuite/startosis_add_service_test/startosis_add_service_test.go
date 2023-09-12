@@ -43,7 +43,7 @@ def run(plan):
 		),
 		service_name = SERVICE_NAME_2,
 	)
-	plan.assert(connection_result["code"], "==", SUCCESS_CODE)
+	plan.verify(connection_result["code"], "==", SUCCESS_CODE)
 	
 	test_ip_address_cmd = "nc -zv {0} {1}".format(datastore_1.ip_address, GRPC_PORT) 
 	connection_result = plan.exec(
@@ -52,7 +52,7 @@ def run(plan):
 		),
 		service_name = SERVICE_NAME_2,
 	)
-	plan.assert(connection_result["code"], "==", SUCCESS_CODE)
+	plan.verify(connection_result["code"], "==", SUCCESS_CODE)
 `
 )
 

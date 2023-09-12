@@ -1,4 +1,4 @@
-package assert
+package verify
 
 import (
 	"github.com/stretchr/testify/require"
@@ -10,28 +10,28 @@ func TestAssert_StringsEqual(t *testing.T) {
 	currentValue := starlark.String("Hello")
 	assertion := "=="
 	targetValue := starlark.String("Hello")
-	require.Nil(t, Assert(currentValue, assertion, targetValue))
+	require.Nil(t, Verify(currentValue, assertion, targetValue))
 }
 
 func TestAssert_StringsNonEqual(t *testing.T) {
 	currentValue := starlark.String("Hello")
 	assertion := "=="
 	targetValue := starlark.String("World")
-	require.NotNil(t, Assert(currentValue, assertion, targetValue))
+	require.NotNil(t, Verify(currentValue, assertion, targetValue))
 }
 
 func TestAssert_IntsLt(t *testing.T) {
 	currentValue := starlark.MakeInt(1)
 	assertion := "<"
 	targetValue := starlark.MakeInt(5)
-	require.Nil(t, Assert(currentValue, assertion, targetValue))
+	require.Nil(t, Verify(currentValue, assertion, targetValue))
 }
 
 func TestAssert_IntsGtFalse(t *testing.T) {
 	currentValue := starlark.MakeInt(1)
 	assertion := ">"
 	targetValue := starlark.MakeInt(5)
-	require.NotNil(t, Assert(currentValue, assertion, targetValue))
+	require.NotNil(t, Verify(currentValue, assertion, targetValue))
 }
 
 func TestAssert_ListIn(t *testing.T) {
@@ -41,7 +41,7 @@ func TestAssert_ListIn(t *testing.T) {
 		starlark.String("Hello"),
 		starlark.String("World"),
 	})
-	require.Nil(t, Assert(currentValue, assertion, targetValue))
+	require.Nil(t, Verify(currentValue, assertion, targetValue))
 }
 
 func TestAssert_ListInFalse(t *testing.T) {
@@ -51,7 +51,7 @@ func TestAssert_ListInFalse(t *testing.T) {
 		starlark.String("Hello"),
 		starlark.String("World"),
 	})
-	require.NotNil(t, Assert(currentValue, assertion, targetValue))
+	require.NotNil(t, Verify(currentValue, assertion, targetValue))
 }
 
 func TestAssert_ListNotIn(t *testing.T) {
@@ -61,7 +61,7 @@ func TestAssert_ListNotIn(t *testing.T) {
 		starlark.String("Hello"),
 		starlark.String("World"),
 	})
-	require.Nil(t, Assert(currentValue, assertion, targetValue))
+	require.Nil(t, Verify(currentValue, assertion, targetValue))
 }
 
 func TestAssert_ListNotInFalse(t *testing.T) {
@@ -71,7 +71,7 @@ func TestAssert_ListNotInFalse(t *testing.T) {
 		starlark.String("Hello"),
 		starlark.String("World"),
 	})
-	require.NotNil(t, Assert(currentValue, assertion, targetValue))
+	require.NotNil(t, Verify(currentValue, assertion, targetValue))
 }
 
 func TestAssert_InvalidToken(t *testing.T) {
@@ -81,5 +81,5 @@ func TestAssert_InvalidToken(t *testing.T) {
 		starlark.String("Hello"),
 		starlark.String("World"),
 	})
-	require.NotNil(t, Assert(currentValue, assertion, targetValue))
+	require.NotNil(t, Verify(currentValue, assertion, targetValue))
 }
