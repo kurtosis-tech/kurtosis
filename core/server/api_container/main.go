@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
@@ -170,11 +171,17 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
 	}
 
+	// Load the current enclave plan, in case the enclave is being restarted
+	enclavePlan, err := enclave_plan_persistence.Load(enclaveDb)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred loading stored enclave plan")
+	}
+
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
-		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, serverArgs.EnclaveEnvVars),
+		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, starlarkValueSerde, serverArgs.EnclaveEnvVars),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
-		startosis_engine.NewStartosisExecutor(runtimeValueStore))
+		startosis_engine.NewStartosisExecutor(starlarkValueSerde, runtimeValueStore, enclavePlan, enclaveDb))
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
