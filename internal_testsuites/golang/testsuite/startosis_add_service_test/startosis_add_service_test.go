@@ -72,13 +72,13 @@ Command returned with exit code '0' and the following output:
 [a-z-0-9]+ \([0-9\.]+:1323\) open
 
 --------------------
-Assertion succeeded. Value is '0'.
+Verification succeeded. Value is '0'.
 Command returned with exit code '0' and the following output:
 --------------------
 [0-9\.]+ \([0-9\.]+:1323\) open
 
 --------------------
-Assertion succeeded. Value is '0'.
+Verification succeeded. Value is '0'.
 `
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
