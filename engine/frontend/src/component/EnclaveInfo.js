@@ -93,7 +93,8 @@ const EnclaveInfo = ({enclaves}) => {
     }, [name, enclaves])
 
     const handleServiceClick = (service, services) => {
-        navigate(`/enclaves/${name}/services/${service.uuid}`, {state: {services, selected: service}})
+        console.log(service)
+        navigate(`/enclaves/${name}/services/${service.serviceUuid}`, {state: {services, selected: service}})
     }
 
     const handleLeftPanelClick = (enclaveName) => {

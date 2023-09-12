@@ -22,16 +22,21 @@ const PackageCatalogRouter = ({addEnclave}) => {
         fetchPackages();
     },[])
 
-    const createNewEnclave = (runArgs, enclaveName, productionMode) => {
+    const createNewEnclave = async (runArgs, enclaveName, productionMode) => {
         const request = async () => {
-            const enclave = await createEnclave(appData.jwtToken, appData.apiHost, enclaveName, productionMode);
-            addEnclave(enclave)
-            navigate("/catalog/progress", {state: {
-                enclave,
-                runArgs,
-            }})
+            try {
+                const enclave = await createEnclave(appData.jwtToken, appData.apiHost, enclaveName, productionMode);
+                addEnclave(enclave)
+                navigate("/catalog/progress", {state: {
+                    enclave,
+                    runArgs,
+                }})
+            } catch(ex) {
+                console.log(ex)
+                alert(`Error occurred while creating enclave for package: ${runArgs.kurtosisPackage.name}. An error message should be printed in console, please share it with us to help debug this problem`)
+            } 
         }
-        request()
+        await request()
     }
 
     return (
@@ -41,7 +46,7 @@ const PackageCatalogRouter = ({addEnclave}) => {
                     <PackageCatalogProgress appData={appData}/>
                 } />
                 <Route path="/form" element={
-                    <PackageCatalogForm handleCreateNewEnclave={createNewEnclave}/>
+                    <PackageCatalogForm createEnclave={createNewEnclave}/>
                 } />
                 <Route path="/" element={
                     <PackageCatalog kurtosisPackages={kurtosisPackages}

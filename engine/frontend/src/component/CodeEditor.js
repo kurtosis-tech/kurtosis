@@ -27,6 +27,8 @@ export const CodeEditor = (
     const originalReadOnlySetting = useRef(readOnly)
     const [readOnlySetting, setReadOnlySetting] = useState(readOnly)
     const [formatCode, setFormatCode] = useState(false)
+    const [monacoReadOnlySettingHasChanged, setMonacoReadOnlySettingHasChangedHasChanged] = useState(false)
+
 
     // TODO: This could lead to bugs in the future:
     //  This number depends on the version of Monaco! Use actual enum instead.
@@ -45,7 +47,6 @@ export const CodeEditor = (
             return undefined
         }
     }
-    const [monacoReadOnlySettingHasChanged, setMonacoReadOnlySettingHasChangedHasChanged] = useState(false)
 
     function attachOptionsChangeListener() {
         getEditor().onDidChangeConfiguration((event) => {
@@ -87,6 +88,10 @@ export const CodeEditor = (
     // Start by manually setting the content of the editor. From hereafter user interaction will update it:
     useEffect(() => {
         handleEditorChange(value)
+        console.log("hello!")
+        return () => {
+            console.log("BYE BYE")
+        }
     }, [])
 
     useEffect(() => {
