@@ -7,7 +7,7 @@ import {
     InspectFilesArtifactContentsRequest,
     RunStarlarkPackageRequest
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
-import {CreateEnclaveArgs, EnclaveMode} from "enclave-manager-sdk/build/engine_service_pb";
+import {CreateEnclaveArgs, DestroyEnclaveArgs, EnclaveMode} from "enclave-manager-sdk/build/engine_service_pb";
 import {RunStarlarkPackageArgs} from "enclave-manager-sdk/build/api_container_service_pb";
 
 export const createClient = (apiHost) => {
@@ -66,6 +66,16 @@ export const inspectFilesArtifactContentsFromEnclaveManager = async (host, port,
         }
     );
     return enclaveManagerClient.inspectFilesArtifactContents(request, createHeaderOptionsWithToken(token));
+}
+
+export const removeEnclaveFromEnclaveManager = async (enclaveIdentifier, token, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
+    const request = new DestroyEnclaveArgs(
+        {
+            "enclaveIdentifier": enclaveIdentifier
+        }
+    );
+    return enclaveManagerClient.destroyEnclave(request, createHeaderOptionsWithToken(token))
 }
 
 export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, versionTag, token, apiHost, productionMode) => {

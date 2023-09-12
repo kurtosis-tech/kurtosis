@@ -130,10 +130,10 @@ func (service *EngineConnectServerService) StopEnclave(ctx context.Context, conn
 func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
+
 	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v':", args.EnclaveIdentifier)
 	}
-
 	return connect.NewResponse(&emptypb.Empty{}), nil
 }
 
