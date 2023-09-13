@@ -32,6 +32,7 @@ const JsonEditor = (
     readOnly = false,
     fieldName = "json_field.json"
 ) => {
+    // https://github.com/microsoft/monaco-editor/blob/main/webpack-plugin/README.md#options
     const [value, setValue] = useState("{\n}")
     const jsonClipboard = useClipboard("");
     const monacoRef = useRef(null);
@@ -64,11 +65,11 @@ const JsonEditor = (
             if (monacoRef.current.editor) {
                 // console.log('monacoRef.current.editor', monacoRef.current.editor)
                 // console.log('monacoRef.current.editor', monacoRef.current.editor.getEditors())
-                monacoRef.current.editor.getEditors()[0].updateOptions({automaticLayout:true})
+                monacoRef.current.editor.getEditors()[0].updateOptions({automaticLayout: true})
                 // monacoRef.current.editor.getEditors()[0].layout({width: 200, height:200})
                 // console.log("width", width)
                 // console.log("height", height)
-                if(monacoRef.current?.editor){
+                if (monacoRef.current?.editor) {
                     // console.log("dims", monacoRef.current.editor.getEditors()[0].getLayoutInfo())
                 }
 
@@ -134,7 +135,7 @@ const JsonEditor = (
         // here is another way to get monaco instance
         // you can also store it in `useRef` for further usage
         monacoRef.current = monaco;
-        monacoRef.current.editor.getEditors()[0].updateOptions({ scrollBeyondLastLine: false });
+        monacoRef.current.editor.getEditors()[0].updateOptions({scrollBeyondLastLine: false});
 
     }
 
@@ -269,13 +270,18 @@ const KeyValueTable = (dataCallBack) => {
                 margin={1}
                 onClick={clipboard.onCopy}
             >
-                {clipboard.hasCopied ? "Copied!" : "Copy"}
+                <Tooltip label="Copy As JSON">
+                    {clipboard.hasCopied ? "Copied!" : "Copy"}
+                </Tooltip>
+
             </Button>
             <Button
                 margin={1}
                 onClick={paste}
             >
-                Paste
+                <Tooltip label="Paste As JSON">
+                    Paste
+                </Tooltip>
             </Button>
         </Box>
     )
@@ -345,6 +351,7 @@ const renderArgs = (args, handleChange, formData, errorData) => {
 }
 
 const renderSingleArg = (fieldName, type, errorData, formData, index, handleChange) => {
+
     switch (type) {
         case "INTEGER":
         case "STRING":
@@ -360,24 +367,7 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
             )
 
         case "JSON":
-            // https://github.com/microsoft/monaco-editor/blob/main/webpack-plugin/README.md#options
             return (
-                // <Textarea
-                //     borderColor={errorData[index] ? "red.400" : null}
-                //     minHeight={"200px"}
-                //     onChange={e => handleChange(e.target.value, index)}
-                //     value={formData[index]}
-                // />
-                // <MonacoEditor
-                //     width="800"
-                //     height="600"
-                //     language="javascript"
-                //     theme="vs-dark"
-                //     value={formData[index]}
-                //     options={options}
-                //     // onChange={::this.onChange}
-                //     // editorDidMount={::this.editorDidMount}
-                // />
                 <Box
                     border={errorData[index] ? "1px" : null}
                     borderColor={errorData[index] ? "red.400" : null}
