@@ -26,9 +26,9 @@ const (
 	oneWeek = 7 * 24 * time.Hour
 )
 
-// This strategy pulls logs from filesytsem where there is a log file per year, per week, per enclave, per service
+// PerWeekStreamLogsStrategy pulls logs from filesystem where there is a log file per year, per week, per enclave, per service
 // Weeks are denoted 01-52
-// eg.
+// e.g.
 // [.../28/d3e8832d671f/61830789f03a.json] is the file containing logs from service with uuid 61830789f03a, in enclave with uuid d3e8832d671f,
 // in the 28th week of the current year
 type PerWeekStreamLogsStrategy struct {
@@ -67,7 +67,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			volume_consts.LogRetentionPeriodInWeeks+1, len(paths))
 	}
 
-	fileReaders := []io.Reader{}
+	var fileReaders []io.Reader
 	for _, pathStr := range paths {
 		logsFile, err := fs.Open(pathStr)
 		if err != nil {
@@ -88,11 +88,12 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			return
 		default:
 			var jsonLogStr string
-			var err error
-			var readErr error
 			var jsonLogNewStr string
-			var shouldReturnAfterStreamingLastLine = false
+			var readErr error
+			var err error
+			var isLastLogLine = false
 
+			// get a complete log line
 			for {
 				jsonLogNewStr, readErr = logsReader.ReadString(volume_consts.NewLineRune)
 				jsonLogStr = jsonLogStr + jsonLogNewStr
@@ -106,13 +107,10 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 					}
 				}
 				if readErr != nil && errors.Is(readErr, io.EOF) {
-					if shouldFollowLogs {
-						tailLogs(paths[len(paths)-1], logsByKurtosisUserServiceUuidChan, streamErrChan, serviceUuid)
-					}
 					// exiting stream
 					logrus.Debugf("EOF error returned when reading logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 					if jsonLogStr != "" {
-						shouldReturnAfterStreamingLastLine = true
+						isLastLogLine = true
 					} else {
 						return
 					}
@@ -124,52 +122,30 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 				return
 			}
 
-			// each logLineStr is of the following structure: {"enclave_uuid": "...", "service_uuid":"...", "log": "...",.. "timestamp":"..."}
-			// eg. {"container_type":"api-container", "container_id":"8f8558ba", "container_name":"/kurtosis-api--ffd",
-			// "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
-
-			// First, we decode the line
-			var jsonLog JsonLog
-			err = json.Unmarshal([]byte(jsonLogStr), &jsonLog)
+			err = strategy.sendJsonLogLine(
+				jsonLogStr,
+				logsByKurtosisUserServiceUuidChan,
+				serviceUuid,
+				conjunctiveLogLinesFiltersWithRegex)
 			if err != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred parsing the json logs file for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
-				return
+				streamErrChan <- stacktrace.Propagate(err, "An error occurred sending log line for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 			}
 
-			// Then we extract the actual log message using the "log" field
-			logLineStr, found := jsonLog[volume_consts.LogLabel]
-			if !found {
-				streamErrChan <- stacktrace.NewError("An error retrieving the log field from logs json file. This is a bug in Kurtosis.")
-				return
-			}
-			logLine := logline.NewLogLine(logLineStr)
-
-			// Then we filter by checking if the log message is valid based on requested filtersr
-			validLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
-			if err != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
-				break
-			}
-			// ensure this log line is within the retention period if it has a timestamp
-			withinRetention, err := strategy.isWithinRetentionPeriod(jsonLog)
-			if err != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
-				break
-			}
-
-			shouldReturnLogLine := validLogLine && withinRetention
-			if !shouldReturnLogLine {
-				break
-			}
-
-			// send the log line
-			logLines := []logline.LogLine{*logLine}
-			userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
-				serviceUuid: logLines,
-			}
-			logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
-			if shouldReturnAfterStreamingLastLine {
-				return
+			if isLastLogLine {
+				if shouldFollowLogs {
+					// already guaranteed [paths] is non-zero so no need to check
+					latestLogFile := paths[len(paths)-1]
+					err = strategy.tailLogs(
+						latestLogFile,
+						logsByKurtosisUserServiceUuidChan,
+						serviceUuid,
+						conjunctiveLogLinesFiltersWithRegex)
+					if err != nil {
+						streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
+					}
+				} else {
+					return
+				}
 			}
 		}
 	}
@@ -186,7 +162,7 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 	filesystem volume_filesystem.VolumeFilesystem,
 	retentionPeriodInWeeks int,
 	enclaveUuid, serviceUuid string) []string {
-	paths := []string{}
+	var paths []string
 
 	// get log file paths as far back as they exist
 	for i := 0; i < (retentionPeriodInWeeks + 1); i++ {
@@ -204,40 +180,89 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 	return paths
 }
 
-// Returns true if no [logLine] has no timestamp
+func (strategy *PerWeekStreamLogsStrategy) tailLogs(
+	filepath string,
+	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	serviceUuid service.ServiceUUID,
+	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
+) error {
+	logTail, err := tail.TailFile(filepath, tail.Config{Follow: true, ReOpen: false})
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while attempting to tail the log file.")
+	}
+
+	for logLine := range logTail.Lines {
+		err = strategy.sendJsonLogLine(
+			logLine.Text,
+			logsByKurtosisUserServiceUuidChan,
+			serviceUuid,
+			conjunctiveLogLinesFiltersWithRegex)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
+		}
+	}
+	return nil
+}
+
+func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
+	jsonLogLineStr string,
+	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	serviceUuid service.ServiceUUID,
+	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
+	// each logLineStr is of the following structure: {"enclave_uuid": "...", "service_uuid":"...", "log": "...",.. "timestamp":"..."}
+	// eg. {"container_type":"api-container", "container_id":"8f8558ba", "container_name":"/kurtosis-api--ffd",
+	// "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
+
+	// First decode the line
+	var jsonLog JsonLog
+	err := json.Unmarshal([]byte(jsonLogLineStr), &jsonLog)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred parsing the json log string: %v\n", jsonLogLineStr)
+	}
+
+	// Then extract the actual log message using the "log" field
+	logLineStr, found := jsonLog[volume_consts.LogLabel]
+	if !found {
+		return stacktrace.NewError("An error retrieving the log field from json log string: %v\n", jsonLogLineStr)
+	}
+	logLine := logline.NewLogLine(logLineStr)
+
+	// Then filter by checking if the log message is valid based on requested filters
+	validLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
+	}
+	// ensure this log line is within the retention period if it has a timestamp
+	withinRetentionPeriod, err := strategy.isWithinRetentionPeriod(jsonLog)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
+	}
+
+	shouldReturnLogLine := validLogLine && withinRetentionPeriod
+	if !shouldReturnLogLine {
+		return nil
+	}
+
+	// send the log line
+	logLines := []logline.LogLine{*logLine}
+	userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
+		serviceUuid: logLines,
+	}
+	logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
+	return nil
+}
+
+// Returns true if [logLine] has no timestamp
 func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine JsonLog) (bool, error) {
 	retentionPeriod := strategy.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks-1) * oneWeek)
 	timestampStr, found := logLine[volume_consts.TimestampLabel]
-	if found {
-		timestamp, err := time.Parse(time.RFC3339, timestampStr)
-		if err != nil {
-			return false, stacktrace.Propagate(err, "An error occurred retrieving the timestamp field from logs json log line. This is a bug in Kurtosis.")
-		}
-		return timestamp.After(retentionPeriod), nil
+	if !found {
+		return true, nil
 	}
-	return true, nil
-}
 
-func tailLogs(
-	filepath string,
-	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
-	streamErrChan chan error,
-	serviceUuid service.ServiceUUID,
-) {
-	logrus.Infof("TAILING LOG FILE NOW")
-	t, err := tail.TailFile(filepath, tail.Config{Follow: true, ReOpen: false})
+	timestamp, err := time.Parse(time.RFC3339, timestampStr)
 	if err != nil {
-		streamErrChan <- stacktrace.Propagate(err, "An error occurred while attempting to follow the log file.")
-		return
+		return false, stacktrace.Propagate(err, "An error occurred retrieving the timestamp field from logs json log line. This is a bug in Kurtosis.")
 	}
-
-	for line := range t.Lines {
-		// send the log line
-		logLine := logline.NewLogLine(line.Text)
-		logLines := []logline.LogLine{*logLine}
-		userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
-			serviceUuid: logLines,
-		}
-		logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
-	}
+	return timestamp.After(retentionPeriod), nil
 }
