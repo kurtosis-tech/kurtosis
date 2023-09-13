@@ -49,14 +49,14 @@ def run(plan):
 func TestStarlark_RunshTaskSimple(t *testing.T) {
 	ctx := context.Background()
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkSimple)
-	expectedOutput := "Command returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nCommand returned with exit code '0' and the following output:\n--------------------\n/src/kurtosis\n\n--------------------\nAssertion succeeded. Value is '\"/src/kurtosis\\n\"'.\n"
+	expectedOutput := "Command returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nCommand returned with exit code '0' and the following output:\n--------------------\n/src/kurtosis\n\n--------------------\nVerification succeeded. Value is '\"/src/kurtosis\\n\"'.\n"
 	require.Equal(t, expectedOutput, string(runResult.RunOutput))
 }
 
 func TestStarlark_RunshTaskFileArtifact(t *testing.T) {
 	ctx := context.Background()
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkFileArtifact)
-	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nAssertion succeeded. Value is '\"kurtosis\\n\"'.\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nAssertion succeeded. Value is '\"kurtosis\\n\"'.\n"
+	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nVerification succeeded. Value is '\"kurtosis\\n\"'.\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nVerification succeeded. Value is '\"kurtosis\\n\"'.\n"
 	require.Equal(t, expectedOutput, string(runResult.RunOutput))
 }
 
@@ -79,6 +79,6 @@ func TestStarlark_RunshTimesoutSuccess(t *testing.T) {
 func TestStarlark_RunshFileArtifactWithoutParentDir(t *testing.T) {
 	ctx := context.Background()
 	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkIgnoreParentDir)
-	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nAssertion succeeded. Value is '\"kurtosis\\n\"'.\n"
+	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nVerification succeeded. Value is '\"kurtosis\\n\"'.\n"
 	require.Equal(t, expectedOutput, string(runResult.RunOutput))
 }
