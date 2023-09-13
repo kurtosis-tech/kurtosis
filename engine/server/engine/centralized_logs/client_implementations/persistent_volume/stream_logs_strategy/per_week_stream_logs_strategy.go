@@ -13,6 +13,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/nxadm/tail"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 	"io"
@@ -106,7 +107,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 				}
 				if readErr != nil && errors.Is(readErr, io.EOF) {
 					if shouldFollowLogs {
-						continue
+						tailLogs(paths[len(paths)-1], logsByKurtosisUserServiceUuidChan, streamErrChan, serviceUuid)
 					}
 					// exiting stream
 					logrus.Debugf("EOF error returned when reading logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
@@ -215,4 +216,28 @@ func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine JsonL
 		return timestamp.After(retentionPeriod), nil
 	}
 	return true, nil
+}
+
+func tailLogs(
+	filepath string,
+	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	streamErrChan chan error,
+	serviceUuid service.ServiceUUID,
+) {
+	logrus.Infof("TAILING LOG FILE NOW")
+	t, err := tail.TailFile(filepath, tail.Config{Follow: true, ReOpen: false})
+	if err != nil {
+		streamErrChan <- stacktrace.Propagate(err, "An error occurred while attempting to follow the log file.")
+		return
+	}
+
+	for line := range t.Lines {
+		// send the log line
+		logLine := logline.NewLogLine(line.Text)
+		logLines := []logline.LogLine{*logLine}
+		userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
+			serviceUuid: logLines,
+		}
+		logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
+	}
 }
