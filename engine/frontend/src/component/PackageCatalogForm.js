@@ -11,22 +11,208 @@ import {
     Text,
     Textarea,
     Tooltip,
+    useClipboard, useDimensions,
+
 } from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
 import {useLocation, useNavigate} from "react-router";
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import startCase from 'lodash/startCase'
 import {InfoOutlineIcon} from '@chakra-ui/icons'
 import {ObjectInput} from 'react-object-input'
+// import MonacoEditor from "react-monaco-editor/lib/editor";
+import Editor, {DiffEditor, useMonaco, loader} from '@monaco-editor/react';
+import useWindowDimensions from "../utils/windowheight";
 
 
 const yaml = require("js-yaml")
+
+const JsonEditor = (
+    dataCallback,
+    readOnly = false,
+    fieldName = "json_field.json"
+) => {
+    const [value, setValue] = useState("{\n}")
+    const jsonClipboard = useClipboard("");
+    const monacoRef = useRef(null);
+    const {width, height} = useWindowDimensions();
+    const elementRef = useRef()
+    const dimensions = useDimensions(elementRef)
+    const editorHeight = 300
+
+    useEffect(() => {
+        handleEditorChange(value)
+    }, [])
+
+    // let ignoreEvent = false;
+    // const updateHeight = () => {
+    //     const contentHeight = Math.min(1000, editor.getContentHeight());
+    //     container.style.width = `${width}px`;
+    //     container.style.height = `${contentHeight}px`;
+    //     try {
+    //         ignoreEvent = true;
+    //         editor.layout({ width, height: contentHeight });
+    //     } finally {
+    //         ignoreEvent = false;
+    //     }
+    // };
+
+    useEffect(() => {
+        jsonClipboard.setValue(value)
+        if (monacoRef.current) {
+            // console.log('monacoRef.current', monacoRef.current)
+            if (monacoRef.current.editor) {
+                // console.log('monacoRef.current.editor', monacoRef.current.editor)
+                // console.log('monacoRef.current.editor', monacoRef.current.editor.getEditors())
+                monacoRef.current.editor.getEditors()[0].updateOptions({automaticLayout:true})
+                // monacoRef.current.editor.getEditors()[0].layout({width: 200, height:200})
+                // console.log("width", width)
+                // console.log("height", height)
+                if(monacoRef.current?.editor){
+                    // console.log("dims", monacoRef.current.editor.getEditors()[0].getLayoutInfo())
+                }
+
+                console.log(`box dims: ${dimensions?.borderBox?.width} x ${dimensions?.borderBox?.height}`, dimensions?.borderBox)
+
+
+                // monacoRef.current.editor.getEditors()[0].layout({width: 600, height:editorHeight})
+                // monacoRef.current.editor.layout();
+                // monacoRef.current.editor.getEditors()[0].layout({width: "autp", height:200})
+
+            }
+            // monacoRef.current.layout({ width: 0, height: 0 })
+        }
+    }, [value])
+
+    const saveTextAsFile = (text, fileName) => {
+        const blob = new Blob([text], {type: "text/plain"});
+        const downloadLink = document.createElement("a");
+        downloadLink.download = fileName;
+        downloadLink.innerHTML = "Download File";
+        if (window.webkitURL) {
+            // No need to add the download element to the DOM in Webkit.
+            downloadLink.href = window.webkitURL.createObjectURL(blob);
+        } else {
+            downloadLink.href = window.URL.createObjectURL(blob);
+            downloadLink.onclick = (event) => {
+                if (event.target) {
+                    document.body.removeChild(event.target);
+                }
+            };
+            downloadLink.style.display = "none";
+            document.body.appendChild(downloadLink);
+        }
+
+        downloadLink.click();
+
+        if (window.webkitURL) {
+            window.webkitURL.revokeObjectURL(downloadLink.href);
+        } else {
+            window.URL.revokeObjectURL(downloadLink.href);
+        }
+    };
+
+    function handleEditorChange(value) {
+        try {
+            setValue(value)
+            const parsedJson = JSON.parse(value)
+            const jsonCleanedMinified = JSON.stringify(parsedJson)
+            const jsonCleanedFormatted = JSON.stringify(parsedJson, null, 2)
+            dataCallback(jsonCleanedMinified)
+        } catch (error) {
+            // swallow
+        }
+    }
+
+    // function handleEditorWillMount(monaco) {
+    //     // here is the monaco instance
+    //     // do something before editor is mounted
+    //     monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
+    // }
+
+    function handleEditorDidMount(editor, monaco) {
+        // here is another way to get monaco instance
+        // you can also store it in `useRef` for further usage
+        monacoRef.current = monaco;
+        monacoRef.current.editor.getEditors()[0].updateOptions({ scrollBeyondLastLine: false });
+
+    }
+
+    function handleDownload() {
+        saveTextAsFile(value, fieldName)
+    }
+
+    // TODO: We can use this to display error messages
+    // function handleEditorValidation(markers) {
+    //     // model markers
+    //     // markers.forEach(marker => console.log('onValidate:', marker.message));
+    // }
+    return (
+        <Box
+            border="1px"
+            borderColor='gray.700'
+            borderRadius="7"
+            margin={"1px"}
+            padding={1}
+            ref={elementRef}
+        >
+            <Editor
+                margin={1}
+                height="300px"
+                // width="300px"
+                defaultLanguage="json"
+                value={value}
+                theme={"vs-dark"}
+                onMount={handleEditorDidMount}
+                onChange={handleEditorChange}
+                // onValidate={handleEditorValidation}
+                options={{
+                    automaticLayout: true,
+                    selectOnLineNumbers: true,
+                    languages: ['json'],
+                    readOnly: readOnly,
+                    minimap: {
+                        enabled: false
+                    }
+                }}
+            />
+            <Button
+                margin={1}
+                onClick={jsonClipboard.onCopy}
+            >
+                {jsonClipboard.hasCopied ? "Copied!" : "Copy"}
+            </Button>
+            <Button
+                margin={1}
+                onClick={handleDownload}
+
+            >
+                Download
+            </Button>
+        </Box>
+    )
+}
+
 const KeyValueTable = (dataCallBack) => {
     const [value, setValue] = useState({})
+    const clipboard = useClipboard(value);
 
     useEffect(() => {
         dataCallBack(JSON.stringify(value))
+        clipboard.setValue(JSON.stringify(value, null, 2))
     }, [value])
+
+    const paste = async () => {
+        const clipboard = await window.navigator.clipboard.readText()
+        try {
+            const json = JSON.parse(clipboard)
+            setValue(json)
+            console.log(value)
+            console.log(json)
+        } catch (e) {
+            alert("Could not process the content in the clipboard. Please verify it's valid JSON")
+        }
+    }
 
     return (
         <Box
@@ -55,7 +241,6 @@ const KeyValueTable = (dataCallBack) => {
                                     onChange={e => updateKey(e.target.value)}
                                     size="md"
                                     variant='filled'
-                                    // htmlSize={10} width='auto'
                                 />
                             </InputGroup>
 
@@ -67,11 +252,9 @@ const KeyValueTable = (dataCallBack) => {
                                     onChange={e => updateValue(e.target.value)}
                                     size="md"
                                     variant='filled'
-                                    // htmlSize={10} width='auto'
                                 />
                             </InputGroup>
                             <Button
-                                // margin={"10px"}
                                 onClick={deleteProperty}
                             >
                                 x
@@ -82,40 +265,47 @@ const KeyValueTable = (dataCallBack) => {
                 renderAdd={addItem => <Button margin={1} onClick={addItem}>Add item</Button>}
                 // renderEmpty={() => <p></p>}
             />
+            <Button
+                margin={1}
+                onClick={clipboard.onCopy}
+            >
+                {clipboard.hasCopied ? "Copied!" : "Copy"}
+            </Button>
+            <Button
+                margin={1}
+                onClick={paste}
+            >
+                Paste
+            </Button>
         </Box>
     )
 }
 const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
-        let placeholder = "";
+        let dataType = "";
         switch (arg.type) {
             case "INTEGER":
-                placeholder = "INTEGER"
+                dataType = "INTEGER"
                 break;
             case "STRING":
-                placeholder = "STRING"
+                dataType = "STRING"
                 break
             case "BOOL":
-                placeholder = "BOOL"
+                dataType = "BOOL"
                 break
             case "FLOAT":
-                placeholder = "FLOAT"
+                dataType = "FLOAT"
                 break
             case "KEY_VALUE":
-                placeholder = "KEY_VALUE"
+                dataType = "KEY_VALUE"
                 break
             default:
-                placeholder = "JSON"
+                dataType = "JSON"
         }
 
         // no need to show plan arg as it's internal!
         if (arg.name === "plan") {
             return
-        }
-
-        // REMOVE: JUST FOR TESTING
-        if(arg.name === "remote_chains"){
-            placeholder="KEY_VALUE"
         }
 
         return (
@@ -141,20 +331,20 @@ const renderArgs = (args, handleChange, formData, errorData) => {
                         </Tooltip>
 
                     </Text>
-                    <Text marginLeft={3} as='kbd' fontSize='xs' align={"right"}>{placeholder.toLowerCase()}</Text>
+                    <Text marginLeft={3} as='kbd' fontSize='xs' align={"right"}>{dataType.toLowerCase()}</Text>
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
                     {errorData[index].length > 0 ?
                         <Text marginLeft={3} align={"left"} fontSize={"xs"}
                               color="red.500"> {errorData[index]} </Text> : null}
-                    {renderSingleArg(placeholder, errorData, formData, index, handleChange)}
+                    {renderSingleArg(arg.name, dataType, errorData, formData, index, handleChange)}
                 </Flex>
             </Flex>
         )
     })
 }
 
-const renderSingleArg = (type, errorData, formData, index, handleChange) => {
+const renderSingleArg = (fieldName, type, errorData, formData, index, handleChange) => {
     switch (type) {
         case "INTEGER":
         case "STRING":
@@ -170,16 +360,47 @@ const renderSingleArg = (type, errorData, formData, index, handleChange) => {
             )
 
         case "JSON":
+            // https://github.com/microsoft/monaco-editor/blob/main/webpack-plugin/README.md#options
             return (
-                <Textarea
+                // <Textarea
+                //     borderColor={errorData[index] ? "red.400" : null}
+                //     minHeight={"200px"}
+                //     onChange={e => handleChange(e.target.value, index)}
+                //     value={formData[index]}
+                // />
+                // <MonacoEditor
+                //     width="800"
+                //     height="600"
+                //     language="javascript"
+                //     theme="vs-dark"
+                //     value={formData[index]}
+                //     options={options}
+                //     // onChange={::this.onChange}
+                //     // editorDidMount={::this.editorDidMount}
+                // />
+                <Box
+                    border={errorData[index] ? "1px" : null}
                     borderColor={errorData[index] ? "red.400" : null}
-                    minHeight={"200px"}
-                    onChange={e => handleChange(e.target.value, index)}
-                    value={formData[index]}
-                />
+                >
+                    {JsonEditor(
+                        (data) => handleChange(data, index),
+                        false,
+                        fieldName,
+                    )}
+                </Box>
+
             )
         case "KEY_VALUE":
-            return KeyValueTable((data) => handleChange(data, index))
+            return (
+                <Box
+                    border={errorData[index] ? "1px" : null}
+                    borderColor={errorData[index] ? "red.400" : null}
+                >
+
+                    {KeyValueTable((data) => handleChange(data, index))}
+                </Box>
+
+            )
 
         default:
             return <p key={`data-${index}`}>Unsupported data type encountered</p>
@@ -194,6 +415,26 @@ const checkValidUndefinedType = (data) => {
         return false;
     }
     return true;
+}
+
+const checkValidJsonType = (data) => {
+    console.log("data", data)
+    if (data === undefined || data === "undefined" || data.length === 0) {
+        return false
+    }
+
+    try {
+        const val = JSON.parse(data)
+        if (Object.keys(val).length > 0) {
+            return true;
+        }
+        return false
+    } catch (ex) {
+        if (data.includes("\"") || data.includes("\'")) {
+            return false
+        }
+        return true;
+    }
 }
 
 const checkValidStringType = (data) => {
@@ -256,6 +497,17 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const location = useLocation()
     const {state} = location;
     const {kurtosisPackage} = state
+
+    // TODO: REMOVE, FOR TESTING:
+    kurtosisPackage.args.forEach(item => {
+        if (item.name === "remote_chains") {
+            item.type = "KEY_VALUE"
+            item.data = {"ab": "cd"}
+        } else if (item.type === undefined) {
+            item.type = "JSON"
+        }
+    })
+
     const [runningPackage, setRunningPackage] = useState(false)
     const [enclaveName, setEnclaveName] = useState("")
     const [productionMode, setProductionMode] = useState(false)
@@ -271,7 +523,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const [formData, setFormData] = useState(initialFormData)
 
     let initialErrorData = {}
-    kurtosisPackage.args.map((arg, index) => {
+    kurtosisPackage.args.forEach((arg, index) => {
         if (arg.name !== "plan") {
             initialErrorData[index] = ""
         }
@@ -319,6 +571,8 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 valid = checkValidBooleanType(formData[key])
             } else if (type === "FLOAT") {
                 valid = checkValidFloatType(formData[key])
+            } else if (type === "JSON" || type === "KEY_VALUE") {
+                valid = checkValidJsonType(formData[key])
             } else {
                 valid = checkValidUndefinedType(formData[key])
             }
@@ -333,7 +587,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             }
 
             if (!valid) {
-                errorsFound[key] = `Incorrect type, expected ${typeToPrint}`;
+                errorsFound[key] = `Incorrect type: expected ${typeToPrint}`;
             }
         })
 
@@ -432,7 +686,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                             <Text>
                                 Restart services
                                 <Tooltip
-                                    label="When enabled, Kurtosis will automatically restart any services that crash in side the enclave">
+                                    label="When enabled, Kurtosis will automatically restart any services that crash inside the enclave">
                                     <InfoOutlineIcon marginLeft={2}/>
                                 </Tooltip>
 
