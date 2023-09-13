@@ -1,0 +1,30 @@
+name: Check proto breaks
+
+on:
+  pull_request:
+    types:
+    - opened
+    - synchronize
+    - edited
+
+jobs:
+  check-proto-break:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-go@v3
+      with:
+        go-version: 1.19
+    - run: go install github.com/bufbuild/buf/cmd/buf@v1.26.1
+    - uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+    - name: Check if PR is breaking
+      run: |
+        title="${{ github.event.pull_request.title }}"
+        if [[ "$title" == *'!'* ]]; then
+          echo "PR is a breaking change by title"
+          exit 0
+        else
+          echo "Checking if PR is a breaking change"
+          buf breaking --path ./api/protobuf/ --against '.git#branch=origin/main'
+        fi
