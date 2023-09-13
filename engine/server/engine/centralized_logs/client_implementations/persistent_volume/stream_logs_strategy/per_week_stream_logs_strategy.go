@@ -112,7 +112,20 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 					if jsonLogStr != "" {
 						isLastLogLine = true
 					} else {
-						return
+						if shouldFollowLogs {
+							// already guaranteed [paths] is non-zero so no need to check
+							latestLogFile := paths[len(paths)-1]
+							err = strategy.tailLogs(
+								latestLogFile,
+								logsByKurtosisUserServiceUuidChan,
+								serviceUuid,
+								conjunctiveLogLinesFiltersWithRegex)
+							if err != nil {
+								streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
+							}
+						} else {
+							return
+						}
 					}
 				}
 				break
