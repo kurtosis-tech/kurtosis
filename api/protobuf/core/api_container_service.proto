@@ -119,6 +119,7 @@ enum Connect {
   NO_CONNECT = 1;
   // Starlark run fails if the ports cannot be forwarded.
   // MUST_CONNECT = 2;
+  DEMO = 3;
 }
 
 message RunStarlarkScriptArgs {
