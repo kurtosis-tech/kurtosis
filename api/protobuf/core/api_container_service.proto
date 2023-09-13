@@ -57,9 +57,9 @@ service ApiContainerService {
 // ==============================================================================================
 message Port {
   enum TransportProtocol {
-    // TCP = 0;
+    TCP = 0;
     SCTP = 1;
-    UDP = 2;
+    // UDP = 2;
   }
 
   uint32 number = 1;
