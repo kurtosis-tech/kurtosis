@@ -25,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/gateway"
 	_import "github.com/kurtosis-tech/kurtosis/cli/cli/commands/import"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lint"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lsp"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/port"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/portal"
@@ -120,6 +121,7 @@ func init() {
 	RootCmd.AddCommand(files.FilesCmd)
 	RootCmd.AddCommand(gateway.GatewayCmd)
 	RootCmd.AddCommand(lsp.NewLspCommand())
+	RootCmd.AddCommand(lint.LintCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(port.PortCmd)
 	RootCmd.AddCommand(portal.PortalCmd)
 	RootCmd.AddCommand(run.StarlarkRunCmd.MustGetCobraCommand())
