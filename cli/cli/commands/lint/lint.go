@@ -18,17 +18,13 @@ const (
 	fileOrDirToLintArgKey           = "file-or-dir"
 	fileOrDirToLintArgKeyIsOptional = true
 	fileOrDirToLintArgKeyIsGreedy   = true
-	checkFlagKey                    = "check"
-	checkFlagForBlack               = "--check"
-	checkFlagShortKey               = "c"
-	checkFlagDefaultValue           = "false"
 	cmdArgsSeparator                = " "
 )
 
 var fileOrDirToLintDefaultValue = []string{"."}
 var possiblePythonBinaries = []string{"python", "python3"}
 
-var flagsForBlack = []string{"/Users/gyanendramishra/work/kurtosis/cli/cli/commands/lint/resource/black", "--include='\\.star?$'"}
+var flagsForBlack = []string{"/Users/gyanendramishra/work/kurtosis/cli/cli/commands/lint/resource/black", "--include", "\\.star?$"}
 
 // LintCmd we only fill in the required struct fields, hence the others remain nil
 // nolint: exhaustruct
@@ -47,16 +43,6 @@ var LintCmd = &lowlevel.LowlevelKurtosisCommand{
 			ValidationFunc: validateFileOrDirToLintArg,
 		},
 	},
-
-	Flags: []*flags.FlagConfig{
-		{
-			Key:       checkFlagKey,
-			Usage:     fmt.Sprintf("Passes the %v flag to black; doesn't change the files and just reports the status", checkFlagForBlack),
-			Shorthand: checkFlagShortKey,
-			Type:      flags.FlagType_Bool,
-			Default:   checkFlagDefaultValue,
-		},
-	},
 	RunFunc: run,
 }
 
@@ -64,11 +50,6 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	fileOrDirToLintArg, err := args.GetGreedyArg(fileOrDirToLintArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "an error occurred getting the value of argument with key '%v'", fileOrDirToLintArgKey)
-	}
-
-	checkFlag, err := flags.GetBool(checkFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred getting the value of the '%v' flag", checkFlagKey)
 	}
 
 	var pythonBinaryToUse string
@@ -84,16 +65,15 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		return stacktrace.NewError("Tried looking for the following python binaries '%v' but found none; one of them has to exist for lint to work", possiblePythonBinaries)
 	}
 
-	if checkFlag {
-		flagsForBlack = append(flagsForBlack, checkFlagForBlack)
-	}
-
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
 		flagsForBlackWithFile := append(flagsForBlack, fileOrDirToLint)
 		cmd := exec.Command(pythonBinaryToUse, flagsForBlackWithFile...)
-		if _, err = cmd.Output(); err != nil {
+		cmdOutput, err := cmd.CombinedOutput()
+		if err != nil {
+			fmt.Println(string(cmdOutput))
 			return stacktrace.Propagate(err, "An error occurred while running the command '%v'", strings.Join(cmd.Args, cmdArgsSeparator))
 		}
+		fmt.Println(string(cmdOutput))
 	}
 
 	return nil
