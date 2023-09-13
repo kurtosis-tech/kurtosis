@@ -2,6 +2,7 @@ package lint
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
@@ -12,10 +13,6 @@ import (
 	"os/exec"
 	"strings"
 )
-
-import _ "embed"
-
-// go:embed black/*
 
 const (
 	fileOrDirToLintArgKey           = "file-or-dir"
@@ -31,7 +28,7 @@ const (
 var fileOrDirToLintDefaultValue = []string{"."}
 var possiblePythonBinaries = []string{"python", "python3"}
 
-var flagsForBlack = []string{"black/__main__.py", "--include='\\.star?$'"}
+var flagsForBlack = []string{"/Users/gyanendramishra/work/kurtosis/cli/cli/commands/lint/resource/black", "--include='\\.star?$'"}
 
 // LintCmd we only fill in the required struct fields, hence the others remain nil
 // nolint: exhaustruct
@@ -77,7 +74,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	var pythonBinaryToUse string
 	foundPythonBinaryInPath := false
 	for _, possiblePythonBinary := range possiblePythonBinaries {
-		if _, err := exec.LookPath(possiblePythonBinary); err != nil {
+		if _, err = exec.LookPath(possiblePythonBinary); err == nil {
 			pythonBinaryToUse = possiblePythonBinary
 			foundPythonBinaryInPath = true
 		}
@@ -94,8 +91,8 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
 		flagsForBlackWithFile := append(flagsForBlack, fileOrDirToLint)
 		cmd := exec.Command(pythonBinaryToUse, flagsForBlackWithFile...)
-		if err = cmd.Run(); err != nil {
-			return stacktrace.Propagate(err, "An error occurred while running the command '%v %v'", cmd.Path, strings.Join(cmd.Args, cmdArgsSeparator))
+		if _, err = cmd.Output(); err != nil {
+			return stacktrace.Propagate(err, "An error occurred while running the command '%v'", strings.Join(cmd.Args, cmdArgsSeparator))
 		}
 	}
 
