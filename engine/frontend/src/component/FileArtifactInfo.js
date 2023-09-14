@@ -8,6 +8,8 @@ import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import LoadingOverlay from "./LoadingOverflow";
 import {useAppContext} from "../context/AppState";
+import Editor from "@monaco-editor/react";
+import {CodeEditor} from "./CodeEditor";
 
 const BreadCumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
     const total = currentPath.length;
@@ -66,7 +68,8 @@ const renderFiles = (files, handleFileClick) => {
     return Object.keys(files).map((key) => {
         return (
             <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
-                 onClick={() => handleFileClick(key, files[key])}>
+                 onClick={() => handleFileClick(key, files[key])}
+            >
                 <div> {key} </div>
             </div>
         )
@@ -114,7 +117,13 @@ const FileArtifactInfo = ({enclaves}) => {
     }
 
     const handleFileClick = (key, file) => {
+        console.log("file.path", file.path)
+        file = {
+            ...file,
+            extension: "json",
+        }
         if (file.path) {
+            console.log("file", file)
             setDetailInfo(file)
             let current = files
             currentPath.map(path => {
@@ -156,10 +165,30 @@ const FileArtifactInfo = ({enclaves}) => {
             {
                 (Object.keys(detailInfo).length !== 0) ?
                     <div className="flex h-3/4 flex-col text-black">
-                        <p className="text-lg font-bold text-right"> Size: {detailInfo.size}B </p>
-                        <p className="break-all overflow-y-auto"> {detailInfo.textPreview.length > 0 ? detailInfo.textPreview :
-                            <h2 className="text-2xl text-center mt-20 text-red-800 font-bold">No Preview
-                                Available</h2>} </p>
+                        <p className="text-lg font-bold text-left"> Size: {detailInfo.size} B </p>
+                        <p className="text-lg font-bold text-left"> Type: {detailInfo.type} </p>
+                        <p className="break-all overflow-y-auto">
+                            {detailInfo.textPreview.length > 0 ?
+                                <>
+                                    {
+                                        CodeEditor(
+                                            () => {
+                                            },
+                                            false,
+                                            "json_field.json",
+                                            ["json"],
+                                            500,
+                                            detailInfo.textPreview,
+                                        )
+                                    }
+                                </>
+
+                                :
+                                <h2 className="text-2xl text-center mt-20 text-red-800 font-bold">
+                                    No Preview Available
+                                </h2>
+                            }
+                        </p>
                     </div> :
                     <div className="flex flex-col h-[85%] min-h-[85%] border-8">
                         <Heading content={"Files"} size={"text-xl"}/>
@@ -181,7 +210,7 @@ const FileArtifactInfo = ({enclaves}) => {
 
             <div className="flex bg-white w-[calc(100vw-39rem)] flex-col space-y-5">
                 <div className="h-[3rem] flex items-center justify-center m-2">
-                    <Heading content={`${enclaveName}::${fileArtifactName}`}/>
+                    <Heading content={`${enclaveName} :: ${fileArtifactName}`}/>
                 </div>
                 <BreadCumbs
                     currentPath={currentPath}
