@@ -34,6 +34,16 @@ func (deprecationNotice *DeprecationNotice) GetMitigation() string {
 	return deprecationNotice.mitigation
 }
 
+func (deprecationNotice *DeprecationNotice) IsDeprecatedDateScheduled() bool {
+	isDeprecatedDateSet := true
+
+	if deprecationNotice.deprecationDate.Day == 0 || deprecationNotice.deprecationDate.Month == 0 || deprecationNotice.deprecationDate.Year == 0 {
+		return false
+	}
+
+	return isDeprecatedDateSet
+}
+
 // Deprecation DeprecationDate - date when the field or the instruction will be deprecated
 // mitigation - what is the alternative way to do it
 // for example: please use `xyz` instead - for more info check out the docs <link>

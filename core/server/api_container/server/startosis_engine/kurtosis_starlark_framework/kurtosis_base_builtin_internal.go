@@ -89,10 +89,14 @@ func getFormattedWarningMessageForInstruction(deprecation *starlark_warning.Depr
 }
 
 func getFormattedWarningMessageForArgument(deprecation *starlark_warning.DeprecationNotice, builtinName string, argumentName string) string {
-	deprecationDateStr := deprecation.GetDeprecatedDate()
+	deprecationDateStr := "soon"
+	if deprecation.IsDeprecatedDateScheduled() {
+		deprecationDateStr = fmt.Sprintf("by %v", deprecation.GetDeprecatedDate())
+	}
+
 	deprecationReason := deprecation.GetMitigation()
 	return fmt.Sprintf(
-		"%q field for %q will be deprecated by %v. %v",
+		"%q field for %q will be deprecated %v. %v",
 		argumentName,
 		builtinName,
 		deprecationDateStr,
