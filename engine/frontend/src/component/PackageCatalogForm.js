@@ -223,7 +223,7 @@ const KeyValueTable = (dataCallBack) => {
                                 <InputLeftAddon children='Value'/>
                                 <Input
                                     type="text"
-                                    value={value || ''} // value will be undefined for new rows
+                                    value={value || " "} // value will be undefined for new rows
                                     onChange={e => updateValue(e.target.value)}
                                     size="md"
                                     variant='filled'
@@ -244,7 +244,7 @@ const KeyValueTable = (dataCallBack) => {
                 margin={1}
                 onClick={clipboard.onCopy}
             >
-                <Tooltip label="Copy As JSON">
+                <Tooltip label="Copy as JSON">
                     {clipboard.hasCopied ? "Copied!" : "Copy"}
                 </Tooltip>
 
@@ -253,7 +253,7 @@ const KeyValueTable = (dataCallBack) => {
                 margin={1}
                 onClick={paste}
             >
-                <Tooltip label="Paste As JSON">
+                <Tooltip label='Paste as a JSON key value map, e.g. `{ "key_1": "value", "key_2": 1 }` '>
                     Paste
                 </Tooltip>
             </Button>
@@ -325,7 +325,6 @@ const renderArgs = (args, handleChange, formData, errorData) => {
 }
 
 const renderSingleArg = (fieldName, type, errorData, formData, index, handleChange) => {
-
     switch (type) {
         case "INTEGER":
         case "STRING":
@@ -360,7 +359,6 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
                     border={errorData[index] ? "1px" : null}
                     borderColor={errorData[index] ? "red.400" : null}
                 >
-
                     {KeyValueTable((data) => handleChange(data, index))}
                 </Box>
 
@@ -382,12 +380,14 @@ const checkValidUndefinedType = (data) => {
 }
 
 const checkValidJsonType = (data) => {
+    console.log("raw data", data)
     if (data === undefined || data === "undefined" || data.length === 0) {
         return false
     }
 
     try {
-        const val = JSON.parse(data)
+        console.log("data", data)
+        JSON.parse(data)
         return true;
     } catch (ex) {
         return false
