@@ -1,7 +1,7 @@
 ---
 title: Write a Package
 sidebar_label: Write a Package
-slug: /how-to-set-up-postgres
+slug: /quickstart-write-a-package
 toc_max_heading_level: 2
 sidebar_position: 2
 ---
