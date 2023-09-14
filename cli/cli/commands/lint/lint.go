@@ -19,12 +19,17 @@ const (
 	fileOrDirToLintArgKeyIsOptional = true
 	fileOrDirToLintArgKeyIsGreedy   = true
 	cmdArgsSeparator                = " "
+	pyBlackDockerImage              = "pyfound/black:latest"
+	dockerBinary                    = "docker"
+
+	formatFlagKey          = "format"
+	formatFlagShortKey     = "f"
+	formatFlagDefaultValue = "false"
 )
 
 var fileOrDirToLintDefaultValue = []string{"."}
-var possiblePythonBinaries = []string{"python", "python3"}
 
-var flagsForBlack = []string{"/Users/gyanendramishra/work/kurtosis/cli/cli/commands/lint/resource/black", "--include", "\\.star?$"}
+var flagsForBlack = []string{"--include", "\\.star?$"}
 
 // LintCmd we only fill in the required struct fields, hence the others remain nil
 // nolint: exhaustruct
@@ -43,6 +48,16 @@ var LintCmd = &lowlevel.LowlevelKurtosisCommand{
 			ValidationFunc: validateFileOrDirToLintArg,
 		},
 	},
+
+	Flags: []*flags.FlagConfig{
+		{
+			Key:       formatFlagKey,
+			Usage:     "Use this flag to edit files in place instead of just verifying whether the formatting is correct",
+			Shorthand: formatFlagShortKey,
+			Type:      flags.FlagType_Bool,
+			Default:   formatFlagDefaultValue,
+		},
+	},
 	RunFunc: run,
 }
 
@@ -52,22 +67,18 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		return stacktrace.Propagate(err, "an error occurred getting the value of argument with key '%v'", fileOrDirToLintArgKey)
 	}
 
-	var pythonBinaryToUse string
-	foundPythonBinaryInPath := false
-	for _, possiblePythonBinary := range possiblePythonBinaries {
-		if _, err = exec.LookPath(possiblePythonBinary); err == nil {
-			pythonBinaryToUse = possiblePythonBinary
-			foundPythonBinaryInPath = true
-		}
+	formatFlag, err := flags.GetBool(formatFlagKey)
+	if !formatFlag {
+		flagsForBlack = append(flagsForBlack, "--check")
 	}
 
-	if !foundPythonBinaryInPath {
-		return stacktrace.NewError("Tried looking for the following python binaries '%v' but found none; one of them has to exist for lint to work", possiblePythonBinaries)
+	if _, err := exec.LookPath(dockerBinary); err != nil {
+		return stacktrace.Propagate(err, "'%v' uses '%v' underneath in order to use the '%v' image but it couldn't find '%v' in path", command_str_consts.KurtosisLintCmdStr, dockerBinary, pyBlackDockerImage, dockerBinary)
 	}
 
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
 		flagsForBlackWithFile := append(flagsForBlack, fileOrDirToLint)
-		cmd := exec.Command(pythonBinaryToUse, flagsForBlackWithFile...)
+		cmd := exec.Command(dockerBinary, flagsForBlackWithFile...)
 		cmdOutput, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(string(cmdOutput))
