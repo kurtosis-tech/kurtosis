@@ -665,7 +665,7 @@ plan.print(recipe_result["code"])
 <!--------------- ONLY LINKS BELOW THIS POINT ---------------------->
 [add-service]: #add_service
 [add-services]: #add_services
-[assert]: #assert
+[verify]: #verify
 [extract]: #extract
 [exec]: #exec
 [request]: #request
