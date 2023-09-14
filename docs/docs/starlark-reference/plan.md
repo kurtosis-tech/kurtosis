@@ -99,7 +99,7 @@ services will be rolled back and the instruction will return an execution error.
 verify
 ------
 
-The `verify` instruction throws an [Execution phase error][multi-phase-runs-reference] if the defined verification fails.
+The `verify` instruction throws an [Execution phase error][multi-phase-runs-reference] if the defined assertion fails.
 
 ```python
 plan.verify(
@@ -130,7 +130,7 @@ plan.verify(
 Verifications are typed, so running
 
 ```python
-plan.assert(
+plan.verify(
     value = "0",
     assertion = "==",
     target_value = 0,
@@ -180,7 +180,7 @@ plan.print(result["code"])
 
 The instruction returns a `dict` whose values are [future reference][future-references-reference] to the output and exit code of the command. `result["output"]` is a future reference to the output of the command, and `result["code"]` is a future reference to the exit code.
 
-They can be chained to [`assert`][assert] and [`wait`][wait]:
+They can be chained to [`verify`][verify] and [`wait`][wait]:
 
 ```python
 exec_recipe = ExecRecipe(
@@ -188,7 +188,7 @@ exec_recipe = ExecRecipe(
 )
 
 result = plan.exec(service_name="my_service", recipe=exec_recipe)
-plan.assert(result["code"], "==", 0)
+plan.verify(result["code"], "==", 0)
 
 plan.wait(service_name="my_service", recipe=exec_recipe, field="output", assertion="!=", target_value="Greetings, world")
 ```
@@ -322,7 +322,7 @@ post_response = plan.request(
 
 NOTE: In the above example, `response` also has a custom field `extract.second-element-from-list-head` and the value is `world` which is extracted from the `response[body]`.
 
-These fields can be used in conjunction with [`assert`][assert] and [`wait`][wait] instructions, like so:
+These fields can be used in conjunction with [`verify`][verify] and [`wait`][wait] instructions, like so:
 ```python
 # Following the example above, response["extract.second-element-from-list-head"] is world
 post_response = plan.request(
@@ -331,7 +331,7 @@ post_response = plan.request(
 )
 
 # Assert if the extracted field in the response is world
-plan.assert(response["extract.second-element-from-list-head"], "==", "world")
+plan.verify(response["extract.second-element-from-list-head"], "==", "world")
 
 # Make a post request and check if the extracted field in the response is world
 plan.wait(service_name="my_service", recipe=post_request_recipe, field="extract.second-element-from-list-head", assertion="==", target_value="world")
@@ -609,7 +609,7 @@ The return value is a [future reference][future-references-reference] to the nam
 wait
 ----
 
-The `wait` instruction fails the Starlark script or package with an execution error if the provided [assertion][assert] does not succeed within a given period of time. 
+The `wait` instruction fails the Starlark script or package with an execution error if the provided [verification][verify] does not succeed within a given period of time. 
 
 If the assertion succeeds, `wait` returns the result of the given Recipe  - i.e. the same output as [`plan.request`][request] or [`plan.exec`][exec].
 
