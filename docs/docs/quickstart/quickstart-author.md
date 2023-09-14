@@ -1,6 +1,6 @@
 ---
 title: Write a Package
-sidebar_label: Quickstart - Authors (2/2)
+sidebar_label: Write a Package
 slug: /how-to-set-up-postgres
 toc_max_heading_level: 2
 sidebar_position: 2
