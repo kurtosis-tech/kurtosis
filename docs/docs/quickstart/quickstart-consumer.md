@@ -1,6 +1,6 @@
 ---
 title: Run a Package
-sidebar_label: Quickstart - Consumers 1/2
+sidebar_label: Run a Package
 slug: /quickstart-run-a-package
 toc_max_heading_level: 2
 sidebar_position: 1
