@@ -142,6 +142,7 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 			case image, isChanOpen := <-imageValidationStarted:
 				if !isChanOpen {
 					// the subroutine returns when the error channel is closed
+					logrus.Infof("[LEO-DEBUG] chan closed 1")
 					continue
 				}
 				logrus.Debugf("Received image validation started event: '%s'", image)
@@ -150,6 +151,7 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 			case image, isChanOpen := <-imageValidationFinished:
 				if !isChanOpen {
 					// the subroutine returns when the error channel is closed
+					logrus.Infof("[LEO-DEBUG] chan closed 2")
 					continue
 				}
 				numberOfImageValidated++
@@ -160,7 +162,15 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 				if !isChanOpen {
 					// the error channel is the important. If it's closed, then all errors have been forwarded to
 					// starlarkRunResponseLineStream and this method can return
+
+					logrus.Infof("[LEO-DEBUG] closing the subroutine with '%+v'", imageCurrentlyBeingValidated)
+
+					customLeoMsg := "CONTAINER IMAGES SUMMARY:\n > mendhak/http-https-echo:26 - downloaded \n > iconloop/goloop-icon:v1.3.8 - local \n > httpd:latest downloaded"
+
+					starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromInfoMsg(customLeoMsg)
+
 					waitForErrorChannelToBeClosed <- true
+					logrus.Infof("[LEO-DEBUG] chan closed for error, returning")
 					return
 				}
 				logrus.Debugf("Received an error during image validation: '%s'", err.Error())
@@ -169,6 +179,7 @@ func (validator *StartosisValidator) downloadAndValidateImagesAccountingForProgr
 				starlarkRunResponseLineStream <- binding_constructors.NewStarlarkRunResponseLineFromValidationError(wrappedValidationError.ToAPIType())
 			}
 		}
+
 	}()
 
 	logrus.Debug("Waiting for all images to be downloaded and validated")
