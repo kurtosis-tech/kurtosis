@@ -199,7 +199,16 @@ func (strategy *PerWeekStreamLogsStrategy) tailLogs(
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 ) error {
-	logTail, err := tail.TailFile(filepath, tail.Config{Follow: true, ReOpen: false})
+	logTail, err := tail.TailFile(filepath, tail.Config{
+		Location:    nil,
+		ReOpen:      false,
+		MustExist:   true,
+		Poll:        false,
+		Pipe:        false,
+		Follow:      true,
+		MaxLineSize: 0,
+		RateLimiter: nil,
+		Logger:      logrus.StandardLogger()})
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while attempting to tail the log file.")
 	}
