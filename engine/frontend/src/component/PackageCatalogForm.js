@@ -22,6 +22,7 @@ import startCase from 'lodash/startCase'
 import {InfoOutlineIcon} from '@chakra-ui/icons'
 import {ObjectInput} from 'react-object-input'
 import Editor from '@monaco-editor/react';
+import useWindowDimensions from "../utils/windowheight";
 
 const yaml = require("js-yaml")
 
@@ -36,6 +37,7 @@ const JsonEditor = (
     const monacoRef = useRef(null);
     const elementRef = useRef();
     const defaultWidthPx = 500;
+    const dimensions = useWindowDimensions();
 
     const getEditor = () => {
         if (!monacoRef.current) return null;
@@ -46,6 +48,20 @@ const JsonEditor = (
         handleEditorChange(value)
     }, [])
 
+    useEffect(() => {
+        jsonClipboard.setValue(value)
+        // Resize view on content change
+        updateWindowHeight();
+    }, [value])
+
+    // Resize view on window change
+    useEffect(() => {
+        if (getEditor()) {
+            getEditor().layout({width: defaultWidthPx, height: getEditor().getContentHeight()});
+            getEditor().layout()
+        }
+    }, [dimensions])
+
     const updateWindowHeight = () => {
         if (getEditor()) {
             const contentHeight = Math.min(1000, getEditor().getContentHeight());
@@ -53,11 +69,6 @@ const JsonEditor = (
             getEditor().layout()
         }
     };
-
-    useEffect(() => {
-        jsonClipboard.setValue(value)
-        updateWindowHeight();
-    }, [value])
 
     const saveTextAsFile = (text, fileName) => {
         const blob = new Blob([text], {type: "text/plain"});
