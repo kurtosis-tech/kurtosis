@@ -841,6 +841,10 @@ func (network *DefaultServiceNetwork) GetApiContainerInfo() *ApiContainerInfo {
 	return network.apiContainerInfo
 }
 
+func (network *DefaultServiceNetwork) GetEnclaveUuid() enclave.EnclaveUUID {
+	return network.enclaveUuid
+}
+
 // ====================================================================================================
 //
 //	Private helper methods

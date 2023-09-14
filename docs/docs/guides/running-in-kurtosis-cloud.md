@@ -18,9 +18,14 @@ A Kurtosis cloud instance is an AWS EC2 instance running the Kurtosis engine, th
 ### Advantages of running Kurtosis enclaves in Kurtosis Cloud
 
 In addition to offloading the compute to a cloud infrastructure, Kurtosis Cloud comes with other advantages.
-When provisioning a cloud instance, Kurtosis will create a specific AWS user account and a private storage space in S3.
+When provisioning a cloud instance, Kurtosis will create a specific AWS user account and a storage space in S3.
 
 Services running inside a Kurtosis enclave in Kurtosis Cloud can freely read and write objects from/to this S3 storage.
+
+:::warning S3 storage is publicly accessible
+While only the owner of the S3 storage is permitted to write to the S3 storage, the data is publicly accessible to 
+anyone that knows the object key. For this reason, we don't recommend storing sensitive data in the S3 storage.
+:::
 
 The AWS user key as well as the information on the user S3 space is provided to all Starlark packages running in the 
 cloud via the global `kurtosis` module. The following variables are available inside Starlark and can be passed as 

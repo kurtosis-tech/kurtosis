@@ -228,7 +228,6 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 
 	serviceNameStr := string(serviceName)
 	serviceUuidStr := string(serviceUuid)
-
 	labels, err := provider.getLabelsForEnclaveObjectWithIDAndGUID(serviceNameStr, serviceUuidStr)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with UUID '%v'", serviceUuid)
@@ -478,8 +477,14 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from GUID string '%v'", guid)
 	}
+	shortGuidStr := uuid_generator.ShortenedUUIDString(guid)
+	shortGuidLabelValue, err := docker_label_value.CreateNewDockerLabelValue(shortGuidStr)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Docker label value from GUID string '%v'", guid)
+	}
 	labels[label_key_consts.GUIDDockerLabelKey] = guidLabelValue
 	labels[label_key_consts.LogsServiceUUIDDockerLabelKey] = guidLabelValue
+	labels[label_key_consts.LogsServiceShortUUIDDockerLabelKey] = shortGuidLabelValue
 	return labels, nil
 }
 
@@ -493,6 +498,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from ID string '%v'", id)
 	}
 	labels[label_key_consts.IDDockerLabelKey] = idLabelValue
+	labels[label_key_consts.LogsServiceNameDockerLabelKey] = idLabelValue
 	return labels, nil
 }
 

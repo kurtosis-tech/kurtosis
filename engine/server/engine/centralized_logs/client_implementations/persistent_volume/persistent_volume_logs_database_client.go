@@ -1,46 +1,39 @@
 package persistent_volume
 
 import (
-	"bufio"
 	"context"
-	"encoding/json"
-	"errors"
-	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/stacktrace"
-	"github.com/sirupsen/logrus"
-	"io"
 	"sync"
 )
 
 const (
 	oneSenderAdded = 1
-
-	// Location of logs on the filesystem of the engine
-	logsStorageDirpath = "/var/log/kurtosis/"
-	filetype           = ".json"
-
-	logLabel = "log"
-
-	maxNumLogsToReturn = 200
 )
-
-type JsonLog map[string]string
 
 // persistentVolumeLogsDatabaseClient pulls logs from a Docker volume the engine is mounted to
 type persistentVolumeLogsDatabaseClient struct {
 	kurtosisBackend backend_interface.KurtosisBackend
 
-	filesystem VolumeFilesystem
+	filesystem volume_filesystem.VolumeFilesystem
+
+	streamStrategy stream_logs_strategy.StreamLogsStrategy
 }
 
-func NewPersistentVolumeLogsDatabaseClient(kurtosisBackend backend_interface.KurtosisBackend, filesystem VolumeFilesystem) *persistentVolumeLogsDatabaseClient {
+func NewPersistentVolumeLogsDatabaseClient(
+	kurtosisBackend backend_interface.KurtosisBackend,
+	filesystem volume_filesystem.VolumeFilesystem,
+	streamStrategy stream_logs_strategy.StreamLogsStrategy,
+) *persistentVolumeLogsDatabaseClient {
 	return &persistentVolumeLogsDatabaseClient{
 		kurtosisBackend: kurtosisBackend,
 		filesystem:      filesystem,
+		streamStrategy:  streamStrategy,
 	}
 }
 
@@ -73,9 +66,8 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	wgSenders := &sync.WaitGroup{}
 	for serviceUuid := range userServiceUuids {
 		wgSenders.Add(oneSenderAdded)
-		go streamServiceLogLines(
+		go client.streamServiceLogLines(
 			ctx,
-			client.filesystem,
 			wgSenders,
 			logsByKurtosisUserServiceUuidChan,
 			streamErrChan,
@@ -131,9 +123,8 @@ func (client *persistentVolumeLogsDatabaseClient) FilterExistingServiceUuids(
 //	Private helper functions
 //
 // ====================================================================================================
-func streamServiceLogLines(
+func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 	ctx context.Context,
-	fs VolumeFilesystem,
 	wgSenders *sync.WaitGroup,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	streamErrChan chan error,
@@ -143,75 +134,13 @@ func streamServiceLogLines(
 	shouldFollowLogs bool,
 ) {
 	defer wgSenders.Done()
-
-	// logs are stored per enclave id, per service uuid, eg. <base path>/123440231421/54325342w2341.json
-	logsFilepath := fmt.Sprintf("%s%s/%s%s", logsStorageDirpath, string(enclaveUuid), string(serviceUuid), filetype)
-	logsFile, err := fs.Open(logsFilepath)
-	if err != nil {
-		streamErrChan <- stacktrace.Propagate(err, "An error occurred opening the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
-		return
-	}
-	logsReader := bufio.NewReader(logsFile)
-
-	numLogsReturned := 0
-	for shouldFollowLogs || numLogsReturned < maxNumLogsToReturn {
-		select {
-		case <-ctx.Done():
-			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v' in enclave '%v", serviceUuid, enclaveUuid)
-			return
-		default:
-			jsonLogStr, _, err := logsReader.ReadLine()
-			if err != nil && errors.Is(err, io.EOF) {
-				// exiting stream
-				if shouldFollowLogs {
-					continue
-				} else {
-					logrus.Debugf("EOF error returned when reading logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
-					return
-				}
-			}
-			if err != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred reading the logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
-				return
-			}
-
-			// each logLineStr is of the following structure: {"enclave_uuid": "...", "service_uuid":"...", "log": "...",.. "timestamp":"..."}
-			// eg. {"container_type":"api-container", "container_id":"8f8558ba", "container_name":"/kurtosis-api--ffd",
-			// "log":"hi","timestamp":"2023-08-14T14:57:49Z"}
-
-			// First, we decode the line
-			var jsonLog JsonLog
-			err = json.Unmarshal([]byte(jsonLogStr), &jsonLog)
-			if err != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred parsing the json logs file for service '%v' in enclave '%v' at the following path: %v.", serviceUuid, enclaveUuid, logsFilepath)
-				return
-			}
-
-			// Then we extract the actual log message using the "log" field
-			logLineStr, found := jsonLog[logLabel]
-			if !found {
-				streamErrChan <- stacktrace.NewError("An error retrieving the log field from logs json file. This is a bug in Kurtosis.")
-				return
-			}
-			logLine := logline.NewLogLine(logLineStr)
-
-			// Then we filter by checking if the log message is valid based on requested filters
-			shouldReturnLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
-			if err != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
-				break
-			}
-			if !shouldReturnLogLine {
-				break
-			}
-
-			// send the log line
-			logLines := []logline.LogLine{*logLine}
-			userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
-				serviceUuid: logLines,
-			}
-			logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
-			numLogsReturned++
-		}
-	}
+	client.streamStrategy.StreamLogs(
+		ctx,
+		client.filesystem,
+		logsByKurtosisUserServiceUuidChan,
+		streamErrChan,
+		enclaveUuid,
+		serviceUuid,
+		conjunctiveLogLinesFiltersWithRegex,
+		shouldFollowLogs)
 }

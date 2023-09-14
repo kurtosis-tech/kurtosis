@@ -15,6 +15,8 @@ import (
 // The only read method is GeneratePlan unwraps the plan into an actual list of instructions that can be submitted to
 // the executor.
 type InstructionsPlan struct {
+	indexOfFirstInstruction int
+
 	scheduledInstructionsIndex map[ScheduledInstructionUuid]*ScheduledInstruction
 
 	instructionsSequence []ScheduledInstructionUuid
@@ -22,9 +24,18 @@ type InstructionsPlan struct {
 
 func NewInstructionsPlan() *InstructionsPlan {
 	return &InstructionsPlan{
+		indexOfFirstInstruction:    0,
 		scheduledInstructionsIndex: map[ScheduledInstructionUuid]*ScheduledInstruction{},
 		instructionsSequence:       []ScheduledInstructionUuid{},
 	}
+}
+
+func (plan *InstructionsPlan) SetIndexOfFirstInstruction(indexOfFirstInstruction int) {
+	plan.indexOfFirstInstruction = indexOfFirstInstruction
+}
+
+func (plan *InstructionsPlan) GetIndexOfFirstInstruction() int {
+	return plan.indexOfFirstInstruction
 }
 
 func (plan *InstructionsPlan) AddInstruction(instruction kurtosis_instruction.KurtosisInstruction, returnedValue starlark.Value) error {
@@ -45,7 +56,6 @@ func (plan *InstructionsPlan) AddScheduledInstruction(scheduledInstruction *Sche
 	newScheduledInstructionUuid := scheduledInstruction.uuid
 	newScheduledInstruction := NewScheduledInstruction(newScheduledInstructionUuid, scheduledInstruction.kurtosisInstruction, scheduledInstruction.returnedValue)
 	newScheduledInstruction.Executed(scheduledInstruction.IsExecuted())
-	newScheduledInstruction.ImportedFromCurrentEnclavePlan(scheduledInstruction.IsImportedFromCurrentEnclavePlan())
 
 	plan.scheduledInstructionsIndex[newScheduledInstructionUuid] = newScheduledInstruction
 	plan.instructionsSequence = append(plan.instructionsSequence, newScheduledInstructionUuid)

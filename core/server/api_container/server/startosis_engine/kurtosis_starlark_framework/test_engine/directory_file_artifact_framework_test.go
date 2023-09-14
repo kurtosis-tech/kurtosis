@@ -12,14 +12,10 @@ type directoryFileArtifactTestCase struct {
 	*testing.T
 }
 
-func newDirectoryFileArtifactTestCase(t *testing.T) *directoryFileArtifactTestCase {
-	return &directoryFileArtifactTestCase{
-		T: t,
-	}
-}
-
-func (t *directoryFileArtifactTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", directory.DirectoryTypeName, "FileArtifact")
+func (suite *KurtosisTypeConstructorTestSuite) TestDirectoryFileArtifact() {
+	suite.run(&directoryFileArtifactTestCase{
+		T: suite.T(),
+	})
 }
 
 func (t *directoryFileArtifactTestCase) GetStarlarkCode() string {

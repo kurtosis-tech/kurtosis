@@ -3,15 +3,15 @@ module github.com/kurtosis-tech/kurtosis/cloud/api/golang
 go 1.19
 
 require (
-	google.golang.org/grpc v1.53.0
+	connectrpc.com/connect v1.11.1
+	google.golang.org/grpc v1.56.2
 	google.golang.org/protobuf v1.31.0
 )
 
 require (
-	github.com/bufbuild/connect-go v1.10.0 // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
-	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
-	golang.org/x/text v0.7.0 // indirect
-	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
+	github.com/golang/protobuf v1.5.3 // indirect
+	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
+	golang.org/x/text v0.12.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230706204954-ccb25ca9f130 // indirect
 )

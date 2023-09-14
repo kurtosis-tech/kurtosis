@@ -18,6 +18,8 @@ const (
 	defaultApiContainerLogLevel = logrus.DebugLevel
 
 	fill = true
+
+	createTestEnclave = false
 )
 
 type EnclavePool struct {
@@ -264,6 +266,7 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_en
 		defaultApiContainerLogLevel,
 		enclaveName,
 		pool.enclaveEnvVars,
+		createTestEnclave,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(

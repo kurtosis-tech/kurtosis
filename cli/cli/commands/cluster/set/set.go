@@ -8,14 +8,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/defaults"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/engine_manager"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/kurtosis_config_getter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
+	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 )
 
 const (
-	clusterNameArgKey = "cluster-name"
+	clusterNameArgKey                     = "cluster-name"
+	emptyClusterFromNeverHavingClusterSet = ""
 )
 
 var SetCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -47,7 +51,15 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "'%s' is not a valid name for Kurtosis cluster", clusterName)
 	}
 
-	clusterUpdateSuccessful := false
+	contextsConfigStore := store.GetContextsConfigStore()
+	currentKurtosisContext, err := contextsConfigStore.GetCurrentContext()
+	if err != nil {
+		return stacktrace.Propagate(err, "tried fetching the current Kurtosis context but failed, we can't switch clusters without this information. This is a bug in Kurtosis")
+	}
+	if store.IsRemote(currentKurtosisContext) {
+		return stacktrace.NewError("Switching clusters on a remote context is not a permitted operation, please switch to the local context using `kurtosis %s %s default` before switching clusters", command_str_consts.ContextCmdStr, command_str_consts.ContextSwitchCmdStr)
+	}
+
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	clusterPriorToUpdate, err := clusterSettingStore.GetClusterSetting()
 	if err != nil {
@@ -60,51 +72,62 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return nil
 	}
 
-	engineManagerOldCluster, err := engine_manager.NewEngineManager(ctx)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
+	// at the moment docker clusters are local only, we stop engine in them in favor of switching to any other cluster
+	stopOldEngine := false
+	if clusterPriorToUpdate == emptyClusterFromNeverHavingClusterSet {
+		stopOldEngine = true
+	} else {
+		clusterSettingPriorToUpdate, err := kurtosis_config_getter.GetKurtosisClusterConfig()
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred while fetching cluster setting for current cluster '%s'; not proceeding further to ensure that Kurtosis doesn't get into a bad state", clusterPriorToUpdate)
+		} else if clusterSettingPriorToUpdate.GetClusterType() == resolved_config.KurtosisClusterType_Docker {
+			stopOldEngine = true
+		}
 	}
-	if err = engineManagerOldCluster.StopEngineIdempotently(ctx); err != nil {
-		logrus.Warnf("Kurtosis was not able to stop a potentially running engine on the cluster '%s'. This is not "+
-			"critical, it might be that the current cluster is not reachable anymore. In the worst case scenario, the "+
-			"engine will continue running in cluster '%s' until Kurtosis is switched back to it.", clusterPriorToUpdate,
-			clusterPriorToUpdate)
+
+	if stopOldEngine {
+		logrus.Infof("Current cluster seems to be a local cluster of type '%s'; will stop the engine if its running so that it doesn't interfere with the updated cluster", resolved_config.KurtosisClusterType_Docker.String())
+		engineManagerOldCluster, err := engine_manager.NewEngineManager(ctx)
+		if err != nil {
+			return stacktrace.Propagate(err, "an error occurred while creating an engine manager for current cluster")
+		}
+		if err := engineManagerOldCluster.StopEngineIdempotently(ctx); err != nil {
+			return stacktrace.Propagate(err, "Tried stopping engine for current cluster but failed; not proceeding further as current cluster is a local cluster and there might be port clashes with the updated cluster. Its status can be retrieved "+
+				"running 'kurtosis %s %s' and it can potentially be started running 'kurtosis %s %s'",
+				command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,
+				command_str_consts.EngineStartCmdStr)
+		}
 	}
 
 	if err = clusterSettingStore.SetClusterSetting(clusterName); err != nil {
 		return stacktrace.Propagate(err, "Failed to set cluster name to '%v'.", clusterName)
 	}
-	defer func() {
-		if clusterUpdateSuccessful {
-			return
-		}
-		if err = clusterSettingStore.SetClusterSetting(clusterPriorToUpdate); err != nil {
-			logrus.Errorf("An error happened updating cluster to '%s'. Kurtosis tried to roll back to the "+
-				"previous value '%s' but the roll back failed. You have to roll back manually running "+
-				"'kurtosis %s %s %s'", clusterName, clusterPriorToUpdate, command_str_consts.ClusterCmdStr,
-				command_str_consts.ClusterSetCmdStr, clusterPriorToUpdate)
-		}
-	}()
-	logrus.Infof("Cluster set to '%s', Kurtosis engine will now be started", clusterName)
+	logrus.Infof("Cluster set to '%s'", clusterName)
 	engineManagerNewCluster, err := engine_manager.NewEngineManager(ctx)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 	}
-	// Start the engine inside the new cluster
-	_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize)
+	engineStatus, _, _, err := engineManagerNewCluster.GetEngineStatus(ctx)
 	if err != nil {
-		return stacktrace.Propagate(err, "Engine could not be started after cluster was updated. The cluster "+
-			"will be rolled back, but it is possible the engine will remain stopped. Its status can be retrieved "+
-			"running 'kurtosis %s %s' and it can potentially be started running 'kurtosis %s %s'",
-			command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,
-			command_str_consts.EngineStartCmdStr)
+		return stacktrace.Propagate(err, "an error occurred while getting the status of the engine in the current cluster")
 	}
-	defer func() {
-		if err = engineClientCloseFunc(); err != nil {
-			logrus.Warnf("Error closing the engine client:\n'%v'", err)
+	// we only start in a stopped state, the idempotent visitor gets stuck with engine_manager.EngineStatus_ContainerRunningButServerNotResponding if the gateway isn't running
+	// TODO - fix the idempotent starter longer term
+	if engineStatus == engine_manager.EngineStatus_Stopped {
+		_, engineClientCloseFunc, err := engineManagerNewCluster.StartEngineIdempotentlyWithDefaultVersion(ctx, defaults.DefaultEngineLogLevel, defaults.DefaultEngineEnclavePoolSize)
+		if err != nil {
+			return stacktrace.Propagate(err, "Engine could not be started after cluster was updated. Its status can be retrieved "+
+				"running 'kurtosis %s %s' and it can potentially be started running 'kurtosis %s %s'",
+				command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr, command_str_consts.EngineCmdStr,
+				command_str_consts.EngineStartCmdStr)
 		}
-	}()
-	clusterUpdateSuccessful = true
+		defer func() {
+			if err = engineClientCloseFunc(); err != nil {
+				logrus.Warnf("Error closing the engine client:\n'%v'", err)
+			}
+		}()
+	}
+
 	return nil
 }
 

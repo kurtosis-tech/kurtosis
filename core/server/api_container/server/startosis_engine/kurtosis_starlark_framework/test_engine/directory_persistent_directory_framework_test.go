@@ -12,14 +12,10 @@ type directoryPersistentDirectoryTestCase struct {
 	*testing.T
 }
 
-func newDirectoryPersistnetDirectoryTestCase(t *testing.T) *directoryPersistentDirectoryTestCase {
-	return &directoryPersistentDirectoryTestCase{
-		T: t,
-	}
-}
-
-func (t *directoryPersistentDirectoryTestCase) GetId() string {
-	return fmt.Sprintf("%s_%s", directory.DirectoryTypeName, "PersistentDirectory")
+func (suite *KurtosisTypeConstructorTestSuite) TestDirectoryPersistentDirectory() {
+	suite.run(&directoryPersistentDirectoryTestCase{
+		T: suite.T(),
+	})
 }
 
 func (t *directoryPersistentDirectoryTestCase) GetStarlarkCode() string {

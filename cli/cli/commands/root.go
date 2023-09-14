@@ -153,7 +153,8 @@ func globalSetup(cmd *cobra.Command, args []string) error {
 func printKurtosisCommandToFile(cmd *cobra.Command, args []string) {
 	fileLogger := out.GetFileLogger()
 	flagsSetByUsers := getFlagsSetByUsers(cmd.Flags())
-	fileLogger.Infof("===== Executing Command: kurtosis %v %v %v =====",
+	fileLogger.Infof("===== Executing Command: %v %v %v %v =====",
+		command_str_consts.KurtosisCmdStr,
 		cmd.Name(),
 		strings.Join(flagsSetByUsers, " "),
 		strings.Join(args, " "))
@@ -194,14 +195,12 @@ func checkCLIVersion(cmd *cobra.Command) {
 	if err != nil {
 		logrus.Warning("An error occurred trying to check if you are running the latest Kurtosis CLI version.")
 		logrus.Debugf("Checking latest version error: %v", err)
-		logrus.Warningf("Your current version is '%v'", kurtosis_version.KurtosisVersion)
-		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", user_support_constants.UpgradeCLIInstructionsPage)
+		logrus.Warningf("Your current version is '%v'. You can manually upgrade the CLI tool following these instructions: %v", kurtosis_version.KurtosisVersion, user_support_constants.UpgradeCLIInstructionsPage)
 		return
 	}
 
 	if !isLatestVersion {
-		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'", latestVersion)
-		logrus.Warningf("You can manually upgrade the CLI tool following these instructions: %v", user_support_constants.UpgradeCLIInstructionsPage)
+		logrus.Warningf("You are running an old version of the Kurtosis CLI; we suggest you to update it to the latest version, '%v'. You can manually upgrade the CLI tool following these instructions: %v", latestVersion, user_support_constants.UpgradeCLIInstructionsPage)
 	}
 }
 
@@ -313,7 +312,7 @@ func getLatestCLIReleaseVersionFromGitHub() (string, error) {
 
 	latestVersion := strings.TrimLeft(responseObject.TagName, optionalSemverPrefix)
 	if latestVersion == "" {
-		return "", stacktrace.Propagate(err, "The latest release version got from GitHub releases is empty")
+		return "", stacktrace.NewError("The latest release version got from GitHub releases is empty")
 	}
 
 	return latestVersion, nil

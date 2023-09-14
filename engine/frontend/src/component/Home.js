@@ -4,15 +4,14 @@ import Main from "./Main"
 import EnclaveInfo from "./EnclaveInfo";
 import ServiceInfo from "./ServiceInfo";
 import FileArtifactInfo from './FileArtifactInfo';
+import PackageCatalogRouter from './PackageCatalogRouter';
 import Enclaves from "./Enclaves";
-import {getEnclavesFromKurtosis} from "../api/enclave";
-
+import {getEnclavesFromKurtosis, removeEnclave} from "../api/enclave";
 import {createBrowserRouter, Route, RouterProvider} from 'react-router-dom';
 import {useAppContext} from "../context/AppState";
 import LoadingOverlay from "./LoadingOverflow";
 import CreateEnclave from "./CreateEnclave";
 import {createRoutesFromElements} from "react-router";
-
 
 const queryParamToBool = (value) => {
     return ((value + '').toLowerCase() === 'true')
@@ -38,6 +37,20 @@ const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [enclaveLoading, setEnclaveLoading] = useState(false)
     const {appData, setAppData} = useAppContext()
+
+    const handleDeleteClick = async (enclaveName) => {
+        const makeRequest = async () => {
+            try {
+                const filteredEnclaves = enclaves.filter(enclave => enclave.name !== enclaveName)
+                await removeEnclave(appData.jwtToken, appData.apiHost, enclaveName)
+                setEnclaves(filteredEnclaves)
+            } catch (ex) {
+                console.log(ex)
+                alert(`Sorry, unexpected error occurred while removing enclave with name: ${enclaveName}`)
+            }
+        }
+        await makeRequest()
+    }
 
     const loading = (
         <div className="flex-grow bg-#181926-100 flex-row flex mt-28 w-screen">
@@ -131,7 +144,8 @@ const Home = () => {
     }, [appData.apiHost])
 
     const addEnclave = (enclave) => {
-        setEnclaves(enclaves => [...enclaves, enclave])
+        const {created, ...updated} = enclave
+        setEnclaves(enclaves => [...enclaves, updated])
     }
 
     const checkAuth = (element) => {
@@ -149,14 +163,11 @@ const Home = () => {
 
     const routes = (
         <>
-            <Route
-                path="/"
-                element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}
-            />
             <Route exact
                    path="/enclaves"
                    element={checkAuth(<Enclaves enclaves={enclaves}
                                                 isLoading={enclaveLoading}
+                                                handleDeleteClick={handleDeleteClick}
                        />
                    )}
             />
@@ -172,6 +183,14 @@ const Home = () => {
             />
             <Route path="/enclaves/:name/files/:fileArtifactName"
                    element={checkAuth(<FileArtifactInfo enclaves={enclaves}/>)}
+            />
+            <Route exact
+                path="/catalog/*" 
+                element={checkAuth(<PackageCatalogRouter addEnclave={addEnclave}/>)} 
+            />
+            <Route
+                path="/"
+                element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}
             />
         </>
     )

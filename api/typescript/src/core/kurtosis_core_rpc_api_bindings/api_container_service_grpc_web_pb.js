@@ -793,5 +793,66 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.inspectFilesA
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.api_container_api.ConnectServicesArgs,
+ *   !proto.api_container_api.ConnectServicesResponse>}
+ */
+const methodDescriptor_ApiContainerService_ConnectServices = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/ConnectServices',
+  grpc.web.MethodType.UNARY,
+  proto.api_container_api.ConnectServicesArgs,
+  proto.api_container_api.ConnectServicesResponse,
+  /**
+   * @param {!proto.api_container_api.ConnectServicesArgs} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.ConnectServicesResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.api_container_api.ConnectServicesArgs} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.ConnectServicesResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.ConnectServicesResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.connectServices =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/ConnectServices',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ConnectServices,
+      callback);
+};
+
+
+/**
+ * @param {!proto.api_container_api.ConnectServicesArgs} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.ConnectServicesResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.connectServices =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/ConnectServices',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_ConnectServices);
+};
+
+
 module.exports = proto.api_container_api;
 

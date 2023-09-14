@@ -11,6 +11,8 @@ var LogsDatabaseKurtosisTrackedDockerLabelsForIdentifyLogsStream = []*docker_lab
 	label_key_consts.ContainerTypeDockerLabelKey,
 	label_key_consts.LogsEnclaveUUIDDockerLabelKey,
 	label_key_consts.LogsServiceUUIDDockerLabelKey,
+	label_key_consts.LogsServiceShortUUIDDockerLabelKey,
+	label_key_consts.LogsServiceNameDockerLabelKey,
 }
 
 // These are all the logs database Kurtosis tracked Docker Labels used

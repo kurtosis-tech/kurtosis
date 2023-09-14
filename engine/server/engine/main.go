@@ -20,6 +20,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
 	"github.com/kurtosis-tech/stacktrace"
@@ -96,7 +99,6 @@ func main() {
 
 func runMain() error {
 	ctx := context.Background()
-
 	serverArgs, err := args.GetArgsFromEnv()
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't retrieve engine server args from the environment")
@@ -138,8 +140,15 @@ func runMain() error {
 	}
 
 	// osFs is a wrapper around disk
-	osFs := persistent_volume.NewOsVolumeFilesystem()
-	logsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs)
+	osFs := volume_filesystem.NewOsVolumeFilesystem()
+	// pulls logs per enclave/per service id
+	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
+	perFileLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perFileStreamStrategy)
+
+	// pulls logs /per week/per enclave/per service
+	realTime := logs_clock.NewRealClock()
+	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime)
+	perWeekLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamStrategy)
 
 	go func() {
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
@@ -182,8 +191,19 @@ func runMain() error {
 		}
 	}()
 
-	engineConnectServer := server.NewEngineConnectServerService(serverArgs.ImageVersionTag, enclaveManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics, logsDatabaseClient)
+	engineConnectServer := server.NewEngineConnectServerService(
+		serverArgs.ImageVersionTag,
+		enclaveManager,
+		serverArgs.MetricsUserID,
+		serverArgs.DidUserAcceptSendingMetrics,
+		perWeekLogsDatabaseClient,
+		perFileLogsDatabaseClient)
 	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
+	defer func() {
+		if err := engineConnectServer.Close(); err != nil {
+			logrus.Errorf("We tried to close the engine connect server service but something fails. Err:\n%v", err)
+		}
+	}()
 
 	logrus.Info("Running server...")
 	engineHttpServer := connect_server.NewConnectServer(serverArgs.GrpcListenPortNum, grpcServerStopGracePeriod, handler, apiPath)

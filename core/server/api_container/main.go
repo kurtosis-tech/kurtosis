@@ -20,11 +20,14 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"go.starlark.net/starlark"
 	"google.golang.org/grpc"
 	"net"
 	"os"
@@ -129,6 +132,7 @@ func runMain() error {
 			Context:        ctx,
 			EnclaveID:      enclave.EnclaveUUID(serverArgs.EnclaveUUID),
 			APIContainerIP: ownIpAddress,
+			IsProduction:   serverArgs.IsProductionEnclave,
 		}
 		kurtosisBackend, err = backend_creator.GetDockerKurtosisBackend(apiContainerModeArgs, configs.NoRemoteBackendConfig)
 		if err != nil {
@@ -161,12 +165,23 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	starlarkValueSerde := createStarlarkValueSerde()
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(starlarkValueSerde, enclaveDb)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the runtime value store")
+	}
+
+	// Load the current enclave plan, in case the enclave is being restarted
+	enclavePlan, err := enclave_plan_persistence.Load(enclaveDb)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred loading stored enclave plan")
+	}
+
 	// TODO: Consolidate Interpreter, Validator and Executor into a single interface
 	startosisRunner := startosis_engine.NewStartosisRunner(
-		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, serverArgs.EnclaveEnvVars),
+		startosis_engine.NewStartosisInterpreter(serviceNetwork, gitPackageContentProvider, runtimeValueStore, starlarkValueSerde, serverArgs.EnclaveEnvVars),
 		startosis_engine.NewStartosisValidator(&kurtosisBackend, serviceNetwork, filesArtifactStore),
-		startosis_engine.NewStartosisExecutor(runtimeValueStore))
+		startosis_engine.NewStartosisExecutor(starlarkValueSerde, runtimeValueStore, enclavePlan, enclaveDb))
 
 	//Creation of ApiContainerService
 	apiContainerService, err := server.NewApiContainerService(
@@ -226,6 +241,22 @@ func createServiceNetwork(
 		return nil, stacktrace.Propagate(err, "An error occurred while creating the default service network")
 	}
 	return serviceNetwork, nil
+}
+
+func createStarlarkValueSerde() *kurtosis_types.StarlarkValueSerde {
+	starlarkThread := &starlark.Thread{
+		Name:       "starlark-serde-thread",
+		Print:      nil,
+		Load:       nil,
+		OnMaxSteps: nil,
+		Steps:      0,
+	}
+	starlarkEnv := startosis_engine.Predeclared()
+	builtins := startosis_engine.KurtosisTypeConstructors()
+	for _, builtin := range builtins {
+		starlarkEnv[builtin.Name()] = builtin
+	}
+	return kurtosis_types.NewStarlarkValueSerde(starlarkThread, starlarkEnv)
 }
 
 func formatFilenameFunctionForLogs(filename string, functionName string) string {

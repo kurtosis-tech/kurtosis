@@ -120,6 +120,7 @@ func StartRegisteredUserServices(
 	objAttrsProvider object_attributes_provider.DockerObjectAttributesProvider,
 	freeIpProviderForEnclave *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
+	restartPolicy docker_manager.RestartPolicy,
 ) (
 	map[service.ServiceUUID]*service.Service,
 	map[service.ServiceUUID]error,
@@ -218,6 +219,7 @@ func StartRegisteredUserServices(
 		enclaveObjAttrsProvider,
 		freeIpProviderForEnclave,
 		dockerManager,
+		restartPolicy,
 		logsCollectorEnclaveAddr,
 		logsCollectorLabels,
 	)
@@ -447,6 +449,7 @@ func runStartServiceOperationsInParallel(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
+	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) (
@@ -473,6 +476,7 @@ func runStartServiceOperationsInParallel(
 			enclaveObjAttrsProvider,
 			freeIpAddrProvider,
 			dockerManager,
+			restartPolicy,
 			logsCollectorAddress,
 			logsCollectorLabels,
 		)
@@ -508,6 +512,7 @@ func createStartServiceOperation(
 	enclaveObjAttrsProvider object_attributes_provider.DockerEnclaveObjectAttributesProvider,
 	freeIpAddrProvider *free_ip_addr_tracker.FreeIpAddrTracker,
 	dockerManager *docker_manager.DockerManager,
+	restartPolicy docker_manager.RestartPolicy,
 	logsCollectorAddress string,
 	logsCollectorLabels logs_collector_functions.LogsCollectorLabels,
 ) operation_parallelizer.Operation {
@@ -676,7 +681,7 @@ func createStartServiceOperation(
 			volumeMounts,
 		).WithLoggingDriver(
 			fluentdLoggingDriverCnfg,
-		)
+		).WithRestartPolicy(restartPolicy)
 
 		if entrypointArgs != nil {
 			createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)
@@ -686,11 +691,6 @@ func createStartServiceOperation(
 		}
 
 		createAndStartArgs := createAndStartArgsBuilder.Build()
-
-		// Best-effort pull attempt
-		if err = dockerManager.FetchImage(ctx, containerImageName); err != nil {
-			logrus.Warnf("Failed to pull the latest version of user service container image '%v'; you may be running an out-of-date version", containerImageName)
-		}
 
 		containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 		if err != nil {

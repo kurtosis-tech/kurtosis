@@ -1076,10 +1076,46 @@ export namespace FileArtifactContentsFileDescription {
   }
 }
 
+export class ConnectServicesArgs extends jspb.Message {
+  getConnect(): Connect;
+  setConnect(value: Connect): ConnectServicesArgs;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ConnectServicesArgs.AsObject;
+  static toObject(includeInstance: boolean, msg: ConnectServicesArgs): ConnectServicesArgs.AsObject;
+  static serializeBinaryToWriter(message: ConnectServicesArgs, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ConnectServicesArgs;
+  static deserializeBinaryFromReader(message: ConnectServicesArgs, reader: jspb.BinaryReader): ConnectServicesArgs;
+}
+
+export namespace ConnectServicesArgs {
+  export type AsObject = {
+    connect: Connect,
+  }
+}
+
+export class ConnectServicesResponse extends jspb.Message {
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): ConnectServicesResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: ConnectServicesResponse): ConnectServicesResponse.AsObject;
+  static serializeBinaryToWriter(message: ConnectServicesResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): ConnectServicesResponse;
+  static deserializeBinaryFromReader(message: ConnectServicesResponse, reader: jspb.BinaryReader): ConnectServicesResponse;
+}
+
+export namespace ConnectServicesResponse {
+  export type AsObject = {
+  }
+}
+
 export enum ServiceStatus { 
   STOPPED = 0,
   RUNNING = 1,
   UNKNOWN = 2,
+}
+export enum Connect { 
+  CONNECT = 0,
+  NO_CONNECT = 1,
 }
 export enum KurtosisFeatureFlag { 
   NO_INSTRUCTIONS_CACHING = 0,

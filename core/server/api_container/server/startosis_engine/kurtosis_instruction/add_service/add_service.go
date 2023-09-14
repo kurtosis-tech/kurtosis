@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -152,25 +153,27 @@ func (builtin *AddServiceCapabilities) Execute(ctx context.Context, _ *builtin_a
 		return "", stacktrace.Propagate(err, "An error occurred while checking if service '%v' is ready", replacedServiceName)
 	}
 
-	fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore)
+	if err := fillAddServiceReturnValueWithRuntimeValues(startedService, builtin.resultUuid, builtin.runtimeValueStore); err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred while adding service return values with result key UUID '%s'", builtin.resultUuid)
+	}
 	instructionResult := fmt.Sprintf("Service '%s' added with service UUID '%s'", replacedServiceName, startedService.GetRegistration().GetUUID())
 	return instructionResult, nil
 }
 
-func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	// if other instruction is nil or other instruction is not an add_service instruction, status is unknown
 	if other == nil {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
-	otherAddServiceCapabilities, ok := other.(*AddServiceCapabilities)
-	if !ok {
+
+	if other.Type != AddServiceBuiltinName {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
 
 	// if service names don't match, status is unknown, instructions can't be resolved together
-	if otherAddServiceCapabilities.serviceName != builtin.serviceName {
+	if !other.HasOnlyServiceName(builtin.serviceName) {
 		enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
@@ -196,6 +199,14 @@ func (builtin *AddServiceCapabilities) TryResolveWith(instructionsAreEqual bool,
 
 	enclaveComponents.AddService(builtin.serviceName, enclave_structure.ComponentWasLeftIntact)
 	return enclave_structure.InstructionIsEqual
+}
+
+func (builtin *AddServiceCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(
+		AddServiceBuiltinName,
+	).AddServiceName(
+		builtin.serviceName,
+	)
 }
 
 func validateAndConvertConfigAndReadyCondition(

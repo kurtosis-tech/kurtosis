@@ -5,7 +5,7 @@ import NoData from './NoData';
 const Main = ({totalEnclaves}) => {
     const navigate = useNavigate()
     const handleCreateEnvClick = () => {
-        navigate("/enclave/create")
+        navigate("/catalog")
     }
     const handleViewEnvsClick = () => {
         navigate("/enclaves")

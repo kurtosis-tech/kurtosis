@@ -1,5 +1,5 @@
 import {runStarlarkPackage} from "./container"
-import {createClient, createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager} from "./api";
+import {createClient, createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager, removeEnclaveFromEnclaveManager} from "./api";
 
 export const getEnclavesFromKurtosis = async (token, apiHost) => {
     const data = await getEnclavesFromEnclaveManager(token, apiHost);
@@ -19,11 +19,17 @@ export const getEnclavesFromKurtosis = async (token, apiHost) => {
     return []
 }
 
-export const createEnclave = async (token, apiHost) => {
-    const enclaveName = ""; // TODO We could make this input from the UI
+export const removeEnclave = async (token, apiHost, enclaveName) => {
+    const response = await removeEnclaveFromEnclaveManager(enclaveName, token, apiHost)
+    const enclave = response.enclaveInfo;
+    return {}
+}
+
+
+export const createEnclave = async (token, apiHost, enclaveName, productionMode) => {
     const apiContainerVersionTag = "";
     const apiContainerLogLevel = "info";
-    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag, token, apiHost)
+    const response = await createEnclaveFromEnclaveManager(enclaveName, apiContainerLogLevel, apiContainerVersionTag, token, apiHost, productionMode)
 
     const enclave = response.enclaveInfo;
     return {

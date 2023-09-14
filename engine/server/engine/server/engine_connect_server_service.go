@@ -12,6 +12,11 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"time"
+)
+
+var (
+	logRetentionFeatureReleaseTime = time.Date(2023, 9, 7, 13, 0, 0, 0, time.UTC)
 )
 
 type EngineConnectServerService struct {
@@ -20,14 +25,20 @@ type EngineConnectServerService struct {
 
 	enclaveManager *enclave_manager.EnclaveManager
 
-	//The protected user ID for metrics analytics purpose
+	// The protected user ID for metrics analytics purpose
 	metricsUserID string
 
-	//User consent to send metrics
+	// User consent to send metrics
 	didUserAcceptSendingMetrics bool
 
-	//The client for consuming container logs from the logs' database server
-	logsDatabaseClient centralized_logs.LogsDatabaseClient
+	// The clients for consuming container logs from the logs' database server
+
+	// per week pulls logs from enclaves created post log retention feature
+	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient
+
+	// per file pulls logs from enclaves created pre log retention feature
+	// TODO: remove once users are fully migrated to log retention/new log schema
+	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient
 }
 
 func NewEngineConnectServerService(
@@ -35,14 +46,16 @@ func NewEngineConnectServerService(
 	enclaveManager *enclave_manager.EnclaveManager,
 	metricsUserId string,
 	didUserAcceptSendingMetrics bool,
-	logsDatabaseClient centralized_logs.LogsDatabaseClient,
+	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
+	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient,
 ) *EngineConnectServerService {
 	service := &EngineConnectServerService{
 		imageVersionTag:             imageVersionTag,
 		enclaveManager:              enclaveManager,
 		metricsUserID:               metricsUserId,
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
-		logsDatabaseClient:          logsDatabaseClient,
+		perWeekLogsDatabaseClient:   perWeekLogsDatabaseClient,
+		perFileLogsDatabaseClient:   perFileLogsDatabaseClient,
 	}
 	return service
 }
@@ -62,12 +75,17 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
 	}
 
+	isProduction := false
+	if args.Mode == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
+		isProduction = true
+	}
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		service.imageVersionTag,
 		args.ApiContainerVersionTag,
 		apiContainerLogLevel,
 		args.EnclaveName,
+		isProduction,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.EnclaveName)
@@ -112,10 +130,10 @@ func (service *EngineConnectServerService) StopEnclave(ctx context.Context, conn
 func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
 	args := connectArgs.Msg
 	enclaveIdentifier := args.EnclaveIdentifier
+
 	if err := service.enclaveManager.DestroyEnclave(ctx, enclaveIdentifier); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred destroying enclave with identifier '%v':", args.EnclaveIdentifier)
 	}
-
 	return connect.NewResponse(&emptypb.Empty{}), nil
 }
 
@@ -152,7 +170,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		requestedServiceUuids[serviceUuid] = true
 	}
 
-	if service.logsDatabaseClient == nil {
+	if service.perWeekLogsDatabaseClient == nil || service.perFileLogsDatabaseClient == nil {
 		return stacktrace.NewError("It's not possible to return service logs because there is no logs database client; this is bug in Kurtosis")
 	}
 
@@ -172,7 +190,14 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		return stacktrace.Propagate(err, "An error occurred creating the conjunctive log line filters from the GRPC's conjunctive log line filters '%+v'", args.GetConjunctiveFilters())
 	}
 
-	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = service.logsDatabaseClient.StreamUserServiceLogs(contextWithCancel, enclaveUuid, requestedServiceUuids, conjunctiveLogLineFilters, shouldFollowLogs)
+	// get enclave creation time to determine strategy to pull logs
+	enclaveCreationTime, err := service.getEnclaveCreationTime(ctx, enclaveUuid)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while trying to get the enclave creation time to determine how to pull logs.")
+	}
+	logsDatabaseClient := service.getLogsDatabaseClient(enclaveCreationTime)
+
+	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(contextWithCancel, enclaveUuid, requestedServiceUuids, conjunctiveLogLineFilters, shouldFollowLogs)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -233,7 +258,8 @@ func (service *EngineConnectServerService) reportAnyMissingUuidsAndGetNotFoundUu
 	requestedServiceUuids map[user_service.ServiceUUID]bool,
 	stream *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) (map[string]bool, error) {
-	existingServiceUuids, err := service.logsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
+	// doesn't matter which logs client is used here
+	existingServiceUuids, err := service.perWeekLogsDatabaseClient.FilterExistingServiceUuids(ctx, enclaveUuid, requestedServiceUuids)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred retrieving the exhaustive list of service UUIDs from the log client for enclave '%v' and for the requested UUIDs '%+v'", enclaveUuid, requestedServiceUuids)
 	}
@@ -351,4 +377,31 @@ func newConjunctiveLogLineFiltersFromGRPCLogLineFilters(
 	}
 
 	return conjunctiveLogLineFilters, nil
+}
+
+// If the enclave was created prior to log retention, return the per file logs client
+func (service *EngineConnectServerService) getLogsDatabaseClient(enclaveCreationTime time.Time) centralized_logs.LogsDatabaseClient {
+	if enclaveCreationTime.After(logRetentionFeatureReleaseTime) {
+		return service.perWeekLogsDatabaseClient
+	} else {
+		return service.perFileLogsDatabaseClient
+	}
+}
+
+func (service *EngineConnectServerService) getEnclaveCreationTime(ctx context.Context, enclaveUuid enclave.EnclaveUUID) (time.Time, error) {
+	enclaves, err := service.enclaveManager.GetEnclaves(ctx)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	enclaveObj, found := enclaves[string(enclaveUuid)]
+	if !found {
+		return time.Time{}, stacktrace.NewError("Engine could not find enclave '%v'", enclaveUuid)
+	}
+
+	timestamp := enclaveObj.GetCreationTime()
+	if timestamp == nil {
+		return time.Time{}, stacktrace.NewError("An error occurred getting the creation time for enclave '%v'. This is a bug in Kurtosis", enclaveUuid)
+	}
+	return timestamp.AsTime(), nil
 }

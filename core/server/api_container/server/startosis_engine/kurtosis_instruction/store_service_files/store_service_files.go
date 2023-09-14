@@ -5,6 +5,7 @@ import (
 	"fmt"
 	kurtosis_backend_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -126,20 +127,19 @@ func (builtin *StoreServiceFilesCapabilities) Execute(ctx context.Context, _ *bu
 	return instructionResult, nil
 }
 
-func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqual bool, other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	// if other instruction is nil or other instruction is not an add_service instruction, status is unknown
 	if other == nil {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
-	otherStoreServiceFilesCapabilities, ok := other.(*StoreServiceFilesCapabilities)
-	if !ok {
+	if other.Type != StoreServiceFilesBuiltinName {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
 
 	// if artifact names don't match, status is unknown, instructions can't be resolved together
-	if otherStoreServiceFilesCapabilities.artifactName != builtin.artifactName {
+	if !other.HasOnlyFilesArtifactName(builtin.artifactName) {
 		enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentIsNew)
 		return enclave_structure.InstructionIsUnknown
 	}
@@ -159,4 +159,15 @@ func (builtin *StoreServiceFilesCapabilities) TryResolveWith(instructionsAreEqua
 
 	enclaveComponents.AddFilesArtifact(builtin.artifactName, enclave_structure.ComponentWasLeftIntact)
 	return enclave_structure.InstructionIsEqual
+}
+
+func (builtin *StoreServiceFilesCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	// No need for the MD5 here because "store_service_files" is an atomic operation at the service_network level.
+	// Here we just consider that if the service has been updated, we store the file again (b/c it the content might
+	// have changed), otherwise we don't
+	builder.SetType(
+		StoreServiceFilesBuiltinName,
+	).AddFilesArtifact(
+		builtin.artifactName, nil,
+	)
 }

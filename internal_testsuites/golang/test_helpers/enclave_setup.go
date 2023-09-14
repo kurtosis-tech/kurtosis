@@ -12,19 +12,17 @@ import (
 )
 
 const (
-	testsuiteNameEnclaveIDFragment = "go-testsuite"
-
-	millisInNanos = 1000
+	testsuiteNameEnclaveIDFragment = "go-test"
 )
 
 func CreateEnclave(t *testing.T, ctx context.Context, testName string) (resultEnclaveCtx *enclaves.EnclaveContext, resultStopEnclaveFunc func(), resultDestroyEnclaveFunc func() error, resultErr error) {
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	require.NoError(t, err, "An error occurred connecting to the Kurtosis engine for running test '%v'", testName)
 	enclaveName := fmt.Sprintf(
-		"%v.%v.%v",
+		"%v-%v-%v",
 		testsuiteNameEnclaveIDFragment,
 		testName,
-		time.Now().UnixNano()/millisInNanos,
+		time.Now().Unix(),
 	)
 	enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
 	require.NoError(t, err, "An error occurred creating enclave '%v'", enclaveName)

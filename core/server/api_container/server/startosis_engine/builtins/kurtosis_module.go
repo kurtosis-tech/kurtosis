@@ -1,6 +1,8 @@
 package builtins
 
 import (
+	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	starlarkjson "go.starlark.net/lib/json"
 	"go.starlark.net/starlark"
@@ -18,8 +20,8 @@ var (
 	noKwargs []starlark.Tuple
 )
 
-func KurtosisModule(thread *starlark.Thread, enclaveEnvVars string) (*starlarkstruct.Module, *startosis_errors.InterpretationError) {
-	enclaveEnvVarsStringDict, interpretationErr := convertEnvVarsToDict(thread, enclaveEnvVars)
+func KurtosisModule(thread *starlark.Thread, enclaveUuid enclave.EnclaveUUID, enclaveEnvVars string) (*starlarkstruct.Module, *startosis_errors.InterpretationError) {
+	enclaveEnvVarsStringDict, interpretationErr := convertEnvVarsToDict(thread, enclaveUuid, enclaveEnvVars)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -30,7 +32,7 @@ func KurtosisModule(thread *starlark.Thread, enclaveEnvVars string) (*starlarkst
 	}, nil
 }
 
-func convertEnvVarsToDict(thread *starlark.Thread, enclaveEnvVars string) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+func convertEnvVarsToDict(thread *starlark.Thread, enclaveUuid enclave.EnclaveUUID, enclaveEnvVars string) (*starlark.StringDict, *startosis_errors.InterpretationError) {
 	envVarsDict := starlark.StringDict{}
 	if enclaveEnvVars == "" {
 		return &envVarsDict, nil
@@ -68,7 +70,25 @@ func convertEnvVarsToDict(thread *starlark.Thread, enclaveEnvVars string) (*star
 			return nil, startosis_errors.NewInterpretationError("No value found for key '%s' converting the environment variables dictionary", envVarName)
 		}
 		lowercaseEnvVarName := strings.ToLower(envVarName.GoString())
-		envVarsDict[lowercaseEnvVarName] = envVarValue
+
+		// TODO: This is a hack to "inject" the enclave ID in the bucket user folder variable such that each enclave can
+		// write to its own folder, rather than all enclaves writing to at the root of the user folder and potentially
+		// experiencing file name collisions.
+		// Once each AWS bucket is created inside the Starlark script (under the user own AWS account), we can remove
+		// this and let the user own and manage their bucket
+		if lowercaseEnvVarName == "aws_bucket_user_folder" {
+			envVarValueStr, ok := envVarValue.(starlark.String)
+			if !ok {
+				return nil, startosis_errors.NewInterpretationError("Environment variable value for "+
+					"'AWS_BUCKET_USER_FOLDER' was expected to be a string, but was not: '%v'. This is unexpected",
+					envVarValue)
+			}
+			trimmedEnvVarValueStr := strings.Trim(envVarValueStr.GoString(), "/")
+			envVarValueWithEnclaveUuid := fmt.Sprintf("%s/%s", trimmedEnvVarValueStr, string(enclaveUuid))
+			envVarsDict[lowercaseEnvVarName] = starlark.String(envVarValueWithEnclaveUuid)
+		} else {
+			envVarsDict[lowercaseEnvVarName] = envVarValue
+		}
 	}
 	return &envVarsDict, nil
 }

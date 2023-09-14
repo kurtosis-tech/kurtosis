@@ -49,6 +49,13 @@ message CreateEnclaveArgs {
   string api_container_version_tag = 2;
   // The API container log level
   string api_container_log_level = 3;
+
+  EnclaveMode mode = 4;
+}
+
+enum EnclaveMode {
+  TEST = 0;
+  PRODUCTION = 1;
 }
 
 message CreateEnclaveResponse {

@@ -2,19 +2,31 @@ package startosis_engine
 
 import (
 	"context"
+	"github.com/google/uuid"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/port_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/mock_package_content_provider"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.starlark.net/starlark"
+	"go.starlark.net/starlarkstruct"
 	"net"
 	"testing"
 )
 
 const (
+	starlarkValueSerdeThreadName = "test-serde-thread"
+
+	enclaveUuid = enclave.EnclaveUUID("enclave-uuid")
+
 	noInputParams = "{}"
 )
 
@@ -26,12 +38,32 @@ type StartosisInterpreterIdempotentTestSuite struct {
 
 func (suite *StartosisInterpreterIdempotentTestSuite) SetupTest() {
 	suite.packageContentProvider = mock_package_content_provider.NewMockPackageContentProvider()
-	runtimeValueStore := runtime_value_store.NewRuntimeValueStore()
+	enclaveDb := getEnclaveDBForTest(suite.T())
+
+	thread := &starlark.Thread{
+		Name:       starlarkValueSerdeThreadName,
+		Print:      nil,
+		Load:       nil,
+		OnMaxSteps: nil,
+		Steps:      0,
+	}
+	starlarkEnv := starlark.StringDict{
+		starlarkstruct.Default.GoString(): starlark.NewBuiltin(starlarkstruct.Default.GoString(), starlarkstruct.Make),
+
+		kurtosis_types.ServiceTypeName: starlark.NewBuiltin(kurtosis_types.ServiceTypeName, kurtosis_types.NewServiceType().CreateBuiltin()),
+		port_spec.PortSpecTypeName:     starlark.NewBuiltin(port_spec.PortSpecTypeName, port_spec.NewPortSpecType().CreateBuiltin()),
+	}
+	starlarkValueSerde := kurtosis_types.NewStarlarkValueSerde(thread, starlarkEnv)
+
+	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(starlarkValueSerde, enclaveDb)
+	require.NoError(suite.T(), err)
+
 	serviceNetwork := service_network.NewMockServiceNetwork(suite.T())
 	serviceNetwork.EXPECT().GetApiContainerInfo().Maybe().Return(
 		service_network.NewApiContainerInfo(net.IPv4(0, 0, 0, 0), uint16(1234), "0.0.0"),
 	)
-	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, "")
+	serviceNetwork.EXPECT().GetEnclaveUuid().Maybe().Return(enclaveUuid)
+	suite.interpreter = NewStartosisInterpreter(serviceNetwork, suite.packageContentProvider, runtimeValueStore, starlarkValueSerde, "")
 }
 
 func TestRunStartosisInterpreterIdempotentTestSuite(t *testing.T) {
@@ -64,6 +96,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	// Interpret the updated script against the current enclave plan
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
@@ -73,7 +106,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		script,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
@@ -83,17 +116,14 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 
 	scheduledInstruction1 := instructionSequence[0]
 	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
 	require.True(suite.T(), scheduledInstruction1.IsExecuted())
 
 	scheduledInstruction2 := instructionSequence[1]
 	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
 	require.True(suite.T(), scheduledInstruction2.IsExecuted())
 
 	scheduledInstruction3 := instructionSequence[2]
 	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
 	require.True(suite.T(), scheduledInstruction3.IsExecuted())
 }
 
@@ -119,6 +149,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan, args):
 	plan.print("instruction1")
@@ -133,27 +164,25 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
 	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 0, instructionsPlan.GetIndexOfFirstInstruction())
 	require.Equal(suite.T(), 3, len(instructionSequence))
 
 	scheduledInstruction1 := instructionSequence[0]
 	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
 	require.True(suite.T(), scheduledInstruction1.IsExecuted())
 
 	scheduledInstruction2 := instructionSequence[1]
 	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
 	require.True(suite.T(), scheduledInstruction2.IsExecuted())
 
 	scheduledInstruction3 := instructionSequence[2]
 	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction3.IsExecuted())
 }
 
@@ -179,6 +208,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 2, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan, args):
 	plan.print("instruction3")
@@ -191,31 +221,21 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
 	require.Nil(suite.T(), err)
-	require.Equal(suite.T(), 3, len(instructionSequence))
+	require.Equal(suite.T(), 2, instructionsPlan.GetIndexOfFirstInstruction()) // the first 2 instruction are kept
+	require.Equal(suite.T(), 1, len(instructionSequence))                      // the new one is the only one inside the plan
 
-	scheduledInstruction1 := instructionSequence[0]
-	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
-	require.True(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction1.IsExecuted())
-
-	scheduledInstruction2 := instructionSequence[1]
-	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
-	require.True(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction2.IsExecuted())
-
-	scheduledInstruction3 := instructionSequence[2]
+	scheduledInstruction3 := instructionSequence[0]
 	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction3.IsExecuted())
 }
 
-// Submit a package with a update on an instruction located "in the middle" of the package
+// Submit a package with an update on an instruction located "in the middle" of the package
 // Current plan ->     [`print("instruction1")`  `print("instruction2")`      `print("instruction3")`]
 // Package to run ->   [`print("instruction1")`  `print("instruction2_NEW")`  `print("instruction3")`]
 // That will result in the concatenation of the two plans because we're not able to properly resolve dependencies yet
@@ -239,6 +259,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 3, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan, args):
 	plan.print(msg="instruction1")
@@ -253,42 +274,25 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
 	require.Nil(suite.T(), err)
-	require.Equal(suite.T(), 6, len(instructionSequence))
+	require.Equal(suite.T(), 3, instructionsPlan.GetIndexOfFirstInstruction())
+	require.Equal(suite.T(), 3, len(instructionSequence))
 
-	scheduledInstruction1 := instructionSequence[0]
-	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction1.GetInstruction().String())
-	require.True(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction1.IsExecuted())
-
-	scheduledInstruction2 := instructionSequence[1]
-	require.Equal(suite.T(), `print(msg="instruction2")`, scheduledInstruction2.GetInstruction().String())
-	require.True(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction2.IsExecuted())
-
-	scheduledInstruction3 := instructionSequence[2]
-	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction3.GetInstruction().String())
-	require.True(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
-	require.True(suite.T(), scheduledInstruction3.IsExecuted())
-
-	scheduledInstruction4 := instructionSequence[3]
+	scheduledInstruction4 := instructionSequence[0]
 	require.Equal(suite.T(), `print(msg="instruction1")`, scheduledInstruction4.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction4.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction4.IsExecuted())
 
-	scheduledInstruction5 := instructionSequence[4]
+	scheduledInstruction5 := instructionSequence[1]
 	require.Equal(suite.T(), `print(msg="instruction2_NEW")`, scheduledInstruction5.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction5.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction5.IsExecuted())
 
-	scheduledInstruction6 := instructionSequence[5]
+	scheduledInstruction6 := instructionSequence[2]
 	require.Equal(suite.T(), `print(msg="instruction3")`, scheduledInstruction6.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction6.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction6.IsExecuted())
 }
 
@@ -314,6 +318,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan):
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.5.0")) # <-- version updated
@@ -329,32 +334,29 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
 	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 0, instructionsPlan.GetIndexOfFirstInstruction())
 	require.Equal(suite.T(), 4, len(instructionSequence))
 
 	scheduledInstruction1 := instructionSequence[0]
 	require.Equal(suite.T(), `add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.5.0"))`, scheduledInstruction1.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction1.IsExecuted())
 
 	scheduledInstruction2 := instructionSequence[1]
 	require.Regexp(suite.T(), `print\(msg="Service 1 - IP: {{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}} - Hostname: {{kurtosis:[a-z0-9]{32}:hostname\.runtime_value}}"\)`, scheduledInstruction2.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
 	require.True(suite.T(), scheduledInstruction2.IsExecuted())
 
 	scheduledInstruction3 := instructionSequence[2]
 	require.Equal(suite.T(), `exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))`, scheduledInstruction3.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction3.IsExecuted())
 
 	scheduledInstruction4 := instructionSequence[3]
 	require.Regexp(suite.T(), `assert\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction4.IsImportedFromCurrentEnclavePlan())
 	require.True(suite.T(), scheduledInstruction4.IsExecuted())
 }
 
@@ -385,6 +387,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		resolver.NewInstructionsPlanMask(0))
 	require.Nil(suite.T(), interpretationApiErr)
 	require.Equal(suite.T(), 4, currentEnclavePlan.Size())
+	convertedEnclavePlan := suite.convertInstructionPlanToEnclavePlan(currentEnclavePlan)
 
 	updatedScript := `def run(plan):
 	files_artifact = plan.render_templates(
@@ -405,31 +408,44 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
 		noInputParams,
-		currentEnclavePlan,
+		convertedEnclavePlan,
 	)
 	require.Nil(suite.T(), interpretationError)
 
 	instructionSequence, err := instructionsPlan.GeneratePlan()
 	require.Nil(suite.T(), err)
+	require.Equal(suite.T(), 0, instructionsPlan.GetIndexOfFirstInstruction())
 	require.Equal(suite.T(), 4, len(instructionSequence))
 
 	scheduledInstruction1 := instructionSequence[0]
 	require.Equal(suite.T(), `render_templates(config={"/output.txt": struct(data={"World": "World!"}, template="Bonjour {{.World}}")}, name="files_artifact")`, scheduledInstruction1.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction1.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction1.IsExecuted())
 
 	scheduledInstruction2 := instructionSequence[1]
 	require.Equal(suite.T(), `add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3", files={"/path/": "files_artifact"}))`, scheduledInstruction2.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction2.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction2.IsExecuted()) // since the files artifact has been updated, the service will be updated as well
 
 	scheduledInstruction3 := instructionSequence[2]
 	require.Equal(suite.T(), `exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))`, scheduledInstruction3.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction3.IsImportedFromCurrentEnclavePlan())
 	require.False(suite.T(), scheduledInstruction3.IsExecuted()) // since the service has been updated, the exec will be re-run
 
 	scheduledInstruction4 := instructionSequence[3]
 	require.Regexp(suite.T(), `assert\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
-	require.False(suite.T(), scheduledInstruction4.IsImportedFromCurrentEnclavePlan())
 	require.True(suite.T(), scheduledInstruction4.IsExecuted()) // this instruction is not affected, i.e. it won't be re-run
+}
+
+func (suite *StartosisInterpreterIdempotentTestSuite) convertInstructionPlanToEnclavePlan(instructionPlan *instructions_plan.InstructionsPlan) *enclave_plan_persistence.EnclavePlan {
+	enclavePlan := enclave_plan_persistence.NewEnclavePlan()
+	instructionPlanSequence, interpretationErr := instructionPlan.GeneratePlan()
+	suite.Require().Nil(interpretationErr)
+	for _, instruction := range instructionPlanSequence {
+		enclavePlanInstruction, err := instruction.GetInstruction().GetPersistableAttributes().SetUuid(
+			uuid.New().String(),
+		).SetReturnedValue(
+			"None", // the returnedValue does not matter for those tests as we're testing only the interpretation phase
+		).Build()
+		suite.Require().NoError(err)
+		enclavePlan.AppendInstruction(enclavePlanInstruction)
+	}
+	return enclavePlan
 }
