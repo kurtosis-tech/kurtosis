@@ -5,14 +5,15 @@ import {
     Checkbox,
     Flex,
     Grid,
-    GridItem, HStack,
-    Input, InputGroup, InputLeftAddon, Spacer,
+    GridItem,
+    HStack,
+    Input,
+    InputGroup,
+    InputLeftAddon,
     Stack,
     Text,
-    Textarea,
     Tooltip,
-    useClipboard, useDimensions,
-
+    useClipboard,
 } from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
 import {useLocation, useNavigate} from "react-router";
@@ -20,10 +21,7 @@ import React, {useEffect, useRef, useState} from 'react';
 import startCase from 'lodash/startCase'
 import {InfoOutlineIcon} from '@chakra-ui/icons'
 import {ObjectInput} from 'react-object-input'
-// import MonacoEditor from "react-monaco-editor/lib/editor";
-import Editor, {DiffEditor, useMonaco, loader} from '@monaco-editor/react';
-import useWindowDimensions from "../utils/windowheight";
-
+import Editor from '@monaco-editor/react';
 
 const yaml = require("js-yaml")
 
@@ -36,53 +34,29 @@ const JsonEditor = (
     const [value, setValue] = useState("{\n}")
     const jsonClipboard = useClipboard("");
     const monacoRef = useRef(null);
-    const {width, height} = useWindowDimensions();
-    const elementRef = useRef()
-    const dimensions = useDimensions(elementRef)
-    const editorHeight = 300
+    const elementRef = useRef();
+    const defaultWidthPx = 500;
+
+    const getEditor = () => {
+        if (!monacoRef.current) return null;
+        return monacoRef.current.editor.getEditors()[0];
+    }
 
     useEffect(() => {
         handleEditorChange(value)
     }, [])
 
-    // let ignoreEvent = false;
-    // const updateHeight = () => {
-    //     const contentHeight = Math.min(1000, editor.getContentHeight());
-    //     container.style.width = `${width}px`;
-    //     container.style.height = `${contentHeight}px`;
-    //     try {
-    //         ignoreEvent = true;
-    //         editor.layout({ width, height: contentHeight });
-    //     } finally {
-    //         ignoreEvent = false;
-    //     }
-    // };
+    const updateWindowHeight = () => {
+        if (getEditor()) {
+            const contentHeight = Math.min(1000, getEditor().getContentHeight());
+            getEditor().layout({width: defaultWidthPx, height: contentHeight});
+            getEditor().layout()
+        }
+    };
 
     useEffect(() => {
         jsonClipboard.setValue(value)
-        if (monacoRef.current) {
-            // console.log('monacoRef.current', monacoRef.current)
-            if (monacoRef.current.editor) {
-                // console.log('monacoRef.current.editor', monacoRef.current.editor)
-                // console.log('monacoRef.current.editor', monacoRef.current.editor.getEditors())
-                monacoRef.current.editor.getEditors()[0].updateOptions({automaticLayout: true})
-                // monacoRef.current.editor.getEditors()[0].layout({width: 200, height:200})
-                // console.log("width", width)
-                // console.log("height", height)
-                if (monacoRef.current?.editor) {
-                    // console.log("dims", monacoRef.current.editor.getEditors()[0].getLayoutInfo())
-                }
-
-                console.log(`box dims: ${dimensions?.borderBox?.width} x ${dimensions?.borderBox?.height}`, dimensions?.borderBox)
-
-
-                // monacoRef.current.editor.getEditors()[0].layout({width: 600, height:editorHeight})
-                // monacoRef.current.editor.layout();
-                // monacoRef.current.editor.getEditors()[0].layout({width: "autp", height:200})
-
-            }
-            // monacoRef.current.layout({ width: 0, height: 0 })
-        }
+        updateWindowHeight();
     }, [value])
 
     const saveTextAsFile = (text, fileName) => {
@@ -118,25 +92,15 @@ const JsonEditor = (
             setValue(value)
             const parsedJson = JSON.parse(value)
             const jsonCleanedMinified = JSON.stringify(parsedJson)
-            const jsonCleanedFormatted = JSON.stringify(parsedJson, null, 2)
             dataCallback(jsonCleanedMinified)
         } catch (error) {
             // swallow
         }
     }
 
-    // function handleEditorWillMount(monaco) {
-    //     // here is the monaco instance
-    //     // do something before editor is mounted
-    //     monaco.languages.typescript.javascriptDefaults.setEagerModelSync(true);
-    // }
-
     function handleEditorDidMount(editor, monaco) {
-        // here is another way to get monaco instance
-        // you can also store it in `useRef` for further usage
         monacoRef.current = monaco;
-        monacoRef.current.editor.getEditors()[0].updateOptions({scrollBeyondLastLine: false});
-
+        updateWindowHeight();
     }
 
     function handleDownload() {
@@ -148,6 +112,7 @@ const JsonEditor = (
     //     // model markers
     //     // markers.forEach(marker => console.log('onValidate:', marker.message));
     // }
+
     return (
         <Box
             border="1px"
@@ -159,8 +124,6 @@ const JsonEditor = (
         >
             <Editor
                 margin={1}
-                height="300px"
-                // width="300px"
                 defaultLanguage="json"
                 value={value}
                 theme={"vs-dark"}
@@ -174,7 +137,8 @@ const JsonEditor = (
                     readOnly: readOnly,
                     minimap: {
                         enabled: false
-                    }
+                    },
+                    scrollBeyondLastLine: false
                 }}
             />
             <Button
