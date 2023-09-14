@@ -66,6 +66,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 					This means logs past the retention period are being returned, likely a bug in Kurtosis.`,
 			volume_consts.LogRetentionPeriodInWeeks+1, len(paths))
 	}
+	latestLogFile := paths[len(paths)-1]
 
 	var fileReaders []io.Reader
 	for _, pathStr := range paths {
@@ -113,15 +114,9 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 						isLastLogLine = true
 					} else {
 						if shouldFollowLogs {
-							// already guaranteed [paths] is non-zero so no need to check
-							latestLogFile := paths[len(paths)-1]
-							err = strategy.tailLogs(
-								latestLogFile,
-								logsByKurtosisUserServiceUuidChan,
-								serviceUuid,
-								conjunctiveLogLinesFiltersWithRegex)
-							if err != nil {
+							if err = strategy.tailLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 								streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
+								return
 							}
 						} else {
 							return
@@ -135,25 +130,13 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 				return
 			}
 
-			err = strategy.sendJsonLogLine(
-				jsonLogStr,
-				logsByKurtosisUserServiceUuidChan,
-				serviceUuid,
-				conjunctiveLogLinesFiltersWithRegex)
-			if err != nil {
+			if err = strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 				streamErrChan <- stacktrace.Propagate(err, "An error occurred sending log line for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 			}
 
 			if isLastLogLine {
 				if shouldFollowLogs {
-					// already guaranteed [paths] is non-zero so no need to check
-					latestLogFile := paths[len(paths)-1]
-					err = strategy.tailLogs(
-						latestLogFile,
-						logsByKurtosisUserServiceUuidChan,
-						serviceUuid,
-						conjunctiveLogLinesFiltersWithRegex)
-					if err != nil {
+					if err = strategy.tailLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 						streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 					}
 				} else {
@@ -215,11 +198,7 @@ func (strategy *PerWeekStreamLogsStrategy) tailLogs(
 	}
 
 	for logLine := range logTail.Lines {
-		err = strategy.sendJsonLogLine(
-			logLine.Text,
-			logsByKurtosisUserServiceUuidChan,
-			serviceUuid,
-			conjunctiveLogLinesFiltersWithRegex)
+		err = strategy.sendJsonLogLine(logLine.Text, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred sending json log line '%v'.", logLine.Text)
 		}
@@ -239,8 +218,7 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 
 	// First decode the line
 	var jsonLog JsonLog
-	err := json.Unmarshal([]byte(jsonLogLineStr), &jsonLog)
-	if err != nil {
+	if err := json.Unmarshal([]byte(jsonLogLineStr), &jsonLog); err != nil {
 		return stacktrace.Propagate(err, "An error occurred parsing the json log string: %v\n", jsonLogLineStr)
 	}
 
@@ -256,14 +234,16 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 	}
+	if !validLogLine {
+		return nil
+	}
+
 	// ensure this log line is within the retention period if it has a timestamp
 	withinRetentionPeriod, err := strategy.isWithinRetentionPeriod(jsonLog)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred filtering log line '%+v' using filters '%+v'", logLine, conjunctiveLogLinesFiltersWithRegex)
 	}
-
-	shouldReturnLogLine := validLogLine && withinRetentionPeriod
-	if !shouldReturnLogLine {
+	if !withinRetentionPeriod {
 		return nil
 	}
 
