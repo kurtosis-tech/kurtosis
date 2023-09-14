@@ -4,7 +4,7 @@ sidebar_label: run
 slug: /run
 ---
 
-Kurtosis can be used to run a Starlark script or a [runnable package](../concepts-reference/packages.md) in an enclave. 
+Kurtosis can be used to run a Starlark script or a [runnable package](../concepts-reference/packages.md) in an enclave.
 
 A single Starlark script can be ran with:
 
@@ -12,7 +12,7 @@ A single Starlark script can be ran with:
 kurtosis run script.star
 ```
 
-Adding the `--dry-run` flag will print the changes without executing them. 
+Adding the `--dry-run` flag will print the changes without executing them.
 
 A [Kurtosis package](../concepts-reference/packages.md) on your local machine can be run with:
 
@@ -89,7 +89,7 @@ run(plan, some_parameter = struct(some_property = "Property value"))
    ```bash
    kurtosis run main.star --main-function-name start_node
    ```
-   
+
    Where `start_node` is a function defined in `main.star` like so:
    ```python
    # --------------- main.star --------------------
@@ -99,20 +99,22 @@ run(plan, some_parameter = struct(some_property = "Property value"))
 1. The `--main-file` flag sets the main file in which Kurtosis looks for the main function defined via the `--main-function-name` flag. This can be thought of as the entrypoint file. This flag takes a filepath **relative to the package's root**, and defaults to `main.star`. For example, if your package is `github.com/my-org/my-package` but your main file is located in subdirectories like `github.com/my-org/my-package/src/internal/my-file.star`, you should set this flag like `--main-file src/internal/my-file.star`.
 
    Example of using the `--main-function-name` flag
-   
+
    For example, to run the `start_node` function in a `main.star` file, simple use:
    ```bash
    kurtosis run main.star --main-function-name start_node
    ```
-   
+
    Where `start_node` is a function defined in `main.star` like so:
-   
+
    ```python
    # main.star code
    def start_node(plan,args):
        # your code
    ```
 1. The `--production` flag can be used to make sure services restart in case of failure (default behavior is not restart)
+
+1. The `--no-connect` flag can be used to disable user services port forwarding (default behavior is to forward the ports)
 
 1. The `--experimental` flag can be used to enable experimental or incubating features. Please reach out to Kurtosis team if you wish to try any of those.
 
