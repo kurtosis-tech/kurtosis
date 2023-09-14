@@ -9,6 +9,9 @@ The `import_module` function imports the symbols from a Starlark script specifie
 # Import remote code from another package using an absolute import
 remote = import_module("github.com/foo/bar/src/lib.star")
 
+# Simiarily, you can also import a specific version (e.g. 2.0) of an upstream package using an absolute import
+remote_2 = import_module("github.com/foo/bar/src/lib.star@2.0")
+
 # Import local code from the same package using a relative import
 local = import_module("./local.star")
 
