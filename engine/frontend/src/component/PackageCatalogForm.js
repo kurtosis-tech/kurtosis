@@ -90,9 +90,10 @@ const JsonEditor = (
     function handleEditorChange(value) {
         try {
             setValue(value)
-            const parsedJson = JSON.parse(value)
-            const jsonCleanedMinified = JSON.stringify(parsedJson)
-            dataCallback(jsonCleanedMinified)
+            // const parsedJson = JSON.parse(value)
+            // const jsonCleanedMinified = JSON.stringify(parsedJson)
+            // dataCallback(jsonCleanedMinified)
+            dataCallback(value)
         } catch (error) {
             // swallow
         }
@@ -172,8 +173,6 @@ const KeyValueTable = (dataCallBack) => {
         try {
             const json = JSON.parse(clipboard)
             setValue(json)
-            console.log(value)
-            console.log(json)
         } catch (e) {
             alert("Could not process the content in the clipboard. Please verify it's valid JSON")
         }
@@ -372,22 +371,15 @@ const checkValidUndefinedType = (data) => {
 }
 
 const checkValidJsonType = (data) => {
-    console.log("data", data)
     if (data === undefined || data === "undefined" || data.length === 0) {
         return false
     }
 
     try {
         const val = JSON.parse(data)
-        if (Object.keys(val).length > 0) {
-            return true;
-        }
-        return false
-    } catch (ex) {
-        if (data.includes("\"") || data.includes("\'")) {
-            return false
-        }
         return true;
+    } catch (ex) {
+        return false
     }
 }
 
@@ -567,18 +559,14 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 const value = formData[key]
 
                 let val;
-                let trimmedValue;
                 if (value.length > 0) {
                     if (kurtosisPackage.args[key]["type"] === "INTEGER") {
-                        trimmedValue = value.trim()
                         val = parseInt(value)
                         args[argName] = val
                     } else if (kurtosisPackage.args[key]["type"] === "BOOL") {
-                        trimmedValue = value.trim()
                         val = value.toUpperCase()
                         args[argName] = (val === "TRUE") ? true : false
                     } else if (kurtosisPackage.args[key]["type"] === "FLOAT") {
-                        trimmedValue = value.trim()
                         val = parseFloat(value)
                         args[argName] = val
                     } else if (kurtosisPackage.args[key]["type"] === "STRING") {
