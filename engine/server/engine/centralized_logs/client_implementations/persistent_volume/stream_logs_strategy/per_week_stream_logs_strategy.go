@@ -193,6 +193,7 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 	return paths
 }
 
+// tail -f [filepath]
 func (strategy *PerWeekStreamLogsStrategy) tailLogs(
 	filepath string,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
@@ -226,6 +227,7 @@ func (strategy *PerWeekStreamLogsStrategy) tailLogs(
 	return nil
 }
 
+// Returns error if [jsonLogLineStr] is not a valid log line
 func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	jsonLogLineStr string,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
