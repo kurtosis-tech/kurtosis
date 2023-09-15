@@ -21,7 +21,8 @@ export const CodeEditor = (
     const [readOnlySetting, setReadOnlySetting] = useState(readOnly)
     const [formatCode, setFormatCode] = useState(false)
 
-    // TODO: This depends on the version! Use actual enum
+    // TODO: This could lead to bugs in the future:
+    //  This number depends on the version of Monaco! Use actual enum instead.
     const monacoReadOnlyEnumId = 86;
 
     // TODO: Add a promise to getEditor()

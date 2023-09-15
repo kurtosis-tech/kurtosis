@@ -63,7 +63,7 @@ const renderFileArtifacts = (file_artifacts, handleFileArtifactClick) => {
     })
 }
 
-const EncalveInfo = ({enclaves}) => {
+const EnclaveInfo = ({enclaves}) => {
     const navigate = useNavigate();
     const {appData} = useAppContext()
 
@@ -111,13 +111,13 @@ const EncalveInfo = ({enclaves}) => {
     const EnclaveInfoComponent = ({services, fileArtifacts, handleServiceClick, handleFileArtifactClick}) => (
         <div className='flex flex-col h-[calc(100vh-3rem)] space-y-1 overflow-auto'>
             <div className="flex flex-col h-1/2 min-h-1/2 border-8">
-                <Heading content={"Services"} size={"text-xl"}/>
+                <Heading color={"text-white"} content={"Services"} size={"text-xl"}/>
                 <div className="overflow-auto space-y-2">
                     {renderServices(services, handleServiceClick)}
                 </div>
             </div>
             <div className="flex flex-col h-[46%] border-8">
-                <Heading content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
+                <Heading color={"text-white"} content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
                 <div className="overflow-auto space-y-2">
                     {renderFileArtifacts(fileArtifacts, handleFileArtifactClick)}
                 </div>
@@ -133,7 +133,7 @@ const EncalveInfo = ({enclaves}) => {
                 renderList={() => renderEnclaves(enclaves, handleLeftPanelClick)}
             />
 
-            <div className="flex bg-white w-[calc(100vw-39rem)] flex-col space-y-5">
+            <div className="flex bg-[#171923] w-[calc(100vw-39rem)] flex-col space-y-5">
                 <div className="h-[3rem] flex items-center justify-center m-2">
                     <Heading content={name}/>
                 </div>
@@ -153,4 +153,4 @@ const EncalveInfo = ({enclaves}) => {
     )
 }
 
-export default EncalveInfo;
+export default EnclaveInfo;
