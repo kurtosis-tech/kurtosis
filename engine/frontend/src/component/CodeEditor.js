@@ -30,29 +30,53 @@ export const CodeEditor = (
         return monacoRef.current.editor.getEditors()[0];
     }
 
-    const getReadOnly = () => {
+    const isEditorReadOnly = () => {
         try {
-            return getEditor()?.getOption(monacoReadOnlyEnumId)
+            return getEditor().getOption(monacoReadOnlyEnumId)
         } catch (e) {
             return undefined
         }
     }
     const [monacoReadOnlySettingHasChanged, setMonacoReadOnlySettingHasChangedHasChanged] = useState(false)
 
+    function attachOptionsChangeListener() {
+        getEditor().onDidChangeConfiguration((event) => {
+            if (event.hasChanged(monacoReadOnlyEnumId)) {
+                setMonacoReadOnlySettingHasChangedHasChanged(true)
+            }
+        });
+    }
+
     useEffect(() => {
-        if (monacoReadOnlySettingHasChanged) {
-            const isReadOnly = getReadOnly()
-            console.log("Monaco changed read only setting", isReadOnly)
-            // reset
-            setMonacoReadOnlySettingHasChangedHasChanged(false)
-            if (!isReadOnly) {
-                // With the editor in !readOnly mode we can format the code:
-                setFormatCode(true)
+        if (getEditor()) {
+            console.log("Changing readOnly in monaco to:", readOnlySetting)
+            getEditor().updateOptions({
+                readOnly: readOnlySetting,
+            })
+        }
+    }, [readOnlySetting])
+
+    useEffect(() => {
+        if (formatCode) {
+            if (isEditorReadOnly()) {
+                console.log("Cannot format with readonly=true, requesting to set readOnly=false")
+                setReadOnlySetting(false)
+            } else {
+                if (getEditor()) {
+                    getEditor()
+                        .getAction('editor.action.formatDocument')
+                        .run()
+                        .then(() => {
+                            console.log(`Formatting finished running. Setting readonly=${originalReadOnlySetting.current}`)
+                            setReadOnlySetting(originalReadOnlySetting.current)
+                            setFormatCode(false)
+                        });
+                }
             }
         }
-    }, [monacoReadOnlySettingHasChanged])
+    }, [formatCode, monacoReadOnlySettingHasChanged])
 
-
+    // Start by manually setting the content of the editor. From hereafter user interaction will update it:
     useEffect(() => {
         handleEditorChange(value)
     }, [])
@@ -60,7 +84,7 @@ export const CodeEditor = (
     useEffect(() => {
         contentClipboard.setValue(value)
         // Resize view on content change
-        updateWindowHeight();
+        updateWindowHeightBasedOnContent();
     }, [value])
 
     // Resize view on window change
@@ -71,7 +95,7 @@ export const CodeEditor = (
         }
     }, [dimensions])
 
-    const updateWindowHeight = () => {
+    const updateWindowHeightBasedOnContent = () => {
         if (getEditor()) {
             const contentHeight = Math.min(1000, getEditor().getContentHeight());
             getEditor().layout({width: defaultWidthPx, height: contentHeight});
@@ -108,106 +132,24 @@ export const CodeEditor = (
     };
 
     function handleEditorChange(value) {
-        try {
-            setValue(value)
-            // const parsedJson = JSON.parse(value)
-            // const jsonCleanedMinified = JSON.stringify(parsedJson)
-            // dataCallback(jsonCleanedMinified)
-            dataCallback(value)
-        } catch (error) {
-            // swallow
-        }
+        setValue(value)
+        dataCallback(value)
     }
-
-    useEffect(() => {
-        if (!getReadOnly()) {
-            console.log("format the code: request", formatCode)
-            if (getEditor()) {
-                console.log("format the code: editor is ready!")
-                getEditor()
-                    .getAction('editor.action.formatDocument')
-                    .run()
-                    .then(() => {
-                        console.log("Formatting finished running")
-                        setReadOnlySetting(originalReadOnlySetting.current)
-                        setFormatCode(false)
-                    });
-            }
-        }
-    }, [formatCode])
-
-    useEffect(() => {
-        if (getEditor()) {
-            console.log("Changing readOnly in monaco to:", readOnlySetting)
-            getEditor().updateOptions({
-                readOnly: readOnlySetting,
-            })
-        }
-    }, [readOnlySetting])
-
-
-    // // For testing:
-    // useEffect(() => {
-    //     if (getEditor()) {
-    //         console.log("Readonly option from Monaco options", getReadonly())
-    //     }
-    // }, [getReadonly()])
 
     function handleEditorDidMount(editor, monaco) {
         monacoRef.current = monaco;
-        updateWindowHeight();
-        attacheOptionsChangeListener()
-        // if (autoFormat && getEditor()) {
-        //     // To auto update we need to first make the editor writable:
-        //     // getEditor().updateOptions({readOnly: false})
-        //     // getEditor().updateOptions({readOnly: false})
-        //     // console.log("readOnly: ", getEditor().getOption(88))
-        //     // Then autoformat
-        //
-        //     getEditor()
-        //         .getAction('editor.action.formatDocument')
-        //         .run()
-        //         .then(() => {
-        //             console.log("Formatting finished running")
-        //             // getEditor().updateOptions({readOnly: true})
-        //             // console.log("readOnly: ", getEditor().getOption(88))
-        //         });
-        // } else {
-        //     console.error("did not mount in time to auto-format and update options")
-        // }
+        updateWindowHeightBasedOnContent();
+        attachOptionsChangeListener()
+        if (autoFormat) handleCodeFormat();
     }
 
     function handleDownload() {
         saveTextAsFile(value, fullFileName)
     }
 
-    function handleFormat() {
-        console.log("Requesting format!")
-        // TODO: Make promise
-        setReadOnlySetting(false)
-        // setFormatCode(true)
+    function handleCodeFormat() {
+        setFormatCode(true)
     }
-
-    // function handleFlip() {
-    //     const newVal = !readOnlySetting
-    //     // console.log(`Set readonly: ${readOnlySetting} => ${newVal}`)
-    //     setReadOnlySetting(!readOnlySetting)
-    // }
-
-    function attacheOptionsChangeListener() {
-        getEditor().onDidChangeConfiguration((event) => {
-            if (event.hasChanged(monacoReadOnlyEnumId)) {
-                setMonacoReadOnlySettingHasChangedHasChanged(true)
-            }
-        });
-        console.log("attached event listener")
-    }
-
-    // function attachListener() {
-    //     console.log("handleOptionsChange()")
-    //     attacheOptionsChangeListener()
-    //
-    // }
 
     // TODO: We can use this to display error messages
     // function handleEditorValidation(markers) {
@@ -236,7 +178,6 @@ export const CodeEditor = (
                     selectOnLineNumbers: true,
                     languages: languages,
                     readOnly: readOnlySetting,
-                    // domReadOnly: readOnlySetting,
                     minimap: {
                         enabled: false
                     },
@@ -257,18 +198,10 @@ export const CodeEditor = (
             </Button>
             <Button
                 margin={1}
-                onClick={handleFormat}
+                onClick={handleCodeFormat}
             >
                 Format
             </Button>
-
-            {/*<Button*/}
-            {/*    margin={1}*/}
-            {/*    onClick={handleFlip}*/}
-            {/*>*/}
-            {/*    Toggle*/}
-            {/*</Button>*/}
-
         </Box>
     )
 }
