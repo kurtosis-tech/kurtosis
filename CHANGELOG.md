@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.82.24](https://github.com/kurtosis-tech/kurtosis/compare/0.82.23...0.82.24) (2023-09-14)
+
+
+### Bug Fixes
+
+* propagate failed img pull error to response line ([#1302](https://github.com/kurtosis-tech/kurtosis/issues/1302)) ([9a4a928](https://github.com/kurtosis-tech/kurtosis/commit/9a4a9284c4dff87dfd861d2bd8878748abe5c3b8))
+* revert always pull latest img ([#1306](https://github.com/kurtosis-tech/kurtosis/issues/1306)) ([d4ef19e](https://github.com/kurtosis-tech/kurtosis/commit/d4ef19e1297ae9373263b1392a1a7fead1892af7))
+
 ## [0.82.23](https://github.com/kurtosis-tech/kurtosis/compare/0.82.22...0.82.23) (2023-09-14)
 
 
