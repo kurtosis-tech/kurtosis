@@ -158,7 +158,7 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 		formattedRunInfoMessage := formatInfo(responseLine.GetInfo().GetInfoMessage())
 		formattedRunInfoMessageWithNewline := fmt.Sprintf("\n%s", formattedRunInfoMessage)
 		if err := printer.printPersistentLineToStdOut(formattedRunInfoMessageWithNewline); err != nil {
-			return stacktrace.Propagate(err, "Error printing warning message: %v", formattedRunInfoMessage)
+			return stacktrace.Propagate(err, "Error printing info message: %v", formattedRunInfoMessage)
 		}
 	}
 	return nil
