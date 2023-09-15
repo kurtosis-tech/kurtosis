@@ -6,7 +6,7 @@ const Enclave = ({name, status, created, handleClick}) => {
     const backgroundColor = status === 1 ? "bg-[#24BA27]" : "bg-red-600"
     return (
         <div onClick={() => handleClick(name)}
-             className={`h-48 p-4 rounded-md border-4 flex ${backgroundColor} text-white items-center justify-center text-2xl flex-col`}>
+             className={`h-48 p-4 rounded-md border-2 flex ${backgroundColor} text-white items-center justify-center text-2xl flex-col`}>
             <p className="text-3xl"> {name} </p>
             <p className="text-xs"> {created} </p>
         </div>

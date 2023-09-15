@@ -18,7 +18,9 @@ const BreadCrumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
 
     const BreadCrumb = ({text, last, color = "text-white", index, handleOnClick}) => {
         return (
-            <div className={`${color} cursor-default font-bold`} onClick={() => handleOnClick(index)}>
+            <div className={`${color} cursor-default font-bold`}
+                 onClick={() => handleOnClick(index)}
+            >
                 {text} {last ? "" : "/"}
             </div>)
     }

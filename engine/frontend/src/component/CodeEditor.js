@@ -158,6 +158,10 @@ export const CodeEditor = (
     //     // markers.forEach(marker => console.log('onValidate:', marker.message));
     // }
 
+    const isNotFormattable = () => {
+        return !languages.includes("json")
+    }
+
     return (
         <Box
             border="1px"
@@ -200,6 +204,7 @@ export const CodeEditor = (
             <Button
                 margin={1}
                 onClick={handleCodeFormat}
+                isDisabled={isNotFormattable()}
             >
                 Format
             </Button>

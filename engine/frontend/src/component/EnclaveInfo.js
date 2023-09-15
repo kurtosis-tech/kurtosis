@@ -34,7 +34,7 @@ const renderServices = (services, handleClick) => {
 
     return services.map((service) => {
         return (
-            <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
+            <div className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
                  onClick={() => handleClick(service, services)}>
                 <div> {service.name} </div>
             </div>
@@ -55,7 +55,7 @@ const renderFileArtifacts = (file_artifacts, handleFileArtifactClick) => {
 
     return file_artifacts.map((file_artifact) => {
         return (
-            <div className="border-4 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
+            <div className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
                  onClick={() => handleFileArtifactClick(file_artifact.name, file_artifacts)}>
                 <div>{file_artifact.name}</div>
             </div>
@@ -110,13 +110,13 @@ const EnclaveInfo = ({enclaves}) => {
 
     const EnclaveInfoComponent = ({services, fileArtifacts, handleServiceClick, handleFileArtifactClick}) => (
         <div className='flex flex-col h-[calc(100vh-3rem)] space-y-1 overflow-auto'>
-            <div className="flex flex-col h-1/2 min-h-1/2 border-8">
+            <div className="flex flex-col h-1/2 min-h-1/2 border-2">
                 <Heading color={"text-white"} content={"Services"} size={"text-xl"}/>
                 <div className="overflow-auto space-y-2">
                     {renderServices(services, handleServiceClick)}
                 </div>
             </div>
-            <div className="flex flex-col h-[46%] border-8">
+            <div className="flex flex-col h-[46%] border-2">
                 <Heading color={"text-white"} content={"File Artifacts"} size={"text-xl"} padding={"p-1"}/>
                 <div className="overflow-auto space-y-2">
                     {renderFileArtifacts(fileArtifacts, handleFileArtifactClick)}
