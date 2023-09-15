@@ -185,7 +185,7 @@ const FileArtifactInfo = ({enclaves}) => {
                                             [detailInfo.extension],
                                             500,
                                             detailInfo.textPreview,
-                                            true,
+                                            false,
                                         )
                                     }
                                 </Box>
