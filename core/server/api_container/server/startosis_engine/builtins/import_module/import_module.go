@@ -33,6 +33,7 @@ How does the returned function work?
 This function is recursive in the sense, to load a module that loads modules we call the same function
 */
 func NewImportModule(
+	packageId string,
 	recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError),
 	packageContentProvider startosis_packages.PackageContentProvider,
 	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
@@ -49,9 +50,20 @@ func NewImportModule(
 						return builtin_argument.NonEmptyString(value, ModuleFileArgName)
 					},
 					//TODO remove this deprecation warning when the local absolute locators block is implemented
-					Deprecation: starlark_warning.Deprecation(starlark_warning.DeprecationDate{
-						Day: 0, Year: 0, Month: 0, //nolint:gomnd
-					}, "Local `absolute locators` are being deprecated in favor of `relative locators` to normalize when a locator is pointing to inside or outside the package. e.g.: if your package name is 'github.com/kurtosis-tech/autogpt-package' and the package contains local absolute locators like this 'github.com/kurtosis-tech/autogpt-package/plugins.star' it should be modified to its relative version '/plugins.star', where '/' is the package's root."),
+					Deprecation: starlark_warning.Deprecation(
+						starlark_warning.DeprecationDate{
+							Day: 0, Year: 0, Month: 0, //nolint:gomnd
+
+						},
+						"Local `absolute locators` are being deprecated in favor of `relative locators` to normalize when a locator is pointing to inside or outside the package. e.g.: if your package name is 'github.com/kurtosis-tech/autogpt-package' and the package contains local absolute locators like this 'github.com/kurtosis-tech/autogpt-package/plugins.star' it should be modified to its relative version '/plugins.star', where '/' is the package's root.",
+						func(value starlark.Value) bool {
+							// err means that it is a local absolute locator
+							if err := builtin_argument.RelativeOrRemoteAbsoluteLocator(value, packageId, ModuleFileArgName); err != nil {
+								return true
+							}
+							return false
+						},
+					),
 				},
 			},
 		},

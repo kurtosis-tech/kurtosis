@@ -77,6 +77,7 @@ func Test_printWarningIfArgumentIsDeprecated(t *testing.T) {
 			Deprecation: starlark_warning.Deprecation(
 				deprecatedDate,
 				deprecatedMitigation,
+				nil,
 			),
 		},
 		{
@@ -86,6 +87,7 @@ func Test_printWarningIfArgumentIsDeprecated(t *testing.T) {
 					Day: 20, Month: 11, Year: 2023,
 				},
 				"mitigation reason for another_key",
+				nil,
 			),
 		},
 	}
@@ -118,6 +120,7 @@ func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
 		Deprecation: starlark_warning.Deprecation(
 			deprecatedDate,
 			deprecatedMitigation,
+			nil,
 		),
 	}
 
@@ -129,6 +132,7 @@ func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
 					Day: 20, Month: 11, Year: 2023,
 				},
 				"mitigation reason",
+				nil,
 			),
 		},
 	}
