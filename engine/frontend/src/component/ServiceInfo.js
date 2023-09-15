@@ -62,7 +62,7 @@ const ServiceInfo = () => {
             />
             <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
                 <div className='flex flex-col h-full space-y-1 bg-white'>
-                    <Heading content={`${enclaveName}::${selected.name}`}/>
+                    <Heading content={`${enclaveName} ::${selected.name}`}/>
                     <div className="flex-1">
                         <div className="text-xl text-left h-fit mb-2 ml-5 text-black">
                             Ports

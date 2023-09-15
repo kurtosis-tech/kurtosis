@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Box, Button, useClipboard} from "@chakra-ui/react";
 import useWindowDimensions from "../utils/windowheight";
 import Editor from "@monaco-editor/react";
@@ -10,20 +10,48 @@ export const CodeEditor = (
     languages = ["json"],
     defaultWidthPx = 500,
     defaultState = languages.includes("json") ? "{\n}" : "",
+    autoFormat = false,
 ) => {
     // https://github.com/microsoft/monaco-editor/blob/main/webpack-plugin/README.md#options
     const [value, setValue] = useState(defaultState)
     const contentClipboard = useClipboard("");
     const monacoRef = useRef(null);
     const dimensions = useWindowDimensions();
-    console.log("defaultState", defaultState)
+    const originalReadOnlySetting = useRef(readOnly)
+    const [readOnlySetting, setReadOnlySetting] = useState(readOnly)
+    const [formatCode, setFormatCode] = useState(false)
 
-    console.log(value)
+    // TODO: This depends on the version! Use actual enum
+    const monacoReadOnlyEnumId = 86;
 
+    // TODO: Add a promise to getEditor()
     const getEditor = () => {
         if (!monacoRef.current) return null;
         return monacoRef.current.editor.getEditors()[0];
     }
+
+    const getReadOnly = () => {
+        try {
+            return getEditor()?.getOption(monacoReadOnlyEnumId)
+        } catch (e) {
+            return undefined
+        }
+    }
+    const [monacoReadOnlySettingHasChanged, setMonacoReadOnlySettingHasChangedHasChanged] = useState(false)
+
+    useEffect(() => {
+        if (monacoReadOnlySettingHasChanged) {
+            const isReadOnly = getReadOnly()
+            console.log("Monaco changed read only setting", isReadOnly)
+            // reset
+            setMonacoReadOnlySettingHasChangedHasChanged(false)
+            if (!isReadOnly) {
+                // With the editor in !readOnly mode we can format the code:
+                setFormatCode(true)
+            }
+        }
+    }, [monacoReadOnlySettingHasChanged])
+
 
     useEffect(() => {
         handleEditorChange(value)
@@ -91,14 +119,95 @@ export const CodeEditor = (
         }
     }
 
+    useEffect(() => {
+        if (!getReadOnly()) {
+            console.log("format the code: request", formatCode)
+            if (getEditor()) {
+                console.log("format the code: editor is ready!")
+                getEditor()
+                    .getAction('editor.action.formatDocument')
+                    .run()
+                    .then(() => {
+                        console.log("Formatting finished running")
+                        setReadOnlySetting(originalReadOnlySetting.current)
+                        setFormatCode(false)
+                    });
+            }
+        }
+    }, [formatCode])
+
+    useEffect(() => {
+        if (getEditor()) {
+            console.log("Changing readOnly in monaco to:", readOnlySetting)
+            getEditor().updateOptions({
+                readOnly: readOnlySetting,
+            })
+        }
+    }, [readOnlySetting])
+
+
+    // // For testing:
+    // useEffect(() => {
+    //     if (getEditor()) {
+    //         console.log("Readonly option from Monaco options", getReadonly())
+    //     }
+    // }, [getReadonly()])
+
     function handleEditorDidMount(editor, monaco) {
         monacoRef.current = monaco;
         updateWindowHeight();
+        attacheOptionsChangeListener()
+        // if (autoFormat && getEditor()) {
+        //     // To auto update we need to first make the editor writable:
+        //     // getEditor().updateOptions({readOnly: false})
+        //     // getEditor().updateOptions({readOnly: false})
+        //     // console.log("readOnly: ", getEditor().getOption(88))
+        //     // Then autoformat
+        //
+        //     getEditor()
+        //         .getAction('editor.action.formatDocument')
+        //         .run()
+        //         .then(() => {
+        //             console.log("Formatting finished running")
+        //             // getEditor().updateOptions({readOnly: true})
+        //             // console.log("readOnly: ", getEditor().getOption(88))
+        //         });
+        // } else {
+        //     console.error("did not mount in time to auto-format and update options")
+        // }
     }
 
     function handleDownload() {
         saveTextAsFile(value, fullFileName)
     }
+
+    function handleFormat() {
+        console.log("Requesting format!")
+        // TODO: Make promise
+        setReadOnlySetting(false)
+        // setFormatCode(true)
+    }
+
+    // function handleFlip() {
+    //     const newVal = !readOnlySetting
+    //     // console.log(`Set readonly: ${readOnlySetting} => ${newVal}`)
+    //     setReadOnlySetting(!readOnlySetting)
+    // }
+
+    function attacheOptionsChangeListener() {
+        getEditor().onDidChangeConfiguration((event) => {
+            if (event.hasChanged(monacoReadOnlyEnumId)) {
+                setMonacoReadOnlySettingHasChangedHasChanged(true)
+            }
+        });
+        console.log("attached event listener")
+    }
+
+    // function attachListener() {
+    //     console.log("handleOptionsChange()")
+    //     attacheOptionsChangeListener()
+    //
+    // }
 
     // TODO: We can use this to display error messages
     // function handleEditorValidation(markers) {
@@ -126,7 +235,8 @@ export const CodeEditor = (
                     automaticLayout: true,
                     selectOnLineNumbers: true,
                     languages: languages,
-                    readOnly: readOnly,
+                    readOnly: readOnlySetting,
+                    // domReadOnly: readOnlySetting,
                     minimap: {
                         enabled: false
                     },
@@ -142,10 +252,23 @@ export const CodeEditor = (
             <Button
                 margin={1}
                 onClick={handleDownload}
-
             >
                 Download
             </Button>
+            <Button
+                margin={1}
+                onClick={handleFormat}
+            >
+                Format
+            </Button>
+
+            {/*<Button*/}
+            {/*    margin={1}*/}
+            {/*    onClick={handleFlip}*/}
+            {/*>*/}
+            {/*    Toggle*/}
+            {/*</Button>*/}
+
         </Box>
     )
 }
