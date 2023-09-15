@@ -76,12 +76,12 @@ func NewDockerKurtosisBackend(
 	}
 }
 
-func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string) error {
-	err := backend.dockerManager.FetchImage(ctx, image)
+func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string) (bool, error) {
+	pulledFromRemote, err := backend.dockerManager.FetchImage(ctx, image)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred fetching image from kurtosis backend")
+		return false, stacktrace.Propagate(err, "An error occurred fetching image from kurtosis backend")
 	}
-	return nil
+	return pulledFromRemote, nil
 }
 
 func (backend *DockerKurtosisBackend) CreateEngine(

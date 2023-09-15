@@ -25,7 +25,10 @@ import (
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
 // the underlying container engine?"
 type KurtosisBackend interface {
-	FetchImage(ctx context.Context, image string) error
+	// FetchImage always attempts to retrieve the latest image.
+	// If retrieving the latest [dockerImage] fails, the local image will be used.
+	// Returns True is it was retrieved from cloud or False if it's a local image
+	FetchImage(ctx context.Context, image string) (bool, error)
 
 	// Creates an engine with the given parameters
 	CreateEngine(
