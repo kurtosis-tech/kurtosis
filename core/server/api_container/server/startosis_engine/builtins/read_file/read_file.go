@@ -33,7 +33,7 @@ func NewReadFileHelper(packageId string, packageContentProvider startosis_packag
 						starlark_warning.DeprecationDate{
 							Day: 0, Year: 0, Month: 0, //nolint:gomnd
 						},
-						"Local `absolute locators` are being deprecated in favor of `relative locators` to normalize when a locator is pointing to inside or outside the package. e.g.: if your package name is 'github.com/kurtosis-tech/autogpt-package' and the package contains local absolute locators like this 'github.com/kurtosis-tech/autogpt-package/plugins.star' it should be modified to its relative version '/plugins.star', where '/' is the package's root.",
+						"Local 'absolute locators' are being deprecated in favor of 'relative locators' to normalize when a locator is pointing to inside or outside the package. e.g.: if your package name is 'github.com/sample/sample-kurtosis-package' and the package contains a 'local absolute locator' for example 'github.com/sample/sample-kurtosis-package/component/component.star' it should be modified to a relative version like this '/component/component.star' or './component/component.star', or, if you are referencing it in a sub-folder, you can use a 'relative locator' like this '../component/component.star'.",
 						func(value starlark.Value) bool {
 							if err := builtin_argument.RelativeOrRemoteAbsoluteLocator(value, packageId, SrcArgName); err != nil {
 								return true
