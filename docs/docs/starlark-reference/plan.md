@@ -274,7 +274,6 @@ artifact_name = plan.render_templates(
 - [add-service]
 - [add-services]
 - [service-config]
-- `TODO TODO TODO read-file reference`
 
 request
 -------
