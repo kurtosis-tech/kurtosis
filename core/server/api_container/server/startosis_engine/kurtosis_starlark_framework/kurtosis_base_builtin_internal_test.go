@@ -93,7 +93,8 @@ func Test_printWarningIfArgumentIsDeprecated(t *testing.T) {
 	}
 
 	argumentSet := builtin_argument.NewArgumentValuesSet(builtinArgs, []starlark.Value{starlark.String("test"), starlark.String("test")})
-	printWarningForArguments(argumentSet, &baseBuiltIn)
+	err := printWarningForArguments(argumentSet, &baseBuiltIn)
+	require.NoError(t, err)
 	warnings := starlark_warning.GetContentFromWarningSet()
 	require.Len(t, warnings, 2)
 
@@ -139,7 +140,8 @@ func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
 
 	argumentSet := builtin_argument.NewArgumentValuesSet(builtinArgs, []starlark.Value{starlark.String("test"), starlark.String("test")})
 
-	printWarningForArguments(argumentSet, &baseBuiltIn)
+	err := printWarningForArguments(argumentSet, &baseBuiltIn)
+	require.NoError(t, err)
 	warnings := starlark_warning.GetContentFromWarningSet()
 	require.Len(t, warnings, 1)
 	require.Contains(t, warnings[0],
@@ -163,7 +165,8 @@ func Test_printWarningForInstructionNoWarning(t *testing.T) {
 	}
 
 	argumentSet := builtin_argument.NewArgumentValuesSet(builtinArgs, []starlark.Value{starlark.String("test"), starlark.String("test")})
-	printWarningForArguments(argumentSet, &baseBuiltIn)
+	err := printWarningForArguments(argumentSet, &baseBuiltIn)
+	require.NoError(t, err)
 	warnings := starlark_warning.GetContentFromWarningSet()
 	require.Len(t, warnings, 0)
 }
