@@ -221,7 +221,7 @@ render_templates
 
 The `render_templates` instruction combines a template and data to produce a [files artifact][files-artifacts-reference]. Files artifacts can be used with the `files` property of the `ServiceConfig` object, allowing for reuse of config files across services.
 
-**Returns**: a [FutureReference][future-references-reference] resolving to a `string` representing the name of a [FilesArtifact][files-artifacts-reference].
+**Returns**: a [future reference][future-references-reference] resolving to a `string` representing the name of a [files artifact][files-artifacts-reference].
 
 **Args**:
 - `config`: a dictionary with the following keys and values:
