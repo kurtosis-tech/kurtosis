@@ -1670,7 +1670,15 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the docker containers with filter args '%+v'", filterArgs)
 	}
-	containers, err := newContainersListFromDockerContainersList(dockerContainers)
+	dockerContainersDetails := []types.ContainerJSON{}
+	for _, dockerContainer := range dockerContainers {
+		dockerContainerDetails, err := manager.InspectContainer(ctx, dockerContainer.ID)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred inspecting the docker container with ID '%s'", dockerContainer.ID)
+		}
+		dockerContainersDetails = append(dockerContainersDetails, dockerContainerDetails)
+	}
+	containers, err := newContainersListFromDockerContainersList(dockerContainersDetails)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new containers list from Docker containers list")
 	}
@@ -1716,7 +1724,7 @@ func (manager *DockerManager) didContainerStartSuccessfully(ctx context.Context,
 	return true, nil
 }
 
-func newContainersListFromDockerContainersList(dockerContainers []types.Container) ([]*docker_manager_types.Container, error) {
+func newContainersListFromDockerContainersList(dockerContainers []types.ContainerJSON) ([]*docker_manager_types.Container, error) {
 	containers := make([]*docker_manager_types.Container, 0, len(dockerContainers))
 	for _, dockerContainer := range dockerContainers {
 		container, err := newContainerFromDockerContainer(dockerContainer)
@@ -1728,46 +1736,28 @@ func newContainersListFromDockerContainersList(dockerContainers []types.Containe
 	return containers, nil
 }
 
-func newContainerFromDockerContainer(dockerContainer types.Container) (*docker_manager_types.Container, error) {
-	containerStatus, err := getContainerStatusByDockerContainerState(dockerContainer.State)
+func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*docker_manager_types.Container, error) {
+	containerStatus, err := getContainerStatusByDockerContainerState(dockerContainer.State.Status)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", dockerContainer.State)
+		return nil, stacktrace.Propagate(err, "An error occurred getting ContainerStatus from Docker container state '%v'", dockerContainer.State.Status)
 	}
-	containerName, err := getContainerNameByDockerContainerNames(dockerContainer.Names)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting container name from Docker container names '%+v'", dockerContainer.Names)
+	containerHostPortBindings := getHostPortBindingsOnExpectedInterface(dockerContainer.NetworkSettings.Ports)
+	containerEnvArgs := map[string]string{}
+	for _, env := range dockerContainer.Config.Env {
+		envSlice := strings.Split(env, "=")
+		containerEnvArgs[envSlice[0]] = envSlice[1]
 	}
-
-	// Frustratingly, Docker's ContainerList returns ports in a completely different format than ContainerInspect, so we need
-	// to process the ports into the same format as ContainerInspect so we can call getHostPortBindingsOnExpectedInterface
-	portMap := nat.PortMap{}
-	for _, port := range dockerContainer.Ports {
-		// It's kinda bad that we use "forbidden knowledge" about how nat.Port represents its internals to create one, but
-		// the nat.Port API is so infuriatingly awful to use (how do you even create one??)
-		privatePortStr := fmt.Sprintf("%v/%v", port.PrivatePort, port.Type)
-		privatePort := nat.Port(privatePortStr)
-
-		bindingsForPort, found := portMap[privatePort]
-		if !found {
-			bindingsForPort = []nat.PortBinding{}
-		}
-
-		hostBinding := nat.PortBinding{
-			HostIP:   port.IP,
-			HostPort: fmt.Sprintf("%v", port.PublicPort),
-		}
-
-		bindingsForPort = append(bindingsForPort, hostBinding)
-		portMap[privatePort] = bindingsForPort
-	}
-	containerHostPortBindings := getHostPortBindingsOnExpectedInterface(portMap)
 
 	newContainer := docker_manager_types.NewContainer(
 		dockerContainer.ID,
-		containerName,
-		dockerContainer.Labels,
+		dockerContainer.Name,
+		dockerContainer.Config.Labels,
 		containerStatus,
 		containerHostPortBindings,
+		dockerContainer.Image,
+		dockerContainer.Config.Entrypoint,
+		dockerContainer.Config.Cmd,
+		containerEnvArgs,
 	)
 
 	return newContainer, nil
