@@ -65,6 +65,8 @@ const (
 	enclaveDumpJsonSerializationPrefix = ""
 
 	dumpPodErrorTitle = "Pod"
+
+	emptyImageName = ""
 )
 
 // Kubernetes doesn't provide public IP or port information; this is instead handled by the Kurtosis gateway that the user uses
@@ -350,6 +352,11 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", numPodsForGuid, serviceUuid)
 		} else if numPodsForGuid == 1 {
 			kubernetesPod := kubernetesPodsForGuid[0]
+		
+			numContainersForPod := len(kubernetesPod.Spec.Containers)
+			if numContainersForPod != 1 {
+				return nil, stacktrace.NewError("Found %v containers associated with service GUID '%v'; this is a bug in Kurtosis", numContainersForPod, serviceUuid)
+			}
 
 			resultObj, found := results[serviceUuid]
 			if !found {
@@ -438,7 +445,12 @@ func GetUserServiceObjectsFromKubernetesResources(
 				privatePorts,
 				servicePublicIp,
 				servicePublicPorts,
-				container.NewContainer(container.ContainerStatus_Stopped, "", nil, nil, nil),
+				container.NewContainer(
+					container.ContainerStatus_Stopped,
+					emptyImageName,
+					nil,
+					nil,
+					nil),
 			)
 			continue
 		}
@@ -448,12 +460,24 @@ func GetUserServiceObjectsFromKubernetesResources(
 			return nil, stacktrace.Propagate(err, "An error occurred getting container status from Kubernetes pod '%+v'", resourcesToParse.Pod)
 		}
 
+		podContainer := resourcesToParse.Pod.Spec.Containers[0]
+		podContainerEnvVars := map[string]string{}
+		for _, env := range podContainer.Env {
+			podContainerEnvVars[env.Name] = env.Value
+		}
+
 		resultObj.Service = service.NewService(
 			serviceRegistrationObj,
 			privatePorts,
 			servicePublicIp,
 			servicePublicPorts,
-			container.NewContainer(containerStatus, "", nil, nil, nil),
+			container.NewContainer(
+				containerStatus,
+				podContainer.Image,
+				podContainer.Command,
+				podContainer.Args,
+				podContainerEnvVars,
+			),
 		)
 	}
 
