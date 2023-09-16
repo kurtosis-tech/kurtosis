@@ -1754,7 +1754,7 @@ func newContainerFromDockerContainer(dockerContainer types.ContainerJSON) (*dock
 		dockerContainer.Config.Labels,
 		containerStatus,
 		containerHostPortBindings,
-		dockerContainer.Image,
+		dockerContainer.Config.Image,
 		dockerContainer.Config.Entrypoint,
 		dockerContainer.Config.Cmd,
 		containerEnvArgs,

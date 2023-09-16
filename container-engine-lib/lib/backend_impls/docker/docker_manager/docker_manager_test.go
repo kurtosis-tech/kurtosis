@@ -107,7 +107,7 @@ func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 	hostPortBindings := kurtosisContainer.GetHostPortBindings()
 	require.Equal(t, 1, len(hostPortBindings))
 
-	portBinding, found := hostPortBindings["7443/tcp"]
+	portBinding, found := hostPortBindings["7444/tcp"]
 	require.True(t, found)
 	require.Equal(t, "127.0.0.1", portBinding.HostIP)
 	require.Equal(t, "49050", portBinding.HostPort)

@@ -644,7 +644,13 @@ func getUserServiceObjsFromDockerResources(
 			privatePorts,
 			maybePublicIp,
 			maybePublicPorts,
-			container.NewContainer(serviceContainerStatus, "", nil, nil, nil),
+			container.NewContainer(
+				serviceContainerStatus,
+				serviceContainer.GetImageName(),
+				serviceContainer.GetEntrypointArgs(),
+				serviceContainer.GetCmdArgs(),
+				serviceContainer.GetEnvVars(),
+			),
 		)
 	}
 	return result, nil

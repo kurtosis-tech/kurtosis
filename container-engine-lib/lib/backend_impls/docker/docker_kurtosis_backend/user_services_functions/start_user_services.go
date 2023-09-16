@@ -28,6 +28,7 @@ import (
 const (
 	unlimitedReplacements                = -1
 	skipAddingUserServiceToBridgeNetwork = true
+	emptyImageName                       = ""
 )
 
 func RegisterUserServices(
@@ -419,7 +420,12 @@ func restartUserServices(
 			nil,
 			nil,
 			nil,
-			container.NewContainer(container.ContainerStatus_Running, "", nil, nil, nil),
+			container.NewContainer(
+				container.ContainerStatus_Running,
+				emptyImageName,
+				nil,
+				nil,
+				nil),
 		)
 
 		serviceStatus := service.ServiceStatus_Started
@@ -729,7 +735,12 @@ func createStartServiceOperation(
 			privatePorts,
 			maybePublicIp,
 			maybePublicPortSpecs,
-			container.NewContainer(container.ContainerStatus_Running, "", nil, nil, nil),
+			container.NewContainer(
+				container.ContainerStatus_Running,
+				containerImageName,
+				entrypointArgs,
+				cmdArgs,
+				envVars),
 		)
 
 		shouldDeleteVolumes = false
