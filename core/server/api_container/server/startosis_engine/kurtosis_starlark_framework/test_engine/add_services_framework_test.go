@@ -86,8 +86,8 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		mock.Anything,
 	).Times(1).Return(
 		map[service.ServiceName]*service.Service{
-			TestServiceName: service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, "", nil, nil, nil)),
-			TestServiceName2: service.NewService(service.NewServiceRegistration(TestServiceName2, TestServiceUuid2, TestEnclaveUuid, nil, string(TestServiceName2)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, "", nil, nil, nil)),
+			TestServiceName: service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, TestContainerImageName, nil, nil, nil)),
+			TestServiceName2: service.NewService(service.NewServiceRegistration(TestServiceName2, TestServiceUuid2, TestEnclaveUuid, nil, string(TestServiceName2)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, TestContainerImageName, nil, nil, nil)),
 		},
 		map[service.ServiceName]error{},
 		nil,
