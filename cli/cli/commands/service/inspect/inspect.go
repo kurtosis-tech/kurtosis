@@ -35,7 +35,7 @@ const (
 	isServiceIdentifierArgOptional = false
 	isServiceIdentifierArgGreedy   = false
 
-	fullUuidsFlagKey       = "full-uuids"
+	fullUuidFlagKey       = "full-uuid"
 	fullUuidFlagKeyDefault = "false"
 
 	serviceNameTitleName           = "Name"
@@ -59,8 +59,8 @@ var ServiceInspectCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtos
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
-			Key:     fullUuidsFlagKey,
-			Usage:   "If true then Kurtosis prints full UUIDs instead of shortened UUIDs. Default false.",
+			Key:     fullUuidFlagKey,
+			Usage:   "If true then Kurtosis prints the service full UUID instead of the shortened UUID. Default false.",
 			Type:    flags.FlagType_Bool,
 			Default: fullUuidFlagKeyDefault,
 		},
@@ -100,9 +100,9 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for non-greedy enclave identifier arg '%v' but none was found; this is a bug in the Kurtosis CLI!", enclaveIdentifierArgKey)
 	}
 
-	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
+	showFullUuid, err := flags.GetBool(fullUuidFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidsFlagKey)
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", fullUuidFlagKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -110,14 +110,14 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred creating Kurtosis Context from local engine")
 	}
 
-	if err = PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceIdentifier, showFullUuids); err != nil {
+	if err = PrintServiceInspect(ctx, kurtosisBackend, kurtosisCtx, enclaveIdentifier, serviceIdentifier, showFullUuid); err != nil {
 		// this is already wrapped up
 		return err
 	}
 	return nil
 }
 
-func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, serviceIdentifier string, showFullUuids bool) error {
+func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, kurtosisCtx *kurtosis_context.KurtosisContext, enclaveIdentifier string, serviceIdentifier string, showFullUuid bool) error {
 	enclaveInfo, err := kurtosisCtx.GetEnclave(ctx, enclaveIdentifier)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the enclave for identifier '%v'", enclaveIdentifier)
@@ -146,7 +146,7 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 	out.PrintOutLn(fmt.Sprintf("%s: %s", serviceNameTitleName, userService.GetName()))
 
 	uuidStr := userService.GetShortenedUuid()
-	if showFullUuids {
+	if showFullUuid {
 		uuidStr = userService.GetServiceUuid()
 	}
 	out.PrintOutLn(fmt.Sprintf("%s: %s", serviceUUIDTitleName, uuidStr))
