@@ -1,5 +1,49 @@
 # Changelog
 
+## [0.82.23](https://github.com/kurtosis-tech/kurtosis/compare/0.82.22...0.82.23) (2023-09-14)
+
+
+### Features
+
+* folks can delete enclaves from the frontend ([#1250](https://github.com/kurtosis-tech/kurtosis/issues/1250)) ([ee11b7c](https://github.com/kurtosis-tech/kurtosis/commit/ee11b7c2a79f153d7d8aa023ee7c03d54065a0c1))
+* The current enclave plan is now persisted to the enclave DB every times the execution finishes ([#1280](https://github.com/kurtosis-tech/kurtosis/issues/1280)) ([33d867e](https://github.com/kurtosis-tech/kurtosis/commit/33d867ed62cbf7621aecb775c8f1ba1c01c5d700))
+
+
+### Bug Fixes
+
+* follow logs ([#1298](https://github.com/kurtosis-tech/kurtosis/issues/1298)) ([9b0bcb7](https://github.com/kurtosis-tech/kurtosis/commit/9b0bcb779bd7c2dd12a359c868f16cf34ec69f13))
+* Reset the module global cache on every new interpretation to avoid using outdated modules ([#1291](https://github.com/kurtosis-tech/kurtosis/issues/1291)) ([81c5462](https://github.com/kurtosis-tech/kurtosis/commit/81c54623deb03cdcfb70b075b4a4367e8f4b4e36))
+* return after stream err ([#1301](https://github.com/kurtosis-tech/kurtosis/issues/1301)) ([f40559b](https://github.com/kurtosis-tech/kurtosis/commit/f40559b63ca99163336d0ce706d835a8e345e835))
+
+## [0.82.22](https://github.com/kurtosis-tech/kurtosis/compare/0.82.21...0.82.22) (2023-09-11)
+
+
+### Features
+
+* always pull latest image ([#1267](https://github.com/kurtosis-tech/kurtosis/issues/1267)) ([6706809](https://github.com/kurtosis-tech/kurtosis/commit/670680980957f5eaa5b0ec01ed0ee9b8973d58e7))
+* CLI run command option to disable user services port forwarding ([#1252](https://github.com/kurtosis-tech/kurtosis/issues/1252)) ([1c94378](https://github.com/kurtosis-tech/kurtosis/commit/1c94378b9342bbe07647d8c61c47197f5aafcc18)), closes [#1236](https://github.com/kurtosis-tech/kurtosis/issues/1236)
+* retain logs for x weeks ([#1235](https://github.com/kurtosis-tech/kurtosis/issues/1235)) ([5f50c8c](https://github.com/kurtosis-tech/kurtosis/commit/5f50c8cc8bf9e5d99570c1c618a5ec367ed194a2))
+
+
+### Bug Fixes
+
+* inline upgrade warning ([#1254](https://github.com/kurtosis-tech/kurtosis/issues/1254)) ([33ef03a](https://github.com/kurtosis-tech/kurtosis/commit/33ef03a5c3553778d60597cc177893a0c50d6076)), closes [#1244](https://github.com/kurtosis-tech/kurtosis/issues/1244)
+
+## [0.82.21](https://github.com/kurtosis-tech/kurtosis/compare/0.82.20...0.82.21) (2023-09-06)
+
+
+### Bug Fixes
+
+* the runtime value store now supports `starlark.Bool` value types ([#1249](https://github.com/kurtosis-tech/kurtosis/issues/1249)) ([825f7cd](https://github.com/kurtosis-tech/kurtosis/commit/825f7cdb7b77bfb3a88d658b839141f965ca4fb6))
+
+## [0.82.20](https://github.com/kurtosis-tech/kurtosis/compare/0.82.19...0.82.20) (2023-09-06)
+
+
+### Bug Fixes
+
+* handle default string value properly ([#1243](https://github.com/kurtosis-tech/kurtosis/issues/1243)) ([6e49059](https://github.com/kurtosis-tech/kurtosis/commit/6e4905973715db54814cf678832a576a89b5fd28))
+* Runtime values created by `add_services` were incorrect in the case of a skipped instruction ([#1239](https://github.com/kurtosis-tech/kurtosis/issues/1239)) ([3412486](https://github.com/kurtosis-tech/kurtosis/commit/341248627daa1be920985137080b8705662f1993))
+
 ## [0.82.19](https://github.com/kurtosis-tech/kurtosis/compare/0.82.18...0.82.19) (2023-09-05)
 
 
