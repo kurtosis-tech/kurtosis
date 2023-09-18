@@ -119,27 +119,13 @@ func RelativeOrRemoteAbsoluteLocator(locatorStarlarkValue starlark.Value, packag
 	}
 	locatorStr := locatorStarlarkStr.GoString()
 
-	if isRelativeLocator(locatorStr) {
-		return nil
-	}
-
 	// if absolute and local return error
-	if isLocalLocator(locatorStr, packageId) {
+	if isLocalAbsoluteLocator(locatorStr, packageId) {
 		return startosis_errors.NewInterpretationError("The locator '%s' set in attribute '%v' is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'", locatorStarlarkStr, argNameForLogging)
 	}
 	return nil
 }
 
-func isLocalLocator(locatorStr string, packageId string) bool {
+func isLocalAbsoluteLocator(locatorStr string, packageId string) bool {
 	return strings.HasPrefix(locatorStr, packageId)
-}
-
-func isRelativeLocator(locatorStr string) bool {
-	relativeLocatorPrefixes := []string{".", "/"}
-	for _, relativeLocatorPrefix := range relativeLocatorPrefixes {
-		if strings.HasPrefix(locatorStr, relativeLocatorPrefix) {
-			return true
-		}
-	}
-	return false
 }

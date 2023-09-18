@@ -23,9 +23,9 @@ func (deprecationDate *DeprecationDate) GetFormattedDate() string {
 //
 //	give examples for good mitigation examples; currently it's free form for folks to start using right away
 type DeprecationNotice struct {
-	deprecationDate                  DeprecationDate
-	mitigation                       string
-	shouldShownDeprecationNoticeFunc func(value starlark.Value) bool
+	deprecationDate                                    DeprecationDate
+	mitigation                                         string
+	shouldShowDeprecationNoticeBaseOnArgumentValueFunc func(value starlark.Value) bool
 }
 
 func (deprecationNotice *DeprecationNotice) GetDeprecatedDate() string {
@@ -36,8 +36,8 @@ func (deprecationNotice *DeprecationNotice) GetMitigation() string {
 	return deprecationNotice.mitigation
 }
 
-func (deprecationNotice *DeprecationNotice) GetMaybeShouldShownDeprecationNoticeFunc() func(value starlark.Value) bool {
-	return deprecationNotice.shouldShownDeprecationNoticeFunc
+func (deprecationNotice *DeprecationNotice) GetMaybeShouldShowDeprecationNoticeBaseOnArgumentValueFunc() func(value starlark.Value) bool {
+	return deprecationNotice.shouldShowDeprecationNoticeBaseOnArgumentValueFunc
 }
 
 func (deprecationNotice *DeprecationNotice) IsDeprecatedDateScheduled() bool {
@@ -61,11 +61,11 @@ func (deprecationNotice *DeprecationNotice) IsDeprecatedDateScheduled() bool {
 func Deprecation(
 	deprecationDate DeprecationDate,
 	mitigation string,
-	shouldShownDeprecationNoticeFunc func(value starlark.Value) bool,
+	shouldShowDeprecationNoticeBaseOnArgumentValueFunc func(value starlark.Value) bool,
 ) *DeprecationNotice {
 	return &DeprecationNotice{
-		deprecationDate:                  deprecationDate,
-		mitigation:                       mitigation,
-		shouldShownDeprecationNoticeFunc: shouldShownDeprecationNoticeFunc,
+		deprecationDate: deprecationDate,
+		mitigation:      mitigation,
+		shouldShowDeprecationNoticeBaseOnArgumentValueFunc: shouldShowDeprecationNoticeBaseOnArgumentValueFunc,
 	}
 }

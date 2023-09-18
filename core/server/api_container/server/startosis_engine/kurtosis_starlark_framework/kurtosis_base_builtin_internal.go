@@ -79,7 +79,7 @@ func printWarningForArguments(argumentSet *builtin_argument.ArgumentValuesSet, b
 		for _, argument := range arguments {
 			if argumentSet.IsSet(argument.Name) && argument.IsDeprecated() {
 				shouldShownDeprecationNotice := true
-				maybeShouldShownDeprecationNoticeFunc := argument.Deprecation.GetMaybeShouldShownDeprecationNoticeFunc()
+				maybeShouldShownDeprecationNoticeFunc := argument.Deprecation.GetMaybeShouldShowDeprecationNoticeBaseOnArgumentValueFunc()
 				if maybeShouldShownDeprecationNoticeFunc != nil {
 					argumentValue := argument.ZeroValueProvider()
 					if err := argumentSet.ExtractArgumentValue(argument.Name, &argumentValue); err != nil {
