@@ -40,9 +40,9 @@ def run(plan, args):
 		}
 	)
 	exec_result = plan.exec(recipe=exec_recipe, service_name="test", acceptable_codes=[0], skip_code_check=True)
-	plan.assert(exec_result["code"], "==", %d)
-	plan.assert(exec_result["output"], "==", "%s")
-	plan.assert(exec_result["extract.len"], "==", %d)
+	plan.verify(exec_result["code"], "==", %d)
+	plan.verify(exec_result["output"], "==", "%s")
+	plan.verify(exec_result["extract.len"], "==", %d)
 `
 )
 
