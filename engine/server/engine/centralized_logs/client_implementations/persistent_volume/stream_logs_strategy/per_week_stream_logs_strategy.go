@@ -84,6 +84,8 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 
 	logsReader := bufio.NewReader(combinedLogsReader)
 
+	logLines := make([]string, 0, numLogLines)
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -132,12 +134,28 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 				return
 			}
 
-			if err = strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-				streamErrChan <- stacktrace.Propagate(err, "An error occurred sending log line for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
-				return
+			// send log line or get save into last n log lines
+			if shouldReturnAllLogs {
+				if err = strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+					streamErrChan <- stacktrace.Propagate(err, "An error occurred sending log line for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
+					return
+				}
+			} else {
+				logLines = append(logLines, jsonLogStr)
+				if len(logLines) > int(numLogLines) {
+					logLines = logLines[1:]
+				}
 			}
 
 			if isLastLogLine {
+				if !shouldReturnAllLogs {
+					for _, line := range logLines {
+						if err = strategy.sendJsonLogLine(line, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+							streamErrChan <- stacktrace.Propagate(err, "An error occurred sending log line for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
+							return
+						}
+					}
+				}
 				if shouldFollowLogs {
 					if err = strategy.tailLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 						streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)

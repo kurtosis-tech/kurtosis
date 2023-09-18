@@ -164,8 +164,8 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 	serviceUuidStrSet := args.GetServiceUuidSet()
 	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidStrSet))
 	shouldFollowLogs := args.FollowLogs
-	_ = args.ReturnAllLogs
-	_ = args.NumLogLines
+	shouldReturnAllLogs := args.ReturnAllLogs
+	numLogLines := args.NumLogLines
 
 	for serviceUuidStr := range serviceUuidStrSet {
 		serviceUuid := user_service.ServiceUUID(serviceUuidStr)
@@ -199,7 +199,14 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 	}
 	logsDatabaseClient := service.getLogsDatabaseClient(enclaveCreationTime)
 
-	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(contextWithCancel, enclaveUuid, requestedServiceUuids, conjunctiveLogLineFilters, shouldFollowLogs)
+	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(
+		contextWithCancel,
+		enclaveUuid,
+		requestedServiceUuids,
+		conjunctiveLogLineFilters,
+		shouldFollowLogs,
+		shouldReturnAllLogs,
+		numLogLines)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
