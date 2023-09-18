@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.83.1](https://github.com/kurtosis-tech/kurtosis/compare/0.83.0...0.83.1) (2023-09-18)
+
+
+### Features
+
+* changes to the package manager config and the files artifact view ([#1322](https://github.com/kurtosis-tech/kurtosis/issues/1322)) ([e2b0d2b](https://github.com/kurtosis-tech/kurtosis/commit/e2b0d2b50ffa7edd2ff50eeba4c0887aa38ff27b))
+
 ## [0.83.0](https://github.com/kurtosis-tech/kurtosis/compare/0.82.24...0.83.0) (2023-09-18)
 
 
