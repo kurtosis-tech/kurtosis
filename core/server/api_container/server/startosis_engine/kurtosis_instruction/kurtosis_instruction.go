@@ -3,19 +3,10 @@ package kurtosis_instruction
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
-	"go.starlark.net/starlark"
-)
-
-const (
-	Representative    = true
-	NotRepresentative = false
-)
-
-var (
-	NoArgs []starlark.Value
 )
 
 type KurtosisInstruction interface {
@@ -34,5 +25,12 @@ type KurtosisInstruction interface {
 	ValidateAndUpdateEnvironment(environment *startosis_validator.ValidatorEnvironment) error
 
 	// TryResolveWith assesses whether the instruction can be resolved with the one passed as an argument.
-	TryResolveWith(other KurtosisInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
+	TryResolveWith(other *enclave_plan_persistence.EnclavePlanInstruction, enclaveComponents *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus
+
+	// GetPersistableAttributes returns an EnclavePlanInstructionBuilder object which contains the persistable attributes
+	// for this instruction. Persistable attributes are what will be written to the enclave database so that even
+	// if the APIC is restarted, idempotent runs will continue to work.
+	// It returns a builder and not the built object b/c the caller of this method might want to set some attributes
+	// itself. In the current case, this is called in the executor, and it sets the UUID and the returned value.
+	GetPersistableAttributes() *enclave_plan_persistence.EnclavePlanInstructionBuilder
 }

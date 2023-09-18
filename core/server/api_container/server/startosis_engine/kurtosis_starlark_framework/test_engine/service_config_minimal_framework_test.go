@@ -16,16 +16,11 @@ type serviceConfigMinimalTestCase struct {
 	serviceNetwork *service_network.MockServiceNetwork
 }
 
-func newServiceConfigMinimalTestCase(t *testing.T) *serviceConfigMinimalTestCase {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-	return &serviceConfigMinimalTestCase{
-		T:              t,
-		serviceNetwork: serviceNetwork,
-	}
-}
-
-func (t *serviceConfigMinimalTestCase) GetId() string {
-	return service_config.ServiceConfigTypeName
+func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigMinimal() {
+	suite.run(&serviceConfigMinimalTestCase{
+		T:              suite.T(),
+		serviceNetwork: suite.serviceNetwork,
+	})
 }
 
 func (t *serviceConfigMinimalTestCase) GetStarlarkCode() string {

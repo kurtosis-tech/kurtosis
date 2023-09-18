@@ -117,9 +117,14 @@ func NewKubernetesKurtosisBackend(
 	}
 }
 
-func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string) error {
+func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image string) (bool, error) {
 	logrus.Warnf("FetchImage isn't implemented for Kubernetes yet")
-	return nil
+	return false, nil
+}
+
+func (backend *KubernetesKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
+	logrus.Warnf("PruneUnusedImages isn't implemented for Kubernetes yet")
+	return nil, nil
 }
 
 func (backend *KubernetesKurtosisBackend) CreateEngine(

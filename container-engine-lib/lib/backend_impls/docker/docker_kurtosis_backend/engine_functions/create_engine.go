@@ -228,11 +228,6 @@ func CreateEngine(
 		labelStrs,
 	).Build()
 
-	// Best-effort pull attempt
-	if err = dockerManager.FetchImage(ctx, containerImageAndTag); err != nil {
-		logrus.Warnf("Failed to pull the latest version of engine server image '%v'; you may be running an out-of-date version", containerImageAndTag)
-	}
-
 	containerId, hostMachinePortBindings, err := dockerManager.CreateAndStartContainer(ctx, createAndStartArgs)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred starting the Kurtosis engine container")

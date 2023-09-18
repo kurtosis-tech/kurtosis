@@ -92,9 +92,6 @@ pub struct ServiceInfo {
     #[prost(enumeration = "ServiceStatus", tag = "8")]
     pub service_status: i32,
 }
-/// ==============================================================================================
-///                                Execute Starlark Arguments
-/// ==============================================================================================
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct RunStarlarkScriptArgs {
@@ -175,7 +172,7 @@ pub mod run_starlark_package_args {
 pub struct StarlarkRunResponseLine {
     #[prost(
         oneof = "starlark_run_response_line::RunResponseLine",
-        tags = "1, 2, 3, 4, 5, 6"
+        tags = "1, 2, 3, 4, 5, 6, 7"
     )]
     pub run_response_line: ::core::option::Option<
         starlark_run_response_line::RunResponseLine,
@@ -198,7 +195,15 @@ pub mod starlark_run_response_line {
         RunFinishedEvent(super::StarlarkRunFinishedEvent),
         #[prost(message, tag = "6")]
         Warning(super::StarlarkWarning),
+        #[prost(message, tag = "7")]
+        Info(super::StarlarkInfo),
     }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StarlarkInfo {
+    #[prost(string, tag = "1")]
+    pub info_message: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -553,6 +558,15 @@ pub struct FileArtifactContentsFileDescription {
     #[prost(string, optional, tag = "3")]
     pub text_preview: ::core::option::Option<::prost::alloc::string::String>,
 }
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ConnectServicesArgs {
+    #[prost(enumeration = "Connect", tag = "1")]
+    pub connect: i32,
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct ConnectServicesResponse {}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ServiceStatus {
@@ -578,6 +592,38 @@ impl ServiceStatus {
             "STOPPED" => Some(Self::Stopped),
             "RUNNING" => Some(Self::Running),
             "UNKNOWN" => Some(Self::Unknown),
+            _ => None,
+        }
+    }
+}
+/// User services port forwarding
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum Connect {
+    /// Best effort port forwarding
+    Connect = 0,
+    /// Port forwarding disabled
+    ///
+    /// Starlark run fails if the ports cannot be forwarded.
+    /// MUST_CONNECT = 2;
+    NoConnect = 1,
+}
+impl Connect {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            Connect::Connect => "CONNECT",
+            Connect::NoConnect => "NO_CONNECT",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "CONNECT" => Some(Self::Connect),
+            "NO_CONNECT" => Some(Self::NoConnect),
             _ => None,
         }
     }
@@ -1117,6 +1163,37 @@ pub mod api_container_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        /// User services port forwarding
+        pub async fn connect_services(
+            &mut self,
+            request: impl tonic::IntoRequest<super::ConnectServicesArgs>,
+        ) -> std::result::Result<
+            tonic::Response<super::ConnectServicesResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/api_container_api.ApiContainerService/ConnectServices",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "api_container_api.ApiContainerService",
+                        "ConnectServices",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -1243,6 +1320,14 @@ pub mod api_container_service_server {
             request: tonic::Request<super::InspectFilesArtifactContentsRequest>,
         ) -> std::result::Result<
             tonic::Response<super::InspectFilesArtifactContentsResponse>,
+            tonic::Status,
+        >;
+        /// User services port forwarding
+        async fn connect_services(
+            &self,
+            request: tonic::Request<super::ConnectServicesArgs>,
+        ) -> std::result::Result<
+            tonic::Response<super::ConnectServicesResponse>,
             tonic::Status,
         >;
     }
@@ -1989,6 +2074,52 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = InspectFilesArtifactContentsSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/api_container_api.ApiContainerService/ConnectServices" => {
+                    #[allow(non_camel_case_types)]
+                    struct ConnectServicesSvc<T: ApiContainerService>(pub Arc<T>);
+                    impl<
+                        T: ApiContainerService,
+                    > tonic::server::UnaryService<super::ConnectServicesArgs>
+                    for ConnectServicesSvc<T> {
+                        type Response = super::ConnectServicesResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(
+                            &mut self,
+                            request: tonic::Request<super::ConnectServicesArgs>,
+                        ) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).connect_services(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = ConnectServicesSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

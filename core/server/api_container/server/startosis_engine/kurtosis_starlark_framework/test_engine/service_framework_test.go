@@ -14,21 +14,17 @@ const (
 	testServicePorts     = "{}"
 )
 
-type serviceTestCase struct {
+type serviceObjectTestCase struct {
 	*testing.T
 }
 
-func newServiceTestCase(t *testing.T) *serviceTestCase {
-	return &serviceTestCase{
-		T: t,
-	}
+func (suite *KurtosisTypeConstructorTestSuite) TestServiceObject() {
+	suite.run(&serviceObjectTestCase{
+		T: suite.T(),
+	})
 }
 
-func (t serviceTestCase) GetId() string {
-	return kurtosis_types.ServiceTypeName
-}
-
-func (t serviceTestCase) GetStarlarkCode() string {
+func (t serviceObjectTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%s)",
 		kurtosis_types.ServiceTypeName,
 		kurtosis_types.ServiceNameAttr, TestServiceName,
@@ -37,7 +33,7 @@ func (t serviceTestCase) GetStarlarkCode() string {
 		kurtosis_types.PortsAttr, testServicePorts)
 }
 
-func (t serviceTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
+func (t serviceObjectTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	serviceStarlark, ok := typeValue.(*kurtosis_types.Service)
 	require.True(t, ok)
 

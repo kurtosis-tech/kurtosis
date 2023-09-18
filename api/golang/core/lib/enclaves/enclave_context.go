@@ -100,7 +100,15 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
-func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(ctx context.Context, mainFunctionName string, serializedScript string, serializedParams string, dryRun bool, parallelism int32, experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) (*StarlarkRunResult, error) {
+func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(
+	ctx context.Context,
+	mainFunctionName string,
+	serializedScript string,
+	serializedParams string,
+	dryRun bool,
+	parallelism int32,
+	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkScript(ctx, mainFunctionName, serializedScript, serializedParams, dryRun, parallelism, experimentalFeatures)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error requesting Starlark Script run")
@@ -376,6 +384,16 @@ func (enclaveCtx *EnclaveContext) GetAllFilesArtifactNamesAndUuids(ctx context.C
 		return nil, stacktrace.Propagate(err, "An error occurred while fetching file names and uuids")
 	}
 	return response.GetFileNamesAndUuids(), nil
+}
+
+// Docs available at https://docs.kurtosis.com/sdk#connectservices
+func (enclaveCtx *EnclaveContext) ConnectServices(ctx context.Context, connect kurtosis_core_rpc_api_bindings.Connect) error {
+	args := binding_constructors.NewConnectServicesArgs(connect)
+	_, err := enclaveCtx.client.ConnectServices(ctx, args)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error was encountered while sending the connect request to the API Container.")
+	}
+	return nil
 }
 
 // ====================================================================================================

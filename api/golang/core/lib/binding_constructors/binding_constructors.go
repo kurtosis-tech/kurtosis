@@ -115,6 +115,16 @@ func NewStarlarkRunResponseLineFromInstruction(instruction *kurtosis_core_rpc_ap
 	}
 }
 
+func NewStarlarkRunResponseLineFromInfoMsg(infoMessage string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Info{
+			Info: &kurtosis_core_rpc_api_bindings.StarlarkInfo{
+				InfoMessage: infoMessage,
+			},
+		},
+	}
+}
+
 func NewStarlarkRunResponseLineFromWarning(warningMessage string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Warning{
@@ -364,4 +374,20 @@ func DownloadFilesArtifactArgs(fileIdentifier string) *kurtosis_core_rpc_api_bin
 	return &kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs{
 		Identifier: fileIdentifier,
 	}
+}
+
+// ==============================================================================================
+//
+//	Connect Services arguments and response to configure user services port forwarding
+//
+// ==============================================================================================
+
+func NewConnectServicesArgs(connect kurtosis_core_rpc_api_bindings.Connect) *kurtosis_core_rpc_api_bindings.ConnectServicesArgs {
+	return &kurtosis_core_rpc_api_bindings.ConnectServicesArgs{
+		Connect: connect,
+	}
+}
+
+func NewConnectServicesResponse() *kurtosis_core_rpc_api_bindings.ConnectServicesResponse {
+	return &kurtosis_core_rpc_api_bindings.ConnectServicesResponse{}
 }

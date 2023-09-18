@@ -25,7 +25,12 @@ import {GenericTgzArchiver} from "./generic_tgz_archiver";
 import {
     ServiceInfo,
     RunStarlarkScriptArgs,
-    RunStarlarkPackageArgs, FilesArtifactNameAndUuid, KurtosisFeatureFlag,
+    RunStarlarkPackageArgs,
+    FilesArtifactNameAndUuid,
+    KurtosisFeatureFlag,
+    ConnectServicesArgs,
+    ConnectServicesResponse,
+    Connect,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
@@ -336,6 +341,18 @@ export class EnclaveContext {
 
         const getAllFilesArtifactsNamesAndUuidsResponseValue = getAllFilesArtifactsNamesAndUuidsResponseResult.value
         return ok(getAllFilesArtifactsNamesAndUuidsResponseValue.getFileNamesAndUuidsList())
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk#connectservices-connect-string
+    public async connectServices(connect: Connect): Promise<Result<ConnectServicesResponse, Error>> {
+        const args = new ConnectServicesArgs()
+        args.setConnect(connect)
+        const responseResult = await this.backend.connectServices(args)
+        if (responseResult.isErr()) {
+            return err(responseResult.error)
+        }
+        const response = responseResult.value;
+        return ok(response)
     }
 
     // ====================================================================================================

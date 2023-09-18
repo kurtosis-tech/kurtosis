@@ -47,6 +47,9 @@ service ApiContainerService {
   rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (ListFilesArtifactNamesAndUuidsResponse) {}
 
   rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (InspectFilesArtifactContentsResponse) {}
+  
+  // User services port forwarding
+  rpc ConnectServices(ConnectServicesArgs) returns (ConnectServicesResponse) {};
 }
 
 // ==============================================================================================
@@ -107,6 +110,17 @@ message ServiceInfo {
 // ==============================================================================================
 //                               Execute Starlark Arguments
 // ==============================================================================================
+
+// User services port forwarding
+enum Connect {
+  // Best effort port forwarding
+  CONNECT = 0;
+  // Port forwarding disabled
+  NO_CONNECT = 1;
+  // Starlark run fails if the ports cannot be forwarded.
+  // MUST_CONNECT = 2;
+}
+
 message RunStarlarkScriptArgs {
   string serialized_script = 1;
 
@@ -175,7 +189,12 @@ message StarlarkRunResponseLine {
     StarlarkInstructionResult instruction_result = 4;
     StarlarkRunFinishedEvent run_finished_event = 5;
     StarlarkWarning warning = 6;
+    StarlarkInfo info = 7;
   }
+}
+
+message StarlarkInfo {
+  string info_message = 1;
 }
 
 message StarlarkWarning {
@@ -453,4 +472,15 @@ message FileArtifactContentsFileDescription {
   uint64 size = 2;
   // A bit of text content, if the file allows (similar to UNIX's 'head')
   optional string text_preview = 3;
+}
+
+// ==============================================================================================
+//                               Connect to configure user services port forwarding
+// ==============================================================================================
+
+message ConnectServicesArgs {
+  Connect connect = 1;
+}
+
+message ConnectServicesResponse {
 }

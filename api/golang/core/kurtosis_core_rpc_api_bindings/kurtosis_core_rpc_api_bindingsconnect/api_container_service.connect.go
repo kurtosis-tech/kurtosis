@@ -76,6 +76,9 @@ const (
 	// ApiContainerServiceInspectFilesArtifactContentsProcedure is the fully-qualified name of the
 	// ApiContainerService's InspectFilesArtifactContents RPC.
 	ApiContainerServiceInspectFilesArtifactContentsProcedure = "/api_container_api.ApiContainerService/InspectFilesArtifactContents"
+	// ApiContainerServiceConnectServicesProcedure is the fully-qualified name of the
+	// ApiContainerService's ConnectServices RPC.
+	ApiContainerServiceConnectServicesProcedure = "/api_container_api.ApiContainerService/ConnectServices"
 )
 
 // ApiContainerServiceClient is a client for the api_container_api.ApiContainerService service.
@@ -106,6 +109,8 @@ type ApiContainerServiceClient interface {
 	StoreFilesArtifactFromService(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse], error)
 	ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error)
 	InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error)
+	// User services port forwarding
+	ConnectServices(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.ConnectServicesArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.ConnectServicesResponse], error)
 }
 
 // NewApiContainerServiceClient constructs a client for the api_container_api.ApiContainerService
@@ -188,6 +193,11 @@ func NewApiContainerServiceClient(httpClient connect.HTTPClient, baseURL string,
 			baseURL+ApiContainerServiceInspectFilesArtifactContentsProcedure,
 			opts...,
 		),
+		connectServices: connect.NewClient[kurtosis_core_rpc_api_bindings.ConnectServicesArgs, kurtosis_core_rpc_api_bindings.ConnectServicesResponse](
+			httpClient,
+			baseURL+ApiContainerServiceConnectServicesProcedure,
+			opts...,
+		),
 	}
 }
 
@@ -207,6 +217,7 @@ type apiContainerServiceClient struct {
 	storeFilesArtifactFromService              *connect.Client[kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs, kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse]
 	listFilesArtifactNamesAndUuids             *connect.Client[emptypb.Empty, kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse]
 	inspectFilesArtifactContents               *connect.Client[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest, kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse]
+	connectServices                            *connect.Client[kurtosis_core_rpc_api_bindings.ConnectServicesArgs, kurtosis_core_rpc_api_bindings.ConnectServicesResponse]
 }
 
 // RunStarlarkScript calls api_container_api.ApiContainerService.RunStarlarkScript.
@@ -285,6 +296,11 @@ func (c *apiContainerServiceClient) InspectFilesArtifactContents(ctx context.Con
 	return c.inspectFilesArtifactContents.CallUnary(ctx, req)
 }
 
+// ConnectServices calls api_container_api.ApiContainerService.ConnectServices.
+func (c *apiContainerServiceClient) ConnectServices(ctx context.Context, req *connect.Request[kurtosis_core_rpc_api_bindings.ConnectServicesArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.ConnectServicesResponse], error) {
+	return c.connectServices.CallUnary(ctx, req)
+}
+
 // ApiContainerServiceHandler is an implementation of the api_container_api.ApiContainerService
 // service.
 type ApiContainerServiceHandler interface {
@@ -314,6 +330,8 @@ type ApiContainerServiceHandler interface {
 	StoreFilesArtifactFromService(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse], error)
 	ListFilesArtifactNamesAndUuids(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error)
 	InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error)
+	// User services port forwarding
+	ConnectServices(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.ConnectServicesArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.ConnectServicesResponse], error)
 }
 
 // NewApiContainerServiceHandler builds an HTTP handler from the service implementation. It returns
@@ -392,6 +410,11 @@ func NewApiContainerServiceHandler(svc ApiContainerServiceHandler, opts ...conne
 		svc.InspectFilesArtifactContents,
 		opts...,
 	)
+	apiContainerServiceConnectServicesHandler := connect.NewUnaryHandler(
+		ApiContainerServiceConnectServicesProcedure,
+		svc.ConnectServices,
+		opts...,
+	)
 	return "/api_container_api.ApiContainerService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case ApiContainerServiceRunStarlarkScriptProcedure:
@@ -422,6 +445,8 @@ func NewApiContainerServiceHandler(svc ApiContainerServiceHandler, opts ...conne
 			apiContainerServiceListFilesArtifactNamesAndUuidsHandler.ServeHTTP(w, r)
 		case ApiContainerServiceInspectFilesArtifactContentsProcedure:
 			apiContainerServiceInspectFilesArtifactContentsHandler.ServeHTTP(w, r)
+		case ApiContainerServiceConnectServicesProcedure:
+			apiContainerServiceConnectServicesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -485,4 +510,8 @@ func (UnimplementedApiContainerServiceHandler) ListFilesArtifactNamesAndUuids(co
 
 func (UnimplementedApiContainerServiceHandler) InspectFilesArtifactContents(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api_container_api.ApiContainerService.InspectFilesArtifactContents is not implemented"))
+}
+
+func (UnimplementedApiContainerServiceHandler) ConnectServices(context.Context, *connect.Request[kurtosis_core_rpc_api_bindings.ConnectServicesArgs]) (*connect.Response[kurtosis_core_rpc_api_bindings.ConnectServicesResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("api_container_api.ApiContainerService.ConnectServices is not implemented"))
 }

@@ -13,22 +13,11 @@ import (
 
 type storeServiceFilesTestCase struct {
 	*testing.T
+	serviceNetwork *service_network.MockServiceNetwork
 }
 
-func newStoreServiceFilesTestCase(t *testing.T) *storeServiceFilesTestCase {
-	return &storeServiceFilesTestCase{
-		T: t,
-	}
-}
-
-func (t *storeServiceFilesTestCase) GetId() string {
-	return store_service_files.StoreServiceFilesBuiltinName
-}
-
-func (t *storeServiceFilesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	serviceNetwork := service_network.NewMockServiceNetwork(t)
-
-	serviceNetwork.EXPECT().CopyFilesFromService(
+func (suite *KurtosisPlanInstructionTestSuite) TestStoreServiceFiles() {
+	suite.serviceNetwork.EXPECT().CopyFilesFromService(
 		mock.Anything,
 		string(TestServiceName),
 		TestSrcPath,
@@ -38,7 +27,14 @@ func (t *storeServiceFilesTestCase) GetInstruction() *kurtosis_plan_instruction.
 		nil,
 	)
 
-	return store_service_files.NewStoreServiceFiles(serviceNetwork)
+	suite.run(&storeServiceFilesTestCase{
+		T:              suite.T(),
+		serviceNetwork: suite.serviceNetwork,
+	})
+}
+
+func (t *storeServiceFilesTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
+	return store_service_files.NewStoreServiceFiles(t.serviceNetwork)
 }
 
 func (t *storeServiceFilesTestCase) GetStarlarkCode() string {

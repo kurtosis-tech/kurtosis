@@ -1,29 +1,107 @@
 import {useNavigate} from "react-router-dom";
 import NoData from "./NoData";
 import LoadingOverlay from "./LoadingOverflow";
+import {removeEnclave} from "../api/enclave";
+import { useEffect, useRef, useState} from "react";
+import { Grid, GridItem, Center, Button, useDisclosure, Text } from '@chakra-ui/react'
 
-const Enclave = ({name, status, created, handleClick}) => {
-    const backgroundColor = status === 1 ? "bg-[#24BA27]" : "bg-red-600"
+import {
+    AlertDialog,
+    AlertDialogBody,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogContent,
+    AlertDialogOverlay,
+  } from '@chakra-ui/react'
+
+const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveName, setEnclaveName, handleDeleteClick}) => {
+    const [deleting, setDeleting] = useState(false);
+
+    const handleClose = (action) => {
+        const maybeDeleteRequest = async (action) => {
+            if (action === "delete") {
+                setDeleting(true)
+                await handleDeleteClick(enclaveName)
+                setDeleting(false)
+            }
+            setEnclaveName("")
+            onClose()
+        }
+        maybeDeleteRequest(action)
+    }
+
     return (
-        <div onClick={() => handleClick(name)}
-             className={`h-48 p-4 rounded-md border-2 flex ${backgroundColor} text-white items-center justify-center text-2xl flex-col`}>
-            <p className="text-3xl"> {name} </p>
-            <p className="text-xs"> {created} </p>
-        </div>
+        <AlertDialog
+            isOpen={isOpen}
+            leastDestructiveRef={cancelRef}
+            onClose={onClose}
+            isCentered
+      >
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize='lg'>
+              Delete Enclave: <Text fontSize='lg' fontWeight='bold' as='i'> {enclaveName} </Text>
+            </AlertDialogHeader>
+
+            <AlertDialogBody>
+              Are you sure? You can't undo this action afterwards.
+            </AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={() => handleClose("cancel")}>
+                Cancel
+              </Button>
+              <Button bg="red.600" _hover={{ bg: "red.700"}}  color="white" onClick={() => handleClose("delete")} ml={3} isLoading={deleting}>
+                Delete
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     )
 }
 
-const EnclaveMainComponent = ({enclaves, handleClick}) => (
+const Enclave = ({name, status, created, handleClick, handleDeleteClick, onOpen, setEnclaveName}) => {
+    const backgroundColor = status === 1 ? "bg-[#24BA27]" : "bg-red-500"
+    return (
+        <Grid
+            templateRows='repeat(3, 1fr)'
+            templateColumns='repeat(1, 1fr)'
+            className={`h-48 rounded-md border-4 ${backgroundColor} text-white items-center justify-center text-2xl`}
+            onClick={() => handleClick(name)}
+        >
+            <GridItem colSpan={4} align={"right"} style={{"z-index":100}}>
+                <Button bg="red.600" _hover={{ bg: "red.700"}} color="white" mr="2" onClick={(e)=> {
+                    e.stopPropagation()
+                    setEnclaveName(name)
+                    onOpen()
+                }}> Delete </Button>
+            </GridItem>
+            <GridItem colSpan={4}>
+                <Center>
+                    <p className="text-3xl"> {name} </p>
+                </Center>
+            </GridItem>
+            <GridItem colSpan={4} bg='papayawhip'>
+            </GridItem>
+        </Grid>
+    )
+}
+
+const EnclaveMainComponent = ({onOpen, enclaves, handleClick, handleDeleteClick, setEnclaveName}) => (
     <div className='grid grid-cols-2 gap-4 flex-1'>
         {
             enclaves.map(enclave => {
                 return (
                     <Enclave
+                        onOpen={onOpen}
                         key={enclave.name}
                         name={enclave.name}
                         status={enclave.status}
                         created={enclave.created}
                         handleClick={handleClick}
+                        handleDeleteClick={handleDeleteClick}
+                        setEnclaveName={setEnclaveName}
                     />
                 )
             })
@@ -31,7 +109,7 @@ const EnclaveMainComponent = ({enclaves, handleClick}) => (
     </div>
 )
 
-const EnclaveComponent = ({enclaves, handleClick, handleCreateEnvClick}) => {
+const EnclaveComponent = ({onOpen, enclaves, handleClick, handleCreateEnvClick, handleDeleteClick, setEnclaveName}) => {
     return (
         <div className="flex-1 bg-[#171923] overflow-auto">
             {
@@ -51,28 +129,42 @@ const EnclaveComponent = ({enclaves, handleClick, handleCreateEnvClick}) => {
                         </div>
                     </div>
                     :
-                    <EnclaveMainComponent enclaves={enclaves} handleClick={handleClick}/>
+                    <EnclaveMainComponent setEnclaveName={setEnclaveName} onOpen={onOpen} enclaves={enclaves} handleClick={handleClick} handleDeleteClick={handleDeleteClick}/>
             }
         </div>
     )
 }
 
-const Enclaves = ({enclaves, isLoading}) => {
+const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
     const navigate = useNavigate()
+    const cancelRef = useRef()
+    const [enclaveName, setEnclaveName] = useState("")
+    const { isOpen, onOpen, onClose } = useDisclosure()
+    
+    console.log(enclaveName)
 
     const handleCreateEnvClick = () => {
-        navigate("/enclave/create")
+        navigate("/catalog")
     }
+
     const handleClick = (enclaveName) => {
         navigate(`/enclaves/${enclaveName}`)
     }
-    console.log("is loading:", isLoading)
-    console.log("Updating with enclaves:", enclaves)
+
     return (
         <div className="flex h-full flex-grow">
             {
-                (isLoading) ? <LoadingOverlay/> : <EnclaveComponent enclaves={enclaves} handleClick={handleClick} handleCreateEnvClick={handleCreateEnvClick}/>
+                (isLoading) ? <LoadingOverlay/> : <EnclaveComponent setEnclaveName={setEnclaveName} onOpen={onOpen} enclaves={enclaves} handleClick={handleClick} handleCreateEnvClick={handleCreateEnvClick} handleDeleteClick={handleDeleteClick}/>
             }
+            <DeleteAlertDialog 
+                isOpen={isOpen} 
+                onOpen={onOpen} 
+                onClose={onClose}
+                cancelRef={cancelRef}
+                enclaveName={enclaveName}
+                setEnclaveName={setEnclaveName}
+                handleDeleteClick={handleDeleteClick}
+            />
         </div>
     ) 
 }

@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_plan_persistence"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
@@ -234,11 +235,15 @@ func (builtin *RunShCapabilities) Execute(ctx context.Context, _ *builtin_argume
 	return instructionResult, err
 }
 
-func (builtin *RunShCapabilities) TryResolveWith(instructionsAreEqual bool, _ kurtosis_plan_instruction.KurtosisPlanInstructionCapabilities, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
+func (builtin *RunShCapabilities) TryResolveWith(instructionsAreEqual bool, _ *enclave_plan_persistence.EnclavePlanInstruction, _ *enclave_structure.EnclaveComponents) enclave_structure.InstructionResolutionStatus {
 	if instructionsAreEqual {
 		return enclave_structure.InstructionIsEqual
 	}
 	return enclave_structure.InstructionIsUnknown
+}
+
+func (builtin *RunShCapabilities) FillPersistableAttributes(builder *enclave_plan_persistence.EnclavePlanInstructionBuilder) {
+	builder.SetType(RunShBuiltinName)
 }
 
 func getCommandToRun(builtin *RunShCapabilities) (string, error) {
