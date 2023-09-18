@@ -35,7 +35,7 @@ const (
 	isServiceIdentifierArgOptional = false
 	isServiceIdentifierArgGreedy   = false
 
-	fullUuidFlagKey       = "full-uuid"
+	fullUuidFlagKey        = "full-uuid"
 	fullUuidFlagKeyDefault = "false"
 
 	serviceNameTitleName           = "Name"
@@ -154,7 +154,7 @@ func PrintServiceInspect(ctx context.Context, kurtosisBackend backend_interface.
 	serviceStatus := userService.GetServiceStatus()
 	serviceStatusStr := service_status_stringifier.ServiceStatusStringifier(serviceStatus)
 	out.PrintOutLn(fmt.Sprintf("%s: %s", serviceStatusTitleName, serviceStatusStr))
-	
+
 	out.PrintOutLn(fmt.Sprintf("%s: %s", serviceImageTitleName, userService.GetContainer().GetImageName()))
 
 	out.PrintOutLn(fmt.Sprintf("%s:", servicePortsTitleName))

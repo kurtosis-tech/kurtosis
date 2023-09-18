@@ -2,11 +2,11 @@ package container
 
 // Represents a service container
 type Container struct {
-	status ContainerStatus
-	imageName string
+	status         ContainerStatus
+	imageName      string
 	entrypointArgs []string
-	cmdArgs []string
-	envVars map[string]string
+	cmdArgs        []string
+	envVars        map[string]string
 }
 
 func NewContainer(status ContainerStatus, imageName string, entrypointArgs []string, cmdArgs []string, envVars map[string]string) *Container {

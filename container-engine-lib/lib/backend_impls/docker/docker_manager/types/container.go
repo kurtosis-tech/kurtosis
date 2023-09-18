@@ -10,10 +10,10 @@ type Container struct {
 	labels           map[string]string
 	status           ContainerStatus
 	hostPortBindings map[nat.Port]*nat.PortBinding
-	imageName string
-	entrypointArgs []string
-	cmdArgs []string
-	envVars map[string]string
+	imageName        string
+	entrypointArgs   []string
+	cmdArgs          []string
+	envVars          map[string]string
 }
 
 func NewContainer(

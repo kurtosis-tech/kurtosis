@@ -352,7 +352,7 @@ func GetUserServiceKubernetesResourcesMatchingGuids(
 			return nil, stacktrace.NewError("Found %v Kubernetes pods associated with service GUID '%v'; this is a bug in Kurtosis", numPodsForGuid, serviceUuid)
 		} else if numPodsForGuid == 1 {
 			kubernetesPod := kubernetesPodsForGuid[0]
-		
+
 			numContainersForPod := len(kubernetesPod.Spec.Containers)
 			if numContainersForPod != 1 {
 				return nil, stacktrace.NewError("Found %v containers associated with service GUID '%v'; this is a bug in Kurtosis", numContainersForPod, serviceUuid)

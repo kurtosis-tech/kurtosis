@@ -1,12 +1,13 @@
 package docker_manager
 
 import (
+	"testing"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
@@ -69,9 +70,9 @@ func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T) {
 func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 	dockerContainer := types.ContainerJSON{
 		ContainerJSONBase: &types.ContainerJSONBase{
-			ID:      "abc123",
-			Name:   "noname",
-			Image:   "nginx",
+			ID:    "abc123",
+			Name:  "noname",
+			Image: "nginx",
 			State: &types.ContainerState{
 				Status: "running",
 			},
@@ -99,7 +100,7 @@ func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 			Entrypoint: []string{},
 			Cmd:        []string{},
 			Env:        []string{},
-		},	
+		},
 	}
 	kurtosisContainer, err := newContainerFromDockerContainer(dockerContainer)
 	require.NoError(t, err)

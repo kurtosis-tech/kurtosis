@@ -756,11 +756,11 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		}
 	}
 	serviceInfoContainer := &kurtosis_core_rpc_api_bindings.Container{
-		Status: serviceInfoContainerStatus,
-		ImageName: serviceContainer.GetImageName(),
+		Status:         serviceInfoContainerStatus,
+		ImageName:      serviceContainer.GetImageName(),
 		EntrypointArgs: serviceContainer.GetEntrypointArgs(),
-		CmdArgs: serviceContainer.GetCmdArgs(),
-		EnvVars: serviceContainer.GetEnvVars(),
+		CmdArgs:        serviceContainer.GetCmdArgs(),
+		EnvVars:        serviceContainer.GetEnvVars(),
 	}
 
 	serviceInfoResponse := binding_constructors.NewServiceInfo(
