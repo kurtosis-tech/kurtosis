@@ -8,10 +8,8 @@ import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import LoadingOverlay from "./LoadingOverflow";
 import {useAppContext} from "../context/AppState";
-import Editor from "@monaco-editor/react";
 import {CodeEditor} from "./CodeEditor";
 import {Box} from "@chakra-ui/react";
-import {ArrowForwardIcon} from '@chakra-ui/icons'
 
 const BreadCrumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
     const total = currentPath.length;
@@ -168,7 +166,7 @@ const FileArtifactInfo = ({enclaves}) => {
         navigate(`/enclaves/${enclaveName}/files/${fileArtifactName}`, {replace: true, state: {fileArtifacts}})
     }
 
-    const FileInfoComponent = ({files, handleFileClick, detailInfo}) => {
+    const FileInfoComponent = ({files, handleFileClick, detailInfo, fileName}) => {
         return (
             <div className='flex flex-col h-[90%] space-y-1 overflow-auto'>
                 {
@@ -183,7 +181,7 @@ const FileArtifactInfo = ({enclaves}) => {
                                             () => {
                                             },
                                             true,
-                                            "json_field.json",
+                                            detailInfo.path,
                                             [detailInfo.extension],
                                             500,
                                             detailInfo.textPreview,
@@ -233,6 +231,7 @@ const FileArtifactInfo = ({enclaves}) => {
                         files={currentFiles}
                         handleFileClick={handleFileClick}
                         detailInfo={detailInfo}
+                        fileName={fileArtifactName}
                     />
                 }
             </div>

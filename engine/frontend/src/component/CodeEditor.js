@@ -11,6 +11,7 @@ export const CodeEditor = (
     defaultWidthPx = 500,
     defaultState = languages.includes("json") ? "{\n}" : "",
     autoFormat = false,
+    lineNumbers = false,
 ) => {
     // https://github.com/microsoft/monaco-editor/blob/main/webpack-plugin/README.md#options
     const [value, setValue] = useState(defaultState)
@@ -180,7 +181,8 @@ export const CodeEditor = (
                 // onValidate={handleEditorValidation}
                 options={{
                     automaticLayout: true,
-                    selectOnLineNumbers: true,
+                    selectOnLineNumbers: lineNumbers,
+                    lineNumbers: lineNumbers,
                     languages: languages,
                     readOnly: readOnlySetting,
                     minimap: {
