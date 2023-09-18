@@ -265,7 +265,7 @@ func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]types.Im
 	logrus.Debugf("List of unused images to be pruned '%v'", unusedImages)
 	successfulPrunedImages := []types.ImageSummary{}
 	for _, image := range unusedImages {
-		imagePruneResponse, err := manager.dockerClient.ImageRemove(ctx, image.ID, types.ImageRemoveOptions{})
+		imagePruneResponse, err := manager.dockerClient.ImageRemove(ctx, image.ID, types.ImageRemoveOptions{}) //nolint:exhaustruct
 		if err != nil {
 			return successfulPrunedImages, stacktrace.Propagate(err, "Failed to remove image '%v'", image.ID)
 		}
