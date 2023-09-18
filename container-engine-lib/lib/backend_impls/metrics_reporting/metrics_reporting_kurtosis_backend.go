@@ -33,6 +33,14 @@ func (backend *MetricsReportingKurtosisBackend) FetchImage(ctx context.Context, 
 	return pulledFromRemote, nil
 }
 
+func (backend *MetricsReportingKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
+	prunedImages, err := backend.underlying.PruneUnusedImages(ctx)
+	if err != nil {
+		return prunedImages, stacktrace.Propagate(err, "An error occurred pruning unused images")
+	}
+	return prunedImages, nil
+}
+
 func (backend *MetricsReportingKurtosisBackend) CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,

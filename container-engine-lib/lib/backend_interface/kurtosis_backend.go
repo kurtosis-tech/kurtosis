@@ -24,11 +24,14 @@ import (
 // KurtosisBackend abstracts a Kurtosis backend, which will be a container engine (Docker or Kubernetes).
 // The heuristic for "do I need a method in KurtosisBackend?" here is "will I make one or more calls to
 // the underlying container engine?"
+// mockery -r --name=KurtosisBackend --filename=mock_kurtosis_backend.go --structname=MockKurtosisBackend --with-expecter --inpackage
 type KurtosisBackend interface {
 	// FetchImage always attempts to retrieve the latest image.
 	// If retrieving the latest [dockerImage] fails, the local image will be used.
 	// Returns True is it was retrieved from cloud or False if it's a local image
 	FetchImage(ctx context.Context, image string) (bool, error)
+
+	PruneUnusedImages(ctx context.Context) ([]string, error)
 
 	// Creates an engine with the given parameters
 	CreateEngine(

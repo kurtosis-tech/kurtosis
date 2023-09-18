@@ -84,6 +84,18 @@ func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image stri
 	return pulledFromRemote, nil
 }
 
+func (backend *DockerKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
+	prunedImages, err := backend.dockerManager.PruneUnusedImages(ctx)
+	prunedImageNames := []string{}
+	for _, prunedImage := range prunedImages {
+		prunedImageNames = append(prunedImageNames, prunedImage.ID)
+	}
+	if err != nil {
+		return prunedImageNames, stacktrace.Propagate(err, "An error occurred pruning image from kurtosis backend")
+	}
+	return prunedImageNames, nil
+}
+
 func (backend *DockerKurtosisBackend) CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,

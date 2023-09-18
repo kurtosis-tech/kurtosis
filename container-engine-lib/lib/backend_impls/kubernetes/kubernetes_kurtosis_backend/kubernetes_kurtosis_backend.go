@@ -122,6 +122,11 @@ func (backend *KubernetesKurtosisBackend) FetchImage(ctx context.Context, image 
 	return false, nil
 }
 
+func (backend *KubernetesKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
+	logrus.Warnf("PruneUnusedImages isn't implemented for Kubernetes yet")
+	return nil, nil
+}
+
 func (backend *KubernetesKurtosisBackend) CreateEngine(
 	ctx context.Context,
 	imageOrgAndRepo string,
