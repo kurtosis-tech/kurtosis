@@ -226,7 +226,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 
 	// we use a new cache for every interpretation b/c the content of the module might have changed
 	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
-	globalVariables, interpretationErr := interpreter.interpretInternal(moduleLocator, serializedStarlark, newInstructionsPlan, moduleGlobalCache)
+	globalVariables, interpretationErr := interpreter.interpretInternal(packageId, moduleLocator, serializedStarlark, newInstructionsPlan, moduleGlobalCache)
 	if interpretationErr != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
 	}
@@ -262,7 +262,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	if mainFuncParamsNum >= minimumParamsRequiredForPlan {
 		firstParamName, _ := mainFunction.Param(planParamIndex)
 		if firstParamName == planParamName {
-			kurtosisPlanInstructions := KurtosisPlanInstructions(interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
+			kurtosisPlanInstructions := KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider)
 			planModule := plan_module.PlanModule(newInstructionsPlan, enclaveComponents, interpreter.starlarkValueSerde, instructionsPlanMask, kurtosisPlanInstructions)
 			argsTuple = append(argsTuple, planModule)
 		}
@@ -312,13 +312,13 @@ func (interpreter *StartosisInterpreter) Interpret(
 	return startosis_constants.NoOutputObject, newInstructionsPlan, nil
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(moduleLocator string, serializedStarlark string, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) interpretInternal(packageId string, moduleLocator string, serializedStarlark string, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (starlark.StringDict, *startosis_errors.InterpretationError) {
 	// We spin up a new thread for every call to interpreterInternal such that the stacktrace provided by the Starlark
 	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
 	// previous calls inside the same thread
 	// The thread name is set to the locator of the module so that we can use it to resolve relative paths
 	thread := newStarlarkThread(moduleLocator)
-	predeclared, interpretationErr := interpreter.buildBindings(thread, instructionPlan, moduleGlobalCache)
+	predeclared, interpretationErr := interpreter.buildBindings(packageId, thread, instructionPlan, moduleGlobalCache)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -331,9 +331,9 @@ func (interpreter *StartosisInterpreter) interpretInternal(moduleLocator string,
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) buildBindings(packageId string, thread *starlark.Thread, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (*starlark.StringDict, *startosis_errors.InterpretationError) {
 	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
-		result, err := interpreter.interpretInternal(moduleId, serializedStartosis, instructionPlan, moduleGlobalCache)
+		result, err := interpreter.interpretInternal(packageId, moduleId, serializedStartosis, instructionPlan, moduleGlobalCache)
 		if err != nil {
 			return nil, err
 		}
@@ -350,7 +350,7 @@ func (interpreter *StartosisInterpreter) buildBindings(thread *starlark.Thread, 
 	predeclared[builtins.KurtosisModuleName] = kurtosisModule
 
 	// Add all Kurtosis helpers
-	for _, kurtosisHelper := range KurtosisHelpers(recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, moduleGlobalCache) {
+	for _, kurtosisHelper := range KurtosisHelpers(packageId, recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, moduleGlobalCache) {
 		predeclared[kurtosisHelper.Name()] = kurtosisHelper
 	}
 
