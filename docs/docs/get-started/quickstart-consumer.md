@@ -1,6 +1,6 @@
 ---
-title: Run a Package
-sidebar_label: Run a Package
+title: Quickstart - Run a Package
+sidebar_label: Quickstart - Run a Package
 slug: /quickstart-run-a-package
 toc_max_heading_level: 2
 sidebar_position: 1
@@ -246,7 +246,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [eth2-package]: https://github.com/kurtosis-tech/eth2-package/
 
 <!-- Misc -->
-[homepage]: ../home.md
+[homepage]: home.md
 [kurtosis-managed-packages]: https://github.com/kurtosis-tech?q=in%3Aname+package&type=all&language=&sort=
 [wild-kurtosis-packages]: https://github.com/search?q=filename%3Akurtosis.yml&type=code
 [bazel-github]: https://github.com/bazelbuild/bazel/

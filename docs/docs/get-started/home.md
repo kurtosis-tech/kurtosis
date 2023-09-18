@@ -37,7 +37,7 @@ In Kurtosis, test environments have these properties:
 
 ## Try out Kurtosis now
 
-Try Kurtosis now with our [quickstart](./quickstart.md).
+Try Kurtosis now with our [quickstart](./quickstart-consumer.md).
 
 :::info
 If you have questions, need help, or simply want to learn more, schedule a live session with us, go [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
