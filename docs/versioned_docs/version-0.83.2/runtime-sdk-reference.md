@@ -1,7 +1,7 @@
 ---
-title: SDK
-sidebar_label: SDK
-slug: /SDK
+title: Runtime SDK Reference
+sidebar_label: Runtime SDK Reference
+slug: /runtime-sdk-reference
 toc_min_heading_level: 2
 toc_max_heading_level: 2
 ---
