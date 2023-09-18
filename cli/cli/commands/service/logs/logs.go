@@ -38,6 +38,8 @@ const (
 	isServiceIdentifierArgGreedy   = false
 
 	shouldFollowLogsFlagKey  = "follow"
+	returnNumLogsFlagKey     = "num"
+	returnAllLogsFlagKey     = "all"
 	matchTextFilterFlagKey   = "match"
 	matchRegexFilterFlagKey  = "regex-match"
 	invertMatchFilterFlagKey = "invert-match"
@@ -57,6 +59,12 @@ var doNotFilterLogLines *kurtosis_context.LogLineFilter = nil
 var defaultShouldFollowLogs = strconv.FormatBool(false)
 var defaultInvertMatchFilterFlagValue = strconv.FormatBool(false)
 
+// default return all logs
+var defaultShouldReturnAllLogs = strconv.FormatBool(true)
+
+// because default is to return all logs, set default num log lines to return to 0
+var defaultShouldReturnNumLogLines = strconv.Itoa(0)
+
 var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.ServiceLogsCmdStr,
 	ShortDescription:          "Get service logs",
@@ -70,6 +78,20 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Shorthand: "f",
 			Type:      flags.FlagType_Bool,
 			Default:   defaultShouldFollowLogs,
+		},
+		{
+			Key:       returnAllLogsFlagKey,
+			Usage:     "Gets all logs.",
+			Shorthand: "a",
+			Type:      flags.FlagType_Bool,
+			Default:   defaultShouldReturnAllLogs,
+		},
+		{
+			Key:       returnNumLogsFlagKey,
+			Usage:     "Get the last X log lines.",
+			Shorthand: "n",
+			Type:      flags.FlagType_Uint32,
+			Default:   defaultShouldReturnNumLogLines,
 		},
 		{
 			Key: matchTextFilterFlagKey,
@@ -141,6 +163,16 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the should-follow-logs flag using key '%v'", shouldFollowLogsFlagKey)
 	}
 
+	shouldReturnAllLogs, err := flags.GetBool(returnAllLogsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the 'all' flag using key '%v'", returnAllLogsFlagKey)
+	}
+
+	numLogLines, err := flags.GetUint32(returnNumLogsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the 'num' flag using key '%v'", returnNumLogsFlagKey)
+	}
+
 	matchTextStr, err := flags.GetString(matchTextFilterFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the match flag using key '%v'", matchTextFilterFlagKey)
@@ -172,7 +204,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the log line filter using these filter flag values '%s=%s', '%s=%s', '%s=%v'", matchTextFilterFlagKey, matchTextStr, matchRegexFilterFlagKey, matchRegexStr, invertMatchFilterFlagKey, invertMatch)
 	}
 
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, userServiceUuids, shouldFollowLogs, logLineFilter)
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, userServiceUuids, shouldFollowLogs, shouldReturnAllLogs, numLogLines, logLineFilter)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting user service logs from user services with UUIDs '%+v' in enclave '%v' and with follow logs value '%v'", userServiceUuids, enclaveIdentifier, shouldFollowLogs)
 	}
