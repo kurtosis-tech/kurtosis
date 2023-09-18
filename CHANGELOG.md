@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.83.0](https://github.com/kurtosis-tech/kurtosis/compare/0.82.24...0.83.0) (2023-09-18)
+
+
+### ⚠ BREAKING CHANGES
+
+* rename assert to verify ([#1295](https://github.com/kurtosis-tech/kurtosis/issues/1295))
+* print a downloaded container images summary after pulling images from remote or locally ([#1315](https://github.com/kurtosis-tech/kurtosis/issues/1315))
+
+### Features
+
+* Clean CLI command now removes unsued Kurtosis images ([#1314](https://github.com/kurtosis-tech/kurtosis/issues/1314)) ([a924f4a](https://github.com/kurtosis-tech/kurtosis/commit/a924f4a7a1b707695bd8ffc7208c1871ea0432ad)), closes [#1131](https://github.com/kurtosis-tech/kurtosis/issues/1131)
+* print a downloaded container images summary after pulling images from remote or locally ([#1315](https://github.com/kurtosis-tech/kurtosis/issues/1315)) ([b822870](https://github.com/kurtosis-tech/kurtosis/commit/b822870d10bcb3614ec3cf2fed3db46dd52d9d42)), closes [#1292](https://github.com/kurtosis-tech/kurtosis/issues/1292)
+
+
+### Code Refactoring
+
+* rename assert to verify ([#1295](https://github.com/kurtosis-tech/kurtosis/issues/1295)) ([651df40](https://github.com/kurtosis-tech/kurtosis/commit/651df406ecf66518005c806d9ccd1bd3260e4af3))
+
 ## [0.82.24](https://github.com/kurtosis-tech/kurtosis/compare/0.82.23...0.82.24) (2023-09-14)
 
 
