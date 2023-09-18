@@ -408,6 +408,12 @@ export declare class StarlarkRunResponseLine extends Message<StarlarkRunResponse
      */
     value: StarlarkWarning;
     case: "warning";
+  } | {
+    /**
+     * @generated from field: api_container_api.StarlarkInfo info = 7;
+     */
+    value: StarlarkInfo;
+    case: "info";
   } | { case: undefined; value?: undefined };
 
   constructor(data?: PartialMessage<StarlarkRunResponseLine>);
@@ -423,6 +429,30 @@ export declare class StarlarkRunResponseLine extends Message<StarlarkRunResponse
   static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StarlarkRunResponseLine;
 
   static equals(a: StarlarkRunResponseLine | PlainMessage<StarlarkRunResponseLine> | undefined, b: StarlarkRunResponseLine | PlainMessage<StarlarkRunResponseLine> | undefined): boolean;
+}
+
+/**
+ * @generated from message api_container_api.StarlarkInfo
+ */
+export declare class StarlarkInfo extends Message<StarlarkInfo> {
+  /**
+   * @generated from field: string info_message = 1;
+   */
+  infoMessage: string;
+
+  constructor(data?: PartialMessage<StarlarkInfo>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.StarlarkInfo";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): StarlarkInfo;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): StarlarkInfo;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): StarlarkInfo;
+
+  static equals(a: StarlarkInfo | PlainMessage<StarlarkInfo> | undefined, b: StarlarkInfo | PlainMessage<StarlarkInfo> | undefined): boolean;
 }
 
 /**

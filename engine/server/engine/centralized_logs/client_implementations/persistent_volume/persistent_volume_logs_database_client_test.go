@@ -510,7 +510,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 		logLine3a}
 
 	week3logLinesStr := strings.Join(week3logLines, "\n") + "\n"
-	week4logLinesStr := strings.Join(week4logLines, "\n")
+	week4logLinesStr := strings.Join(week4logLines, "\n") + "\n"
 
 	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(4), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(3), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)

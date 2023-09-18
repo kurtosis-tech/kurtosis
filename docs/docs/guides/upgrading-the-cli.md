@@ -34,14 +34,14 @@ brew update && brew upgrade kurtosis-tech/tap/kurtosis-cli
 <TabItem value="apt" label="apt (Ubuntu)">
 
 ```bash
-apt install --only-upgrade kurtosis-cli
+apt update && apt install --only-upgrade kurtosis-cli
 ```
 
 </TabItem>
 <TabItem value="yum" label="yum (RHEL)">
 
 ```bash
-yum upgrade kurtosis-cli
+yum update && upgrade kurtosis-cli
 ```
 
 </TabItem>
@@ -86,7 +86,7 @@ In order to upgrade Kurtosis to another version *after you've performed a downgr
 [install-guide]: ./installing-the-cli.md
 [cli-changelog]: ../changelog.md
 [metrics-philosophy]: ../explanations/metrics-philosophy.md
-[quickstart]: ../quickstart/
+[quickstart]: ../get-started/quickstart.md
 [installing-command-line-completion]: ./adding-command-line-completion.md
 
 [release-artifacts]: https://github.com/kurtosis-tech/kurtosis-cli-release-artifacts/releases
