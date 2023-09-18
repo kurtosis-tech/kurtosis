@@ -167,7 +167,6 @@ const FileArtifactInfo = ({enclaves}) => {
     }
 
     const FileInfoComponent = ({files, handleFileClick, detailInfo, fileName}) => {
-        console.log(detailInfo)
         return (
             <div className='flex flex-col h-[90%] space-y-1 overflow-auto'>
                 {
