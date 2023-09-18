@@ -2,7 +2,13 @@ package test_engine
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
+	"testing"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -13,11 +19,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.starlark.net/starlark"
-	"io"
-	"net/http"
-	"net/url"
-	"strings"
-	"testing"
 )
 
 type addServicesTestCase struct {
@@ -85,8 +86,8 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		mock.Anything,
 	).Times(1).Return(
 		map[service.ServiceName]*service.Service{
-			TestServiceName:  service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), container_status.ContainerStatus_Running, nil, nil, nil),
-			TestServiceName2: service.NewService(service.NewServiceRegistration(TestServiceName2, TestServiceUuid2, TestEnclaveUuid, nil, string(TestServiceName2)), container_status.ContainerStatus_Running, nil, nil, nil),
+			TestServiceName:  service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, TestContainerImageName, nil, nil, nil)),
+			TestServiceName2: service.NewService(service.NewServiceRegistration(TestServiceName2, TestServiceUuid2, TestEnclaveUuid, nil, string(TestServiceName2)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, TestContainerImageName, nil, nil, nil)),
 		},
 		map[service.ServiceName]error{},
 		nil,
