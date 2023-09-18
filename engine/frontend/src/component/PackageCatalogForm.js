@@ -115,6 +115,30 @@ const KeyValueTable = (dataCallBack) => {
         </Box>
     )
 }
+
+const prettyPrintTypeSpecialCases = (type, arg) => {
+    if (type === "LIST") {
+        try {
+            const dataType = arg.typeV2.innerType1
+            if (dataType === undefined) return "LIST"
+            return `${dataType} LIST`.toLowerCase()
+        } catch (e) {
+            return "LIST".toLowerCase()
+        }
+    }
+    if (type === "DICT") {
+        try {
+            const x = arg.typeV2.innerType1
+            const y = arg.typeV2.innerType2
+            if (x === undefined || y === undefined) return "DICT"
+            return `${x} -> ${y}`.toLowerCase()
+        } catch (e) {
+            return "DICT".toLowerCase()
+        }
+    }
+    return type.toLowerCase()
+}
+
 const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
         let dataType = "";
@@ -134,22 +158,11 @@ const renderArgs = (args, handleChange, formData, errorData) => {
             case "DICT":
                 dataType = "DICT"
                 break
+            case "LIST":
+                dataType = "LIST"
+                break
             default:
                 dataType = "JSON"
-        }
-
-        const prettyPrintIfDict = (value) => {
-            if (value === "DICT") {
-                try {
-                    const x = arg.typeV2.innerType1
-                    const y = arg.typeV2.innerType2
-                    if (x === undefined || y === undefined) return "DICT"
-                    return `${x} -> ${y}`
-                } catch (e) {
-                    return "DICT"
-                }
-            }
-            return value
         }
 
         // no need to show plan arg as it's internal!
@@ -181,7 +194,7 @@ const renderArgs = (args, handleChange, formData, errorData) => {
 
                     </Text>
                     <Text marginLeft={3} as='kbd' fontSize='xs'
-                          align={"right"}>{prettyPrintIfDict(dataType).toLowerCase()}</Text>
+                          align={"right"}>{prettyPrintTypeSpecialCases(dataType, arg)}</Text>
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
                     {errorData[index].length > 0 ?
@@ -202,6 +215,7 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
         case "INTEGER":
         case "STRING":
         case "BOOL":
+        case "LIST":
         case "FLOAT":
             return (
                 <Input
@@ -318,23 +332,68 @@ const checkValidBooleanType = (data) => {
     return ["TRUE", "FALSE"].includes(trimData.toUpperCase())
 }
 
+const checkValidListType = (data, subType) => {
+    if (data === "undefined") {
+        return false
+    }
+    try {
+        parseList(data, subType)
+        return true
+    } catch (ex) {
+        return false
+    }
+}
+
+
+// Referencing this list:
+// https://github.com/kurtosis-tech/kurtosis-package-indexer/blob/main/server/crawler/starlark_value_type.go#L25-L38
+// 		0: "BOOL",
+// 		1: "STRING",
+// 		2: "INTEGER",
+// 		3: "FLOAT",
+// 		4: "DICT",
+// 		5: "JSON",
+// 		6: "LIST",
+// 	}
+const convertDataTypeToJsType = (dataType) => {
+    const normalizedDataType = dataType.trim().toLowerCase()
+    switch (normalizedDataType) {
+        case "int":
+        case "integer":
+        case "float":
+            return "number"
+        case "str": // Added python type for good measure
+        case "string":
+            return "string"
+        case "bool":
+        case "boolean":
+            return "boolean"
+        case "dict":
+        case "json":
+            return "object"
+    }
+}
+
+const parseList = (data, rawDataType) => {
+    const dataType = rawDataType
+    const convertedDataType = convertDataTypeToJsType(dataType)
+    const trimData = data.trim()
+    const jsonData = `[${trimData}]`
+    const parsedJson = JSON.parse(jsonData)
+    parsedJson.forEach(item => {
+        const type = typeof item;
+        if (type !== convertedDataType) {
+            throw `Invalid datatype: Expected ${convertedDataType} but got ${type}`;
+        }
+    })
+    return parsedJson
+}
+
 const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const navigate = useNavigate()
     const location = useLocation()
     const {state} = location;
     const {kurtosisPackage} = state
-
-    // console.log("kurtosisPackage ", kurtosisPackage)
-
-    // TODO: REMOVE, FOR TESTING:
-    kurtosisPackage.args.forEach(item => {
-        if (item.name === "remote_chains") {
-            item.type = "DICT"
-            item.data = {"ab": "cd"}
-        } else if (item.type === undefined) {
-            item.type = "JSON"
-        }
-    })
 
     const [runningPackage, setRunningPackage] = useState(false)
     const [enclaveName, setEnclaveName] = useState("")
@@ -399,7 +458,12 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 valid = checkValidBooleanType(formData[key])
             } else if (type === "FLOAT") {
                 valid = checkValidFloatType(formData[key])
-            } else if (type === "JSON" || type === "DICT") {
+            } else if (type === "LIST") {
+                let subType = kurtosisPackage.args[key]["typeV2"]["innerType1"]
+                valid = checkValidListType(formData[key], subType)
+            } else if (type === "DICT") {
+                valid = checkValidJsonType(formData[key])
+            } else if (type === "JSON") {
                 valid = checkValidJsonType(formData[key])
             } else {
                 valid = checkValidUndefinedType(formData[key])
@@ -408,10 +472,10 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             let typeToPrint = type
             if (type === undefined) {
                 typeToPrint = "JSON"
-            }
-
-            if (type === "BOOL") {
+            } else if (type === "BOOL") {
                 typeToPrint = "BOOLEAN (TRUE/FALSE)"
+            } else {
+                typeToPrint = prettyPrintTypeSpecialCases(type, kurtosisPackage.args[key])
             }
 
             if (!valid) {
@@ -450,6 +514,10 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                         args[argName] = (val === "TRUE") ? true : false
                     } else if (kurtosisPackage.args[key]["type"] === "FLOAT") {
                         val = parseFloat(value)
+                        args[argName] = val
+                    } else if (kurtosisPackage.args[key]["type"] === "LIST") {
+                        let subType = kurtosisPackage.args[key]["typeV2"]["innerType1"]
+                        val = parseList(value, subType)
                         args[argName] = val
                     } else if (kurtosisPackage.args[key]["type"] === "STRING") {
                         args[argName] = value
