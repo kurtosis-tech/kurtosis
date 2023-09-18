@@ -791,13 +791,13 @@ jobs:
                   docker container restart $(echo $apic_container_id)
                   ${KURTOSIS_BINPATH} service rm test-apic-restart service-test
 
-            # Test APIC restart
+       # Test APIC idempotent runs restart
       - when:
           condition:
             equal: [ "docker", << parameters.cli-cluster-backend >> ]
           steps:
             - run:
-                name: Test APIC restart
+                name: Test APIC idempotent restart
                 command: |
                   ${KURTOSIS_BINPATH} enclave add -n test-apic-idempotent-restart
                   ${KURTOSIS_BINPATH} run github.com/kurtosis-tech/datastore-army-package --enclave test-apic-idempotent-restart
