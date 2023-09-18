@@ -43,6 +43,8 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 	userServiceUuids map[service.ServiceUUID]bool,
 	conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters,
 	shouldFollowLogs bool,
+	shouldReturnAllLogs bool,
+	numLogLines uint32,
 ) (
 	chan map[service.ServiceUUID][]logline.LogLine,
 	chan error,
@@ -75,6 +77,8 @@ func (client *persistentVolumeLogsDatabaseClient) StreamUserServiceLogs(
 			serviceUuid,
 			conjunctiveLogFiltersWithRegex,
 			shouldFollowLogs,
+			shouldReturnAllLogs,
+			numLogLines,
 		)
 	}
 
@@ -132,6 +136,8 @@ func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
+	shouldReturnAllLogs bool,
+	numLogLines uint32,
 ) {
 	defer wgSenders.Done()
 	client.streamStrategy.StreamLogs(
@@ -142,5 +148,7 @@ func (client *persistentVolumeLogsDatabaseClient) streamServiceLogLines(
 		enclaveUuid,
 		serviceUuid,
 		conjunctiveLogLinesFiltersWithRegex,
-		shouldFollowLogs)
+		shouldFollowLogs,
+		shouldReturnAllLogs,
+		numLogLines)
 }

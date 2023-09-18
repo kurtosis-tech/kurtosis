@@ -37,6 +37,8 @@ func (client *kurtosisBackendLogsDatabaseClient) StreamUserServiceLogs(
 	userServiceUuids map[service.ServiceUUID]bool,
 	conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters,
 	shouldFollowLogs bool,
+	shouldReturnAllLogs bool, // unimplemented for kurtosis backend logs db
+	numLogLines uint32, // unimplemented for kurtosis backend logs db client
 ) (
 	chan map[service.ServiceUUID][]logline.LogLine,
 	chan error,

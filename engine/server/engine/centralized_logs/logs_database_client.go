@@ -14,6 +14,8 @@ type LogsDatabaseClient interface {
 		userServiceUuids map[service.ServiceUUID]bool,
 		conjunctiveLogLineFilters logline.ConjunctiveLogLineFilters,
 		shouldFollowLogs bool,
+		shouldReturnAllLogs bool, // if true, stream all log lines
+		numLogLines uint32, // if [shouldReturnAllLogs] is false, stream that only the last [numLogLines]
 	) (
 		userServiceLogsByServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 		errChan chan error,

@@ -36,6 +36,8 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
+	shouldReturnAllLogs bool,
+	numLogLines uint32,
 ) {
 	// logs are stored per enclave id, per service uuid, eg. <base path>/123440231421/54325342w2341.json
 	logsFilepath := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, string(enclaveUuid), string(serviceUuid), volume_consts.Filetype)
