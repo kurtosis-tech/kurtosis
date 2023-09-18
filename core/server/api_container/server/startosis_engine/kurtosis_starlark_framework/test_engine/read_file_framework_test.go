@@ -27,7 +27,7 @@ func (suite *KurtosisHelperTestSuite) TestReadFile() {
 }
 
 func (t *readFileTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
-	return read_file.NewReadFileHelper(t.packageContentProvider)
+	return read_file.NewReadFileHelper("", t.packageContentProvider)
 }
 
 func (t *readFileTestCase) GetStarlarkCode() string {
