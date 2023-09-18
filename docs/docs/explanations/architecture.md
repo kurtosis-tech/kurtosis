@@ -111,5 +111,5 @@ For day-to-day operation, we also provide [a CLI][cli-reference]. This is simply
 [enclave-ls-reference]: ../cli-reference/enclave-ls.md
 [enclave-inspect-reference]: ../cli-reference/enclave-inspect.md
 [enclave-rm-reference]: ../cli-reference/enclave-rm.md
-[quickstart]: ../quickstart.md
-[sdk-reference]: ../sdk.md
+[quickstart]: ../get-started/quickstart.md
+[sdk-reference]: ../runtime-sdk-reference.md

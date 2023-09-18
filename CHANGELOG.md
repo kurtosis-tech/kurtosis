@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.83.2](https://github.com/kurtosis-tech/kurtosis/compare/0.83.1...0.83.2) (2023-09-18)
+
+
+### Features
+
+* disable line numbers and use the name of the file...  ([#1329](https://github.com/kurtosis-tech/kurtosis/issues/1329)) ([1fd0e5a](https://github.com/kurtosis-tech/kurtosis/commit/1fd0e5a10331617e9efdb51e748abac111726bd9))
+* Make service start and stop support multiple services ([#1304](https://github.com/kurtosis-tech/kurtosis/issues/1304)) ([1b34b00](https://github.com/kurtosis-tech/kurtosis/commit/1b34b00578b4a989575bbb96ecf9f2562e9db4cf)), closes [#1089](https://github.com/kurtosis-tech/kurtosis/issues/1089)
+
 ## [0.83.1](https://github.com/kurtosis-tech/kurtosis/compare/0.83.0...0.83.1) (2023-09-18)
 
 
