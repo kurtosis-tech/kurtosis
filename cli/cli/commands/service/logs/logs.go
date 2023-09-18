@@ -59,11 +59,8 @@ var doNotFilterLogLines *kurtosis_context.LogLineFilter = nil
 var defaultShouldFollowLogs = strconv.FormatBool(false)
 var defaultInvertMatchFilterFlagValue = strconv.FormatBool(false)
 
-// default return all logs
-var defaultShouldReturnAllLogs = strconv.FormatBool(true)
-
-// because default is to return all logs, set default num log lines to return to 0
-var defaultShouldReturnNumLogLines = strconv.Itoa(0)
+var defaultShouldReturnAllLogs = strconv.FormatBool(false)
+var defaultShouldReturnNumLogLines = strconv.Itoa(200)
 
 var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.ServiceLogsCmdStr,

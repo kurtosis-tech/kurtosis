@@ -149,6 +149,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 
 			if isLastLogLine {
 				if !shouldReturnAllLogs {
+					logrus.Infof("Sending last '%v' log lines...", numLogLines)
 					for _, line := range logLines {
 						if err = strategy.sendJsonLogLine(line, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 							streamErrChan <- stacktrace.Propagate(err, "An error occurred sending log line for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
