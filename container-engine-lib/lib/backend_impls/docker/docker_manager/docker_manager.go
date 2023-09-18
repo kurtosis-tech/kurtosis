@@ -29,6 +29,7 @@ import (
 	"io"
 	"math"
 	"net"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -131,6 +132,8 @@ const (
 	coresToMilliCores      = 1000
 	bytesInMegaBytes       = 1000000
 	dontStreamStats        = false
+
+	kurtosisTagPrefix = "kurtosistech/"
 )
 
 type RestartPolicy string
@@ -252,6 +255,61 @@ func (manager *DockerManager) ListNetworks(ctx context.Context) ([]types.Network
 	// If we ever need that field, we have to call an InspectNetwork, and even then it seems to have some amount of
 	// nondeterminism (i.e. brand-new containers won't show up)
 	return networks, nil
+}
+
+func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+	unusedImages, err := manager.ListUnusedImages(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list unused images")
+	}
+	logrus.Debugf("List of unused images to be pruned '%v'", unusedImages)
+	successfulPrunedImages := []types.ImageSummary{}
+	for _, image := range unusedImages {
+		imagePruneResponse, err := manager.dockerClient.ImageRemove(ctx, image.ID, types.ImageRemoveOptions{}) //nolint:exhaustruct
+		if err != nil {
+			return successfulPrunedImages, stacktrace.Propagate(err, "Failed to remove image '%v'", image.ID)
+		}
+		logrus.Debugf("Pruned image '%v' with response '%v'", image, imagePruneResponse)
+		successfulPrunedImages = append(successfulPrunedImages, image)
+	}
+	return successfulPrunedImages, nil
+}
+
+func containsSemVer(s string) bool {
+	// Matches patterns like X.Y.Z
+	semVerRegex := `\b(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\b`
+	matched, _ := regexp.MatchString(semVerRegex, s)
+	return matched
+}
+
+func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+	images, err := manager.dockerClient.ImageList(ctx, types.ImageListOptions{}) //nolint:exhaustruct
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
+	}
+	containers, err := manager.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true}) //nolint:exhaustruct
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
+	}
+
+	usedImages := make(map[string]bool)
+	for _, cont := range containers {
+		usedImages[cont.ImageID] = true
+	}
+
+	unusedImages := []types.ImageSummary{}
+	for _, image := range images {
+		if _, used := usedImages[image.ID]; used {
+			logrus.Debugf("Skipping image '%v' since its in use", image.ID)
+			continue
+		}
+		for _, tag := range image.RepoTags {
+			if strings.Contains(tag, kurtosisTagPrefix) && containsSemVer(tag) {
+				unusedImages = append(unusedImages, image)
+			}
+		}
+	}
+	return unusedImages, nil
 }
 
 /*
@@ -463,7 +521,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	err := manager.FetchImage(ctx, dockerImage)
+	_, err := manager.FetchImage(ctx, dockerImage)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
@@ -1121,10 +1179,39 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	return result, nil
 }
 
-// [FetchImage] always attempts to retrieve the latest [dockerImage].
+// [FetchImage] uses the local [dockerImage] if it's available.
+// If unavailable, will attempt to fetch the latest image.
+// Returns error if local [dockerImage] is unavailable and pulling image fails.
+func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string) (bool, error) {
+	// if the image name doesn't have version information we concatenate `:latest`
+	// this behavior is similar to CreateAndStartContainer above
+	// this allows us to be deterministic in our behaviour
+	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
+		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
+	}
+	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
+	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
+	}
+	logrus.Tracef("Is image available locally?: %v", doesImageExistLocally)
+
+	if !doesImageExistLocally {
+		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
+		err = manager.pullImage(ctx, dockerImage)
+		if err != nil {
+			return false, stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
+		}
+		logrus.Tracef("Image successfully pulled from remote to local")
+	}
+
+	return !doesImageExistLocally, nil
+}
+
+// [FetchLatestImage] always attempts to retrieve the latest [dockerImage].
 // If retrieving the latest [dockerImage] fails, the local image will be used.
 // Returns error, if no local image is available after retrieving latest fails.
-func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string) error {
+func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage string) error {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
@@ -1152,35 +1239,6 @@ func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository.", dockerImage)
 		}
-	}
-
-	return nil
-}
-
-// [FetchLocalImage] uses the local [dockerImage] if it's available.
-// If unavailable, will attempt to fetch the latest image.
-// Returns error if local [dockerImage] is unavailable and pulling image fails.
-func (manager *DockerManager) FetchLocalImage(ctx context.Context, dockerImage string) error {
-	// if the image name doesn't have version information we concatenate `:latest`
-	// this behavior is similar to CreateAndStartContainer above
-	// this allows us to be deterministic in our behaviour
-	if !strings.Contains(dockerImage, dockerTagSeparatorChar) {
-		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
-	}
-	logrus.Tracef("Checking if image '%v' is available locally...", dockerImage)
-	doesImageExistLocally, err := manager.isImageAvailableLocally(ctx, dockerImage)
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred checking for local availability of Docker image '%v'", dockerImage)
-	}
-	logrus.Tracef("Is image available locally?: %v", doesImageExistLocally)
-
-	if !doesImageExistLocally {
-		logrus.Tracef("Image doesn't exist locally, so attempting to pull it...")
-		err = manager.pullImage(ctx, dockerImage)
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to pull Docker image '%v' from remote image repository", dockerImage)
-		}
-		logrus.Tracef("Image successfully pulled from remote to local")
 	}
 
 	return nil

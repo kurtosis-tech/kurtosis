@@ -136,6 +136,17 @@ export const StarlarkRunResponseLine = proto3.makeMessageType(
     { no: 4, name: "instruction_result", kind: "message", T: StarlarkInstructionResult, oneof: "run_response_line" },
     { no: 5, name: "run_finished_event", kind: "message", T: StarlarkRunFinishedEvent, oneof: "run_response_line" },
     { no: 6, name: "warning", kind: "message", T: StarlarkWarning, oneof: "run_response_line" },
+    { no: 7, name: "info", kind: "message", T: StarlarkInfo, oneof: "run_response_line" },
+  ],
+);
+
+/**
+ * @generated from message api_container_api.StarlarkInfo
+ */
+export const StarlarkInfo = proto3.makeMessageType(
+  "api_container_api.StarlarkInfo",
+  () => [
+    { no: 1, name: "info_message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ],
 );
 
