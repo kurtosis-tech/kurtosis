@@ -41,7 +41,6 @@ func (deprecationNotice *DeprecationNotice) GetMaybeShouldShowDeprecationNoticeB
 }
 
 func (deprecationNotice *DeprecationNotice) IsDeprecatedDateScheduled() bool {
-	isDeprecatedDateSet := true
 
 	if deprecationNotice.deprecationDate.Day < 1 ||
 		deprecationNotice.deprecationDate.Day > 31 ||
@@ -51,7 +50,7 @@ func (deprecationNotice *DeprecationNotice) IsDeprecatedDateScheduled() bool {
 		return false
 	}
 
-	return isDeprecatedDateSet
+	return true
 }
 
 // Deprecation DeprecationDate - date when the field or the instruction will be deprecated
