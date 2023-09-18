@@ -72,6 +72,16 @@ func run(
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", shouldCleanAll)
 	}
 
+	if shouldCleanAll {
+		images, err := kurtosisBackend.PruneUnusedImages(ctx)
+		if len(images) > 0 {
+			logrus.Infof("Pruned unused images '%v'", images)
+		}
+		if err != nil {
+			return stacktrace.Propagate(err, "Failed to prune all unused images")
+		}
+	}
+
 	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
 	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
 		oldEngineCleaningPhaseTitle: func() ([]string, []error, error) {
@@ -126,6 +136,7 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
+
 func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend) ([]string, []error, error) {
 
 	engineFilters := &engine.EngineFilters{
