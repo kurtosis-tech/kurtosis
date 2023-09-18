@@ -29,7 +29,7 @@ func NewDockerImagesValidator(kurtosisBackend *backend_interface.KurtosisBackend
 // - An error channel that receives all errors happening during validation
 // Note that since it is an async function, the channels are not closed by this function, consumers need to take
 // care of closing them.
-func (validator *DockerImagesValidator) Validate(ctx context.Context, environment *ValidatorEnvironment, imageDownloadStarted chan<- string, imageDownloadFinished chan<- string, pullErrors chan<- error) {
+func (validator *DockerImagesValidator) Validate(ctx context.Context, environment *ValidatorEnvironment, imageDownloadStarted chan<- string, imageDownloadFinished chan<- *ValidatedImage, pullErrors chan<- error) {
 	// We use a buffered channel to control concurrency. We push a bool to this channel when a download starts, and
 	// pop one when it finishes
 	imageCurrentlyDownloading := make(chan bool, maxNumberOfConcurrentDownloads)
@@ -49,22 +49,23 @@ func (validator *DockerImagesValidator) Validate(ctx context.Context, environmen
 	logrus.Debug("All image validation submitted, currently in progress.")
 }
 
-func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrentlyDownloading chan bool, backend *backend_interface.KurtosisBackend, image string, pullErrors chan<- error, imageDownloadStarted chan<- string, imageDownloadFinished chan<- string) {
-	logrus.Debugf("Requesting the download of image: '%s'", image)
+func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrentlyDownloading chan bool, backend *backend_interface.KurtosisBackend, imageName string, pullErrors chan<- error, imageDownloadStarted chan<- string, imageDownloadFinished chan<- *ValidatedImage) {
+	logrus.Debugf("Requesting the download of image: '%s'", imageName)
+	var imagePulledFromRemote bool
 	defer wg.Done()
 	imageCurrentlyDownloading <- true
-	imageDownloadStarted <- image
+	imageDownloadStarted <- imageName
 	defer func() {
 		<-imageCurrentlyDownloading
-		imageDownloadFinished <- image
+		imageDownloadFinished <- NewValidatedImage(imageName, imagePulledFromRemote)
 	}()
 
-	logrus.Debugf("Starting the download of image: '%s'", image)
-	err := (*backend).FetchImage(ctx, image)
+	logrus.Debugf("Starting the download of image: '%s'", imageName)
+	imagePulledFromRemote, err := (*backend).FetchImage(ctx, imageName)
 	if err != nil {
-		logrus.Warnf("Container image '%s' download failed. Error was: '%s'", image, err.Error())
-		pullErrors <- startosis_errors.WrapWithValidationError(err, "Failed fetching the required image '%v'.", image)
+		logrus.Warnf("Container image '%s' download failed. Error was: '%s'", imageName, err.Error())
+		pullErrors <- startosis_errors.WrapWithValidationError(err, "Failed fetching the required image '%v'.", imageName)
 		return
 	}
-	logrus.Debugf("Container image '%s' successfully downloaded", image)
+	logrus.Debugf("Container image '%s' successfully downloaded", imageName)
 }

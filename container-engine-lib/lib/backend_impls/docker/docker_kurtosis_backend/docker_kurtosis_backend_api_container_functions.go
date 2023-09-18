@@ -166,7 +166,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
-	if err = backend.dockerManager.FetchImage(ctx, image); err != nil {
+	if _, err = backend.dockerManager.FetchImage(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
 	}
 
