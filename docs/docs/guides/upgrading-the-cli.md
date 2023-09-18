@@ -34,14 +34,14 @@ brew update && brew upgrade kurtosis-tech/tap/kurtosis-cli
 <TabItem value="apt" label="apt (Ubuntu)">
 
 ```bash
-apt install --only-upgrade kurtosis-cli
+apt update && apt install --only-upgrade kurtosis-cli
 ```
 
 </TabItem>
 <TabItem value="yum" label="yum (RHEL)">
 
 ```bash
-yum upgrade kurtosis-cli
+yum update && upgrade kurtosis-cli
 ```
 
 </TabItem>
