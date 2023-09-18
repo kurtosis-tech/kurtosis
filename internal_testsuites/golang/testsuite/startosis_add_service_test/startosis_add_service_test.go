@@ -43,7 +43,7 @@ def run(plan):
 		),
 		service_name = SERVICE_NAME_2,
 	)
-	plan.assert(connection_result["code"], "==", SUCCESS_CODE)
+	plan.verify(connection_result["code"], "==", SUCCESS_CODE)
 	
 	test_ip_address_cmd = "nc -zv {0} {1}".format(datastore_1.ip_address, GRPC_PORT) 
 	connection_result = plan.exec(
@@ -52,7 +52,7 @@ def run(plan):
 		),
 		service_name = SERVICE_NAME_2,
 	)
-	plan.assert(connection_result["code"], "==", SUCCESS_CODE)
+	plan.verify(connection_result["code"], "==", SUCCESS_CODE)
 `
 )
 
@@ -72,13 +72,13 @@ Command returned with exit code '0' and the following output:
 [a-z-0-9]+ \([0-9\.]+:1323\) open
 
 --------------------
-Assertion succeeded. Value is '0'.
+Verification succeeded. Value is '0'.
 Command returned with exit code '0' and the following output:
 --------------------
 [0-9\.]+ \([0-9\.]+:1323\) open
 
 --------------------
-Assertion succeeded. Value is '0'.
+Verification succeeded. Value is '0'.
 `
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error.")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

@@ -24,7 +24,7 @@ def run(plan, args):
     )
 
     expected_file_hash = args["file_hash"]
-    plan.assert(
+    plan.verify(
         value=result["output"],
         assertion="==",
         target_value=expected_file_hash,
