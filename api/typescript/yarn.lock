@@ -4,12 +4,12 @@
 
 "@bufbuild/buf-darwin-arm64@1.26.1":
   version "1.26.1"
-  resolved "https://registry.npmjs.org/@bufbuild/buf-darwin-arm64/-/buf-darwin-arm64-1.26.1.tgz"
+  resolved "https://registry.yarnpkg.com/@bufbuild/buf-darwin-arm64/-/buf-darwin-arm64-1.26.1.tgz#6085067537074440c098abe1f9cf86be637ad6f2"
   integrity sha512-nmyWiT/59RFja0ZuXFxjNGoAMDPTApU66CZUUevkFVWbNB9nzeQDjx2vsJyACY64k5fTgZiaelSiyppwObQknw==
 
 "@bufbuild/buf-darwin-x64@1.26.1":
   version "1.26.1"
-  resolved "https://registry.yarnpkg.com/@bufbuild/buf-darwin-x64/-/buf-darwin-x64-1.26.1.tgz#76d0cfd468dd2b2c462b7b5ad0de062e475d755e"
+  resolved "https://registry.npmjs.org/@bufbuild/buf-darwin-x64/-/buf-darwin-x64-1.26.1.tgz"
   integrity sha512-jl5WmUv30OW8JiRLid9+mVx1XVH0XttpUfkQfmqDFdUHGfdy4XWYK8kr84YyWu0SiMTIt1mPXkqG5UM3x+tdIQ==
 
 "@bufbuild/buf-linux-aarch64@1.26.1":

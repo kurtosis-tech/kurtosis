@@ -77,12 +77,24 @@ func NewDockerKurtosisBackend(
 	}
 }
 
-func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string) error {
-	err := backend.dockerManager.FetchImage(ctx, image)
+func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string) (bool, error) {
+	pulledFromRemote, err := backend.dockerManager.FetchImage(ctx, image)
 	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred fetching image from kurtosis backend")
+		return false, stacktrace.Propagate(err, "An error occurred fetching image from kurtosis backend")
 	}
-	return nil
+	return pulledFromRemote, nil
+}
+
+func (backend *DockerKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
+	prunedImages, err := backend.dockerManager.PruneUnusedImages(ctx)
+	prunedImageNames := []string{}
+	for _, prunedImage := range prunedImages {
+		prunedImageNames = append(prunedImageNames, prunedImage.ID)
+	}
+	if err != nil {
+		return prunedImageNames, stacktrace.Propagate(err, "An error occurred pruning image from kurtosis backend")
+	}
+	return prunedImageNames, nil
 }
 
 func (backend *DockerKurtosisBackend) CreateEngine(

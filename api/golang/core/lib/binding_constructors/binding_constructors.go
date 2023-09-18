@@ -115,6 +115,16 @@ func NewStarlarkRunResponseLineFromInstruction(instruction *kurtosis_core_rpc_ap
 	}
 }
 
+func NewStarlarkRunResponseLineFromInfoMsg(infoMessage string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Info{
+			Info: &kurtosis_core_rpc_api_bindings.StarlarkInfo{
+				InfoMessage: infoMessage,
+			},
+		},
+	}
+}
+
 func NewStarlarkRunResponseLineFromWarning(warningMessage string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Warning{
