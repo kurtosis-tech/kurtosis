@@ -59,7 +59,7 @@ func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyCon
 func (suite *StartosisAddServiceTestSuite) TestStartosis_AddServicesWithReadyConditionsCheckFail() {
 	ctx := context.Background()
 
-	expectedLastAssertionErrorStr := fmt.Sprintf("Assertion failed '%v' '==' '%v'", okStatusCode, serverErrorStatusCode)
+	expectedLastAssertionErrorStr := fmt.Sprintf("Verification failed '%v' '==' '%v'", okStatusCode, serverErrorStatusCode)
 	script := fmt.Sprintf(addServicesWithReadyConditionsScript, serverErrorStatusCode, serverErrorStatusCode)
 
 	runResult, _ := suite.RunScript(ctx, script)

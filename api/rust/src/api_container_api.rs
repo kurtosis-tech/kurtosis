@@ -172,7 +172,7 @@ pub mod run_starlark_package_args {
 pub struct StarlarkRunResponseLine {
     #[prost(
         oneof = "starlark_run_response_line::RunResponseLine",
-        tags = "1, 2, 3, 4, 5, 6"
+        tags = "1, 2, 3, 4, 5, 6, 7"
     )]
     pub run_response_line: ::core::option::Option<
         starlark_run_response_line::RunResponseLine,
@@ -195,7 +195,15 @@ pub mod starlark_run_response_line {
         RunFinishedEvent(super::StarlarkRunFinishedEvent),
         #[prost(message, tag = "6")]
         Warning(super::StarlarkWarning),
+        #[prost(message, tag = "7")]
+        Info(super::StarlarkInfo),
     }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StarlarkInfo {
+    #[prost(string, tag = "1")]
+    pub info_message: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

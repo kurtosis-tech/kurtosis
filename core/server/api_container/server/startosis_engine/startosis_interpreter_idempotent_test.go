@@ -304,7 +304,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3"))
 	plan.print("Service 1 - IP: {} - Hostname: {}".format(service_1.ip_address, service_1.hostname))
 	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))
-	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip")
+	plan.verify(value=service_1.ip_address, assertion="==", target_value="fake_ip")
 `
 	// Interpretation of the initial script to generate the current enclave plan
 	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
@@ -324,7 +324,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.5.0")) # <-- version updated
 	plan.print("Service 1 - IP: {} - Hostname: {}".format(service_1.ip_address, service_1.hostname)) # <-- identical
 	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"])) # <-- identical but should be rerun b/c service_1 updated
-	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip") # <-- identical b/c we don't track runtime value provenance yet
+	plan.verify(value=service_1.ip_address, assertion="==", target_value="fake_ip") # <-- identical b/c we don't track runtime value provenance yet
 `
 	// Interpret the updated script against the current enclave plan
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
@@ -356,7 +356,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 	require.False(suite.T(), scheduledInstruction3.IsExecuted())
 
 	scheduledInstruction4 := instructionSequence[3]
-	require.Regexp(suite.T(), `assert\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
+	require.Regexp(suite.T(), `verify\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
 	require.True(suite.T(), scheduledInstruction4.IsExecuted())
 }
 
@@ -373,7 +373,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
     )
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3", files={"/path/": files_artifact}))
 	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))
-	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip")
+	plan.verify(value=service_1.ip_address, assertion="==", target_value="fake_ip")
 `
 	// Interpretation of the initial script to generate the current enclave plan
 	_, currentEnclavePlan, interpretationApiErr := suite.interpreter.Interpret(
@@ -398,7 +398,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
     )
 	service_1 = plan.add_service(name="service_1", config=ServiceConfig(image="kurtosistech/image:1.2.3", files={"/path/": files_artifact}))
 	plan.exec(service_name="service_1", recipe=ExecRecipe(command=["echo", "Hello World!"]))
-	plan.assert(value=service_1.ip_address, assertion="==", target_value="fake_ip")
+	plan.verify(value=service_1.ip_address, assertion="==", target_value="fake_ip")
 `
 	// Interpret the updated script against the current enclave plan
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
@@ -430,7 +430,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 	require.False(suite.T(), scheduledInstruction3.IsExecuted()) // since the service has been updated, the exec will be re-run
 
 	scheduledInstruction4 := instructionSequence[3]
-	require.Regexp(suite.T(), `assert\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
+	require.Regexp(suite.T(), `verify\(value="{{kurtosis:[a-z0-9]{32}:ip_address\.runtime_value}}", assertion="==", target_value="fake_ip"\)`, scheduledInstruction4.GetInstruction().String())
 	require.True(suite.T(), scheduledInstruction4.IsExecuted()) // this instruction is not affected, i.e. it won't be re-run
 }
 
