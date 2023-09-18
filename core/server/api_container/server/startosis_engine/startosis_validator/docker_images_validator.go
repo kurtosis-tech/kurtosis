@@ -63,7 +63,8 @@ func fetchImageFromBackend(ctx context.Context, wg *sync.WaitGroup, imageCurrent
 	err := (*backend).FetchImage(ctx, image)
 	if err != nil {
 		logrus.Warnf("Container image '%s' download failed. Error was: '%s'", image, err.Error())
-		pullErrors <- startosis_errors.NewValidationError("Failed fetching the required image '%v', make sure that the image exists and is public", image)
+		pullErrors <- startosis_errors.WrapWithValidationError(err, "Failed fetching the required image '%v'.", image)
+		return
 	}
 	logrus.Debugf("Container image '%s' successfully downloaded", image)
 }
