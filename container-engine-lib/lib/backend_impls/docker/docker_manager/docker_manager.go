@@ -29,6 +29,7 @@ import (
 	"io"
 	"math"
 	"net"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -131,6 +132,8 @@ const (
 	coresToMilliCores      = 1000
 	bytesInMegaBytes       = 1000000
 	dontStreamStats        = false
+
+	kurtosisTagPrefix = "kurtosistech/"
 )
 
 type RestartPolicy string
@@ -252,6 +255,61 @@ func (manager *DockerManager) ListNetworks(ctx context.Context) ([]types.Network
 	// If we ever need that field, we have to call an InspectNetwork, and even then it seems to have some amount of
 	// nondeterminism (i.e. brand-new containers won't show up)
 	return networks, nil
+}
+
+func (manager *DockerManager) PruneUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+	unusedImages, err := manager.ListUnusedImages(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list unused images")
+	}
+	logrus.Debugf("List of unused images to be pruned '%v'", unusedImages)
+	successfulPrunedImages := []types.ImageSummary{}
+	for _, image := range unusedImages {
+		imagePruneResponse, err := manager.dockerClient.ImageRemove(ctx, image.ID, types.ImageRemoveOptions{}) //nolint:exhaustruct
+		if err != nil {
+			return successfulPrunedImages, stacktrace.Propagate(err, "Failed to remove image '%v'", image.ID)
+		}
+		logrus.Debugf("Pruned image '%v' with response '%v'", image, imagePruneResponse)
+		successfulPrunedImages = append(successfulPrunedImages, image)
+	}
+	return successfulPrunedImages, nil
+}
+
+func containsSemVer(s string) bool {
+	// Matches patterns like X.Y.Z
+	semVerRegex := `\b(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)\b`
+	matched, _ := regexp.MatchString(semVerRegex, s)
+	return matched
+}
+
+func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.ImageSummary, error) {
+	images, err := manager.dockerClient.ImageList(ctx, types.ImageListOptions{}) //nolint:exhaustruct
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
+	}
+	containers, err := manager.dockerClient.ContainerList(ctx, types.ContainerListOptions{All: true}) //nolint:exhaustruct
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to list Docker images")
+	}
+
+	usedImages := make(map[string]bool)
+	for _, cont := range containers {
+		usedImages[cont.ImageID] = true
+	}
+
+	unusedImages := []types.ImageSummary{}
+	for _, image := range images {
+		if _, used := usedImages[image.ID]; used {
+			logrus.Debugf("Skipping image '%v' since its in use", image.ID)
+			continue
+		}
+		for _, tag := range image.RepoTags {
+			if strings.Contains(tag, kurtosisTagPrefix) && containsSemVer(tag) {
+				unusedImages = append(unusedImages, image)
+			}
+		}
+	}
+	return unusedImages, nil
 }
 
 /*
