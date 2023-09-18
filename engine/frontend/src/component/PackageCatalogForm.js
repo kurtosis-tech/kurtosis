@@ -131,11 +131,25 @@ const renderArgs = (args, handleChange, formData, errorData) => {
             case "FLOAT":
                 dataType = "FLOAT"
                 break
-            case "KEY_VALUE":
-                dataType = "KEY_VALUE"
+            case "DICT":
+                dataType = "DICT"
                 break
             default:
                 dataType = "JSON"
+        }
+
+        const prettyPrintIfDict = (value) => {
+            if (value === "DICT") {
+                try {
+                    const x = arg.typeV2.innerType1
+                    const y = arg.typeV2.innerType2
+                    if (x === undefined || y === undefined) return "DICT"
+                    return `${x} -> ${y}`
+                } catch (e) {
+                    return "DICT"
+                }
+            }
+            return value
         }
 
         // no need to show plan arg as it's internal!
@@ -161,17 +175,21 @@ const renderArgs = (args, handleChange, formData, errorData) => {
                             </Tooltip>
 
                         </Text>
-                        <Tooltip label="Some text coming here soon">
+                        <Tooltip label={arg.description}>
                             <InfoOutlineIcon marginLeft={2}/>
                         </Tooltip>
 
                     </Text>
-                    <Text marginLeft={3} as='kbd' fontSize='xs' align={"right"}>{dataType.toLowerCase()}</Text>
+                    <Text marginLeft={3} as='kbd' fontSize='xs'
+                          align={"right"}>{prettyPrintIfDict(dataType).toLowerCase()}</Text>
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
                     {errorData[index].length > 0 ?
                         <Text marginLeft={3} align={"left"} fontSize={"xs"}
-                              color="red.500"> {errorData[index]} </Text> : null}
+                              color="red.500">
+                            {errorData[index]}
+                        </Text> : null
+                    }
                     {renderSingleArg(arg.name, dataType, errorData, formData, index, handleChange)}
                 </Flex>
             </Flex>
@@ -206,9 +224,8 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
                         fieldName,
                     )}
                 </Box>
-
             )
-        case "KEY_VALUE":
+        case "DICT":
             return (
                 <Box
                     border={errorData[index] ? "1px" : null}
@@ -216,7 +233,6 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
                 >
                     {KeyValueTable((data) => handleChange(data, index))}
                 </Box>
-
             )
 
         default:
@@ -235,13 +251,11 @@ const checkValidUndefinedType = (data) => {
 }
 
 const checkValidJsonType = (data) => {
-    console.log("raw data", data)
     if (data === undefined || data === "undefined" || data.length === 0) {
         return false
     }
 
     try {
-        console.log("data", data)
         JSON.parse(data)
         return true;
     } catch (ex) {
@@ -310,10 +324,12 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const {state} = location;
     const {kurtosisPackage} = state
 
+    // console.log("kurtosisPackage ", kurtosisPackage)
+
     // TODO: REMOVE, FOR TESTING:
     kurtosisPackage.args.forEach(item => {
         if (item.name === "remote_chains") {
-            item.type = "KEY_VALUE"
+            item.type = "DICT"
             item.data = {"ab": "cd"}
         } else if (item.type === undefined) {
             item.type = "JSON"
@@ -383,7 +399,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 valid = checkValidBooleanType(formData[key])
             } else if (type === "FLOAT") {
                 valid = checkValidFloatType(formData[key])
-            } else if (type === "JSON" || type === "KEY_VALUE") {
+            } else if (type === "JSON" || type === "DICT") {
                 valid = checkValidJsonType(formData[key])
             } else {
                 valid = checkValidUndefinedType(formData[key])
