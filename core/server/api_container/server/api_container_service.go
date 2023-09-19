@@ -12,7 +12,6 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"io"
 	"math"
 	"net/http"
@@ -22,10 +21,12 @@ import (
 	"time"
 	"unicode"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
@@ -552,7 +553,7 @@ func (apicService ApiContainerService) waitForEndpointAvailability(
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting service '%v'", serviceIdStr)
 	}
-	if serviceObj.GetStatus() != container_status.ContainerStatus_Running {
+	if serviceObj.GetContainer().GetStatus() != container.ContainerStatus_Running {
 		return stacktrace.NewError("Service '%v' isn't running so can never become available", serviceIdStr)
 	}
 	privateIp := serviceObj.GetRegistration().GetPrivateIP()
@@ -733,6 +734,11 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred converting the service status to a service info status")
 	}
+	serviceContainer := serviceObj.GetContainer()
+	serviceInfoContainerStatus, err := convertContainerStatusToServiceInfoContainerStatus(serviceContainer.GetStatus())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred converting the service container status to a service info container status")
+	}
 
 	privateApiPorts, err := transformPortSpecMapToApiPortsMap(privatePorts)
 	if err != nil {
@@ -749,6 +755,13 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 			return nil, stacktrace.Propagate(err, "An error occurred transforming the service's public port spec ports to API ports")
 		}
 	}
+	serviceInfoContainer := &kurtosis_core_rpc_api_bindings.Container{
+		Status:         serviceInfoContainerStatus,
+		ImageName:      serviceContainer.GetImageName(),
+		EntrypointArgs: serviceContainer.GetEntrypointArgs(),
+		CmdArgs:        serviceContainer.GetCmdArgs(),
+		EnvVars:        serviceContainer.GetEnvVars(),
+	}
 
 	serviceInfoResponse := binding_constructors.NewServiceInfo(
 		serviceUuidStr,
@@ -759,6 +772,7 @@ func getServiceInfoFromServiceObj(serviceObj *service.Service) (*kurtosis_core_r
 		publicIpAddrStr,
 		publicApiPorts,
 		serviceStatus,
+		serviceInfoContainer,
 	)
 	return serviceInfoResponse, nil
 }
@@ -833,5 +847,16 @@ func convertServiceStatusToServiceInfoStatus(serviceStatus service.ServiceStatus
 		return kurtosis_core_rpc_api_bindings.ServiceStatus_STOPPED, nil
 	default:
 		return kurtosis_core_rpc_api_bindings.ServiceStatus_UNKNOWN, stacktrace.NewError("Failed to convert service status %v", serviceStatus)
+	}
+}
+
+func convertContainerStatusToServiceInfoContainerStatus(containerStatus container.ContainerStatus) (kurtosis_core_rpc_api_bindings.Container_Status, error) {
+	switch containerStatus {
+	case container.ContainerStatus_Running:
+		return kurtosis_core_rpc_api_bindings.Container_RUNNING, nil
+	case container.ContainerStatus_Stopped:
+		return kurtosis_core_rpc_api_bindings.Container_STOPPED, nil
+	default:
+		return kurtosis_core_rpc_api_bindings.Container_UNKNOWN, stacktrace.NewError("Failed to convert container status %v", containerStatus)
 	}
 }

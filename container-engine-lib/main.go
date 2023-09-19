@@ -111,8 +111,8 @@ func runKurtosisBackendTesting() error {
 		UUIDs: map[engine_object.EngineGUID]bool{
 			engine.GetUUID(): true,
 		},
-		Statuses: map[container_status.ContainerStatus]bool{
-			container_status.ContainerStatus_Running: true,
+		Statuses: map[container.ContainerStatus]bool{
+			container.ContainerStatus_Running: true,
 		},
 	}
 	stoppedEngineGuids, erroredEngineGuids, err := backend.StopEngines(ctx, engineFil)
