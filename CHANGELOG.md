@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.83.4](https://github.com/kurtosis-tech/kurtosis/compare/0.83.3...0.83.4) (2023-09-19)
+
+
+### Features
+
+* Add format flag to kurtosis port print ([#1319](https://github.com/kurtosis-tech/kurtosis/issues/1319)) ([cbbf260](https://github.com/kurtosis-tech/kurtosis/commit/cbbf260d872344c40fd768ed2226510550a8370d))
+
+
+### Bug Fixes
+
+* scan for first week of existing logs ([#1343](https://github.com/kurtosis-tech/kurtosis/issues/1343)) ([3905782](https://github.com/kurtosis-tech/kurtosis/commit/3905782b45b8b89d77ee70e231a2e04c19ca1bf0))
+
 ## [0.83.3](https://github.com/kurtosis-tech/kurtosis/compare/0.83.2...0.83.3) (2023-09-19)
 
 
