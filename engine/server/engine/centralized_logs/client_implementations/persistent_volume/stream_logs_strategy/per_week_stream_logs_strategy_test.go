@@ -233,7 +233,7 @@ func TestGetRetainedLogsFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t 
 	week1filepath := getWeekFilepathStr(defaultYear, 1)
 	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
-	// no logs for week 2 created yet
+	// no logs for week current week exist yet
 	mapFS := &fstest.MapFS{
 		week1filepath: {
 			Data: []byte{},
