@@ -161,11 +161,12 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 	retentionPeriodInWeeks int,
 	enclaveUuid, serviceUuid string) []string {
 	var paths []string
+	currentTime := strategy.time.Now()
 
 	// scan for first existing log file
 	firstWeekWithLogs := 0
 	for i := 0; i < (retentionPeriodInWeeks + 1); i++ {
-		year, week := strategy.time.Now().Add(time.Duration(-i) * oneWeek).ISOWeek()
+		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
 		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err == nil {
 			paths = append(paths, filePathStr)
@@ -176,7 +177,7 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 
 	// scan for remaining files as far back as they exist
 	for i := firstWeekWithLogs + 1; i < (retentionPeriodInWeeks + 1); i++ {
-		year, week := strategy.time.Now().Add(time.Duration(-i) * oneWeek).ISOWeek()
+		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
 		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err != nil {
 			break
