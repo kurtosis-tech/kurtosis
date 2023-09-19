@@ -11,7 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/stacktrace"
@@ -141,8 +141,8 @@ func cleanStoppedEngineContainers(ctx context.Context, kurtosisBackend backend_i
 
 	engineFilters := &engine.EngineFilters{
 		GUIDs: nil,
-		Statuses: map[container_status.ContainerStatus]bool{
-			container_status.ContainerStatus_Stopped: true,
+		Statuses: map[container.ContainerStatus]bool{
+			container.ContainerStatus_Stopped: true,
 		},
 	}
 

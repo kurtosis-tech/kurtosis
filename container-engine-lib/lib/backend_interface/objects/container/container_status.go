@@ -1,4 +1,4 @@
-package container_status
+package container
 
 // Represents the state of a container within Kurtosis
 //

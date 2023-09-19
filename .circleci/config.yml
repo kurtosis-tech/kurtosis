@@ -736,6 +736,9 @@ jobs:
       - run: "${KURTOSIS_BINPATH} service stop test-enclave test1"
       - run: "${KURTOSIS_BINPATH} service start test-enclave test1"
 
+      # Service inspect
+      - run: "${KURTOSIS_BINPATH} service inspect test-enclave test1"
+
       # Service Exec
       # Emulates GitHub Actions
       - run: "${KURTOSIS_BINPATH} service exec test-enclave test1 'echo hello'"
