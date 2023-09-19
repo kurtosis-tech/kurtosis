@@ -114,7 +114,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 						isLastLogLine = true
 					} else {
 						if shouldFollowLogs {
-							if err = strategy.tailLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+							if err = strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 								streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 								return
 							}
@@ -137,7 +137,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 
 			if isLastLogLine {
 				if shouldFollowLogs {
-					if err = strategy.tailLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+					if err = strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 						streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 						return
 					}
@@ -179,7 +179,7 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 }
 
 // tail -f [filepath]
-func (strategy *PerWeekStreamLogsStrategy) tailLogs(
+func (strategy *PerWeekStreamLogsStrategy) followLogs(
 	filepath string,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	serviceUuid service.ServiceUUID,
