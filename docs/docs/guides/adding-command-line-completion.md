@@ -1,7 +1,7 @@
 ---
 title: Adding Command-Line Completion
 sidebar_label: Adding Command-Line Completion
-sidebar_position: 4
+sidebar_position: 3
 ---
 
 <!-- NOTE TO KURTOSIS DEVS: 

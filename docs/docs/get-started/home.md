@@ -6,7 +6,7 @@ sidebar_position: 1
 hide_table_of_contents: true
 ---
 ## What is Kurtosis?
-[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container test environments. Kurtosis makes it easier for developers to set up test environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding.
+[Kurtosis](https://www.kurtosis.com) is a composable build system for multi-container environments. Kurtosis makes it easier for developers to set up environments that require dynamic setup logic (e.g. passing IPs or runtime-generated data between services) or programmatic data seeding.
 
 Go [here](../explanations/why-we-built-kurtosis.md) to learn more about what inspired us to build Kurtosis.
 
@@ -14,7 +14,7 @@ Go [here](../explanations/why-we-built-kurtosis.md) to learn more about what ins
 
 Developers usually set up these types of dynamic environments with a free-form scripting language like bash or Python, interacting with the Docker CLI or Docker Compose. Kurtosis is designed to make these setups easier to maintain and reuse in different test scenarios.
 
-In Kurtosis, test environments have these properties:
+In Kurtosis, containerized environments have these properties:
 - Environment-level portability: the entire test environment always runs the same way, regardless of the host machine
 - Composability: environments can be composed and connected together without needing to know the inner details of each setup
 - Parameterizability: environments can be parameterized, so that they're easy to modify for use across different test scenarios
@@ -37,7 +37,7 @@ In Kurtosis, test environments have these properties:
 
 ## Try out Kurtosis now
 
-Try Kurtosis now with our [quickstart](./quickstart.md).
+Try Kurtosis now with our [quickstart](./quickstart-consumer.md).
 
 :::info
 If you have questions, need help, or simply want to learn more, schedule a live session with us, go [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
