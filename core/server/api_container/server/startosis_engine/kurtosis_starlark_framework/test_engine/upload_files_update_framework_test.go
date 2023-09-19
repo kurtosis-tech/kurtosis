@@ -45,7 +45,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesUpdate() {
 }
 
 func (t *uploadFilesUpdateTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return upload_files.NewUploadFiles(t.serviceNetwork, t.packageContentProvider)
+	return upload_files.NewUploadFiles("", t.serviceNetwork, t.packageContentProvider)
 }
 
 func (t *uploadFilesUpdateTestCase) GetStarlarkCode() string {

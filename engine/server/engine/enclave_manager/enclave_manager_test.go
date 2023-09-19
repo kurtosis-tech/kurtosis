@@ -1,11 +1,12 @@
 package enclave_manager
 
 import (
+	"testing"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestIsContainerRunningDeterminerCompleteness(t *testing.T) {
@@ -23,7 +24,7 @@ func TestGetEnclaveContainersStatusFromEnclaveStatusCompleteness(t *testing.T) {
 }
 
 func TestGetApiContainerStatusFromContainerStatusCompleteness(t *testing.T) {
-	for _, containerStatus := range container_status.ContainerStatusValues() {
+	for _, containerStatus := range container.ContainerStatusValues() {
 		_, err := getApiContainerStatusFromContainerStatus(containerStatus)
 		require.NoError(t, err, "No ApiContainerStatus provided for container status '%v'", containerStatus.String())
 	}

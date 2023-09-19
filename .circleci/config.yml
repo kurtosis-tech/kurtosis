@@ -736,6 +736,9 @@ jobs:
       - run: "${KURTOSIS_BINPATH} service stop test-enclave test1"
       - run: "${KURTOSIS_BINPATH} service start test-enclave test1"
 
+      # Service inspect
+      - run: "${KURTOSIS_BINPATH} service inspect test-enclave test1"
+
       # Service Exec
       # Emulates GitHub Actions
       - run: "${KURTOSIS_BINPATH} service exec test-enclave test1 'echo hello'"
@@ -940,6 +943,10 @@ jobs:
           skip_docker_image_building=true
           core/files_artifacts_expander/scripts/build.sh "${skip_docker_image_building}"
       - run: |
+          skip_docker_image_building=true
+          build_architecture=arm64
+          core/files_artifacts_expander/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
+      - run: |
           set -euo pipefail
           source core/files_artifacts_expander/scripts/_constants.env
           dockerfile_filepath='core/files_artifacts_expander/Dockerfile'
@@ -977,6 +984,10 @@ jobs:
       - run: |
           skip_docker_image_building=true
           core/server/scripts/build.sh "${skip_docker_image_building}"
+      - run: |
+          skip_docker_image_building=true
+          build_architecture=arm64
+          core/server/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
       - run: |
           set -euo pipefail
           source core/server/scripts/_constants.env
@@ -1016,6 +1027,10 @@ jobs:
       - run: |
           skip_docker_image_building=true
           engine/server/scripts/build.sh "${skip_docker_image_building}"
+      - run: |
+          skip_docker_image_building=true
+          build_architecture=arm64          
+          engine/server/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
       - run: |
           set -euo pipefail
           source engine/server/scripts/_constants.env

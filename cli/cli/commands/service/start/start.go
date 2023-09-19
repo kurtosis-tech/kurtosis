@@ -3,6 +3,7 @@ package start
 import (
 	"context"
 	"fmt"
+	"github.com/sirupsen/logrus"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -27,7 +28,7 @@ const (
 
 	serviceIdentifierArgKey        = "service"
 	isServiceIdentifierArgOptional = false
-	isServiceIdentifierArgGreedy   = false
+	isServiceIdentifierArgGreedy   = true
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -62,8 +63,8 @@ var ServiceStartCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosis
 		service_identifier_arg.NewServiceIdentifierArg(
 			serviceIdentifierArgKey,
 			enclaveIdentifierArgKey,
-			isServiceIdentifierArgGreedy,
 			isServiceIdentifierArgOptional,
+			isServiceIdentifierArgGreedy,
 		),
 	},
 	Flags:   []*flags.FlagConfig{},
@@ -83,7 +84,7 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting the enclave identifier value using key '%v'", enclaveIdentifierArgKey)
 	}
 
-	serviceIdentifier, err := args.GetNonGreedyArg(serviceIdentifierArgKey)
+	serviceIdentifiers, err := args.GetGreedyArg(serviceIdentifierArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the service identifier value using key '%v'", serviceIdentifierArgKey)
 	}
@@ -98,15 +99,18 @@ func run(
 		return stacktrace.Propagate(err, "An error occurred getting an enclave context from enclave info for enclave '%v'", enclaveIdentifier)
 	}
 
-	serviceContext, err := enclaveCtx.GetServiceContext(serviceIdentifier)
-	if err != nil {
-		return stacktrace.NewError("Couldn't validate whether the service exists for identifier '%v'", serviceIdentifier)
-	}
+	for _, serviceIdentifier := range serviceIdentifiers {
+		logrus.Infof("Starting service '%v'", serviceIdentifier)
+		serviceContext, err := enclaveCtx.GetServiceContext(serviceIdentifier)
+		if err != nil {
+			return stacktrace.NewError("Couldn't validate whether the service exists for identifier '%v'", serviceIdentifier)
+		}
 
-	serviceName := serviceContext.GetServiceName()
+		serviceName := serviceContext.GetServiceName()
 
-	if err := startServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
-		return stacktrace.Propagate(err, "An error occurred starting service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)
+		if err := startServiceStarlarkCommand(ctx, enclaveCtx, serviceName); err != nil {
+			return stacktrace.Propagate(err, "An error occurred starting service '%v' from enclave '%v'", serviceIdentifier, enclaveIdentifier)
+		}
 	}
 	return nil
 }

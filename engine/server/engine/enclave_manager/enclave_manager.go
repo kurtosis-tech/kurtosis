@@ -3,11 +3,15 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"sort"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 	"github.com/kurtosis-tech/kurtosis/core/launcher/api_container_launcher"
@@ -16,9 +20,6 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"sort"
-	"strings"
-	"sync"
 )
 
 const (
@@ -633,11 +634,11 @@ func getEnclaveContainersStatusFromEnclaveStatus(status enclave.EnclaveStatus) (
 	}
 }
 
-func getApiContainerStatusFromContainerStatus(status container_status.ContainerStatus) (kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus, error) {
+func getApiContainerStatusFromContainerStatus(status container.ContainerStatus) (kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus, error) {
 	switch status {
-	case container_status.ContainerStatus_Running:
+	case container.ContainerStatus_Running:
 		return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_RUNNING, nil
-	case container_status.ContainerStatus_Stopped:
+	case container.ContainerStatus_Stopped:
 		return kurtosis_engine_rpc_api_bindings.EnclaveAPIContainerStatus_EnclaveAPIContainerStatus_STOPPED, nil
 	default:
 		// EnclaveAPIContainerStatus is of type int32, cannot convert nil to int32 returning -1
