@@ -119,6 +119,53 @@ func TestGetRetainedLogsFilePathsAcrossNewYear(t *testing.T) {
 	}
 }
 
+func TestGetRetainedLogsFilePathsAcrossNewYearWith53Weeks(t *testing.T) {
+	// According to ISOWeek, 2015 has 53 weeks
+	week52filepath := getWeekFilepathStr(2015, 52)
+	week53filepath := getWeekFilepathStr(2015, 53)
+	week1filepath := getWeekFilepathStr(2016, 1)
+	week2filepath := getWeekFilepathStr(2016, 2)
+	week3filepath := getWeekFilepathStr(2016, 3)
+
+	mapFS := &fstest.MapFS{
+		week52filepath: {
+			Data: []byte{},
+		},
+		week53filepath: {
+			Data: []byte{},
+		},
+		week1filepath: {
+			Data: []byte{},
+		},
+		week2filepath: {
+			Data: []byte{},
+		},
+		week3filepath: {
+			Data: []byte{},
+		},
+	}
+
+	filesystem := volume_filesystem.NewMockedVolumeFilesystem(mapFS)
+	currentWeek := 3
+
+	expectedLogFilePaths := []string{
+		week52filepath,
+		week53filepath,
+		week1filepath,
+		week2filepath,
+		week3filepath,
+	}
+
+	mockTime := logs_clock.NewMockLogsClock(2016, currentWeek, 1)
+	strategy := NewPerWeekStreamLogsStrategy(mockTime)
+	logFilePaths := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
+
+	require.Equal(t, len(expectedLogFilePaths), len(logFilePaths))
+	for i, filePath := range expectedLogFilePaths {
+		require.Equal(t, "/"+filePath, logFilePaths[i])
+	}
+}
+
 func TestGetRetainedLogsFilePathsWithDiffRetentionPeriod(t *testing.T) {
 	// ../week/enclave uuid/service uuid.json
 	week52filepath := getWeekFilepathStr(defaultYear-1, 52)
