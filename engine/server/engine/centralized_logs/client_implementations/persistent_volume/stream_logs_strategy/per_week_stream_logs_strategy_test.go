@@ -159,7 +159,7 @@ func TestGetRetainedLogsFilePathsWithDiffRetentionPeriod(t *testing.T) {
 
 func TestGetRetainedLogsFilePathsReturnsErrorIfWeeksMissing(t *testing.T) {
 	// ../week/enclave uuid/service uuid.json
-	week52filepath := getWeekFilepathStr(defaultYear, 52)
+	week52filepath := getWeekFilepathStr(defaultYear-1, 52)
 	week1filepath := getWeekFilepathStr(defaultYear, 1)
 	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
