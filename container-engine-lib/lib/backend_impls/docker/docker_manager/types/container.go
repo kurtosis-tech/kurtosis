@@ -10,6 +10,10 @@ type Container struct {
 	labels           map[string]string
 	status           ContainerStatus
 	hostPortBindings map[nat.Port]*nat.PortBinding
+	imageName        string
+	entrypointArgs   []string
+	cmdArgs          []string
+	envVars          map[string]string
 }
 
 func NewContainer(
@@ -18,6 +22,10 @@ func NewContainer(
 	labels map[string]string,
 	status ContainerStatus,
 	hostPortBindings map[nat.Port]*nat.PortBinding,
+	imageName string,
+	entrypointArgs []string,
+	cmdArgs []string,
+	envVars map[string]string,
 ) *Container {
 	return &Container{
 		id:               id,
@@ -25,6 +33,10 @@ func NewContainer(
 		labels:           labels,
 		status:           status,
 		hostPortBindings: hostPortBindings,
+		imageName:        imageName,
+		entrypointArgs:   entrypointArgs,
+		cmdArgs:          cmdArgs,
+		envVars:          envVars,
 	}
 }
 
@@ -46,4 +58,20 @@ func (c *Container) GetStatus() ContainerStatus {
 
 func (c Container) GetHostPortBindings() map[nat.Port]*nat.PortBinding {
 	return c.hostPortBindings
+}
+
+func (c *Container) GetImageName() string {
+	return c.imageName
+}
+
+func (c *Container) GetEntrypointArgs() []string {
+	return c.entrypointArgs
+}
+
+func (c *Container) GetCmdArgs() []string {
+	return c.cmdArgs
+}
+
+func (c *Container) GetEnvVars() map[string]string {
+	return c.envVars
 }

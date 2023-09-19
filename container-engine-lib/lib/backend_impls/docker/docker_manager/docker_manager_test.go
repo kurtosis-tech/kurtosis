@@ -1,11 +1,13 @@
 package docker_manager
 
 import (
+	"testing"
+
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/docker/go-connections/nat"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 const (
@@ -64,38 +66,41 @@ func TestConvertMemoryAllocationToBytesReturnsCorrectValue(t *testing.T) {
 }
 
 // We had a bug on 2022-09-19 where having IPv4 and IPv6 ports was incorrectly selecting the IPv6 one
+// nolint: exhaustruct
 func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
-	dockerContainer := types.Container{
-		ID:      "abc123",
-		Names:   []string{"noname"},
-		Image:   "nginx",
-		ImageID: "",
-		Command: "",
-		Created: 0,
-		Ports: []types.Port{
-			{
-				IP:          "::",
-				PrivatePort: 7443,
-				PublicPort:  49051,
-				Type:        "tcp",
-			},
-			{
-				IP:          "0.0.0.0",
-				PrivatePort: 7443,
-				PublicPort:  49050,
-				Type:        "tcp",
+	dockerContainer := types.ContainerJSON{
+		ContainerJSONBase: &types.ContainerJSONBase{
+			ID:    "abc123",
+			Name:  "noname",
+			Image: "nginx",
+			State: &types.ContainerState{
+				Status: "running",
 			},
 		},
-		SizeRw:     0,
-		SizeRootFs: 0,
-		Labels:     map[string]string{},
-		State:      "running",
-		Status:     "",
-		HostConfig: struct { //nolint:exhaustruct
-			NetworkMode string `json:",omitempty"`
-		}{},
-		NetworkSettings: nil,
-		Mounts:          nil,
+		NetworkSettings: &types.NetworkSettings{
+			NetworkSettingsBase: types.NetworkSettingsBase{
+				Ports: nat.PortMap{
+					"7443/tcp": []nat.PortBinding{
+						{
+							HostIP:   "::",
+							HostPort: "49051",
+						},
+					},
+					"7444/tcp": []nat.PortBinding{
+						{
+							HostIP:   "0.0.0.0",
+							HostPort: "49050",
+						},
+					},
+				},
+			},
+		},
+		Config: &container.Config{
+			Labels:     map[string]string{},
+			Entrypoint: []string{},
+			Cmd:        []string{},
+			Env:        []string{},
+		},
 	}
 	kurtosisContainer, err := newContainerFromDockerContainer(dockerContainer)
 	require.NoError(t, err)
@@ -103,7 +108,7 @@ func TestCorrectPortIsSelectedWhenIPv6IsPresent(t *testing.T) {
 	hostPortBindings := kurtosisContainer.GetHostPortBindings()
 	require.Equal(t, 1, len(hostPortBindings))
 
-	portBinding, found := hostPortBindings["7443/tcp"]
+	portBinding, found := hostPortBindings["7444/tcp"]
 	require.True(t, found)
 	require.Equal(t, "127.0.0.1", portBinding.HostIP)
 	require.Equal(t, "49050", portBinding.HostPort)

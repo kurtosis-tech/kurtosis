@@ -24,10 +24,10 @@ def run(plan):
 		}
 	)
 	response = plan.wait(recipe=get_recipe, field="code", assertion="==", target_value=200, interval="100ms", timeout="30s", service_name="web-server-assert-fail-test")
-	plan.assert(response["code"], "!=", 200)
+	plan.verify(response["code"], "!=", 200)
 
 	# dumb test to validate we can pass 2 runtime values here
-	plan.assert(response["code"], "==", response["code"])
+	plan.verify(response["code"], "==", response["code"])
 `
 )
 

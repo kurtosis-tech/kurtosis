@@ -59,6 +59,65 @@ pub mod port {
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
+pub struct Container {
+    #[prost(enumeration = "container::Status", tag = "1")]
+    pub status: i32,
+    #[prost(string, tag = "2")]
+    pub image_name: ::prost::alloc::string::String,
+    #[prost(string, repeated, tag = "3")]
+    pub entrypoint_args: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(string, repeated, tag = "4")]
+    pub cmd_args: ::prost::alloc::vec::Vec<::prost::alloc::string::String>,
+    #[prost(map = "string, string", tag = "5")]
+    pub env_vars: ::std::collections::HashMap<
+        ::prost::alloc::string::String,
+        ::prost::alloc::string::String,
+    >,
+}
+/// Nested message and enum types in `Container`.
+pub mod container {
+    #[derive(
+        Clone,
+        Copy,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash,
+        PartialOrd,
+        Ord,
+        ::prost::Enumeration
+    )]
+    #[repr(i32)]
+    pub enum Status {
+        Stopped = 0,
+        Running = 1,
+        Unknown = 2,
+    }
+    impl Status {
+        /// String value of the enum field names used in the ProtoBuf definition.
+        ///
+        /// The values are not transformed in any way and thus are considered stable
+        /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+        pub fn as_str_name(&self) -> &'static str {
+            match self {
+                Status::Stopped => "STOPPED",
+                Status::Running => "RUNNING",
+                Status::Unknown => "UNKNOWN",
+            }
+        }
+        /// Creates an enum from field names used in the ProtoBuf definition.
+        pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+            match value {
+                "STOPPED" => Some(Self::Stopped),
+                "RUNNING" => Some(Self::Running),
+                "UNKNOWN" => Some(Self::Unknown),
+                _ => None,
+            }
+        }
+    }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ServiceInfo {
     /// UUID of the service
     #[prost(string, tag = "1")]
@@ -91,6 +150,9 @@ pub struct ServiceInfo {
     /// Service status: stopped, running.
     #[prost(enumeration = "ServiceStatus", tag = "8")]
     pub service_status: i32,
+    /// Docker container or Kubernetes pod container
+    #[prost(message, optional, tag = "9")]
+    pub container: ::core::option::Option<Container>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -172,7 +234,7 @@ pub mod run_starlark_package_args {
 pub struct StarlarkRunResponseLine {
     #[prost(
         oneof = "starlark_run_response_line::RunResponseLine",
-        tags = "1, 2, 3, 4, 5, 6"
+        tags = "1, 2, 3, 4, 5, 6, 7"
     )]
     pub run_response_line: ::core::option::Option<
         starlark_run_response_line::RunResponseLine,
@@ -195,7 +257,15 @@ pub mod starlark_run_response_line {
         RunFinishedEvent(super::StarlarkRunFinishedEvent),
         #[prost(message, tag = "6")]
         Warning(super::StarlarkWarning),
+        #[prost(message, tag = "7")]
+        Info(super::StarlarkInfo),
     }
+}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct StarlarkInfo {
+    #[prost(string, tag = "1")]
+    pub info_message: ::prost::alloc::string::String,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

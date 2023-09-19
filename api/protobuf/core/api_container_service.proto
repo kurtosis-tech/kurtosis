@@ -71,6 +71,20 @@ message Port {
   string maybe_wait_timeout = 4;
 }
 
+message Container {
+  enum Status {
+    STOPPED = 0;
+    RUNNING = 1;
+    UNKNOWN = 2;
+  }
+
+  Status status = 1;
+  string image_name = 2;
+  repeated string entrypoint_args = 3;
+  repeated string cmd_args = 4;
+  map<string, string> env_vars = 5;
+}
+
 enum ServiceStatus {
   STOPPED = 0;
   RUNNING = 1;
@@ -105,6 +119,9 @@ message ServiceInfo {
 
   // Service status: stopped, running.
   ServiceStatus service_status = 8;
+
+  // Docker container or Kubernetes pod container
+  Container container = 9;
 }
 
 // ==============================================================================================
@@ -189,7 +206,12 @@ message StarlarkRunResponseLine {
     StarlarkInstructionResult instruction_result = 4;
     StarlarkRunFinishedEvent run_finished_event = 5;
     StarlarkWarning warning = 6;
+    StarlarkInfo info = 7;
   }
+}
+
+message StarlarkInfo {
+  string info_message = 1;
 }
 
 message StarlarkWarning {

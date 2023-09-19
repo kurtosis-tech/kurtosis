@@ -2,6 +2,9 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"net"
+	"time"
+
 	"github.com/docker/go-connections/nat"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
@@ -12,14 +15,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/network_helpers"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"net"
-	"time"
 )
 
 const (
@@ -166,7 +167,7 @@ func (backend *DockerKurtosisBackend) CreateAPIContainer(
 		labelStrs,
 	).WithRestartPolicy(docker_manager.RestartOnFailure).Build()
 
-	if err = backend.dockerManager.FetchImage(ctx, image); err != nil {
+	if _, err = backend.dockerManager.FetchImage(ctx, image); err != nil {
 		logrus.Warnf("Failed to pull the latest version of API container image '%v'; you may be running an out-of-date version", image)
 	}
 
@@ -423,16 +424,16 @@ func getApiContainerObjectFromContainerInfo(
 		// This should never happen because we enforce completeness in a unit test
 		return nil, stacktrace.NewError("No is-running designation found for API container status '%v'; this is a bug in Kurtosis!", containerStatus.String())
 	}
-	var apiContainerStatus container_status.ContainerStatus
+	var apiContainerStatus container.ContainerStatus
 	if isContainerRunning {
-		apiContainerStatus = container_status.ContainerStatus_Running
+		apiContainerStatus = container.ContainerStatus_Running
 	} else {
-		apiContainerStatus = container_status.ContainerStatus_Stopped
+		apiContainerStatus = container.ContainerStatus_Stopped
 	}
 
 	var publicIpAddr net.IP
 	var publicGrpcPortSpec *port_spec.PortSpec
-	if apiContainerStatus == container_status.ContainerStatus_Running {
+	if apiContainerStatus == container.ContainerStatus_Running {
 		publicGrpcPortIpAddr, candidatePublicGrpcPortSpec, err := shared_helpers.GetPublicPortBindingFromPrivatePortSpec(privateGrpcPortSpec, allHostMachinePortBindings)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "The engine is running, but an error occurred getting the public port spec for the engine's grpc private port spec")
