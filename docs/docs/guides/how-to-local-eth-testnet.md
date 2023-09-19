@@ -3,7 +3,7 @@ title: How to set up a local Ethereum testnet
 sidebar_label: Setting up local Ethereum testnet
 slug: /how-to-local-eth-testnet
 toc_max_heading_level: 2
-sidebar_position: 10
+sidebar_position: 6
 ---
 
 ## Introduction

@@ -1,17 +1,16 @@
 ---
-title: Quickstart - Write a Package
-sidebar_label: Quickstart - Write a Package
-slug: /quickstart-write-a-package
+title: Quickstart
+sidebar_label: Quickstart
+slug: /quickstart
 toc_max_heading_level: 2
-sidebar_position: 2
 ---
 
 Introduction
 ------------
 
-Welcome! This guide will walk you through how a [Kurtosis package][packages-reference] author would define their environment definition using Kurtosis. This guide takes ~15 minutes and will walk you through setting up a basic Postgres database and an API server to automate the loading of data. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you run in this guide is free, public, and does not contain any sensitive data. 
+Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~15 minutes and will walk you through building a basic Kurtosis package. This guide is in a "code along" format, meaning we assume the user will be following the code examples and running Kurtosis CLI commands on your local machine. Everything you run in this guide is free, public, and does not contain any sensitive data. 
 
-This quickstart is meant for authors of environment definitions and is a continuation of the [quickstart for package consumers][quickstart-consumers]. While you may choose to do the quickstarts in any order, it is recommended that you start with the [quickstart for package consumers][quickstart-consumers] before this one. Doing both is highly recommended to understand how Kurtosis aims to solve the environment definition author-consumer divide to make building distributed systems as easy as building single server applications.
+For a quick read on what Kurtosis is and what problems Kurtosis aims to solve, our [introduction page][homepage] will be a great starting point, alongside our [motivations behind starting Kurtosis][why-we-built-kurtosis-explanation].
 
 :::tip What You'll Do
 
@@ -19,7 +18,6 @@ This quickstart is meant for authors of environment definitions and is a continu
 - Seed your database with test data using task sequencing
 - Connect an API server to your database using dynamic service dependencies
 - Parameterize your application setup in order to automate loading data into your API
-- Make your Kurtosis package consumable by any user
 :::
 
 <details><summary>TL;DR Version</summary>
@@ -47,7 +45,7 @@ Hello, World
 First, create and `cd` into a directory to hold the project you'll be working on:
 
 ```bash
-mkdir kurtosis-postgres && cd kurtosis-postgres
+mkdir kurtosis-quickstart && cd kurtosis-quickstart
 ```
 
 Next, create a Starlark file called `main.star` inside your new directory with the following contents (more on Starlark in the "Review" section coming up soon):
@@ -71,23 +69,23 @@ autocmd FileType *.star setlocal filetype=python
 Finally, [run][kurtosis-run-reference] the script (we'll explain enclaves in the "Review" section):
 
 ```bash
-kurtosis run --enclave kurtosis-postgres main.star
+kurtosis run --enclave quickstart main.star
 ```
 
 Kurtosis will work for a bit, and then deliver you the following result:
 
 ```text
 INFO[2023-03-15T04:27:01-03:00] Creating a new enclave for Starlark to run inside...
-INFO[2023-03-15T04:27:05-03:00] Enclave 'kurtosis-postgres' created successfully
+INFO[2023-03-15T04:27:05-03:00] Enclave 'quickstart' created successfully
 
 > print msg="Hello, world"
 Hello, world
 
 Starlark code successfully run. No output was returned.
 INFO[2023-03-15T04:27:05-03:00] ===================================================
-INFO[2023-03-15T04:27:05-03:00] ||       Created enclave: kurtosis-postgres      ||
+INFO[2023-03-15T04:27:05-03:00] ||          Created enclave: quickstart          ||
 INFO[2023-03-15T04:27:05-03:00] ===================================================
-Name:                                 kurtosis-postgres
+Name:                                 quickstart
 UUID:                                 a78f2ce1ca68
 Status:                               RUNNING
 Creation Time:                        Wed, 15 Mar 2023 04:27:01 -03
@@ -142,22 +140,22 @@ def run(plan, args):
     )
 ```
 
-Before you run the above command, remember that you still have the `kurtosis-postgres` enclave hanging around from the previous section. To [clean up the previous enclave][kurtosis-clean-reference] and execute our new `main.star` file above, run:
+Before you run the above command, remember that you still have the `quickstart` enclave hanging around from the previous section. To [clean up the previous enclave][kurtosis-clean-reference] and execute our new `main.star` file above, run:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave kurtosis-postgres main.star
+kurtosis clean -a && kurtosis run --enclave quickstart main.star
 ```
 
 :::info
 The `--enclave` flag is used to specify the enclave to use for that particular run. If one doesn't exist, Kurtosis will create an enclave with that name - which is what is happening here. Read more about `kurtosis run` [here][kurtosis-run-reference]. 
 
-This entire  "clean-and-run" process will be your dev loop for the rest of the kurtosis-postgres as you add more services and operations to our distributed application.
+This entire  "clean-and-run" process will be your dev loop for the rest of the quickstart as you add more services and operations to our distributed application.
 :::
 
-You'll see in the result that the `kurtosis-postgres` enclave now contains a Postgres instance:
+You'll see in the result that the `quickstart` enclave now contains a Postgres instance:
 
 ```text
-Name:                                 kurtosis-postgres
+Name:                                 quickstart
 UUID:                                 a30106a0bb87
 Status:                               RUNNING
 Creation Time:                        Tue, 14 Mar 2023 20:23:54 -03
@@ -204,10 +202,10 @@ By contrast, Kurtosis Starlark scripts can use data as a first-class primitive a
 
 Let's see it in action, and we'll explain what's happening afterwards.
 
-First, create a file called `kurtosis.yml` next to your `main.star file` (in your working directory, `kurtosis-postgres`) with the following contents:
+First, create a file called `kurtosis.yml` next to your `main.star file` (in your working directory, `kurtosis-quickstart`) with the following contents:
 
 ```bash
-name: "github.com/john-snow/kurtosis-postgres"
+name: "github.com/john-snow/kurtosis-quickstart"
 ```
 
 Then update your `main.star` with the following:
@@ -260,7 +258,7 @@ def run(plan, args):
 Now, run the following to see what happens:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave kurtosis-postgres .
+kurtosis clean -a && kurtosis run --enclave quickstart .
 ```
 
 (Notice you are using `.` instead of `main.star`)
@@ -270,15 +268,15 @@ The output should also look more interesting as your plan has grown bigger:
 ```text
 INFO[2023-03-15T04:34:06-03:00] Cleaning enclaves...
 INFO[2023-03-15T04:34:06-03:00] Successfully removed the following enclaves:
-60601dd9906e40d6af5f16b233a56ae7	kurtosis-postgres
+60601dd9906e40d6af5f16b233a56ae7	quickstart
 INFO[2023-03-15T04:34:06-03:00] Successfully cleaned enclaves
 INFO[2023-03-15T04:34:06-03:00] Cleaning old Kurtosis engine containers...
 INFO[2023-03-15T04:34:06-03:00] Successfully cleaned old Kurtosis engine containers
 INFO[2023-03-15T04:34:06-03:00] Creating a new enclave for Starlark to run inside...
-INFO[2023-03-15T04:34:10-03:00] Enclave 'kurtosis-postgres' created successfully
-INFO[2023-03-15T04:34:10-03:00] Executing Starlark package at '/tmp/kurtosis-postgres' as the passed argument '.' looks like a directory
-INFO[2023-03-15T04:34:10-03:00] Compressing package 'github.com/john-snow/kurtosis-postgres' at '.' for upload
-INFO[2023-03-15T04:34:10-03:00] Uploading and executing package 'github.com/john-snow/kurtosis-postgres'
+INFO[2023-03-15T04:34:10-03:00] Enclave 'quickstart' created successfully
+INFO[2023-03-15T04:34:10-03:00] Executing Starlark package at '/tmp/kurtosis-quickstart' as the passed argument '.' looks like a directory
+INFO[2023-03-15T04:34:10-03:00] Compressing package 'github.com/john-snow/kurtosis-quickstart' at '.' for upload
+INFO[2023-03-15T04:34:10-03:00] Uploading and executing package 'github.com/john-snow/kurtosis-quickstart'
 
 > upload_files src="github.com/kurtosis-tech/awesome-kurtosis/data-package/dvd-rental-data.tar"
 Files with artifact name 'howling-thunder' uploaded with artifact UUID '32810fc8c131414882c52b044318b2fd'
@@ -291,9 +289,9 @@ Command returned with exit code '0' with no output
 
 Starlark code successfully run. No output was returned.
 INFO[2023-03-15T04:34:21-03:00] ===================================================
-INFO[2023-03-15T04:34:21-03:00] ||       Created enclave: kurtosis-postgres      ||
+INFO[2023-03-15T04:34:21-03:00] ||          Created enclave: quickstart          ||
 INFO[2023-03-15T04:34:21-03:00] ===================================================
-Name:                                 kurtosis-postgres
+Name:                                 quickstart
 UUID:                                 995fe0ca69fe
 Status:                               RUNNING
 Creation Time:                        Wed, 15 Mar 2023 04:34:06 -03
@@ -310,7 +308,7 @@ f1d9cab2ca34   postgres   postgres: 5432/tcp -> postgresql://127.0.0.1:62914   R
 Does your Postgres have data now? Let's find out by opening a shell on the Postgres container and logging into the database:
 
 ```bash
-kurtosis service shell kurtosis-postgres postgres
+kurtosis service shell quickstart postgres
 ```
 
 From there, listing the tables in the Postgres can be done with:
@@ -491,7 +489,7 @@ def run(plan, args):
 Now, run the same dev loop command as before (and don't worry about the result, we'll explain that later):
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave kurtosis-postgres .
+kurtosis clean -a && kurtosis run --enclave quickstart .
 ```
 
 We just got a failure, just like we might when building a real system!
@@ -533,7 +531,7 @@ The enclave state is usually a good place to find mor clues. If you look at the 
 
 ```text
 
-Name:                                 kurtosis-postgres
+Name:                                 quickstart
 UUID:                                 5b360f940bcc
 Status:                               RUNNING
 Creation Time:                        Tue, 14 Mar 2023 22:15:19 -03
@@ -552,7 +550,7 @@ From the above, we can see that the PostgREST service (named: `api`) is not in t
 You can also grab the PostgREST logs...
 
 ```bash
-kurtosis service logs kurtosis-postgres api
+kurtosis service logs quickstart api
 ```
 
 ...we can see that the PostgREST is dying:
@@ -603,13 +601,13 @@ def run(plan, args):
 In the line declaring the `postgres_url` variable in your `main.star` file, replace the `"postgres",` string with `POSTGRES_USER,` to use the correct username we specified at the beginning of our file. Then re-run your dev loop:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave kurtosis-postgres .
+kurtosis clean -a && kurtosis run --enclave quickstart .
 ```
 
 Now at the bottom of the output we can see that the PostgREST service is `RUNNING` correctly:
 
 ```text
-Name:                         kurtosis-postgres
+Name:                         quickstart
 UUID:                         11c0ac047299
 Status:                       RUNNING
 Creation Time:                Tue, 14 Mar 2023 22:30:02 -03
@@ -668,7 +666,7 @@ Now that you have an API, you should be able to interact with the data.
 [Inspect][kurtosis-enclave-inspect-reference] your enclave:
 
 ```bash
-kurtosis enclave inspect kurtosis-postgres
+kurtosis enclave inspect quickstart
 ```
 
 Notice how Kurtosis automatically exposed the PostgREST container's `http` port to your machine:
@@ -681,7 +679,7 @@ Notice how Kurtosis automatically exposed the PostgREST container's `http` port 
 In this output the `http` port is exposed as URL `http://127.0.0.1:59992`, but your port number will be different.
 :::
 
-You can paste the URL from your output into your browser (or Cmd+click if you're using [iTerm][iterm]) to verify that you are indeed talking to the PostgREST inside your `kurtosis-postgres` enclave:
+You can paste the URL from your output into your browser (or Cmd+click if you're using [iTerm][iterm]) to verify that you are indeed talking to the PostgREST inside your `quickstart` enclave:
 
 ```json
 {"swagger":"2.0","info":{"description":"","title":"standard public schema","version":"10.2.0.20230209 (pre-release) (a1e2fe3)"},"host":"0.0.0.0:3000","basePath":"/","schemes":["http"],"consumes":["application/json","application/vnd.pgrst.object+json","text/csv"],"produces":["application/json","application/vnd.pgrst.object+json","text/csv"],"paths":{"/":{"get":{"tags":["Introspection"],"summary":"OpenAPI description (this document)","produces":["application/openapi+json","application/json"],"responses":{"200":{"description":"OK"}}}},"/actor":{"get":{"tags":["actor"],"parameters":[{"$ref":"#/parameters/rowFilter.actor.actor_id"},{"$ref":"#/parameters/rowFilter.actor.first_name"},{"$ref":"#/parameters/rowFilter.actor.last_name"},{"$ref":"#/parameters/rowFilter.actor.last_update"},{"$ref":"#/parameters/select"},{"$ref":"#/parameters/order"},{"$ref":"#/parameters/range"},{"$ref":"#/parameters/rangeUnit"},{"$ref":"#/parameters/offset"},{"$ref":"#/parameters/limit"},{"$ref":"#/parameters/preferCount"}], ...
@@ -833,22 +831,7 @@ def run(plan, args):
 
 **This section showed how to interact with your test environment, and also how to parametrize it for others to easily modify and re-use.**
 
-Publishing your Kurtosis Package for others to use
---------------------------------------------------
-At this point, you should have 2 files:
-1. `main.star`
-2. `kurtosis.yml`
 
-Publishing these 2 files to a Github repository will enable anyone with Kurtosis and an internet connection to instantiate the environment you described in your `main.star` file. These files, alongside a directory that you will create on Github, form the basis for a [Kurtosis package][packages-reference]
-
-Once you've uploaded it to a Github repository, anyone can spin up the same system - in any way they want (using your parameters) and anywhere they want (e.g. Docker, Kubernetes, local, remote, etc).
-
-As an example, a consumer of the Kurtosis package need only run the following command to reproduce the system and add another row to the database of actors:
-```bash
-kurtosis run github.com/YOUR_GITHUB_USERNAME/REPOSITORY_NAME '{"actors": [{"first_name":"Harrison", "last_name": "Ford"}
-```
-
-Where `YOUR_GITHUB_USERNAME` is your Github username, and `REPOSITORY_NAME` is the name of your Github repository that houses your `kurtosis.yml` and `main.star` files.
 <!-- 
 // NOTE(ktoday): We commented this out because the Git publishing aspect was giving people trouble (needed to have Git set up, 'git init' was hard, etc.
 // I still think that publishing/shareability is a large part of Kurtosis, but there's probably a better way to highlight this
@@ -902,19 +885,29 @@ Testing
 
 Conclusion
 ----------
-And that's it - you've written your very first distributed application in Kurtosis! You experienced a great many workflows that Kurtosis optimizes to help bridge the author-consumer divide for environment definitions. Namely, as an author, you:
-- Started a Postgres database in an ephemeral, isolated test environment.
-- Seeded your database by importing an external Starlark package from the internet.
-- Set up an API server for your database and gracefully handled dynamically generated dependency data.
-- Inserted & queried data via the API.
-- Parameterized data insertion for future use by other users.
-- Made your Kurtosis package consumable by any user by publishing a Kurtosis package to Github
+And that's it - you've written your very first distributed application in Kurtosis!
+
+Let's review. In this tutorial you have:
+
+- Started a Postgres database in an ephemeral, isolated test environment
+- Seeded your database by importing an external Starlark package from the internet
+- Set up an API server for your database and gracefully handled dynamically generated dependency data
+- Inserted & queried data via the API
+- Parameterized data insertion for future use
 
 This was still just an introduction to Kurtosis. To dig deeper, visit other sections of our docs where you can read about [what Kurtosis is][homepage], understand the [architecture][architecture-explanation], and hear our [inspiration for starting Kurtosis][why-we-built-kurtosis-explanation]. 
+
+To learn more about how Kurtosis is used, we encourage you to check out our [`awesome-kurtosis` repository][awesome-kurtosis-repo], where you will find real-world examples of Kurtosis in action, including:
+- How to run a simple [Go test][go-test-example] or [Typescript test][ts-test-example] against the app we just built
+- The [Ethereum package][ethereum-package], used by the Ethereum Foundation, which can be used to set up local testnets 
+- A parameterized package for standing up an [n-node Cassandra cluster with Grafana and Prometheus][cassandra-package-example] out-of-the-box
+- The [NEAR package][near-package] for local dApp development in the NEAR ecosystem
 
 Finally, we'd love to hear from you. Please don't hesitate to share with us what went well, and what didn't, using `kurtosis feedback` to file an issue in our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) or to [chat with our cofounder, Kevin](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
 
 Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtosis), [join the community in our Discord](https://discord.com/channels/783719264308953108/783719264308953111), and [follow us on Twitter](https://twitter.com/KurtosisTech)!
+
+Thank you for trying our quickstart. We hope you enjoyed it. 
 
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
@@ -966,7 +959,6 @@ Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtos
 [cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
 [go-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/go-test
 [ts-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/ts-test
-[quickstart-consumers]: quickstart-consumer.md
 
 <!-- Misc -->
 [homepage]: home.md
