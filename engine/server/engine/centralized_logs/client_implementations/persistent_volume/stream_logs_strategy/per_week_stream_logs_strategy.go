@@ -252,7 +252,7 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	// First decode the line
 	var jsonLog JsonLog
 	if err := json.Unmarshal([]byte(jsonLogLineStr), &jsonLog); err != nil {
-		logrus.Warnf("An error occurred parsing the json log string: '%v'. Skipping streaming this log line.", jsonLogLineStr)
+		logrus.Warnf("An error occurred parsing the json log string: %v. Skipping sending this log line.", jsonLogLineStr)
 		return nil
 	}
 
