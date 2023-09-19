@@ -17,6 +17,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"golang.org/x/exp/slices"
 	"io"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -51,7 +52,11 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 	shouldFollowLogs bool,
 ) {
-	paths := strategy.getRetainedLogsFilePaths(fs, volume_consts.LogRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
+	paths, err := strategy.getRetainedLogsFilePaths(fs, volume_consts.LogRetentionPeriodInWeeks, string(enclaveUuid), string(serviceUuid))
+	if err != nil {
+		streamErrChan <- stacktrace.Propagate(err, "An error occurred retrieving log file paths for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
+		return
+	}
 	if len(paths) == 0 {
 		streamErrChan <- stacktrace.NewError(
 			`No logs file paths for service '%v' in enclave '%v' were found. This means either:
@@ -156,15 +161,30 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 // - The +1 is because we retain an extra week of logs compared to what we promise to retain for safety.
 // - The list of file paths is returned in order of oldest logs to most recent logs e.g. [ 3/80124/1234.json, /4/801234/1234.json, ...]
 // - If a file path does not exist, the function with exits and returns whatever file paths were found
-func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
-	filesystem volume_filesystem.VolumeFilesystem,
-	retentionPeriodInWeeks int,
-	enclaveUuid, serviceUuid string) []string {
+func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(filesystem volume_filesystem.VolumeFilesystem, retentionPeriodInWeeks int, enclaveUuid, serviceUuid string) ([]string, error) {
 	var paths []string
+	currentTime := strategy.time.Now()
 
-	// get log file paths as far back as they exist
+	// scan for first existing log file
+	firstWeekWithLogs := 0
 	for i := 0; i < (retentionPeriodInWeeks + 1); i++ {
-		year, week := strategy.time.Now().Add(time.Duration(-i) * oneWeek).ISOWeek()
+		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
+		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
+		if _, err := filesystem.Stat(filePathStr); err == nil {
+			paths = append(paths, filePathStr)
+			firstWeekWithLogs = i
+			break
+		} else {
+			// return if error is not due to nonexistent file path
+			if !os.IsNotExist(err) {
+				return paths, err
+			}
+		}
+	}
+
+	// scan for remaining files as far back as they exist
+	for i := firstWeekWithLogs + 1; i < (retentionPeriodInWeeks + 1); i++ {
+		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
 		filePathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceUuid, volume_consts.Filetype)
 		if _, err := filesystem.Stat(filePathStr); err != nil {
 			break
@@ -175,7 +195,7 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(
 	// reverse for oldest to most recent
 	slices.Reverse(paths)
 
-	return paths
+	return paths, nil
 }
 
 // tail -f [filepath]
