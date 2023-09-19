@@ -966,7 +966,7 @@ Lastly, feel free to [star us on Github](https://github.com/kurtosis-tech/kurtos
 [cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
 [go-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/go-test
 [ts-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/ts-test
-[quickstart-consumers]: quickstart.md
+[quickstart-consumers]: quickstart-consumer.md
 
 <!-- Misc -->
 [homepage]: home.md
