@@ -2,6 +2,7 @@
 title: Running Kurtosis in CI
 sidebar_label: Running in CI
 slug: /ci
+sidebar_position: 5
 ---
 
 Running Kurtosis on your local machine is nice, but executing it as part of CI is even better. This guide will walk you through modifying your CI config file to use Kurtosis in your CI environment:

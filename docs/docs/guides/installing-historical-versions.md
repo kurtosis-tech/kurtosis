@@ -2,7 +2,7 @@
 title: Installing Historical Versions
 sidebar_label: Installing Historical Versions
 slug: /install-historical
-sidebar_position: 3
+sidebar_position: 4
 ---
 
 <!---------- START IMPORTS ------------>
