@@ -195,10 +195,6 @@ func formattedUuidAndName(enclaveUuidWithName *kurtosis_engine_rpc_api_bindings.
 }
 
 func cleanUnusedImages(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, shouldCleanAll bool) ([]string, []error, error) {
-	cleanedImages := []string{}
-	var cleanError error = nil
-	if shouldCleanAll {
-		cleanedImages, cleanError = kurtosisBackend.PruneUnusedImages(ctx)
-	}
+	cleanedImages, cleanError := kurtosisBackend.PruneUnusedImages(ctx)
 	return cleanedImages, nil, cleanError
 }
