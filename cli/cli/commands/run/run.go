@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"os"
 	"os/signal"
 	"path"
@@ -553,15 +554,19 @@ func getOrCreateEnclaveContext(
 
 // validatePackageArgs just validates the args is a valid JSON string
 func validatePackageArgs(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
-	serializedJsonArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
+	serializedArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", inputArgsArgKey)
 	}
 	var result interface{}
-	if err := json.Unmarshal([]byte(serializedJsonArgs), &result); err != nil {
-		return stacktrace.Propagate(err, "Error validating args, likely because it is not a valid JSON.")
+	var jsonError error
+	if jsonError = json.Unmarshal([]byte(serializedArgs), &result); jsonError == nil {
+		return nil
 	}
-	return nil
+	if err := yaml.Unmarshal([]byte(serializedArgs), &result); err == nil {
+		return nil
+	}
+	return stacktrace.Propagate(jsonError, "Error validating args, likely because it is not a valid JSON or YAML.")
 }
 
 // parseVerbosityFlag Get the verbosity flag is present, and parse it to a valid Verbosity value

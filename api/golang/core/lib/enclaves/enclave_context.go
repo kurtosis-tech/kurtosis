@@ -19,6 +19,7 @@ package enclaves
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -28,6 +29,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
+	"gopkg.in/yaml.v2"
 	"io"
 	"path"
 	"strings"
@@ -187,6 +189,15 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	if yamlObj, valid := isValidYAML(serializedParams); valid {
+		var err error
+		logrus.Debugf("Converting from %s", serializedParams)
+		serializedParams, err = convertYamlToJson(yamlObj)
+		if err != nil {
+			return nil, nil, stacktrace.Propagate(err, "Failed while converting serialized params to json")
+		}
+		logrus.Debugf("Converting to %s", serializedParams)
+	}
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	defer func() {
@@ -206,6 +217,23 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
 	executionStartedSuccessfully = true
 	return starlarkResponseLineChan, cancelCtxFunc, nil
+}
+
+func isValidYAML(maybeYaml string) (map[string]interface{}, bool) {
+	var yamlObj map[string]interface{}
+	if err := yaml.Unmarshal([]byte(maybeYaml), &yamlObj); err != nil {
+		return nil, false
+	}
+	return yamlObj, true
+}
+
+func convertYamlToJson(yaml map[string]interface{}) (string, error) {
+	// Marshal the map into a JSON string
+	jsonData, err := json.Marshal(yaml)
+	if err != nil {
+		return "", stacktrace.NewError("Failed to convert yaml '%v' to json", yaml)
+	}
+	return string(jsonData), nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
