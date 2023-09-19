@@ -64,8 +64,9 @@ func TestGetRetainedLogsFilePaths(t *testing.T) {
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime)
-	logFilePaths := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
+	logFilePaths, err := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
 
+	require.NoError(t, err)
 	require.Equal(t, len(expectedLogFilePaths), len(logFilePaths))
 	for i, filePath := range expectedLogFilePaths {
 		require.Equal(t, "/"+filePath, logFilePaths[i])
@@ -111,8 +112,9 @@ func TestGetRetainedLogsFilePathsAcrossNewYear(t *testing.T) {
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime)
-	logFilePaths := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
+	logFilePaths, err := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
 
+	require.NoError(t, err)
 	require.Equal(t, len(expectedLogFilePaths), len(logFilePaths))
 	for i, filePath := range expectedLogFilePaths {
 		require.Equal(t, "/"+filePath, logFilePaths[i])
@@ -158,8 +160,9 @@ func TestGetRetainedLogsFilePathsAcrossNewYearWith53Weeks(t *testing.T) {
 
 	mockTime := logs_clock.NewMockLogsClock(2016, currentWeek, 1)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime)
-	logFilePaths := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
+	logFilePaths, err := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
 
+	require.NoError(t, err)
 	require.Equal(t, len(expectedLogFilePaths), len(logFilePaths))
 	for i, filePath := range expectedLogFilePaths {
 		require.Equal(t, "/"+filePath, logFilePaths[i])
@@ -196,8 +199,9 @@ func TestGetRetainedLogsFilePathsWithDiffRetentionPeriod(t *testing.T) {
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime)
-	logFilePaths := strategy.getRetainedLogsFilePaths(filesystem, retentionPeriod, testEnclaveUuid, testUserService1Uuid)
+	logFilePaths, err := strategy.getRetainedLogsFilePaths(filesystem, retentionPeriod, testEnclaveUuid, testUserService1Uuid)
 
+	require.NoError(t, err)
 	require.Equal(t, len(expectedLogFilePaths), len(logFilePaths))
 	for i, filePath := range expectedLogFilePaths {
 		require.Equal(t, "/"+filePath, logFilePaths[i])
@@ -234,8 +238,9 @@ func TestGetRetainedLogsFilePathsReturnsErrorIfWeeksMissing(t *testing.T) {
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime)
-	logFilePaths := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
+	logFilePaths, err := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
 
+	require.NoError(t, err)
 	require.Less(t, len(logFilePaths), defaultRetentionPeriodInWeeks)
 	for i, filePath := range expectedLogFilePaths {
 		require.Equal(t, "/"+filePath, logFilePaths[i])
@@ -265,8 +270,9 @@ func TestGetRetainedLogsFilePathsReturnsCorrectPathsIfWeeksMissingInBetween(t *t
 
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, currentWeek, defaultDay)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime)
-	logFilePaths := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
+	logFilePaths, err := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
 
+	require.NoError(t, err)
 	require.Len(t, logFilePaths, 1)
 	require.Equal(t, "/"+week3filepath, logFilePaths[0]) // should only return week 3 because week 2 is missing
 }
@@ -298,8 +304,9 @@ func TestGetRetainedLogsFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t 
 
 	filesystem := volume_filesystem.NewMockedVolumeFilesystem(mapFS)
 	strategy := NewPerWeekStreamLogsStrategy(mockTime)
-	logFilePaths := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
+	logFilePaths, err := strategy.getRetainedLogsFilePaths(filesystem, defaultRetentionPeriodInWeeks, testEnclaveUuid, testUserService1Uuid)
 
+	require.NoError(t, err)
 	require.Equal(t, len(expectedLogFilePaths), len(logFilePaths))
 	for i, filePath := range expectedLogFilePaths {
 		require.Equal(t, "/"+filePath, logFilePaths[i])
