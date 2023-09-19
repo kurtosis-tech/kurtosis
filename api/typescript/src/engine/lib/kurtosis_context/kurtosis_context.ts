@@ -237,11 +237,17 @@ export class KurtosisContext {
     //})
     //You can cancel receiving the stream from the service calling serviceLogsReadable.destroy()
     // Docs available at https://docs.kurtosis.com/sdk#getservicelogsstring-enclaveidentifier-setserviceuuid-serviceuuids-boolean-shouldfollowlogs-loglinefilter-loglinefilter---servicelogsstreamcontent-servicelogsstreamcontent
-    public async getServiceLogs(enclaveIdentifier: string, serviceUuids: Set<ServiceUUID>, shouldFollowLogs: boolean, logLineFilter: LogLineFilter|undefined): Promise<Result<Readable, Error>> {
+    public async getServiceLogs(
+        enclaveIdentifier: string,
+        serviceUuids: Set<ServiceUUID>,
+        shouldFollowLogs: boolean,
+        shouldReturnAllLogs : boolean,
+        numLogLines : number,
+        logLineFilter: LogLineFilter|undefined): Promise<Result<Readable, Error>> {
         let getServiceLogsArgs: GetServiceLogsArgs;
 
         try {
-            getServiceLogsArgs = newGetServiceLogsArgs(enclaveIdentifier, serviceUuids, shouldFollowLogs, logLineFilter);
+            getServiceLogsArgs = newGetServiceLogsArgs(enclaveIdentifier, serviceUuids, shouldFollowLogs, shouldReturnAllLogs, numLogLines, logLineFilter);
         } catch(error) {
             return err(new Error(`An error occurred getting the get service logs arguments for enclave identifier '${enclaveIdentifier}', service UUIDs '${serviceUuids}', with should follow value '${shouldFollowLogs}' and log line filter '${logLineFilter}'. Error:\n${error}`));
         }
