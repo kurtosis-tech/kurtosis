@@ -161,7 +161,9 @@ func formatOutput(format string, ipAddress string, spec *services.PortSpec) (str
 			if spec.GetMaybeApplicationProtocol() != "" {
 				resultParts = append(resultParts, spec.GetMaybeApplicationProtocol()+"://")
 			} else {
-				logrus.Warnf("Expected protocol but was empty, skipping")
+				// TODO(victor.colombo): What should we do here? Panic? Warn?
+				// Left it as a debug for now so it doesn't pollute the output
+				logrus.Debugf("Expected protocol but was empty, skipping")
 			}
 		case ipStr:
 			resultParts = append(resultParts, ipAddress)
