@@ -987,7 +987,7 @@ jobs:
       - run: |
           skip_docker_image_building=true
           build_architecture=arm64
-          core/server/scripts/build.sh "${skip_docker_image_building}" ${build_architecture}
+          core/server/scripts/build.sh "${skip_docker_image_building}" "${build_architecture}"
       - run: |
           set -euo pipefail
           source core/server/scripts/_constants.env
