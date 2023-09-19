@@ -1,16 +1,19 @@
 import Heading from "./Heading";
 import {useEffect, useState} from "react";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
-import {LogView} from "./LogView";
 import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import {getServiceLogs} from "../api/enclave";
 import {useAppContext} from "../context/AppState";
+import {Badge, Box, GridItem, Table, TableContainer, Tbody, Td, Tr} from "@chakra-ui/react";
+import {CodeEditor} from "./CodeEditor";
+import {LogView} from "./LogView";
 
 const renderServices = (services, handleClick) => {
     return services.map(service => {
         return (
-            <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={service.name} onClick={() => handleClick(service)}>
+            <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={service.name}
+                 onClick={() => handleClick(service)}>
                 <div className='cursor-default text-lg text-white'> {service.name} </div>
             </div>
         )
@@ -31,7 +34,8 @@ const ServiceInfo = () => {
         let stream;
         const ctrl = new AbortController();
         const fetchLogs = async () => {
-                stream = await getServiceLogs(ctrl, enclaveName, serviceUuid, appData.apiHost);            try {
+            stream = await getServiceLogs(ctrl, enclaveName, serviceUuid, appData.apiHost);
+            try {
                 for await (const res of stream) {
                     const log = res["serviceLogsByServiceUuid"][serviceUuid]["line"][0]
                     setLogs(logs => [...logs, log])
@@ -52,6 +56,66 @@ const ServiceInfo = () => {
         navigate(fullPath, {state: {services, selected: service}})
     }
 
+    const func = () => {
+    }
+
+    const codeBox = (id, parameterName, data) => {
+        const serializedData = JSON.stringify(data, null, 2)
+        return (
+            <Box>
+                {
+                    CodeEditor(
+                        func,
+                        true,
+                        `${parameterName}.json`,
+                        ["json"],
+                        250,
+                        serializedData,
+                        true,
+                        false,
+                        id,
+                        true,
+                        true,
+                        false,
+                        "xs",
+                        "1px"
+                    )
+                }
+            </Box>
+        );
+    }
+
+    const tableRow = (heading, data) => {
+        let displayData = ""
+        try {
+            displayData = data()
+        } catch (e) {
+            displayData = "Error while retrieving information"
+        }
+        return (
+            <Tr key={heading}>
+                <Td><p><b>{heading}</b></p></Td>
+                <Td>{displayData}</Td>
+            </Tr>
+        );
+    };
+
+    const selectedSerialized = JSON.parse(JSON.stringify(selected))
+    const statusBadge = (status) => {
+        let color = ""
+        if(status === "RUNNING"){
+            color="green"
+        } else if (status === "STOPPED") {
+            color="red"
+        } else if(status ==="UNKNOWN"){
+            color = "yellow"
+        }
+        return (
+            <Badge colorScheme={color}>{status}</Badge>
+        )
+
+    }
+
     return (
         <div className="flex h-full">
             <LeftPanel
@@ -61,32 +125,24 @@ const ServiceInfo = () => {
                 renderList={() => renderServices(services, handleServiceClick)}
             />
             <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
-                <div className='flex flex-col h-full space-y-1 bg-white'>
-                    <Heading content={`${enclaveName} ::${selected.name}`}/>
-                    <div className="flex-1">
-                        <div className="text-xl text-left h-fit mb-2 ml-5 text-black">
-                            Ports
-                        </div>
-                        <div className="overflow-auto">
-                            {
-                                selected.ports.map(port => {
-                                    const urlWithApplicationString = `${port.applicationProtocol}://localhost:${port.publicPortNumber}`
-                                    const urlWithoutApplicationString = `localhost:${port.publicPortNumber}`
-                                    const url = port.applicationProtocol ? urlWithApplicationString : urlWithoutApplicationString
+                <div className='flex flex-col h-full space-y-1 bg-[#171923]'>
+                    <Heading content={`${enclaveName} - ${selected.name}`}/>
+                    <TableContainer>
+                        <Table variant='simple' size='sm'>
+                            <Tbody>
+                                {tableRow("Name", () => selectedSerialized.name)}
+                                {tableRow("UUID", () => selectedSerialized.uuid)}
+                                {tableRow("Status", () => statusBadge(selectedSerialized.container.status))}
+                                {tableRow("Image", () => selectedSerialized.container.imageName)}
+                                {tableRow("Ports", () => codeBox(0, "ports", selectedSerialized.ports))}
+                                {tableRow("ENTRYPOINT", () => codeBox(1, "entrypoint", selectedSerialized.container.entrypointArgs))}
+                                {tableRow("CMD", () => codeBox(2, "cmd", selectedSerialized.container.cmdArgs))}
+                                {tableRow("ENV", () => codeBox(3, "env", selectedSerialized.container.envVars))}
+                            </Tbody>
+                        </Table>
+                    </TableContainer>
 
-                                    return (
-                                        <div className="h-fit flex flex-row space-x-10 ml-5 text-black">
-                                            <div> {port.portName}:</div>
-                                            <a href={url} rel="noreferrer" className="grow">
-                                                <u> {url} </u>
-                                            </a>
-                                        </div>
-                                    )
-                                })
-                            }
-                        </div>
-                    </div>
-                    <LogView heading={`Service Logs`} logs={logs}/>
+                    {/*<LogView heading={`Service Logs`} logs={logs}/>*/}
                 </div>
             </div>
             <RightPanel home={false} isServiceInfo={true} enclaveName={enclaveName}/>

@@ -141,8 +141,6 @@ const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
     const [enclaveName, setEnclaveName] = useState("")
     const { isOpen, onOpen, onClose } = useDisclosure()
     
-    console.log(enclaveName)
-
     const handleCreateEnvClick = () => {
         navigate("/catalog")
     }
