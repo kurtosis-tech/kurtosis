@@ -36,10 +36,21 @@ const (
 	isPortIdentifierArgOptional = false
 	isPortIdentifierArgGreedy   = false
 
-	formatFlagKey        = "format"
-	formatFlagKeyDefault = "protocol,ip,number"
+	formatFlagKey = "format"
+	protocolStr   = "protocol"
+	ipStr         = "ip"
+	numberStr     = "number"
 
 	ipAddress = "127.0.0.1"
+)
+
+var (
+	formatFlagKeyDefault  = fmt.Sprintf("'%s,%s,%s'", protocolStr, ipStr, numberStr)
+	formatFlagKeyExamples = []string{
+		fmt.Sprintf("'%s'", ipStr),
+		fmt.Sprintf("'%s'", numberStr),
+		fmt.Sprintf("'%s,%s'", protocolStr, ipStr),
+	}
 )
 
 var PortPrintCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -50,8 +61,10 @@ var PortPrintCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 	EngineClientContextKey:    engineClientCtxKey,
 	Flags: []*flags.FlagConfig{
 		{
-			Key:     formatFlagKey,
-			Usage:   "Allows selecting what pieces of port are printed, using comma separated values (examples: 'ip', 'number', 'protocol,ip'). Default 'protocol,ip,number'.",
+			Key: formatFlagKey,
+			Usage: fmt.Sprintf(
+				"Allows selecting what pieces of port are printed, using comma separated values (examples: %s). Default %s.",
+				strings.Join(formatFlagKeyExamples, ", "), formatFlagKeyDefault),
 			Type:    flags.FlagType_String,
 			Default: formatFlagKeyDefault,
 		},
@@ -144,15 +157,15 @@ func formatOutput(format string, ipAddress string, spec *services.PortSpec) (str
 	var resultParts []string
 	for _, part := range parts {
 		switch part {
-		case "protocol":
+		case protocolStr:
 			if spec.GetMaybeApplicationProtocol() != "" {
 				resultParts = append(resultParts, spec.GetMaybeApplicationProtocol()+"://")
 			} else {
 				logrus.Warnf("Expected protocol but was empty, skipping")
 			}
-		case "ip":
+		case ipStr:
 			resultParts = append(resultParts, ipAddress)
-		case "number":
+		case numberStr:
 			resultParts = append(resultParts, fmt.Sprintf(":%d", spec.GetNumber()))
 		default:
 			return "", stacktrace.NewError("Invalid format piece '%v'", part)
