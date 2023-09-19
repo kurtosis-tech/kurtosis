@@ -89,8 +89,21 @@ func run(
 		},
 	}
 
+	executeOnlyIfAllFlagIsEnabled := map[string]bool{
+		oldEngineCleaningPhaseTitle: false,
+		enclavesCleaningPhaseTitle:  false,
+		unusedImagesPhaseTitle:      true,
+	}
+
 	phasesWithErrors := []string{}
 	for phaseTitle, cleaningFunc := range cleaningPhaseFunctions {
+		onlyIfAllFlag, found := executeOnlyIfAllFlagIsEnabled[phaseTitle]
+		if !found {
+			return stacktrace.NewError("Couldn't find phase %s in executeOnlyIfAllFlagIsEnabled. This is a bug in Kurtosis", phaseTitle)
+		}
+		if onlyIfAllFlag && !shouldCleanAll {
+			continue
+		}
 		logrus.Infof("Cleaning %v...", phaseTitle)
 		successfullyRemovedArtifactUuids, removalErrors, err := cleaningFunc()
 		if err != nil {
