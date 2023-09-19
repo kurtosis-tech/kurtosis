@@ -127,6 +127,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 							}
 						}
 						if shouldFollowLogs {
+							logrus.Infof("STARTING TO FOLLOW LOGS...")
 							if err = strategy.tailLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 								streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 								return
