@@ -128,6 +128,70 @@ export declare enum Port_TransportProtocol {
 }
 
 /**
+ * @generated from message api_container_api.Container
+ */
+export declare class Container extends Message<Container> {
+  /**
+   * @generated from field: api_container_api.Container.Status status = 1;
+   */
+  status: Container_Status;
+
+  /**
+   * @generated from field: string image_name = 2;
+   */
+  imageName: string;
+
+  /**
+   * @generated from field: repeated string entrypoint_args = 3;
+   */
+  entrypointArgs: string[];
+
+  /**
+   * @generated from field: repeated string cmd_args = 4;
+   */
+  cmdArgs: string[];
+
+  /**
+   * @generated from field: map<string, string> env_vars = 5;
+   */
+  envVars: { [key: string]: string };
+
+  constructor(data?: PartialMessage<Container>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.Container";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): Container;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): Container;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): Container;
+
+  static equals(a: Container | PlainMessage<Container> | undefined, b: Container | PlainMessage<Container> | undefined): boolean;
+}
+
+/**
+ * @generated from enum api_container_api.Container.Status
+ */
+export declare enum Container_Status {
+  /**
+   * @generated from enum value: STOPPED = 0;
+   */
+  STOPPED = 0,
+
+  /**
+   * @generated from enum value: RUNNING = 1;
+   */
+  RUNNING = 1,
+
+  /**
+   * @generated from enum value: UNKNOWN = 2;
+   */
+  UNKNOWN = 2,
+}
+
+/**
  * @generated from message api_container_api.ServiceInfo
  */
 export declare class ServiceInfo extends Message<ServiceInfo> {
@@ -190,6 +254,13 @@ export declare class ServiceInfo extends Message<ServiceInfo> {
    * @generated from field: api_container_api.ServiceStatus service_status = 8;
    */
   serviceStatus: ServiceStatus;
+
+  /**
+   * Docker container or Kubernetes pod container
+   *
+   * @generated from field: api_container_api.Container container = 9;
+   */
+  container?: Container;
 
   constructor(data?: PartialMessage<ServiceInfo>);
 

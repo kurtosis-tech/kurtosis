@@ -5,6 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net"
+	"os"
+	"path"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
 	"github.com/gammazero/workerpool"
@@ -14,19 +22,12 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	"net"
-	"os"
-	"path"
-	"strconv"
-	"strings"
-	"time"
 )
 
 const (
@@ -334,7 +335,7 @@ func GetMatchingUserServiceObjsAndDockerResourcesNoMutex(
 		}
 
 		if filters.Statuses != nil && len(filters.Statuses) > 0 {
-			if _, found := filters.Statuses[serviceObj.GetStatus()]; !found {
+			if _, found := filters.Statuses[serviceObj.GetContainer().GetStatus()]; !found {
 				continue
 			}
 		}
@@ -591,19 +592,19 @@ func getUserServiceObjsFromDockerResources(
 
 	// If we have an entry in the map, it means there's at least one Docker resource
 	for serviceUuid, resources := range allDockerResources {
-		container := resources.ServiceContainer
+		serviceContainer := resources.ServiceContainer
 
 		// If we don't have a container, we don't have the service ID label which means we can't actually construct a Service object
 		// The only case where this would happen is if, during deletion, we delete the container but an error occurred deleting the volumes
-		if container == nil {
+		if serviceContainer == nil {
 			return nil, stacktrace.NewError(
 				"Service '%v' has Docker resources but not a container; this indicates that there the service's "+
 					"container was deleted but errors occurred deleting the rest of the resources",
 				serviceUuid,
 			)
 		}
-		containerName := container.GetName()
-		containerLabels := container.GetLabels()
+		containerName := serviceContainer.GetName()
+		containerLabels := serviceContainer.GetLabels()
 
 		serviceIdStr, found := containerLabels[label_key_consts.IDDockerLabelKey.GetString()]
 		if !found {
@@ -614,10 +615,10 @@ func getUserServiceObjsFromDockerResources(
 		privateIp, privatePorts, maybePublicIp, maybePublicPorts, err := GetIpAndPortInfoFromContainer(
 			containerName,
 			containerLabels,
-			container.GetHostPortBindings(),
+			serviceContainer.GetHostPortBindings(),
 		)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", container.GetName())
+			return nil, stacktrace.Propagate(err, "An error occurred getting IP & port info from container '%v'", serviceContainer.GetName())
 		}
 
 		registration := service.NewServiceRegistration(
@@ -628,22 +629,28 @@ func getUserServiceObjsFromDockerResources(
 			string(serviceName), // in Docker, hostname = serviceName because we're setting the "alias" of the container to serviceName
 		)
 
-		containerStatus := container.GetStatus()
+		containerStatus := serviceContainer.GetStatus()
 		isContainerRunning, found := consts.IsContainerRunningDeterminer[containerStatus]
 		if !found {
 			return nil, stacktrace.NewError("No is-running determination found for status '%v' for container '%v'", containerStatus.String(), containerName)
 		}
-		serviceStatus := container_status.ContainerStatus_Stopped
+		serviceContainerStatus := container.ContainerStatus_Stopped
 		if isContainerRunning {
-			serviceStatus = container_status.ContainerStatus_Running
+			serviceContainerStatus = container.ContainerStatus_Running
 		}
 
 		result[serviceUuid] = service.NewService(
 			registration,
-			serviceStatus,
 			privatePorts,
 			maybePublicIp,
 			maybePublicPorts,
+			container.NewContainer(
+				serviceContainerStatus,
+				serviceContainer.GetImageName(),
+				serviceContainer.GetEntrypointArgs(),
+				serviceContainer.GetCmdArgs(),
+				serviceContainer.GetEnvVars(),
+			),
 		)
 	}
 	return result, nil

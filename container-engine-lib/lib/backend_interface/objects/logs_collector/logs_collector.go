@@ -2,10 +2,11 @@ package logs_collector
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"net"
+
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"net"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 // 1. collecting logs from all services within an enclave
 // 2. forwarding these lgos to the logs aggregator
 type LogsCollector struct {
-	status container_status.ContainerStatus
+	status container.ContainerStatus
 
 	// This information will be nil if the logs collector container isn't running
 	privateTcpPort  *port_spec.PortSpec
@@ -28,7 +29,7 @@ type LogsCollector struct {
 }
 
 func NewLogsCollector(
-	status container_status.ContainerStatus,
+	status container.ContainerStatus,
 	maybeEnclaveNetworkIpAddress net.IP,
 	maybeBridgeNetworkIpAddress net.IP,
 	privateTcpPort *port_spec.PortSpec,
@@ -43,7 +44,7 @@ func NewLogsCollector(
 	}
 }
 
-func (logsCollector *LogsCollector) GetStatus() container_status.ContainerStatus {
+func (logsCollector *LogsCollector) GetStatus() container.ContainerStatus {
 	return logsCollector.status
 }
 

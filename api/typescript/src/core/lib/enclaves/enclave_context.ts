@@ -260,6 +260,7 @@ export class EnclaveContext {
             serviceInfo.getMaybePublicIpAddr(),
             serviceCtxPublicPorts,
             serviceInfo.getServiceStatus(),
+            serviceInfo.getContainer(),
         );
 
         return ok(serviceContext);

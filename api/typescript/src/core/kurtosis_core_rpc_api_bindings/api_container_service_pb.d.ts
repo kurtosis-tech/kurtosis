@@ -39,6 +39,50 @@ export namespace Port {
   }
 }
 
+export class Container extends jspb.Message {
+  getStatus(): Container.Status;
+  setStatus(value: Container.Status): Container;
+
+  getImageName(): string;
+  setImageName(value: string): Container;
+
+  getEntrypointArgsList(): Array<string>;
+  setEntrypointArgsList(value: Array<string>): Container;
+  clearEntrypointArgsList(): Container;
+  addEntrypointArgs(value: string, index?: number): Container;
+
+  getCmdArgsList(): Array<string>;
+  setCmdArgsList(value: Array<string>): Container;
+  clearCmdArgsList(): Container;
+  addCmdArgs(value: string, index?: number): Container;
+
+  getEnvVarsMap(): jspb.Map<string, string>;
+  clearEnvVarsMap(): Container;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): Container.AsObject;
+  static toObject(includeInstance: boolean, msg: Container): Container.AsObject;
+  static serializeBinaryToWriter(message: Container, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): Container;
+  static deserializeBinaryFromReader(message: Container, reader: jspb.BinaryReader): Container;
+}
+
+export namespace Container {
+  export type AsObject = {
+    status: Container.Status,
+    imageName: string,
+    entrypointArgsList: Array<string>,
+    cmdArgsList: Array<string>,
+    envVarsMap: Array<[string, string]>,
+  }
+
+  export enum Status { 
+    STOPPED = 0,
+    RUNNING = 1,
+    UNKNOWN = 2,
+  }
+}
+
 export class ServiceInfo extends jspb.Message {
   getServiceUuid(): string;
   setServiceUuid(value: string): ServiceInfo;
@@ -64,6 +108,11 @@ export class ServiceInfo extends jspb.Message {
   getServiceStatus(): ServiceStatus;
   setServiceStatus(value: ServiceStatus): ServiceInfo;
 
+  getContainer(): Container | undefined;
+  setContainer(value?: Container): ServiceInfo;
+  hasContainer(): boolean;
+  clearContainer(): ServiceInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): ServiceInfo.AsObject;
   static toObject(includeInstance: boolean, msg: ServiceInfo): ServiceInfo.AsObject;
@@ -82,6 +131,7 @@ export namespace ServiceInfo {
     name: string,
     shortenedUuid: string,
     serviceStatus: ServiceStatus,
+    container?: Container.AsObject,
   }
 }
 
