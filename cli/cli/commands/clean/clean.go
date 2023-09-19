@@ -75,7 +75,10 @@ func run(
 	if shouldCleanAll {
 		images, err := kurtosisBackend.PruneUnusedImages(ctx)
 		if len(images) > 0 {
-			logrus.Infof("Pruned unused images '%v'", images)
+			logrus.Infof("Removing old Kurtosis images")
+			for _, image := range images {
+				logrus.Infof("Removed '%v'", image)
+			}
 		}
 		if err != nil {
 			return stacktrace.Propagate(err, "Failed to prune all unused images")
