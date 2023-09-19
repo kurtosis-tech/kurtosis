@@ -186,7 +186,10 @@ func (strategy *PerWeekStreamLogsStrategy) tailLogs(
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 ) error {
 	logTail, err := tail.TailFile(filepath, tail.Config{
-		Location:    nil,
+		Location: &tail.SeekInfo{
+			Offset: 0,
+			Whence: io.SeekEnd, // start tailing from end of log file
+		},
 		ReOpen:      false,
 		MustExist:   true,
 		Poll:        false,
