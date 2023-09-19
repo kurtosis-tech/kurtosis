@@ -28,6 +28,7 @@ const (
 	// Should be lowercased as they'll go into a string like "Cleaning XXXXX...."
 	oldEngineCleaningPhaseTitle = "old Kurtosis engine containers"
 	enclavesCleaningPhaseTitle  = "enclaves"
+	unusedImagesPhaseTitle      = "unused images"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -72,19 +73,6 @@ func run(
 		return stacktrace.Propagate(err, "Expected a boolean flag with key '%v' but none was found; this is an error in Kurtosis!", shouldCleanAll)
 	}
 
-	if shouldCleanAll {
-		images, err := kurtosisBackend.PruneUnusedImages(ctx)
-		if len(images) > 0 {
-			logrus.Infof("Removing old Kurtosis images")
-			for _, image := range images {
-				logrus.Infof("Removed '%v'", image)
-			}
-		}
-		if err != nil {
-			return stacktrace.Propagate(err, "Failed to prune all unused images")
-		}
-	}
-
 	// Map of cleaning_phase_title -> (successfully_destroyed_object_id, object_destruction_errors, clean_error)
 	cleaningPhaseFunctions := map[string]func() ([]string, []error, error){
 		oldEngineCleaningPhaseTitle: func() ([]string, []error, error) {
@@ -94,6 +82,10 @@ func run(
 		enclavesCleaningPhaseTitle: func() ([]string, []error, error) {
 			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
 			return cleanEnclaves(ctx, engineClient, shouldCleanAll)
+		},
+		unusedImagesPhaseTitle: func() ([]string, []error, error) {
+			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
+			return cleanUnusedImages(ctx, kurtosisBackend, shouldCleanAll)
 		},
 	}
 
@@ -187,4 +179,13 @@ func cleanEnclaves(ctx context.Context, engineClient kurtosis_engine_rpc_api_bin
 
 func formattedUuidAndName(enclaveUuidWithName *kurtosis_engine_rpc_api_bindings.EnclaveNameAndUuid) string {
 	return fmt.Sprintf("%v%v%v", enclaveUuidWithName.Uuid, uuidAndNameDelimiter, enclaveUuidWithName.Name)
+}
+
+func cleanUnusedImages(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, shouldCleanAll bool) ([]string, []error, error) {
+	cleanedImages := []string{}
+	var cleanError error = nil
+	if shouldCleanAll {
+		cleanedImages, cleanError = kurtosisBackend.PruneUnusedImages(ctx)
+	}
+	return cleanedImages, nil, cleanError
 }
