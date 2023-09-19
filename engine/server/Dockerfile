@@ -8,6 +8,6 @@ WORKDIR /run
 
 ADD ./webapp ./webapp
 
-COPY ./build/kurtosis-engine.$TARGETARCH ./
+COPY ./build/kurtosis-engine.$TARGETARCH ./kurtosis-engine
 
-CMD ./kurtosis-engine.$TARGETARCH
+CMD ./kurtosis-engine

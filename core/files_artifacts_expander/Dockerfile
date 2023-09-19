@@ -6,6 +6,6 @@ ARG TARGETARCH
 
 WORKDIR /run
 
-COPY ./build/files-artifacts-expander.$TARGETARCH  ./
+COPY ./build/files-artifacts-expander.$TARGETARCH  ./files-artifacts-expander
 
-CMD ./files-artifacts-expander.$TARGETARCH
+CMD ./files-artifacts-expander

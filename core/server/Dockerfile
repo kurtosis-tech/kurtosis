@@ -7,6 +7,6 @@ ARG TARGETARCH
 
 WORKDIR /run
 
-COPY ./build/api-container.$TARGETARCH ./
+COPY ./build/api-container.$TARGETARCH ./api-container
 
-CMD ./api-container.$TARGETARCH
+CMD ./api-container
