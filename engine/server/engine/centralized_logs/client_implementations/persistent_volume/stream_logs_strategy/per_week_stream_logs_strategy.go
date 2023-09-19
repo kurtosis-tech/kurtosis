@@ -263,6 +263,7 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 		return stacktrace.NewError("An error retrieving the log field from json log string: %v\n", jsonLogLineStr)
 	}
 	logLine := logline.NewLogLine(logLineStr)
+	logrus.Infof("LOG LINE SENT: %v", logLine)
 
 	// Then filter by checking if the log message is valid based on requested filters
 	validLogLine, err := logLine.IsValidLogLineBaseOnFilters(conjunctiveLogLinesFiltersWithRegex)
