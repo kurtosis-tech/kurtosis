@@ -2,7 +2,6 @@
 title: Running Kurtosis in Kubernetes
 sidebar_label: Running in Kubernetes
 slug: /k8s
-sidebar_position: 6
 ---
 
 This guide assumes that you have [Kurtosis installed](./installing-the-cli.md).
