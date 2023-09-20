@@ -29,10 +29,10 @@ const (
 )
 
 var (
-	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
+	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 )
 
-func TestStartosisPackage_ValidPackageWithInput(t *testing.T) {
+func TestStartosisPackage_UploadFileAndCheckFileHash(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 
