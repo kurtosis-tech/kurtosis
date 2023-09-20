@@ -20,6 +20,7 @@ package enclaves
 import (
 	"context"
 	"encoding/json"
+	yaml_convert "github.com/ghodss/yaml"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -29,7 +30,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
-	"gopkg.in/yaml.v2"
 	"io"
 	"path"
 	"strings"
@@ -188,16 +188,18 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(
 }
 
 func maybeParseYaml(serializedParams string) (string, error) {
-	if yamlObj, valid := isValidYAML(serializedParams); valid {
-		var err error
-		logrus.Debugf("Converting from %s", serializedParams)
-		serializedParams, err = convertYamlToJson(yamlObj)
-		if err != nil {
-			return "", stacktrace.Propagate(err, "Failed while converting serialized params to json")
-		}
-		logrus.Debugf("Converting to %s", serializedParams)
+	if valid := isValidJSON(serializedParams); valid {
+		return serializedParams, nil
 	}
-	return serializedParams, nil
+	logrus.Debugf("Serialized params '%v' is not valid JSON, trying to convert from YAML", serializedParams)
+	var err error
+	serializedParamsBytes, err := yaml_convert.YAMLToJSON([]byte(serializedParams))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed while converting serialized params to json")
+	}
+	serializedParamsStr := string(serializedParamsBytes)
+	logrus.Debugf("Converted to '%v'", serializedParamsStr)
+	return serializedParamsStr, nil
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
@@ -236,21 +238,13 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	return starlarkResponseLineChan, cancelCtxFunc, nil
 }
 
-func isValidYAML(maybeYaml string) (map[string]interface{}, bool) {
-	var yamlObj map[string]interface{}
-	if err := yaml.Unmarshal([]byte(maybeYaml), &yamlObj); err != nil {
-		return nil, false
+func isValidJSON(maybeJson string) bool {
+	var jsonObj map[string]interface{}
+	if err := json.Unmarshal([]byte(maybeJson), &jsonObj); err != nil {
+		return false
 	}
-	return yamlObj, true
-}
-
-func convertYamlToJson(yaml map[string]interface{}) (string, error) {
-	// Marshal the map into a JSON string
-	jsonData, err := json.Marshal(yaml)
-	if err != nil {
-		return "", stacktrace.NewError("Failed to convert yaml '%v' to json", yaml)
-	}
-	return string(jsonData), nil
+	logrus.Debugf("Valid json found '%v'", jsonObj)
+	return true
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
