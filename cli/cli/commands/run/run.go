@@ -3,6 +3,7 @@ package run
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"os"
@@ -563,10 +564,11 @@ func validatePackageArgs(_ context.Context, _ *flags.ParsedFlags, args *args.Par
 	if jsonError = json.Unmarshal([]byte(serializedArgs), &result); jsonError == nil {
 		return nil
 	}
-	if err := yaml.Unmarshal([]byte(serializedArgs), &result); err == nil {
+	var yamlError error
+	if yamlError = yaml.Unmarshal([]byte(serializedArgs), &result); yamlError == nil {
 		return nil
 	}
-	return stacktrace.Propagate(jsonError, "Error validating args, likely because it is not a valid JSON or YAML.")
+	return stacktrace.Propagate(errors.Join(jsonError, yamlError), "Error validating args, because it is not a valid JSON or YAML.")
 }
 
 // parseVerbosityFlag Get the verbosity flag is present, and parse it to a valid Verbosity value
