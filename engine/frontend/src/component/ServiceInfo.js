@@ -90,6 +90,7 @@ const ServiceInfo = () => {
         try {
             displayData = data()
         } catch (e) {
+            console.error("Error while processing row", e)
             displayData = "Error while retrieving information"
         }
         return (
@@ -100,20 +101,28 @@ const ServiceInfo = () => {
         );
     };
 
-    const selectedSerialized = JSON.parse(JSON.stringify(selected))
+    const selectedSerialized = selected; // JSON.parse(JSON.stringify(selected))
     const statusBadge = (status) => {
+        console.log(`status=${status}`)
         let color = ""
-        if(status === "RUNNING"){
+        let text = ""
+        if(status === "RUNNING" || status === 1){
             color="green"
-        } else if (status === "STOPPED") {
+            text="RUNNING"
+        } else if (status === "STOPPED" || status === 0) {
             color="red"
-        } else if(status ==="UNKNOWN"){
+            text="STOPPED"
+        } else if(status ==="UNKNOWN" || status === 2){
             color = "yellow"
+            text="UNKNOWN"
+        } else {
+            return (
+                <Badge>N/A</Badge>
+            )
         }
         return (
-            <Badge colorScheme={color}>{status}</Badge>
+            <Badge colorScheme={color}>{text}</Badge>
         )
-
     }
 
     return (
@@ -131,8 +140,8 @@ const ServiceInfo = () => {
                         <Table variant='simple' size='sm'>
                             <Tbody>
                                 {tableRow("Name", () => selectedSerialized.name)}
-                                {tableRow("UUID", () => selectedSerialized.uuid)}
-                                {tableRow("Status", () => statusBadge(selectedSerialized.container.status))}
+                                {tableRow("UUID", () => <pre>{selectedSerialized.serviceUuid}</pre>)}
+                                {tableRow("Status", () => statusBadge(selectedSerialized.serviceStatus))}
                                 {tableRow("Image", () => selectedSerialized.container.imageName)}
                                 {tableRow("Ports", () => codeBox(0, "ports", selectedSerialized.ports))}
                                 {tableRow("ENTRYPOINT", () => codeBox(1, "entrypoint", selectedSerialized.container.entrypointArgs))}

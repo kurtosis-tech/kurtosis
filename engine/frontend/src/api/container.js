@@ -102,11 +102,8 @@ export const getEnclaveInformation = async (host, port, token, apiHost) => {
                     )
 
                 return {
-                    name: data.serviceInfo[serviceName].name,
-                    uuid: data.serviceInfo[serviceName].serviceUuid,
-                    privateIpAddr: data.serviceInfo[serviceName].privateIpAddr,
+                    ...data.serviceInfo[serviceName],
                     ports: ports,
-                    container: data.serviceInfo[serviceName].container,
                 }
             })
     }
