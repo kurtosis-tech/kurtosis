@@ -1,6 +1,6 @@
 ---
-title: Engine/APIC Reference
-sidebar_label: Engine/APIC Reference
+title: Engine & APIC Reference
+sidebar_label: Engine & APIC Reference
 slug: /engine-apic-reference
 toc_min_heading_level: 2
 toc_max_heading_level: 2
