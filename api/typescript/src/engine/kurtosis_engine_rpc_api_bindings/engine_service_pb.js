@@ -2908,7 +2908,7 @@ proto.engine_api.CleanResponse.prototype.clearRemovedEnclaveNameAndUuidsList = f
  * @private {!Array<number>}
  * @const
  */
-proto.engine_api.GetServiceLogsArgs.repeatedFields_ = [6];
+proto.engine_api.GetServiceLogsArgs.repeatedFields_ = [4];
 
 
 
@@ -2944,10 +2944,10 @@ proto.engine_api.GetServiceLogsArgs.toObject = function(includeInstance, msg) {
     enclaveIdentifier: jspb.Message.getFieldWithDefault(msg, 1, ""),
     serviceUuidSetMap: (f = msg.getServiceUuidSetMap()) ? f.toObject(includeInstance, undefined) : [],
     followLogs: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
-    returnAllLogs: jspb.Message.getBooleanFieldWithDefault(msg, 4, false),
-    numLogLines: jspb.Message.getFieldWithDefault(msg, 5, 0),
     conjunctiveFiltersList: jspb.Message.toObjectList(msg.getConjunctiveFiltersList(),
-    proto.engine_api.LogLineFilter.toObject, includeInstance)
+    proto.engine_api.LogLineFilter.toObject, includeInstance),
+    returnAllLogs: jspb.Message.getBooleanFieldWithDefault(msg, 5, false),
+    numLogLines: jspb.Message.getFieldWithDefault(msg, 6, 0)
   };
 
   if (includeInstance) {
@@ -2999,17 +2999,17 @@ proto.engine_api.GetServiceLogsArgs.deserializeBinaryFromReader = function(msg, 
       msg.setFollowLogs(value);
       break;
     case 4:
-      var value = /** @type {boolean} */ (reader.readBool());
-      msg.setReturnAllLogs(value);
-      break;
-    case 5:
-      var value = /** @type {number} */ (reader.readUint32());
-      msg.setNumLogLines(value);
-      break;
-    case 6:
       var value = new proto.engine_api.LogLineFilter;
       reader.readMessage(value,proto.engine_api.LogLineFilter.deserializeBinaryFromReader);
       msg.addConjunctiveFilters(value);
+      break;
+    case 5:
+      var value = /** @type {boolean} */ (reader.readBool());
+      msg.setReturnAllLogs(value);
+      break;
+    case 6:
+      var value = /** @type {number} */ (reader.readUint32());
+      msg.setNumLogLines(value);
       break;
     default:
       reader.skipField();
@@ -3058,26 +3058,26 @@ proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, 
       f
     );
   }
+  f = message.getConjunctiveFiltersList();
+  if (f.length > 0) {
+    writer.writeRepeatedMessage(
+      4,
+      f,
+      proto.engine_api.LogLineFilter.serializeBinaryToWriter
+    );
+  }
   f = message.getReturnAllLogs();
   if (f) {
     writer.writeBool(
-      4,
+      5,
       f
     );
   }
   f = message.getNumLogLines();
   if (f !== 0) {
     writer.writeUint32(
-      5,
-      f
-    );
-  }
-  f = message.getConjunctiveFiltersList();
-  if (f.length > 0) {
-    writer.writeRepeatedMessage(
       6,
-      f,
-      proto.engine_api.LogLineFilter.serializeBinaryToWriter
+      f
     );
   }
 };
@@ -3142,48 +3142,12 @@ proto.engine_api.GetServiceLogsArgs.prototype.setFollowLogs = function(value) {
 
 
 /**
- * optional bool return_all_logs = 4;
- * @return {boolean}
- */
-proto.engine_api.GetServiceLogsArgs.prototype.getReturnAllLogs = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 4, false));
-};
-
-
-/**
- * @param {boolean} value
- * @return {!proto.engine_api.GetServiceLogsArgs} returns this
- */
-proto.engine_api.GetServiceLogsArgs.prototype.setReturnAllLogs = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 4, value);
-};
-
-
-/**
- * optional uint32 num_log_lines = 5;
- * @return {number}
- */
-proto.engine_api.GetServiceLogsArgs.prototype.getNumLogLines = function() {
-  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 5, 0));
-};
-
-
-/**
- * @param {number} value
- * @return {!proto.engine_api.GetServiceLogsArgs} returns this
- */
-proto.engine_api.GetServiceLogsArgs.prototype.setNumLogLines = function(value) {
-  return jspb.Message.setProto3IntField(this, 5, value);
-};
-
-
-/**
- * repeated LogLineFilter conjunctive_filters = 6;
+ * repeated LogLineFilter conjunctive_filters = 4;
  * @return {!Array<!proto.engine_api.LogLineFilter>}
  */
 proto.engine_api.GetServiceLogsArgs.prototype.getConjunctiveFiltersList = function() {
   return /** @type{!Array<!proto.engine_api.LogLineFilter>} */ (
-    jspb.Message.getRepeatedWrapperField(this, proto.engine_api.LogLineFilter, 6));
+    jspb.Message.getRepeatedWrapperField(this, proto.engine_api.LogLineFilter, 4));
 };
 
 
@@ -3192,7 +3156,7 @@ proto.engine_api.GetServiceLogsArgs.prototype.getConjunctiveFiltersList = functi
  * @return {!proto.engine_api.GetServiceLogsArgs} returns this
 */
 proto.engine_api.GetServiceLogsArgs.prototype.setConjunctiveFiltersList = function(value) {
-  return jspb.Message.setRepeatedWrapperField(this, 6, value);
+  return jspb.Message.setRepeatedWrapperField(this, 4, value);
 };
 
 
@@ -3202,7 +3166,7 @@ proto.engine_api.GetServiceLogsArgs.prototype.setConjunctiveFiltersList = functi
  * @return {!proto.engine_api.LogLineFilter}
  */
 proto.engine_api.GetServiceLogsArgs.prototype.addConjunctiveFilters = function(opt_value, opt_index) {
-  return jspb.Message.addToRepeatedWrapperField(this, 6, opt_value, proto.engine_api.LogLineFilter, opt_index);
+  return jspb.Message.addToRepeatedWrapperField(this, 4, opt_value, proto.engine_api.LogLineFilter, opt_index);
 };
 
 
@@ -3212,6 +3176,42 @@ proto.engine_api.GetServiceLogsArgs.prototype.addConjunctiveFilters = function(o
  */
 proto.engine_api.GetServiceLogsArgs.prototype.clearConjunctiveFiltersList = function() {
   return this.setConjunctiveFiltersList([]);
+};
+
+
+/**
+ * optional bool return_all_logs = 5;
+ * @return {boolean}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.getReturnAllLogs = function() {
+  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 5, false));
+};
+
+
+/**
+ * @param {boolean} value
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.setReturnAllLogs = function(value) {
+  return jspb.Message.setProto3BooleanField(this, 5, value);
+};
+
+
+/**
+ * optional uint32 num_log_lines = 6;
+ * @return {number}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.getNumLogLines = function() {
+  return /** @type {number} */ (jspb.Message.getFieldWithDefault(this, 6, 0));
+};
+
+
+/**
+ * @param {number} value
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.setNumLogLines = function(value) {
+  return jspb.Message.setProto3IntField(this, 6, value);
 };
 
 

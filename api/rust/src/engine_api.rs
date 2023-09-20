@@ -185,15 +185,15 @@ pub struct GetServiceLogsArgs {
     /// If true, It will follow the container logs
     #[prost(bool, tag = "3")]
     pub follow_logs: bool,
+    /// The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
+    #[prost(message, repeated, tag = "4")]
+    pub conjunctive_filters: ::prost::alloc::vec::Vec<LogLineFilter>,
     /// If true, return all log lines
-    #[prost(bool, tag = "4")]
+    #[prost(bool, tag = "5")]
     pub return_all_logs: bool,
     /// If \[return_all_logs\] is false, return \[num_log_lines\]
-    #[prost(uint32, tag = "5")]
+    #[prost(uint32, tag = "6")]
     pub num_log_lines: u32,
-    /// The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
-    #[prost(message, repeated, tag = "6")]
-    pub conjunctive_filters: ::prost::alloc::vec::Vec<LogLineFilter>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

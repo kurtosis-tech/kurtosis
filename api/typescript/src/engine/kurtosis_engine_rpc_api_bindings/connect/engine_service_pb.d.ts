@@ -644,25 +644,25 @@ export declare class GetServiceLogsArgs extends Message<GetServiceLogsArgs> {
   followLogs: boolean;
 
   /**
+   * The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
+   *
+   * @generated from field: repeated engine_api.LogLineFilter conjunctive_filters = 4;
+   */
+  conjunctiveFilters: LogLineFilter[];
+
+  /**
    * If true, return all log lines
    *
-   * @generated from field: bool return_all_logs = 4;
+   * @generated from field: bool return_all_logs = 5;
    */
   returnAllLogs: boolean;
 
   /**
    * If [return_all_logs] is false, return [num_log_lines]
    *
-   * @generated from field: uint32 num_log_lines = 5;
+   * @generated from field: uint32 num_log_lines = 6;
    */
   numLogLines: number;
-
-  /**
-   * The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
-   *
-   * @generated from field: repeated engine_api.LogLineFilter conjunctive_filters = 6;
-   */
-  conjunctiveFilters: LogLineFilter[];
 
   constructor(data?: PartialMessage<GetServiceLogsArgs>);
 

@@ -51,6 +51,7 @@ const (
 
 	interruptChanBufferSize = 5
 
+	defaultNumLogLines            = 200
 	commonInstructionInMatchFlags = "Important: " + matchTextFilterFlagKey + " and " + matchRegexFilterFlagKey + " flags cannot be used at the same time. You should either use one or the other."
 )
 
@@ -60,7 +61,7 @@ var defaultShouldFollowLogs = strconv.FormatBool(false)
 var defaultInvertMatchFilterFlagValue = strconv.FormatBool(false)
 
 var defaultShouldReturnAllLogs = strconv.FormatBool(false)
-var defaultShouldReturnNumLogLines = strconv.Itoa(200)
+var defaultNumLogLinesFlagValue = strconv.Itoa(defaultNumLogLines)
 
 var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
 	CommandStr:                command_str_consts.ServiceLogsCmdStr,
@@ -88,7 +89,7 @@ var ServiceLogsCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Usage:     "Get the last X log lines.",
 			Shorthand: "n",
 			Type:      flags.FlagType_Uint32,
-			Default:   defaultShouldReturnNumLogLines,
+			Default:   defaultNumLogLinesFlagValue,
 		},
 		{
 			Key: matchTextFilterFlagKey,
