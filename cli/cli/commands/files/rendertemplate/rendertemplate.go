@@ -227,6 +227,9 @@ func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.Enc
 	}
 	params := fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName)
 	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, params, doNotDryRun, noParallelism, noExperimentalFeature)
+	if err != nil {
+		return "", stacktrace.Propagate(err, "An error occurred during Starlark script execution for rendering template. This is a bug in Kurtosis")
+	}
 	if runResult.ExecutionError != nil {
 		return "", stacktrace.NewError("An error occurred during Starlark script execution for rendering template: %s", runResult.ExecutionError.GetErrorMessage())
 	}
@@ -236,5 +239,5 @@ func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.Enc
 	if len(runResult.ValidationErrors) > 0 {
 		return "", stacktrace.NewError("An error occurred during Starlark script validation for rendering template: %v", runResult.ValidationErrors)
 	}
-	return string(runResult.RunOutput), err
+	return string(runResult.RunOutput), nil
 }
