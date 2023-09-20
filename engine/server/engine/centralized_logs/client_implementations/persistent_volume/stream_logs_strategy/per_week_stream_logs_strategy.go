@@ -119,7 +119,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 						isLastLogLine = true
 					} else {
 						if shouldFollowLogs {
-							if err = strategy.tailLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+							if err = strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 								streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 								return
 							}
@@ -142,7 +142,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 
 			if isLastLogLine {
 				if shouldFollowLogs {
-					if err = strategy.tailLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+					if err = strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 						streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
 						return
 					}
@@ -199,14 +199,17 @@ func (strategy *PerWeekStreamLogsStrategy) getRetainedLogsFilePaths(filesystem v
 }
 
 // tail -f [filepath]
-func (strategy *PerWeekStreamLogsStrategy) tailLogs(
+func (strategy *PerWeekStreamLogsStrategy) followLogs(
 	filepath string,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 ) error {
 	logTail, err := tail.TailFile(filepath, tail.Config{
-		Location:    nil,
+		Location: &tail.SeekInfo{
+			Offset: 0,
+			Whence: io.SeekEnd, // start tailing from end of log file
+		},
 		ReOpen:      false,
 		MustExist:   true,
 		Poll:        false,
@@ -241,7 +244,8 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	// First decode the line
 	var jsonLog JsonLog
 	if err := json.Unmarshal([]byte(jsonLogLineStr), &jsonLog); err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the json log string: %v\n", jsonLogLineStr)
+		logrus.Warnf("An error occurred parsing the json log string: %v. Skipping sending this log line.", jsonLogLineStr)
+		return nil
 	}
 
 	// Then extract the actual log message using the "log" field
