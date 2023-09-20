@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.83.4](https://github.com/kurtosis-tech/kurtosis/compare/0.83.3...0.83.4) (2023-09-19)
+
+
+### Features
+
+* Add format flag to kurtosis port print ([#1319](https://github.com/kurtosis-tech/kurtosis/issues/1319)) ([cbbf260](https://github.com/kurtosis-tech/kurtosis/commit/cbbf260d872344c40fd768ed2226510550a8370d))
+
+
+### Bug Fixes
+
+* scan for first week of existing logs ([#1343](https://github.com/kurtosis-tech/kurtosis/issues/1343)) ([3905782](https://github.com/kurtosis-tech/kurtosis/commit/3905782b45b8b89d77ee70e231a2e04c19ca1bf0))
+
+## [0.83.3](https://github.com/kurtosis-tech/kurtosis/compare/0.83.2...0.83.3) (2023-09-19)
+
+
+### Features
+
+* CLI service inspect command ([#1323](https://github.com/kurtosis-tech/kurtosis/issues/1323)) ([ec018b9](https://github.com/kurtosis-tech/kurtosis/commit/ec018b94dd276479ae550597a079c79496a6bc4f))
+
+
+### Bug Fixes
+
+* revert docs ([#1347](https://github.com/kurtosis-tech/kurtosis/issues/1347)) ([efbaf09](https://github.com/kurtosis-tech/kurtosis/commit/efbaf09a86cb3313af03456a8212c92eb8c33120))
+* the docs name ([#1345](https://github.com/kurtosis-tech/kurtosis/issues/1345)) ([c3074d0](https://github.com/kurtosis-tech/kurtosis/commit/c3074d06bae6923d3ea2ab7124a2ace1d4a73aad))
+* Update testsuite package name to match their location in Github ([#1335](https://github.com/kurtosis-tech/kurtosis/issues/1335)) ([d5218a2](https://github.com/kurtosis-tech/kurtosis/commit/d5218a2e01361d016269607939721cfee08e3a3d))
+
 ## [0.83.2](https://github.com/kurtosis-tech/kurtosis/compare/0.83.1...0.83.2) (2023-09-18)
 
 
