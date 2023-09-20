@@ -237,6 +237,44 @@ func getLogsReader(filesystem volume_filesystem.VolumeFilesystem, logFilePaths [
 	return bufio.NewReader(combinedLogsReader), nil
 }
 
+// Returns a complete json log string from [logsReader], unless EOF is reached, in which case an
+// incomplete json log line is returned
+func getCompleteJsonLogString(logsReader *bufio.Reader) (string, error) {
+	var completeJsonLogStr string
+
+	for {
+		jsonLogStr, isComplete, err := getJsonLogString(logsReader)
+		completeJsonLogStr = completeJsonLogStr + jsonLogStr
+		if err != nil {
+			return completeJsonLogStr, err
+		}
+
+		if isComplete {
+			return completeJsonLogStr, nil
+		}
+	}
+}
+
+// Return the next json log string from [logsReader]
+// if string is complete json log line, returns string and false
+// if string is incomplete json log line, returns string and false
+// if EOF error, returns the last read string and err
+func getJsonLogString(logsReader *bufio.Reader) (string, bool, error) {
+	jsonLogStr, err := logsReader.ReadString(volume_consts.NewLineRune)
+
+	jsonLogStr = strings.TrimSuffix(jsonLogStr, string(volume_consts.NewLineRune))
+
+	return jsonLogStr, isValidJsonEnding(jsonLogStr), err
+}
+
+func isValidJsonEnding(line string) bool {
+	if len(line) == 0 {
+		return false
+	}
+	endOfLine := line[len(line)-1:]
+	return endOfLine == volume_consts.EndOfJsonLine
+}
+
 // Returns error if [jsonLogLineStr] is not a valid log line
 func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	jsonLogLineStr string,

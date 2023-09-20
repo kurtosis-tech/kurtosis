@@ -1,12 +1,15 @@
 package stream_logs_strategy
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/stretchr/testify/require"
+	"io"
 	"strconv"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -331,4 +334,143 @@ func TestIsWithinRetentionPeriod(t *testing.T) {
 
 func getWeekFilepathStr(year, week int) string {
 	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+}
+
+func TestGetCompleteJsonLogString(t *testing.T) {
+	logLine1 := "{\"log\":\"Starting feature 'runs idempotently'\"}"
+	logLine2a := "{\"log\":\"Starting feature 'apic "
+	logLine2b := "idempotently'\"}"
+
+	logs := strings.Join([]string{logLine1, logLine2a, logLine2b}, string(volume_consts.NewLineRune))
+	logsReader := bufio.NewReader(strings.NewReader(logs))
+
+	var jsonLogStr string
+	var err error
+
+	// First read
+	jsonLogStr, err = getCompleteJsonLogString(logsReader)
+	require.NoError(t, err)
+	require.Equal(t, logLine1, jsonLogStr)
+
+	// Second read
+	logLine2 := "{\"log\":\"Starting feature 'apic idempotently'\"}"
+	jsonLogStr, err = getCompleteJsonLogString(logsReader)
+	require.Error(t, err)
+	require.ErrorIs(t, io.EOF, err)
+	require.Equal(t, logLine2, jsonLogStr)
+}
+
+func TestGetCompleteJsonLogStringAcrossManyLines(t *testing.T) {
+	logLine1a := "{\"log\":\"Starting"
+	logLine1b := " feature "
+	logLine1c := "'runs "
+	logLine1d := "idempotently'\"}"
+
+	logs := strings.Join([]string{logLine1a, logLine1b, logLine1c, logLine1d}, string(volume_consts.NewLineRune))
+	logsReader := bufio.NewReader(strings.NewReader(logs))
+
+	var jsonLogStr string
+	var err error
+
+	logLine1 := "{\"log\":\"Starting feature 'runs idempotently'\"}"
+	jsonLogStr, err = getCompleteJsonLogString(logsReader)
+	require.Error(t, err)
+	require.ErrorIs(t, io.EOF, err)
+	require.Equal(t, logLine1, jsonLogStr)
+}
+
+func TestGetCompleteJsonLogStringWithNoValidJsonEnding(t *testing.T) {
+	logLine1 := "{\"log\":\"Starting idempotently'\""
+
+	logsReader := bufio.NewReader(strings.NewReader(logLine1))
+
+	var jsonLogStr string
+	var err error
+
+	// this will end up in an infinite loop, bc [getCompleteJsonLogString] keeps looping till it finds EOF or complete json
+	jsonLogStr, err = getCompleteJsonLogString(logsReader)
+	require.Error(t, err)
+	require.ErrorIs(t, io.EOF, err)
+	require.Equal(t, logLine1, jsonLogStr)
+}
+
+func TestGetJsonLogString(t *testing.T) {
+	logLine1 := "{\"log\":\"Starting feature 'centralized logs'\"}"
+	logLine2 := "{\"log\":\"Starting feature 'runs idempotently'\"}"
+	logLine3a := "{\"log\":\"Starting feature 'apic "
+	logLine3b := "idempotently'\"}"
+
+	logs := strings.Join([]string{logLine1, logLine2, logLine3a, logLine3b}, string(volume_consts.NewLineRune))
+	logsReader := bufio.NewReader(strings.NewReader(logs))
+
+	var jsonLogStr string
+	var isComplete bool
+	var err error
+
+	// First read
+	jsonLogStr, isComplete, err = getJsonLogString(logsReader)
+	require.NoError(t, err)
+	require.True(t, isComplete)
+	require.Equal(t, logLine1, jsonLogStr)
+
+	// Second read
+	jsonLogStr, isComplete, err = getJsonLogString(logsReader)
+	require.NoError(t, err)
+	require.True(t, isComplete)
+	require.Equal(t, logLine2, jsonLogStr)
+
+	// Third read
+	jsonLogStr, isComplete, err = getJsonLogString(logsReader)
+	require.NoError(t, err)
+	require.False(t, isComplete)
+	require.Equal(t, logLine3a, jsonLogStr)
+
+	// Last read
+	jsonLogStr, isComplete, err = getJsonLogString(logsReader)
+	require.Error(t, err)
+	require.ErrorIs(t, io.EOF, err)
+	require.True(t, isComplete)
+	require.Equal(t, logLine3b, jsonLogStr)
+}
+
+func TestGetJsonLogStringWithEOFAndNoNewLine(t *testing.T) {
+	logLine1a := "{\"log\":\"Starting feature 'apic "
+	logLine1b := "idempotently'\"}"
+
+	logs := logLine1a + "\n" + logLine1b
+	logsReader := bufio.NewReader(strings.NewReader(logs))
+
+	var jsonLogStr string
+	var isComplete bool
+	var err error
+
+	// First read
+	jsonLogStr, isComplete, err = getJsonLogString(logsReader)
+	require.NoError(t, err)
+	require.False(t, isComplete)
+	require.Equal(t, logLine1a, jsonLogStr)
+
+	// Second read
+	jsonLogStr, isComplete, err = getJsonLogString(logsReader)
+	require.Error(t, err)
+	require.ErrorIs(t, io.EOF, err)
+	require.True(t, isComplete)
+	require.Equal(t, logLine1b, jsonLogStr)
+}
+
+func TestGetJsonLogStringWithEOFAndNoValidJsonEnding(t *testing.T) {
+	logLine1 := "{\"log\":\"Starting feature 'centralized logs'\""
+
+	logsReader := bufio.NewReader(strings.NewReader(logLine1))
+
+	var jsonLogStr string
+	var isComplete bool
+	var err error
+
+	// First read
+	jsonLogStr, isComplete, err = getJsonLogString(logsReader)
+	require.Error(t, err)
+	require.ErrorIs(t, io.EOF, err)
+	require.False(t, isComplete)
+	require.Equal(t, logLine1, jsonLogStr)
 }
