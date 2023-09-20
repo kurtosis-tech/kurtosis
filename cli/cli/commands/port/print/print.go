@@ -144,7 +144,7 @@ func run(
 		)
 	}
 
-	fullUrl, err := formatOutput(format, ipAddress, publicPort)
+	fullUrl, err := formatPortOutput(format, ipAddress, publicPort)
 	if err != nil {
 		return stacktrace.Propagate(err, "Couldn't format the output according to formatting string '%v'", format)
 	}
@@ -152,14 +152,15 @@ func run(
 	return nil
 }
 
-func formatOutput(format string, ipAddress string, spec *services.PortSpec) (string, error) {
+func formatPortOutput(format string, ipAddress string, spec *services.PortSpec) (string, error) {
 	parts := strings.Split(format, ",")
 	var resultParts []string
+	isOnlyPiece := len(parts) == 1
 	for _, part := range parts {
 		switch part {
 		case protocolStr:
 			if spec.GetMaybeApplicationProtocol() != "" {
-				resultParts = append(resultParts, spec.GetMaybeApplicationProtocol()+"://")
+				resultParts = append(resultParts, getApplicationProtocol(spec.GetMaybeApplicationProtocol(), isOnlyPiece))
 			} else {
 				// TODO(victor.colombo): What should we do here? Panic? Warn?
 				// Left it as a debug for now so it doesn't pollute the output
@@ -168,10 +169,26 @@ func formatOutput(format string, ipAddress string, spec *services.PortSpec) (str
 		case ipStr:
 			resultParts = append(resultParts, ipAddress)
 		case numberStr:
-			resultParts = append(resultParts, fmt.Sprintf(":%d", spec.GetNumber()))
+			resultParts = append(resultParts, getPortString(spec.GetNumber(), isOnlyPiece))
 		default:
 			return "", stacktrace.NewError("Invalid format piece '%v'", part)
 		}
 	}
 	return strings.Join(resultParts, ""), nil
+}
+
+func getPortString(portNumber uint16, isOnlyPiece bool) string {
+	if isOnlyPiece {
+		return fmt.Sprintf("%d", portNumber)
+	} else {
+		return fmt.Sprintf(":%d", portNumber)
+	}
+}
+
+func getApplicationProtocol(applicationProtocol string, isOnlyPiece bool) string {
+	if isOnlyPiece {
+		return applicationProtocol
+	} else {
+		return fmt.Sprintf("%s://", applicationProtocol)
+	}
 }
