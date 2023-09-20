@@ -87,9 +87,10 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
-	serializedParams, err := maybeParseYaml(serializedParams)
+	oldSerializedParams := serializedParams
+	serializedParams, err := maybeParseYaml(oldSerializedParams)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for script '%v'", serializedParams)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for script '%v'", oldSerializedParams)
 	}
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(mainFunctionName, serializedScript, serializedParams, dryRun, parallelism, experimentalFeatures)
