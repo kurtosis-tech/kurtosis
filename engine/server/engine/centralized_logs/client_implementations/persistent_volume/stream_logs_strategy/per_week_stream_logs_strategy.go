@@ -80,96 +80,23 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 		return
 	}
 
-	latestLogFile := paths[len(paths)-1]
-	logLines := make([]string, 0, numLogLines)
-
-	for {
-		select {
-		case <-ctx.Done():
-			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v' in enclave '%v", serviceUuid, enclaveUuid)
+	if shouldReturnAllLogs {
+		if err := strategy.streamAllLogs(ctx, logsReader, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+			streamErrChan <- stacktrace.Propagate(err, "An error ocurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
-		default:
-			var jsonLogStr string
-			var jsonLogNewStr string
-			var readErr error
-			var err error
-			var isLastLogLine = false
+		}
+	} else {
+		if err := strategy.streamTailLogs(ctx, logsReader, numLogLines, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+			streamErrChan <- stacktrace.Propagate(err, "An error ocurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
+			return
+		}
+	}
 
-			// get a complete log line
-			for {
-				jsonLogNewStr, readErr = logsReader.ReadString(volume_consts.NewLineRune)
-				jsonLogStr = jsonLogStr + jsonLogNewStr
-				// check if it's an uncompleted Json line
-				if jsonLogNewStr != "" && len(jsonLogNewStr) > 2 {
-					jsonLogNewStrLastChars := jsonLogNewStr[len(jsonLogNewStr)-2:]
-					if jsonLogNewStrLastChars != volume_consts.EndOfJsonLine {
-						// removes the newline char from the previous part of the json line
-						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(volume_consts.NewLineRune))
-						continue
-					}
-				}
-				if readErr != nil && errors.Is(readErr, io.EOF) {
-					// exiting stream
-					logrus.Debugf("EOF error returned when reading logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
-					if jsonLogStr != "" {
-						isLastLogLine = true
-					} else {
-						if !shouldReturnAllLogs {
-							for _, line := range logLines {
-								if err = strategy.sendJsonLogLine(line, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-									streamErrChan <- stacktrace.Propagate(err, "An error occurred sending log line for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
-									return
-								}
-							}
-						}
-						if shouldFollowLogs {
-							if err = strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-								streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
-								return
-							}
-						} else {
-							return
-						}
-					}
-				}
-				break
-			}
-			if readErr != nil && !errors.Is(readErr, io.EOF) {
-				streamErrChan <- stacktrace.Propagate(readErr, "An error occurred reading the logs file for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
-				return
-			}
-
-			// send log line or get save into last n log lines
-			if shouldReturnAllLogs {
-				if err = strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-					streamErrChan <- stacktrace.Propagate(err, "An error occurred sending log line for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
-					return
-				}
-			} else {
-				logLines = append(logLines, jsonLogStr)
-				if len(logLines) > int(numLogLines) {
-					logLines = logLines[1:]
-				}
-			}
-
-			if isLastLogLine {
-				if !shouldReturnAllLogs {
-					for _, line := range logLines {
-						if err = strategy.sendJsonLogLine(line, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-							streamErrChan <- stacktrace.Propagate(err, "An error occurred sending log line for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
-							return
-						}
-					}
-				}
-				if shouldFollowLogs {
-					if err = strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-						streamErrChan <- stacktrace.Propagate(err, "An error occurred following logs for service '%v' in enclave '%v'.", serviceUuid, enclaveUuid)
-						return
-					}
-				} else {
-					return
-				}
-			}
+	latestLogFile := paths[len(paths)-1]
+	if shouldFollowLogs {
+		if err := strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+			streamErrChan <- stacktrace.Propagate(err, "An error ocurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
+			return
 		}
 	}
 }
@@ -238,58 +165,71 @@ func getLogsReader(filesystem volume_filesystem.VolumeFilesystem, logFilePaths [
 }
 
 func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
+	ctx context.Context,
 	logsReader *bufio.Reader,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
 	for {
-		jsonLogStr, err := getCompleteJsonLogString(logsReader)
-		if isValidJsonEnding(jsonLogStr) {
-			if err = strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-				return err
+		select {
+		case <-ctx.Done():
+			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v'", serviceUuid)
+			return nil
+		default:
+			jsonLogStr, err := getCompleteJsonLogString(logsReader)
+			if isValidJsonEnding(jsonLogStr) {
+				if err = strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+					return err
+				}
 			}
-		}
 
-		if err != nil {
-			// if we've reached end of logs, return success, otherwise return the error
-			if errors.Is(err, io.EOF) {
-				break
-			} else {
-				return err
+			if err != nil {
+				// if we've reached end of logs, return success, otherwise return the error
+				if errors.Is(err, io.EOF) {
+					return nil
+				} else {
+					return err
+				}
 			}
 		}
 	}
-
-	return nil
 }
 
 // tail -n X
 func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
+	ctx context.Context,
 	logsReader *bufio.Reader,
-	numLogLines int,
+	numLogLines uint32,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
 	serviceUuid service.ServiceUUID,
 	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
 	tailLogLines := make([]string, 0, numLogLines)
 
 	for {
-		jsonLogStr, err := getCompleteJsonLogString(logsReader)
-		if isValidJsonEnding(jsonLogStr) {
-			// collect all log lines in tail log lines
-			tailLogLines = append(tailLogLines, jsonLogStr)
-			if len(tailLogLines) > numLogLines {
-				tailLogLines = tailLogLines[1:]
+		select {
+		case <-ctx.Done():
+			logrus.Debugf("Context was canceled, stopping streaming service logs for service '%v'", serviceUuid)
+			return nil
+		default:
+			jsonLogStr, err := getCompleteJsonLogString(logsReader)
+			if isValidJsonEnding(jsonLogStr) {
+				// collect all log lines in tail log lines
+				tailLogLines = append(tailLogLines, jsonLogStr)
+				if len(tailLogLines) > int(numLogLines) {
+					tailLogLines = tailLogLines[1:]
+				}
 			}
-		}
 
-		if err != nil {
-			// if we've reached end of logs, return success, else, return the error
-			if errors.Is(err, io.EOF) {
-				break
-			} else {
-				return err
+			if err != nil {
+				// if we've reached end of logs, return success, else, return the error
+				if errors.Is(err, io.EOF) {
+					break
+				} else {
+					return err
+				}
 			}
 		}
+		break
 	}
 
 	for _, jsonLogStr := range tailLogLines {
