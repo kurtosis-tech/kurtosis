@@ -75,10 +75,10 @@ const config = {
         },
         items: [
           {
-            to: '/quickstart',
+            to: '/get-started/quickstart-consumer',
             position: 'left',
             label: 'Quickstart',
-            activeBasePath: '/quickstart'
+            activeBasePath: '/get-started/quickstart-consumer'
           },
           {
             to: '/cli',
