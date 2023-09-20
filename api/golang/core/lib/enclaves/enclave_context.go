@@ -87,6 +87,10 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	serializedParams, err := maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for script '%v'", serializedParams)
+	}
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(mainFunctionName, serializedScript, serializedParams, dryRun, parallelism, experimentalFeatures)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
@@ -130,6 +134,10 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	serializedParams, err := maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for package '%v'", serializedParams)
+	}
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	defer func() {
@@ -178,6 +186,19 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(
 	return starlarkResponse, getErrFromStarlarkRunResult(starlarkResponse)
 }
 
+func maybeParseYaml(serializedParams string) (string, error) {
+	if yamlObj, valid := isValidYAML(serializedParams); valid {
+		var err error
+		logrus.Debugf("Converting from %s", serializedParams)
+		serializedParams, err = convertYamlToJson(yamlObj)
+		if err != nil {
+			return "", stacktrace.Propagate(err, "Failed while converting serialized params to json")
+		}
+		logrus.Debugf("Converting to %s", serializedParams)
+	}
+	return serializedParams, nil
+}
+
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	ctx context.Context,
@@ -189,14 +210,9 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
-	if yamlObj, valid := isValidYAML(serializedParams); valid {
-		var err error
-		logrus.Debugf("Converting from %s", serializedParams)
-		serializedParams, err = convertYamlToJson(yamlObj)
-		if err != nil {
-			return nil, nil, stacktrace.Propagate(err, "Failed while converting serialized params to json")
-		}
-		logrus.Debugf("Converting to %s", serializedParams)
+	serializedParams, err := maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for remote package '%v'", serializedParams)
 	}
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
