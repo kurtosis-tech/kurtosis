@@ -244,7 +244,8 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	// First decode the line
 	var jsonLog JsonLog
 	if err := json.Unmarshal([]byte(jsonLogLineStr), &jsonLog); err != nil {
-		return stacktrace.Propagate(err, "An error occurred parsing the json log string: %v\n", jsonLogLineStr)
+		logrus.Warnf("An error occurred parsing the json log string: %v. Skipping sending this log line.", jsonLogLineStr)
+		return nil
 	}
 
 	// Then extract the actual log message using the "log" field
