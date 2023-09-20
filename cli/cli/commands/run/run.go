@@ -552,7 +552,7 @@ func getOrCreateEnclaveContext(
 	return enclaveContext, isNewEnclaveFlagWhenCreated, nil
 }
 
-// validatePackageArgs just validates the args is a valid JSON string
+// validatePackageArgs just validates the args is a valid JSON or YAML string
 func validatePackageArgs(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	serializedArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
 	if err != nil {
