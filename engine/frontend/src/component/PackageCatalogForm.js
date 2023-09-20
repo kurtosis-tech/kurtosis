@@ -92,11 +92,12 @@ const KeyValueTable = (dataCallBack) => {
                         </HStack>
                     </Box>
                 )}
-                renderAdd={addItem => <Button margin={1} onClick={addItem}>Add item</Button>}
+                renderAdd={addItem => <Button size={"sm"} margin={1} onClick={addItem}>Add item</Button>}
                 // renderEmpty={() => <p></p>}
             />
             <Button
                 margin={1}
+                size={"sm"}
                 onClick={clipboard.onCopy}
             >
                 <Tooltip label="Copy as JSON">
@@ -106,6 +107,7 @@ const KeyValueTable = (dataCallBack) => {
             </Button>
             <Button
                 margin={1}
+                size={"sm"}
                 onClick={paste}
             >
                 <Tooltip label='Paste as a JSON key value map, e.g. `{ "key_1": "value", "key_2": 1 }` '>
