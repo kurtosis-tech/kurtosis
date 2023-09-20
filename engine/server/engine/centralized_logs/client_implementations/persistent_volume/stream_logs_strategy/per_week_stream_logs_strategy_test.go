@@ -317,7 +317,7 @@ func TestGetLogFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t *testing.
 }
 
 func TestIsWithinRetentionPeriod(t *testing.T) {
-	// this is the 36th week of the yera
+	// this is the 36th week of the year
 	jsonLogLine := map[string]string{
 		"timestamp": "2023-09-06T00:35:15-04:00",
 	}
@@ -360,7 +360,41 @@ func TestGetCompleteJsonLogString(t *testing.T) {
 	require.Equal(t, logLine2, jsonLogStr)
 }
 
-func TestGetCompleteJsonLogStringAcrossManyLines(t *testing.T) {
+func TestGetCompleteJsonLogStringAcrossManyCompleteLines(t *testing.T) {
+	logLine1 := "{\"log\":\"Starting feature 'files manager'\"}"
+	logLine2 := "{\"log\":\"The enclave was created\"}"
+	logLine3 := "{\"log\":\"User service started\"}"
+	logLine4 := "{\"log\":\"The data have being loaded\"}"
+
+	logs := strings.Join([]string{logLine1, logLine2, logLine3, logLine4}, string(volume_consts.NewLineRune))
+	logsReader := bufio.NewReader(strings.NewReader(logs))
+
+	var jsonLogStr string
+	var err error
+
+	// First read
+	jsonLogStr, err = getCompleteJsonLogString(logsReader)
+	require.NoError(t, err)
+	require.Equal(t, logLine1, jsonLogStr)
+
+	// Second read
+	jsonLogStr, err = getCompleteJsonLogString(logsReader)
+	require.NoError(t, err)
+	require.Equal(t, logLine2, jsonLogStr)
+
+	// Fourth read
+	jsonLogStr, err = getCompleteJsonLogString(logsReader)
+	require.NoError(t, err)
+	require.Equal(t, logLine3, jsonLogStr)
+
+	// Last read
+	jsonLogStr, err = getCompleteJsonLogString(logsReader)
+	require.Error(t, err)
+	require.ErrorIs(t, io.EOF, err)
+	require.Equal(t, logLine4, jsonLogStr)
+}
+
+func TestGetCompleteJsonLogStringAcrossManyBrokenLines(t *testing.T) {
 	logLine1a := "{\"log\":\"Starting"
 	logLine1b := " feature "
 	logLine1c := "'runs "
