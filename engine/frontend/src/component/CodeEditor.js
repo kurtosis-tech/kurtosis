@@ -12,6 +12,12 @@ export const CodeEditor = (
     defaultState = languages.includes("json") ? "{\n}" : "",
     autoFormat = false,
     lineNumbers = false,
+    id = 0,
+    showCopyButton = true,
+    showDownloadButton = true,
+    showFormatButton = true,
+    buttonSizes = "sm",
+    border = "1px"
 ) => {
     // https://github.com/microsoft/monaco-editor/blob/main/webpack-plugin/README.md#options
     const [value, setValue] = useState(defaultState)
@@ -29,7 +35,7 @@ export const CodeEditor = (
     // TODO: Add a promise to getEditor()
     const getEditor = () => {
         if (!monacoRef.current) return null;
-        return monacoRef.current.editor.getEditors()[0];
+        return monacoRef.current.editor.getEditors()[id];
     }
 
     const isEditorReadOnly = () => {
@@ -51,7 +57,7 @@ export const CodeEditor = (
 
     useEffect(() => {
         if (getEditor()) {
-            console.log("Changing readOnly in monaco to:", readOnlySetting)
+            // console.log("Changing readOnly in monaco to:", readOnlySetting)
             getEditor().updateOptions({
                 readOnly: readOnlySetting,
             })
@@ -61,7 +67,7 @@ export const CodeEditor = (
     useEffect(() => {
         if (formatCode) {
             if (isEditorReadOnly()) {
-                console.log("Cannot format with readonly=true, requesting to set readOnly=false")
+                // console.log("Cannot format with readonly=true, requesting to set readOnly=false")
                 setReadOnlySetting(false)
             } else {
                 if (getEditor()) {
@@ -69,7 +75,7 @@ export const CodeEditor = (
                         .getAction('editor.action.formatDocument')
                         .run()
                         .then(() => {
-                            console.log(`Formatting finished running. Setting readonly=${originalReadOnlySetting.current}`)
+                            // console.log(`Formatting finished running. Setting readonly=${originalReadOnlySetting.current}`)
                             setReadOnlySetting(originalReadOnlySetting.current)
                             setFormatCode(false)
                         });
@@ -165,7 +171,7 @@ export const CodeEditor = (
 
     return (
         <Box
-            border="1px"
+            border={border}
             borderColor='gray.700'
             borderRadius="7"
             margin={"1px"}
@@ -180,7 +186,7 @@ export const CodeEditor = (
                 onChange={handleEditorChange}
                 // onValidate={handleEditorValidation}
                 options={{
-                    automaticLayout: true,
+                    automaticLayout: false, // if this is `true` a ResizeObserver is installed. This causes issues with us managing the container size outside.
                     selectOnLineNumbers: lineNumbers,
                     lineNumbers: lineNumbers,
                     languages: languages,
@@ -191,25 +197,38 @@ export const CodeEditor = (
                     scrollBeyondLastLine: false
                 }}
             />
-            <Button
-                margin={1}
-                onClick={contentClipboard.onCopy}
+            <Box
+                marginTop={1}
             >
-                {contentClipboard.hasCopied ? "Copied!" : "Copy"}
-            </Button>
-            <Button
-                margin={1}
-                onClick={handleDownload}
-            >
-                Download
-            </Button>
-            <Button
-                margin={1}
-                onClick={handleCodeFormat}
-                isDisabled={isNotFormattable()}
-            >
-                Format
-            </Button>
+                {showCopyButton && (
+                    <Button
+                        margin={1}
+                        onClick={contentClipboard.onCopy}
+                        size={buttonSizes}
+                    >
+                        {contentClipboard.hasCopied ? "Copied!" : "Copy"}
+                    </Button>
+                )}
+                {showDownloadButton && (
+                    <Button
+                        margin={1}
+                        onClick={handleDownload}
+                        size={buttonSizes}
+                    >
+                        Download
+                    </Button>
+                )}
+                {showFormatButton && (
+                    <Button
+                        margin={1}
+                        onClick={handleCodeFormat}
+                        isDisabled={isNotFormattable()}
+                        size={buttonSizes}
+                    >
+                        Format
+                    </Button>
+                )}
+            </Box>
         </Box>
     )
 }
