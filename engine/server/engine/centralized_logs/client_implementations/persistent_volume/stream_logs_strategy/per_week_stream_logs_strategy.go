@@ -237,6 +237,70 @@ func getLogsReader(filesystem volume_filesystem.VolumeFilesystem, logFilePaths [
 	return bufio.NewReader(combinedLogsReader), nil
 }
 
+func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
+	logsReader *bufio.Reader,
+	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	serviceUuid service.ServiceUUID,
+	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
+	for {
+		jsonLogStr, err := getCompleteJsonLogString(logsReader)
+		if isValidJsonEnding(jsonLogStr) {
+			if err = strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+				return err
+			}
+		}
+
+		if err != nil {
+			// if we've reached end of logs, return success, otherwise return the error
+			if errors.Is(err, io.EOF) {
+				break
+			} else {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+// tail -n X
+func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
+	logsReader *bufio.Reader,
+	numLogLines int,
+	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
+	serviceUuid service.ServiceUUID,
+	conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex) error {
+	tailLogLines := make([]string, 0, numLogLines)
+
+	for {
+		jsonLogStr, err := getCompleteJsonLogString(logsReader)
+		if isValidJsonEnding(jsonLogStr) {
+			// collect all log lines in tail log lines
+			tailLogLines = append(tailLogLines, jsonLogStr)
+			if len(tailLogLines) > numLogLines {
+				tailLogLines = tailLogLines[1:]
+			}
+		}
+
+		if err != nil {
+			// if we've reached end of logs, return success, else, return the error
+			if errors.Is(err, io.EOF) {
+				break
+			} else {
+				return err
+			}
+		}
+	}
+
+	for _, jsonLogStr := range tailLogLines {
+		if err := strategy.sendJsonLogLine(jsonLogStr, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
 // Returns a complete json log string from [logsReader], unless EOF is reached, in which case an
 // incomplete json log line is returned
 func getCompleteJsonLogString(logsReader *bufio.Reader) (string, error) {

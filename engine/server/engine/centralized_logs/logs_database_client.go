@@ -17,10 +17,10 @@ type LogsDatabaseClient interface {
 		shouldReturnAllLogs bool, // if true, stream all log lines
 		numLogLines uint32, // if [shouldReturnAllLogs] is false, stream that only the last [numLogLines]
 	) (
-		userServiceLogsByServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
-		errChan chan error,
-		cancelFunc context.CancelFunc,
-		err error,
+		chan map[service.ServiceUUID][]logline.LogLine,
+		chan error,
+		context.CancelFunc,
+		error,
 	)
 
 	FilterExistingServiceUuids(

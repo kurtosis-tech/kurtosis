@@ -245,8 +245,8 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		//error from logs database case
 		case err, isChanOpen := <-errChan:
 			if isChanOpen {
-				logrus.Debug("Exiting the stream because and error from the logs database client was received through the error chan")
-				return stacktrace.Propagate(err, "An error occurred streaming user service logs")
+				logrus.Debug("Exiting the stream because an error from the logs database client was received through the error chan.")
+				return stacktrace.Propagate(err, "An error occurred streaming user service logs.")
 			}
 			logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
 			return nil
