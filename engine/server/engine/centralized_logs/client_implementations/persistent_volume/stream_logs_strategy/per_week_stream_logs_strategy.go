@@ -92,8 +92,8 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 		}
 	}
 
-	latestLogFile := paths[len(paths)-1]
 	if shouldFollowLogs {
+		latestLogFile := paths[len(paths)-1]
 		if err := strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
 			streamErrChan <- stacktrace.Propagate(err, "An error occurred creating following logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
@@ -243,8 +243,7 @@ func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
 	return nil
 }
 
-// Returns a complete json log string from [logsReader], unless EOF is reached, in which case an
-// incomplete json log line is returned
+// Returns the next complete json log string from [logsReader], unless EOF is reached in which case an incomplete json log line is returned
 func getCompleteJsonLogString(logsReader *bufio.Reader) (string, error) {
 	var completeJsonLogStr string
 
@@ -261,10 +260,7 @@ func getCompleteJsonLogString(logsReader *bufio.Reader) (string, error) {
 	}
 }
 
-// Return the next json log string from [logsReader]
-// if string is complete json log line, returns string and false
-// if string is incomplete json log line, returns string and false
-// if EOF error, returns the last read string and err
+// Return the next json log string from [logsReader] and whether the string is a valid json or not
 func getJsonLogString(logsReader *bufio.Reader) (string, bool, error) {
 	jsonLogStr, err := logsReader.ReadString(volume_consts.NewLineRune)
 
@@ -281,7 +277,6 @@ func isValidJsonEnding(line string) bool {
 	return endOfLine == volume_consts.EndOfJsonLine
 }
 
-// Returns error if [jsonLogLineStr] is not a valid log line
 func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	jsonLogLineStr string,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
@@ -328,7 +323,6 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
 		serviceUuid: logLines,
 	}
-
 	logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
 	return nil
 }
@@ -348,7 +342,7 @@ func (strategy *PerWeekStreamLogsStrategy) isWithinRetentionPeriod(logLine JsonL
 	return timestamp.After(retentionPeriod), nil
 }
 
-// Continue streaming log lines as they are written to log file (-f) [filepath]
+// Continue streaming log lines as they are written to log file (tail -f [filepath])
 func (strategy *PerWeekStreamLogsStrategy) followLogs(
 	filepath string,
 	logsByKurtosisUserServiceUuidChan chan map[service.ServiceUUID][]logline.LogLine,
