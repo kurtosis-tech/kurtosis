@@ -1,1 +1,1 @@
-lib = import_module("github.com/sample/sample-kurtosis-package/lib/lib.star")
+lib = import_module("github.com/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-run-in-main-star/lib/lib.star")
