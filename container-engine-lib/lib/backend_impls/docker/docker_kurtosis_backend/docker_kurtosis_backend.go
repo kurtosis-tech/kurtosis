@@ -89,7 +89,10 @@ func (backend *DockerKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]
 	prunedImages, err := backend.dockerManager.PruneUnusedImages(ctx)
 	prunedImageNames := []string{}
 	for _, prunedImage := range prunedImages {
-		prunedImageNames = append(prunedImageNames, prunedImage.ID)
+		if lenPrunedImageTags := len(prunedImage.RepoTags); lenPrunedImageTags != 1 {
+			return nil, stacktrace.NewError("Expected exactly one repo tag, but found %d (%v). This is a bug in Kurtosis.", lenPrunedImageTags, prunedImage.RepoTags)
+		}
+		prunedImageNames = append(prunedImageNames, prunedImage.RepoTags[0])
 	}
 	if err != nil {
 		return prunedImageNames, stacktrace.Propagate(err, "An error occurred pruning image from kurtosis backend")
