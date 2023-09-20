@@ -76,18 +76,18 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 
 	logsReader, err := getLogsReader(fs, paths)
 	if err != nil {
-		streamErrChan <- stacktrace.Propagate(err, "An error ocurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
+		streamErrChan <- stacktrace.Propagate(err, "An error occurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 		return
 	}
 
 	if shouldReturnAllLogs {
 		if err := strategy.streamAllLogs(ctx, logsReader, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-			streamErrChan <- stacktrace.Propagate(err, "An error ocurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
+			streamErrChan <- stacktrace.Propagate(err, "An error occurred streaming all logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
 		}
 	} else {
 		if err := strategy.streamTailLogs(ctx, logsReader, numLogLines, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-			streamErrChan <- stacktrace.Propagate(err, "An error ocurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
+			streamErrChan <- stacktrace.Propagate(err, "An error occurred streaming '%v' logs for service '%v' in enclave '%v'", numLogLines, serviceUuid, enclaveUuid)
 			return
 		}
 	}
@@ -95,7 +95,7 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 	latestLogFile := paths[len(paths)-1]
 	if shouldFollowLogs {
 		if err := strategy.followLogs(latestLogFile, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
-			streamErrChan <- stacktrace.Propagate(err, "An error ocurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
+			streamErrChan <- stacktrace.Propagate(err, "An error occurred creating following logs for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 			return
 		}
 	}
@@ -218,6 +218,7 @@ func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
 				if len(tailLogLines) > int(numLogLines) {
 					tailLogLines = tailLogLines[1:]
 				}
+				continue
 			}
 
 			if err != nil {
@@ -326,6 +327,7 @@ func (strategy *PerWeekStreamLogsStrategy) sendJsonLogLine(
 	userServicesLogLinesMap := map[service.ServiceUUID][]logline.LogLine{
 		serviceUuid: logLines,
 	}
+
 	logsByKurtosisUserServiceUuidChan <- userServicesLogLinesMap
 	return nil
 }

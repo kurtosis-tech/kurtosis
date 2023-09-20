@@ -64,7 +64,7 @@ func (strategy *PerFileStreamLogsStrategy) StreamLogs(
 				// check if it's an uncompleted Json line
 				if jsonLogNewStr != "" && len(jsonLogNewStr) > 2 {
 					jsonLogNewStrLastChars := jsonLogNewStr[len(jsonLogNewStr)-2:]
-					if jsonLogNewStrLastChars != volume_consts.EndOfJsonLine {
+					if jsonLogNewStrLastChars != volume_consts.EndOfJsonLine+"\n" {
 						// removes the newline char from the previous part of the json line
 						jsonLogStr = strings.TrimSuffix(jsonLogStr, string(volume_consts.NewLineRune))
 						continue
