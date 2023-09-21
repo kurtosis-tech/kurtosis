@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.83.5](https://github.com/kurtosis-tech/kurtosis/compare/0.83.4...0.83.5) (2023-09-21)
+
+
+### Features
+
+* add service details to EM UI ([#1352](https://github.com/kurtosis-tech/kurtosis/issues/1352)) ([2ccd98d](https://github.com/kurtosis-tech/kurtosis/commit/2ccd98d2066975d7c94c07b6f793878a27c4ed81))
+* added ability to lint Starlark packages ([#1360](https://github.com/kurtosis-tech/kurtosis/issues/1360)) ([f4a072c](https://github.com/kurtosis-tech/kurtosis/commit/f4a072cbbdf53614fe752069d12ed8577a6164be)), closes [#1228](https://github.com/kurtosis-tech/kurtosis/issues/1228)
+* Support YAML as Package param ([#1350](https://github.com/kurtosis-tech/kurtosis/issues/1350)) ([e33bfe6](https://github.com/kurtosis-tech/kurtosis/commit/e33bfe688e78b15a6468b4d5abf5ad7a5413ca71))
+
+
+### Bug Fixes
+
+* tail logs from end of log file ([#1339](https://github.com/kurtosis-tech/kurtosis/issues/1339)) ([b8d5816](https://github.com/kurtosis-tech/kurtosis/commit/b8d58169e9c708a71159a87fe52877471c928653))
+* warn instead of failing for json log line parse error ([#1336](https://github.com/kurtosis-tech/kurtosis/issues/1336)) ([44b2820](https://github.com/kurtosis-tech/kurtosis/commit/44b282076a6be85e1711ee33cbcc0ae116882ec6))
+
 ## [0.83.4](https://github.com/kurtosis-tech/kurtosis/compare/0.83.3...0.83.4) (2023-09-19)
 
 
