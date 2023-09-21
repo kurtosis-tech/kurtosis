@@ -9,6 +9,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"strings"
@@ -19,17 +20,22 @@ const (
 	fileOrDirToLintArgKeyIsOptional = true
 	fileOrDirToLintArgKeyIsGreedy   = true
 	cmdArgsSeparator                = " "
-	pyBlackDockerImage              = "pyfound/black:latest"
-	dockerBinary                    = "docker"
 
 	formatFlagKey          = "format"
 	formatFlagShortKey     = "f"
 	formatFlagDefaultValue = "false"
+
+	pyBlackDockerImage    = "pyfound/black:23.9.1"
+	dockerRunCmd          = "run"
+	removeContainerOnExit = "--rm"
+	dockerBinary          = "docker"
+	lintVolumeName        = "lint"
 )
 
 var fileOrDirToLintDefaultValue = []string{"."}
 
-var flagsForBlack = []string{"run", pyBlackDockerImage, "--include", "\\.star?$"}
+var dockerRunPrefix = []string{dockerRunCmd, removeContainerOnExit, "-v"}
+var dockerRunSuffix = []string{"--workdir", "/" + lintVolumeName, pyBlackDockerImage, "black", ".", `--include=".star"`}
 
 // LintCmd we only fill in the required struct fields, hence the others remain nil
 // nolint: exhaustruct
@@ -69,16 +75,19 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 
 	formatFlag, err := flags.GetBool(formatFlagKey)
 	if !formatFlag {
-		flagsForBlack = append(flagsForBlack, "--check")
+		dockerRunSuffix = append(dockerRunSuffix, "--check")
 	}
+
+	logrus.Infof("The first run might take a few seconds as we depend on the '%v' image and have to download it", pyBlackDockerImage)
 
 	if _, err := exec.LookPath(dockerBinary); err != nil {
 		return stacktrace.Propagate(err, "'%v' uses '%v' underneath in order to use the '%v' image but it couldn't find '%v' in path", command_str_consts.KurtosisLintCmdStr, dockerBinary, pyBlackDockerImage, dockerBinary)
 	}
 
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
-		flagsForBlackWithFile := append(flagsForBlack, fileOrDirToLint)
-		cmd := exec.Command(dockerBinary, flagsForBlackWithFile...)
+		commandArgs := append(dockerRunPrefix, fileOrDirToLint+":/"+lintVolumeName)
+		commandArgs = append(commandArgs, dockerRunSuffix...)
+		cmd := exec.Command(dockerBinary, commandArgs...)
 		cmdOutput, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(string(cmdOutput))
