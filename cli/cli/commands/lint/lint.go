@@ -51,8 +51,7 @@ var dockerRunSuffix = []string{dockerWorkDirFlag, lintVolumeName, pyBlackDockerI
 var LintCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.KurtosisLintCmdStr,
 	ShortDescription: "Lints the Kurtosis package or file",
-	LongDescription: fmt.Sprintf(
-		"Lints the Kurtosis package or file"),
+	LongDescription:  "Lints the Kurtosis package or file",
 
 	Args: []*args.ArgConfig{
 		{
@@ -83,6 +82,9 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	}
 
 	formatFlag, err := flags.GetBool(formatFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "an error occurred getting the value of flag '%v'", formatFlag)
+	}
 	if !formatFlag {
 		dockerRunSuffix = append(dockerRunSuffix, checkFlagForBlack)
 	}
