@@ -1,5 +1,61 @@
 # Changelog
 
+## [0.83.5](https://github.com/kurtosis-tech/kurtosis/compare/0.83.4...0.83.5) (2023-09-21)
+
+
+### Features
+
+* add service details to EM UI ([#1352](https://github.com/kurtosis-tech/kurtosis/issues/1352)) ([2ccd98d](https://github.com/kurtosis-tech/kurtosis/commit/2ccd98d2066975d7c94c07b6f793878a27c4ed81))
+* added ability to lint Starlark packages ([#1360](https://github.com/kurtosis-tech/kurtosis/issues/1360)) ([f4a072c](https://github.com/kurtosis-tech/kurtosis/commit/f4a072cbbdf53614fe752069d12ed8577a6164be)), closes [#1228](https://github.com/kurtosis-tech/kurtosis/issues/1228)
+* Support YAML as Package param ([#1350](https://github.com/kurtosis-tech/kurtosis/issues/1350)) ([e33bfe6](https://github.com/kurtosis-tech/kurtosis/commit/e33bfe688e78b15a6468b4d5abf5ad7a5413ca71))
+
+
+### Bug Fixes
+
+* tail logs from end of log file ([#1339](https://github.com/kurtosis-tech/kurtosis/issues/1339)) ([b8d5816](https://github.com/kurtosis-tech/kurtosis/commit/b8d58169e9c708a71159a87fe52877471c928653))
+* warn instead of failing for json log line parse error ([#1336](https://github.com/kurtosis-tech/kurtosis/issues/1336)) ([44b2820](https://github.com/kurtosis-tech/kurtosis/commit/44b282076a6be85e1711ee33cbcc0ae116882ec6))
+
+## [0.83.4](https://github.com/kurtosis-tech/kurtosis/compare/0.83.3...0.83.4) (2023-09-19)
+
+
+### Features
+
+* Add format flag to kurtosis port print ([#1319](https://github.com/kurtosis-tech/kurtosis/issues/1319)) ([cbbf260](https://github.com/kurtosis-tech/kurtosis/commit/cbbf260d872344c40fd768ed2226510550a8370d))
+
+
+### Bug Fixes
+
+* scan for first week of existing logs ([#1343](https://github.com/kurtosis-tech/kurtosis/issues/1343)) ([3905782](https://github.com/kurtosis-tech/kurtosis/commit/3905782b45b8b89d77ee70e231a2e04c19ca1bf0))
+
+## [0.83.3](https://github.com/kurtosis-tech/kurtosis/compare/0.83.2...0.83.3) (2023-09-19)
+
+
+### Features
+
+* CLI service inspect command ([#1323](https://github.com/kurtosis-tech/kurtosis/issues/1323)) ([ec018b9](https://github.com/kurtosis-tech/kurtosis/commit/ec018b94dd276479ae550597a079c79496a6bc4f))
+
+
+### Bug Fixes
+
+* revert docs ([#1347](https://github.com/kurtosis-tech/kurtosis/issues/1347)) ([efbaf09](https://github.com/kurtosis-tech/kurtosis/commit/efbaf09a86cb3313af03456a8212c92eb8c33120))
+* the docs name ([#1345](https://github.com/kurtosis-tech/kurtosis/issues/1345)) ([c3074d0](https://github.com/kurtosis-tech/kurtosis/commit/c3074d06bae6923d3ea2ab7124a2ace1d4a73aad))
+* Update testsuite package name to match their location in Github ([#1335](https://github.com/kurtosis-tech/kurtosis/issues/1335)) ([d5218a2](https://github.com/kurtosis-tech/kurtosis/commit/d5218a2e01361d016269607939721cfee08e3a3d))
+
+## [0.83.2](https://github.com/kurtosis-tech/kurtosis/compare/0.83.1...0.83.2) (2023-09-18)
+
+
+### Features
+
+* disable line numbers and use the name of the file...  ([#1329](https://github.com/kurtosis-tech/kurtosis/issues/1329)) ([1fd0e5a](https://github.com/kurtosis-tech/kurtosis/commit/1fd0e5a10331617e9efdb51e748abac111726bd9))
+* Make service start and stop support multiple services ([#1304](https://github.com/kurtosis-tech/kurtosis/issues/1304)) ([1b34b00](https://github.com/kurtosis-tech/kurtosis/commit/1b34b00578b4a989575bbb96ecf9f2562e9db4cf)), closes [#1089](https://github.com/kurtosis-tech/kurtosis/issues/1089)
+
+## [0.83.1](https://github.com/kurtosis-tech/kurtosis/compare/0.83.0...0.83.1) (2023-09-18)
+
+
+### Features
+
+* changes to the package manager config and the files artifact view ([#1322](https://github.com/kurtosis-tech/kurtosis/issues/1322)) ([e2b0d2b](https://github.com/kurtosis-tech/kurtosis/commit/e2b0d2b50ffa7edd2ff50eeba4c0887aa38ff27b))
+
 ## [0.83.0](https://github.com/kurtosis-tech/kurtosis/compare/0.82.24...0.83.0) (2023-09-18)
 
 
