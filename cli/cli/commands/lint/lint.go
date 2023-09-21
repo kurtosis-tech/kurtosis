@@ -12,14 +12,12 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 const (
 	fileOrDirToLintArgKey           = "file-or-dir"
 	fileOrDirToLintArgKeyIsOptional = true
 	fileOrDirToLintArgKeyIsGreedy   = true
-	fileOrDirSeparator              = ", "
 
 	formatFlagKey          = "format"
 	formatFlagShortKey     = "f"
@@ -87,13 +85,13 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	}
 
 	logrus.Infof("This depends on '%v'; first run may take a while as we might have to download it", pyBlackDockerImage)
-	logrus.Infof("Will be linting '%v'", strings.Join(fileOrDirToLintArg, fileOrDirSeparator))
 
 	if _, err := exec.LookPath(dockerBinary); err != nil {
 		return stacktrace.Propagate(err, "'%v' uses '%v' underneath in order to use the '%v' image but it couldn't find '%v' in path", command_str_consts.KurtosisLintCmdStr, dockerBinary, pyBlackDockerImage, dockerBinary)
 	}
 
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
+		logrus.Infof("Linting '%v'", fileOrDirToLint)
 		commandArgs := append(dockerRunPrefix, fileOrDirToLint+dirVolumeSeparator+lintVolumeName)
 		commandArgs = append(commandArgs, dockerRunSuffix...)
 		cmd := exec.Command(dockerBinary, commandArgs...)
