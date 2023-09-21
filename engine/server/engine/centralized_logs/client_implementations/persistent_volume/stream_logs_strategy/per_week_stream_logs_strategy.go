@@ -79,7 +79,6 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 		return
 	}
-	// ensure clean up all the files
 	defer func() {
 		for _, file := range files {
 			_ = file.Close()
@@ -152,7 +151,7 @@ func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_fil
 	return paths, nil
 }
 
-// Returns a Reader over all logs in [logFilePaths], and the file descriptors of the associated [logFilePaths]
+// Returns a Reader over all logs in [logFilePaths] and the open file descriptors of the associated [logFilePaths]
 func getLogsReader(filesystem volume_filesystem.VolumeFilesystem, logFilePaths []string) (*bufio.Reader, []volume_filesystem.VolumeFile, error) {
 	var fileReaders []io.Reader
 	var files []volume_filesystem.VolumeFile
@@ -231,7 +230,7 @@ func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
 			}
 
 			if err != nil {
-				// if we've reached end of logs, return success, else, return the error
+				// stop reading if end of logs reached, otherwise return the error
 				if errors.Is(err, io.EOF) {
 					break
 				} else {
@@ -251,24 +250,25 @@ func (strategy *PerWeekStreamLogsStrategy) streamTailLogs(
 	return nil
 }
 
-// Returns the next complete json log string from [logsReader], unless EOF is reached in which case an incomplete json log line is returned
+// Returns the next complete json log string from [logsReader], unless err is reached in which case an incomplete json log line could be returned
 func getCompleteJsonLogString(logsReader *bufio.Reader) (string, error) {
 	var completeJsonLogStr string
-
 	for {
-		jsonLogStr, isComplete, err := getJsonLogString(logsReader)
+		jsonLogStr, isJsonEnding, err := getJsonLogString(logsReader)
 		completeJsonLogStr = completeJsonLogStr + jsonLogStr
+		// err could be EOF or something else so return the string and err for caller to handle
 		if err != nil {
 			return completeJsonLogStr, err
 		}
 
-		if isComplete {
+		// if appended string is valid json ending, can now return a complete json log
+		if isJsonEnding {
 			return completeJsonLogStr, nil
 		}
 	}
 }
 
-// Return the next json log string from [logsReader] and whether the string is a valid json or not
+// Return the next json log string from [logsReader] and whether the string ends in valid json or not
 func getJsonLogString(logsReader *bufio.Reader) (string, bool, error) {
 	jsonLogStr, err := logsReader.ReadString(volume_consts.NewLineRune)
 
@@ -278,10 +278,10 @@ func getJsonLogString(logsReader *bufio.Reader) (string, bool, error) {
 }
 
 func isValidJsonEnding(line string) bool {
-	if len(line) == 0 {
+	if len(line) < len(volume_consts.EndOfJsonLine) {
 		return false
 	}
-	endOfLine := line[len(line)-1:]
+	endOfLine := line[len(line)-len(volume_consts.EndOfJsonLine):]
 	return endOfLine == volume_consts.EndOfJsonLine
 }
 
