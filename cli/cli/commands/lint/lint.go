@@ -12,30 +12,36 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
-	"strings"
 )
 
 const (
 	fileOrDirToLintArgKey           = "file-or-dir"
 	fileOrDirToLintArgKeyIsOptional = true
 	fileOrDirToLintArgKeyIsGreedy   = true
-	cmdArgsSeparator                = " "
 
 	formatFlagKey          = "format"
 	formatFlagShortKey     = "f"
 	formatFlagDefaultValue = "false"
 
-	pyBlackDockerImage    = "pyfound/black:23.9.1"
-	dockerRunCmd          = "run"
-	removeContainerOnExit = "--rm"
-	dockerBinary          = "docker"
-	lintVolumeName        = "lint"
+	pyBlackDockerImage      = "pyfound/black:23.9.1"
+	dockerRunCmd            = "run"
+	removeContainerOnExit   = "--rm"
+	dockerBinary            = "docker"
+	lintVolumeName          = "/lint"
+	dockerVolumeFlag        = "-v"
+	dockerWorkDirFlag       = "--workdir"
+	blackBinaryName         = "black"
+	includeFlagForBlack     = "--include"
+	presentWorkingDirectory = "."
+	checkFlagForBlack       = "--check"
+	allStarlarkFilesMatch   = "\\.star?$"
+	dirVolumeSeparator      = ":"
 )
 
 var fileOrDirToLintDefaultValue = []string{"."}
 
-var dockerRunPrefix = []string{dockerRunCmd, removeContainerOnExit, "-v"}
-var dockerRunSuffix = []string{"--workdir", "/" + lintVolumeName, pyBlackDockerImage, "black", ".", "--include", "\\.star?$"}
+var dockerRunPrefix = []string{dockerRunCmd, removeContainerOnExit, dockerVolumeFlag}
+var dockerRunSuffix = []string{dockerWorkDirFlag, lintVolumeName, pyBlackDockerImage, blackBinaryName, presentWorkingDirectory, includeFlagForBlack, allStarlarkFilesMatch}
 
 // LintCmd we only fill in the required struct fields, hence the others remain nil
 // nolint: exhaustruct
@@ -75,7 +81,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 
 	formatFlag, err := flags.GetBool(formatFlagKey)
 	if !formatFlag {
-		dockerRunSuffix = append(dockerRunSuffix, "--check")
+		dockerRunSuffix = append(dockerRunSuffix, checkFlagForBlack)
 	}
 
 	logrus.Infof("The first run might take a few seconds as we depend on the '%v' image and have to download it", pyBlackDockerImage)
@@ -85,13 +91,13 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	}
 
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
-		commandArgs := append(dockerRunPrefix, fileOrDirToLint+":/"+lintVolumeName)
+		commandArgs := append(dockerRunPrefix, fileOrDirToLint+dirVolumeSeparator+lintVolumeName)
 		commandArgs = append(commandArgs, dockerRunSuffix...)
 		cmd := exec.Command(dockerBinary, commandArgs...)
 		cmdOutput, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(string(cmdOutput))
-			return stacktrace.Propagate(err, "An error occurred while running the command '%v'", strings.Join(cmd.Args, cmdArgsSeparator))
+			return stacktrace.Propagate(err, "the lint command '%v' failed with a few errors, this means that there are some linting failures", cmd.Args)
 		}
 		fmt.Println(string(cmdOutput))
 	}
