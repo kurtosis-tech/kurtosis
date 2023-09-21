@@ -202,20 +202,8 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		return nil
 	}
 
-	cleanedPackageId := cleanPackageId(packageId)
-	logrus.Debugf("cleanedPackageId: %s", cleanedPackageId)
 	apicService.runStarlark(parallelism, dryRun, packageName, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 	return nil
-}
-
-// cleanPackageId will clean the "branch" or "commit hash" part from it
-func cleanPackageId(packageId string) string {
-	atIndex := strings.Index(packageId, "@")
-
-	if atIndex > -1 {
-		return packageId[:atIndex]
-	}
-	return packageId
 }
 
 func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
