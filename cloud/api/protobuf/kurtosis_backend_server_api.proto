@@ -12,6 +12,7 @@ service KurtosisCloudBackendServer {
   rpc GetCloudInstanceConfig(GetCloudInstanceConfigArgs) returns (GetCloudInstanceConfigResponse) {};
   rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
   rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
+  rpc GetOrCreatePaymentConfig(GetOrCreatePaymentConfigArgs) returns (GetOrCreatePaymentConfigResponse) {};
 }
 
 message GetOrCreateApiKeyRequest {
@@ -66,6 +67,18 @@ message GetCloudInstanceConfigResponse {
 
   // TODO: remove the optional once this is released and the cloud BE is upgraded
   optional AwsEnvironment aws_environment = 9;
+}
+
+message GetOrCreatePaymentConfigArgs {
+  string api_key = 1;
+}
+
+message GetOrCreatePaymentConfigResponse {
+  string user_id = 1;
+  string client_secret = 2;
+  int32 exp_month = 3;
+  int32 exp_year = 4;
+  string last_four = 5;
 }
 
 message AwsKey {
