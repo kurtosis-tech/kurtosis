@@ -164,6 +164,8 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 	serviceUuidStrSet := args.GetServiceUuidSet()
 	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidStrSet))
 	shouldFollowLogs := args.FollowLogs
+	shouldReturnAllLogs := args.ReturnAllLogs
+	numLogLines := args.NumLogLines
 
 	for serviceUuidStr := range serviceUuidStrSet {
 		serviceUuid := user_service.ServiceUUID(serviceUuidStr)
@@ -197,7 +199,14 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 	}
 	logsDatabaseClient := service.getLogsDatabaseClient(enclaveCreationTime)
 
-	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(contextWithCancel, enclaveUuid, requestedServiceUuids, conjunctiveLogLineFilters, shouldFollowLogs)
+	serviceLogsByServiceUuidChan, errChan, cancelCtxFunc, err = logsDatabaseClient.StreamUserServiceLogs(
+		contextWithCancel,
+		enclaveUuid,
+		requestedServiceUuids,
+		conjunctiveLogLineFilters,
+		shouldFollowLogs,
+		shouldReturnAllLogs,
+		numLogLines)
 	if err != nil {
 		return stacktrace.Propagate(
 			err,
@@ -236,8 +245,8 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		//error from logs database case
 		case err, isChanOpen := <-errChan:
 			if isChanOpen {
-				logrus.Debug("Exiting the stream because and error from the logs database client was received through the error chan")
-				return stacktrace.Propagate(err, "An error occurred streaming user service logs")
+				logrus.Debug("Exiting the stream because an error from the logs database client was received through the error chan.")
+				return stacktrace.Propagate(err, "An error occurred streaming user service logs.")
 			}
 			logrus.Debug("Exiting the stream loop after receiving a close signal from the error chan")
 			return nil

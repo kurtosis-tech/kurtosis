@@ -351,6 +351,12 @@ export class GetServiceLogsArgs extends jspb.Message {
   clearConjunctiveFiltersList(): GetServiceLogsArgs;
   addConjunctiveFilters(value?: LogLineFilter, index?: number): LogLineFilter;
 
+  getReturnAllLogs(): boolean;
+  setReturnAllLogs(value: boolean): GetServiceLogsArgs;
+
+  getNumLogLines(): number;
+  setNumLogLines(value: number): GetServiceLogsArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceLogsArgs.AsObject;
   static toObject(includeInstance: boolean, msg: GetServiceLogsArgs): GetServiceLogsArgs.AsObject;
@@ -365,6 +371,8 @@ export namespace GetServiceLogsArgs {
     serviceUuidSetMap: Array<[string, boolean]>,
     followLogs: boolean,
     conjunctiveFiltersList: Array<LogLineFilter.AsObject>,
+    returnAllLogs: boolean,
+    numLogLines: number,
   }
 }
 
