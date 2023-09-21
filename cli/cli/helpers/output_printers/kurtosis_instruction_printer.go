@@ -38,6 +38,7 @@ var (
 	colorizeError            = color.New(color.FgRed).SprintFunc()
 	colorizeWarning          = color.New(color.FgYellow).SprintFunc()
 	colorizeRunSuccessfulMsg = color.New(color.FgGreen).SprintFunc()
+	colorizeInfo             = color.New(color.FgCyan).SprintFunc()
 
 	colorizeProgressBarIsDone    = color.New(color.FgGreen).SprintFunc()
 	colorizeProgressBarRemaining = color.New(color.FgWhite).SprintFunc()
@@ -153,6 +154,12 @@ func (printer *ExecutionPrinter) PrintKurtosisExecutionResponseLineToStdOut(resp
 		if err := printer.printPersistentLineToStdOut(formattedRunWarningMessageWithNewline); err != nil {
 			return stacktrace.Propagate(err, "Error printing warning message: %v", formattedRunWarningMessage)
 		}
+	} else if responseLine.GetInfo() != nil {
+		formattedRunInfoMessage := formatInfo(responseLine.GetInfo().GetInfoMessage())
+		formattedRunInfoMessageWithNewline := fmt.Sprintf("\n%s", formattedRunInfoMessage)
+		if err := printer.printPersistentLineToStdOut(formattedRunInfoMessageWithNewline); err != nil {
+			return stacktrace.Propagate(err, "Error printing info message: %v", formattedRunInfoMessage)
+		}
 	}
 	return nil
 }
@@ -171,6 +178,10 @@ func FormatError(errorMessage string) string {
 
 func formatWarning(warningMessage string) string {
 	return colorizeWarning(warningMessage)
+}
+
+func formatInfo(infoMessage string) string {
+	return colorizeInfo(infoMessage)
 }
 
 func formatInstruction(instruction *kurtosis_core_rpc_api_bindings.StarlarkInstruction, verbosity run.Verbosity) string {

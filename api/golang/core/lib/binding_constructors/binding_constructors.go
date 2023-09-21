@@ -115,6 +115,16 @@ func NewStarlarkRunResponseLineFromInstruction(instruction *kurtosis_core_rpc_ap
 	}
 }
 
+func NewStarlarkRunResponseLineFromInfoMsg(infoMessage string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
+		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Info{
+			Info: &kurtosis_core_rpc_api_bindings.StarlarkInfo{
+				InfoMessage: infoMessage,
+			},
+		},
+	}
+}
+
 func NewStarlarkRunResponseLineFromWarning(warningMessage string) *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	return &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine{
 		RunResponseLine: &kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine_Warning{
@@ -298,6 +308,7 @@ func NewServiceInfo(
 	maybePublicIpAddr string,
 	maybePublicPorts map[string]*kurtosis_core_rpc_api_bindings.Port,
 	serviceStatus kurtosis_core_rpc_api_bindings.ServiceStatus,
+	container *kurtosis_core_rpc_api_bindings.Container,
 ) *kurtosis_core_rpc_api_bindings.ServiceInfo {
 	return &kurtosis_core_rpc_api_bindings.ServiceInfo{
 		ServiceUuid:       uuid,
@@ -308,6 +319,7 @@ func NewServiceInfo(
 		MaybePublicIpAddr: maybePublicIpAddr,
 		MaybePublicPorts:  maybePublicPorts,
 		ServiceStatus:     serviceStatus,
+		Container:         container,
 	}
 }
 

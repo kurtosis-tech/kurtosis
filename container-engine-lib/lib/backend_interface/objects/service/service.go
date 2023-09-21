@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"net"
 	"regexp"
@@ -34,8 +34,6 @@ type ServiceUUID string
 type Service struct {
 	registration *ServiceRegistration
 
-	status container_status.ContainerStatus
-
 	// Keyed by user-provided port ID
 	privatePorts map[string]*port_spec.PortSpec
 
@@ -51,18 +49,21 @@ type Service struct {
 	// - The service's status is running
 	// - The backend type is Docker
 	maybePublicPorts map[string]*port_spec.PortSpec
+
+	// Docker container or Kubernetes pod container
+	container *container.Container
 }
 
-func NewService(registration *ServiceRegistration, status container_status.ContainerStatus, privatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec) *Service {
-	return &Service{registration: registration, status: status, privatePorts: privatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts}
+func NewService(registration *ServiceRegistration, privatePorts map[string]*port_spec.PortSpec, maybePublicIp net.IP, maybePublicPorts map[string]*port_spec.PortSpec, container *container.Container) *Service {
+	return &Service{registration: registration, privatePorts: privatePorts, maybePublicIp: maybePublicIp, maybePublicPorts: maybePublicPorts, container: container}
 }
 
 func (service *Service) GetRegistration() *ServiceRegistration {
 	return service.registration
 }
 
-func (service *Service) GetStatus() container_status.ContainerStatus {
-	return service.status
+func (service *Service) GetContainer() *container.Container {
+	return service.container
 }
 
 func (service *Service) GetPrivatePorts() map[string]*port_spec.PortSpec {

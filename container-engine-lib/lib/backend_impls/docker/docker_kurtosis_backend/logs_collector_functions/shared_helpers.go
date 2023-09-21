@@ -2,6 +2,8 @@ package logs_collector_functions
 
 import (
 	"context"
+	"net"
+
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager"
@@ -9,12 +11,11 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/stacktrace"
-	"net"
 )
 
 const (
@@ -56,7 +57,7 @@ func getLogsCollectorObjectFromContainerInfo(
 ) (*logs_collector.LogsCollector, error) {
 
 	var (
-		logsCollectorStatus     container_status.ContainerStatus
+		logsCollectorStatus     container.ContainerStatus
 		privateIpAddr           net.IP
 		bridgeNetworkIpAddr     net.IP
 		enclaveNetworkIpAddress string
@@ -76,7 +77,7 @@ func getLogsCollectorObjectFromContainerInfo(
 	}
 
 	if isContainerRunning {
-		logsCollectorStatus = container_status.ContainerStatus_Running
+		logsCollectorStatus = container.ContainerStatus_Running
 
 		enclaveNetworkIpAddress, err = dockerManager.GetContainerIP(ctx, enclaveNetworkId.GetName(), containerId)
 		if err != nil {
@@ -96,7 +97,7 @@ func getLogsCollectorObjectFromContainerInfo(
 			return nil, stacktrace.Propagate(err, "Couldn't parse '%v' network ip address string '%v' to ip", consts.NameOfNetworkToStartEngineAndLogServiceContainersIn, bridgeNetworkIpAddress)
 		}
 	} else {
-		logsCollectorStatus = container_status.ContainerStatus_Stopped
+		logsCollectorStatus = container.ContainerStatus_Stopped
 	}
 
 	logsCollectorObj := logs_collector.NewLogsCollector(
