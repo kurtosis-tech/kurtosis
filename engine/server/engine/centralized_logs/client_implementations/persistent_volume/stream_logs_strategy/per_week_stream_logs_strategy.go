@@ -74,11 +74,17 @@ func (strategy *PerWeekStreamLogsStrategy) StreamLogs(
 			volume_consts.LogRetentionPeriodInWeeks+1, len(paths))
 	}
 
-	logsReader, err := getLogsReader(fs, paths)
+	logsReader, files, err := getLogsReader(fs, paths)
 	if err != nil {
 		streamErrChan <- stacktrace.Propagate(err, "An error occurred creating a logs reader for service '%v' in enclave '%v'", serviceUuid, enclaveUuid)
 		return
 	}
+	// ensure clean up all the files
+	defer func() {
+		for _, file := range files {
+			_ = file.Close()
+		}
+	}()
 
 	if shouldReturnAllLogs {
 		if err := strategy.streamAllLogs(ctx, logsReader, logsByKurtosisUserServiceUuidChan, serviceUuid, conjunctiveLogLinesFiltersWithRegex); err != nil {
@@ -146,23 +152,25 @@ func (strategy *PerWeekStreamLogsStrategy) getLogFilePaths(filesystem volume_fil
 	return paths, nil
 }
 
-// Returns a Reader over all logs in [logFilePaths]
-func getLogsReader(filesystem volume_filesystem.VolumeFilesystem, logFilePaths []string) (*bufio.Reader, error) {
+// Returns a Reader over all logs in [logFilePaths], and the file descriptors of the associated [logFilePaths]
+func getLogsReader(filesystem volume_filesystem.VolumeFilesystem, logFilePaths []string) (*bufio.Reader, []volume_filesystem.VolumeFile, error) {
 	var fileReaders []io.Reader
+	var files []volume_filesystem.VolumeFile
 
 	// get a reader for each log file
 	for _, pathStr := range logFilePaths {
 		logsFile, err := filesystem.Open(pathStr)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred opening the logs file at the following path: %v", pathStr)
+			return nil, nil, stacktrace.Propagate(err, "An error occurred opening the logs file at the following path: %v", pathStr)
 		}
 		fileReaders = append(fileReaders, logsFile)
+		files = append(files, logsFile)
 	}
 
 	// combine log file readers into a single reader
 	combinedLogsReader := io.MultiReader(fileReaders...)
 
-	return bufio.NewReader(combinedLogsReader), nil
+	return bufio.NewReader(combinedLogsReader), files, nil
 }
 
 func (strategy *PerWeekStreamLogsStrategy) streamAllLogs(
