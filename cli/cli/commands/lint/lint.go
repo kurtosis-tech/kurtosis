@@ -35,7 +35,7 @@ const (
 var fileOrDirToLintDefaultValue = []string{"."}
 
 var dockerRunPrefix = []string{dockerRunCmd, removeContainerOnExit, "-v"}
-var dockerRunSuffix = []string{"--workdir", "/" + lintVolumeName, pyBlackDockerImage, "black", ".", `--include=".star"`}
+var dockerRunSuffix = []string{"--workdir", "/" + lintVolumeName, pyBlackDockerImage, "black", ".", "--include", "\\.star?$"}
 
 // LintCmd we only fill in the required struct fields, hence the others remain nil
 // nolint: exhaustruct
