@@ -47,12 +47,16 @@ func (suite *StartosisPackageTestSuite) SetupTest() {
 }
 
 func (suite *StartosisPackageTestSuite) TearDownTest() {
-	err := suite.destroyEnclaveFunc()
-	require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
+	//err := suite.destroyEnclaveFunc()
+	//require.NoError(suite.T(), err, "Destroying the test suite's enclave process has failed, you will have to remove it manually")
 }
 
 func (suite *StartosisPackageTestSuite) RunPackage(ctx context.Context, packageRelativeDirpath string) (*enclaves.StarlarkRunResult, error) {
 	return suite.RunPackageWithParams(ctx, packageRelativeDirpath, emptyRunParams)
+}
+
+func (suite *StartosisPackageTestSuite) RunRemotePackage(ctx context.Context, remotePackage string) (*enclaves.StarlarkRunResult, error) {
+	return suite.enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
 }
 
 func (suite *StartosisPackageTestSuite) RunPackageWithParams(ctx context.Context, packageRelativeDirpath string, params string) (*enclaves.StarlarkRunResult, error) {

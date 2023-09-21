@@ -187,12 +187,13 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	//  right now the TS SDK still uses the old deprecated behavior
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
+	var packageName string
 	if args.ClonePackage != nil {
-		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
+		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
 	} else {
 		// old deprecated syntax in use
 		moduleContentIfLocal := args.GetLocal()
-		scriptWithRunFunction, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
+		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
 	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
@@ -201,8 +202,20 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		return nil
 	}
 
-	apicService.runStarlark(parallelism, dryRun, packageId, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
+	cleanedPackageId := cleanPackageId(packageId)
+	logrus.Debugf("cleanedPackageId: %s", cleanedPackageId)
+	apicService.runStarlark(parallelism, dryRun, packageName, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 	return nil
+}
+
+// cleanPackageId will clean the "branch" or "commit hash" part from it
+func cleanPackageId(packageId string) string {
+	atIndex := strings.Index(packageId, "@")
+
+	if atIndex > -1 {
+		return packageId[:atIndex]
+	}
+	return packageId
 }
 
 func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
@@ -645,36 +658,39 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 	clonePackage bool,
 	moduleContentIfLocal []byte,
 	relativePathToMainFile string,
-) (string, *startosis_errors.InterpretationError) {
+) (string, string, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
+	var packageName string
 	if clonePackage {
-		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.ClonePackage(packageId)
+		packageRootPathOnDisk, packageName, interpretationError = apicService.startosisModuleContentProvider.ClonePackage(packageId)
 	} else if moduleContentIfLocal != nil {
 		// TODO: remove this once UploadStarlarkPackage is called prior to calling RunStarlarkPackage by all consumers
 		//  of this API
 		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StorePackageContents(packageId, bytes.NewReader(moduleContentIfLocal), doOverwriteExistingModule)
+		packageName = packageId
 	} else {
 		// We just need to retrieve the absolute path, the content is will not be stored here since it has been uploaded
 		// prior to this call
 		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.GetOnDiskAbsolutePackagePath(packageId)
+		packageName = packageId
 	}
 	if interpretationError != nil {
-		return "", interpretationError
+		return "", "", interpretationError
 	}
 
 	pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
 
 	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
 	mainScriptToExecute, err := os.ReadFile(pathToMainFile)
 	if err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
-	return string(mainScriptToExecute), nil
+	return string(mainScriptToExecute), packageName, nil
 }
 
 func (apicService ApiContainerService) runStarlark(

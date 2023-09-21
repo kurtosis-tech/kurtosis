@@ -25,8 +25,8 @@ type PackageContentProvider interface {
 	// StorePackageContents writes on disk the content of the package passed as params
 	StorePackageContents(packageId string, packageContent io.Reader, overwriteExisting bool) (string, *startosis_errors.InterpretationError)
 
-	// ClonePackage clones the package with the given id and returns the absolute path on disk
-	ClonePackage(packageId string) (string, *startosis_errors.InterpretationError)
+	// ClonePackage clones the package with the given id and returns the absolute path on disk and the package name from Kurtosis yaml file
+	ClonePackage(packageId string) (string, string, *startosis_errors.InterpretationError)
 
 	// GetAbsoluteLocatorForRelativeModuleLocator returns the absolute package path for a relative module path
 	GetAbsoluteLocatorForRelativeModuleLocator(packageId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError)
