@@ -47,11 +47,11 @@ const (
 var expectedRelativeOrder = map[string]int{
 	protocolStr: 0,
 	ipStr:       1,
-	numberStr:   2,
+	numberStr:   2, //nolint:gomnd
 }
 
 var (
-	formatFlagKeyDefault  = fmt.Sprintf("'%s,%s,%s'", protocolStr, ipStr, numberStr)
+	formatFlagKeyDefault  = fmt.Sprintf("%s,%s,%s", protocolStr, ipStr, numberStr)
 	formatFlagKeyExamples = []string{
 		fmt.Sprintf("'%s'", ipStr),
 		fmt.Sprintf("'%s'", numberStr),
@@ -69,7 +69,7 @@ var PortPrintCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCom
 		{
 			Key: formatFlagKey,
 			Usage: fmt.Sprintf(
-				"Allows selecting what pieces of port are printed, using comma separated values (examples: %s). Default %s.",
+				"Allows selecting what pieces of port are printed, using comma separated values (examples: %s). Default '%s'.",
 				strings.Join(formatFlagKeyExamples, ", "), formatFlagKeyDefault),
 			Type:    flags.FlagType_String,
 			Default: formatFlagKeyDefault,
