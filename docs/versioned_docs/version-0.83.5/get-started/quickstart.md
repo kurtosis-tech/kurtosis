@@ -171,7 +171,7 @@ b6fc024deefe   postgres   postgres: 5432/tcp -> postgresql://127.0.0.1:59299   R
 ### Review: Run Postgres
 So what actually happened? Three things actually:
 
-1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](./concepts-reference/plan.md) for what you wanted done (in this case, starting a Postgres instance)
+1. **Interpretation:** Kurtosis first ran your Starlark to build [a plan](../concepts-reference/plan.md) for what you wanted done (in this case, starting a Postgres instance)
 1. **Validation:** Kurtosis then ran several validations against your plan, including validating that the Postgres image exists
 1. **Execution:** Kurtosis finally executed the validated plan inside the enclave to start a Postgres container
 
@@ -912,43 +912,43 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 <!-- !!!!!!!!!!!!!!!!!!!!!!!!!!! ONLY LINKS BELOW HERE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! -->
 
 <!--------------------------- Guides ------------------------------------>
-[installing-kurtosis-guide]: ./guides/installing-the-cli.md#ii-install-the-cli
-[installing-docker-guide]: ./guides/installing-the-cli.md#i-install--start-docker
-[upgrading-kurtosis-guide]: ./guides/upgrading-the-cli.md
+[installing-kurtosis-guide]: ../guides/installing-the-cli.md#ii-install-the-cli
+[installing-docker-guide]: ../guides/installing-the-cli.md#i-install--start-docker
+[upgrading-kurtosis-guide]: ../guides/upgrading-the-cli.md
 
 <!--------------------------- Explanations ------------------------------------>
-[architecture-explanation]: ./explanations/architecture.md
-[enclaves-reference]: ./concepts-reference/enclaves.md
-[services-explanation]: ./explanations/architecture.md#services
-[reusable-environment-definitions-explanation]: ./explanations/reusable-environment-definitions.md
-[why-we-built-kurtosis-explanation]: ./explanations/why-we-built-kurtosis.md
-[how-do-imports-work-explanation]: ./explanations/how-do-kurtosis-imports-work.md
-[why-multi-phase-runs-explanation]: ./explanations/why-multi-phase-runs.md
+[architecture-explanation]: ../explanations/architecture.md
+[enclaves-reference]: ../concepts-reference/enclaves.md
+[services-explanation]: ../explanations/architecture.md#services
+[reusable-environment-definitions-explanation]: ../explanations/reusable-environment-definitions.md
+[why-we-built-kurtosis-explanation]: ../explanations/why-we-built-kurtosis.md
+[how-do-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
+[why-multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
 
 <!--------------------------- Reference ------------------------------------>
 <!-- CLI Commands Reference -->
 [cli-reference]: /cli
-[kurtosis-run-reference]: ./cli-reference/run.md
-[kurtosis-clean-reference]: ./cli-reference/clean.md
-[kurtosis-enclave-inspect-reference]: ./cli-reference/enclave-inspect.md
-[kurtosis-files-upload-reference]: ./cli-reference/files-upload.md
-[kurtosis-feedback-reference]: ./cli-reference/feedback.md
-[kurtosis-twitter]: ./cli-reference/twitter.md
-[starlark-reference]: ./concepts-reference/starlark.md
+[kurtosis-run-reference]: ../cli-reference/run.md
+[kurtosis-clean-reference]: ../cli-reference/clean.md
+[kurtosis-enclave-inspect-reference]: ../cli-reference/enclave-inspect.md
+[kurtosis-files-upload-reference]: ../cli-reference/files-upload.md
+[kurtosis-feedback-reference]: ../cli-reference/feedback.md
+[kurtosis-twitter]: ../cli-reference/twitter.md
+[starlark-reference]: ../concepts-reference/starlark.md
 
 <!-- SL Instructions Reference-->
-[request-reference]: ./starlark-reference/plan.md#request
-[exec-reference]: ./starlark-reference/plan.md#exec
+[request-reference]: ../starlark-reference/plan.md#request
+[exec-reference]: ../starlark-reference/plan.md#exec
 
 <!-- Reference -->
-[multi-phase-runs-reference]: ./concepts-reference/multi-phase-runs.md
-[kurtosis-yml-reference]: ./concepts-reference/kurtosis-yml.md
-[packages-reference]: ./concepts-reference/packages.md
-[runnable-packages-reference]: ./concepts-reference/packages.md#runnable-packages
-[locators-reference]: ./concepts-reference/locators.md
-[plan-reference]: ./concepts-reference/plan.md
-[future-references-reference]: ./concepts-reference/future-references.md
-[files-artifacts-reference]: ./concepts-reference/files-artifacts.md
+[multi-phase-runs-reference]: ../concepts-reference/multi-phase-runs.md
+[kurtosis-yml-reference]: ../concepts-reference/kurtosis-yml.md
+[packages-reference]: ../concepts-reference/packages.md
+[runnable-packages-reference]: ../concepts-reference/packages.md#runnable-packages
+[locators-reference]: ../concepts-reference/locators.md
+[plan-reference]: ../concepts-reference/plan.md
+[future-references-reference]: ../concepts-reference/future-references.md
+[files-artifacts-reference]: ../concepts-reference/files-artifacts.md
 
 <!--------------------------- Other ------------------------------------>
 <!-- Examples repo -->
