@@ -29,7 +29,7 @@ const (
 
 var fileOrDirToLintDefaultValue = []string{"."}
 
-var flagsForBlack = []string{"--include", "\\.star?$"}
+var flagsForBlack = []string{"run", pyBlackDockerImage, "--include", "\\.star?$"}
 
 // LintCmd we only fill in the required struct fields, hence the others remain nil
 // nolint: exhaustruct
