@@ -12,12 +12,14 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
+	"strings"
 )
 
 const (
 	fileOrDirToLintArgKey           = "file-or-dir"
 	fileOrDirToLintArgKeyIsOptional = true
 	fileOrDirToLintArgKeyIsGreedy   = true
+	fileOrDirSeparator              = ", "
 
 	formatFlagKey          = "format"
 	formatFlagShortKey     = "f"
@@ -84,7 +86,8 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		dockerRunSuffix = append(dockerRunSuffix, checkFlagForBlack)
 	}
 
-	logrus.Infof("The first run might take a few seconds as we depend on the '%v' image and have to download it", pyBlackDockerImage)
+	logrus.Infof("This depends on '%v'; first run may take a while as we might have to download it", pyBlackDockerImage)
+	logrus.Infof("Will be linting '%v'", strings.Join(fileOrDirToLintArg, fileOrDirSeparator))
 
 	if _, err := exec.LookPath(dockerBinary); err != nil {
 		return stacktrace.Propagate(err, "'%v' uses '%v' underneath in order to use the '%v' image but it couldn't find '%v' in path", command_str_consts.KurtosisLintCmdStr, dockerBinary, pyBlackDockerImage, dockerBinary)
@@ -97,7 +100,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		cmdOutput, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(string(cmdOutput))
-			return stacktrace.Propagate(err, "the lint command '%v' failed with a few errors, this means that there are some linting failures", cmd.Args)
+			return stacktrace.Propagate(err, "linting failed, this means that there are some files that need to be formatted, run this command with the '%v' flag", formatFlag)
 		}
 		fmt.Println(string(cmdOutput))
 	}
