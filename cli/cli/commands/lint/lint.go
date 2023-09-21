@@ -88,6 +88,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		commandArgs := append(dockerRunPrefix, fileOrDirToLint+":/"+lintVolumeName)
 		commandArgs = append(commandArgs, dockerRunSuffix...)
 		cmd := exec.Command(dockerBinary, commandArgs...)
+		fmt.Println(cmd.Args)
 		cmdOutput, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(string(cmdOutput))
