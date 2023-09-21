@@ -73,12 +73,16 @@ message GetOrCreatePaymentConfigArgs {
   string api_key = 1;
 }
 
+message PaymentMethod {
+  int32 exp_month = 1;
+  int32 exp_year = 2;
+  string last_four = 3;
+}
+
 message GetOrCreatePaymentConfigResponse {
   string user_id = 1;
   string client_secret = 2;
-  int32 exp_month = 3;
-  int32 exp_year = 4;
-  string last_four = 5;
+  PaymentMethod payment_method = 3;
 }
 
 message AwsKey {
