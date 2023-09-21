@@ -100,7 +100,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		cmdOutput, err := cmd.CombinedOutput()
 		if err != nil {
 			fmt.Println(string(cmdOutput))
-			return stacktrace.Propagate(err, "linting failed, this means that there are some files that need to be formatted, run this command with the '%v' flag", formatFlag)
+			return stacktrace.Propagate(err, "linting failed, this means that there are some files that need to be formatted, run this command with the '%v' flag", formatFlagKey)
 		}
 		fmt.Println(string(cmdOutput))
 	}
