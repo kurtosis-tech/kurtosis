@@ -34,3 +34,8 @@ func TestAllPieces(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, "http://127.0.0.1:123", out)
 }
+
+func TestPiecesOutOfOrder(t *testing.T) {
+	_, err := formatPortOutput("ip,protocol", testIpAddress, portSpec)
+	assert.NotNil(t, err)
+}

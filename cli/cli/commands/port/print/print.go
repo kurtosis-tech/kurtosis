@@ -44,6 +44,12 @@ const (
 	ipAddress = "127.0.0.1"
 )
 
+var expectedRelativeOrder = map[string]int{
+	protocolStr: 0,
+	ipStr:       1,
+	numberStr:   2,
+}
+
 var (
 	formatFlagKeyDefault  = fmt.Sprintf("'%s,%s,%s'", protocolStr, ipStr, numberStr)
 	formatFlagKeyExamples = []string{
@@ -156,6 +162,12 @@ func formatPortOutput(format string, ipAddress string, spec *services.PortSpec) 
 	parts := strings.Split(format, ",")
 	var resultParts []string
 	isOnlyPiece := len(parts) == 1
+	lastPart := parts[0]
+	for _, part := range parts {
+		if partIndex := expectedRelativeOrder[part]; partIndex < expectedRelativeOrder[lastPart] {
+			return "", stacktrace.NewError("Found '%v' before '%v', which is not expected.", lastPart, part)
+		}
+	}
 	for _, part := range parts {
 		switch part {
 		case protocolStr:
