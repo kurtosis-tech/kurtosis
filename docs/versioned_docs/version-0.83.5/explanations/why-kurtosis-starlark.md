@@ -53,4 +53,4 @@ So far, both our users and our team have been very happy with our decision to go
 [reusable-environment-definitions]: ./reusable-environment-definitions.md
 [starlark-differences-with-python]: https://bazel.build/rules/language#differences_with_python
 
-[quickstart]: ../quickstart.md
+[quickstart]: ../get-started/quickstart.md
