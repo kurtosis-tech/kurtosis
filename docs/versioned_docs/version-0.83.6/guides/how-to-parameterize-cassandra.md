@@ -379,7 +379,7 @@ With your parameterized, reusable environment definition for a multi-node Cassan
 We encourage you to check out our [quickstart][quickstart] (where you’ll build a postgres database and API on top) and our other examples in our [awesome-kurtosis repository][awesome-kurtosis] where you will find other Kurtosis packages for you to check out as well, including a package that spins up a local [Ethereum testnet][eth-package-example] or one that sets up a [voting app using a Redis cluster][redis-package-example]. 
 
 <!---- REFERENCE LINKS BELOW ONLY ---->
-[quickstart]: ../quickstart.md
+[quickstart]: ../get-started/quickstart.md
 [awesome-kurtosis]: https://github.com/kurtosis-tech/awesome-kurtosis
 [multi-phase-runs]: ../concepts-reference/multi-phase-runs.md
 [github-cass-package]: https://github.com/kurtosis-tech/cassandra-package/blob/main/main.star
@@ -387,7 +387,7 @@ We encourage you to check out our [quickstart][quickstart] (where you’ll build
 [kurtosis-yml]: ../concepts-reference/kurtosis-yml.md
 [locator]: ../concepts-reference/locators.md
 [packages]: ../concepts-reference/packages.md
-[sdk-reference]: ../sdk.md
+[sdk-reference]: ../engine-apic-reference.md
 [redis-package-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/redis-voting-app
 [eth-package-example]: https://github.com/kurtosis-tech/eth-network-package
 [installing-the-cli]: ./installing-the-cli.md#ii-install-the-cli
