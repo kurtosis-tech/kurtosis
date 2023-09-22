@@ -14,44 +14,87 @@ import {
     Grid,
     GridItem,
     Text,
-    useDisclosure
-} from '@chakra-ui/react'
+    useDisclosure,
+    FormControl,
+    FormHelperText,
+    Input
+  } from '@chakra-ui/react'
 
 const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveName, setEnclaveName, handleDeleteClick}) => {
     const [deleting, setDeleting] = useState(false);
-
+    const [value, setValue] = useState("")
+    const [error, setError] = useState(false)
+    
     const handleClose = (action) => {
-        const maybeDeleteRequest = async (action) => {
-            if (action === "delete") {
-                setDeleting(true)
-                await handleDeleteClick(enclaveName)
-                setDeleting(false)
-            }
+
+        const clickCancel = () => {
+            setError(false)
             setEnclaveName("")
             onClose()
         }
-        maybeDeleteRequest(action)
+
+        const clickDelete = async () => {
+            setDeleting(true)
+            await handleDeleteClick(enclaveName)
+            setDeleting(false)
+            setError(false)
+            clickCancel()
+        }
+
+        const maybeDeleteRequest = async () => {
+            if (action === "delete") {
+                if (value === enclaveName) {
+                    await clickDelete()
+                } else {
+                    setError(true)
+                    setValue("")
+                }
+            } else {
+                clickCancel()
+            }
+        }
+
+        maybeDeleteRequest()
+    }
+
+    const handleInputChange = (val) => {
+        if (error) {
+            setError(false)
+        }
+        setValue(val)
     }
 
     return (
         <AlertDialog
             isOpen={isOpen}
             leastDestructiveRef={cancelRef}
-            onClose={onClose}
+            onClose={ () => {
+                setError(false)
+                setValue("");
+                onClose();
+            }}
             isCentered
       >
         <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize='lg'>
+          <AlertDialogContent backgroundColor={"white"}>
+            <AlertDialogHeader fontSize='lg' color={"black"}>
               Delete Enclave: <Text fontSize='lg' fontWeight='bold' as='i'> {enclaveName} </Text>
             </AlertDialogHeader>
 
             <AlertDialogBody>
-              Are you sure? You can't undo this action afterwards.
+                <FormControl>
+                    <Input onChange={(e) => handleInputChange(e.target.value)} isInvalid={error} borderColor={"black"} color={"black"}/>
+                    <FormHelperText color={error ? "red.600" : "black"} fontSize={"sm"}> 
+                        {error ? 
+                            "Please make sure that the input matches the enclave name" : 
+                            "Please enter the enclave name to delete the enclave."
+                        } 
+                    </FormHelperText>
+                </FormControl>
             </AlertDialogBody>
 
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={() => handleClose("cancel")}>
+              <Button ref={cancelRef} onClick={() => handleClose("cancel")} color={"black"}>
                 Cancel
               </Button>
               <Button bg="red.600" _hover={{ bg: "red.700"}}  color="white" onClick={() => handleClose("delete")} ml={3} isLoading={deleting}>
