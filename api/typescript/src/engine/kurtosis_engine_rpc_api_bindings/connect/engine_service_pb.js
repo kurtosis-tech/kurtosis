@@ -261,6 +261,8 @@ export const GetServiceLogsArgs = proto3.makeMessageType(
     { no: 2, name: "service_uuid_set", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 8 /* ScalarType.BOOL */} },
     { no: 3, name: "follow_logs", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
     { no: 4, name: "conjunctive_filters", kind: "message", T: LogLineFilter, repeated: true },
+    { no: 5, name: "return_all_logs", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 6, name: "num_log_lines", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
   ],
 );
 

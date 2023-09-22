@@ -276,6 +276,8 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	enclaveIdentifier string,
 	userServiceUuids map[services.ServiceUUID]bool,
 	shouldFollowLogs bool,
+	shouldReturnAllLogs bool,
+	numLogLines uint32,
 	logLineFilter *LogLineFilter,
 ) (
 	chan *serviceLogsStreamContent,
@@ -295,7 +297,7 @@ func (kurtosisCtx *KurtosisContext) GetServiceLogs(
 	//this process could take much time until the next channel pull, so we could be filling the buffer during that time to not let the servers thread idled
 	serviceLogsStreamContentChan := make(chan *serviceLogsStreamContent, serviceLogsStreamContentChanBufferSize)
 
-	getServiceLogsArgs, err := newGetServiceLogsArgs(enclaveIdentifier, userServiceUuids, shouldFollowLogs, logLineFilter)
+	getServiceLogsArgs, err := newGetServiceLogsArgs(enclaveIdentifier, userServiceUuids, shouldFollowLogs, shouldReturnAllLogs, numLogLines, logLineFilter)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(
 			err,
@@ -498,6 +500,8 @@ func newGetServiceLogsArgs(
 	enclaveIdentifier string,
 	userServiceUUIDs map[services.ServiceUUID]bool,
 	shouldFollowLogs bool,
+	shouldReturnAllLogs bool,
+	numLogLines uint32,
 	logLineFilter *LogLineFilter,
 ) (*kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs, error) {
 	userServiceUuuidSet := make(map[string]bool, len(userServiceUUIDs))
@@ -517,6 +521,8 @@ func newGetServiceLogsArgs(
 		ServiceUuidSet:     userServiceUuuidSet,
 		FollowLogs:         shouldFollowLogs,
 		ConjunctiveFilters: grpcConjunctiveFilters,
+		ReturnAllLogs:      shouldReturnAllLogs,
+		NumLogLines:        numLogLines,
 	}
 
 	return getUserServiceLogsArgs, nil

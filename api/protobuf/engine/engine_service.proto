@@ -211,6 +211,10 @@ message GetServiceLogsArgs {
   bool follow_logs = 3;
   // The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
   repeated LogLineFilter conjunctive_filters = 4;
+  // If true, return all log lines
+  bool return_all_logs = 5;
+  // If [return_all_logs] is false, return [num_log_lines]
+  uint32 num_log_lines = 6;
 }
 
 message GetServiceLogsResponse {

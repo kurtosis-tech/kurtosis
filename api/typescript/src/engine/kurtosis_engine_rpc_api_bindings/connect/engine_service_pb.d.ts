@@ -650,6 +650,20 @@ export declare class GetServiceLogsArgs extends Message<GetServiceLogsArgs> {
    */
   conjunctiveFilters: LogLineFilter[];
 
+  /**
+   * If true, return all log lines
+   *
+   * @generated from field: bool return_all_logs = 5;
+   */
+  returnAllLogs: boolean;
+
+  /**
+   * If [return_all_logs] is false, return [num_log_lines]
+   *
+   * @generated from field: uint32 num_log_lines = 6;
+   */
+  numLogLines: number;
+
   constructor(data?: PartialMessage<GetServiceLogsArgs>);
 
   static readonly runtime: typeof proto3;
