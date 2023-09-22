@@ -158,29 +158,34 @@ func (c *WebServer) GetServiceLogs(
 	req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
 	str *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) error {
-
-	result, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
+	engineClient, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	logs := getServiceLogsFromEngine(result)
-	for {
+	for engineClient.Receive() {
 		select {
 		case <-ctx.Done():
-			err := result.Close()
+			logrus.Debug("Closing the engine client after receiving abort signal from the client")
+			err := engineClient.Close()
 			if err != nil {
 				logrus.Errorf("Error ocurred: %+v", err)
+				return err
 			}
-			close(logs)
 			return nil
-		case resp := <-logs:
+		default:
+			resp := engineClient.Msg()
 			errWhileSending := str.Send(resp)
 			if errWhileSending != nil {
 				return errWhileSending
 			}
 		}
 	}
+	if engineClient.Err() != nil {
+		return engineClient.Err()
+	}
+
+	return nil
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
@@ -431,17 +436,6 @@ func RunEnclaveManagerApiServer(enforceAuth bool) error {
 		logrus.Error("An error occurred running the server", err)
 	}
 	return nil
-}
-
-func getServiceLogsFromEngine(client *connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
-	result := make(chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse)
-	go func() {
-		for client.Receive() {
-			res := client.Msg()
-			result <- res
-		}
-	}()
-	return result
 }
 
 func getRuntimeLogsWhenCreatingEnclave(cancel context.CancelFunc, client *connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
