@@ -2,6 +2,7 @@ package backend_creator
 
 import (
 	"context"
+	"fmt"
 	"github.com/docker/docker/client"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/logs_collector_functions"
@@ -23,6 +24,10 @@ import (
 )
 
 const (
+	unixSocketPrefix    = "unix://"
+	systemDaemonSocket  = "/var/run/docker.sock"
+	userOwnDaemonSocket = "/.docker/run/docker.sock"
+
 	noTempDirPrefix    = ""
 	tempDirNamePattern = "kurtosis_backend_tls_*"
 	caFileName         = "ca.pem"
@@ -73,8 +78,33 @@ func getLocalDockerKurtosisBackend(
 	optionalApiContainerModeArgs *APIContainerModeArgs,
 ) (backend_interface.KurtosisBackend, error) {
 	dockerClientOpts := []client.Opt{
-		client.FromEnv,
 		client.WithAPIVersionNegotiation(),
+	}
+
+	// If the DOCKER_HOST env variable is set, use it. Otherwise, try to locate the daemon socket. Otherwise, fall back
+	// to env variables as we were doing before
+	userHomeDir, err := os.UserHomeDir()
+	if err != nil {
+		logrus.Debugf("Unable to locate user's home directory, this might affect connection to docker.")
+	}
+	userOwnedSocketPath := fmt.Sprintf("%s%s", userHomeDir, userOwnDaemonSocket)
+	if dockerHostEnvVar := os.Getenv(client.EnvOverrideHost); dockerHostEnvVar != "" {
+		logrus.Debugf("Connecting to Docker daemon at '%s'", dockerHostEnvVar)
+		dockerClientOpts = append(dockerClientOpts, client.WithHostFromEnv())
+	} else if _, err := os.Stat(systemDaemonSocket); err == nil {
+		logrus.Debugf("Connecting to Docker daemon via unix socket '%s'", systemDaemonSocket)
+		fullyQualifiedUnixSocket := fmt.Sprintf("%s%s", unixSocketPrefix, systemDaemonSocket)
+		dockerClientOpts = append(dockerClientOpts, client.WithHost(fullyQualifiedUnixSocket))
+	} else if _, err := os.Stat(userOwnedSocketPath); err == nil {
+		logrus.Debugf("Connecting to Docker daemon via unix socket '%s'", userOwnedSocketPath)
+		fullyQualifiedUnixSocket := fmt.Sprintf("%s%s", unixSocketPrefix, userOwnedSocketPath)
+		dockerClientOpts = append(dockerClientOpts, client.WithHost(fullyQualifiedUnixSocket))
+	} else {
+		logrus.Debugf("Unable to locate Docker daemon socket and '%s' environment variable wasn't set. Falling "+
+			"back to Docker's own way to connect to locally running daemon. If it fails, make sure docker is running "+
+			"locally and try setting '%s' to help Kurtosis connect to it.", client.EnvOverrideHost,
+			client.EnvOverrideHost)
+		dockerClientOpts = append(dockerClientOpts, client.FromEnv)
 	}
 
 	localDockerBackend, err := getDockerKurtosisBackend(dockerClientOpts, optionalApiContainerModeArgs)
