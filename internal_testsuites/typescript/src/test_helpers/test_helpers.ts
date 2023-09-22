@@ -62,6 +62,9 @@ const WAIT_FOR_FILE_SERVER_INTERVAL_MILLISECONDS = 100
 
 const USER_SERVICE_MOUNT_POINT_FOR_TEST_FILES_ARTIFACT = "/static"
 
+const DEFAULT_SHOULD_RETURN_ALL_LOGS = true
+const DEFAULT_NUM_LOG_LINES = 0 // this value doesn't matetr since default is to return all logs
+
 // for validating data store is healthy
 /*
 NOTE: on 2022-05-16 the Go version failed with the following error so we bumped the num polls to 20.
@@ -550,7 +553,7 @@ export async function getLogsResponseAndEvaluateResponse(
     let receivedLogLinesByService: Map<ServiceUUID, Array<ServiceLog>> = new Map<ServiceUUID, Array<ServiceLog>>();
     let receivedNotFoundServiceUuids: Set<ServiceUUID> = new Set<ServiceUUID>();
 
-    const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveUuid, serviceUuids, shouldFollowLogs, logLineFilter);
+    const streamUserServiceLogsPromise = await kurtosisCtx.getServiceLogs(enclaveUuid, serviceUuids, shouldFollowLogs, DEFAULT_SHOULD_RETURN_ALL_LOGS, DEFAULT_NUM_LOG_LINES, logLineFilter);
 
     if (streamUserServiceLogsPromise.isErr()) {
         return err(streamUserServiceLogsPromise.error);

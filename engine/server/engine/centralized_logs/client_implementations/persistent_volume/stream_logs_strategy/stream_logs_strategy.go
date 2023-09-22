@@ -21,5 +21,7 @@ type StreamLogsStrategy interface {
 		serviceUuid service.ServiceUUID,
 		conjunctiveLogLinesFiltersWithRegex []logline.LogLineFilterWithRegex,
 		shouldFollowLogs bool,
+		shouldReturnAllLogs bool,
+		numLogLines uint32,
 	)
 }

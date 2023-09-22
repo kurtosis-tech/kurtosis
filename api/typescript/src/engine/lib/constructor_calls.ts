@@ -49,6 +49,8 @@ export function newGetServiceLogsArgs(
         enclaveIdentifier: string,
         serviceUuids: Set<ServiceUUID>,
         shouldFollowLogs: boolean,
+        shouldReturnAllLogs: boolean,
+        numLogLines: number,
         logLineFilter: kurtosisCtx.LogLineFilter|undefined,
 ): GetServiceLogsArgs {
 
@@ -69,6 +71,8 @@ export function newGetServiceLogsArgs(
     }
 
     result.setConjunctiveFiltersList(grpcConjunctiveFilters)
+    result.setReturnAllLogs(shouldReturnAllLogs)
+    result.setNumLogLines(numLogLines)
     return result;
 }
 
