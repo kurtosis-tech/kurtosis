@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.83.6](https://github.com/kurtosis-tech/kurtosis/compare/0.83.5...0.83.6) (2023-09-22)
+
+
+### Features
+
+* implement -n X and -a flags ([#1341](https://github.com/kurtosis-tech/kurtosis/issues/1341)) ([2c6880c](https://github.com/kurtosis-tech/kurtosis/commit/2c6880c9c251843dafacc3a356cc320f5efe85a7))
+
+
+### Bug Fixes
+
+* enclave manager ui was reading the wrong type fields ([#1367](https://github.com/kurtosis-tech/kurtosis/issues/1367)) ([0bae141](https://github.com/kurtosis-tech/kurtosis/commit/0bae141837324f94841f4e5f311cc7e2bbfa63a1))
+* Manually locate docker socket ([#1362](https://github.com/kurtosis-tech/kurtosis/issues/1362)) ([7fe4956](https://github.com/kurtosis-tech/kurtosis/commit/7fe49560b4d99c28e9bda640294bbe0554b57820))
+
 ## [0.83.5](https://github.com/kurtosis-tech/kurtosis/compare/0.83.4...0.83.5) (2023-09-21)
 
 
