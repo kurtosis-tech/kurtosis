@@ -102,7 +102,7 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
                 />
                 <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
                     <div className='flex flex-col h-full space-y-1 bg-[#171923]'>
-                        <Flex className={"bg-[#171923]"} style={{height: `80px`}}>    
+                        <Flex bg={"#171923"} height={`80px`}>    
                             <Box p='2' m="4"> 
                                 <Text color={"white"} fontSize='xl' as='b'> 
                                     Logs  for {enclave.name} 

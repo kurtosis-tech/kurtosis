@@ -68,8 +68,6 @@ const ServiceInfo = () => {
         navigate(fullPath, {state: {services, selected: service}})
     }
 
-
-
     const func = () => {
     }
 
@@ -108,7 +106,7 @@ const ServiceInfo = () => {
             displayData = "Error while retrieving information"
         }
         return (
-            <Tr key={heading} className="text-white">
+            <Tr key={heading} color="white">
                 <Td><p><b>{heading}</b></p></Td>
                 <Td>{displayData}</Td>
             </Tr>
@@ -167,7 +165,7 @@ const ServiceInfo = () => {
             />
             <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
                 <div className={`flex-col flex h-full space-y-1 bg-[#171923]`}>
-                    <Flex className={"bg-[#171923]"} style={{height: `80px`}}>    
+                    <Flex bg={"#171923"} height={"80px"}>    
                         <Box p='2' m="4"> 
                             <Text color={"white"} fontSize='xl' as='b'> {!isViewLogPage() ? "Detailed Info " : "Logs "}  for {selectedSerialized.name} </Text>
                         </Box>
