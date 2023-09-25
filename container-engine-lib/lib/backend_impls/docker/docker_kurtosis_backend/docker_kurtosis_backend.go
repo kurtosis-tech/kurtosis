@@ -415,14 +415,14 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator. The logs collector cannot be run without a logs aggregator.")
 	}
 	if maybeLogsAggregator == nil {
-		logrus.Warnf("Logs aggregator conatiner does not exist. This is unexpected as docker should have restarted the container automatically.")
+		logrus.Warnf("Logs aggregator container does not exist. This is unexpected as docker should have restarted the container automatically.")
 		return nil, stacktrace.Propagate(err, "No logs aggregator container exists. The logs collector cannot be run without a logs aggregator.")
 	}
 	if maybeLogsAggregator.GetStatus() != container.ContainerStatus_Running {
-		logrus.Warnf("Logs aggregator exists but is not running, with status '%v'. This is unexpected as docker should have restarted the container automatically.",
-			container.ContainerStatus_Running)
+		logrus.Warnf("Logs aggregator exists but is not running. Instead container status is '%v'. This is unexpected as docker should have restarted the container automatically.",
+			maybeLogsAggregator.GetStatus())
 		return nil, stacktrace.Propagate(err,
-			"The logs aggregator container exists not running, with status '%v'. The logs collector cannot be run without a logs aggregator.",
+			"The logs aggregator container exists but is not running. Instead container status is '%v'. The logs collector cannot be run without a logs aggregator.",
 			maybeLogsAggregator.GetStatus(),
 		)
 	}
