@@ -9,6 +9,12 @@ import {Box, Text, Flex, Spacer, Center} from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 
 const SERVICE_IS_ADDED = "added with service";
+const ERROR = "error"
+const INSTRUCTION = "instruction"
+const PROGRESS_INFO = "progressInfo"
+const INSTRUCTION_RESULT = "instructionResult"
+
+
 export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
@@ -23,24 +29,24 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
     }
 
     const readStreamData = (result) => {
-        if (result.case === "instruction") {
+        if (result.case === INSTRUCTION) {
             setLogs(logs => [...logs, result.value.executableInstruction])
         }
 
-        if (result.case === "progressInfo" && result.value.currentStepInfo.length > 0) {
+        if (result.case === PROGRESS_INFO && result.value.currentStepInfo.length > 0) {
             if (result.value.currentStepInfo[result.value.currentStepNumber] !== undefined) {
                 setLogs(logs => [...logs, result.value.currentStepInfo[result.value.currentStepNumber]])
             }
         }
 
-        if (result.case === "instructionResult" && result.value.serializedInstructionResult) {
+        if (result.case === INSTRUCTION_RESULT && result.value.serializedInstructionResult) {
             if (result.value.serializedInstructionResult.includes(SERVICE_IS_ADDED)) {
                 getServices(enclave)
             }
             setLogs(logs => [...logs, result.value.serializedInstructionResult])
         }
 
-        if (result.case === "error") {
+        if (result.case === ERROR) {
             const errorMessage = result.value.error.value.errorMessage;
             setLogs(logs => [...logs, errorMessage])
         }

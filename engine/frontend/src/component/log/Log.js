@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { VariableSizeList as List } from "react-window";
-import { useWindowResize } from "./useWindowResize";
+import useWindowDimensions from "../../utils/windowDimension";
 import { Flex, Box, Spacer } from "@chakra-ui/react";
 import { TriangleDownIcon, DownloadIcon } from '@chakra-ui/icons'
 import parse from 'html-react-parser';
@@ -42,14 +42,11 @@ const Row = ({ data, index, setSize, windowWidth}) => {
 export const Log = ({logs, fileName}) => {
   const { onCopy, value:copyValue, setValue:setCopyValue, hasCopied } = useClipboard("");
 
-  const [initalRender, setInitialRender] = useState(false);
   const listRef = useRef(null);
   const sizeMap = useRef({});
   const testRef = useRef({})
   const containerRef = useRef({})
-  const [bottomMap, setMaybeBottom] = useState([0, 0])
   const [previousOffset, setPreviousOffset] = useState(0)
-
 
   const setSize = useCallback((index, size) => {
     sizeMap.current = { ...sizeMap.current, [index]: size };
@@ -57,7 +54,7 @@ export const Log = ({logs, fileName}) => {
   }, []);
 
   const getSize = index => sizeMap.current[index] || 50;
-  const [windowWidth, windowHeight] = useWindowResize();
+  const {width: windowWidth, height: windowHeight} = useWindowDimensions();
 
   const [isBottom, setBottom] = useState(true)
 
@@ -65,18 +62,16 @@ export const Log = ({logs, fileName}) => {
     const logsWithoutAnsi = logs.map((log)=> {
       return stripAnsi(log)
     })
-
     setCopyValue(logsWithoutAnsi.join("\n"))    
     // automatically scroll the bottom if it;s at the bottom
     if (logs.length > 0 && isBottom) {
       scrollToBottom()
     }
-
   }, [logs]);
   
   const scrollToBottom = () => {
     if (listRef.current) {
-      console.log("scroll to ", logs.length)
+      //console.log("scroll to ", logs.length)
       listRef.current.scrollToItem(logs.length - 1, "end");
     }
   }
@@ -84,7 +79,7 @@ export const Log = ({logs, fileName}) => {
   const handleScroll = ({scrollOffset}) => {
       // user manually scrolled up 
       if (scrollOffset < previousOffset && testRef.current.clientHeight > containerRef.current.clientHeight) {
-        console.log("setting scroll to false!")
+        //console.log("setting scroll to false!")
         setBottom(false);
       } 
       setPreviousOffset(Math.floor(scrollOffset))
@@ -104,11 +99,6 @@ export const Log = ({logs, fileName}) => {
       if (overscanStopIndex === logs.length - 1) {
         setBottom(true)
       }
-  }
-
-  const isItAtBottom = () => {
-    console.log(logs.length - 1, bottomMap[0])
-    return bottomMap[0] === logs.length - 1
   }
 
   const handleDownload = () => {
@@ -164,8 +154,6 @@ export const Log = ({logs, fileName}) => {
     </div>
   );
 }
-
-
 
 const styles = {
   row: {

@@ -1,6 +1,13 @@
-export const saveTextAsFile = (text, fileName) => {
-    const blob = new Blob([text], {type: "text/plain"});
-    const downloadLink = document.createElement("a");
+const DEFAULT_ELEMENT_NAME = "a"
+const DEFAULT_FILE_TYPE = "text/plain"
+
+export const saveTextAsFile = (text, fileName, options = {}) => {
+    const elementName = options["elementName"] ? options["elementName"] : DEFAULT_ELEMENT_NAME
+    const fileType = options["fileType"] ? options["fileType"] : DEFAULT_FILE_TYPE
+    console.log(fileName, fileType, elementName)
+
+    const blob = new Blob([text], {type: fileType});
+    const downloadLink = document.createElement(elementName);
     downloadLink.download = fileName;
     downloadLink.innerHTML = "Download File";
     if (window.webkitURL) {
