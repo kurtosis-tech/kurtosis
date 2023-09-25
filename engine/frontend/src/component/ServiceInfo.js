@@ -5,8 +5,11 @@ import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import {getServiceLogs} from "../api/enclave";
 import {useAppContext} from "../context/AppState";
-import {Badge, Box, GridItem, Table, TableContainer, Tbody, Td, Tr, Text, Flex, Spacer, Button, Center} from "@chakra-ui/react";
+import {Badge, Box, Table, TableContainer, Tbody, Td, Tr, Text, Flex, Spacer, Button, Center} from "@chakra-ui/react";
 import {CodeEditor} from "./CodeEditor";
+
+const DEFAULT_SHOULD_FOLLOW_LOGS = true
+const DEFAULT_NUM_LINES = 6000
 
 const renderServices = (services, handleClick) => {
     return services.map(service => {
@@ -32,8 +35,8 @@ const ServiceInfo = () => {
 
     const startServiceLogCollector = (ctrl) => {
         let stream
-        const fetchLogs = async () => {
-            stream = await getServiceLogs(ctrl, enclaveName, serviceUuid, appData.apiHost, true, 6000);
+        const fetchServiceLogs = async () => {
+            stream = await getServiceLogs(ctrl, enclaveName, serviceUuid, appData.apiHost, DEFAULT_SHOULD_FOLLOW_LOGS, DEFAULT_NUM_LINES);
             try {
                 for await (const res of stream) {
                     const log = res["serviceLogsByServiceUuid"][serviceUuid]["line"][0]
@@ -46,7 +49,7 @@ const ServiceInfo = () => {
             }
         }
 
-        fetchLogs()
+        fetchServiceLogs()
     }
     
     useEffect(() => {

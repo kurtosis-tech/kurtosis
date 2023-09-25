@@ -233,16 +233,15 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 		resp := apiClient.Msg()
 		errWhileSending := str.Send(resp)
 		if errWhileSending != nil {
-			logrus.Errorf("Error occurred: %+v", errWhileSending)
+			logrus.Errorf("Error occurred while sending stream frome enclave manager to the UI: %+v", errWhileSending)
 			return stacktrace.Propagate(errWhileSending, "Error occurred while sending streams")
 		}
 	}
 
 	if errWhileReceive := apiClient.Err(); errWhileReceive != nil {
-		logrus.Errorf("Error occurred: %+v", errWhileReceive)
+		logrus.Errorf("Error occurred while enclave manger is receiving streams from engine: %+v", errWhileReceive)
 		return stacktrace.Propagate(errWhileReceive, "Error occurred while receiving data from engine")
 	}
-	ctx.Done()
 	return nil
 }
 

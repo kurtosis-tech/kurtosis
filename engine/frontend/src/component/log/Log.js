@@ -8,6 +8,8 @@ import hasAnsi from 'has-ansi';
 import stripAnsi from 'strip-ansi';
 import { useClipboard } from '@chakra-ui/react'
 import { saveTextAsFile } from "../../utils/download";
+var os = require('os-browserify/browser')
+
 
 const Convert = require('ansi-to-html');
 const convert = new Convert();
@@ -28,15 +30,15 @@ const Row = ({ data, index, setSize, windowWidth}) => {
       txt = parse(parsedAnsi)
     }
     return (
-        <div
+        <Box
           ref={rowRef}
           style={styles.row}
         >
          {txt}
-        </div>
+        </Box>
       );
   } 
-  return null;
+  return <></>;
 };
 
 export const Log = ({logs, fileName}) => {
@@ -59,10 +61,13 @@ export const Log = ({logs, fileName}) => {
   const [isBottom, setBottom] = useState(true)
 
   useEffect(() => {
+    // we strip ansi for all logs every time new logs are seen
+    // this is done in favour of simplicity, if there are performance impact
+    // we can make this logic for smarter
     const logsWithoutAnsi = logs.map((log)=> {
       return stripAnsi(log)
     })
-    setCopyValue(logsWithoutAnsi.join("\n"))    
+    setCopyValue(logsWithoutAnsi.join(os.EOL))    
     // automatically scroll the bottom if it;s at the bottom
     if (logs.length > 0 && isBottom) {
       scrollToBottom()
@@ -105,7 +110,7 @@ export const Log = ({logs, fileName}) => {
     const logsWithoutAnsi = logs.map((log)=> {
       return stripAnsi(log)
     })
-    const logsAsText = logsWithoutAnsi.join("\n")
+    const logsAsText = logsWithoutAnsi.join(os.EOL)
     saveTextAsFile(logsAsText, fileName)
   }
 
@@ -138,16 +143,16 @@ export const Log = ({logs, fileName}) => {
       </List>
       <Flex className="bg-black" style={{height: `80px`}}>
         <Spacer />
-        <Box p='2' m="4" onClick={onCopy} className="rounded-md border-white border-1" height={"40px"}> 
+        <Box p='2' m="4" onClick={onCopy} height={"40px"}> 
           <svg class="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
             <path d="M5 9V4.13a2.96 2.96 0 0 0-1.293.749L.879 7.707A2.96 2.96 0 0 0 .13 9H5Zm11.066-9H9.829a2.98 2.98 0 0 0-2.122.879L7 1.584A.987.987 0 0 0 6.766 2h4.3A3.972 3.972 0 0 1 15 6v10h1.066A1.97 1.97 0 0 0 18 14V2a1.97 1.97 0 0 0-1.934-2Z"/>
             <path d="M11.066 4H7v5a2 2 0 0 1-2 2H0v7a1.969 1.969 0 0 0 1.933 2h9.133A1.97 1.97 0 0 0 13 18V6a1.97 1.97 0 0 0-1.934-2Z"/>
           </svg>
         </Box>
-        <Box p='2' m="4" onClick={handleDownload} className="rounded-md border-white border-1" height={"40px"}> 
+        <Box p='2' m="4" onClick={handleDownload} height={"40px"}> 
           <DownloadIcon textColor={"white"}/>
         </Box>
-        <Box p='2' m="4" onClick={handleToBottom} className="rounded-md border-white border-1" height={"40px"}> 
+        <Box p='2' m="4" onClick={handleToBottom} height={"40px"}> 
           <TriangleDownIcon textColor={"white"}/>
         </Box>
       </Flex>

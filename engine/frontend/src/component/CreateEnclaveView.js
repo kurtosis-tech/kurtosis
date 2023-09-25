@@ -10,7 +10,7 @@ import {runStarlark} from "../api/enclave";
 import {getEnclaveInformation} from "../api/container";
 import LoadingOverlay from "./LoadingOverflow";
 import {useAppContext} from "../context/AppState";
-import {Badge, Box, GridItem, Table, TableContainer, Tbody, Td, Tr, Text, Flex, Spacer, Button, Center} from "@chakra-ui/react";
+import { Box, Text, Flex, Spacer, Center} from "@chakra-ui/react";
 
 
 const SERVICE_IS_ADDED = "added with service";
@@ -64,7 +64,7 @@ export const CreateEnclaveView = ({packageId, enclave, args}) => {
                     readStreamData(result)    
                 }
             } catch (ex) {
-                console.log("Error occured while reading data from the enclave: ", enclave.name)
+                console.log(`Error occured while reading data from the enclave: ${enclave.name}: `, ex)
             } finally {
                 setLoading(false)
             }

@@ -32,7 +32,7 @@ const PackageCatalogRouter = ({addEnclave}) => {
                     runArgs,
                 }})
             } catch(ex) {
-                console.log(ex)
+                console.error(ex)
                 alert(`Error occurred while creating enclave for package: ${runArgs.kurtosisPackage.name}. An error message should be printed in console, please share it with us to help debug this problem`)
             } 
         }
