@@ -178,7 +178,7 @@ const Home = () => {
             <Route path="/enclaves/:name"
                    element={checkAuth(<EnclaveInfo enclaves={enclaves}/>)}
             />
-            <Route path="/enclaves/:name/services/:uuid"
+            <Route path="/enclaves/:name/services/:uuid/*"
                    element={checkAuth(<ServiceInfo/>)}
             />
             <Route path="/enclaves/:name/files/:fileArtifactName"

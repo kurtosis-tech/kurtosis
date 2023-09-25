@@ -412,7 +412,7 @@ const parseList = (data, rawDataType) => {
     return parsedJson
 }
 
-const PackageCatalogForm = ({handleCreateNewEnclave}) => {
+const PackageCatalogForm = ({createEnclave}) => {
     const navigate = useNavigate()
     const location = useLocation()
     const {state} = location;
@@ -560,8 +560,8 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 args: stringifiedArgs,
             }
 
-            handleCreateNewEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
-
+            handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
+        
         } else {
             const newErrorData = {
                 ...errorData,
@@ -569,6 +569,11 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             }
             setErrorData(newErrorData)
         }
+    }
+
+    const handleCreateEnclave = async (runKurtosisPackageArgs, enclaveName, productionMode) => {
+        await createEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
+        setRunningPackage(false)
     }
 
     return (
