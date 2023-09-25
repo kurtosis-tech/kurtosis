@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Box, Button, useClipboard} from "@chakra-ui/react";
-import useWindowDimensions from "../utils/windowheight";
+import useWindowDimensions from "../utils/windowDimension";
+import { saveTextAsFile } from "../utils/download";
 import Editor from "@monaco-editor/react";
 
 export const CodeEditor = (
@@ -27,7 +28,7 @@ export const CodeEditor = (
     const originalReadOnlySetting = useRef(readOnly)
     const [readOnlySetting, setReadOnlySetting] = useState(readOnly)
     const [formatCode, setFormatCode] = useState(false)
-
+    const [monacoReadOnlySettingHasChanged, setMonacoReadOnlySettingHasChangedHasChanged] = useState(false)
     // TODO: This could lead to bugs in the future:
     //  This number depends on the version of Monaco! Use actual enum instead.
     const monacoReadOnlyEnumId = 86;
@@ -45,7 +46,6 @@ export const CodeEditor = (
             return undefined
         }
     }
-    const [monacoReadOnlySettingHasChanged, setMonacoReadOnlySettingHasChangedHasChanged] = useState(false)
 
     function attachOptionsChangeListener() {
         getEditor().onDidChangeConfiguration((event) => {
@@ -108,34 +108,6 @@ export const CodeEditor = (
             const contentHeight = Math.min(1000, getEditor().getContentHeight());
             getEditor().layout({width: defaultWidthPx, height: contentHeight});
             getEditor().layout()
-        }
-    };
-
-    const saveTextAsFile = (text, fileName) => {
-        const blob = new Blob([text], {type: "text/plain"});
-        const downloadLink = document.createElement("a");
-        downloadLink.download = fileName;
-        downloadLink.innerHTML = "Download File";
-        if (window.webkitURL) {
-            // No need to add the download element to the DOM in Webkit.
-            downloadLink.href = window.webkitURL.createObjectURL(blob);
-        } else {
-            downloadLink.href = window.URL.createObjectURL(blob);
-            downloadLink.onclick = (event) => {
-                if (event.target) {
-                    document.body.removeChild(event.target);
-                }
-            };
-            downloadLink.style.display = "none";
-            document.body.appendChild(downloadLink);
-        }
-
-        downloadLink.click();
-
-        if (window.webkitURL) {
-            window.webkitURL.revokeObjectURL(downloadLink.href);
-        } else {
-            window.URL.revokeObjectURL(downloadLink.href);
         }
     };
 
