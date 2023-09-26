@@ -165,7 +165,7 @@ const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
 
         // no need to process plan arg as it's internal!
-        if (getArgName(arg)) {
+        if (getArgName(arg) === "plan") {
             return
         }
 
