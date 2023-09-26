@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -34,7 +35,7 @@ This function is recursive in the sense, to load a module that loads modules we 
 */
 func NewImportModule(
 	packageId string,
-	recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError),
+	recursiveInterpret func(packageId string, moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError),
 	packageContentProvider startosis_packages.PackageContentProvider,
 	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
 ) *kurtosis_helper.KurtosisHelper {
@@ -78,20 +79,29 @@ func NewImportModule(
 
 type importModuleCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
-	recursiveInterpret     func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError)
+	recursiveInterpret     func(packageId string, moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError)
 	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
 }
 
 func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	logrus.Infof("[LEO-DEBUG] locatorOfModuleInWhichThisBuiltInIsBeingCalled: %s", locatorOfModuleInWhichThisBuiltInIsBeingCalled)
 	moduleInPackageStarlarkStr, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
 	if err != nil {
 		return nil, explicitInterpretationError(err)
 	}
 	moduleInPackage := moduleInPackageStarlarkStr.GoString()
+	logrus.Infof("[LEO-DEBUG] moduleInPackage: %s", moduleInPackage)
+
+	//TODO check if moduleInPackage is an external package comparing it with builtin.packageID
+	//TODO if it's external we ned to check where is this extermanl module package ID
+
+	//TODO probably remove locatorOfModuleInWhichThisBuiltInIsBeingCalled
+
 	moduleInPackage, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, moduleInPackage)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}
+	logrus.Infof("[LEO-DEBUG] absolute moduleInPackage: %s", moduleInPackage)
 
 	var loadInProgress *startosis_packages.ModuleCacheEntry
 	cacheEntry, found := builtin.moduleGlobalCache[moduleInPackage]
@@ -116,7 +126,7 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", moduleInPackage)
 	}
 
-	globalVariables, interpretationErr := builtin.recursiveInterpret(moduleInPackage, contents)
+	globalVariables, interpretationErr := builtin.recursiveInterpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled, moduleInPackage, contents)
 	// the above error goes unchecked as it needs to be persisted to the cache and then returned to the parent loader
 
 	// Update the cache.

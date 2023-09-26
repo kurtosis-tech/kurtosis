@@ -17,7 +17,7 @@ const (
 	SrcArgName = "src"
 )
 
-func NewReadFileHelper(packageId string, packageContentProvider startosis_packages.PackageContentProvider) *kurtosis_helper.KurtosisHelper {
+func NewReadFileHelper(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, packageContentProvider startosis_packages.PackageContentProvider) *kurtosis_helper.KurtosisHelper {
 	return &kurtosis_helper.KurtosisHelper{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: ReadFileBuiltinName,
@@ -47,13 +47,15 @@ func NewReadFileHelper(packageId string, packageContentProvider startosis_packag
 		},
 
 		Capabilities: &readFileCapabilities{
-			packageContentProvider: packageContentProvider,
+			packageContentProvider:                         packageContentProvider,
+			locatorOfModuleInWhichThisBuiltInIsBeingCalled: locatorOfModuleInWhichThisBuiltInIsBeingCalled,
 		},
 	}
 }
 
 type readFileCapabilities struct {
-	packageContentProvider startosis_packages.PackageContentProvider
+	packageContentProvider                         startosis_packages.PackageContentProvider
+	locatorOfModuleInWhichThisBuiltInIsBeingCalled string
 }
 
 func (builtin *readFileCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -63,8 +65,9 @@ func (builtin *readFileCapabilities) Interpret(locatorOfModuleInWhichThisBuiltIn
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for arg '%s'", srcValue)
 	}
 	fileToReadStr := srcValue.GoString()
+	logrus.Infof("[LEO-DEBUG] builtin locatorOfModuleInWhichThisBuiltInIsBeingCalled: %s", builtin.locatorOfModuleInWhichThisBuiltInIsBeingCalled)
 	logrus.Infof("[LEO-DEBUG] fileToReadStr before absolute resolution: %s", fileToReadStr)
-	fileToReadStr, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, fileToReadStr)
+	fileToReadStr, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(builtin.locatorOfModuleInWhichThisBuiltInIsBeingCalled, fileToReadStr)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}

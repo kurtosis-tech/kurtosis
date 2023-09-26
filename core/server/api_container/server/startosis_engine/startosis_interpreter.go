@@ -296,7 +296,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		}
 		kwArgs = append(kwArgs, argsDict.Items()...)
 	}
-
+	logrus.Infof("[LEO-DEBUG] before calling call")
 	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, kwArgs)
 	if err != nil {
 		return startosis_constants.NoOutputObject, nil, generateInterpretationError(err).ToAPIType()
@@ -324,7 +324,7 @@ func (interpreter *StartosisInterpreter) interpretInternal(packageId string, mod
 
 	thread := newStarlarkThread(moduleLocator)
 	logrus.Infof("[LEO-DEBUG] thread: %p", thread)
-	predeclared, interpretationErr := interpreter.buildBindings(packageId, thread, instructionPlan, moduleGlobalCache)
+	predeclared, interpretationErr := interpreter.buildBindings(packageId, moduleLocator, thread, instructionPlan, moduleGlobalCache)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
@@ -337,8 +337,11 @@ func (interpreter *StartosisInterpreter) interpretInternal(packageId string, mod
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(packageId string, thread *starlark.Thread, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (*starlark.StringDict, *startosis_errors.InterpretationError) {
-	recursiveInterpretForModuleLoading := func(moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) buildBindings(packageId string, moduleLocator string, thread *starlark.Thread, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+	recursiveInterpretForModuleLoading := func(packageId string, moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
+		logrus.Infof("[LEO-DEBUG] executing the recursive func packageId: %s", packageId)
+		logrus.Infof("[LEO-DEBUG] executing the recursive func moduleId: %s", moduleId)
+		packageId = ""
 		result, err := interpreter.interpretInternal(packageId, moduleId, serializedStartosis, instructionPlan, moduleGlobalCache)
 		if err != nil {
 			return nil, err
@@ -356,7 +359,7 @@ func (interpreter *StartosisInterpreter) buildBindings(packageId string, thread 
 	predeclared[builtins.KurtosisModuleName] = kurtosisModule
 
 	// Add all Kurtosis helpers
-	for _, kurtosisHelper := range KurtosisHelpers(packageId, recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, moduleGlobalCache) {
+	for _, kurtosisHelper := range KurtosisHelpers(packageId, moduleLocator, recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, moduleGlobalCache) {
 		predeclared[kurtosisHelper.Name()] = kurtosisHelper
 	}
 
@@ -387,6 +390,7 @@ func findFirstEqualInstructionPastIndex(currentEnclaveInstructionsList []*enclav
 // - If input args aren't empty it tries to deserialize them
 func (interpreter *StartosisInterpreter) parseInputArgs(thread *starlark.Thread, serializedJsonArgs string) (starlark.Value, *startosis_errors.InterpretationError) {
 	// it is a module, and it has input args -> deserialize the JSON input and add it as a struct to the predeclared
+	logrus.Infof("[LEO-DEBUG] serializedJsonArgs: %s", serializedJsonArgs)
 	deserializedArgs, interpretationError := package_io.DeserializeArgs(thread, serializedJsonArgs)
 	if interpretationError != nil {
 		return nil, interpretationError
