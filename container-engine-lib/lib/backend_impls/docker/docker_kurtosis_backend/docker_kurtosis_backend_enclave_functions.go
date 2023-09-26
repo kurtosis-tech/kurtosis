@@ -2,6 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
@@ -24,6 +25,10 @@ const (
 
 	defaultHttpLogsCollectorPortNum = uint16(9712)
 	defaultTcpLogsCollectorPortNum  = uint16(9713)
+
+	labelTypeName       = "com.kurtosistech.container-type"
+	filterContainerType = "api-container"
+	SERIALIZED_ARGS     = "SERIALIZED_ARGS"
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
@@ -181,7 +186,7 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 
 	result := map[enclave.EnclaveUUID]*enclave.Enclave{}
 	for enclaveUuid, matchingNetworkInfo := range allMatchingNetworkInfo {
-
+		productionMode := false
 		creationTime, err := getEnclaveCreationTimeFromNetwork(matchingNetworkInfo.dockerNetwork)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the enclave's creation time value from enclave's Docker network '%+v'", matchingNetworkInfo.dockerNetwork)
@@ -189,11 +194,29 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 
 		enclaveName := getEnclaveNameFromNetwork(matchingNetworkInfo.dockerNetwork)
 
-		result[enclaveUuid] = enclave.NewEnclave(
+		// This method just looks for api-container ( which only can be one) for an enclave
+		// and extracts out whether enclave is running on production mode
+		for _, container := range matchingNetworkInfo.containers {
+			labels := container.GetLabels()
+			containerType := labels[labelTypeName]
+			if containerType == filterContainerType {
+				envVars := container.GetEnvVars()
+				serializedArgs := envVars[SERIALIZED_ARGS]
+				productionMode, err = getProductionModeFromEnvVars(serializedArgs)
+				if err != nil {
+					return nil, stacktrace.Propagate(err, "Error occurred while parsing env vars from api container for %v", enclaveName)
+				}
+				logrus.Infof("enclave name %v %v", enclaveName, productionMode)
+				break
+			}
+		}
+
+		result[enclaveUuid] = enclave.NewEnclaveWithProductionMode(
 			enclaveUuid,
 			enclaveName,
 			matchingNetworkInfo.enclaveStatus,
 			creationTime,
+			productionMode,
 		)
 	}
 
@@ -386,7 +409,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	// Keyed by network ID
+// Keyed by network ID
 	map[enclave.EnclaveUUID]*matchingNetworkInformation,
 	error,
 ) {
@@ -747,4 +770,19 @@ func getEnclaveNameFromNetwork(network *types.Network) string {
 	}
 
 	return enclaveNameStr
+}
+
+func getProductionModeFromEnvVars(serializedParamsStr string) (bool, error) {
+	type Args struct {
+		IsProductionEnclave bool `json:"isProductionEnclave"`
+	}
+
+	var args Args
+	paramsJsonBytes := []byte(serializedParamsStr)
+	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred deserializing the args JSON '%v'", serializedParamsStr)
+	}
+
+	return args.IsProductionEnclave, nil
+
 }

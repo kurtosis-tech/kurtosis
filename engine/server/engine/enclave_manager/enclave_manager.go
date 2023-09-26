@@ -106,11 +106,11 @@ func CreateEnclaveManager(
 // is only used by the EngineServerService so we might as well return the object that EngineServerService wants
 func (manager *EnclaveManager) CreateEnclave(
 	setupCtx context.Context,
-	// If blank, will use the default
+// If blank, will use the default
 	engineVersion string,
 	apiContainerImageVersionTag string,
 	apiContainerLogLevel logrus.Level,
-	//If blank, will use a random one
+//If blank, will use a random one
 	enclaveName string,
 	isProduction bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
@@ -560,6 +560,11 @@ func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_inter
 
 	enclaveName := enclave.GetName()
 
+	mode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+	if enclave.IsProductionEnclave() {
+		mode = kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
+	}
+
 	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:                 enclaveUuidStr,
 		ShortenedUuid:               uuid_generator.ShortenedUUIDString(enclaveUuidStr),
@@ -569,6 +574,7 @@ func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_inter
 		ApiContainerInfo:            apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,
+		Mode:                        mode,
 	}, nil
 }
 
