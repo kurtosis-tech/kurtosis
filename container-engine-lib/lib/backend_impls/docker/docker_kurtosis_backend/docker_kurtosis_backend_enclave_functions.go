@@ -196,13 +196,19 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 		// and extracts out whether enclave is running on production mode
 		for _, container := range matchingNetworkInfo.containers {
 			labels := container.GetLabels()
-			containerType := labels[label_key_consts.ContainerTypeDockerLabelKey.GetString()]
+			containerType, ok := labels[label_key_consts.ContainerTypeDockerLabelKey.GetString()]
+			if !ok {
+				continue
+			}
+
 			if containerType == label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString() {
 				envVars := container.GetEnvVars()
-				serializedArgs := envVars[serializedArgs]
-				productionMode, err = getProductionModeFromEnvVars(serializedArgs)
-				if err != nil {
-					return nil, stacktrace.Propagate(err, "Error occurred while parsing env vars from api container for %v", enclaveName)
+				serializedArgsValue, found := envVars[serializedArgs]
+				if found {
+					productionMode, err = getProductionModeFromEnvVars(serializedArgsValue)
+					if err != nil {
+						return nil, stacktrace.Propagate(err, "Error occurred while parsing env vars from api container for %v", enclaveName)
+					}
 				}
 				break
 			}
