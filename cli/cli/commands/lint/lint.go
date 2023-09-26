@@ -12,6 +12,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
+	"path"
 )
 
 const (
@@ -32,10 +33,10 @@ const (
 	dockerWorkDirFlag       = "--workdir"
 	blackBinaryName         = "black"
 	includeFlagForBlack     = "--include"
-	presentWorkingDirectory = "."
 	checkFlagForBlack       = "--check"
 	allStarlarkFilesMatch   = "\\.star?$"
 	dirVolumeSeparator      = ":"
+	presentWorkingDirectory = "."
 
 	linterFailedAsThingsNeedToBeReformattedExitCode = 1
 	linterFailedWithInternalErrorsExitCode          = 123
@@ -44,7 +45,7 @@ const (
 var fileOrDirToLintDefaultValue = []string{"."}
 
 var dockerRunPrefix = []string{dockerRunCmd, removeContainerOnExit, dockerVolumeFlag}
-var dockerRunSuffix = []string{dockerWorkDirFlag, lintVolumeName, pyBlackDockerImage, blackBinaryName, presentWorkingDirectory, includeFlagForBlack, allStarlarkFilesMatch}
+var dockerRunSuffix = []string{dockerWorkDirFlag, lintVolumeName, pyBlackDockerImage, blackBinaryName, includeFlagForBlack, allStarlarkFilesMatch}
 
 // LintCmd we only fill in the required struct fields, hence the others remain nil
 // nolint: exhaustruct
@@ -97,7 +98,12 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
 		logrus.Infof("Linting '%v'", fileOrDirToLint)
-		commandArgs := append(dockerRunPrefix, fileOrDirToLint+dirVolumeSeparator+lintVolumeName)
+		volumeToMount, pathToLint, err := getVolumeToMountAndPathToLint(fileOrDirToLint)
+		if err != nil {
+			return stacktrace.Propagate(err, "an error occurred while attempting to parse the volume to mount and file to lint for path '%v'", fileOrDirToLint)
+		}
+		commandArgs := append(dockerRunPrefix, volumeToMount+dirVolumeSeparator+lintVolumeName)
+		dockerRunSuffix = append(dockerRunSuffix, pathToLint)
 		commandArgs = append(commandArgs, dockerRunSuffix...)
 		cmd := exec.Command(dockerBinary, commandArgs...)
 		cmdOutput, err := cmd.CombinedOutput()
@@ -134,4 +140,16 @@ func validateFileOrDirToLintArg(_ context.Context, _ *flags.ParsedFlags, args *a
 	}
 
 	return nil
+}
+
+func getVolumeToMountAndPathToLint(pathOfFileOrDirToLint string) (string, string, error) {
+	fileInfo, err := os.Stat(pathOfFileOrDirToLint)
+	if err != nil {
+		return "", "", stacktrace.Propagate(err, "an error occurred while verifying that '%v' exist", pathOfFileOrDirToLint)
+	}
+	if fileInfo.IsDir() {
+		return pathOfFileOrDirToLint, presentWorkingDirectory, nil
+	} else {
+		return path.Dir(pathOfFileOrDirToLint), path.Base(pathOfFileOrDirToLint), nil
+	}
 }
