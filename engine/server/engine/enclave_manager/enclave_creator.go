@@ -120,6 +120,12 @@ func (creator *EnclaveCreator) CreateEnclave(
 	if apiContainer.GetBridgeNetworkIPAddress() != nil {
 		bridgeIpAddr = apiContainer.GetBridgeNetworkIPAddress().String()
 	}
+
+	mode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+	if newEnclave.IsProductionEnclave() {
+		mode = kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
+	}
+
 	newEnclaveInfo := &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:        newEnclaveUuidStr,
 		Name:               newEnclave.GetName(),
@@ -134,6 +140,7 @@ func (creator *EnclaveCreator) CreateEnclave(
 		},
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,
+		Mode:                        mode,
 	}
 
 	// Everything started successfully, so the responsibility of deleting the enclave is now transferred to the caller

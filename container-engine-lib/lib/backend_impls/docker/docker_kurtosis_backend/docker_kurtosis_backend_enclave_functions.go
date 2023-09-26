@@ -26,9 +26,7 @@ const (
 	defaultHttpLogsCollectorPortNum = uint16(9712)
 	defaultTcpLogsCollectorPortNum  = uint16(9713)
 
-	labelTypeName       = "com.kurtosistech.container-type"
-	filterContainerType = "api-container"
-	SERIALIZED_ARGS     = "SERIALIZED_ARGS"
+	serializedArgs = "SERIALIZED_ARGS"
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
@@ -198,10 +196,10 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 		// and extracts out whether enclave is running on production mode
 		for _, container := range matchingNetworkInfo.containers {
 			labels := container.GetLabels()
-			containerType := labels[labelTypeName]
-			if containerType == filterContainerType {
+			containerType := labels[label_key_consts.ContainerTypeDockerLabelKey.GetString()]
+			if containerType == label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString() {
 				envVars := container.GetEnvVars()
-				serializedArgs := envVars[SERIALIZED_ARGS]
+				serializedArgs := envVars[serializedArgs]
 				productionMode, err = getProductionModeFromEnvVars(serializedArgs)
 				if err != nil {
 					return nil, stacktrace.Propagate(err, "Error occurred while parsing env vars from api container for %v", enclaveName)
@@ -408,7 +406,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-// Keyed by network ID
+	// Keyed by network ID
 	map[enclave.EnclaveUUID]*matchingNetworkInformation,
 	error,
 ) {
