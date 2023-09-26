@@ -109,7 +109,9 @@ def run(plan, args):
 
 	defaultWaitTimeoutForTest = "2m"
 
-	useDefaultMainFile = ""
+	useDefaultMainFile         = ""
+	defaultShouldReturnAllLogs = true
+	defaultNumLogLines         = 0 // bc return all logs is true, what this is set to doesn't matter
 )
 
 var (
@@ -459,7 +461,7 @@ func GetLogsResponse(
 	receivedNotFoundServiceGuids := map[services.ServiceUUID]bool{}
 	var testEvaluationErr error
 
-	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, serviceUuids, shouldFollowLogs, logLineFilter)
+	serviceLogsStreamContentChan, cancelStreamUserServiceLogsFunc, err := kurtosisCtx.GetServiceLogs(ctx, enclaveIdentifier, serviceUuids, shouldFollowLogs, defaultShouldReturnAllLogs, defaultNumLogLines, logLineFilter)
 	defer cancelStreamUserServiceLogsFunc()
 	require.NoError(t, err, "An error occurred getting user service logs from user services with UUIDs '%+v' in enclave '%v' and with follow logs value '%v'", serviceUuids, enclaveIdentifier, shouldFollowLogs)
 

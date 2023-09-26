@@ -48,6 +48,9 @@ const (
 	defaultYear  = 2023
 	defaultDay   = 0 // sunday
 	startingWeek = 4
+
+	defaultShouldReturnAllLogs = true
+	defaultNumLogLines         = 0
 )
 
 func TestStreamUserServiceLogs_WithFilters(t *testing.T) {
@@ -237,11 +240,11 @@ func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing
 		testUserService1Uuid: expectedAmountLogLines,
 	}
 
-	emptyFilters := []logline.LogLineFilter{}
+	var emptyFilters []logline.LogLineFilter
 
 	expectedFirstLogLine := "Starting feature 'centralized logs'"
 
-	logLines := []string{}
+	var logLines []string
 
 	for i := 0; i <= expectedAmountLogLines; i++ {
 		logLines = append(logLines, logLine1)
@@ -288,11 +291,11 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 		testUserService1Uuid: expectedAmountLogLines,
 	}
 
-	emptyFilters := []logline.LogLineFilter{}
+	var emptyFilters []logline.LogLineFilter
 
 	expectedFirstLogLine := "Starting feature 'centralized logs'"
 
-	logLines := []string{}
+	var logLines []string
 
 	for i := 0; i <= expectedAmountLogLines; i++ {
 		logLines = append(logLines, logLine1)
@@ -340,7 +343,7 @@ func TestStreamUserServiceLogs_EmptyLogLines(t *testing.T) {
 		testUserService1Uuid: expectedAmountLogLines,
 	}
 
-	emptyFilters := []logline.LogLineFilter{}
+	var emptyFilters []logline.LogLineFilter
 
 	userServiceUuids := map[service.ServiceUUID]bool{
 		testUserService1Uuid: true,
@@ -382,7 +385,7 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 		testUserService1Uuid: expectedAmountLogLines,
 	}
 
-	emptyFilters := []logline.LogLineFilter{}
+	var emptyFilters []logline.LogLineFilter
 
 	userServiceUuids := map[service.ServiceUUID]bool{
 		testUserService1Uuid: true,
@@ -425,7 +428,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 		testUserService1Uuid: expectedAmountLogLines,
 	}
 
-	logLinesFilters := []logline.LogLineFilter{}
+	var logLinesFilters []logline.LogLineFilter
 
 	userServiceUuids := map[service.ServiceUUID]bool{
 		testUserService1Uuid: true,
@@ -489,7 +492,7 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 		testUserService1Uuid: expectedAmountLogLines,
 	}
 
-	logLinesFilters := []logline.LogLineFilter{}
+	var logLinesFilters []logline.LogLineFilter
 
 	userServiceUuids := map[service.ServiceUUID]bool{
 		testUserService1Uuid: true,
@@ -573,7 +576,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 	mockedFs := volume_filesystem.NewMockedVolumeFilesystem(underlyingFs)
 	logsDatabaseClient := NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, mockedFs, streamStrategy)
 
-	userServiceLogsByUuidChan, errChan, receivedCancelCtxFunc, err := logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveUuid, userServiceUuids, logLinesFilters, shouldFollowLogs)
+	userServiceLogsByUuidChan, errChan, receivedCancelCtxFunc, err := logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveUuid, userServiceUuids, logLinesFilters, shouldFollowLogs, defaultShouldReturnAllLogs, defaultNumLogLines)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting user service logs for UUIDs '%+v' using log line filters '%v' in enclave '%v'", userServiceUuids, logLinesFilters, enclaveUuid)
 	}

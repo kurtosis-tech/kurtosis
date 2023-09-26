@@ -158,29 +158,34 @@ func (c *WebServer) GetServiceLogs(
 	req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
 	str *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) error {
-
-	result, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
+	engineClient, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	logs := getServiceLogsFromEngine(result)
-	for {
+	for engineClient.Receive() {
 		select {
 		case <-ctx.Done():
-			err := result.Close()
+			logrus.Debug("Closing the engine client after receiving abort signal from the client")
+			err := engineClient.Close()
 			if err != nil {
 				logrus.Errorf("Error ocurred: %+v", err)
+				return err
 			}
-			close(logs)
 			return nil
-		case resp := <-logs:
+		default:
+			resp := engineClient.Msg()
 			errWhileSending := str.Send(resp)
 			if errWhileSending != nil {
 				return errWhileSending
 			}
 		}
 	}
+	if engineClient.Err() != nil {
+		return engineClient.Err()
+	}
+
+	return nil
 }
 
 func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.GetListFilesArtifactNamesAndUuidsRequest]) (*connect.Response[kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse], error) {
@@ -222,26 +227,22 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 		Msg: req.Msg.RunStarlarkPackageArgs,
 	}
 
-	apicStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
-	ctxWithCancel, cancel := context.WithCancel(ctx)
-	logs := getRuntimeLogsWhenCreatingEnclave(cancel, apicStream)
-	for {
-		select {
-		case <-ctxWithCancel.Done():
-			err := apicStream.Close()
-			close(logs)
-			if err != nil {
-				return stacktrace.Propagate(err, "Error occurred after closing the stream")
-			}
-			return nil
-		case resp := <-logs:
-			errWhileSending := str.Send(resp)
-			if errWhileSending != nil {
-				logrus.Errorf("error occurred: %+v", errWhileSending)
-				return stacktrace.Propagate(errWhileSending, "Error occurred while sending streams")
-			}
+	apiClient, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
+
+	for apiClient.Receive() {
+		resp := apiClient.Msg()
+		errWhileSending := str.Send(resp)
+		if errWhileSending != nil {
+			logrus.Errorf("Error occurred while sending stream frome enclave manager to the UI: %+v", errWhileSending)
+			return stacktrace.Propagate(errWhileSending, "Error occurred while sending streams")
 		}
 	}
+
+	if errWhileReceive := apiClient.Err(); errWhileReceive != nil {
+		logrus.Errorf("Error occurred while enclave manger is receiving streams from engine: %+v", errWhileReceive)
+		return stacktrace.Propagate(errWhileReceive, "Error occurred while receiving data from engine")
+	}
+	return nil
 }
 
 func (c *WebServer) DestroyEnclave(ctx context.Context, req *connect.Request[kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs]) (*connect.Response[emptypb.Empty], error) {
@@ -431,27 +432,4 @@ func RunEnclaveManagerApiServer(enforceAuth bool) error {
 		logrus.Error("An error occurred running the server", err)
 	}
 	return nil
-}
-
-func getServiceLogsFromEngine(client *connect.ServerStreamForClient[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse {
-	result := make(chan *kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse)
-	go func() {
-		for client.Receive() {
-			res := client.Msg()
-			result <- res
-		}
-	}()
-	return result
-}
-
-func getRuntimeLogsWhenCreatingEnclave(cancel context.CancelFunc, client *connect.ServerStreamForClient[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
-	result := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	go func() {
-		for client.Receive() {
-			res := client.Msg()
-			result <- res
-		}
-		cancel()
-	}()
-	return result
 }

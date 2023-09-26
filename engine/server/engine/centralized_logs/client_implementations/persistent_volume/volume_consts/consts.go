@@ -13,7 +13,7 @@ const (
 	LogLabel       = "log"
 	TimestampLabel = "timestamp"
 
-	EndOfJsonLine = "}\n"
+	EndOfJsonLine = "}"
 
 	LogRetentionPeriodInWeeks = 4
 

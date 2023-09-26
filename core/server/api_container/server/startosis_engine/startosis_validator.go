@@ -20,9 +20,9 @@ import (
 const (
 	validationInProgressMsg = "Validating Starlark code and downloading container images - execution will begin shortly"
 
-	containerDownloadedImagesMsgHeader     = "Downloaded container images:"
-	containerDownloadedImagesMsgFromLocal  = "local"
-	containerDownloadedImagesMsgFromRemote = "downloaded"
+	containerDownloadedImagesMsgHeader     = "Container images used in this run:"
+	containerDownloadedImagesMsgFromLocal  = "locally cached"
+	containerDownloadedImagesMsgFromRemote = "remotely downloaded"
 	containerDownloadedImagesMsgLineFormat = "> %s - %s"
 	linebreak                              = "\n"
 )

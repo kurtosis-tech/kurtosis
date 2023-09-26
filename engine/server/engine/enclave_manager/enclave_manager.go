@@ -560,6 +560,11 @@ func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_inter
 
 	enclaveName := enclave.GetName()
 
+	mode := kurtosis_engine_rpc_api_bindings.EnclaveMode_TEST
+	if enclave.IsProductionEnclave() {
+		mode = kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION
+	}
+
 	return &kurtosis_engine_rpc_api_bindings.EnclaveInfo{
 		EnclaveUuid:                 enclaveUuidStr,
 		ShortenedUuid:               uuid_generator.ShortenedUUIDString(enclaveUuidStr),
@@ -569,6 +574,7 @@ func getEnclaveInfoForEnclave(ctx context.Context, kurtosisBackend backend_inter
 		ApiContainerInfo:            apiContainerInfo,
 		ApiContainerHostMachineInfo: apiContainerHostMachineInfo,
 		CreationTime:                creationTimestamp,
+		Mode:                        mode,
 	}, nil
 }
 

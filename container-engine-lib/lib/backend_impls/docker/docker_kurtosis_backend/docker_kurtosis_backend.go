@@ -2,6 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"github.com/sirupsen/logrus"
 	"io"
 	"sync"
 
@@ -408,14 +409,26 @@ func (backend *DockerKurtosisBackend) CreateLogsCollectorForEnclave(
 	*logs_collector.LogsCollector,
 	error,
 ) {
-	logsAggregator, err := backend.GetLogsAggregator(ctx)
+	var logsAggregator *logs_aggregator.LogsAggregator
+	maybeLogsAggregator, err := logs_aggregator_functions.GetLogsAggregator(ctx, backend.dockerManager)
 	if err != nil {
-		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator; the logs collector cannot be run without a logs aggregator")
+		return nil, stacktrace.Propagate(err, "An error occurred getting the logs aggregator. The logs collector cannot be run without a logs aggregator.")
 	}
-
-	if logsAggregator == nil || logsAggregator.GetStatus() != container.ContainerStatus_Running {
-		return nil, stacktrace.NewError("The logs aggregator is not running; the logs collector cannot be run without a running logs aggregator")
+	if maybeLogsAggregator == nil {
+		logrus.Warnf("Logs aggregator container does not exist. This is unexpected as docker should have restarted the container automatically.")
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
+		return nil, stacktrace.Propagate(err, "No logs aggregator container exists. The logs collector cannot be run without a logs aggregator.")
 	}
+	if maybeLogsAggregator.GetStatus() != container.ContainerStatus_Running {
+		logrus.Warnf("Logs aggregator exists but is not running. Instead container status is '%v'. This is unexpected as docker should have restarted the container automatically.",
+			maybeLogsAggregator.GetStatus())
+		logrus.Warnf("This can be fixed by restarting the engine using `kurtosis engine restart` and attempting to create the enclave again.")
+		return nil, stacktrace.Propagate(err,
+			"The logs aggregator container exists but is not running. Instead container status is '%v'. The logs collector cannot be run without a logs aggregator.",
+			maybeLogsAggregator.GetStatus(),
+		)
+	}
+	logsAggregator = maybeLogsAggregator
 
 	//Declaring the implementation
 	logsCollectorContainer := fluentbit.NewFluentbitLogsCollectorContainer()

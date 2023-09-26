@@ -21,6 +21,7 @@ type VolumeFilesystem interface {
 
 type VolumeFile interface {
 	io.Reader
+	Close() error
 }
 
 type VolumeFileInfo interface {
