@@ -12,11 +12,7 @@ type Enclave struct {
 	isProductionEnclave bool
 }
 
-func NewEnclave(id EnclaveUUID, name string, status EnclaveStatus, creationTime *time.Time) *Enclave {
-	return &Enclave{uuid: id, name: name, status: status, creationTime: creationTime}
-}
-
-func NewEnclaveWithProductionMode(id EnclaveUUID, name string, status EnclaveStatus, creationTime *time.Time, productionMode bool) *Enclave {
+func NewEnclave(id EnclaveUUID, name string, status EnclaveStatus, creationTime *time.Time, productionMode bool) *Enclave {
 	return &Enclave{uuid: id, name: name, status: status, creationTime: creationTime, isProductionEnclave: productionMode}
 }
 

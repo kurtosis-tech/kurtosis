@@ -148,8 +148,8 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 		}
 	}()
 
-	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime)
-
+	// TODO: return production mode for create enclave request as well
+	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime, false)
 	// TODO the logs collector has a random private ip address in the enclave network that must be tracked
 	if _, err := backend.CreateLogsCollectorForEnclave(ctx, enclaveUuid, defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum)
@@ -210,7 +210,7 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 			}
 		}
 
-		result[enclaveUuid] = enclave.NewEnclaveWithProductionMode(
+		result[enclaveUuid] = enclave.NewEnclave(
 			enclaveUuid,
 			enclaveName,
 			matchingNetworkInfo.enclaveStatus,
@@ -408,7 +408,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-	// Keyed by network ID
+// Keyed by network ID
 	map[enclave.EnclaveUUID]*matchingNetworkInformation,
 	error,
 ) {
