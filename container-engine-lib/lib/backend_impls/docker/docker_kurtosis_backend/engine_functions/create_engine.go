@@ -104,6 +104,12 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err,
 			"An error occurred attempting to create logging components for engine with GUID '%v' in Docker network with network id '%v'.", engineGuidStr, targetNetworkId)
 	}
+	shouldRemoveLogsAggregator := true
+	defer func() {
+		if shouldRemoveLogsAggregator {
+			removeLogsAggregatorFunc()
+		}
+	}()
 
 	// schedule log removal for log retention
 	go func() {
@@ -116,13 +122,6 @@ func CreateEngine(
 		logRemovalTicker := time.NewTicker(removeLogsWaitHours)
 		for range logRemovalTicker.C {
 			logRemover.Run()
-		}
-	}()
-
-	shouldRemoveCentralizedLogComponents := true
-	defer func() {
-		if shouldRemoveCentralizedLogComponents {
-			removeLogsAggregatorFunc()
 		}
 	}()
 	logrus.Infof("Centralized logs components started.")
@@ -265,7 +264,7 @@ func CreateEngine(
 		return nil, stacktrace.Propagate(err, "An error occurred creating an engine object from container with GUID '%v'", containerId)
 	}
 
-	shouldRemoveCentralizedLogComponents = false
+	shouldRemoveLogsAggregator = false
 	shouldKillEngineContainer = false
 	return result, nil
 }
