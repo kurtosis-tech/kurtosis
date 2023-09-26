@@ -362,6 +362,11 @@ export declare class EnclaveInfo extends Message<EnclaveInfo> {
    */
   creationTime?: Timestamp;
 
+  /**
+   * @generated from field: engine_api.EnclaveMode mode = 9;
+   */
+  mode: EnclaveMode;
+
   constructor(data?: PartialMessage<EnclaveInfo>);
 
   static readonly runtime: typeof proto3;

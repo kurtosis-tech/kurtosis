@@ -147,6 +147,7 @@ export const EnclaveInfo = proto3.makeMessageType(
     { no: 6, name: "api_container_info", kind: "message", T: EnclaveAPIContainerInfo },
     { no: 7, name: "api_container_host_machine_info", kind: "message", T: EnclaveAPIContainerHostMachineInfo },
     { no: 8, name: "creation_time", kind: "message", T: Timestamp },
+    { no: 9, name: "mode", kind: "enum", T: proto3.getEnumType(EnclaveMode) },
   ],
 );
 

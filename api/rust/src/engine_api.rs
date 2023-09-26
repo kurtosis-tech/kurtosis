@@ -91,6 +91,8 @@ pub struct EnclaveInfo {
     /// The enclave's creation time
     #[prost(message, optional, tag = "8")]
     pub creation_time: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(enumeration = "EnclaveMode", tag = "9")]
+    pub mode: i32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
