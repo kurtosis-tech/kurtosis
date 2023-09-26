@@ -164,7 +164,7 @@ const ServiceInfo = () => {
                 renderList={() => renderServices(services, handleServiceClick)}
             />
             <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
-                <div className={`flex-col flex h-full space-y-1 bg-[#171923]`}>
+                <div className={`flex-col flex space-y-1 bg-[#171923]`}>
                     <Flex bg={"#171923"} height={"80px"}>    
                         <Box p='2' m="4"> 
                             <Text color={"white"} fontSize='xl' as='b'> {!isViewLogPage() ? "Detailed Info " : "Logs "}  for {selectedSerialized.name} </Text>

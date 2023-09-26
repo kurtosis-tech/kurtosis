@@ -1740,7 +1740,6 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new containers list from Docker containers list")
 	}
-
 	return containers, nil
 }
 

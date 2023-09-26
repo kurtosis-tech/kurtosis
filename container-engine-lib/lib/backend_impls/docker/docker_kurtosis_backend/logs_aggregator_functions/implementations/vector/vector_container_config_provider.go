@@ -52,6 +52,10 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 		),
 	}
 
+	// The logs aggregator should ALWAYS be running to ensure that no logs are lost for services in enclaves
+	// Thus, instruct docker to restart the container if it exits with non-zero status code for whatever reason
+	restartPolicy := docker_manager.RestartPolicy("on-failure")
+
 	createAndStartArgs := docker_manager.NewCreateAndStartContainerArgsBuilder(
 		containerImage,
 		containerName,
@@ -66,6 +70,8 @@ func (vector *vectorContainerConfigProvider) GetContainerArgs(
 		},
 	).WithCmdArgs(
 		overrideCmd,
+	).WithRestartPolicy(
+		restartPolicy,
 	).Build()
 
 	return createAndStartArgs, nil
