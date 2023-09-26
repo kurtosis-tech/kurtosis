@@ -155,6 +155,9 @@ export class EnclaveInfo extends jspb.Message {
   hasCreationTime(): boolean;
   clearCreationTime(): EnclaveInfo;
 
+  getMode(): EnclaveMode;
+  setMode(value: EnclaveMode): EnclaveInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveInfo): EnclaveInfo.AsObject;
@@ -173,6 +176,7 @@ export namespace EnclaveInfo {
     apiContainerInfo?: EnclaveAPIContainerInfo.AsObject,
     apiContainerHostMachineInfo?: EnclaveAPIContainerHostMachineInfo.AsObject,
     creationTime?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    mode: EnclaveMode,
   }
 }
 

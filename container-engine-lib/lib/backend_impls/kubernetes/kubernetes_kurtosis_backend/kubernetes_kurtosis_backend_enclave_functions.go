@@ -587,6 +587,7 @@ func getEnclaveObjectsFromKubernetesResources(
 			enclaveName,
 			enclaveStatus,
 			enclaveCreationTime,
+			false,
 		)
 
 		result[enclaveId] = enclaveObj
