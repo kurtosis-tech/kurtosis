@@ -55,6 +55,10 @@ func (suite *StartosisPackageTestSuite) RunPackage(ctx context.Context, packageR
 	return suite.RunPackageWithParams(ctx, packageRelativeDirpath, emptyRunParams)
 }
 
+func (suite *StartosisPackageTestSuite) RunRemotePackage(ctx context.Context, remotePackage string) (*enclaves.StarlarkRunResult, error) {
+	return suite.enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
+}
+
 func (suite *StartosisPackageTestSuite) RunPackageWithParams(ctx context.Context, packageRelativeDirpath string, params string) (*enclaves.StarlarkRunResult, error) {
 	logrus.Infof("Executing Startosis package...")
 

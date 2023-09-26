@@ -138,6 +138,8 @@ message EnclaveInfo {
 
   //The enclave's creation time
   google.protobuf.Timestamp creation_time = 8;
+
+  EnclaveMode mode =9;
 }
 
 message GetEnclavesResponse {
