@@ -78,9 +78,7 @@ const Home = () => {
         switch (message) {
             case 'jwtToken':
                 const value = event.data.value
-                console.log("got event: jwtToken")
                 if (value !== null && value !== undefined) {
-                    // console.log("got token:", value)
                     setAppData({
                         ...appData,
                         jwtToken: value,
@@ -100,8 +98,6 @@ const Home = () => {
         // At this time requireAuth=true means we are running remote which means connection is going through a TLS protected LB
         const requireProxy = requireAuth;
         const apiHost = createApiUrl(requestedApiHost, requireProxy)
-        console.log(`requireProxy=${requireProxy}`)
-        console.log(`apiHost=${apiHost}`)
         if (apiHost && apiHost.length > 0) {
             setAppData({
                 ...appData,
@@ -114,21 +110,13 @@ const Home = () => {
     const validApiHost = () => appData.apiHost && appData.apiHost.length > 0
 
     const fetch = async () => {
-        console.log("submitting request for enclaves")
         const response = await getEnclavesFromKurtosis(appData.jwtToken, appData.apiHost);
-        console.log("Got response for enclaves", response)
         setEnclaves(response)
         setEnclaveLoading(false)
-        console.log("finished fetch")
     }
 
     useEffect(() => {
-        if (requireAuth && !validJwtToken()) {
-            console.log("Requires Auth and jwt token: waiting for jwt token")
-        }
         if (requireAuth && validJwtToken() && validApiHost()) {
-            console.log("Requires Auth, jwt token and api host: Got them all")
-            console.log("starting load for authenticated access")
             setEnclaveLoading(true)
             fetch()
         }
@@ -137,8 +125,6 @@ const Home = () => {
 
     useEffect(() => {
         if (!requireAuth && validApiHost()) {
-            console.log("Does not require auth. Got Api host:", appData.apiHost)
-            console.log("starting load for non authenticated access")
             fetch()
         }
     }, [appData.apiHost])
@@ -185,8 +171,8 @@ const Home = () => {
                    element={checkAuth(<FileArtifactInfo enclaves={enclaves}/>)}
             />
             <Route exact
-                path="/catalog/*" 
-                element={checkAuth(<PackageCatalogRouter addEnclave={addEnclave}/>)} 
+                   path="/catalog/*"
+                   element={checkAuth(<PackageCatalogRouter addEnclave={addEnclave}/>)}
             />
             <Route
                 path="/"
@@ -195,14 +181,12 @@ const Home = () => {
         </>
     )
 
-    console.log("urlPath", urlPath)
     const router = createBrowserRouter(
         createRoutesFromElements(routes),
         {
             basename: urlPath,
         }
     );
-
 
     return (
         <div className="h-screen flex flex-col bg-[#171923]">
