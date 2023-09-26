@@ -70,7 +70,7 @@ message GetCloudInstanceConfigResponse {
 }
 
 message GetOrCreatePaymentConfigArgs {
-  string api_key = 1;
+  string access_token = 1;
 }
 
 message PaymentMethod {
