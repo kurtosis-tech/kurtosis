@@ -42,14 +42,16 @@ export const createEnclave = async (token, apiHost, enclaveName, productionMode)
     }
 }
 
-export const getServiceLogs = async (ctrl, enclaveName, serviceUuid, apiHost) => {
+export const getServiceLogs = async (ctrl, enclaveName, serviceUuid, apiHost, followLogs, numLogLines) => {
     const enclaveManagerClient = createClient(apiHost);
     const args = {
-        "enclaveIdentifier": enclaveName,
-        "serviceUuidSet": {
+        enclaveIdentifier: enclaveName,
+        serviceUuidSet: {
             [serviceUuid]: true
         },
-        followLogs: true,
+        followLogs: followLogs,
+        returnAllLogs: false,
+        numLogLines: numLogLines,
     }
     return enclaveManagerClient.getServiceLogs(args, {signal: ctrl.signal});
 }
