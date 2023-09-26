@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.83.9](https://github.com/kurtosis-tech/kurtosis/compare/0.83.8...0.83.9) (2023-09-26)
+
+
+### Bug Fixes
+
+* rebuild with type bug fix ([#1385](https://github.com/kurtosis-tech/kurtosis/issues/1385)) ([14840b7](https://github.com/kurtosis-tech/kurtosis/commit/14840b73509ddbf6ea4729a20703ea0d77c08da9))
+* restart log aggregator on failure ([#1371](https://github.com/kurtosis-tech/kurtosis/issues/1371)) ([7f171ce](https://github.com/kurtosis-tech/kurtosis/commit/7f171ce678ee8915d17c30262930365428d9a4f8))
+
+## [0.83.8](https://github.com/kurtosis-tech/kurtosis/compare/0.83.7...0.83.8) (2023-09-26)
+
+
+### Bug Fixes
+
+* handle missing arg types ([#1373](https://github.com/kurtosis-tech/kurtosis/issues/1373)) ([5cfea2a](https://github.com/kurtosis-tech/kurtosis/commit/5cfea2a0c62165193d258ad8d5bba48e06d4f5fb))
+* Relative import breaks for 'non-main branchs' ([#1364](https://github.com/kurtosis-tech/kurtosis/issues/1364)) ([5496082](https://github.com/kurtosis-tech/kurtosis/commit/549608269f21b2bf886c92263ee60989dc9fb4e1)), closes [#1361](https://github.com/kurtosis-tech/kurtosis/issues/1361)
+
+## [0.83.7](https://github.com/kurtosis-tech/kurtosis/compare/0.83.6...0.83.7) (2023-09-25)
+
+
+### Features
+
+* improved log experience on the UI. ([#1368](https://github.com/kurtosis-tech/kurtosis/issues/1368)) ([760c7f0](https://github.com/kurtosis-tech/kurtosis/commit/760c7f0a33d3e2e9f777b509562901a8c6f25308))
+
+## [0.83.6](https://github.com/kurtosis-tech/kurtosis/compare/0.83.5...0.83.6) (2023-09-22)
+
+
+### Features
+
+* implement -n X and -a flags ([#1341](https://github.com/kurtosis-tech/kurtosis/issues/1341)) ([2c6880c](https://github.com/kurtosis-tech/kurtosis/commit/2c6880c9c251843dafacc3a356cc320f5efe85a7))
+
+
+### Bug Fixes
+
+* enclave manager ui was reading the wrong type fields ([#1367](https://github.com/kurtosis-tech/kurtosis/issues/1367)) ([0bae141](https://github.com/kurtosis-tech/kurtosis/commit/0bae141837324f94841f4e5f311cc7e2bbfa63a1))
+* Manually locate docker socket ([#1362](https://github.com/kurtosis-tech/kurtosis/issues/1362)) ([7fe4956](https://github.com/kurtosis-tech/kurtosis/commit/7fe49560b4d99c28e9bda640294bbe0554b57820))
+
+## [0.83.5](https://github.com/kurtosis-tech/kurtosis/compare/0.83.4...0.83.5) (2023-09-21)
+
+
+### Features
+
+* add service details to EM UI ([#1352](https://github.com/kurtosis-tech/kurtosis/issues/1352)) ([2ccd98d](https://github.com/kurtosis-tech/kurtosis/commit/2ccd98d2066975d7c94c07b6f793878a27c4ed81))
+* added ability to lint Starlark packages ([#1360](https://github.com/kurtosis-tech/kurtosis/issues/1360)) ([f4a072c](https://github.com/kurtosis-tech/kurtosis/commit/f4a072cbbdf53614fe752069d12ed8577a6164be)), closes [#1228](https://github.com/kurtosis-tech/kurtosis/issues/1228)
+* Support YAML as Package param ([#1350](https://github.com/kurtosis-tech/kurtosis/issues/1350)) ([e33bfe6](https://github.com/kurtosis-tech/kurtosis/commit/e33bfe688e78b15a6468b4d5abf5ad7a5413ca71))
+
+
+### Bug Fixes
+
+* tail logs from end of log file ([#1339](https://github.com/kurtosis-tech/kurtosis/issues/1339)) ([b8d5816](https://github.com/kurtosis-tech/kurtosis/commit/b8d58169e9c708a71159a87fe52877471c928653))
+* warn instead of failing for json log line parse error ([#1336](https://github.com/kurtosis-tech/kurtosis/issues/1336)) ([44b2820](https://github.com/kurtosis-tech/kurtosis/commit/44b282076a6be85e1711ee33cbcc0ae116882ec6))
+
 ## [0.83.4](https://github.com/kurtosis-tech/kurtosis/compare/0.83.3...0.83.4) (2023-09-19)
 
 
