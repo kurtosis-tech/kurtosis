@@ -66,6 +66,6 @@ func (t *importModuleTestCase) Assert(result starlark.Value) {
 	loadedModule, ok := result.(*starlarkstruct.Module)
 	require.True(t, ok, "object returned was not a starlark module")
 	require.Equal(t, loadedModule.Name, TestModuleFileName)
-	require.Len(t, loadedModule.Members, 1)
+	require.Len(t, loadedModule.Members, 2)
 	require.Contains(t, loadedModule.Members, importModule_moduleConstKey)
 }

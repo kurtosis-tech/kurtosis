@@ -215,6 +215,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 	enclaveComponents *enclave_structure.EnclaveComponents,
 	instructionsPlanMask *resolver.InstructionsPlanMask,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
+	logrus.Infof("[LEO-DEBUG] packageId: %s", packageId)
 	interpreter.mutex.Lock()
 	defer interpreter.mutex.Unlock()
 	newInstructionsPlan := instructions_plan.NewInstructionsPlan()
@@ -250,6 +251,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		return startosis_constants.NoOutputObject, nil, missingMainFunctionError(packageId, mainFunctionName)
 	}
 
+	logrus.Infof("[LEO-DEBUG] justo antes de crear el nuevo thread, moduleLcoator: %s", moduleLocator)
 	runFunctionExecutionThread := newStarlarkThread(moduleLocator)
 
 	var argsTuple starlark.Tuple
@@ -317,7 +319,11 @@ func (interpreter *StartosisInterpreter) interpretInternal(packageId string, mod
 	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
 	// previous calls inside the same thread
 	// The thread name is set to the locator of the module so that we can use it to resolve relative paths
+	logrus.Infof("[LEO-DEBUG] packageId: %s", packageId)
+	logrus.Infof("[LEO-DEBUG] moduleLocator: %s", moduleLocator)
+
 	thread := newStarlarkThread(moduleLocator)
+	logrus.Infof("[LEO-DEBUG] thread: %p", thread)
 	predeclared, interpretationErr := interpreter.buildBindings(packageId, thread, instructionPlan, moduleGlobalCache)
 	if interpretationErr != nil {
 		return nil, interpretationErr
@@ -470,6 +476,7 @@ func missingMainFunctionError(packageId string, mainFunctionName string) *kurtos
 }
 
 func newStarlarkThread(threadName string) *starlark.Thread {
+	logrus.Infof("[LEO-DEBUG] threadName: %s", threadName)
 	return &starlark.Thread{
 		Name:       threadName,
 		Print:      makePrintFunction(),

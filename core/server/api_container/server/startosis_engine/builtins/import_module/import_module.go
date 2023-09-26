@@ -126,6 +126,8 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 			Members: globalVariables,
 		}
 		cacheEntry = startosis_packages.NewModuleCacheEntry(newModule, nil)
+
+		globalVariables["current-module-locator"] = starlark.String(moduleInPackage)
 	} else {
 		cacheEntry = startosis_packages.NewModuleCacheEntry(nil, interpretationErr)
 	}

@@ -10,6 +10,8 @@ const (
 	remotePackage        = "github.com/kurtosis-tech/awesome-kurtosis/quickstart"
 	expectedOutputLength = 4
 	expectedServiceName  = "postgres"
+
+	packageWithSiblingImport = "github.com/h4ck3rk3y/package-panic/primary"
 )
 
 func (suite *StartosisSubpackageTestSuite) TestStarlarkRemotePackage() {
@@ -29,4 +31,18 @@ func (suite *StartosisSubpackageTestSuite) TestStarlarkRemotePackage() {
 
 	require.Equal(t, expectedOutputLength, len(runOutputList))
 	require.Contains(t, runOutputTrimmedString, expectedServiceName)
+}
+
+func (suite *StartosisSubpackageTestSuite) TestStartosisSiblingRemotePackages_RelativeImports() {
+	ctx := context.Background()
+	isRemotePackage := true
+	runResult, _ := suite.RunPackage(ctx, packageWithSiblingImport, isRemotePackage)
+
+	t := suite.T()
+	require.Nil(t, runResult.InterpretationError)
+	require.Empty(t, runResult.ValidationErrors)
+	require.Nil(t, runResult.ExecutionError)
+
+	//expectedResult := "Package loaded.\n"
+	//require.Regexp(t, expectedResult, string(runResult.RunOutput))
 }
