@@ -15,7 +15,7 @@ const RightPanel = ({isServiceInfo, enclaveName}) => {
     }
 
     return (
-        <div className="flex-none w-[15rem] p-4 border-l bg-[#171923]">
+        <div className="flex-none w-[15rem] p-4 bg-[#171923]">
             <div className="flex flex-col space-y-10 items-center">
                 {
                     isServiceInfo ? <button className="w-full bg-[#24BA27] text-slate-800 h-14" onClick={handleGoToEnclave}> {`View ${enclaveName}`}  </button> : null

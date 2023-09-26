@@ -15,7 +15,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/engine_server_launcher"
@@ -426,8 +426,8 @@ func getEngineInfoWithTimeout(ctx context.Context, client kurtosis_engine_rpc_ap
 func getRunningEnginesFilter() *engine.EngineFilters {
 	return &engine.EngineFilters{
 		GUIDs: nil,
-		Statuses: map[container_status.ContainerStatus]bool{
-			container_status.ContainerStatus_Running: true,
+		Statuses: map[container.ContainerStatus]bool{
+			container.ContainerStatus_Running: true,
 		},
 	}
 }
@@ -436,8 +436,8 @@ func getRunningEnginesFilter() *engine.EngineFilters {
 func getStoppedEnginesFilter() *engine.EngineFilters {
 	return &engine.EngineFilters{
 		GUIDs: nil,
-		Statuses: map[container_status.ContainerStatus]bool{
-			container_status.ContainerStatus_Stopped: true,
+		Statuses: map[container.ContainerStatus]bool{
+			container.ContainerStatus_Stopped: true,
 		},
 	}
 }

@@ -2,6 +2,7 @@ package docker_kurtosis_backend
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/docker/docker/api/types/volume"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/shared_helpers"
@@ -24,6 +25,8 @@ const (
 
 	defaultHttpLogsCollectorPortNum = uint16(9712)
 	defaultTcpLogsCollectorPortNum  = uint16(9713)
+
+	serializedArgs = "SERIALIZED_ARGS"
 )
 
 // TODO: MIGRATE THIS FOLDER TO USE STRUCTURE OF USER_SERVICE_FUNCTIONS MODULE
@@ -143,8 +146,8 @@ func (backend *DockerKurtosisBackend) CreateEnclave(ctx context.Context, enclave
 		}
 	}()
 
-	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime)
-
+	// TODO: return production mode for create enclave request as well
+	newEnclave := enclave.NewEnclave(enclaveUuid, enclaveName, enclave.EnclaveStatus_Empty, &creationTime, false)
 	// TODO the logs collector has a random private ip address in the enclave network that must be tracked
 	if _, err := backend.CreateLogsCollectorForEnclave(ctx, enclaveUuid, defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating the logs collector with TCP port number '%v' and HTTP port number '%v'", defaultTcpLogsCollectorPortNum, defaultHttpLogsCollectorPortNum)
@@ -181,7 +184,7 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 
 	result := map[enclave.EnclaveUUID]*enclave.Enclave{}
 	for enclaveUuid, matchingNetworkInfo := range allMatchingNetworkInfo {
-
+		productionMode := false
 		creationTime, err := getEnclaveCreationTimeFromNetwork(matchingNetworkInfo.dockerNetwork)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred getting the enclave's creation time value from enclave's Docker network '%+v'", matchingNetworkInfo.dockerNetwork)
@@ -189,11 +192,34 @@ func (backend *DockerKurtosisBackend) GetEnclaves(
 
 		enclaveName := getEnclaveNameFromNetwork(matchingNetworkInfo.dockerNetwork)
 
+		// This method just looks for api-container ( which only can be one) for an enclave
+		// and extracts out whether enclave is running on production mode
+		for _, container := range matchingNetworkInfo.containers {
+			labels := container.GetLabels()
+			containerType, ok := labels[label_key_consts.ContainerTypeDockerLabelKey.GetString()]
+			if !ok {
+				continue
+			}
+
+			if containerType == label_value_consts.APIContainerContainerTypeDockerLabelValue.GetString() {
+				envVars := container.GetEnvVars()
+				serializedArgsValue, found := envVars[serializedArgs]
+				if found {
+					productionMode, err = getProductionModeFromEnvVars(serializedArgsValue)
+					if err != nil {
+						return nil, stacktrace.Propagate(err, "Error occurred while parsing env vars from api container for %v", enclaveName)
+					}
+				}
+				break
+			}
+		}
+
 		result[enclaveUuid] = enclave.NewEnclave(
 			enclaveUuid,
 			enclaveName,
 			matchingNetworkInfo.enclaveStatus,
 			creationTime,
+			productionMode,
 		)
 	}
 
@@ -747,4 +773,19 @@ func getEnclaveNameFromNetwork(network *types.Network) string {
 	}
 
 	return enclaveNameStr
+}
+
+func getProductionModeFromEnvVars(serializedParamsStr string) (bool, error) {
+	type Args struct {
+		IsProductionEnclave bool `json:"isProductionEnclave"`
+	}
+
+	var args Args
+	paramsJsonBytes := []byte(serializedParamsStr)
+	if err := json.Unmarshal(paramsJsonBytes, &args); err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred deserializing the args JSON '%v'", serializedParamsStr)
+	}
+
+	return args.IsProductionEnclave, nil
+
 }

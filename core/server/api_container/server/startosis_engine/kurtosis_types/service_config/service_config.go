@@ -113,9 +113,13 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.Uint64InRange(value, CpuAllocationAttr, 0, math.MaxUint64)
 					},
-					Deprecation: starlark_warning.Deprecation(starlark_warning.DeprecationDate{
-						Day: 25, Year: 2023, Month: 6, //nolint:gomnd
-					}, "This field is being deprecated in favour of `max_cpu` to set a maximum cpu a container can use"),
+					Deprecation: starlark_warning.Deprecation(
+						starlark_warning.DeprecationDate{
+							Day: 25, Year: 2023, Month: 6, //nolint:gomnd
+						},
+						"This field is being deprecated in favour of `max_cpu` to set a maximum cpu a container can use",
+						nil,
+					),
 				},
 				{
 					Name:              MemoryAllocationAttr,
@@ -124,9 +128,13 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
 						return builtin_argument.Uint64InRange(value, MemoryAllocationAttr, minimumMemoryAllocationMegabytes, math.MaxUint64)
 					},
-					Deprecation: starlark_warning.Deprecation(starlark_warning.DeprecationDate{
-						Day: 25, Year: 2023, Month: 6, //nolint:gomnd
-					}, "This field is being deprecated in favour of `max_memory` to set maximum memory a container can use"),
+					Deprecation: starlark_warning.Deprecation(
+						starlark_warning.DeprecationDate{
+							Day: 25, Year: 2023, Month: 6, //nolint:gomnd
+						},
+						"This field is being deprecated in favour of `max_memory` to set maximum memory a container can use",
+						nil,
+					),
 				},
 				{
 					Name:              MaxCpuMilliCoresAttr,

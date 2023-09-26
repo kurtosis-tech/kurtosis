@@ -155,6 +155,9 @@ export class EnclaveInfo extends jspb.Message {
   hasCreationTime(): boolean;
   clearCreationTime(): EnclaveInfo;
 
+  getMode(): EnclaveMode;
+  setMode(value: EnclaveMode): EnclaveInfo;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): EnclaveInfo.AsObject;
   static toObject(includeInstance: boolean, msg: EnclaveInfo): EnclaveInfo.AsObject;
@@ -173,6 +176,7 @@ export namespace EnclaveInfo {
     apiContainerInfo?: EnclaveAPIContainerInfo.AsObject,
     apiContainerHostMachineInfo?: EnclaveAPIContainerHostMachineInfo.AsObject,
     creationTime?: google_protobuf_timestamp_pb.Timestamp.AsObject,
+    mode: EnclaveMode,
   }
 }
 
@@ -351,6 +355,12 @@ export class GetServiceLogsArgs extends jspb.Message {
   clearConjunctiveFiltersList(): GetServiceLogsArgs;
   addConjunctiveFilters(value?: LogLineFilter, index?: number): LogLineFilter;
 
+  getReturnAllLogs(): boolean;
+  setReturnAllLogs(value: boolean): GetServiceLogsArgs;
+
+  getNumLogLines(): number;
+  setNumLogLines(value: number): GetServiceLogsArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceLogsArgs.AsObject;
   static toObject(includeInstance: boolean, msg: GetServiceLogsArgs): GetServiceLogsArgs.AsObject;
@@ -365,6 +375,8 @@ export namespace GetServiceLogsArgs {
     serviceUuidSetMap: Array<[string, boolean]>,
     followLogs: boolean,
     conjunctiveFiltersList: Array<LogLineFilter.AsObject>,
+    returnAllLogs: boolean,
+    numLogLines: number,
   }
 }
 

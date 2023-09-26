@@ -19,6 +19,8 @@ package enclaves
 
 import (
 	"context"
+	"encoding/json"
+	yaml_convert "github.com/ghodss/yaml"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
@@ -85,6 +87,11 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	oldSerializedParams := serializedParams
+	serializedParams, err := maybeParseYaml(oldSerializedParams)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for script '%v'", oldSerializedParams)
+	}
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(mainFunctionName, serializedScript, serializedParams, dryRun, parallelism, experimentalFeatures)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
@@ -128,6 +135,10 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	serializedParams, err := maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for package '%v'", serializedParams)
+	}
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	defer func() {
@@ -176,6 +187,21 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(
 	return starlarkResponse, getErrFromStarlarkRunResult(starlarkResponse)
 }
 
+func maybeParseYaml(serializedParams string) (string, error) {
+	if valid := isValidJSON(serializedParams); valid {
+		return serializedParams, nil
+	}
+	logrus.Debugf("Serialized params '%v' is not valid JSON, trying to convert from YAML", serializedParams)
+	var err error
+	serializedParamsBytes, err := yaml_convert.YAMLToJSON([]byte(serializedParams))
+	if err != nil {
+		return "", stacktrace.Propagate(err, "Failed while converting serialized params to json")
+	}
+	serializedParamsStr := string(serializedParamsBytes)
+	logrus.Debugf("Converted to '%v'", serializedParamsStr)
+	return serializedParamsStr, nil
+}
+
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	ctx context.Context,
@@ -187,6 +213,10 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+	serializedParams, err := maybeParseYaml(serializedParams)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for remote package '%v'", serializedParams)
+	}
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
 	defer func() {
@@ -206,6 +236,15 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	go runReceiveStarlarkResponseLineRoutine(cancelCtxFunc, stream, starlarkResponseLineChan)
 	executionStartedSuccessfully = true
 	return starlarkResponseLineChan, cancelCtxFunc, nil
+}
+
+func isValidJSON(maybeJson string) bool {
+	var jsonObj map[string]interface{}
+	if err := json.Unmarshal([]byte(maybeJson), &jsonObj); err != nil {
+		return false
+	}
+	logrus.Debugf("Valid json found '%v'", jsonObj)
+	return true
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error

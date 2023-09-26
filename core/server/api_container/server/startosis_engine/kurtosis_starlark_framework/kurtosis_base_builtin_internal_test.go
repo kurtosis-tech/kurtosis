@@ -77,6 +77,7 @@ func Test_printWarningIfArgumentIsDeprecated(t *testing.T) {
 			Deprecation: starlark_warning.Deprecation(
 				deprecatedDate,
 				deprecatedMitigation,
+				nil,
 			),
 		},
 		{
@@ -86,12 +87,14 @@ func Test_printWarningIfArgumentIsDeprecated(t *testing.T) {
 					Day: 20, Month: 11, Year: 2023,
 				},
 				"mitigation reason for another_key",
+				nil,
 			),
 		},
 	}
 
 	argumentSet := builtin_argument.NewArgumentValuesSet(builtinArgs, []starlark.Value{starlark.String("test"), starlark.String("test")})
-	printWarningForArguments(argumentSet, &baseBuiltIn)
+	err := printWarningForArguments(argumentSet, &baseBuiltIn)
+	require.NoError(t, err)
 	warnings := starlark_warning.GetContentFromWarningSet()
 	require.Len(t, warnings, 2)
 
@@ -118,6 +121,7 @@ func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
 		Deprecation: starlark_warning.Deprecation(
 			deprecatedDate,
 			deprecatedMitigation,
+			nil,
 		),
 	}
 
@@ -129,13 +133,15 @@ func Test_printWarningForBuiltinIsDeprecated(t *testing.T) {
 					Day: 20, Month: 11, Year: 2023,
 				},
 				"mitigation reason",
+				nil,
 			),
 		},
 	}
 
 	argumentSet := builtin_argument.NewArgumentValuesSet(builtinArgs, []starlark.Value{starlark.String("test"), starlark.String("test")})
 
-	printWarningForArguments(argumentSet, &baseBuiltIn)
+	err := printWarningForArguments(argumentSet, &baseBuiltIn)
+	require.NoError(t, err)
 	warnings := starlark_warning.GetContentFromWarningSet()
 	require.Len(t, warnings, 1)
 	require.Contains(t, warnings[0],
@@ -159,7 +165,8 @@ func Test_printWarningForInstructionNoWarning(t *testing.T) {
 	}
 
 	argumentSet := builtin_argument.NewArgumentValuesSet(builtinArgs, []starlark.Value{starlark.String("test"), starlark.String("test")})
-	printWarningForArguments(argumentSet, &baseBuiltIn)
+	err := printWarningForArguments(argumentSet, &baseBuiltIn)
+	require.NoError(t, err)
 	warnings := starlark_warning.GetContentFromWarningSet()
 	require.Len(t, warnings, 0)
 }

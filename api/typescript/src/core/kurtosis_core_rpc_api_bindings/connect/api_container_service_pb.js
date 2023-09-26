@@ -70,6 +70,32 @@ export const Port_TransportProtocol = proto3.makeEnum(
 );
 
 /**
+ * @generated from message api_container_api.Container
+ */
+export const Container = proto3.makeMessageType(
+  "api_container_api.Container",
+  () => [
+    { no: 1, name: "status", kind: "enum", T: proto3.getEnumType(Container_Status) },
+    { no: 2, name: "image_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "entrypoint_args", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 4, name: "cmd_args", kind: "scalar", T: 9 /* ScalarType.STRING */, repeated: true },
+    { no: 5, name: "env_vars", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
+  ],
+);
+
+/**
+ * @generated from enum api_container_api.Container.Status
+ */
+export const Container_Status = proto3.makeEnum(
+  "api_container_api.Container.Status",
+  [
+    {no: 0, name: "STOPPED"},
+    {no: 1, name: "RUNNING"},
+    {no: 2, name: "UNKNOWN"},
+  ],
+);
+
+/**
  * @generated from message api_container_api.ServiceInfo
  */
 export const ServiceInfo = proto3.makeMessageType(
@@ -83,6 +109,7 @@ export const ServiceInfo = proto3.makeMessageType(
     { no: 6, name: "name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 7, name: "shortened_uuid", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 8, name: "service_status", kind: "enum", T: proto3.getEnumType(ServiceStatus) },
+    { no: 9, name: "container", kind: "message", T: Container },
   ],
 );
 
@@ -136,6 +163,17 @@ export const StarlarkRunResponseLine = proto3.makeMessageType(
     { no: 4, name: "instruction_result", kind: "message", T: StarlarkInstructionResult, oneof: "run_response_line" },
     { no: 5, name: "run_finished_event", kind: "message", T: StarlarkRunFinishedEvent, oneof: "run_response_line" },
     { no: 6, name: "warning", kind: "message", T: StarlarkWarning, oneof: "run_response_line" },
+    { no: 7, name: "info", kind: "message", T: StarlarkInfo, oneof: "run_response_line" },
+  ],
+);
+
+/**
+ * @generated from message api_container_api.StarlarkInfo
+ */
+export const StarlarkInfo = proto3.makeMessageType(
+  "api_container_api.StarlarkInfo",
+  () => [
+    { no: 1, name: "info_message", kind: "scalar", T: 9 /* ScalarType.STRING */ },
   ],
 );
 

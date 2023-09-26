@@ -91,6 +91,8 @@ pub struct EnclaveInfo {
     /// The enclave's creation time
     #[prost(message, optional, tag = "8")]
     pub creation_time: ::core::option::Option<::prost_types::Timestamp>,
+    #[prost(enumeration = "EnclaveMode", tag = "9")]
+    pub mode: i32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -188,6 +190,12 @@ pub struct GetServiceLogsArgs {
     /// The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
     #[prost(message, repeated, tag = "4")]
     pub conjunctive_filters: ::prost::alloc::vec::Vec<LogLineFilter>,
+    /// If true, return all log lines
+    #[prost(bool, tag = "5")]
+    pub return_all_logs: bool,
+    /// If \[return_all_logs\] is false, return \[num_log_lines\]
+    #[prost(uint32, tag = "6")]
+    pub num_log_lines: u32,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

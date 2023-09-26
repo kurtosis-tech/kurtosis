@@ -1,63 +1,286 @@
-import { 
-    Grid, 
-    GridItem, 
-    Center,  
-    Input, 
-    Flex, 
+import {
+    Box,
     Button,
+    Center,
+    Checkbox,
+    Flex,
+    Grid,
+    GridItem,
+    HStack,
+    Input,
+    InputGroup,
+    InputLeftAddon,
     Stack,
     Text,
-    Textarea,
-    Checkbox,
+    Tooltip,
+    useClipboard,
 } from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
-import { useLocation, useNavigate } from "react-router";
-import {useState} from 'react';
+import {useLocation, useNavigate} from "react-router";
+import React, {useEffect, useState} from 'react';
+import startCase from 'lodash/startCase'
+import {InfoOutlineIcon} from '@chakra-ui/icons'
+import {ObjectInput} from 'react-object-input'
+import {CodeEditor} from "./CodeEditor";
 
 const yaml = require("js-yaml")
 
+const KeyValueTable = (dataCallBack) => {
+    const [value, setValue] = useState({})
+    const clipboard = useClipboard(value);
+
+    useEffect(() => {
+        dataCallBack(JSON.stringify(value))
+        clipboard.setValue(JSON.stringify(value, null, 2))
+    }, [value])
+
+    const paste = async () => {
+        const clipboard = await window.navigator.clipboard.readText()
+        try {
+            const json = JSON.parse(clipboard)
+            setValue(json)
+        } catch (e) {
+            alert("Could not process the content in the clipboard. Please verify it's valid JSON")
+        }
+    }
+
+    return (
+        <Box
+            border="1px"
+            borderColor='gray.700'
+            borderRadius="7"
+            margin={"1px"}
+            padding={1}
+        >
+            <ObjectInput
+                obj={value}
+                onChange={setValue}
+                renderItem={(key, value, updateKey, updateValue, deleteProperty) => (
+                    <Box
+                        margin={1}
+                    >
+                        <HStack
+                            spacing={1}
+                            direction="row"
+                        >
+                            <InputGroup>
+                                <InputLeftAddon children='Key'/>
+                                <Input
+                                    type="text"
+                                    value={key}
+                                    onChange={e => updateKey(e.target.value)}
+                                    size="md"
+                                    variant='filled'
+                                />
+                            </InputGroup>
+
+                            <InputGroup>
+                                <InputLeftAddon children='Value'/>
+                                <Input
+                                    type="text"
+                                    value={value || " "} // value will be undefined for new rows
+                                    onChange={e => updateValue(e.target.value)}
+                                    size="md"
+                                    variant='filled'
+                                />
+                            </InputGroup>
+                            <Button
+                                onClick={deleteProperty}
+                            >
+                                x
+                            </Button>
+                        </HStack>
+                    </Box>
+                )}
+                renderAdd={addItem => <Button size={"sm"} margin={1} onClick={addItem}>Add item</Button>}
+                // renderEmpty={() => <p></p>}
+            />
+            <Button
+                margin={1}
+                size={"sm"}
+                onClick={clipboard.onCopy}
+            >
+                <Tooltip label="Copy as JSON">
+                    {clipboard.hasCopied ? "Copied!" : "Copy"}
+                </Tooltip>
+
+            </Button>
+            <Button
+                margin={1}
+                size={"sm"}
+                onClick={paste}
+            >
+                <Tooltip label='Paste as a JSON key value map, e.g. `{ "key_1": "value", "key_2": 1 }` '>
+                    Paste
+                </Tooltip>
+            </Button>
+        </Box>
+    )
+}
+
+const prettyPrintTypeSpecialCases = (type, arg) => {
+    if (type === "LIST") {
+        try {
+            const dataType = getType(arg)
+            if (dataType === undefined) return "LIST"
+            return `${dataType} LIST`.toLowerCase()
+        } catch (e) {
+            return "LIST".toLowerCase()
+        }
+    }
+    if (type === "DICT") {
+        try {
+            const x = getFirstSubType(arg)
+            const y = getSecondSubType(arg)
+            if (x === undefined || y === undefined) return "DICT"
+            return `${x} -> ${y}`.toLowerCase()
+        } catch (e) {
+            return "DICT".toLowerCase()
+        }
+    }
+    return type.toLowerCase()
+}
+
+const getArgName = (arg) => {
+    return arg["name"]
+}
+
+const getType = (arg) => {
+    return arg["typeV2"]["topLevelType"]
+}
+
+const getFirstSubType = (arg) => {
+    return arg["typeV2"]["innerType1"]
+}
+
+const getSecondSubType = (arg) => {
+    return arg["typeV2"]["innerType2"]
+}
+
+const isRequired = (arg) => {
+    return arg["isRequired"]
+}
+
 const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
-        let placeholder = "";
-        switch(arg.type) {
-            case "INTEGER":
-              placeholder = "INTEGER"
-              break;
-            case "STRING":
-                placeholder = "STRING"
-                break
-            case "BOOL":
-                placeholder = "BOOL"
-                break
-            case "FLOAT": 
-                placeholder = "FLOAT"
-                break
-            default:
-                placeholder = "JSON"
+
+        // no need to process plan arg as it's internal!
+        if (getArgName(arg) === "plan") {
+            return
         }
 
-        // no need to show plan arg as it's internal!
-        if (arg.name === "plan") {
-            return 
+        let dataType = "STRING";
+        try {
+            switch (getType(arg)) {
+                case "INTEGER":
+                    dataType = "INTEGER"
+                    break;
+                case "STRING":
+                    dataType = "STRING"
+                    break
+                case "BOOL":
+                    dataType = "BOOL"
+                    break
+                case "FLOAT":
+                    dataType = "FLOAT"
+                    break
+                case "DICT":
+                    dataType = "DICT"
+                    break
+                case "LIST":
+                    dataType = "LIST"
+                    break
+                default:
+                    dataType = "JSON"
+            }
+        } catch (e) {
+            console.log("no data type provided, falling back to string")
         }
-        
+
         return (
-            <Flex color={"white"}>
+            <Flex color={"white"} key={`entry-${index}`}>
                 <Flex mr="3" direction={"column"} w="15%">
-                    <Text align={"center"} fontSize={"xl"}> {arg.name} </Text>
-                    {arg.isRequired ? <Text align={"center"} fontSize={"s"} color="red.500"> Required</Text>: null}
+                    <Text marginLeft={3}
+                          align={"right"}
+                          fontSize={"l"}
+                    >
+                        {startCase(arg.name)}
+                        <Text
+                            fontSize={"l"}
+                            as="span"
+                            color={"red"}
+                        >
+                            <Tooltip label="Required variable">
+                                <span>{arg.isRequired ? " *" : null}</span>
+                            </Tooltip>
+
+                        </Text>
+                        <Tooltip label={arg.description}>
+                            <InfoOutlineIcon marginLeft={2}/>
+                        </Tooltip>
+
+                    </Text>
+                    <Text marginLeft={3} as='kbd' fontSize='xs'
+                          align={"right"}>{prettyPrintTypeSpecialCases(dataType, arg)}</Text>
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
-                {   errorData[index].length > 0 ? <Text align={"center"} fontSize={"s"} color="red.500"> {errorData[index]} </Text> : null}
-                    {
-                        ["INTEGER", "STRING", "BOOL", "FLOAT"].includes(placeholder) ? <Input placeholder={placeholder} color='gray.300' onChange={e => handleChange(e.target.value, index)} value={formData[index]} borderColor={errorData[index] ? "red.400": null}/> :
-                        <Textarea borderColor={errorData[index] ? "red.400": null} placeholder={placeholder} minHeight={"200px"} onChange={e => handleChange(e.target.value, index)} value={formData[index]}/>
-                    }   
+                    {errorData[index].length > 0 ?
+                        <Text marginLeft={3} align={"left"} fontSize={"xs"}
+                              color="red.500">
+                            {errorData[index]}
+                        </Text> : null
+                    }
+                    {renderSingleArg(arg.name, dataType, errorData, formData, index, handleChange)}
                 </Flex>
             </Flex>
         )
     })
 }
+
+const renderSingleArg = (fieldName, type, errorData, formData, index, handleChange) => {
+    switch (type) {
+        case "INTEGER":
+        case "STRING":
+        case "BOOL":
+        case "LIST":
+        case "FLOAT":
+            return (
+                <Input
+                    color='gray.300'
+                    onChange={e => handleChange(e.target.value, index)}
+                    value={formData[index]}
+                    borderColor={errorData[index] ? "red.400" : null}
+                />
+            )
+
+        case "JSON":
+            return (
+                <Box
+                    border={errorData[index] ? "1px" : null}
+                    borderColor={errorData[index] ? "red.400" : null}
+                >
+                    {CodeEditor(
+                        (data) => handleChange(data, index),
+                        false,
+                        fieldName,
+                    )}
+                </Box>
+            )
+        case "DICT":
+            return (
+                <Box
+                    border={errorData[index] ? "1px" : null}
+                    borderColor={errorData[index] ? "red.400" : null}
+                >
+                    {KeyValueTable((data) => handleChange(data, index))}
+                </Box>
+            )
+
+        default:
+            return <p key={`data-${index}`}>Unsupported data type encountered</p>
+    }
+}
+
 
 const checkValidUndefinedType = (data) => {
     try {
@@ -66,6 +289,19 @@ const checkValidUndefinedType = (data) => {
         return false;
     }
     return true;
+}
+
+const checkValidJsonType = (data) => {
+    if (data === undefined || data === "undefined" || data.length === 0) {
+        return false
+    }
+
+    try {
+        JSON.parse(data)
+        return true;
+    } catch (ex) {
+        return false
+    }
 }
 
 const checkValidStringType = (data) => {
@@ -97,13 +333,13 @@ const checkValidIntType = (data) => {
     try {
         const trimmedData = data.trim()
         return isNumeric(trimmedData)
-    } catch(ex) {
+    } catch (ex) {
         return false
     }
 }
 
 const checkValidFloatType = (data) => {
-    const  isValidFloat = (value) => {
+    const isValidFloat = (value) => {
         return !isNaN(Number(value))
     }
     if (data === "undefined") {
@@ -123,33 +359,91 @@ const checkValidBooleanType = (data) => {
     return ["TRUE", "FALSE"].includes(trimData.toUpperCase())
 }
 
-const PackageCatalogForm = ({handleCreateNewEnclave}) => {
+const checkValidListType = (data, subType) => {
+    if (data === "undefined") {
+        return false
+    }
+    try {
+        parseList(data, subType)
+        return true
+    } catch (ex) {
+        return false
+    }
+}
+
+
+// Referencing this list:
+// https://github.com/kurtosis-tech/kurtosis-package-indexer/blob/main/server/crawler/starlark_value_type.go#L25-L38
+// 		0: "BOOL",
+// 		1: "STRING",
+// 		2: "INTEGER",
+// 		3: "FLOAT",
+// 		4: "DICT",
+// 		5: "JSON",
+// 		6: "LIST",
+// 	}
+const convertDataTypeToJsType = (dataType) => {
+    const normalizedDataType = dataType.trim().toLowerCase()
+    switch (normalizedDataType) {
+        case "int":
+        case "integer":
+        case "float":
+            return "number"
+        case "str": // Added python type for good measure
+        case "string":
+            return "string"
+        case "bool":
+        case "boolean":
+            return "boolean"
+        case "dict":
+        case "json":
+            return "object"
+    }
+}
+
+const parseList = (data, rawDataType) => {
+    const dataType = rawDataType
+    const convertedDataType = convertDataTypeToJsType(dataType)
+    const trimData = data.trim()
+    const jsonData = `[${trimData}]`
+    const parsedJson = JSON.parse(jsonData)
+    parsedJson.forEach(item => {
+        const type = typeof item;
+        if (type !== convertedDataType) {
+            throw `Invalid datatype: Expected ${convertedDataType} but got ${type}`;
+        }
+    })
+    return parsedJson
+}
+
+const PackageCatalogForm = ({createEnclave}) => {
     const navigate = useNavigate()
     const location = useLocation()
     const {state} = location;
     const {kurtosisPackage} = state
+
     const [runningPackage, setRunningPackage] = useState(false)
     const [enclaveName, setEnclaveName] = useState("")
     const [productionMode, setProductionMode] = useState(false)
-    
+
     let initialFormData = {}
-    kurtosisPackage.args.map(
-        (arg, index)=> {
+    kurtosisPackage.args.forEach(
+        (arg, index) => {
             if (arg.name !== "plan") {
                 initialFormData[index] = ""
             }
         }
-     )
+    )
     const [formData, setFormData] = useState(initialFormData)
 
     let initialErrorData = {}
-    kurtosisPackage.args.map((arg, index)=> {
+    kurtosisPackage.args.forEach((arg, index) => {
         if (arg.name !== "plan") {
             initialErrorData[index] = ""
         }
     })
     const [errorData, setErrorData] = useState(initialErrorData)
-    
+
     const handleFormDataChange = (value, index) => {
         const newData = {
             ...formData,
@@ -169,19 +463,24 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
     const handleCancelBtn = () => {
         navigate("/catalog")
     }
-    
+
     const handleRunBtn = () => {
         let errorsFound = {}
 
         Object.keys(formData).filter(key => {
-            let type = kurtosisPackage.args[key]["type"]
-            const required = kurtosisPackage.args[key]["isRequired"]
+            const arg = kurtosisPackage.args[key]
+            let type = ""
+            try {
+                type = getType(arg)
+            } catch {
+            }
+            const required = isRequired(arg)
 
             // if it's optional and empty it's fine
             if (!required && formData[key].length === 0) {
                 return
             }
-            
+
             let valid = true
             if (type === "STRING") {
                 valid = checkValidStringType(formData[key])
@@ -191,33 +490,40 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 valid = checkValidBooleanType(formData[key])
             } else if (type === "FLOAT") {
                 valid = checkValidFloatType(formData[key])
+            } else if (type === "LIST") {
+                let subType = getFirstSubType(arg)
+                valid = checkValidListType(formData[key], subType)
+            } else if (type === "DICT") {
+                valid = checkValidJsonType(formData[key])
+            } else if (type === "JSON") {
+                valid = checkValidJsonType(formData[key])
             } else {
                 valid = checkValidUndefinedType(formData[key])
             }
 
-            let typeToPrint = type 
+            let typeToPrint = type
             if (type === undefined) {
                 typeToPrint = "JSON"
-            }
-            
-            if (type === "BOOL") {
+            } else if (type === "BOOL") {
                 typeToPrint = "BOOLEAN (TRUE/FALSE)"
+            } else {
+                typeToPrint = prettyPrintTypeSpecialCases(type, kurtosisPackage.args[key])
             }
 
             if (!valid) {
-                errorsFound[key] = `Incorrect type, expected ${typeToPrint}`;
+                errorsFound[key] = `Incorrect type: expected ${typeToPrint}`;
             }
         })
 
         Object.keys(formData).filter(key => {
+            const required = isRequired(kurtosisPackage.args[key])
             let valid = true;
-            const required = kurtosisPackage.args[key]["isRequired"]
             if (required) {
                 if (formData[key].length === 0) {
                     valid = false;
                 }
             }
-            
+
             if (!valid) {
                 errorsFound[key] = `This field is required and cannot be empty`;
             }
@@ -227,31 +533,37 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             setRunningPackage(true)
             let args = {}
             Object.keys(formData).map(key => {
-                const argName = kurtosisPackage.args[key].name
+                const arg = kurtosisPackage.args[key]
+                const argName = getArgName(arg)
+                let type = ""
+                try {
+                    type = getType(arg)
+                } catch {
+                }
                 const value = formData[key]
 
-                let val; 
-                let trimmedValue;
+                let val;
                 if (value.length > 0) {
-                    if (kurtosisPackage.args[key]["type"] === "INTEGER") {
-                        trimmedValue = value.trim()
+                    if (type === "INTEGER") {
                         val = parseInt(value)
                         args[argName] = val
-                    } else if (kurtosisPackage.args[key]["type"] === "BOOL") {
-                        trimmedValue = value.trim()
+                    } else if (type === "BOOL") {
                         val = value.toUpperCase()
                         args[argName] = (val === "TRUE") ? true : false
-                    } else if (kurtosisPackage.args[key]["type"] === "FLOAT") {
-                        trimmedValue = value.trim()
+                    } else if (type === "FLOAT") {
                         val = parseFloat(value)
                         args[argName] = val
-                    } else if (kurtosisPackage.args[key]["type"] === "STRING") {
+                    } else if (type === "LIST") {
+                        let subType = getFirstSubType(kurtosisPackage, key)
+                        val = parseList(value, subType)
+                        args[argName] = val
+                    } else if (type === "STRING") {
                         args[argName] = value
                     } else {
                         val = JSON.parse(value)
                         args[argName] = val
                     }
-                }    
+                }
             })
 
             const stringifiedArgs = JSON.stringify(args)
@@ -260,15 +572,20 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 args: stringifiedArgs,
             }
 
-            handleCreateNewEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
+            handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
 
         } else {
-           const newErrorData = {
-            ...errorData,
-            ...errorsFound
-           }
-           setErrorData(newErrorData)
+            const newErrorData = {
+                ...errorData,
+                ...errorsFound
+            }
+            setErrorData(newErrorData)
         }
+    }
+
+    const handleCreateEnclave = async (runKurtosisPackageArgs, enclaveName, productionMode) => {
+        await createEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
+        setRunningPackage(false)
     }
 
     return (
@@ -287,34 +604,50 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 gap={2}
             >
                 <GridItem area={'option'} pt="1">
-                    <PackageCatalogOption catalog={true} />
+                    <PackageCatalogOption catalog={true}/>
                 </GridItem>
                 <GridItem area={'packageId'} p="1">
                     <Flex direction={"column"} gap={"2"}>
                         <Center>
-                            <Text color={"white"} fontSize={"4xl"}> {kurtosisPackage.name} </Text>
-                         </Center>
-                         <Center>
-                            <Checkbox color={"white"} fontSize={"2xl"} isChecked={productionMode} onChange={(e)=>setProductionMode(e.target.checked)}> 
-                                <Text color={"white"} fontSize={"xl"} textAlign={"justify-center"}> 
-                                    Production Mode 
-                                </Text>
-                            </Checkbox>
+                            <Text color={"white"} fontSize={"2xl"}> {kurtosisPackage.name} </Text>
                         </Center>
+                        <Checkbox
+                            marginLeft={2}
+                            color={"white"}
+                            fontSize={"xl"}
+                            isChecked={productionMode}
+                            onChange={(e) => setProductionMode(e.target.checked)}
+                        >
+                            <Text>
+                                Restart services
+                                <Tooltip
+                                    label="When enabled, Kurtosis will automatically restart any services that crash inside the enclave">
+                                    <InfoOutlineIcon marginLeft={2}/>
+                                </Tooltip>
+
+                            </Text>
+                        </Checkbox>
                     </Flex>
                 </GridItem>
-                <GridItem area={'main'} h="90%" overflowY={"scroll"} mt="10"> 
+                <GridItem area={'main'} h="90%" overflowY={"scroll"} mt="10">
                     <Stack spacing={4}>
                         <Flex color={"white"}>
                             <Flex mr="3" direction={"column"} w="15%">
-                                <Text align={"center"} fontSize={"xl"}> Enclave Name </Text>
+                                <Text
+                                    marginLeft={3}
+                                    align={"right"}
+                                    fontSize={"l"}
+                                >Enclave Name
+                                    <Tooltip label="Leave empty to auto-generate an enclave name">
+                                        <InfoOutlineIcon marginLeft={2}/>
+                                    </Tooltip>
+                                </Text>
                             </Flex>
                             <Flex flex="1" mr="3" direction={"column"}>
-                                <Input 
-                                    placeholder={"IF NOT PROVIDED, THIS WILL BE GENERATED AUTOMATICALLY"} 
-                                    color='gray.300' 
+                                <Input
+                                    color='gray.300'
                                     value={enclaveName}
-                                    onChange={(e)=>setEnclaveName(e.target.value)}
+                                    onChange={(e) => setEnclaveName(e.target.value)}
                                 />
                             </Flex>
                         </Flex>
@@ -337,10 +670,5 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             </Grid>
         </div>
     );
-  };
-  export default PackageCatalogForm;
-
-
-
-
-
+};
+export default PackageCatalogForm;

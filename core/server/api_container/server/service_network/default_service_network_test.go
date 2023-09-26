@@ -8,7 +8,6 @@ package service_network
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"net"
 	"net/netip"
 	"os"
@@ -16,8 +15,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container_status"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -65,7 +66,7 @@ func TestAddService_Successful(t *testing.T) {
 	serviceUuid := testServiceUuidFromInt(serviceInternalTestId)
 	successfulServiceIp := testIpFromInt(serviceInternalTestId)
 	serviceRegistration := service.NewServiceRegistration(serviceName, serviceUuid, enclaveName, successfulServiceIp, string(serviceName))
-	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
+	serviceObj := service.NewService(serviceRegistration, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{}, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil))
 	serviceConfig := testServiceConfig(testContainerImageName)
 
 	file, err := os.CreateTemp("/tmp", "*.db")
@@ -240,7 +241,7 @@ func TestAddServices_Success(t *testing.T) {
 	successfulServiceUuid := testServiceUuidFromInt(successfulServiceIndex)
 	successfulServiceIp := testIpFromInt(successfulServiceIndex)
 	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceName, successfulServiceUuid, enclaveName, successfulServiceIp, string(successfulServiceName))
-	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
+	successfulService := service.NewService(successfulServiceRegistration, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{}, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil))
 	successfulServiceConfig := testServiceConfig(testContainerImageName)
 
 	file, err := os.CreateTemp("/tmp", "*.db")
@@ -325,7 +326,7 @@ func TestAddServices_FailureRollsBackTheEntireBatch(t *testing.T) {
 	successfulServiceUuid := testServiceUuidFromInt(successfulServiceIndex)
 	successfulServiceIp := testIpFromInt(successfulServiceIndex)
 	successfulServiceRegistration := service.NewServiceRegistration(successfulServiceName, successfulServiceUuid, enclaveName, successfulServiceIp, string(successfulServiceName))
-	successfulService := service.NewService(successfulServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
+	successfulService := service.NewService(successfulServiceRegistration, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{}, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil))
 	successfulServiceConfig := testServiceConfig(testContainerImageName)
 
 	// One service will fail to be started
@@ -705,7 +706,7 @@ func TestStartService_Successful(t *testing.T) {
 	serviceRegistration.SetStatus(service.ServiceStatus_Stopped)
 	serviceConfig := testServiceConfig(testContainerImageName)
 	serviceRegistration.SetConfig(serviceConfig)
-	serviceObj := service.NewService(serviceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{})
+	serviceObj := service.NewService(serviceRegistration, map[string]*port_spec.PortSpec{}, successfulServiceIp, map[string]*port_spec.PortSpec{}, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil))
 
 	file, err := os.CreateTemp("/tmp", "*.db")
 	defer os.Remove(file.Name())
@@ -946,7 +947,7 @@ func TestUpdateService(t *testing.T) {
 	)
 
 	// The services will then be re-created
-	serviceObj := service.NewService(existingServiceRegistration, container_status.ContainerStatus_Running, map[string]*port_spec.PortSpec{}, existingServiceIp, map[string]*port_spec.PortSpec{})
+	serviceObj := service.NewService(existingServiceRegistration, map[string]*port_spec.PortSpec{}, existingServiceIp, map[string]*port_spec.PortSpec{}, container.NewContainer(container.ContainerStatus_Running, "", nil, nil, nil))
 	backend.EXPECT().StartRegisteredUserServices(
 		ctx,
 		enclaveName,
