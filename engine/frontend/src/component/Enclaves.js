@@ -1,18 +1,21 @@
 import {useNavigate} from "react-router-dom";
 import NoData from "./NoData";
 import LoadingOverlay from "./LoadingOverflow";
-import {removeEnclave} from "../api/enclave";
-import { useEffect, useRef, useState} from "react";
-import { Grid, GridItem, Center, Button, useDisclosure, Text } from '@chakra-ui/react'
-
+import {useRef, useState} from "react";
 import {
     AlertDialog,
     AlertDialogBody,
+    AlertDialogContent,
     AlertDialogFooter,
     AlertDialogHeader,
-    AlertDialogContent,
     AlertDialogOverlay,
-  } from '@chakra-ui/react'
+    Button,
+    Center,
+    Grid,
+    GridItem,
+    Text,
+    useDisclosure
+} from '@chakra-ui/react'
 
 const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveName, setEnclaveName, handleDeleteClick}) => {
     const [deleting, setDeleting] = useState(false);
@@ -70,7 +73,7 @@ const Enclave = ({name, status, created, handleClick, handleDeleteClick, onOpen,
             className={`h-48 rounded-md border-4 ${backgroundColor} text-white items-center justify-center text-2xl`}
             onClick={() => handleClick(name)}
         >
-            <GridItem colSpan={4} align={"right"} style={{"z-index":100}}>
+            <GridItem colSpan={4} align={"right"} style={{"zIndex":100}}>
                 <Button bg="red.600" _hover={{ bg: "red.700"}} color="white" mr="2" onClick={(e)=> {
                     e.stopPropagation()
                     setEnclaveName(name)
