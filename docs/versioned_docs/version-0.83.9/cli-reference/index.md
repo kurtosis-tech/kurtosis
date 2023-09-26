@@ -133,4 +133,4 @@ Caused by: stat ../../../per/other/submodul/: no such file or directory
 <!-------------------- ONLY LINKS BELOW THIS POINT ----------------------->
 [adding-command-line-completion]: ../guides/adding-command-line-completion.md
 [installing-the-cli]: ../guides/installing-the-cli.md
-[sdk-reference]: ../runtime-sdk-reference.md
+[sdk-reference]: ../engine-apic-reference.md
