@@ -412,7 +412,7 @@ func (backend *DockerKurtosisBackend) getMatchingEnclaveNetworkInfo(
 	ctx context.Context,
 	filters *enclave.EnclaveFilters,
 ) (
-// Keyed by network ID
+	// Keyed by network ID
 	map[enclave.EnclaveUUID]*matchingNetworkInformation,
 	error,
 ) {
