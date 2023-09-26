@@ -103,12 +103,11 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 		cmdOutput, err := cmd.CombinedOutput()
 		if err != nil {
 			if exitError, ok := err.(*exec.ExitError); ok {
+				fmt.Println(string(cmdOutput))
 				switch exitError.ExitCode() {
 				case linterFailedAsThingsNeedToBeReformattedExitCode:
-					fmt.Println(string(cmdOutput))
 					return stacktrace.NewError("linting failed, this means that there are some files that need to be formatted, run this command with the '--%v' flag", formatFlagKey)
 				case linterFailedWithInternalErrorsExitCode:
-					fmt.Println(string(cmdOutput))
 					return stacktrace.NewError("linting failed with an internal error please look at the output to see why; usually this happens if there's a mix of spaces & tabs")
 				default:
 					return stacktrace.Propagate(err, "linting failed with an unexpected exit code '%v'; This is a bug in Kurtosis", exitError.ExitCode())
