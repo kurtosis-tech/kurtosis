@@ -6,7 +6,7 @@ module.exports = {
     theme: {
         extend: {
             colors: {
-                'kurtosis-background': '#181926',
+                'kurtosis-background': '#171923',
             },
             minHeight: {
                 '1/2': '50%',
