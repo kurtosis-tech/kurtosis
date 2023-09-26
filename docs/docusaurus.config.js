@@ -75,12 +75,6 @@ const config = {
         },
         items: [
           {
-            to: '/quickstart-run-a-package',
-            position: 'left',
-            label: 'Quickstart',
-            activeBasePath: '/quickstart-run-a-package'
-          },
-          {
             to: '/cli',
             position: 'left',
             label: 'CLI',
