@@ -1740,11 +1740,6 @@ func (manager *DockerManager) getContainersByFilterArgs(ctx context.Context, fil
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new containers list from Docker containers list")
 	}
-
-	for _, abd := range containers {
-		logrus.Infof("YELLO: Id: %v, Env: %v", abd.GetName(), abd.GetEnvVars())
-	}
-
 	return containers, nil
 }
 
