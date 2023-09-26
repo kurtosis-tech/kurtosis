@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.83.9](https://github.com/kurtosis-tech/kurtosis/compare/0.83.8...0.83.9) (2023-09-26)
+
+
+### Bug Fixes
+
+* rebuild with type bug fix ([#1385](https://github.com/kurtosis-tech/kurtosis/issues/1385)) ([14840b7](https://github.com/kurtosis-tech/kurtosis/commit/14840b73509ddbf6ea4729a20703ea0d77c08da9))
+* restart log aggregator on failure ([#1371](https://github.com/kurtosis-tech/kurtosis/issues/1371)) ([7f171ce](https://github.com/kurtosis-tech/kurtosis/commit/7f171ce678ee8915d17c30262930365428d9a4f8))
+
 ## [0.83.8](https://github.com/kurtosis-tech/kurtosis/compare/0.83.7...0.83.8) (2023-09-26)
 
 
