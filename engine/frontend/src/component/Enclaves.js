@@ -89,12 +89,12 @@ const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveToDelete, setEncl
                             <Input onChange={(e) => handleInputChange(e.target.value)} isInvalid={error} borderColor={"black"} color={"black"}/>
                             <FormHelperText color={error ? "red.600" : "black"} fontSize={"sm"}> 
                                 {error ? 
-                                    "Please make sure that the input matches the enclave name" : 
-                                    "Please enter the enclave name to delete the enclave."
+                                    "Please verify that the input matches the enclave name" : 
+                                    "Enter the enclave name to delete the enclave"
                                 } 
                             </FormHelperText>
                         </FormControl> : 
-                        <Text> Are you you want to delete: {enclaveName} </Text>
+                        <Text> Are you sure? You can't undo this action afterwards. </Text>
                 }
                 
             </AlertDialogBody>
