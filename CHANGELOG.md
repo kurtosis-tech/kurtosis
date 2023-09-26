@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.83.8](https://github.com/kurtosis-tech/kurtosis/compare/0.83.7...0.83.8) (2023-09-26)
+
+
+### Bug Fixes
+
+* handle missing arg types ([#1373](https://github.com/kurtosis-tech/kurtosis/issues/1373)) ([5cfea2a](https://github.com/kurtosis-tech/kurtosis/commit/5cfea2a0c62165193d258ad8d5bba48e06d4f5fb))
+* Relative import breaks for 'non-main branchs' ([#1364](https://github.com/kurtosis-tech/kurtosis/issues/1364)) ([5496082](https://github.com/kurtosis-tech/kurtosis/commit/549608269f21b2bf886c92263ee60989dc9fb4e1)), closes [#1361](https://github.com/kurtosis-tech/kurtosis/issues/1361)
+
 ## [0.83.7](https://github.com/kurtosis-tech/kurtosis/compare/0.83.6...0.83.7) (2023-09-25)
 
 
