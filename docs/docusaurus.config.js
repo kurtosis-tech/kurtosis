@@ -75,29 +75,6 @@ const config = {
         },
         items: [
           {
-            to: '/quickstart',
-            position: 'left',
-            label: 'Quickstart',
-            activeBasePath: '/quickstart'
-          },
-          {
-            to: '/cli',
-            position: 'left',
-            label: 'CLI',
-            activeBasePath: '/cli'
-          },
-          {
-            to: '/starlark-reference',
-            position: 'left',
-            label: 'Starlark',
-            activeBasePath: '/sdk'
-          },
-          {
-            href: 'https://web3.kurtosis.com',
-            position: 'left',
-            label: 'Kurtosis for Web3',
-          },
-          {
             type: 'docsVersionDropdown',
             position: 'right',
             dropdownActiveClassDisabled: true,

@@ -28,7 +28,14 @@ Kurtosis shines when creating, working with, and destroying self-contained distr
 - You're the author of a containerized service or distributed application and you want to give your users a one-liner to try it
 - You want to get an instance of your application running in the cloud without provisioning or administering a Kubernetes cluster
 
+<<<<<<< HEAD
 If you're in web3, we have even more specific web3 usecases [here](https://web3.kurtosis.com).
+=======
+In Kurtosis, containerized environments have these properties:
+- Environment-level portability: the entire test environment always runs the same way, regardless of the host machine
+- Composability: environments can be composed and connected together without needing to know the inner details of each setup
+- Parameterizability: environments can be parameterized, so that they're easy to modify for use across different test scenarios
+>>>>>>> main
 
 ## Architecture
 
@@ -48,7 +55,7 @@ If you're in web3, we have even more specific web3 usecases [here](https://web3.
 
 ## Try out Kurtosis now
 
-Try Kurtosis now with our [quickstart](./quickstart.md).
+Try Kurtosis now with our [quickstart](./quickstart-consumer.md).
 
 :::info
 If you have questions, need help, or simply want to learn more, schedule a live session with us, go [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
