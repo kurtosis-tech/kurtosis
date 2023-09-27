@@ -220,14 +220,14 @@ func (interpreter *StartosisInterpreter) Interpret(
 	defer interpreter.mutex.Unlock()
 	newInstructionsPlan := instructions_plan.NewInstructionsPlan()
 	logrus.Debugf("Interpreting package '%v' with contents '%v' and params '%v'", packageId, serializedStarlark, serializedJsonParams)
-	moduleLocator := packageId
+	moduleAbsoluteLocator := packageId
 	if packageId != startosis_constants.PackageIdPlaceholderForStandaloneScript {
-		moduleLocator = path.Join(moduleLocator, relativePathtoMainFile)
+		moduleAbsoluteLocator = path.Join(moduleAbsoluteLocator, relativePathtoMainFile)
 	}
 
 	// we use a new cache for every interpretation b/c the content of the module might have changed
 	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
-	globalVariables, interpretationErr := interpreter.interpretInternal(packageId, moduleLocator, serializedStarlark, newInstructionsPlan, moduleGlobalCache)
+	globalVariables, interpretationErr := interpreter.interpretInternal(packageId, moduleAbsoluteLocator, serializedStarlark, newInstructionsPlan, moduleGlobalCache)
 	if interpretationErr != nil {
 		return startosis_constants.NoOutputObject, nil, interpretationErr.ToAPIType()
 	}
@@ -251,8 +251,8 @@ func (interpreter *StartosisInterpreter) Interpret(
 		return startosis_constants.NoOutputObject, nil, missingMainFunctionError(packageId, mainFunctionName)
 	}
 
-	logrus.Infof("[LEO-DEBUG] justo antes de crear el nuevo thread, moduleLcoator: %s", moduleLocator)
-	runFunctionExecutionThread := newStarlarkThread(moduleLocator)
+	logrus.Infof("[LEO-DEBUG] justo antes de crear el nuevo thread, moduleLcoator: %s", moduleAbsoluteLocator)
+	runFunctionExecutionThread := newStarlarkThread(moduleAbsoluteLocator)
 
 	var argsTuple starlark.Tuple
 	var kwArgs []starlark.Tuple
@@ -314,22 +314,22 @@ func (interpreter *StartosisInterpreter) Interpret(
 	return startosis_constants.NoOutputObject, newInstructionsPlan, nil
 }
 
-func (interpreter *StartosisInterpreter) interpretInternal(packageId string, moduleLocator string, serializedStarlark string, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) interpretInternal(packageId string, moduleAbsoluteLocator string, serializedStarlark string, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (starlark.StringDict, *startosis_errors.InterpretationError) {
 	// We spin up a new thread for every call to interpreterInternal such that the stacktrace provided by the Starlark
 	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
 	// previous calls inside the same thread
 	// The thread name is set to the locator of the module so that we can use it to resolve relative paths
 	logrus.Infof("[LEO-DEBUG] packageId: %s", packageId)
-	logrus.Infof("[LEO-DEBUG] moduleLocator: %s", moduleLocator)
+	logrus.Infof("[LEO-DEBUG] moduleAbsoluteLocator: %s", moduleAbsoluteLocator)
 
-	thread := newStarlarkThread(moduleLocator)
+	thread := newStarlarkThread(moduleAbsoluteLocator)
 	logrus.Infof("[LEO-DEBUG] thread: %p", thread)
-	predeclared, interpretationErr := interpreter.buildBindings(packageId, moduleLocator, thread, instructionPlan, moduleGlobalCache)
+	predeclared, interpretationErr := interpreter.buildBindings(packageId, moduleAbsoluteLocator, thread, instructionPlan, moduleGlobalCache)
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}
 
-	globalVariables, err := starlark.ExecFile(thread, moduleLocator, serializedStarlark, *predeclared)
+	globalVariables, err := starlark.ExecFile(thread, moduleAbsoluteLocator, serializedStarlark, *predeclared)
 	if err != nil {
 		return nil, generateInterpretationError(err)
 	}
@@ -337,12 +337,12 @@ func (interpreter *StartosisInterpreter) interpretInternal(packageId string, mod
 	return globalVariables, nil
 }
 
-func (interpreter *StartosisInterpreter) buildBindings(packageId string, moduleLocator string, thread *starlark.Thread, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (*starlark.StringDict, *startosis_errors.InterpretationError) {
-	recursiveInterpretForModuleLoading := func(packageId string, moduleId string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
+func (interpreter *StartosisInterpreter) buildBindings(packageId string, moduleAbsoluteLocator string, thread *starlark.Thread, instructionPlan *instructions_plan.InstructionsPlan, moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry) (*starlark.StringDict, *startosis_errors.InterpretationError) {
+	recursiveInterpretForModuleLoading := func(packageId string, moduleAbsoluteLocator string, serializedStartosis string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		logrus.Infof("[LEO-DEBUG] executing the recursive func packageId: %s", packageId)
-		logrus.Infof("[LEO-DEBUG] executing the recursive func moduleId: %s", moduleId)
+		logrus.Infof("[LEO-DEBUG] executing the recursive func moduleAbsoluteLocator: %s", moduleAbsoluteLocator)
 		packageId = ""
-		result, err := interpreter.interpretInternal(packageId, moduleId, serializedStartosis, instructionPlan, moduleGlobalCache)
+		result, err := interpreter.interpretInternal(packageId, moduleAbsoluteLocator, serializedStartosis, instructionPlan, moduleGlobalCache)
 		if err != nil {
 			return nil, err
 		}
@@ -359,7 +359,7 @@ func (interpreter *StartosisInterpreter) buildBindings(packageId string, moduleL
 	predeclared[builtins.KurtosisModuleName] = kurtosisModule
 
 	// Add all Kurtosis helpers
-	for _, kurtosisHelper := range KurtosisHelpers(packageId, moduleLocator, recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, moduleGlobalCache) {
+	for _, kurtosisHelper := range KurtosisHelpers(packageId, moduleAbsoluteLocator, recursiveInterpretForModuleLoading, interpreter.moduleContentProvider, moduleGlobalCache) {
 		predeclared[kurtosisHelper.Name()] = kurtosisHelper
 	}
 

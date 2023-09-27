@@ -17,7 +17,7 @@ const (
 	SrcArgName = "src"
 )
 
-func NewReadFileHelper(packageId string, locatorOfModuleInWhichThisBuiltInIsBeingCalled string, packageContentProvider startosis_packages.PackageContentProvider) *kurtosis_helper.KurtosisHelper {
+func NewReadFileHelper(packageId string, moduleAbsoluteLocator string, packageContentProvider startosis_packages.PackageContentProvider) *kurtosis_helper.KurtosisHelper {
 	return &kurtosis_helper.KurtosisHelper{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: ReadFileBuiltinName,
@@ -47,17 +47,18 @@ func NewReadFileHelper(packageId string, locatorOfModuleInWhichThisBuiltInIsBein
 		},
 
 		Capabilities: &readFileCapabilities{
-			packageContentProvider:                         packageContentProvider,
-			locatorOfModuleInWhichThisBuiltInIsBeingCalled: locatorOfModuleInWhichThisBuiltInIsBeingCalled,
+			packageContentProvider: packageContentProvider,
+			moduleAbsoluteLocator:  moduleAbsoluteLocator,
 		},
 	}
 }
 
 type readFileCapabilities struct {
-	packageContentProvider                         startosis_packages.PackageContentProvider
-	locatorOfModuleInWhichThisBuiltInIsBeingCalled string
+	packageContentProvider startosis_packages.PackageContentProvider
+	moduleAbsoluteLocator  string //this is the module absolute locator in which this builtin is being called
 }
 
+// TODO ignore locatorOfModuleInWhichThisBuiltInIsBeingCalled parameter
 func (builtin *readFileCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	logrus.Infof("[LEO-DEBUG] locatorOfModuleInWhichThisBuiltInIsBeingCalled: %s", locatorOfModuleInWhichThisBuiltInIsBeingCalled)
 	srcValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, SrcArgName)
@@ -65,13 +66,13 @@ func (builtin *readFileCapabilities) Interpret(locatorOfModuleInWhichThisBuiltIn
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for arg '%s'", srcValue)
 	}
 	fileToReadStr := srcValue.GoString()
-	logrus.Infof("[LEO-DEBUG] builtin locatorOfModuleInWhichThisBuiltInIsBeingCalled: %s", builtin.locatorOfModuleInWhichThisBuiltInIsBeingCalled)
+	logrus.Infof("[LEO-DEBUG] builtin moduleAbsoluteLocator: %s", builtin.moduleAbsoluteLocator)
 	logrus.Infof("[LEO-DEBUG] fileToReadStr before absolute resolution: %s", fileToReadStr)
-	fileToReadStr, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(builtin.locatorOfModuleInWhichThisBuiltInIsBeingCalled, fileToReadStr)
+	fileToReadStr, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(builtin.moduleAbsoluteLocator, fileToReadStr)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}
-	logrus.Infof("[LEO-DEBUG] fileToReadStr: %s", fileToReadStr)
+	logrus.Infof("[LEO-DEBUG] absolute fileToReadStr: %s", fileToReadStr)
 	packageContent, interpretationErr := builtin.packageContentProvider.GetModuleContents(fileToReadStr)
 	if interpretationErr != nil {
 		return nil, interpretationErr
