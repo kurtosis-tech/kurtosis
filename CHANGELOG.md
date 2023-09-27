@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.83.10](https://github.com/kurtosis-tech/kurtosis/compare/0.83.9...0.83.10) (2023-09-27)
+
+
+### Features
+
+* disable scrollbar, remove line highlighting, set background color ([#1408](https://github.com/kurtosis-tech/kurtosis/issues/1408)) ([1ffdf10](https://github.com/kurtosis-tech/kurtosis/commit/1ffdf10e985b48e2cacc1f595590115a33f5834e)), closes [#1391](https://github.com/kurtosis-tech/kurtosis/issues/1391)
+* return the production enclave information if present via GetEnclaves API ([#1395](https://github.com/kurtosis-tech/kurtosis/issues/1395)) ([ef22820](https://github.com/kurtosis-tech/kurtosis/commit/ef22820cad6d98a784bb263435f3dd6e2bbbe31a))
+
+
+### Bug Fixes
+
+* add scrollbar ([#1400](https://github.com/kurtosis-tech/kurtosis/issues/1400)) ([40aba1d](https://github.com/kurtosis-tech/kurtosis/commit/40aba1ded6ac9b889486c6045332f1bb060ddea8)), closes [#1390](https://github.com/kurtosis-tech/kurtosis/issues/1390)
+* bring back args ([#1397](https://github.com/kurtosis-tech/kurtosis/issues/1397)) ([3e1c318](https://github.com/kurtosis-tech/kurtosis/commit/3e1c3188f58a91eb6428ddf17dfa95a0040551c3))
+* text off center ([#1407](https://github.com/kurtosis-tech/kurtosis/issues/1407)) ([d845764](https://github.com/kurtosis-tech/kurtosis/commit/d8457640597696d6bfcd6c6e9f12864176bb8b35)), closes [#1406](https://github.com/kurtosis-tech/kurtosis/issues/1406)
+
 ## [0.83.9](https://github.com/kurtosis-tech/kurtosis/compare/0.83.8...0.83.9) (2023-09-26)
 
 
