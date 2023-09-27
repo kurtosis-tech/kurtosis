@@ -1,12 +1,5 @@
 # Changelog
 
-## [0.83.11](https://github.com/kurtosis-tech/kurtosis/compare/0.83.10...0.83.11) (2023-09-27)
-
-
-### Bug Fixes
-
-* make linter work with individual files ([#1378](https://github.com/kurtosis-tech/kurtosis/issues/1378)) ([edcd8c8](https://github.com/kurtosis-tech/kurtosis/commit/edcd8c8c9ebc0a46612739fdc97bee772e011f12))
-
 ## [0.83.10](https://github.com/kurtosis-tech/kurtosis/compare/0.83.9...0.83.10) (2023-09-27)
 
 
