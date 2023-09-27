@@ -49,7 +49,7 @@ export const CreateEnclaveModal = ({enclaveName, handleSubmit, name, setName, ar
         </label>
         <label className="block mb-4 text-2xl text-black space-x-2">
             <Checkbox colorScheme='blue' border={'black'} isChecked={productionMode} onChange={(e)=>setProductionMode(e.target.checked)}> 
-                <div class="text-xl text-black"> Production Mode </div>
+                <div className="text-xl text-black"> Production Mode </div>
             </Checkbox>
         </label>
         <label className="block mb-4 text-2xl text-black">

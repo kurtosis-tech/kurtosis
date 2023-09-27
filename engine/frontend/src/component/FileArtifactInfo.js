@@ -34,9 +34,9 @@ const BreadCrumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
             {
                 currentPath.length > 0 ?
                     <div className="mx-3" onClick={handleCleanButton}>
-                        <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+                        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
                              stroke="currentColor" aria-hidden="true">
-                            <path color="gray" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            <path color="gray" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
                                   d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </div> : null
@@ -46,9 +46,11 @@ const BreadCrumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
 }
 
 const renderFileArtfiacts = (fileArtifacts, handleClick) => {
-    return fileArtifacts.map(fileArtifact => {
+    return fileArtifacts.map((fileArtifact, index) => {
+        const key = `${fileArtifact.name}-${index}`
         return (
-            <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={fileArtifact.name}
+            <div key={key}
+                className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`}
                  onClick={() => handleClick(fileArtifact.name)}>
                 <div className='cursor-default text-lg text-white'> {fileArtifact.name} </div>
             </div>
@@ -67,9 +69,11 @@ const renderFiles = (files, handleFileClick) => {
         )
     }
 
-    return Object.keys(files).map((key) => {
+    return Object.keys(files).map((key, index) => {
+        const objKey = `${key}-${index}`
         return (
-            <div className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
+            <div key={objKey}
+                className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
                  onClick={() => handleFileClick(key, files[key])}
             >
                 <div> {key} </div>
@@ -168,7 +172,7 @@ const FileArtifactInfo = ({enclaves}) => {
 
     const FileInfoComponent = ({files, handleFileClick, detailInfo, fileName}) => {
         return (
-            <div className='flex flex-col h-[90%] space-y-1 overflow-auto'>
+            <div className='flex flex-col h-full space-y-1 overflow-auto'>
                 {
                     (Object.keys(detailInfo).length !== 0) ?
                         <div className="flex h-3/4 flex-col text-white">
