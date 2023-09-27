@@ -165,32 +165,36 @@ const renderArgs = (args, handleChange, formData, errorData) => {
     return args.map((arg, index) => {
 
         // no need to process plan arg as it's internal!
-        if (arg["name"] === "plan") {
+        if (getArgName(arg) === "plan") {
             return
         }
 
-        let dataType = "";
-        switch (arg["typeV2"]["topLevelType"]) {
-            case "INTEGER":
-                dataType = "INTEGER"
-                break;
-            case "STRING":
-                dataType = "STRING"
-                break
-            case "BOOL":
-                dataType = "BOOL"
-                break
-            case "FLOAT":
-                dataType = "FLOAT"
-                break
-            case "DICT":
-                dataType = "DICT"
-                break
-            case "LIST":
-                dataType = "LIST"
-                break
-            default:
-                dataType = "JSON"
+        let dataType = "STRING";
+        try {
+            switch (getType(arg)) {
+                case "INTEGER":
+                    dataType = "INTEGER"
+                    break;
+                case "STRING":
+                    dataType = "STRING"
+                    break
+                case "BOOL":
+                    dataType = "BOOL"
+                    break
+                case "FLOAT":
+                    dataType = "FLOAT"
+                    break
+                case "DICT":
+                    dataType = "DICT"
+                    break
+                case "LIST":
+                    dataType = "LIST"
+                    break
+                default:
+                    dataType = "JSON"
+            }
+        } catch (e) {
+            console.log("no data type provided, falling back to string")
         }
 
         return (
@@ -412,7 +416,7 @@ const parseList = (data, rawDataType) => {
     return parsedJson
 }
 
-const PackageCatalogForm = ({handleCreateNewEnclave}) => {
+const PackageCatalogForm = ({createEnclave}) => {
     const navigate = useNavigate()
     const location = useLocation()
     const {state} = location;
@@ -465,7 +469,11 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
 
         Object.keys(formData).filter(key => {
             const arg = kurtosisPackage.args[key]
-            const type = getType(arg)
+            let type = ""
+            try {
+                type = getType(arg)
+            } catch {
+            }
             const required = isRequired(arg)
 
             // if it's optional and empty it's fine
@@ -527,7 +535,11 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             Object.keys(formData).map(key => {
                 const arg = kurtosisPackage.args[key]
                 const argName = getArgName(arg)
-                const type = getType(arg)
+                let type = ""
+                try {
+                    type = getType(arg)
+                } catch {
+                }
                 const value = formData[key]
 
                 let val;
@@ -560,7 +572,7 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
                 args: stringifiedArgs,
             }
 
-            handleCreateNewEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
+            handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
 
         } else {
             const newErrorData = {
@@ -569,6 +581,11 @@ const PackageCatalogForm = ({handleCreateNewEnclave}) => {
             }
             setErrorData(newErrorData)
         }
+    }
+
+    const handleCreateEnclave = async (runKurtosisPackageArgs, enclaveName, productionMode) => {
+        await createEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
+        setRunningPackage(false)
     }
 
     return (

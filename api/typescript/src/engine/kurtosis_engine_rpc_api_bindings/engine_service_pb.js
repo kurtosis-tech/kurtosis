@@ -1345,7 +1345,8 @@ proto.engine_api.EnclaveInfo.toObject = function(includeInstance, msg) {
     apiContainerStatus: jspb.Message.getFieldWithDefault(msg, 5, 0),
     apiContainerInfo: (f = msg.getApiContainerInfo()) && proto.engine_api.EnclaveAPIContainerInfo.toObject(includeInstance, f),
     apiContainerHostMachineInfo: (f = msg.getApiContainerHostMachineInfo()) && proto.engine_api.EnclaveAPIContainerHostMachineInfo.toObject(includeInstance, f),
-    creationTime: (f = msg.getCreationTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f)
+    creationTime: (f = msg.getCreationTime()) && google_protobuf_timestamp_pb.Timestamp.toObject(includeInstance, f),
+    mode: jspb.Message.getFieldWithDefault(msg, 9, 0)
   };
 
   if (includeInstance) {
@@ -1416,6 +1417,10 @@ proto.engine_api.EnclaveInfo.deserializeBinaryFromReader = function(msg, reader)
       var value = new google_protobuf_timestamp_pb.Timestamp;
       reader.readMessage(value,google_protobuf_timestamp_pb.Timestamp.deserializeBinaryFromReader);
       msg.setCreationTime(value);
+      break;
+    case 9:
+      var value = /** @type {!proto.engine_api.EnclaveMode} */ (reader.readEnum());
+      msg.setMode(value);
       break;
     default:
       reader.skipField();
@@ -1503,6 +1508,13 @@ proto.engine_api.EnclaveInfo.serializeBinaryToWriter = function(message, writer)
       8,
       f,
       google_protobuf_timestamp_pb.Timestamp.serializeBinaryToWriter
+    );
+  }
+  f = message.getMode();
+  if (f !== 0.0) {
+    writer.writeEnum(
+      9,
+      f
     );
   }
 };
@@ -1706,6 +1718,24 @@ proto.engine_api.EnclaveInfo.prototype.clearCreationTime = function() {
  */
 proto.engine_api.EnclaveInfo.prototype.hasCreationTime = function() {
   return jspb.Message.getField(this, 8) != null;
+};
+
+
+/**
+ * optional EnclaveMode mode = 9;
+ * @return {!proto.engine_api.EnclaveMode}
+ */
+proto.engine_api.EnclaveInfo.prototype.getMode = function() {
+  return /** @type {!proto.engine_api.EnclaveMode} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
+};
+
+
+/**
+ * @param {!proto.engine_api.EnclaveMode} value
+ * @return {!proto.engine_api.EnclaveInfo} returns this
+ */
+proto.engine_api.EnclaveInfo.prototype.setMode = function(value) {
+  return jspb.Message.setProto3EnumField(this, 9, value);
 };
 
 

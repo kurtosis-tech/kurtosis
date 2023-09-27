@@ -136,3 +136,20 @@ func TestParsedGitUrl_ResolvesRelativeUrl(t *testing.T) {
 	expected = "github.com/kurtosis-tech/sample-startosis-load/src/lib.star"
 	require.Equal(t, expected, absoluteUrl)
 }
+
+func TestParsedGitUrl_ResolvesRelativeUrlForUrlWithTag(t *testing.T) {
+	parsedUrl, err := parseGitURL(githubSampleUrlWithTag)
+	require.Nil(t, err)
+
+	relativeUrl := "./lib.star"
+	absoluteUrl := parsedUrl.getAbsoluteLocatorRelativeToThisURL(relativeUrl)
+	require.Nil(t, err)
+	expected := "github.com/kurtosis-tech/sample-startosis-load/lib.star"
+	require.Equal(t, expected, absoluteUrl)
+
+	relativeUrl = "./src/lib.star"
+	absoluteUrl = parsedUrl.getAbsoluteLocatorRelativeToThisURL(relativeUrl)
+	require.Nil(t, err)
+	expected = "github.com/kurtosis-tech/sample-startosis-load/src/lib.star"
+	require.Equal(t, expected, absoluteUrl)
+}

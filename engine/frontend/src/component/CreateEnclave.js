@@ -1,7 +1,7 @@
 import React, {useState} from 'react';
 
 import {CreateEnclaveModal} from "./CreateEnclaveModal";
-import {CreateEnclaveView} from "./CreateEnclaveView";
+import {CreateEnclaveLog} from "./log/CreateEnclaveLog";
 import {Route, Routes, useNavigate} from 'react-router-dom';
 import {useAppContext} from "../context/AppState";
 
@@ -31,7 +31,13 @@ const CreateEnclave = ({addEnclave}) => {
                                                     productionMode={productionMode}
                                                     setProductionMode={setProductionMode}
                                                     />}/>
-                <Route path="/progress" element={<CreateEnclaveView args={args} packageId={name} enclave={enclave}/>}/>
+                <Route path="/progress" element={
+                    <CreateEnclaveLog 
+                        args={args} 
+                        packageId={name} 
+                        enclave={enclave} 
+                        appData={appData}
+                    />}/>
             </Routes>
         </div>
     )

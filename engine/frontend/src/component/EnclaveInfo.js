@@ -32,9 +32,11 @@ const renderServices = (services, handleClick) => {
         )
     }
 
-    return services.map((service) => {
+    return services.map((service, index) => {
+        const key = `${service.name}-${index}`
         return (
-            <div className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
+            <div key={key}
+                 className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
                  onClick={() => handleClick(service, services)}>
                 <div> {service.name} </div>
             </div>
@@ -53,9 +55,11 @@ const renderFileArtifacts = (file_artifacts, handleFileArtifactClick) => {
         )
     }
 
-    return file_artifacts.map((file_artifact) => {
+    return file_artifacts.map((file_artifact, index) => {
+        const key = `${file_artifact.name}-${index}`
         return (
-            <div className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
+            <div key={key}
+                 className="border-2 bg-[#171923] text-lg align-middle text-center h-16 p-3 text-[#24BA27]"
                  onClick={() => handleFileArtifactClick(file_artifact.name, file_artifacts)}>
                 <div>{file_artifact.name}</div>
             </div>
@@ -93,7 +97,7 @@ const EnclaveInfo = ({enclaves}) => {
     }, [name, enclaves])
 
     const handleServiceClick = (service, services) => {
-        navigate(`/enclaves/${name}/services/${service.uuid}`, {state: {services, selected: service}})
+        navigate(`/enclaves/${name}/services/${service.serviceUuid}`, {state: {services, selected: service}})
     }
 
     const handleLeftPanelClick = (enclaveName) => {

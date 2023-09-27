@@ -40,7 +40,7 @@ func (provider *MockPackageContentProvider) GetOnDiskAbsoluteFilePath(packageId 
 	return absFilePath, nil
 }
 
-func (provider *MockPackageContentProvider) ClonePackage(_ string) (string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) ClonePackage(_ string) (string, string, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 

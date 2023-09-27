@@ -50,15 +50,15 @@ func NewGitPackageContentProvider(moduleDir string, tmpDir string) *GitPackageCo
 	}
 }
 
-func (provider *GitPackageContentProvider) ClonePackage(packageId string) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) ClonePackage(packageId string) (string, string, *startosis_errors.InterpretationError) {
 	parsedURL, interpretationError := parseGitURL(packageId)
 	if interpretationError != nil {
-		return "", interpretationError
+		return "", "", interpretationError
 	}
 
 	interpretationError = provider.atomicClone(parsedURL)
 	if interpretationError != nil {
-		return "", interpretationError
+		return "", "", interpretationError
 	}
 
 	relPackagePathToPackagesDir := getPathToPackageRoot(parsedURL)
@@ -66,14 +66,15 @@ func (provider *GitPackageContentProvider) ClonePackage(packageId string) (strin
 
 	pathToKurtosisYaml := path.Join(packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName)
 	if _, err := os.Stat(pathToKurtosisYaml); err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
+		return "", "", startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
 			startosis_constants.KurtosisYamlName, packageId, startosis_constants.KurtosisYamlName, packageDocLink)
 	}
 
-	if interpretationError = validateKurtosisYaml(pathToKurtosisYaml, provider.packagesDir); interpretationError != nil {
-		return "", interpretationError
+	kurtosisYaml, interpretationError := validateAndGetKurtosisYaml(pathToKurtosisYaml, provider.packagesDir)
+	if interpretationError != nil {
+		return "", "", interpretationError
 	}
-	return packageAbsolutePathOnDisk, nil
+	return packageAbsolutePathOnDisk, kurtosisYaml.PackageName, nil
 }
 
 func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
@@ -115,7 +116,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsideP
 		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, fileInsidePackageUrl, howImportWorksLink)
 	}
 
-	if interpretationError = validateKurtosisYaml(maybeKurtosisYamlPath, provider.packagesDir); interpretationError != nil {
+	if _, interpretationError = validateAndGetKurtosisYaml(maybeKurtosisYamlPath, provider.packagesDir); interpretationError != nil {
 		return "", interpretationError
 	}
 
@@ -352,18 +353,18 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 }
 
 // this method validates the contents of the kurtosis.yml found at path identified by the absPathToKurtosisYmlInThePackage
-func validateKurtosisYaml(absPathToKurtosisYmlInThePackage string, packageDir string) *startosis_errors.InterpretationError {
+func validateAndGetKurtosisYaml(absPathToKurtosisYmlInThePackage string, packageDir string) (*yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	kurtosisYaml, errWhileParsing := yaml_parser.ParseKurtosisYaml(absPathToKurtosisYmlInThePackage)
 	if errWhileParsing != nil {
-		return startosis_errors.WrapWithInterpretationError(errWhileParsing, "Error occurred while parsing %v", absPathToKurtosisYmlInThePackage)
+		return nil, startosis_errors.WrapWithInterpretationError(errWhileParsing, "Error occurred while parsing %v", absPathToKurtosisYmlInThePackage)
 	}
 
 	// this method validates whether the package name is also the locator - it should the location where kurtosis.yml exists
 	if err := validatePackageNameMatchesKurtosisYamlLocation(kurtosisYaml, absPathToKurtosisYmlInThePackage, packageDir); err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating %v", absPathToKurtosisYmlInThePackage)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating %v", absPathToKurtosisYmlInThePackage)
 	}
 
-	return nil
+	return kurtosisYaml, nil
 }
 
 // this method validates whether the package name found in kurtosis yml is same as the location where kurtosis.yml is found

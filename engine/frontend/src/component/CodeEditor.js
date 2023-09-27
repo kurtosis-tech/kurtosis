@@ -1,6 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Box, Button, useClipboard} from "@chakra-ui/react";
-import useWindowDimensions from "../utils/windowheight";
+import useWindowDimensions from "../utils/windowDimension";
+import {saveTextAsFile} from "../utils/download";
 import Editor from "@monaco-editor/react";
 
 export const CodeEditor = (
@@ -27,7 +28,7 @@ export const CodeEditor = (
     const originalReadOnlySetting = useRef(readOnly)
     const [readOnlySetting, setReadOnlySetting] = useState(readOnly)
     const [formatCode, setFormatCode] = useState(false)
-
+    const [monacoReadOnlySettingHasChanged, setMonacoReadOnlySettingHasChangedHasChanged] = useState(false)
     // TODO: This could lead to bugs in the future:
     //  This number depends on the version of Monaco! Use actual enum instead.
     const monacoReadOnlyEnumId = 86;
@@ -38,6 +39,11 @@ export const CodeEditor = (
         return monacoRef.current.editor.getEditors()[id];
     }
 
+    const defineAndSetTheme = (name, data) => {
+        monacoRef.current.editor.defineTheme(name, data);
+        monacoRef.current.editor.setTheme(name);
+    }
+
     const isEditorReadOnly = () => {
         try {
             return getEditor().getOption(monacoReadOnlyEnumId)
@@ -45,7 +51,6 @@ export const CodeEditor = (
             return undefined
         }
     }
-    const [monacoReadOnlySettingHasChanged, setMonacoReadOnlySettingHasChangedHasChanged] = useState(false)
 
     function attachOptionsChangeListener() {
         getEditor().onDidChangeConfiguration((event) => {
@@ -57,7 +62,6 @@ export const CodeEditor = (
 
     useEffect(() => {
         if (getEditor()) {
-            // console.log("Changing readOnly in monaco to:", readOnlySetting)
             getEditor().updateOptions({
                 readOnly: readOnlySetting,
             })
@@ -67,7 +71,6 @@ export const CodeEditor = (
     useEffect(() => {
         if (formatCode) {
             if (isEditorReadOnly()) {
-                // console.log("Cannot format with readonly=true, requesting to set readOnly=false")
                 setReadOnlySetting(false)
             } else {
                 if (getEditor()) {
@@ -75,7 +78,6 @@ export const CodeEditor = (
                         .getAction('editor.action.formatDocument')
                         .run()
                         .then(() => {
-                            // console.log(`Formatting finished running. Setting readonly=${originalReadOnlySetting.current}`)
                             setReadOnlySetting(originalReadOnlySetting.current)
                             setFormatCode(false)
                         });
@@ -111,34 +113,6 @@ export const CodeEditor = (
         }
     };
 
-    const saveTextAsFile = (text, fileName) => {
-        const blob = new Blob([text], {type: "text/plain"});
-        const downloadLink = document.createElement("a");
-        downloadLink.download = fileName;
-        downloadLink.innerHTML = "Download File";
-        if (window.webkitURL) {
-            // No need to add the download element to the DOM in Webkit.
-            downloadLink.href = window.webkitURL.createObjectURL(blob);
-        } else {
-            downloadLink.href = window.URL.createObjectURL(blob);
-            downloadLink.onclick = (event) => {
-                if (event.target) {
-                    document.body.removeChild(event.target);
-                }
-            };
-            downloadLink.style.display = "none";
-            document.body.appendChild(downloadLink);
-        }
-
-        downloadLink.click();
-
-        if (window.webkitURL) {
-            window.webkitURL.revokeObjectURL(downloadLink.href);
-        } else {
-            window.URL.revokeObjectURL(downloadLink.href);
-        }
-    };
-
     function handleEditorChange(value) {
         setValue(value)
         dataCallback(value)
@@ -149,6 +123,14 @@ export const CodeEditor = (
         updateWindowHeightBasedOnContent();
         attachOptionsChangeListener()
         if (autoFormat) handleCodeFormat();
+        defineAndSetTheme('kurtosisTheme', {
+            base: 'vs-dark',
+            inherit: true,
+            rules: [],
+            colors: {
+                'editor.background': '#171923',
+            },
+        });
     }
 
     function handleDownload() {
@@ -167,6 +149,22 @@ export const CodeEditor = (
 
     const isNotFormattable = () => {
         return !languages.includes("json")
+    }
+
+    const highlightLineOption = (readOnly) => {
+        if (readOnly) {
+            return "none"
+        } else {
+            return "line"
+        }
+    }
+
+    const scrollbarOption = (readOnly) => {
+        if (readOnly) {
+            return 0
+        } else {
+            return 10
+        }
     }
 
     return (
@@ -194,7 +192,11 @@ export const CodeEditor = (
                     minimap: {
                         enabled: false
                     },
-                    scrollBeyondLastLine: false
+                    scrollBeyondLastLine: false,
+                    scrollbar: {
+                        verticalScrollbarSize: scrollbarOption(readOnly),
+                    },
+                    renderLineHighlight: highlightLineOption(readOnly),
                 }}
             />
             <Box

@@ -221,6 +221,17 @@ render_templates
 
 The `render_templates` instruction combines a template and data to produce a [files artifact][files-artifacts-reference]. Files artifacts can be used with the `files` property of the `ServiceConfig` object, allowing for reuse of config files across services.
 
+**Returns**: a [future reference][future-references-reference] resolving to a `string` representing the name of a [files artifact][files-artifacts-reference].
+
+**Args**:
+- `config`: a dictionary with the following keys and values:
+  - **keys**: `string`s representing the filepaths to be produced within the returned files artifact
+  - **values**: `struct`s with the following root level keys:
+    - `template`: a string with representing the template in [Go template format](https://pkg.go.dev/text/template#pkg-overview)
+    - `data`: a `struct` or `dict` type, with keys matching the variables used in the template, and values matching the intended replacement values.
+
+**Examples**:
+
 ```python
 # Example data to slot into the template
 template_data = {
@@ -259,7 +270,10 @@ artifact_name = plan.render_templates(
 )
 ```
 
-The return value is a [future reference][future-references-reference] to the name of the [files artifact][files-artifacts-reference] that was generated, which can be used with the `files` property of the service config of the `add_service` command.
+**See also**:
+- [add-service]
+- [add-services]
+- [service-config]
 
 request
 -------

@@ -11,9 +11,16 @@ export const CreateEnclaveModal = ({enclaveName, handleSubmit, name, setName, ar
   const handleFormSubmit = (e) => {
     e.preventDefault();
     const fetch = async () => {
-      const enclave = await createEnclave(token, apiHost, enclaveName, productionMode);
-      addEnclave(enclave)
-      handleSubmit(enclave);
+      try {
+        const enclave = await createEnclave(token, apiHost, enclaveName, productionMode);
+        addEnclave(enclave)
+        handleSubmit(enclave);
+      } catch(ex) {
+        console.log(ex);
+        alert(`Error occurred while creating enclave for package: ${name}. An error message should be printed in console, please share it with us to help debug this problem`)
+      } finally {
+        setRunningPackage(false)
+      } 
     }
 
     try {
@@ -42,7 +49,7 @@ export const CreateEnclaveModal = ({enclaveName, handleSubmit, name, setName, ar
         </label>
         <label className="block mb-4 text-2xl text-black space-x-2">
             <Checkbox colorScheme='blue' border={'black'} isChecked={productionMode} onChange={(e)=>setProductionMode(e.target.checked)}> 
-                <div class="text-xl text-black"> Production Mode </div>
+                <div className="text-xl text-black"> Production Mode </div>
             </Checkbox>
         </label>
         <label className="block mb-4 text-2xl text-black">
