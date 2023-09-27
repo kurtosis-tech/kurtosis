@@ -48,7 +48,7 @@ If you're in web3, we have even more specific web3 usecases [here](https://web3.
 
 ## Try out Kurtosis now
 
-Try Kurtosis now with our [quickstart](./quickstart-consumer.md).
+Try Kurtosis now with our [quickstart](./quickstart.md).
 
 :::info
 If you have questions, need help, or simply want to learn more, schedule a live session with us, go [here](https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding).
