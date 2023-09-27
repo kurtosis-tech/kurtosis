@@ -92,11 +92,6 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 	moduleInPackage := moduleInPackageStarlarkStr.GoString()
 	logrus.Infof("[LEO-DEBUG] moduleInPackage: %s", moduleInPackage)
 
-	//TODO check if moduleInPackage is an external package comparing it with builtin.packageID
-	//TODO if it's external we ned to check where is this extermanl module package ID
-
-	//TODO probably remove locatorOfModuleInWhichThisBuiltInIsBeingCalled
-
 	moduleInPackage, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, moduleInPackage)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
