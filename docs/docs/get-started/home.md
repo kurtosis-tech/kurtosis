@@ -38,13 +38,13 @@ If you're in web3, we have even more specific web3 usecases [here](https://web3.
 - A package management system for shareability and composability
 
 #### Kurtosis has a validator with:
-- Compile-time safety to quickly catch errors in test environment definitions
-- The ability to dry-run test environment definitions to verify what will be run, before running
+- Compile-time safety to quickly catch errors in environment definitions
+- The ability to dry-run environment definitions to verify what will be run, before running
 
 #### Kurtosis has a runtime to:
-- Run multi-container test environments over Docker or Kubernetes, depending on how you wish to scale
-- Enable debugging and investigation of problems live, as they're happening in your test environment
-- Manage file dependencies to ensure complete portability of test environments across different test runs and backends
+- Run multi-container environments over Docker or Kubernetes, depending on how you wish to scale
+- Enable debugging and investigation of problems live, as they're happening in your environment
+- Manage file dependencies to ensure complete portability of environments across different runs and backends
 
 ## Try out Kurtosis now
 
