@@ -1,7 +1,7 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Box, Button, useClipboard} from "@chakra-ui/react";
 import useWindowDimensions from "../utils/windowDimension";
-import { saveTextAsFile } from "../utils/download";
+import {saveTextAsFile} from "../utils/download";
 import Editor from "@monaco-editor/react";
 
 export const CodeEditor = (
@@ -39,6 +39,11 @@ export const CodeEditor = (
         return monacoRef.current.editor.getEditors()[id];
     }
 
+    const defineAndSetTheme = (name, data) => {
+        monacoRef.current.editor.defineTheme(name, data);
+        monacoRef.current.editor.setTheme(name);
+    }
+
     const isEditorReadOnly = () => {
         try {
             return getEditor().getOption(monacoReadOnlyEnumId)
@@ -57,7 +62,6 @@ export const CodeEditor = (
 
     useEffect(() => {
         if (getEditor()) {
-            // console.log("Changing readOnly in monaco to:", readOnlySetting)
             getEditor().updateOptions({
                 readOnly: readOnlySetting,
             })
@@ -67,7 +71,6 @@ export const CodeEditor = (
     useEffect(() => {
         if (formatCode) {
             if (isEditorReadOnly()) {
-                // console.log("Cannot format with readonly=true, requesting to set readOnly=false")
                 setReadOnlySetting(false)
             } else {
                 if (getEditor()) {
@@ -75,7 +78,6 @@ export const CodeEditor = (
                         .getAction('editor.action.formatDocument')
                         .run()
                         .then(() => {
-                            // console.log(`Formatting finished running. Setting readonly=${originalReadOnlySetting.current}`)
                             setReadOnlySetting(originalReadOnlySetting.current)
                             setFormatCode(false)
                         });
@@ -121,6 +123,14 @@ export const CodeEditor = (
         updateWindowHeightBasedOnContent();
         attachOptionsChangeListener()
         if (autoFormat) handleCodeFormat();
+        defineAndSetTheme('kurtosisTheme', {
+            base: 'vs-dark',
+            inherit: true,
+            rules: [],
+            colors: {
+                'editor.background': '#171923',
+            },
+        });
     }
 
     function handleDownload() {
@@ -139,6 +149,22 @@ export const CodeEditor = (
 
     const isNotFormattable = () => {
         return !languages.includes("json")
+    }
+
+    const highlightLineOption = (readOnly) => {
+        if (readOnly) {
+            return "none"
+        } else {
+            return "line"
+        }
+    }
+
+    const scrollbarOption = (readOnly) => {
+        if (readOnly) {
+            return 0
+        } else {
+            return 10
+        }
     }
 
     return (
@@ -166,7 +192,11 @@ export const CodeEditor = (
                     minimap: {
                         enabled: false
                     },
-                    scrollBeyondLastLine: false
+                    scrollBeyondLastLine: false,
+                    scrollbar: {
+                        verticalScrollbarSize: scrollbarOption(readOnly),
+                    },
+                    renderLineHighlight: highlightLineOption(readOnly),
                 }}
             />
             <Box
