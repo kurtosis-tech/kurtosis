@@ -1,5 +1,56 @@
 # Changelog
 
+## [0.83.10](https://github.com/kurtosis-tech/kurtosis/compare/0.83.9...0.83.10) (2023-09-27)
+
+
+### Features
+
+* disable scrollbar, remove line highlighting, set background color ([#1408](https://github.com/kurtosis-tech/kurtosis/issues/1408)) ([1ffdf10](https://github.com/kurtosis-tech/kurtosis/commit/1ffdf10e985b48e2cacc1f595590115a33f5834e)), closes [#1391](https://github.com/kurtosis-tech/kurtosis/issues/1391)
+* return the production enclave information if present via GetEnclaves API ([#1395](https://github.com/kurtosis-tech/kurtosis/issues/1395)) ([ef22820](https://github.com/kurtosis-tech/kurtosis/commit/ef22820cad6d98a784bb263435f3dd6e2bbbe31a))
+
+
+### Bug Fixes
+
+* add scrollbar ([#1400](https://github.com/kurtosis-tech/kurtosis/issues/1400)) ([40aba1d](https://github.com/kurtosis-tech/kurtosis/commit/40aba1ded6ac9b889486c6045332f1bb060ddea8)), closes [#1390](https://github.com/kurtosis-tech/kurtosis/issues/1390)
+* bring back args ([#1397](https://github.com/kurtosis-tech/kurtosis/issues/1397)) ([3e1c318](https://github.com/kurtosis-tech/kurtosis/commit/3e1c3188f58a91eb6428ddf17dfa95a0040551c3))
+* text off center ([#1407](https://github.com/kurtosis-tech/kurtosis/issues/1407)) ([d845764](https://github.com/kurtosis-tech/kurtosis/commit/d8457640597696d6bfcd6c6e9f12864176bb8b35)), closes [#1406](https://github.com/kurtosis-tech/kurtosis/issues/1406)
+
+## [0.83.9](https://github.com/kurtosis-tech/kurtosis/compare/0.83.8...0.83.9) (2023-09-26)
+
+
+### Bug Fixes
+
+* rebuild with type bug fix ([#1385](https://github.com/kurtosis-tech/kurtosis/issues/1385)) ([14840b7](https://github.com/kurtosis-tech/kurtosis/commit/14840b73509ddbf6ea4729a20703ea0d77c08da9))
+* restart log aggregator on failure ([#1371](https://github.com/kurtosis-tech/kurtosis/issues/1371)) ([7f171ce](https://github.com/kurtosis-tech/kurtosis/commit/7f171ce678ee8915d17c30262930365428d9a4f8))
+
+## [0.83.8](https://github.com/kurtosis-tech/kurtosis/compare/0.83.7...0.83.8) (2023-09-26)
+
+
+### Bug Fixes
+
+* handle missing arg types ([#1373](https://github.com/kurtosis-tech/kurtosis/issues/1373)) ([5cfea2a](https://github.com/kurtosis-tech/kurtosis/commit/5cfea2a0c62165193d258ad8d5bba48e06d4f5fb))
+* Relative import breaks for 'non-main branchs' ([#1364](https://github.com/kurtosis-tech/kurtosis/issues/1364)) ([5496082](https://github.com/kurtosis-tech/kurtosis/commit/549608269f21b2bf886c92263ee60989dc9fb4e1)), closes [#1361](https://github.com/kurtosis-tech/kurtosis/issues/1361)
+
+## [0.83.7](https://github.com/kurtosis-tech/kurtosis/compare/0.83.6...0.83.7) (2023-09-25)
+
+
+### Features
+
+* improved log experience on the UI. ([#1368](https://github.com/kurtosis-tech/kurtosis/issues/1368)) ([760c7f0](https://github.com/kurtosis-tech/kurtosis/commit/760c7f0a33d3e2e9f777b509562901a8c6f25308))
+
+## [0.83.6](https://github.com/kurtosis-tech/kurtosis/compare/0.83.5...0.83.6) (2023-09-22)
+
+
+### Features
+
+* implement -n X and -a flags ([#1341](https://github.com/kurtosis-tech/kurtosis/issues/1341)) ([2c6880c](https://github.com/kurtosis-tech/kurtosis/commit/2c6880c9c251843dafacc3a356cc320f5efe85a7))
+
+
+### Bug Fixes
+
+* enclave manager ui was reading the wrong type fields ([#1367](https://github.com/kurtosis-tech/kurtosis/issues/1367)) ([0bae141](https://github.com/kurtosis-tech/kurtosis/commit/0bae141837324f94841f4e5f311cc7e2bbfa63a1))
+* Manually locate docker socket ([#1362](https://github.com/kurtosis-tech/kurtosis/issues/1362)) ([7fe4956](https://github.com/kurtosis-tech/kurtosis/commit/7fe49560b4d99c28e9bda640294bbe0554b57820))
+
 ## [0.83.5](https://github.com/kurtosis-tech/kurtosis/compare/0.83.4...0.83.5) (2023-09-21)
 
 
