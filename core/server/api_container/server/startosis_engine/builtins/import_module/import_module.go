@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -84,19 +83,16 @@ type importModuleCapabilities struct {
 }
 
 func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	logrus.Infof("[LEO-DEBUG] locatorOfModuleInWhichThisBuiltInIsBeingCalled: %s", locatorOfModuleInWhichThisBuiltInIsBeingCalled)
 	moduleInPackageStarlarkStr, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
 	if err != nil {
 		return nil, explicitInterpretationError(err)
 	}
 	moduleInPackage := moduleInPackageStarlarkStr.GoString()
-	logrus.Infof("[LEO-DEBUG] moduleInPackage: %s", moduleInPackage)
 
 	moduleInPackageAbsoluteLocator, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, moduleInPackage)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}
-	logrus.Infof("[LEO-DEBUG] absolute moduleInPackageAbsoluteLocator: %s", moduleInPackageAbsoluteLocator)
 
 	var loadInProgress *startosis_packages.ModuleCacheEntry
 	cacheEntry, found := builtin.moduleGlobalCache[moduleInPackageAbsoluteLocator]

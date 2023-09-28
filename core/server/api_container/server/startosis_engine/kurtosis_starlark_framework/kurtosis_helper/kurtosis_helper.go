@@ -22,8 +22,7 @@ func (builtin *KurtosisHelper) CreateBuiltin() func(thread *starlark.Thread, b *
 			return nil, interpretationErr
 		}
 		helperInternal := newKurtosisHelperInternal(wrappedBuiltin, builtin.Capabilities)
-		locatorOfModuleInWhichThisBuiltInIsBeingCalled := thread.Name
-		result, interpretationErr := helperInternal.interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled)
+		result, interpretationErr := helperInternal.interpret()
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
