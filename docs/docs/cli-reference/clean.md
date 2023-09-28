@@ -4,12 +4,12 @@ sidebar_label: clean
 slug: /clean
 ---
 
-The `clean` command is used to remove enclaves and related processes, often to free up resources.  
+The `clean` command is used to remove enclaves and related processes, often to free up resources. By default this command affects stopped enclaves. If the -a flag is set, all running enclaves and engine containers will be removed.  
 
-1. Removes stopped enclaves and stopped engine containers (if the -a flag is set, all running enclaves and engine containers will also be removed)
-2. Removes all services within enclaves
-3. Removes all unused kurtosis images (engine + logs aggregator + enclaves)
-4. Removes all files artifacts and all docker volumes within those enclaves
+- Removes stopped enclaves and stopped engine containers
+- Removes all services within enclaves
+- Removes all unused Kurtosis images (engine + logs aggregator + enclaves)
+- Removes all files artifacts and all docker volumes within those enclaves
 ```
   kurtosis clean [flags]
 ```
