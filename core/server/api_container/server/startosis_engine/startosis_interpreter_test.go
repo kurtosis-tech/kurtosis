@@ -540,7 +540,7 @@ def run(plan):
 
 	_, instructionsPlan, interpretationError := suite.interpreter.Interpret(context.Background(), startosis_constants.PackageIdPlaceholderForStandaloneScript, useDefaultMainFunctionName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, script, startosis_constants.EmptyInputArgs, emptyEnclaveComponents, emptyInstructionsPlanMask)
 
-	errorMsg := `Evaluation error: An error occurred while loading the moduleInPackageAbsoluteLocator '` + nonExistentModule + `'
+	errorMsg := `Evaluation error: An error occurred while loading the module '` + nonExistentModule + `'
 	Caused by: Package '` + nonExistentModule + `' not found`
 	expectedError := startosis_errors.NewInterpretationErrorWithCustomMsg(
 		[]startosis_errors.CallFrame{

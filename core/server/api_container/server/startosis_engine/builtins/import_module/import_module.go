@@ -114,7 +114,7 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 	// Load it.
 	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(moduleInPackageAbsoluteLocator)
 	if interpretationError != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the moduleInPackageAbsoluteLocator '%v'", moduleInPackageAbsoluteLocator)
+		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", moduleInPackageAbsoluteLocator)
 	}
 
 	globalVariables, interpretationErr := builtin.recursiveInterpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled, moduleInPackageAbsoluteLocator, contents)

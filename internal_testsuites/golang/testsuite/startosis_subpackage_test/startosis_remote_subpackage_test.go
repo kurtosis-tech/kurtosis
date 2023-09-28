@@ -11,7 +11,7 @@ const (
 	expectedOutputLength = 4
 	expectedServiceName  = "postgres"
 
-	packageWithSiblingImport = "github.com/h4ck3rk3y/package-panic/primary"
+	packageWithSiblingImport = "github.com/kurtosis-tech/sample-startosis-load/primary-package"
 )
 
 func (suite *StartosisSubpackageTestSuite) TestStarlarkRemotePackage() {
@@ -43,6 +43,6 @@ func (suite *StartosisSubpackageTestSuite) TestStartosisSiblingRemotePackages_Re
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
 
-	//expectedResult := "Package loaded.\n"
-	//require.Regexp(t, expectedResult, string(runResult.RunOutput))
+	expectedResult := "Primary package loaded.\n\"Hello world!\"\n"
+	require.Regexp(t, expectedResult, string(runResult.RunOutput))
 }
