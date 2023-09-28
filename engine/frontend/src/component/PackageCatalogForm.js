@@ -161,7 +161,7 @@ const isRequired = (arg) => {
     return arg["isRequired"]
 }
 
-const renderArgs = (args, handleChange, formData, errorData) => {
+const renderArgs = (args, handleChange, formData, errorData, packageName) => {
     return args.map((arg, index) => {
 
         // no need to process plan arg as it's internal!
@@ -230,14 +230,15 @@ const renderArgs = (args, handleChange, formData, errorData) => {
                             {errorData[index]}
                         </Text> : null
                     }
-                    {renderSingleArg(arg.name, dataType, errorData, formData, index, handleChange)}
+                    {renderSingleArg(arg.name, dataType, errorData, formData, index, handleChange, packageName)}
                 </Flex>
             </Flex>
         )
     })
 }
 
-const renderSingleArg = (fieldName, type, errorData, formData, index, handleChange) => {
+const renderSingleArg = (fieldName, type, errorData, formData, index, handleChange, packageName) => {
+    const uniqueId = `${packageName}-${fieldName}`
     switch (type) {
         case "INTEGER":
         case "STRING":
@@ -260,9 +261,8 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
                     borderColor={errorData[index] ? "red.400" : null}
                 >
                     {CodeEditor(
-                        (data) => handleChange(data, index),
-                        false,
-                        fieldName,
+                        uniqueId,
+                        (data) => handleChange(data, index)
                     )}
                 </Box>
             )
@@ -651,7 +651,7 @@ const PackageCatalogForm = ({createEnclave}) => {
                                 />
                             </Flex>
                         </Flex>
-                        {renderArgs(kurtosisPackage.args, handleFormDataChange, formData, errorData)}
+                        {renderArgs(kurtosisPackage.args, handleFormDataChange, formData, errorData, kurtosisPackage.name)}
                     </Stack>
                 </GridItem>
                 <GridItem area={'configure'} m="10px">
