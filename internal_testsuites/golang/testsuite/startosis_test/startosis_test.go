@@ -74,7 +74,7 @@ def run(plan, args):
 	template_str = read_file(TEMPLATE_FILE_TO_RENDER)
 
 	template_data = {
-		"CLNodesMetricsInfo" : [{"name" : "foo", "path": "/foo/path", "url": "foobar.com"}]
+		"MetricsJobs" : [{"Name" : "foo", "MetricsPath": "/foo/path", "Endpoint": "foobar.com", "Labels": {"test": "pass"}}]
 	}
 
 	template_data_by_path = {
@@ -183,21 +183,14 @@ Deployed example-datastore-server-2 successfully
 
 	// Check that the file got rendered on the second service
 	expectedConfigFile := `global:
-  scrape_interval:     15s # By default, scrape targets every 15 seconds.
-
-# A scrape configuration containing exactly one endpoint to scrape:
-# Here it's Prometheus itself.
+  scrape_interval: 15s
 scrape_configs:
-   
-   - job_name: 'foo'
-     metrics_path: /foo/path
-     static_configs:
-       - targets: ['foobar.com']
-   
-   - job_name: 'beacon-metrics-gazer'
-     metrics_path: '/metrics'
-     static_configs:
-      - targets: ['beacon-metrics-gazer:8080']
+  - job_name: "foo"
+    metrics_path: "/foo/path"
+    static_configs:
+      - targets: ['foobar.com']
+        labels:
+          test: "pass"
 `
 	logrus.Infof("Checking that the file got mounted on " + serviceIdForDependentService)
 	serviceCtx, err = enclaveCtx.GetServiceContext(serviceIdForDependentService)

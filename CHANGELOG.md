@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.83.12](https://github.com/kurtosis-tech/kurtosis/compare/0.83.11...0.83.12) (2023-09-28)
+
+
+### Bug Fixes
+
+* stale data in code editor ([#1421](https://github.com/kurtosis-tech/kurtosis/issues/1421)) ([d58ca3f](https://github.com/kurtosis-tech/kurtosis/commit/d58ca3f6fcb8a7cbf996c49cea53bf9b71c4987a))
+
 ## [0.83.11](https://github.com/kurtosis-tech/kurtosis/compare/0.83.10...0.83.11) (2023-09-27)
 
 
