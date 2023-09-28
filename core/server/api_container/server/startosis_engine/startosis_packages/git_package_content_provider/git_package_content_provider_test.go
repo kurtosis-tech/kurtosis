@@ -193,6 +193,14 @@ func TestGetAbsoluteLocatorForRelativeModuleLocator_SucceedsForRelativeFile(t *t
 	expectedAbsoluteLocator := "github.com/kurtosis-tech/avalanche-package/static_files/config.json.tmpl"
 	require.Nil(t, err)
 	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+
+	parentModuleId2 := "github.com/kurtosis-tech/avalanche-package/src/builder.star"
+	maybeRelativeLocator2 := "/static_files/genesis.json"
+	absoluteLocator2, err2 := provider.GetAbsoluteLocatorForRelativeModuleLocator(parentModuleId2, maybeRelativeLocator2)
+
+	expectedAbsoluteLocator2 := "github.com/kurtosis-tech/avalanche-package/static_files/genesis.json"
+	require.Nil(t, err2)
+	require.Equal(t, expectedAbsoluteLocator2, absoluteLocator2)
 }
 
 func Test_getPathToPackageRoot(t *testing.T) {
