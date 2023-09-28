@@ -47,14 +47,22 @@ func NewKurtosisPlanInstructionWrapper(instruction *KurtosisPlanInstruction, enc
 
 func (builtin *KurtosisPlanInstructionWrapper) CreateBuiltin() func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
 	return func(thread *starlark.Thread, b *starlark.Builtin, args starlark.Tuple, kwargs []starlark.Tuple) (starlark.Value, error) {
+		logrus.Infof("[LEO-DEBUG-2] b: %+v", b)
+		logrus.Infof("[LEO-DEBUG-2] args %+v", args)
+		logrus.Infof("[LEO-DEBUG-2] args %+v", kwargs)
 		wrappedBuiltin, interpretationErr := kurtosis_starlark_framework.WrapKurtosisBaseBuiltin(builtin.KurtosisBaseBuiltin, thread, args, kwargs)
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}
+		logrus.Infof("[LEO-DEBUG-2] wrappedBuiltin: %+v", wrappedBuiltin)
 
 		instructionWrapper := newKurtosisPlanInstructionInternal(wrappedBuiltin, builtin.Capabilities(), builtin.DefaultDisplayArguments)
+		logrus.Infof("[LEO-DEBUG-2] instructionWrapper: %+v", instructionWrapper)
 		locatorOfModuleInWhichInstructionIsBeingInterpreted := thread.Name
-		returnedFutureValue, interpretationErr := instructionWrapper.interpret(locatorOfModuleInWhichInstructionIsBeingInterpreted)
+		logrus.Infof("[LEO-DEBUG-2] locatorOfModuleInWhichInstructionIsBeingInterpreted %s", locatorOfModuleInWhichInstructionIsBeingInterpreted)
+		logrus.Infof("[LEO-DEBUG-7] instruction filename %s", instructionWrapper.GetPosition().GetFilename())
+
+		returnedFutureValue, interpretationErr := instructionWrapper.interpret()
 		if interpretationErr != nil {
 			return nil, interpretationErr
 		}

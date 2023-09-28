@@ -16,6 +16,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"os"
 )
@@ -95,6 +96,8 @@ type UploadFilesCapabilities struct {
 }
 
 func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
+	logrus.Infof("[LEO-DEBUG-2] locatorOfModuleInWhichThisBuiltInIsBeingCalled %s", locatorOfModuleInWhichThisBuiltInIsBeingCalled)
+	logrus.Infof("[LEO-DEBUG-2] arguments %+v", arguments)
 	if !arguments.IsSet(ArtifactNameArgName) {
 		natureThemeName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
 		if err != nil {

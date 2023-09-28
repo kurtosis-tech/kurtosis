@@ -58,9 +58,7 @@ type readFileCapabilities struct {
 	moduleAbsoluteLocator  string //this is the module absolute locator in which this builtin is being called
 }
 
-// TODO ignore locatorOfModuleInWhichThisBuiltInIsBeingCalled parameter
-func (builtin *readFileCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	logrus.Infof("[LEO-DEBUG] locatorOfModuleInWhichThisBuiltInIsBeingCalled: %s", locatorOfModuleInWhichThisBuiltInIsBeingCalled)
+func (builtin *readFileCapabilities) Interpret(_ string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
 	srcValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, SrcArgName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for arg '%s'", srcValue)

@@ -245,6 +245,7 @@ func (interpreter *StartosisInterpreter) Interpret(
 		return "", nil, missingMainFunctionError(packageId, mainFunctionName)
 	}
 
+	logrus.Infof("[LEO-DEBUG-5] globalVariables: %+v", globalVariables)
 	mainFunction, ok := globalVariables[mainFunctionName].(*starlark.Function)
 	// if there is an element with the `mainFunctionName` but it isn't a function we have to error as well
 	if !ok {
@@ -297,6 +298,8 @@ func (interpreter *StartosisInterpreter) Interpret(
 		kwArgs = append(kwArgs, argsDict.Items()...)
 	}
 	logrus.Infof("[LEO-DEBUG] before calling call")
+	logrus.Infof("[LEO-DEBUG-4] argsTuple: %v", argsTuple)
+	logrus.Infof("[LEO-DEBUG-4] kwArgs: %v", kwArgs)
 	outputObject, err := starlark.Call(runFunctionExecutionThread, mainFunction, argsTuple, kwArgs)
 	if err != nil {
 		return startosis_constants.NoOutputObject, nil, generateInterpretationError(err).ToAPIType()
@@ -367,6 +370,14 @@ func (interpreter *StartosisInterpreter) buildBindings(packageId string, moduleA
 	for _, kurtosisTypeConstructors := range KurtosisTypeConstructors() {
 		predeclared[kurtosisTypeConstructors.Name()] = kurtosisTypeConstructors
 	}
+
+	/*
+		for _, kurtosisPlanInstruction := range KurtosisPlanInstructions(packageId, interpreter.serviceNetwork, interpreter.recipeExecutor, interpreter.moduleContentProvider) {
+			predeclared[kurtosisPlanInstruction.KurtosisBaseBuiltin.GetName()] = kurtosisPlanInstruction.KurtosisBaseBuiltin
+		}*/
+
+	logrus.Infof("[LEO-DEBUG-6] predeclared: %+v", predeclared)
+
 	return &predeclared, nil
 }
 
