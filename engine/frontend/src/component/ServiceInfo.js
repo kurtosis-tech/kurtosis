@@ -42,7 +42,8 @@ const ServiceInfo = () => {
                     const log = res["serviceLogsByServiceUuid"][serviceUuid]["line"][0]
                     if (log !== "") {
                         setLogs(logs => [...logs, log])
-                    }
+                        console.log("setting new log here..")
+                    } 
                 }
             } catch (ex) {
                 console.log("Abort Initial Log Stream!")

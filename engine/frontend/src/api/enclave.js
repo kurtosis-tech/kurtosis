@@ -52,7 +52,7 @@ export const getServiceLogs = async (ctrl, enclaveName, serviceUuid, apiHost, fo
         },
         followLogs: followLogs,
         returnAllLogs: false,
-        numLogLines: numLogLines,
+        numLogLines: 5000,
     }
     return enclaveManagerClient.getServiceLogs(args, {signal: ctrl.signal});
 }
