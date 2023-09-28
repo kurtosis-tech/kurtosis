@@ -123,7 +123,7 @@ const FileArtifactInfo = ({enclaves}) => {
     }
 
     const getExtension = (filename) => {
-        if (!filename || filename === undefined) return undefined
+        if (!filename) return undefined
         return filename.split('.').pop();
     }
 
@@ -152,7 +152,7 @@ const FileArtifactInfo = ({enclaves}) => {
     }
 
     const handleBreadCrumbClick = (index) => {
-        if (index == currentPath.length - 1) {
+        if (index === currentPath.length - 1) {
             // do nothing
         } else {
             const newCurrentPath = currentPath.slice(0, index + 1)
@@ -170,7 +170,8 @@ const FileArtifactInfo = ({enclaves}) => {
         navigate(`/enclaves/${enclaveName}/files/${fileArtifactName}`, {replace: true, state: {fileArtifacts}})
     }
 
-    const FileInfoComponent = ({files, handleFileClick, detailInfo, fileName}) => {
+    const FileInfoComponent = ({files, handleFileClick, detailInfo, enclaveName}) => {
+        const uniqueEditorFileId = `${enclaveName}-${detailInfo.path}`
         return (
             <div className='flex flex-col h-full space-y-1 overflow-auto'>
                 {
@@ -182,10 +183,10 @@ const FileArtifactInfo = ({enclaves}) => {
                                 <Box>
                                     {
                                         CodeEditor(
+                                            uniqueEditorFileId,
                                             () => {
                                             },
                                             true,
-                                            detailInfo.path,
                                             [detailInfo.extension],
                                             500,
                                             detailInfo.textPreview,
@@ -235,7 +236,7 @@ const FileArtifactInfo = ({enclaves}) => {
                         files={currentFiles}
                         handleFileClick={handleFileClick}
                         detailInfo={detailInfo}
-                        fileName={fileArtifactName}
+                        enclaveName={enclaveName}
                     />
                 }
             </div>
