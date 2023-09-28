@@ -13,6 +13,7 @@ export const getEnclavesFromKurtosis = async (token, apiHost) => {
                 status: enclave.apiContainerStatus,
                 host: enclave.apiContainerInfo.bridgeIpAddress,
                 port: enclave.apiContainerInfo.grpcPortInsideEnclave,
+                mode: enclave.mode,
             }
         });
     }
