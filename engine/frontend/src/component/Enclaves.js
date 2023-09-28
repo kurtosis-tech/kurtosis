@@ -25,7 +25,6 @@ const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveToDelete, setEncl
     const [value, setValue] = useState("")
     const [error, setError] = useState(false)
 
-    console.log(enclaveToDelete)
     const enclaveName = enclaveToDelete.name;
     const handleClose = (action) => {
 
