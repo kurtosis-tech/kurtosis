@@ -108,7 +108,7 @@ You'll use these "Review" sections to explain what happened in the section.
 
 In this section, you created a `main.star` file that simply told Kurtosis to print `Hello, world`. The `.star` extension corresponds to [Starlark][starlark-reference], a Python dialect also used by Google and Meta for configuring build systems.
 
-When you ran `main.star`, you got `Created enclave: quickstart`. An [enclave][enclaves-reference] is a Kurtosis primitive that can be thought of as an *ephemeral test environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. If you'd like, you can tear down your enclave and any of its artifacts by running: `kurtosis clean -a` (more on the `kurtosis clean` command [here][kurtosis-clean-reference]).
+When you ran `main.star`, you got `Created enclave: quickstart`. An [enclave][enclaves-reference] is a Kurtosis primitive that can be thought of as an *ephemeral environment*, on top of Docker or Kubernetes, for a distributed application. The distributed applications that you define with Starlark will run inside enclaves. If you'd like, you can tear down your enclave and any of its artifacts by running: `kurtosis clean -a` (more on the `kurtosis clean` command [here][kurtosis-clean-reference]).
 
 Enclaves are intended to be easy to create, easy to destroy, cheap to run, and isolated from each other. Use enclaves liberally!
 
@@ -181,7 +181,7 @@ Note that Kurtosis did not execute anything until _after_ Interpretation and Val
 
 We call this approach [multi-phase runs][multi-phase-runs-reference]. While this approach has powerful benefits over traditional scripting, it also means _you cannot reference Execution values like IP address in Starlark_ because they simply don't exist at Interpretation time. We'll explore how Kurtosis gracefully handles values generated during the Execution phase at the Interpretation phase later on in the quickstart.
 
-**This section introduced Kurtosis' ability to validate that definitions work as intended, _before_ they are run - helping developers catch errors sooner & save resources when configuring multi-container test environments.**
+**This section introduced Kurtosis' ability to validate that definitions work as intended, _before_ they are run - helping developers catch errors sooner & save resources when configuring multi-container environments.**
 
 Add some data
 -------------
@@ -659,7 +659,7 @@ api = plan.add_service(
 
 ...Kurtosis simply swapped in the correct Postgres container Execution-time values. While future references take some getting used to, [we've found the feedback loop speedup to be very worth it][why-multi-phase-runs-explanation].
 
-**What you've just seen is Kurtosis' powerful ability to gracefully handle data generated at runtime to set up service dependencies in multi-container test environments. You also saw how seamless it was to run on-box CLI commands on a container.**
+**What you've just seen is Kurtosis' powerful ability to gracefully handle data generated at runtime to set up service dependencies in multi-container environments. You also saw how seamless it was to run on-box CLI commands on a container.**
 
 Modifying data
 --------------
@@ -831,7 +831,7 @@ At a higher level, Kurtosis automatically deserialized the `{"actors": [{"first_
 def run(plan, args):
 ```
 
-**This section showed how to interact with your test environment, and also how to parametrize it for others to easily modify and re-use.**
+**This section showed how to interact with your environment, and also how to parametrize it for others to easily modify and re-use.**
 
 Publishing your Kurtosis Package for others to use
 --------------------------------------------------
@@ -903,7 +903,7 @@ Testing
 Conclusion
 ----------
 And that's it - you've written your very first distributed application in Kurtosis! You experienced a great many workflows that Kurtosis optimizes to help bridge the author-consumer divide for environment definitions. Namely, as an author, you:
-- Started a Postgres database in an ephemeral, isolated test environment.
+- Started a Postgres database in an ephemeral, isolated environment.
 - Seeded your database by importing an external Starlark package from the internet.
 - Set up an API server for your database and gracefully handled dynamically generated dependency data.
 - Inserted & queried data via the API.
