@@ -3,7 +3,7 @@ title: How to set up a local Ethereum testnet
 sidebar_label: Setting up local Ethereum testnet
 slug: /how-to-local-eth-testnet
 toc_max_heading_level: 2
-sidebar_position: 6
+sidebar_position: 10
 ---
 
 ## Introduction
@@ -17,7 +17,7 @@ In this guide, you will:
 
 ### What is Kurtosis?
 
-[Kurtosis](https://www.kurtosis.com/) is a composable build system designed for configuring multi-container test environments. It specifically enables developers to create reproducible environments that require dynamic setup logic, such as blockchain testnets.
+[Kurtosis](https://www.kurtosis.com/) is a composable build system designed for configuring multi-container environments. It specifically enables developers to create reproducible environments that require dynamic setup logic, such as blockchain testnets.
 
 In this guide, the Kurtosis eth-network-package spins up a local Ethereum testnet with support for the [`geth`](https://geth.ethereum.org/) Execution Layer (EL) client, as well as [`teku`](https://consensys.net/knowledge-base/ethereum-2/teku/), [`lighthouse`](https://lighthouse.sigmaprime.io/), and [`lodestar`](https://lodestar.chainsafe.io/) Consensus Layer (CL) clients. This package serves as a configurable and composable alternative to networks in frameworks like Hardhat Network, Ganache, and Anvil. Kurtosis offers developers greater control and flexibility over the testnets they use, which is a major reason why the [Ethereum Foundation used Kurtosis to test the Merge](https://www.kurtosis.com/blog/testing-the-ethereum-merge) and continues to use it for testing network upgrades.
 
