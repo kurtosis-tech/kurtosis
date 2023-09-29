@@ -3,14 +3,14 @@ title: How to set up an n-node Cassandra environment
 sidebar_label: Setting up an n-node Cassandra cluster
 slug: /how-to-parameterize-cassandra
 toc_max_heading_level: 2
-sidebar_position: 5
+sidebar_position: 9
 ---
 
 Introduction
 ------------
 In this guide, you will set up a 3-node Cassandra cluster in Docker and parameterize the environment definition so it can easily be modified for use in different tests that require an _n_-node Cassandra cluster. Then we will show you how to run remotely hosted packages authored by others, and go through how to package and publish our work to Github for others to use as well.
 
-Specifically, you're going to configure your test environments with a way that allows you to both:
+Specifically, you're going to configure your environments with a way that allows you to both:
 1. Parameterize the environment so another developer using the environment can specify how many nodes they’d like for their system to have, and 
 2. Make the environment definition composable so that your environments can be included in tests with other services for different scenarios & use cases.
 

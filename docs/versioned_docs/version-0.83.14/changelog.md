@@ -1,5 +1,54 @@
 # Changelog
 
+## [0.83.14](https://github.com/kurtosis-tech/kurtosis/compare/0.83.13...0.83.14) (2023-09-29)
+
+
+### Bug Fixes
+
+* scroll tracking experience is improved. ([#1429](https://github.com/kurtosis-tech/kurtosis/issues/1429)) ([0572a5c](https://github.com/kurtosis-tech/kurtosis/commit/0572a5c6026a15096e38ddd22d709dc7b6be4edc))
+
+## [0.83.13](https://github.com/kurtosis-tech/kurtosis/compare/0.83.12...0.83.13) (2023-09-28)
+
+
+### Features
+
+* add extra verification when deleting prod enclave. ([#1404](https://github.com/kurtosis-tech/kurtosis/issues/1404)) ([6e3ea07](https://github.com/kurtosis-tech/kurtosis/commit/6e3ea07437368f1fdfbbc32688d8434b223c4ef1))
+* Get user payment config method definition ([#1374](https://github.com/kurtosis-tech/kurtosis/issues/1374)) ([c52cb97](https://github.com/kurtosis-tech/kurtosis/commit/c52cb97e7427c3796b9eedbf1fb115320060c664))
+
+
+### Bug Fixes
+
+* build ([#1432](https://github.com/kurtosis-tech/kurtosis/issues/1432)) ([4e7b618](https://github.com/kurtosis-tech/kurtosis/commit/4e7b6187944972fd12191f97a8064ed62c6db183)), closes [#1425](https://github.com/kurtosis-tech/kurtosis/issues/1425)
+
+## [0.83.12](https://github.com/kurtosis-tech/kurtosis/compare/0.83.11...0.83.12) (2023-09-28)
+
+
+### Bug Fixes
+
+* stale data in code editor ([#1421](https://github.com/kurtosis-tech/kurtosis/issues/1421)) ([d58ca3f](https://github.com/kurtosis-tech/kurtosis/commit/d58ca3f6fcb8a7cbf996c49cea53bf9b71c4987a))
+
+## [0.83.11](https://github.com/kurtosis-tech/kurtosis/compare/0.83.10...0.83.11) (2023-09-27)
+
+
+### Bug Fixes
+
+* make linter work with individual files ([#1378](https://github.com/kurtosis-tech/kurtosis/issues/1378)) ([edcd8c8](https://github.com/kurtosis-tech/kurtosis/commit/edcd8c8c9ebc0a46612739fdc97bee772e011f12))
+
+## [0.83.10](https://github.com/kurtosis-tech/kurtosis/compare/0.83.9...0.83.10) (2023-09-27)
+
+
+### Features
+
+* disable scrollbar, remove line highlighting, set background color ([#1408](https://github.com/kurtosis-tech/kurtosis/issues/1408)) ([1ffdf10](https://github.com/kurtosis-tech/kurtosis/commit/1ffdf10e985b48e2cacc1f595590115a33f5834e)), closes [#1391](https://github.com/kurtosis-tech/kurtosis/issues/1391)
+* return the production enclave information if present via GetEnclaves API ([#1395](https://github.com/kurtosis-tech/kurtosis/issues/1395)) ([ef22820](https://github.com/kurtosis-tech/kurtosis/commit/ef22820cad6d98a784bb263435f3dd6e2bbbe31a))
+
+
+### Bug Fixes
+
+* add scrollbar ([#1400](https://github.com/kurtosis-tech/kurtosis/issues/1400)) ([40aba1d](https://github.com/kurtosis-tech/kurtosis/commit/40aba1ded6ac9b889486c6045332f1bb060ddea8)), closes [#1390](https://github.com/kurtosis-tech/kurtosis/issues/1390)
+* bring back args ([#1397](https://github.com/kurtosis-tech/kurtosis/issues/1397)) ([3e1c318](https://github.com/kurtosis-tech/kurtosis/commit/3e1c3188f58a91eb6428ddf17dfa95a0040551c3))
+* text off center ([#1407](https://github.com/kurtosis-tech/kurtosis/issues/1407)) ([d845764](https://github.com/kurtosis-tech/kurtosis/commit/d8457640597696d6bfcd6c6e9f12864176bb8b35)), closes [#1406](https://github.com/kurtosis-tech/kurtosis/issues/1406)
+
 ## [0.83.9](https://github.com/kurtosis-tech/kurtosis/compare/0.83.8...0.83.9) (2023-09-26)
 
 
