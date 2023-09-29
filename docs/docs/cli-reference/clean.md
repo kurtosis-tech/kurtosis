@@ -9,7 +9,7 @@ The `clean` command is used to remove stopped enclaves and their contents to fre
 - Removes stopped enclaves and stopped engine containers
 - Removes all services within stopped enclaves
 - Removes all unused Kurtosis images (engine + logs aggregator + enclaves)
-- Removes all files artifacts and all docker volumes within those enclaves
+- Removes all files artifacts and all Docker volumes within stopped enclaves
 ```
   kurtosis clean [flags]
 ```
