@@ -17,7 +17,7 @@ type readFileTestCase struct {
 }
 
 func (suite *KurtosisHelperTestSuite) TestReadFile() {
-	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(kurtosisHelperThreadName, TestModuleFileName).Return(TestModuleFileName, nil)
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(kurtosisHelperThreadName, TestModuleRelativeLocator).Return(TestModuleFileName, nil)
 	suite.packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
 
 	suite.run(&readFileTestCase{
@@ -27,11 +27,11 @@ func (suite *KurtosisHelperTestSuite) TestReadFile() {
 }
 
 func (t *readFileTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
-	return read_file.NewReadFileHelper("", t.packageContentProvider)
+	return read_file.NewReadFileHelper(TestModulePackageId, t.packageContentProvider)
 }
 
 func (t *readFileTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf(`%s(%s=%q)`, read_file.ReadFileBuiltinName, read_file.SrcArgName, TestModuleFileName)
+	return fmt.Sprintf(`%s(%s=%q)`, read_file.ReadFileBuiltinName, read_file.SrcArgName, TestModuleRelativeLocator)
 }
 
 func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
@@ -39,7 +39,7 @@ func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
 }
 
 func (t *readFileTestCase) Assert(result starlark.Value) {
-	t.packageContentProvider.AssertCalled(t, "GetAbsoluteLocatorForRelativeModuleLocator", kurtosisHelperThreadName, TestModuleFileName)
+	t.packageContentProvider.AssertCalled(t, "GetAbsoluteLocatorForRelativeModuleLocator", kurtosisHelperThreadName, TestModuleRelativeLocator)
 	t.packageContentProvider.AssertCalled(t, "GetModuleContents", TestModuleFileName)
 	require.Equal(t, result, starlark.String("Hello World!"))
 }
