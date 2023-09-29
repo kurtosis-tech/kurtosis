@@ -51,3 +51,16 @@ body:
       - Papercut; this bug is frustrating, but I have a workaround.
     validations:
       required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: What area of the product does this pertain to?
+      multiple: false
+      # Update .github/issue-labeler.yml when updating the list of options
+      options:
+      - "CLI: the kurtosis command line interface"
+      - "Frontend: the graphical interface, including the Enclave Manager"
+      - "SDK: any of the SDKs - Typescript, Go, etc."
+      - "Other: anything not covered by the above"
+    validations:
+      required: true
