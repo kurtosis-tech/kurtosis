@@ -4,7 +4,7 @@ sidebar_label: clean
 slug: /clean
 ---
 
-The `clean` command is used to remove enclaves and related processes, often to free up resources. By default this command affects stopped enclaves. If the -a flag is set, all running enclaves and engine containers will be removed.  
+The `clean` command is used to remove stopped enclaves and their contents to free up resources. If the `-a` flag is passed in, all running enclaves, their contents, and unused engine containers will be removed as well.
 
 - Removes stopped enclaves and stopped engine containers
 - Removes all services within enclaves
