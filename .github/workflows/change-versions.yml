@@ -18,9 +18,6 @@ jobs:
           api/scripts/update-package-versions.sh "$(cat version.txt)"
           api/scripts/update-own-version-constants.sh "$(cat version.txt)"
           scripts/update-license-version.sh "$(cat version.txt)"
-      - run: |
-          sudo apt install nodejs yarn
-        name: Set up Node & Yarn for cutting new version of docs
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"
