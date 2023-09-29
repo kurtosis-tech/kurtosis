@@ -5,11 +5,11 @@ import LeftPanel from "./LeftPanel";
 import RightPanel from "./RightPanel";
 import {getServiceLogs} from "../api/enclave";
 import {useAppContext} from "../context/AppState";
-import {Badge, Box, Table, TableContainer, Tbody, Td, Tr, Text, Flex, Spacer, Button, Center} from "@chakra-ui/react";
-import {CodeEditor} from "./CodeEditor";
+import {Box, Button, Center, Flex, Spacer, Text} from "@chakra-ui/react";
+import ServiceView from "./ServiceView";
 
 const DEFAULT_SHOULD_FOLLOW_LOGS = true
-const DEFAULT_NUM_LINES = 6000
+const DEFAULT_NUM_LINES = 1500
 
 const renderServices = (services, handleClick) => {
     return services.map(service => {
@@ -45,13 +45,13 @@ const ServiceInfo = () => {
                     } 
                 }
             } catch (ex) {
-                console.log("Abort Initial Log Stream!")
+                console.log("Abort Initial Log Stream! with error ", ex)
             }
         }
 
         fetchServiceLogs()
     }
-    
+
     useEffect(() => {
 
         const ctrl = new AbortController();
@@ -68,77 +68,9 @@ const ServiceInfo = () => {
         navigate(fullPath, {state: {services, selected: service}})
     }
 
-    const func = () => {
-    }
-
-    const codeBox = (id, parameterName, data) => {
-        const serializedData = JSON.stringify(data, null, 2)
-        return (
-            <Box>
-                {
-                    CodeEditor(
-                        func,
-                        true,
-                        `${parameterName}.json`,
-                        ["json"],
-                        250,
-                        serializedData,
-                        true,
-                        false,
-                        id,
-                        true,
-                        true,
-                        false,
-                        "xs",
-                        "1px"
-                    )
-                }
-            </Box>
-        );
-    }
-
-    const tableRow = (heading, data) => {
-        let displayData = ""
-        try {
-            displayData = data()
-        } catch (e) {
-            console.error("Error while processing row", e)
-            displayData = "Error while retrieving information"
-        }
-        return (
-            <Tr key={heading} color="white">
-                <Td><p><b>{heading}</b></p></Td>
-                <Td>{displayData}</Td>
-            </Tr>
-        );
-    };
-
-    const selectedSerialized = selected; // JSON.parse(JSON.stringify(selected))
-    const statusBadge = (status) => {
-        let color = ""
-        let text = ""
-        if(status === "RUNNING" || status === 1){
-            color="green"
-            text="RUNNING"
-        } else if (status === "STOPPED" || status === 0) {
-            color="red"
-            text="STOPPED"
-        } else if(status ==="UNKNOWN" || status === 2){
-            color = "yellow"
-            text="UNKNOWN"
-        } else {
-            return (
-                <Badge>N/A</Badge>
-            )
-        }
-        return (
-            <Badge colorScheme={color}>{text}</Badge>
-        )
-    }
-
     const renderLogView = () => {
         return (
-            (logs.length > 0) ? <Log logs={logs} fileName={`${enclaveName}-${selectedSerialized.name}`} />: <Center color="white"> No Logs Available</Center>
+            (logs.length > 0) ? <Log logs={logs} fileName={`${enclaveName}-${selected.name}`} />: <Center color="white"> No Logs Available</Center>
         )
     }
 
@@ -149,9 +81,9 @@ const ServiceInfo = () => {
 
     const switchServiceInfoView = () => {
         if (isViewLogPage()) {
-            navigate(`/enclaves/${enclaveName}/services/${selectedSerialized.serviceUuid}`,  {state: {services, selected: selected}})
+            navigate(`/enclaves/${enclaveName}/services/${selected.serviceUuid}`,  {state: {services, selected: selected}})
         } else {
-            navigate(`/enclaves/${enclaveName}/services/${selectedSerialized.serviceUuid}/logs`,  {state: {services, selected: selected}})
+            navigate(`/enclaves/${enclaveName}/services/${selected.serviceUuid}/logs`,  {state: {services, selected: selected}})
         }
     }
 
@@ -165,33 +97,16 @@ const ServiceInfo = () => {
             />
             <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
                 <div className={`flex-col flex space-y-1 bg-[#171923]`}>
-                    <Flex bg={"#171923"} height={"80px"}>    
-                        <Box p='2' m="4"> 
-                            <Text color={"white"} fontSize='xl' as='b'> {!isViewLogPage() ? "Detailed Info " : "Logs "}  for {selectedSerialized.name} </Text>
+                    <Flex bg={"#171923"} height={"80px"}>
+                        <Box p='2' m="4">
+                            <Text color={"white"} fontSize='xl' as='b'> {!isViewLogPage() ? "Detailed Info " : "Logs "}  for {selected.name} </Text>
                         </Box>
                         <Spacer/>
-                        <Button m="4" onClick={switchServiceInfoView}> {!isViewLogPage() ? "View Logs" : `View ${selectedSerialized.name}`} </Button>
+                        <Button m="4" onClick={switchServiceInfoView}> {!isViewLogPage() ? "View Logs" : `View ${selected.name}`} </Button>
                     </Flex>
                     <Routes>
-                        <Route path="/logs" element={
-                            renderLogView()
-                        } />
-                        <Route path="/" element={
-                            <TableContainer>
-                                <Table variant='simple' size='sm'>
-                                    <Tbody>
-                                        {tableRow("Name", () => selectedSerialized.name)}
-                                        {tableRow("UUID", () => <pre>{selectedSerialized.serviceUuid}</pre>)}
-                                        {tableRow("Status", () => statusBadge(selectedSerialized.serviceStatus))}
-                                        {tableRow("Image", () => selectedSerialized.container.imageName)}
-                                        {tableRow("Ports", () => codeBox(0, "ports", selectedSerialized.ports))}
-                                        {tableRow("ENTRYPOINT", () => codeBox(1, "entrypoint", selectedSerialized.container.entrypointArgs))}
-                                        {tableRow("CMD", () => codeBox(2, "cmd", selectedSerialized.container.cmdArgs))}
-                                        {tableRow("ENV", () => codeBox(3, "env", selectedSerialized.container.envVars))}
-                                    </Tbody>
-                                </Table>
-                            </TableContainer>
-                        } />
+                        <Route path="/logs" element={renderLogView()} />
+                        <Route path="/" element={<ServiceView service={selected}/>} />
                     </Routes>
                 </div>
             </div>

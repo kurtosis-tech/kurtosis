@@ -1,42 +1,53 @@
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {Box, Button, useClipboard} from "@chakra-ui/react";
 import useWindowDimensions from "../utils/windowDimension";
 import {saveTextAsFile} from "../utils/download";
 import Editor from "@monaco-editor/react";
 
 export const CodeEditor = (
-    dataCallback,
+    uniqueId,
+    dataCallback = (data) => {
+    },
     readOnly = false,
-    fullFileName = "json_field.json",
     languages = ["json"],
     defaultWidthPx = 500,
     defaultState = languages.includes("json") ? "{\n}" : "",
     autoFormat = false,
     lineNumbers = false,
-    id = 0,
     showCopyButton = true,
     showDownloadButton = true,
     showFormatButton = true,
     buttonSizes = "sm",
-    border = "1px"
+    border = "1px",
+    theme = "vs-dark",
 ) => {
     // https://github.com/microsoft/monaco-editor/blob/main/webpack-plugin/README.md#options
-    const [value, setValue] = useState(defaultState)
-    const contentClipboard = useClipboard("");
     const monacoRef = useRef(null);
     const dimensions = useWindowDimensions();
+    const [formatCode, setFormatCode] = useState(false)
+    const [monacoReadOnlySettingToggle, setMonacoReadOnlySettingToggle] = useState(false)
+    // TODO: This may need to be by Model in the future (i.e. state is indexed by unique id):
+    const contentClipboard = useClipboard("");
     const originalReadOnlySetting = useRef(readOnly)
     const [readOnlySetting, setReadOnlySetting] = useState(readOnly)
-    const [formatCode, setFormatCode] = useState(false)
-    const [monacoReadOnlySettingHasChanged, setMonacoReadOnlySettingHasChangedHasChanged] = useState(false)
-    // TODO: This could lead to bugs in the future:
-    //  This number depends on the version of Monaco! Use actual enum instead.
+
+    // TODO: This could lead to bugs in the future. This number depends on the version of Monaco! Use actual enum instead.
     const monacoReadOnlyEnumId = 86;
 
-    // TODO: Add a promise to getEditor()
+    // TODO: Add a promise to eventually return the editor, and make all callers process async
     const getEditor = () => {
         if (!monacoRef.current) return null;
-        return monacoRef.current.editor.getEditors()[id];
+        return findEditorByModelUri(uniqueId);
+    }
+
+    const findEditorByModelUri = (modelUri) => {
+        return monacoRef.current.editor.getEditors().find((model) => {
+            return model.getModel().uri.toString() === `file:///${modelUri}`
+        })
+    }
+
+    const getValue = () => {
+        return getEditor()?.getModel().getValue();
     }
 
     const defineAndSetTheme = (name, data) => {
@@ -55,7 +66,7 @@ export const CodeEditor = (
     function attachOptionsChangeListener() {
         getEditor().onDidChangeConfiguration((event) => {
             if (event.hasChanged(monacoReadOnlyEnumId)) {
-                setMonacoReadOnlySettingHasChangedHasChanged(true)
+                setMonacoReadOnlySettingToggle(!monacoReadOnlySettingToggle)
             }
         });
     }
@@ -80,51 +91,41 @@ export const CodeEditor = (
                         .then(() => {
                             setReadOnlySetting(originalReadOnlySetting.current)
                             setFormatCode(false)
+                        })
+                        .catch((e) => {
+                            console.error("An error happened", e)
                         });
                 }
             }
         }
-    }, [formatCode, monacoReadOnlySettingHasChanged])
-
-    // Start by manually setting the content of the editor. From hereafter user interaction will update it:
-    useEffect(() => {
-        handleEditorChange(value)
-    }, [])
-
-    useEffect(() => {
-        contentClipboard.setValue(value)
-        // Resize view on content change
-        updateWindowHeightBasedOnContent();
-    }, [value])
+    }, [formatCode, monacoReadOnlySettingToggle])
 
     // Resize view on window change
-    useEffect(() => {
-        if (getEditor()) {
-            getEditor().layout({width: defaultWidthPx, height: getEditor().getContentHeight()});
-            getEditor().layout()
-        }
-    }, [dimensions])
+    useEffect(() => updateWindowHeightBasedOnContent(), [dimensions])
+
+    useEffect(() => handleEditorChange(defaultState), [defaultState])
 
     const updateWindowHeightBasedOnContent = () => {
         if (getEditor()) {
-            const contentHeight = Math.min(1000, getEditor().getContentHeight());
+            const contentHeight = Math.min(750, getEditor().getContentHeight());
             getEditor().layout({width: defaultWidthPx, height: contentHeight});
             getEditor().layout()
         }
     };
 
-    function handleEditorChange(value) {
-        setValue(value)
-        dataCallback(value)
+    const handleEditorChange = (value) => {
+        updateWindowHeightBasedOnContent();
+        dataCallback(value);
+        contentClipboard.setValue(value);
     }
 
-    function handleEditorDidMount(editor, monaco) {
+    const handleEditorDidMount = (editor, monaco) => {
         monacoRef.current = monaco;
         updateWindowHeightBasedOnContent();
         attachOptionsChangeListener()
         if (autoFormat) handleCodeFormat();
-        defineAndSetTheme('kurtosisTheme', {
-            base: 'vs-dark',
+        defineAndSetTheme('kurtosis-theme', {
+            base: theme,
             inherit: true,
             rules: [],
             colors: {
@@ -133,11 +134,11 @@ export const CodeEditor = (
         });
     }
 
-    function handleDownload() {
-        saveTextAsFile(value, fullFileName)
+    const handleDownload = () => {
+        saveTextAsFile(getValue(), uniqueId)
     }
 
-    function handleCodeFormat() {
+    const handleCodeFormat = () => {
         setFormatCode(true)
     }
 
@@ -167,6 +168,13 @@ export const CodeEditor = (
         }
     }
 
+    const copyToClipboard = () => {
+        contentClipboard.setValue(defaultState);
+        contentClipboard.onCopy();
+    }
+
+    updateWindowHeightBasedOnContent();
+
     return (
         <Box
             border={border}
@@ -178,8 +186,9 @@ export const CodeEditor = (
             <Editor
                 margin={1}
                 defaultLanguage="json"
-                value={value}
-                theme={"vs-dark"}
+                value={defaultState}
+                theme={theme}
+                path={uniqueId}
                 onMount={handleEditorDidMount}
                 onChange={handleEditorChange}
                 // onValidate={handleEditorValidation}
@@ -194,9 +203,9 @@ export const CodeEditor = (
                     },
                     scrollBeyondLastLine: false,
                     scrollbar: {
-                        verticalScrollbarSize: scrollbarOption(readOnly),
+                        verticalScrollbarSize: scrollbarOption(readOnlySetting),
                     },
-                    renderLineHighlight: highlightLineOption(readOnly),
+                    renderLineHighlight: highlightLineOption(readOnlySetting),
                 }}
             />
             <Box
@@ -205,7 +214,7 @@ export const CodeEditor = (
                 {showCopyButton && (
                     <Button
                         margin={1}
-                        onClick={contentClipboard.onCopy}
+                        onClick={copyToClipboard}
                         size={buttonSizes}
                     >
                         {contentClipboard.hasCopied ? "Copied!" : "Copy"}

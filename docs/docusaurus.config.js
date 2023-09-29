@@ -30,11 +30,6 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
-          versions: {
-            current: {
-              label: 'Upcoming Release',
-            }
-          },
           admonitions: {}, // Add this line to enable admonitions
 
           // TODO TODO Run Remark plugins through Docusaurus itself (right now we're running it via yarn and package.json)!! See https://docusaurus.io/docs/markdown-features/plugins#installing-plugins
@@ -96,11 +91,6 @@ const config = {
             href: 'https://web3.kurtosis.com',
             position: 'left',
             label: 'Kurtosis for Web3',
-          },
-          {
-            type: 'docsVersionDropdown',
-            position: 'right',
-            dropdownActiveClassDisabled: true,
           },
           {
             href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml',

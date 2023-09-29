@@ -50,6 +50,9 @@ const (
 	// KurtosisCloudBackendServerGetOrCreateInstanceProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's GetOrCreateInstance RPC.
 	KurtosisCloudBackendServerGetOrCreateInstanceProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
+	// KurtosisCloudBackendServerGetOrCreatePaymentConfigProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's GetOrCreatePaymentConfig RPC.
+	KurtosisCloudBackendServerGetOrCreatePaymentConfigProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreatePaymentConfig"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -60,6 +63,7 @@ type KurtosisCloudBackendServerClient interface {
 	GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	GetOrCreateApiKey(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse], error)
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
+	GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -97,16 +101,22 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerGetOrCreateInstanceProcedure,
 			opts...,
 		),
+		getOrCreatePaymentConfig: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerGetOrCreatePaymentConfigProcedure,
+			opts...,
+		),
 	}
 }
 
 // kurtosisCloudBackendServerClient implements KurtosisCloudBackendServerClient.
 type kurtosisCloudBackendServerClient struct {
-	isAvailable            *connect.Client[emptypb.Empty, emptypb.Empty]
-	createCloudInstance    *connect.Client[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse]
-	getCloudInstanceConfig *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
-	getOrCreateApiKey      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse]
-	getOrCreateInstance    *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
+	isAvailable              *connect.Client[emptypb.Empty, emptypb.Empty]
+	createCloudInstance      *connect.Client[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse]
+	getCloudInstanceConfig   *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
+	getOrCreateApiKey        *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse]
+	getOrCreateInstance      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
+	getOrCreatePaymentConfig *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -134,6 +144,12 @@ func (c *kurtosisCloudBackendServerClient) GetOrCreateInstance(ctx context.Conte
 	return c.getOrCreateInstance.CallUnary(ctx, req)
 }
 
+// GetOrCreatePaymentConfig calls
+// kurtosis_cloud.KurtosisCloudBackendServer.GetOrCreatePaymentConfig.
+func (c *kurtosisCloudBackendServerClient) GetOrCreatePaymentConfig(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error) {
+	return c.getOrCreatePaymentConfig.CallUnary(ctx, req)
+}
+
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -142,6 +158,7 @@ type KurtosisCloudBackendServerHandler interface {
 	GetCloudInstanceConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse], error)
 	GetOrCreateApiKey(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse], error)
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
+	GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -175,6 +192,11 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.GetOrCreateInstance,
 		opts...,
 	)
+	kurtosisCloudBackendServerGetOrCreatePaymentConfigHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerGetOrCreatePaymentConfigProcedure,
+		svc.GetOrCreatePaymentConfig,
+		opts...,
+	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -187,6 +209,8 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerGetOrCreateApiKeyHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerGetOrCreateInstanceProcedure:
 			kurtosisCloudBackendServerGetOrCreateInstanceHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerGetOrCreatePaymentConfigProcedure:
+			kurtosisCloudBackendServerGetOrCreatePaymentConfigHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -214,4 +238,8 @@ func (UnimplementedKurtosisCloudBackendServerHandler) GetOrCreateApiKey(context.
 
 func (UnimplementedKurtosisCloudBackendServerHandler) GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetOrCreateInstance is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetOrCreatePaymentConfig is not implemented"))
 }
