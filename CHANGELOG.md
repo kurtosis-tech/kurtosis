@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.83.14](https://github.com/kurtosis-tech/kurtosis/compare/0.83.13...0.83.14) (2023-09-29)
+
+
+### Bug Fixes
+
+* scroll tracking experience is improved. ([#1429](https://github.com/kurtosis-tech/kurtosis/issues/1429)) ([0572a5c](https://github.com/kurtosis-tech/kurtosis/commit/0572a5c6026a15096e38ddd22d709dc7b6be4edc))
+
 ## [0.83.13](https://github.com/kurtosis-tech/kurtosis/compare/0.83.12...0.83.13) (2023-09-28)
 
 
