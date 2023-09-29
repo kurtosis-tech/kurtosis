@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.83.13](https://github.com/kurtosis-tech/kurtosis/compare/0.83.12...0.83.13) (2023-09-28)
+
+
+### Features
+
+* add extra verification when deleting prod enclave. ([#1404](https://github.com/kurtosis-tech/kurtosis/issues/1404)) ([6e3ea07](https://github.com/kurtosis-tech/kurtosis/commit/6e3ea07437368f1fdfbbc32688d8434b223c4ef1))
+* Get user payment config method definition ([#1374](https://github.com/kurtosis-tech/kurtosis/issues/1374)) ([c52cb97](https://github.com/kurtosis-tech/kurtosis/commit/c52cb97e7427c3796b9eedbf1fb115320060c664))
+
+
+### Bug Fixes
+
+* build ([#1432](https://github.com/kurtosis-tech/kurtosis/issues/1432)) ([4e7b618](https://github.com/kurtosis-tech/kurtosis/commit/4e7b6187944972fd12191f97a8064ed62c6db183)), closes [#1425](https://github.com/kurtosis-tech/kurtosis/issues/1425)
+
 ## [0.83.12](https://github.com/kurtosis-tech/kurtosis/compare/0.83.11...0.83.12) (2023-09-28)
 
 
