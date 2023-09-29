@@ -9,7 +9,7 @@ import {Box, Button, Center, Flex, Spacer, Text} from "@chakra-ui/react";
 import ServiceView from "./ServiceView";
 
 const DEFAULT_SHOULD_FOLLOW_LOGS = true
-const DEFAULT_NUM_LINES = 6000
+const DEFAULT_NUM_LINES = 1500
 
 const renderServices = (services, handleClick) => {
     return services.map(service => {
@@ -42,10 +42,10 @@ const ServiceInfo = () => {
                     const log = res["serviceLogsByServiceUuid"][serviceUuid]["line"][0]
                     if (log !== "") {
                         setLogs(logs => [...logs, log])
-                    }
+                    } 
                 }
             } catch (ex) {
-                console.log("Abort Initial Log Stream!")
+                console.log("Abort Initial Log Stream! with error ", ex)
             }
         }
 

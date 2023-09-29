@@ -24,7 +24,7 @@ const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveToDelete, setEncl
     const [deleting, setDeleting] = useState(false);
     const [value, setValue] = useState("")
     const [error, setError] = useState(false)
-    
+
     const enclaveName = enclaveToDelete.name;
     const handleClose = (action) => {
 
@@ -44,7 +44,7 @@ const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveToDelete, setEncl
 
         const maybeDeleteRequest = async () => {
             if (action === "delete") {
-                if (value === enclaveName) {
+                if (value === enclaveName || !enclaveToDelete.mode) {
                     await clickDelete()
                 } else {
                     setError(true)
@@ -94,7 +94,7 @@ const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveToDelete, setEncl
                                 } 
                             </FormHelperText>
                         </FormControl> : 
-                        <Text> Are you sure? You can't undo this action afterwards. </Text>
+                        <Text color={"black"}> Are you sure? You can't undo this action afterwards. </Text>
                 }
                 
             </AlertDialogBody>
