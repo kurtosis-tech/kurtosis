@@ -56,7 +56,7 @@ const config = {
       announcementBar: {
         id: 'support_us',
         content:
-            '<a target="_blank" rel="noopener noreferrer" href="https://github.com/kurtosis-tech/kurtosis">Support Kurtosis with a star on Github!</a>',
+            '<a target="_blank" rel="noopener noreferrer" href="https://github.com/kurtosis-tech/kurtosis">Support Kurtosis with a star on our Github repo!</a>',
         backgroundColor: '#1b1b1d',
         textColor: '#909294',
         isCloseable: false,
