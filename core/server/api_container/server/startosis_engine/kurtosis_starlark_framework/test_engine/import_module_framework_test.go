@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/import_module"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/stretchr/testify/require"
@@ -38,7 +39,7 @@ func (suite *KurtosisHelperTestSuite) TestImportFile() {
 	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
 
 	suite.packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
-	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(kurtosisHelperThreadName, TestModuleRelativeLocator).Return(TestModuleFileName, nil)
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator).Return(TestModuleFileName, nil)
 
 	suite.run(&importModuleTestCase{
 		T:                      suite.T(),
