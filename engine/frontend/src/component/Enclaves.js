@@ -17,8 +17,9 @@ import {
     useDisclosure,
     FormControl,
     FormHelperText,
-    Input
-  } from '@chakra-ui/react'
+    Input, Tooltip, IconButton
+} from '@chakra-ui/react'
+import {DeleteIcon, EditIcon} from "@chakra-ui/icons";
 
 const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveToDelete, setEnclave, handleDeleteClick}) => {
     const [deleting, setDeleting] = useState(false);
@@ -69,47 +70,49 @@ const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveToDelete, setEncl
         <AlertDialog
             isOpen={isOpen}
             leastDestructiveRef={cancelRef}
-            onClose={ () => {
+            onClose={() => {
                 setError(false)
                 setValue("");
                 onClose();
             }}
             isCentered
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent backgroundColor={"white"}>
-            <AlertDialogHeader fontSize='lg' color={"black"}>
-              Delete Enclave: <Text fontSize='lg' fontWeight='bold' as='i'> {enclaveName} </Text>
-            </AlertDialogHeader>
+        >
+            <AlertDialogOverlay>
+                <AlertDialogContent backgroundColor={"white"}>
+                    <AlertDialogHeader fontSize='lg' color={"black"}>
+                        Delete Enclave: <Text fontSize='lg' fontWeight='bold' as='i'> {enclaveName} </Text>
+                    </AlertDialogHeader>
 
-            <AlertDialogBody>
-                {
-                    enclaveToDelete.mode ? 
-                        <FormControl>
-                            <Input onChange={(e) => handleInputChange(e.target.value)} isInvalid={error} borderColor={"black"} color={"black"}/>
-                            <FormHelperText color={error ? "red.600" : "black"} fontSize={"sm"}> 
-                                {error ? 
-                                    "Please verify that the input matches the enclave name" : 
-                                    "Enter the enclave name to delete the enclave"
-                                } 
-                            </FormHelperText>
-                        </FormControl> : 
-                        <Text color={"black"}> Are you sure? You can't undo this action afterwards. </Text>
-                }
-                
-            </AlertDialogBody>
+                    <AlertDialogBody>
+                        {
+                            enclaveToDelete.mode ?
+                                <FormControl>
+                                    <Input onChange={(e) => handleInputChange(e.target.value)} isInvalid={error}
+                                           borderColor={"black"} color={"black"}/>
+                                    <FormHelperText color={error ? "red.600" : "black"} fontSize={"sm"}>
+                                        {error ?
+                                            "Please verify that the input matches the enclave name" :
+                                            "Enter the enclave name to delete the enclave"
+                                        }
+                                    </FormHelperText>
+                                </FormControl> :
+                                <Text color={"black"}> Are you sure? You can't undo this action afterwards. </Text>
+                        }
 
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={() => handleClose("cancel")} color={"black"}>
-                Cancel
-              </Button>
-              <Button bg="red.600" _hover={{ bg: "red.700"}}  color="white" onClick={() => handleClose("delete")} ml={3} isLoading={deleting}>
-                Delete
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+                    </AlertDialogBody>
+
+                    <AlertDialogFooter>
+                        <Button ref={cancelRef} onClick={() => handleClose("cancel")} color={"black"}>
+                            Cancel
+                        </Button>
+                        <Button bg="red.600" _hover={{bg: "red.700"}} color="white"
+                                onClick={() => handleClose("delete")} ml={3} isLoading={deleting}>
+                            Delete
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialogOverlay>
+        </AlertDialog>
     )
 }
 
@@ -122,12 +125,36 @@ const Enclave = ({name, status, handleClick, onOpen, mode, setEnclave}) => {
             className={`h-48 rounded-md border-4 ${backgroundColor} text-white items-center justify-center text-2xl`}
             onClick={() => handleClick(name)}
         >
-            <GridItem colSpan={4} align={"right"} style={{"zIndex":100}}>
-                <Button bg="red.600" _hover={{ bg: "red.700"}} color="white" mr="2" onClick={(e)=> {
-                    e.stopPropagation()
-                    setEnclave({mode:mode, name:name})
-                    onOpen()
-                }}> Delete </Button>
+            <GridItem colSpan={4} align={"right"} style={{"zIndex": 100}}>
+                <Tooltip label='Edit a running enclave' fontSize='sm'>
+                    <IconButton
+                        boxSize={12}
+                        mr="2"
+                        colorScheme=''
+                        _hover={{border: "1px"}}
+                        aria-label='Edit Enclave'
+                        icon={<EditIcon/>}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            alert("test")
+                        }}
+                    />
+                </Tooltip>
+                <Tooltip label='Delete an enclave' fontSize='sm'>
+                    <IconButton
+                        boxSize={12}
+                        mr="2"
+                        bg="red.600"
+                        _hover={{bg: "red.700"}}
+                        aria-label='Delete Enclave'
+                        icon={<DeleteIcon/>}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            setEnclave({mode: mode, name: name})
+                            onOpen()
+                        }}
+                    />
+                </Tooltip>
             </GridItem>
             <GridItem colSpan={4}>
                 <Center>
@@ -182,7 +209,8 @@ const EnclaveComponent = ({onOpen, enclaves, handleClick, handleCreateEnvClick, 
                         </div>
                     </div>
                     :
-                    <EnclaveMainComponent setEnclave={setEnclave} onOpen={onOpen} enclaves={enclaves} handleClick={handleClick} handleDeleteClick={handleDeleteClick}/>
+                    <EnclaveMainComponent setEnclave={setEnclave} onOpen={onOpen} enclaves={enclaves}
+                                          handleClick={handleClick} handleDeleteClick={handleDeleteClick}/>
             }
         </div>
     )
@@ -192,8 +220,8 @@ const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
     const navigate = useNavigate()
     const cancelRef = useRef()
     const [enclaveToDelete, setEnclave] = useState({})
-    const { isOpen, onOpen, onClose } = useDisclosure()
-    
+    const {isOpen, onOpen, onClose} = useDisclosure()
+
     const handleCreateEnvClick = () => {
         navigate("/catalog")
     }
@@ -205,11 +233,14 @@ const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
     return (
         <div className="flex h-full flex-grow">
             {
-                (isLoading) ? <LoadingOverlay/> : <EnclaveComponent setEnclave={setEnclave} onOpen={onOpen} enclaves={enclaves} handleClick={handleClick} handleCreateEnvClick={handleCreateEnvClick} handleDeleteClick={handleDeleteClick}/>
+                (isLoading) ? <LoadingOverlay/> :
+                    <EnclaveComponent setEnclave={setEnclave} onOpen={onOpen} enclaves={enclaves}
+                                      handleClick={handleClick} handleCreateEnvClick={handleCreateEnvClick}
+                                      handleDeleteClick={handleDeleteClick}/>
             }
-            <DeleteAlertDialog 
-                isOpen={isOpen} 
-                onOpen={onOpen} 
+            <DeleteAlertDialog
+                isOpen={isOpen}
+                onOpen={onOpen}
                 onClose={onClose}
                 cancelRef={cancelRef}
                 enclaveToDelete={enclaveToDelete}
@@ -217,7 +248,7 @@ const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
                 handleDeleteClick={handleDeleteClick}
             />
         </div>
-    ) 
+    )
 }
 
 export default Enclaves;
