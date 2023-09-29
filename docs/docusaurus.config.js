@@ -56,7 +56,7 @@ const config = {
       announcementBar: {
         id: 'support_us',
         content:
-            '<a target="_blank" rel="noopener noreferrer" href="https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding">Schedule a live session with us for help getting started or to learn more.</a>',
+            '<a target="_blank" rel="noopener noreferrer" href="https://github.com/kurtosis-tech/kurtosis">Support Kurtosis with a star on Github!</a>',
         backgroundColor: '#1b1b1d',
         textColor: '#909294',
         isCloseable: false,
