@@ -58,9 +58,9 @@ body:
       multiple: false
       # Update .github/issue-labeler.yml when updating the list of options
       options:
-      - "CLI: the kurtosis command line interface"
-      - "Frontend: the graphical interface, including the Enclave Manager"
-      - "SDK: any of the SDKs - Typescript, Go, etc."
+      - "CLI: the Command Line Interface"
+      - "Frontend: the Graphical User Interface, including the Enclave Manager"
+      - "SDK: the Software Development Kit libraries - Typescript, Go, etc."
       - "Other: anything not covered by the above"
     validations:
       required: true
