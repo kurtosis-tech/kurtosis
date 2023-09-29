@@ -7,7 +7,7 @@ slug: /clean
 The `clean` command is used to remove stopped enclaves and their contents to free up resources. If the `-a` flag is passed in, all running enclaves, their contents, and unused engine containers will be removed as well.
 
 - Removes stopped enclaves and stopped engine containers
-- Removes all services within enclaves
+- Removes all services within stopped enclaves
 - Removes all unused Kurtosis images (engine + logs aggregator + enclaves)
 - Removes all files artifacts and all docker volumes within those enclaves
 ```
