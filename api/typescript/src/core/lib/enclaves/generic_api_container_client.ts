@@ -13,6 +13,7 @@ import {
     GetExistingAndHistoricalServiceIdentifiersResponse,
     GetServicesArgs,
     GetServicesResponse,
+    GetStarlarkRunResponse,
     ListFilesArtifactNamesAndUuidsResponse,
     RunStarlarkPackageArgs,
     RunStarlarkScriptArgs,
@@ -40,4 +41,5 @@ export interface GenericApiContainerClient {
     getExistingAndHistoricalServiceIdentifiers(): Promise<Result<GetExistingAndHistoricalServiceIdentifiersResponse, Error>>
     getAllFilesArtifactNamesAndUuids(): Promise<Result<ListFilesArtifactNamesAndUuidsResponse, Error>>
     connectServices(connectServicesArgs: ConnectServicesArgs): Promise<Result<ConnectServicesResponse, Error>>
+    getStarlarkRun(): Promise<Result<GetStarlarkRunResponse, Error>>
 }

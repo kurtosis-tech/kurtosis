@@ -31,6 +31,7 @@ import {
     ConnectServicesArgs,
     ConnectServicesResponse,
     Connect,
+    GetStarlarkRunResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import * as path from "path";
 import {parseKurtosisYaml} from "./kurtosis_yaml";
@@ -349,6 +350,16 @@ export class EnclaveContext {
         const args = new ConnectServicesArgs()
         args.setConnect(connect)
         const responseResult = await this.backend.connectServices(args)
+        if (responseResult.isErr()) {
+            return err(responseResult.error)
+        }
+        const response = responseResult.value;
+        return ok(response)
+    }
+
+    // Docs available at https://docs.kurtosis.com/sdk#getstarlarkrun
+    public async getStarlarkRun(): Promise<Result<GetStarlarkRunResponse, Error>> {
+        const responseResult = await this.backend.getStarlarkRun()
         if (responseResult.isErr()) {
             return err(responseResult.error)
         }

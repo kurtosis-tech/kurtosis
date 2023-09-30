@@ -1657,3 +1657,62 @@ export declare class ConnectServicesResponse extends Message<ConnectServicesResp
   static equals(a: ConnectServicesResponse | PlainMessage<ConnectServicesResponse> | undefined, b: ConnectServicesResponse | PlainMessage<ConnectServicesResponse> | undefined): boolean;
 }
 
+/**
+ * @generated from message api_container_api.GetStarlarkRunResponse
+ */
+export declare class GetStarlarkRunResponse extends Message<GetStarlarkRunResponse> {
+  /**
+   * @generated from field: string package_id = 1;
+   */
+  packageId: string;
+
+  /**
+   * @generated from field: string serialized_script = 2;
+   */
+  serializedScript: string;
+
+  /**
+   * @generated from field: string serialized_params = 3;
+   */
+  serializedParams: string;
+
+  /**
+   * @generated from field: int32 parallelism = 4;
+   */
+  parallelism: number;
+
+  /**
+   * @generated from field: string relative_path_to_main_file = 5;
+   */
+  relativePathToMainFile: string;
+
+  /**
+   * @generated from field: string main_function_name = 6;
+   */
+  mainFunctionName: string;
+
+  /**
+   * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 7;
+   */
+  experimentalFeatures: KurtosisFeatureFlag[];
+
+  /**
+   * @generated from field: bool is_production = 8;
+   */
+  isProduction: boolean;
+
+  constructor(data?: PartialMessage<GetStarlarkRunResponse>);
+
+  static readonly runtime: typeof proto3;
+  static readonly typeName = "api_container_api.GetStarlarkRunResponse";
+  static readonly fields: FieldList;
+
+  static fromBinary(bytes: Uint8Array, options?: Partial<BinaryReadOptions>): GetStarlarkRunResponse;
+
+  static fromJson(jsonValue: JsonValue, options?: Partial<JsonReadOptions>): GetStarlarkRunResponse;
+
+  static fromJsonString(jsonString: string, options?: Partial<JsonReadOptions>): GetStarlarkRunResponse;
+
+  static equals(a: GetStarlarkRunResponse | PlainMessage<GetStarlarkRunResponse> | undefined, b: GetStarlarkRunResponse | PlainMessage<GetStarlarkRunResponse> | undefined): boolean;
+}
+

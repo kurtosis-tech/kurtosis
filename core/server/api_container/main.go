@@ -189,6 +189,7 @@ func runMain() error {
 		serviceNetwork,
 		startosisRunner,
 		gitPackageContentProvider,
+		serverArgs.IsProductionEnclave,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")
