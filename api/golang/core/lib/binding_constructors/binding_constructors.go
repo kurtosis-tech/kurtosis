@@ -60,9 +60,15 @@ func NewRunStarlarkPackageArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	cloudInstanceId string,
+	cloudUserId string,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
+	cloudInstanceIdCopy := new(string)
+	*cloudInstanceIdCopy = cloudInstanceId
+	cloudUserIdCopy := new(string)
+	*cloudUserIdCopy = cloudUserId
 	clonePackage := false
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
@@ -74,6 +80,8 @@ func NewRunStarlarkPackageArgs(
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFunctionName,
 		ExperimentalFeatures:   experimentalFeatures,
+		CloudInstanceId:        cloudInstanceIdCopy,
+		CloudUserId:            cloudUserIdCopy,
 	}
 }
 
@@ -85,9 +93,15 @@ func NewRunStarlarkRemotePackageArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	cloudInstanceId string,
+	cloudUserId string,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
+	cloudInstanceIdCopy := new(string)
+	*cloudInstanceIdCopy = cloudInstanceId
+	cloudUserIdCopy := new(string)
+	*cloudUserIdCopy = cloudUserId
 	clonePackage := true
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
@@ -99,6 +113,8 @@ func NewRunStarlarkRemotePackageArgs(
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFunctionName,
 		ExperimentalFeatures:   experimentalFeatures,
+		CloudInstanceId:        cloudInstanceIdCopy,
+		CloudUserId:            cloudUserIdCopy,
 	}
 }
 
