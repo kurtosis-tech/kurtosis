@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.83.15](https://github.com/kurtosis-tech/kurtosis/compare/0.83.14...0.83.15) (2023-10-02)
+
+
+### Features
+
+* Add product area to the bug report template ([#1441](https://github.com/kurtosis-tech/kurtosis/issues/1441)) ([6d07ed6](https://github.com/kurtosis-tech/kurtosis/commit/6d07ed68005bdaf785328ef8f48d9b6560d185c9))
+* added a tool tip to show users new logs are present ([#1444](https://github.com/kurtosis-tech/kurtosis/issues/1444)) ([82ce14b](https://github.com/kurtosis-tech/kurtosis/commit/82ce14ba2ce667668350ec173e45594d7dbe9089))
+
+
+### Bug Fixes
+
+* relative locators for read_file and upload_files instructions ([#1427](https://github.com/kurtosis-tech/kurtosis/issues/1427)) ([e5d2c54](https://github.com/kurtosis-tech/kurtosis/commit/e5d2c5462471c505853ae2d02d8260c604fbcf38)), closes [#1412](https://github.com/kurtosis-tech/kurtosis/issues/1412)
+
 ## [0.83.14](https://github.com/kurtosis-tech/kurtosis/compare/0.83.13...0.83.14) (2023-09-29)
 
 
