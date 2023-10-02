@@ -5,7 +5,8 @@ import {
     GetListFilesArtifactNamesAndUuidsRequest,
     GetServicesRequest,
     InspectFilesArtifactContentsRequest,
-    RunStarlarkPackageRequest
+    RunStarlarkPackageRequest,
+    GetStarlarkRunRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import {CreateEnclaveArgs, DestroyEnclaveArgs, EnclaveMode} from "enclave-manager-sdk/build/engine_service_pb";
 import {RunStarlarkPackageArgs} from "enclave-manager-sdk/build/api_container_service_pb";
@@ -118,11 +119,11 @@ export const runStarlarkPackageFromEnclaveManager = async (host, port, packageId
 
 export const getStarlarkRunConfig = async (host, port, token, apiHost) => {
     const enclaveManagerClient = createClient(apiHost);
-    const request = new InspectFilesArtifactContentsRequest(
+    const request = new GetStarlarkRunRequest(
         {
             "apicIpAddress": host,
             "apicPort": port,
         }
     );
-    return enclaveManagerClient.inspectFilesArtifactContents(request, createHeaderOptionsWithToken(token));
+    return enclaveManagerClient.getStarlarkRun(request, createHeaderOptionsWithToken(token));
 }
