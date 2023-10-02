@@ -115,7 +115,7 @@ export class EnclaveContext {
         args.setMainFunctionName(runConfig.mainFunctionName)
         args.setExperimentalFeaturesList(runConfig.experimentalFeatureFlags)
         args.setCloudInstanceId(runConfig.cloudInstanceId)
-        args.setCloudUserId(runConfig.cloudInstanceId)
+        args.setCloudUserId(runConfig.cloudUserId)
         const scriptRunResult : Result<Readable, Error> = await this.backend.runStarlarkScript(args)
         if (scriptRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark script \n${scriptRunResult.error}`))
