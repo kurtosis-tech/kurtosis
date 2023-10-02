@@ -62,6 +62,12 @@ const (
 	emptyFileArtifactIdentifier = ""
 	unlimitedLineCount          = math.MaxInt
 	allFilePermissionsForOwner  = 0700
+
+	defaultCloudUserId     = ""
+	defaultCloudInstanceId = ""
+	isScript               = true
+	isNotScript            = false
+	isNotRemote            = false
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -107,7 +113,10 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
+	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
+	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 
+	apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, cloudInstanceID, cloudUserId)
 	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
 	return nil
 }
@@ -183,6 +192,11 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	serializedParams := args.GetSerializedParams()
 	relativePathToMainFile := args.GetRelativePathToMainFile()
 	mainFuncName := args.GetMainFunctionName()
+	isRemote := *args.ClonePackage
+	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
+	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
+
+	apicService.metricsClient.TrackKurtosisRun(packageId, isRemote, dryRun, isNotScript, cloudInstanceID, cloudUserId)
 
 	if relativePathToMainFile == "" {
 		relativePathToMainFile = startosis_constants.MainFileName
