@@ -3,12 +3,6 @@ import React from 'react';
 import { Link } from "react-router-dom";
 
 const TitleBar = () => {
-    // const navigate = useNavigate();
-
-    // const handleToHome = () => {
-    //     navigate("/encalves")
-    // }
-
     return (
         <SimpleGrid columns={3} spacing={1} paddingBottom={5}>
             <Link to="/">
