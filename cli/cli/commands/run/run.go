@@ -92,6 +92,8 @@ const (
 
 	noConnectFlagKey = "no-connect"
 	noConnectDefault = "false"
+
+	packageArgsFlagKey = "args-file"
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -179,6 +181,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Usage:   "If true then user service ports are not forwarded locally. Default false",
 			Type:    flags.FlagType_Bool,
 			Default: noConnectDefault,
+		},
+		{
+			Key:     packageArgsFlagKey,
+			Usage:   "The file (JSON/YAML) will be used as arguments passed to the Kurtosis Package",
+			Type:    flags.FlagType_String,
+			Default: inputArgsAreEmptyBracesByDefault,
 		},
 	},
 	Args: []*args.ArgConfig{
@@ -273,6 +281,19 @@ func run(
 	experimentalFlags, err := parseExperimentalFlag(flags)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFunctionNameFlagKey)
+	}
+
+	packageArgs, err := flags.GetString(packageArgsFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", packageArgsFlagKey)
+	}
+
+	if serializedJsonArgs == inputArgsAreEmptyBracesByDefault && packageArgs != inputArgsAreEmptyBracesByDefault {
+		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFlagKey, packageArgsFlagKey)
+		if packageArgParsingErr := validateSerializedArgs(packageArgs); packageArgParsingErr != nil {
+			return stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFlagKey)
+		}
+		serializedJsonArgs = packageArgs
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -558,18 +579,7 @@ func validatePackageArgs(_ context.Context, _ *flags.ParsedFlags, args *args.Par
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", inputArgsArgKey)
 	}
-	var result interface{}
-	var jsonError error
-	if jsonError = json.Unmarshal([]byte(serializedArgs), &result); jsonError == nil {
-		return nil
-	}
-	var yamlError error
-	if yamlError = yaml.Unmarshal([]byte(serializedArgs), &result); yamlError == nil {
-		return nil
-	}
-	return stacktrace.Propagate(
-		fmt.Errorf("JSON parsing error '%v', YAML parsing error '%v'", jsonError, yamlError),
-		"Error validating args, because it is not a valid JSON or YAML.")
+	return validateSerializedArgs(serializedArgs)
 }
 
 // parseVerbosityFlag Get the verbosity flag is present, and parse it to a valid Verbosity value
@@ -635,4 +645,19 @@ func scriptPathValidation(scriptPath string) (error, bool) {
 	}
 
 	return nil, file_system_path_arg.ContinueWithDefaultValidation
+}
+
+func validateSerializedArgs(serializedArgs string) error {
+	var result interface{}
+	var jsonError error
+	if jsonError = json.Unmarshal([]byte(serializedArgs), &result); jsonError == nil {
+		return nil
+	}
+	var yamlError error
+	if yamlError = yaml.Unmarshal([]byte(serializedArgs), &result); yamlError == nil {
+		return nil
+	}
+	return stacktrace.Propagate(
+		fmt.Errorf("JSON parsing error '%v', YAML parsing error '%v'", jsonError, yamlError),
+		"Error validating args, because it is not a valid JSON or YAML.")
 }
