@@ -18,6 +18,8 @@ const (
 
 	tagBranchOrCommitDelimiter = "@"
 	emptyTagBranchOrCommit     = ""
+
+	packageRootPrefixIndicatorInRelativeLocators = "/"
 )
 
 // ParsedGitURL an object representing a parsed moduleURL
@@ -104,8 +106,10 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 }
 
 func (parsedUrl *ParsedGitURL) getAbsoluteLocatorRelativeToThisURL(relativeUrl string) string {
-	absoluteUrl := path.Join(startosis_constants.GithubDomainPrefix, path.Dir(parsedUrl.relativeFilePath), relativeUrl)
-	return absoluteUrl
+	if strings.HasPrefix(relativeUrl, packageRootPrefixIndicatorInRelativeLocators) {
+		return path.Join(startosis_constants.GithubDomainPrefix, parsedUrl.relativeRepoPath, relativeUrl)
+	}
+	return path.Join(startosis_constants.GithubDomainPrefix, path.Dir(parsedUrl.relativeFilePath), relativeUrl)
 }
 
 // cleanPath removes empty "" from the string slice

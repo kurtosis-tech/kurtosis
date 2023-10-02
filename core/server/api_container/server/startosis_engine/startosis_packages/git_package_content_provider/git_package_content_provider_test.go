@@ -176,6 +176,33 @@ func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
 	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "datastore-army-package", "src/helpers.star"), pathOnDisk)
 }
 
+func TestGetAbsoluteLocatorForRelativeModuleLocator_SucceedsForRelativeFile(t *testing.T) {
+	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageDir)
+	packageTmpDir, err := os.MkdirTemp("", packagesTmpDirRelPath)
+	require.Nil(t, err)
+	defer os.RemoveAll(packageTmpDir)
+
+	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
+
+	parentModuleId := "github.com/kurtosis-tech/avalanche-package/src/builder.star"
+	maybeRelativeLocator := "../static_files/config.json.tmpl"
+	absoluteLocator, err := provider.GetAbsoluteLocatorForRelativeModuleLocator(parentModuleId, maybeRelativeLocator)
+
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/avalanche-package/static_files/config.json.tmpl"
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+
+	parentModuleId2 := "github.com/kurtosis-tech/avalanche-package/src/builder.star"
+	maybeRelativeLocator2 := "/static_files/genesis.json"
+	absoluteLocator2, err2 := provider.GetAbsoluteLocatorForRelativeModuleLocator(parentModuleId2, maybeRelativeLocator2)
+
+	expectedAbsoluteLocator2 := "github.com/kurtosis-tech/avalanche-package/static_files/genesis.json"
+	require.Nil(t, err2)
+	require.Equal(t, expectedAbsoluteLocator2, absoluteLocator2)
+}
+
 func Test_getPathToPackageRoot(t *testing.T) {
 	githubUrlWithKurtosisPackageInSubfolder := "github.com/sample/sample-package/folder/subpackage"
 	parsedGitUrl, err := parseGitURL(githubUrlWithKurtosisPackageInSubfolder)

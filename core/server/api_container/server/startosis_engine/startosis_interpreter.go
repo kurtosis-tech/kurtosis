@@ -316,7 +316,6 @@ func (interpreter *StartosisInterpreter) interpretInternal(packageId string, mod
 	// We spin up a new thread for every call to interpreterInternal such that the stacktrace provided by the Starlark
 	// Go interpreter is relative to each individual thread, and we don't keep accumulating stacktrace entries from the
 	// previous calls inside the same thread
-	// The thread name is set to the locator of the module so that we can use it to resolve relative paths
 	thread := newStarlarkThread(moduleLocator)
 	predeclared, interpretationErr := interpreter.buildBindings(packageId, thread, instructionPlan, moduleGlobalCache)
 	if interpretationErr != nil {
