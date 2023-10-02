@@ -116,7 +116,10 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 
-	apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, cloudInstanceID, cloudUserId)
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, cloudInstanceID, cloudUserId)
+	if metricsErr != nil {
+		logrus.Warn("An error occurred tracking kurtosis run event")
+	}
 	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
 	return nil
 }
@@ -196,7 +199,10 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 
-	apicService.metricsClient.TrackKurtosisRun(packageId, isRemote, dryRun, isNotScript, cloudInstanceID, cloudUserId)
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(packageId, isRemote, dryRun, isNotScript, cloudInstanceID, cloudUserId)
+	if metricsErr != nil {
+		logrus.Warn("An error occurred tracking kurtosis run event")
+	}
 
 	if relativePathToMainFile == "" {
 		relativePathToMainFile = startosis_constants.MainFileName
