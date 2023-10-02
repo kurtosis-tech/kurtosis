@@ -78,6 +78,10 @@ type ApiContainerService struct {
 	startosisRunner *startosis_engine.StartosisRunner
 
 	startosisModuleContentProvider startosis_packages.PackageContentProvider
+
+	isProduction bool
+
+	starlarkRun *kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse
 }
 
 func NewApiContainerService(
@@ -85,12 +89,15 @@ func NewApiContainerService(
 	serviceNetwork service_network.ServiceNetwork,
 	startosisRunner *startosis_engine.StartosisRunner,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
+	isProduction bool,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
 		startosisRunner:                startosisRunner,
 		startosisModuleContentProvider: startosisModuleContentProvider,
+		isProduction:                   isProduction,
+		starlarkRun:                    nil,
 	}
 
 	return service, nil
@@ -102,8 +109,21 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
+	experimentalFeatures := args.GetExperimentalFeatures()
 
 	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
+
+	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
+		PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		SerializedScript:       serializedStarlarkScript,
+		SerializedParams:       serializedParams,
+		Parallelism:            int32(parallelism),
+		RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+		MainFunctionName:       mainFuncName,
+		ExperimentalFeatures:   experimentalFeatures,
+		IsProduction:           apicService.isProduction,
+	}
+
 	return nil
 }
 
@@ -203,6 +223,18 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	}
 
 	apicService.runStarlark(parallelism, dryRun, packageName, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
+
+	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
+		PackageId:              packageId,
+		SerializedScript:       scriptWithRunFunction,
+		SerializedParams:       serializedParams,
+		Parallelism:            int32(parallelism),
+		RelativePathToMainFile: relativePathToMainFile,
+		MainFunctionName:       mainFuncName,
+		ExperimentalFeatures:   args.ExperimentalFeatures,
+		IsProduction:           apicService.isProduction,
+	}
+
 	return nil
 }
 
@@ -479,6 +511,10 @@ func (apicService ApiContainerService) ListFilesArtifactNamesAndUuids(_ context.
 		filesArtifactNamesAndUuids = append(filesArtifactNamesAndUuids, fileNameAndUuidGrpcType)
 	}
 	return &kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse{FileNamesAndUuids: filesArtifactNamesAndUuids}, nil
+}
+
+func (apicService ApiContainerService) GetStarlarkRun(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
+	return apicService.starlarkRun, nil
 }
 
 // ====================================================================================================
