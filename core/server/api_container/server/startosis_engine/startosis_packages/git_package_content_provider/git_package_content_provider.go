@@ -50,15 +50,15 @@ func NewGitPackageContentProvider(moduleDir string, tmpDir string) *GitPackageCo
 	}
 }
 
-func (provider *GitPackageContentProvider) ClonePackage(packageId string) (string, string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) ClonePackage(packageId string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	parsedURL, interpretationError := parseGitURL(packageId)
 	if interpretationError != nil {
-		return "", "", interpretationError
+		return "", nil, interpretationError
 	}
 
 	interpretationError = provider.atomicClone(parsedURL)
 	if interpretationError != nil {
-		return "", "", interpretationError
+		return "", nil, interpretationError
 	}
 
 	relPackagePathToPackagesDir := getPathToPackageRoot(parsedURL)
@@ -66,15 +66,15 @@ func (provider *GitPackageContentProvider) ClonePackage(packageId string) (strin
 
 	pathToKurtosisYaml := path.Join(packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName)
 	if _, err := os.Stat(pathToKurtosisYaml); err != nil {
-		return "", "", startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
+		return "", nil, startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
 			startosis_constants.KurtosisYamlName, packageId, startosis_constants.KurtosisYamlName, packageDocLink)
 	}
 
 	kurtosisYaml, interpretationError := validateAndGetKurtosisYaml(pathToKurtosisYaml, provider.packagesDir)
 	if interpretationError != nil {
-		return "", "", interpretationError
+		return "", nil, interpretationError
 	}
-	return packageAbsolutePathOnDisk, kurtosisYaml.PackageName, nil
+	return packageAbsolutePathOnDisk, kurtosisYaml, nil
 }
 
 func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {

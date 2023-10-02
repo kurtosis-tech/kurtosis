@@ -2,6 +2,7 @@ package startosis_packages
 
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"io"
 )
 
@@ -25,8 +26,10 @@ type PackageContentProvider interface {
 	// StorePackageContents writes on disk the content of the package passed as params
 	StorePackageContents(packageId string, packageContent io.Reader, overwriteExisting bool) (string, *startosis_errors.InterpretationError)
 
+	//TODO review if we have to update the ClonePackage comment
+
 	// ClonePackage clones the package with the given id and returns the absolute path on disk and the package name from Kurtosis yaml file
-	ClonePackage(packageId string) (string, string, *startosis_errors.InterpretationError)
+	ClonePackage(packageId string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)
 
 	// GetAbsoluteLocatorForRelativeModuleLocator returns the absolute package path for a relative module path
 	GetAbsoluteLocatorForRelativeModuleLocator(packageId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError)
