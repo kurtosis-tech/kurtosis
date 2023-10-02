@@ -97,13 +97,22 @@ func NewApiContainerService(
 		startosisRunner:                startosisRunner,
 		startosisModuleContentProvider: startosisModuleContentProvider,
 		isProduction:                   isProduction,
-		starlarkRun:                    nil,
+		starlarkRun: &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
+			PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
+			SerializedScript:       "",
+			SerializedParams:       "",
+			Parallelism:            0,
+			RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+			MainFunctionName:       "",
+			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
+			IsProduction:           false,
+		},
 	}
 
 	return service, nil
 }
 
-func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
+func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
 	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	parallelism := int(args.GetParallelism())
@@ -191,7 +200,7 @@ func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Co
 	}, nil
 }
 
-func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
+func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
 	packageId := args.GetPackageId()
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
