@@ -112,16 +112,16 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	experimentalFeatures := args.GetExperimentalFeatures()
 
 	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
-	
+
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-		PackageId: startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		SerializedScript: serializedStarlarkScript,
-		SerializedParams: serializedParams,
-		Parallelism: int32(parallelism),
+		PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
+		SerializedScript:       serializedStarlarkScript,
+		SerializedParams:       serializedParams,
+		Parallelism:            int32(parallelism),
 		RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
-		MainFunctionName: mainFuncName,
-		ExperimentalFeatures: experimentalFeatures,
-		IsProduction: apicService.isProduction,
+		MainFunctionName:       mainFuncName,
+		ExperimentalFeatures:   experimentalFeatures,
+		IsProduction:           apicService.isProduction,
 	}
 
 	return nil
@@ -225,14 +225,14 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	apicService.runStarlark(parallelism, dryRun, packageName, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
-		PackageId: packageId,
-		SerializedScript: scriptWithRunFunction,
-		SerializedParams: serializedParams,
-		Parallelism: int32(parallelism),
+		PackageId:              packageId,
+		SerializedScript:       scriptWithRunFunction,
+		SerializedParams:       serializedParams,
+		Parallelism:            int32(parallelism),
 		RelativePathToMainFile: relativePathToMainFile,
-		MainFunctionName: mainFuncName,
-		ExperimentalFeatures: args.ExperimentalFeatures,
-		IsProduction: apicService.isProduction,
+		MainFunctionName:       mainFuncName,
+		ExperimentalFeatures:   args.ExperimentalFeatures,
+		IsProduction:           apicService.isProduction,
 	}
 
 	return nil
