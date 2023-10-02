@@ -1,14 +1,10 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {
-    DEFAULT_DRY_RUN,
     JEST_TIMEOUT_MS,
 } from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
 import {StarlarkRunConfig} from "kurtosis-sdk";
-
-const DEFAULT_STARLARK_RUN_FUNC_NAME = "run"
-const DEFAULT_REL_PATH_TO_MAIN_FILE = ""
 
 const VALID_PACKAGE_WITH_PACKAGE_INPUT_TEST_NAME = "valid-package-with-input"
 const VALID_PACKAGE_WITH_PACKAGE_INPUT_REL_PATH = "../../../../starlark/valid-kurtosis-package-with-input"
