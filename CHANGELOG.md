@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.83.16](https://github.com/kurtosis-tech/kurtosis/compare/0.83.15...0.83.16) (2023-10-02)
+
+
+### Features
+
+* add font ([#1454](https://github.com/kurtosis-tech/kurtosis/issues/1454)) ([75ce332](https://github.com/kurtosis-tech/kurtosis/commit/75ce3323c2b593d3f73f47866307e3476c6633d5)), closes [#1386](https://github.com/kurtosis-tech/kurtosis/issues/1386)
+* added --args-file to Kurtosis run ([#1451](https://github.com/kurtosis-tech/kurtosis/issues/1451)) ([fdc6220](https://github.com/kurtosis-tech/kurtosis/commit/fdc622074b9ddb78f0265885c57208ac1e28fc9d)), closes [#1112](https://github.com/kurtosis-tech/kurtosis/issues/1112)
+
+
+### Bug Fixes
+
+* Remove mouse wheel capture ([#1452](https://github.com/kurtosis-tech/kurtosis/issues/1452)) ([2d35d77](https://github.com/kurtosis-tech/kurtosis/commit/2d35d7731019018051921b9b97735ce90277a68c)), closes [#1438](https://github.com/kurtosis-tech/kurtosis/issues/1438)
+
 ## [0.83.15](https://github.com/kurtosis-tech/kurtosis/compare/0.83.14...0.83.15) (2023-10-02)
 
 
