@@ -358,6 +358,10 @@ Get a list of all files artifacts that are registered with the enclave represent
 **Returns**
 * `filesArtifactNameAndUuids`: A list of files artifact names and their corresponding uuids.
 
+### `getStarlarkRun() -> (GetStarlarkRunResponse getStarlarkResponse, Error error)`
+
+Get the last Starlark run from the enclave.
+
 ServiceIdentifiers
 -------------------
 This class is a representation of service identifiers for a given enclave.
