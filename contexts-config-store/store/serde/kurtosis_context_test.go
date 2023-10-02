@@ -59,7 +59,9 @@ var (
 			"clientCertificate":"ZmFrZS1jZXJ0", 
 			"clientKey":"ZmFrZS1rZXk="
 		},
-		"envVars": ""
+		"envVars": "",
+		"cloudInstanceId": "",
+		"cloudUserId": ""
 	}
 }`
 )
