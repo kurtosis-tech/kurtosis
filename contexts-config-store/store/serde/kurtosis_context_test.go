@@ -37,7 +37,9 @@ var (
 					ClientCertificate:    []byte(fakeCert),
 					ClientKey:            []byte(fakeKey),
 				},
-				EnvVars: new(string),
+				EnvVars:         new(string),
+				CloudInstanceId: new(string),
+				CloudUserId:     new(string),
 			},
 		},
 	}
