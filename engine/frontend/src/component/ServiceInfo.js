@@ -102,7 +102,7 @@ const ServiceInfo = () => {
                             <Text color={"white"} fontSize='xl' as='b'> {!isViewLogPage() ? "Detailed Info " : "Logs "}  for {selected.name} </Text>
                         </Box>
                         <Spacer/>
-                        <Button m="4" onClick={switchServiceInfoView}> {!isViewLogPage() ? "View Logs" : `View ${selected.name}`} </Button>
+                        <Button m="4" onClick={switchServiceInfoView}> {!isViewLogPage() ? "Logs" : `Service`} </Button>
                     </Flex>
                     <Routes>
                         <Route path="/logs" element={renderLogView()} />

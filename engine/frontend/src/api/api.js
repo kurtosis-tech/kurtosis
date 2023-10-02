@@ -114,3 +114,15 @@ export const runStarlarkPackageFromEnclaveManager = async (host, port, packageId
     );
     return enclaveManagerClient.runStarlarkPackage(request, createHeaderOptionsWithToken(token));
 }
+
+
+export const getStarlarkRunConfig = async (host, port, token, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
+    const request = new InspectFilesArtifactContentsRequest(
+        {
+            "apicIpAddress": host,
+            "apicPort": port,
+        }
+    );
+    return enclaveManagerClient.inspectFilesArtifactContents(request, createHeaderOptionsWithToken(token));
+}
