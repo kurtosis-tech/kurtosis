@@ -6,3 +6,9 @@ papercut:
     - 'Papercut;'
 nice to have:
     - 'Nice to have;'
+cli:
+    - 'CLI:'
+frontend:
+    - 'Frontend:'
+sdk:
+    - 'SDK:'
