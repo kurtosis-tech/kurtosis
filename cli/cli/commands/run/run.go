@@ -410,7 +410,7 @@ func run(
 		logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
 	} else {
 		// TODO(gyani-cloud-metrics) move this to APIC
-		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics, "", ""); err != nil {
+		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics, cloudInstanceId, cloudUserId); err != nil {
 			logrus.Warn("An error occurred tracking kurtosis run finished event")
 		}
 	}
