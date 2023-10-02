@@ -28,3 +28,7 @@ func (position *KurtosisBuiltinPosition) String() string {
 func (position *KurtosisBuiltinPosition) ToAPIType() *kurtosis_core_rpc_api_bindings.StarlarkInstructionPosition {
 	return binding_constructors.NewStarlarkInstructionPosition(position.filename, position.line, position.column)
 }
+
+func (position *KurtosisBuiltinPosition) GetFilename() string {
+	return position.filename
+}
