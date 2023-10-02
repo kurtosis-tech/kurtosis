@@ -86,6 +86,8 @@ func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, co
 		apiContainerLogLevel,
 		args.EnclaveName,
 		isProduction,
+		service.metricsUserID,
+		service.didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating new enclave with name '%v'", args.EnclaveName)

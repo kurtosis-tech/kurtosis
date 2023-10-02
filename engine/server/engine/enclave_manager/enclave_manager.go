@@ -113,6 +113,8 @@ func (manager *EnclaveManager) CreateEnclave(
 	//If blank, will use a random one
 	enclaveName string,
 	isProduction bool,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 	manager.mutex.Lock()
 	defer manager.mutex.Unlock()
@@ -163,6 +165,8 @@ func (manager *EnclaveManager) CreateEnclave(
 			enclaveName,
 			manager.enclaveEnvVars,
 			isProduction,
+			metricsUserID,
+			didUserAcceptSendingMetrics,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(
