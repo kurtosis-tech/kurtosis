@@ -187,7 +187,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Key:     packageArgsFileFlagKey,
 			Usage:   "The file (JSON/YAML) will be used as arguments passed to the Kurtosis Package",
 			Type:    flags.FlagType_String,
-			Default: inputArgsAreEmptyBracesByDefault,
+			Default: packageArgsFileDefaultValue,
 		},
 	},
 	Args: []*args.ArgConfig{
