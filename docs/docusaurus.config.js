@@ -30,11 +30,6 @@ const config = {
         docs: {
           sidebarPath: require.resolve('./sidebars.js'),
           routeBasePath: '/',
-          versions: {
-            current: {
-              label: 'Upcoming Release',
-            }
-          },
           admonitions: {}, // Add this line to enable admonitions
 
           // TODO TODO Run Remark plugins through Docusaurus itself (right now we're running it via yarn and package.json)!! See https://docusaurus.io/docs/markdown-features/plugins#installing-plugins
@@ -56,7 +51,7 @@ const config = {
       announcementBar: {
         id: 'support_us',
         content:
-            '<a target="_blank" rel="noopener noreferrer" href="https://calendly.com/d/zgt-f2c-66p/kurtosis-onboarding">Schedule a live session with us for help getting started or to learn more.</a>',
+            '<a target="_blank" rel="noopener noreferrer" href="https://github.com/kurtosis-tech/kurtosis">Support Kurtosis with a star on our Github repo!</a>',
         backgroundColor: '#1b1b1d',
         textColor: '#909294',
         isCloseable: false,
@@ -96,11 +91,6 @@ const config = {
             href: 'https://web3.kurtosis.com',
             position: 'left',
             label: 'Kurtosis for Web3',
-          },
-          {
-            type: 'docsVersionDropdown',
-            position: 'right',
-            dropdownActiveClassDisabled: true,
           },
           {
             href: 'https://github.com/kurtosis-tech/kurtosis/issues/new?assignees=leeederek&labels=docs&template=docs-issue.yml',

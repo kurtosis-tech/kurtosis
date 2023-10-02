@@ -18,27 +18,6 @@ jobs:
           api/scripts/update-package-versions.sh "$(cat version.txt)"
           api/scripts/update-own-version-constants.sh "$(cat version.txt)"
           scripts/update-license-version.sh "$(cat version.txt)"
-      - run: |
-          sudo apt install nodejs yarn
-        name: Set up Node & Yarn for cutting new version of docs
-      - name: Cut a New Docs version
-        run: |
-          version="$(cat version.txt)"
-          # revert any other docs changes made in this release please pr so far
-          git rm -r docs/
-          git checkout origin/main -- docs/
-          cd docs/
-
-          # Very important to use Yarn, rather than NPM so we don't get two lockfiles!
-          # Also, important to use a frozen lockfile so that Yarn isn't silently pushing updated dependencies right to 'main'
-          yarn --frozen-lockfile install
-          yarn run docusaurus docs:version "${version}"
-
-          cp ../CHANGELOG.md "versioned_docs/version-${version}/changelog.md"
-      - name: Prune Old Docs
-        run: |
-          cd docs/
-          python ../.github/prune_old_docs.py
       - uses: stefanzweifel/git-auto-commit-action@v4
         with:
           token: "${{ secrets.RELEASER_TOKEN }}"

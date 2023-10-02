@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.83.15](https://github.com/kurtosis-tech/kurtosis/compare/0.83.14...0.83.15) (2023-10-02)
+
+
+### Features
+
+* Add product area to the bug report template ([#1441](https://github.com/kurtosis-tech/kurtosis/issues/1441)) ([6d07ed6](https://github.com/kurtosis-tech/kurtosis/commit/6d07ed68005bdaf785328ef8f48d9b6560d185c9))
+* added a tool tip to show users new logs are present ([#1444](https://github.com/kurtosis-tech/kurtosis/issues/1444)) ([82ce14b](https://github.com/kurtosis-tech/kurtosis/commit/82ce14ba2ce667668350ec173e45594d7dbe9089))
+
+
+### Bug Fixes
+
+* relative locators for read_file and upload_files instructions ([#1427](https://github.com/kurtosis-tech/kurtosis/issues/1427)) ([e5d2c54](https://github.com/kurtosis-tech/kurtosis/commit/e5d2c5462471c505853ae2d02d8260c604fbcf38)), closes [#1412](https://github.com/kurtosis-tech/kurtosis/issues/1412)
+
+## [0.83.14](https://github.com/kurtosis-tech/kurtosis/compare/0.83.13...0.83.14) (2023-09-29)
+
+
+### Bug Fixes
+
+* scroll tracking experience is improved. ([#1429](https://github.com/kurtosis-tech/kurtosis/issues/1429)) ([0572a5c](https://github.com/kurtosis-tech/kurtosis/commit/0572a5c6026a15096e38ddd22d709dc7b6be4edc))
+
+## [0.83.13](https://github.com/kurtosis-tech/kurtosis/compare/0.83.12...0.83.13) (2023-09-28)
+
+
+### Features
+
+* add extra verification when deleting prod enclave. ([#1404](https://github.com/kurtosis-tech/kurtosis/issues/1404)) ([6e3ea07](https://github.com/kurtosis-tech/kurtosis/commit/6e3ea07437368f1fdfbbc32688d8434b223c4ef1))
+* Get user payment config method definition ([#1374](https://github.com/kurtosis-tech/kurtosis/issues/1374)) ([c52cb97](https://github.com/kurtosis-tech/kurtosis/commit/c52cb97e7427c3796b9eedbf1fb115320060c664))
+
+
+### Bug Fixes
+
+* build ([#1432](https://github.com/kurtosis-tech/kurtosis/issues/1432)) ([4e7b618](https://github.com/kurtosis-tech/kurtosis/commit/4e7b6187944972fd12191f97a8064ed62c6db183)), closes [#1425](https://github.com/kurtosis-tech/kurtosis/issues/1425)
+
 ## [0.83.12](https://github.com/kurtosis-tech/kurtosis/compare/0.83.11...0.83.12) (2023-09-28)
 
 
