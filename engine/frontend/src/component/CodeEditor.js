@@ -204,6 +204,7 @@ export const CodeEditor = (
                     scrollBeyondLastLine: false,
                     scrollbar: {
                         verticalScrollbarSize: scrollbarOption(readOnlySetting),
+                        alwaysConsumeMouseWheel: !readOnly, // We want the original read only setting
                     },
                     renderLineHighlight: highlightLineOption(readOnlySetting),
                 }}
