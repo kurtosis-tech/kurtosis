@@ -766,7 +766,7 @@ jobs:
       - run: "${KURTOSIS_BINPATH} run --enclave test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
 
       # Execute Simple Starlark Script to test --args-file
-      - run: "${KURTOSIS_BINPATH} run --enclave args-file-test << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.starlark-test-args-file-test-main-star-relative-path >> --args-file << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipelinestarlark-test-args-file-test-args-json-relative-path >>"
+      - run: "${KURTOSIS_BINPATH} run --enclave args-file-test << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-args-file-test-main-star-relative-path >> --args-file << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.starlark-test-args-file-test-args-json-relative-path >>"
 
       # Execute github starlark module
       - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
