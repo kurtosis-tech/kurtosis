@@ -121,7 +121,8 @@ export const Log = ({logs, fileName}) => {
 
 const styles = {
   row: {
-    fontFamily: "system-ui",
+    fontSize: "10pt",
+    fontFamily: "Menlo, Monaco, Inconsolata, Consolas, Courier, monospace",
     boxSizing: "border-box",
     borderBottom: "1px solid #222",
     padding: "1em",
