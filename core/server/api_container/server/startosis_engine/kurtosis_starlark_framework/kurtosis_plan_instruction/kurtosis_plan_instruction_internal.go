@@ -97,8 +97,8 @@ func (builtin *kurtosisPlanInstructionInternal) GetPersistableAttributes() *encl
 	return enclavePlaneInstructionBuilder.SetStarlarkCode(builtin.String())
 }
 
-func (builtin *kurtosisPlanInstructionInternal) interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string) (starlark.Value, *startosis_errors.InterpretationError) {
-	result, interpretationErr := builtin.capabilities.Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled, builtin.GetArguments())
+func (builtin *kurtosisPlanInstructionInternal) interpret() (starlark.Value, *startosis_errors.InterpretationError) {
+	result, interpretationErr := builtin.capabilities.Interpret(builtin.GetPosition().GetFilename(), builtin.GetArguments())
 	if interpretationErr != nil {
 		return nil, interpretationErr
 	}

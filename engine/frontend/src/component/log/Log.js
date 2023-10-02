@@ -32,17 +32,22 @@ const Row = ({log}) => {
 };
 
 export const Log = ({logs, fileName}) => {
+  const [mouseOnDownload, setMouseOnDownload] =  useState(false);
   const [displayLogs, setDisplayLogs] = useState(logs)
   const virtuosoRef = useRef(null)
+  const [isScrolling, setIsScrolling] = useState(false)
+  const [atBottom, setAtBottom] = useState(false)
+  const [endReached, setEndReached] = useState(false)
   const {height: windowHeight} = useWindowDimensions();
   const { onCopy, value:copyValue, setValue:setCopyValue, hasCopied } = useClipboard("");
-  
+
   useEffect(() => {
     setDisplayLogs(logs);
     const logsWithoutAnsi = logs.map((log)=> {
       return stripAnsi(log)
     })
     setCopyValue(logsWithoutAnsi.join(os.EOL))
+    setEndReached(false)
   }, [logs]);
 
   const handleDownload = () => {
@@ -59,6 +64,9 @@ export const Log = ({logs, fileName}) => {
     });
   }
 
+  const showToolTip = mouseOnDownload || (!endReached && !isScrolling)
+  const toolTipValue = (!endReached) ? "scroll to see new logs" : "scroll to bottom"
+  
   return (
     <div className="flex flex-col bg-black">
       <Virtuoso
@@ -66,6 +74,15 @@ export const Log = ({logs, fileName}) => {
         ref={virtuosoRef}
         data={displayLogs}
         totalCount={displayLogs.length - 1}
+        endReached={() => {
+          setEndReached(true)
+        }}
+        atBottomStateChange={(bottom) => {
+          setAtBottom(bottom)
+        }}
+        isScrolling={(value)=>{
+          setIsScrolling(value)
+        }}
         itemContent={(index, log) => {
           return (
             <Row index={index} log={log} />
@@ -88,9 +105,13 @@ export const Log = ({logs, fileName}) => {
             <DownloadIcon textColor={"white"}/>
           </Box>
         </Tooltip>
-        <Tooltip label={'scroll to bottom'} placement='top' closeOnClick={false}>
-          <Box p='2' m="4" onClick={handleToBottom} height={"40px"}> 
-            <TriangleDownIcon textColor={"white"}/>
+        <Tooltip label={toolTipValue} placement='top' closeOnClick={true} isOpen={showToolTip}>
+          <Box p='2' m="4" 
+            onClick={handleToBottom} height={"40px"} 
+            onMouseEnter={()=> setMouseOnDownload(true)} 
+            onMouseLeave={()=> setMouseOnDownload(false)}
+          > 
+              <TriangleDownIcon textColor={"white"}/>
           </Box>
         </Tooltip>
       </Flex>
@@ -100,7 +121,8 @@ export const Log = ({logs, fileName}) => {
 
 const styles = {
   row: {
-    fontFamily: "system-ui",
+    fontSize: "10pt",
+    fontFamily: "Menlo, Monaco, Inconsolata, Consolas, Courier, monospace",
     boxSizing: "border-box",
     borderBottom: "1px solid #222",
     padding: "1em",
