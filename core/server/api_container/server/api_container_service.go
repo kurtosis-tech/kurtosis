@@ -12,6 +12,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"io"
 	"math"
 	"net/http"
@@ -78,6 +79,8 @@ type ApiContainerService struct {
 	startosisRunner *startosis_engine.StartosisRunner
 
 	startosisModuleContentProvider startosis_packages.PackageContentProvider
+
+	metricsClient metrics_client.MetricsClient
 }
 
 func NewApiContainerService(
@@ -85,12 +88,14 @@ func NewApiContainerService(
 	serviceNetwork service_network.ServiceNetwork,
 	startosisRunner *startosis_engine.StartosisRunner,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
+	metricsClient metrics_client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
 		startosisRunner:                startosisRunner,
 		startosisModuleContentProvider: startosisModuleContentProvider,
+		metricsClient:                  metricsClient,
 	}
 
 	return service, nil
