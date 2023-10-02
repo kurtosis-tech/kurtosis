@@ -93,7 +93,8 @@ const (
 	noConnectFlagKey = "no-connect"
 	noConnectDefault = "false"
 
-	packageArgsFlagKey = "args-file"
+	packageArgsFileFlagKey      = "args-file"
+	packageArgsFileDefaultValue = ""
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -183,7 +184,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Default: noConnectDefault,
 		},
 		{
-			Key:     packageArgsFlagKey,
+			Key:     packageArgsFileFlagKey,
 			Usage:   "The file (JSON/YAML) will be used as arguments passed to the Kurtosis Package",
 			Type:    flags.FlagType_String,
 			Default: inputArgsAreEmptyBracesByDefault,
@@ -283,19 +284,24 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFunctionNameFlagKey)
 	}
 
-	packageArgsViaFlag, err := flags.GetString(packageArgsFlagKey)
+	packageArgsFile, err := flags.GetString(packageArgsFileFlagKey)
 	if err != nil {
-		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", packageArgsFlagKey)
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", packageArgsFileFlagKey)
 	}
 
-	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsViaFlag != inputArgsAreEmptyBracesByDefault {
-		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFlagKey, packageArgsFlagKey)
-		if packageArgParsingErr := validateSerializedArgs(packageArgsViaFlag); packageArgParsingErr != nil {
-			return stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFlagKey)
+	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
+		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFileFlagKey, packageArgsFileFlagKey)
+		packageArgsFileBytes, err := os.ReadFile(packageArgsFile)
+		if err != nil {
+			return stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
 		}
-		packageArgs = packageArgsViaFlag
-	} else if packageArgs != inputArgsAreEmptyBracesByDefault && packageArgsViaFlag != inputArgsAreEmptyBracesByDefault {
-		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFlagKey, inputArgsArgKey)
+		packageArgsFileStr := string(packageArgsFileBytes)
+		if packageArgParsingErr := validateSerializedArgs(packageArgsFileStr); packageArgParsingErr != nil {
+			return stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFileFlagKey)
+		}
+		packageArgs = packageArgsFileStr
+	} else if packageArgs != inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
+		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFileFlagKey, inputArgsArgKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
