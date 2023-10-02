@@ -311,9 +311,9 @@ func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *conne
 	return resp, nil
 }
 
-func (c *WebServer) GetStarlarkRunConfig(
+func (c *WebServer) GetStarlarkRun(
 	ctx context.Context,
-	req *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunConfigRequest],
+	req *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunRequest],
 ) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error) {
 	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
 	if err != nil {
