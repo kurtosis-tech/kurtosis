@@ -25,12 +25,11 @@ import (
 )
 
 const (
-	listenPort                                       = 8081
-	grpcServerStopGracePeriod                        = 5 * time.Second
-	engineHostUrl                                    = "http://localhost:9710"
-	kurtosisCloudApiHost                             = "https://cloud.kurtosis.com"
-	kurtosisCloudApiPort                             = 8080
-	KurtosisEnclaveManagerApiEnforceAuthKeyEnvVarArg = "KURTOSIS_ENCLAVE_MANAGER_API_ENFORCE_AUTH"
+	listenPort                = 8081
+	grpcServerStopGracePeriod = 5 * time.Second
+	engineHostUrl             = "http://localhost:9710"
+	kurtosisCloudApiHost      = "https://cloud.kurtosis.com"
+	kurtosisCloudApiPort      = 8080
 )
 
 type Authentication struct {
@@ -312,6 +311,44 @@ func (c *WebServer) InspectFilesArtifactContents(ctx context.Context, req *conne
 	return resp, nil
 }
 
+func (c *WebServer) GetStarlarkRunConfig(
+	ctx context.Context,
+	req *connect.Request[kurtosis_enclave_manager_api_bindings.GetStarlarkRunConfigRequest],
+) (*connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse], error) {
+	auth, err := c.ValidateRequestAuthorization(ctx, c.enforceAuth, req.Header())
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Authentication attempt failed")
+	}
+	if !auth {
+		return nil, stacktrace.Propagate(err, "User not authorized")
+	}
+	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "Failed to create the APIC client")
+	}
+
+	request := &connect.Request[emptypb.Empty]{
+		Msg: &emptypb.Empty{},
+	}
+	result, err := (*apiContainerServiceClient).GetStarlarkRun(ctx, request)
+	if err != nil {
+		return nil, err
+	}
+	resp := &connect.Response[kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse]{
+		Msg: &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
+			PackageId:              result.Msg.PackageId,
+			SerializedScript:       result.Msg.SerializedScript,
+			SerializedParams:       result.Msg.SerializedParams,
+			Parallelism:            result.Msg.Parallelism,
+			RelativePathToMainFile: result.Msg.RelativePathToMainFile,
+			MainFunctionName:       result.Msg.MainFunctionName,
+			ExperimentalFeatures:   result.Msg.ExperimentalFeatures,
+			IsProduction:           result.Msg.IsProduction,
+		},
+	}
+	return resp, nil
+}
+
 func (c *WebServer) createAPICClient(
 	ip string,
 	port int32,
@@ -332,13 +369,13 @@ func (c *WebServer) createKurtosisCloudBackendClient(
 	host string,
 	port int,
 ) (*kurtosis_backend_server_rpc_api_bindingsconnect.KurtosisCloudBackendServerClient, error) {
-	url, err := url.Parse(fmt.Sprintf("%s:%d", host, port))
+	parsedUrl, err := url.Parse(fmt.Sprintf("%s:%d", host, port))
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Failed to parse the connection url for Kurtosis Cloud Backend")
 	}
 	client := kurtosis_backend_server_rpc_api_bindingsconnect.NewKurtosisCloudBackendServerClient(
 		http.DefaultClient,
-		url.String(),
+		parsedUrl.String(),
 		connect.WithGRPCWeb(),
 	)
 	return &client, nil
