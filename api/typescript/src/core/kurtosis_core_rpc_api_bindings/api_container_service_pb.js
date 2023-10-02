@@ -1910,7 +1910,9 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
     dryRun: jspb.Message.getBooleanFieldWithDefault(msg, 3, false),
     parallelism: jspb.Message.getFieldWithDefault(msg, 4, 0),
     mainFunctionName: jspb.Message.getFieldWithDefault(msg, 5, ""),
-    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f
+    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
+    cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 7, ""),
+    cloudUserId: jspb.Message.getFieldWithDefault(msg, 8, "")
   };
 
   if (includeInstance) {
@@ -1972,6 +1974,14 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
       for (var i = 0; i < values.length; i++) {
         msg.addExperimentalFeatures(values[i]);
       }
+      break;
+    case 7:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setCloudInstanceId(value);
+      break;
+    case 8:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setCloudUserId(value);
       break;
     default:
       reader.skipField();
@@ -2041,6 +2051,20 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
   if (f.length > 0) {
     writer.writePackedEnum(
       6,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 7));
+  if (f != null) {
+    writer.writeString(
+      7,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 8));
+  if (f != null) {
+    writer.writeString(
+      8,
       f
     );
   }
@@ -2210,6 +2234,78 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.clearExperimentalFeature
 };
 
 
+/**
+ * optional string cloud_instance_id = 7;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getCloudInstanceId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 7, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setCloudInstanceId = function(value) {
+  return jspb.Message.setField(this, 7, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearCloudInstanceId = function() {
+  return jspb.Message.setField(this, 7, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasCloudInstanceId = function() {
+  return jspb.Message.getField(this, 7) != null;
+};
+
+
+/**
+ * optional string cloud_user_id = 8;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getCloudUserId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 8, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setCloudUserId = function(value) {
+  return jspb.Message.setField(this, 8, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearCloudUserId = function() {
+  return jspb.Message.setField(this, 8, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasCloudUserId = function() {
+  return jspb.Message.getField(this, 8) != null;
+};
+
+
 
 /**
  * List of repeated fields within this message type.
@@ -2284,7 +2380,9 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     clonePackage: jspb.Message.getBooleanFieldWithDefault(msg, 8, false),
     relativePathToMainFile: jspb.Message.getFieldWithDefault(msg, 9, ""),
     mainFunctionName: jspb.Message.getFieldWithDefault(msg, 10, ""),
-    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f
+    experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f,
+    cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 12, ""),
+    cloudUserId: jspb.Message.getFieldWithDefault(msg, 13, "")
   };
 
   if (includeInstance) {
@@ -2362,6 +2460,14 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
       for (var i = 0; i < values.length; i++) {
         msg.addExperimentalFeatures(values[i]);
       }
+      break;
+    case 12:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setCloudInstanceId(value);
+      break;
+    case 13:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setCloudUserId(value);
       break;
     default:
       reader.skipField();
@@ -2459,6 +2565,20 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f.length > 0) {
     writer.writePackedEnum(
       11,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 12));
+  if (f != null) {
+    writer.writeString(
+      12,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 13));
+  if (f != null) {
+    writer.writeString(
+      13,
       f
     );
   }
@@ -2775,6 +2895,78 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.addExperimentalFeatures
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.clearExperimentalFeaturesList = function() {
   return this.setExperimentalFeaturesList([]);
+};
+
+
+/**
+ * optional string cloud_instance_id = 12;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getCloudInstanceId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 12, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setCloudInstanceId = function(value) {
+  return jspb.Message.setField(this, 12, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearCloudInstanceId = function() {
+  return jspb.Message.setField(this, 12, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.hasCloudInstanceId = function() {
+  return jspb.Message.getField(this, 12) != null;
+};
+
+
+/**
+ * optional string cloud_user_id = 13;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getCloudUserId = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 13, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setCloudUserId = function(value) {
+  return jspb.Message.setField(this, 13, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearCloudUserId = function() {
+  return jspb.Message.setField(this, 13, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.hasCloudUserId = function() {
+  return jspb.Message.getField(this, 13) != null;
 };
 
 

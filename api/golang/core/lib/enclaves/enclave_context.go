@@ -25,6 +25,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/grpc-file-transfer/golang/grpc_file_streaming"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -80,20 +81,16 @@ func (enclaveCtx *EnclaveContext) GetEnclaveName() string {
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 	ctx context.Context,
-	mainFunctionName string,
 	serializedScript string,
-	serializedParams string,
-	dryRun bool,
-	parallelism int32,
-	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
-	oldSerializedParams := serializedParams
+	oldSerializedParams := runConfig.SerializedParams
 	serializedParams, err := maybeParseYaml(oldSerializedParams)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for script '%v'", oldSerializedParams)
 	}
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(mainFunctionName, serializedScript, serializedParams, dryRun, parallelism, experimentalFeatures)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkScriptArgs(runConfig.MainFunctionName, serializedScript, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId)
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 
 	stream, err := enclaveCtx.client.RunStarlarkScript(ctxWithCancel, executeStartosisScriptArgs)
@@ -109,14 +106,10 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScript(
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
 func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(
 	ctx context.Context,
-	mainFunctionName string,
 	serializedScript string,
-	serializedParams string,
-	dryRun bool,
-	parallelism int32,
-	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (*StarlarkRunResult, error) {
-	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkScript(ctx, mainFunctionName, serializedScript, serializedParams, dryRun, parallelism, experimentalFeatures)
+	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkScript(ctx, serializedScript, runConfig)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Error requesting Starlark Script run")
 	}
@@ -128,9 +121,9 @@ func (enclaveCtx *EnclaveContext) RunStarlarkScriptBlocking(
 func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 	ctx context.Context,
 	packageRootPath string,
-	runConfig *RunStarlarkConfig,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
-	serializedParams, err := maybeParseYaml(runConfig.serializedParams)
+	serializedParams, err := maybeParseYaml(runConfig.SerializedParams)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for package '%v'", serializedParams)
 	}
@@ -143,7 +136,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 	}()
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(packageRootPath, runConfig.relativePathToMainFile, runConfig.mainFunctionName, serializedParams, runConfig.dryRun, runConfig.parallelism, runConfig.experimentalFeatureFlags, runConfig.cloudInstanceId, runConfig.cloudUserId)
+	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(packageRootPath, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -167,7 +160,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 func (enclaveCtx *EnclaveContext) RunStarlarkPackageBlocking(
 	ctx context.Context,
 	packageRootPath string,
-	runConfig *RunStarlarkConfig,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkPackage(ctx, packageRootPath, runConfig)
 	if err != nil {
@@ -196,9 +189,9 @@ func maybeParseYaml(serializedParams string) (string, error) {
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	ctx context.Context,
 	packageId string,
-	runConfig *RunStarlarkConfig,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
-	serializedParams, err := maybeParseYaml(runConfig.serializedParams)
+	serializedParams, err := maybeParseYaml(runConfig.SerializedParams)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for remote package '%v'", serializedParams)
 	}
@@ -211,7 +204,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 	}()
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, runConfig.relativePathToMainFile, runConfig.mainFunctionName, serializedParams, runConfig.dryRun, runConfig.parallelism, runConfig.experimentalFeatureFlags, runConfig.cloudInstanceId, runConfig.cloudUserId)
+	executeStartosisScriptArgs := binding_constructors.NewRunStarlarkRemotePackageArgs(packageId, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId)
 
 	stream, err := enclaveCtx.client.RunStarlarkPackage(ctxWithCancel, executeStartosisScriptArgs)
 	if err != nil {
@@ -236,7 +229,7 @@ func isValidJSON(maybeJson string) bool {
 func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackageBlocking(
 	ctx context.Context,
 	packageId string,
-	runConfig *RunStarlarkConfig,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (*StarlarkRunResult, error) {
 	starlarkRunResponseLineChan, _, err := enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, runConfig)
 	if err != nil {

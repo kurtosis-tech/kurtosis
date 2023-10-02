@@ -39,7 +39,13 @@ func NewRunStarlarkScriptArgs(
 	dryRun bool,
 	parallelism int32,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	cloudInstanceId string,
+	cloudUserId string,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
+	cloudInstanceIdCopy := new(string)
+	*cloudInstanceIdCopy = cloudInstanceId
+	cloudUserIdCopy := new(string)
+	*cloudUserIdCopy = cloudUserId
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
@@ -49,6 +55,8 @@ func NewRunStarlarkScriptArgs(
 		Parallelism:          parallelismCopy,
 		MainFunctionName:     mainFunctionName,
 		ExperimentalFeatures: experimentalFeatures,
+		CloudInstanceId:      cloudInstanceIdCopy,
+		CloudUserId:          cloudUserIdCopy,
 	}
 }
 

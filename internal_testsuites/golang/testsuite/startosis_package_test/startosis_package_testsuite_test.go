@@ -2,6 +2,7 @@ package startosis_package_test
 
 import (
 	"context"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"os"
 	"path"
 	"testing"
@@ -15,12 +16,8 @@ import (
 )
 
 const (
-	name                   = "startosis-package"
-	emptyRunParams         = "{}"
-	defaultDryRun          = false
-	defaultParallelism     = 4
-	useDefaultMainFile     = ""
-	useDefaultFunctionName = ""
+	name           = "startosis-package"
+	emptyRunParams = "{}"
 )
 
 var (
@@ -56,7 +53,7 @@ func (suite *StartosisPackageTestSuite) RunPackage(ctx context.Context, packageR
 }
 
 func (suite *StartosisPackageTestSuite) RunRemotePackage(ctx context.Context, remotePackage string) (*enclaves.StarlarkRunResult, error) {
-	return suite.enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, useDefaultMainFile, useDefaultFunctionName, emptyRunParams, defaultDryRun, defaultParallelism, noExperimentalFeature)
+	return suite.enclaveCtx.RunStarlarkRemotePackageBlocking(ctx, remotePackage, starlark_run_config.NewRunStarlarkConfig())
 }
 
 func (suite *StartosisPackageTestSuite) RunPackageWithParams(ctx context.Context, packageRelativeDirpath string, params string) (*enclaves.StarlarkRunResult, error) {
@@ -71,11 +68,6 @@ func (suite *StartosisPackageTestSuite) RunPackageWithParams(ctx context.Context
 	return suite.enclaveCtx.RunStarlarkPackageBlocking(
 		ctx,
 		packageDirpath,
-		useDefaultMainFile,
-		useDefaultFunctionName,
-		params,
-		defaultDryRun,
-		defaultParallelism,
-		noExperimentalFeature,
+		starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(params)),
 	)
 }

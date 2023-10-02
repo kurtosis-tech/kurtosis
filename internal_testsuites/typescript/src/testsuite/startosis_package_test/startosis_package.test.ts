@@ -5,6 +5,7 @@ import {
 } from "./shared_constants";
 import * as path from "path";
 import log from "loglevel";
+import {StarlarkRunConfig} from "kurtosis-sdk";
 
 const DEFAULT_STARLARK_RUN_FUNC_NAME = "run"
 const DEFAULT_REL_PATH_TO_MAIN_FILE = ""
@@ -33,10 +34,7 @@ test("Test valid Starlark package with input", async () => {
         const params = `{"greetings": "bonjour!"}`
         const runResult = await enclaveContext.runStarlarkPackageBlocking(
             packageRootPath,
-            DEFAULT_REL_PATH_TO_MAIN_FILE,
-            DEFAULT_STARLARK_RUN_FUNC_NAME,
-            params,
-            DEFAULT_DRY_RUN,
+            new StarlarkRunConfig(StarlarkRunConfig.WithSerializedParams(params))
         )
 
         if (runResult.isErr()) {
@@ -75,10 +73,7 @@ test("Test valid Starlark package with input - missing key in params", async () 
         const params = `{"hello": "world"}` // expecting key 'greetings' here
         const runResult = await enclaveContext.runStarlarkPackageBlocking(
             packageRootPath,
-            DEFAULT_REL_PATH_TO_MAIN_FILE,
-            DEFAULT_STARLARK_RUN_FUNC_NAME,
-            params,
-            DEFAULT_DRY_RUN,
+            new StarlarkRunConfig(StarlarkRunConfig.WithSerializedParams(params))
         )
 
         if (runResult.isErr()) {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"gopkg.in/yaml.v2"
 	"os"
 	"os/signal"
@@ -301,6 +302,16 @@ func run(
 		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFileFlagKey, inputArgsArgKey)
 	}
 
+	// TODO fill in cloud user id and cloud instance id
+	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig(
+		starlark_run_config.WithDryRun(dryRun),
+		starlark_run_config.WithParallelism(castedParallelism),
+		starlark_run_config.WithExperimentalFeatureFlags(experimentalFlags),
+		starlark_run_config.WithMainFunctionName(mainFunctionName),
+		starlark_run_config.WithRelativePathToMainFile(relativePathToTheMainFile),
+		starlark_run_config.WithSerializedParams(packageArgs),
+	)
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -334,7 +345,7 @@ func run(
 
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
 	if isRemotePackage {
-		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, packageArgs, dryRun, castedParallelism, experimentalFlags)
+		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
 	} else {
 		fileOrDir, err := os.Stat(starlarkScriptOrPackagePath)
 		if err != nil {
@@ -345,7 +356,7 @@ func run(
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, mainFunctionName, packageArgs, dryRun, castedParallelism, experimentalFlags)
+			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
 		} else {
 			// if the path is a file with `kurtosis.yml` at the end it's a module dir
 			// we remove the `kurtosis.yml` to get just the Dir containing the module
@@ -356,7 +367,7 @@ func run(
 			if err != nil {
 				return stacktrace.Propagate(err, "Tried parsing Kurtosis YML at '%v' to get package name but failed", starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, packageArgs, dryRun, castedParallelism, experimentalFlags)
+			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
 		}
 	}
 	if errRunningKurtosis != nil {
@@ -434,24 +445,19 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, mainFunctionName string, serializedParams string, dryRun bool, parallelism int32, experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, runConfig *starlark_run_config.StarlarkRunConfig) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	fileContentBytes, err := os.ReadFile(scriptPath)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", scriptPath)
 	}
-	return enclaveCtx.RunStarlarkScript(ctx, mainFunctionName, string(fileContentBytes), serializedParams, dryRun, parallelism, experimentalFeatures)
+	return enclaveCtx.RunStarlarkScript(ctx, string(fileContentBytes), runConfig)
 }
 
 func executePackage(
 	ctx context.Context,
 	enclaveCtx *enclaves.EnclaveContext,
 	packagePath string,
-	relativePathToMainFile string,
-	mainFunctionName string,
-	serializedParams string,
-	dryRun bool,
-	parallelism int32,
-	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	// we get the absolute path so that the logs make more sense
 	absolutePackagePath, err := filepath.Abs(packagePath)
@@ -460,21 +466,16 @@ func executePackage(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while getting the absolute path for '%v'", packagePath)
 	}
-	return enclaveCtx.RunStarlarkPackage(ctx, packagePath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures)
+	return enclaveCtx.RunStarlarkPackage(ctx, packagePath, runConfig)
 }
 
 func executeRemotePackage(
 	ctx context.Context,
 	enclaveCtx *enclaves.EnclaveContext,
 	packageId string,
-	relativePathToMainFile string,
-	mainFunctionName string,
-	serializedParams string,
-	dryRun bool,
-	parallelism int32,
-	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
-	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures)
+	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, runConfig)
 }
 
 // ReadAndPrintResponseLinesUntilClosed TODO(victor.colombo): Extract this to somewhere reasonable
