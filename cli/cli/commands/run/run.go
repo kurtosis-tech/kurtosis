@@ -217,7 +217,7 @@ func run(
 	args *args.ParsedArgs,
 ) error {
 	// Args parsing and validation
-	serializedJsonArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
+	packageArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", inputArgsArgKey)
 	}
@@ -283,17 +283,19 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFunctionNameFlagKey)
 	}
 
-	packageArgs, err := flags.GetString(packageArgsFlagKey)
+	packageArgsViaFlag, err := flags.GetString(packageArgsFlagKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", packageArgsFlagKey)
 	}
 
-	if serializedJsonArgs == inputArgsAreEmptyBracesByDefault && packageArgs != inputArgsAreEmptyBracesByDefault {
+	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsViaFlag != inputArgsAreEmptyBracesByDefault {
 		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFlagKey, packageArgsFlagKey)
-		if packageArgParsingErr := validateSerializedArgs(packageArgs); packageArgParsingErr != nil {
+		if packageArgParsingErr := validateSerializedArgs(packageArgsViaFlag); packageArgParsingErr != nil {
 			return stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFlagKey)
 		}
-		serializedJsonArgs = packageArgs
+		packageArgs = packageArgsViaFlag
+	} else if packageArgs != inputArgsAreEmptyBracesByDefault && packageArgsViaFlag != inputArgsAreEmptyBracesByDefault {
+		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFlagKey, inputArgsArgKey)
 	}
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -331,7 +333,7 @@ func run(
 	isStandAloneScript := false
 	packageOrScriptName := starlarkScriptOrPackagePath
 	if isRemotePackage {
-		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism, experimentalFlags)
+		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, packageArgs, dryRun, castedParallelism, experimentalFlags)
 	} else {
 		fileOrDir, err := os.Stat(starlarkScriptOrPackagePath)
 		if err != nil {
@@ -343,7 +345,7 @@ func run(
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism, experimentalFlags)
+			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, mainFunctionName, packageArgs, dryRun, castedParallelism, experimentalFlags)
 		} else {
 			// if the path is a file with `kurtosis.yml` at the end it's a module dir
 			// we remove the `kurtosis.yml` to get just the Dir containing the module
@@ -355,7 +357,7 @@ func run(
 			if err != nil {
 				return stacktrace.Propagate(err, "Tried parsing Kurtosis YML at '%v' to get package name but failed", starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism, experimentalFlags)
+			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, packageArgs, dryRun, castedParallelism, experimentalFlags)
 		}
 	}
 	if errRunningKurtosis != nil {
