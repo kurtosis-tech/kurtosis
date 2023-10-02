@@ -52,10 +52,10 @@ func run(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to read content of context file at '%s'", contextFilePath)
 	}
-	return AddContext(newContextToAdd, nil)
+	return AddContext(newContextToAdd, nil, nil, nil)
 }
 
-func AddContext(newContextToAdd *generated.KurtosisContext, envVars *string) error {
+func AddContext(newContextToAdd *generated.KurtosisContext, envVars *string, cloudInstanceId *string, cloudUserId *string) error {
 	logrus.Infof("Adding new context '%s'", newContextToAdd.GetName())
 	contextsConfigStore := store.GetContextsConfigStore()
 	var enrichedContextData *generated.KurtosisContext
@@ -69,6 +69,8 @@ func AddContext(newContextToAdd *generated.KurtosisContext, envVars *string) err
 			newContextToAdd.GetRemoteContextV0().GetTunnelPort(),
 			newContextToAdd.GetRemoteContextV0().GetTlsConfig(),
 			envVars,
+			cloudInstanceId,
+			cloudUserId,
 		)
 	} else {
 		enrichedContextData = newContextToAdd

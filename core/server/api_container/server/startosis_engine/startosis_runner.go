@@ -13,7 +13,6 @@ import (
 	"sync"
 )
 
-// TODO(gyani-cloud-metrics) pass the metrics client here to track the run finished event
 type StartosisRunner struct {
 	startosisInterpreter *StartosisInterpreter
 

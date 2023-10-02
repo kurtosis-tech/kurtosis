@@ -101,7 +101,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 	if err != nil {
 		return stacktrace.Propagate(err, "While attempting to reload the context with uuid %s an error occurred while removing it from the context store", parsedContext.Uuid)
 	}
-	if add.AddContext(parsedContext, assembleEnvVars(result)) != nil {
+	if add.AddContext(parsedContext, assembleEnvVars(result), &result.InstanceId, &result.UserId) != nil {
 		return stacktrace.Propagate(err, "Unable to add context to context store")
 	}
 	contextIdentifier := parsedContext.GetName()
