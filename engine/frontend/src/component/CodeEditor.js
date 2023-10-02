@@ -110,7 +110,7 @@ export const CodeEditor = (
             const contentHeight = Math.min(750, getEditor().getContentHeight());
             getEditor().layout({width: defaultWidthPx, height: contentHeight});
             getEditor().layout()
-            }
+        }
     };
 
     const handleEditorChange = (value) => {
