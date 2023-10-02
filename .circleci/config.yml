@@ -191,7 +191,13 @@ parameters:
     default: "engine-server-image.tgz"
   startosis-test-script-file-relative-path:
     type: string
-    default: "internal_testsuites/starlark/ci_tests/startosis_simple_script.star"
+    default: "internal_testsuites/starlark/ci_tests/simple_no_arg_test/startosis_simple_script.star"
+  starlark-test-args-file-test-main-star-relative-path:
+    type: string
+    default: "internal_testsuites/starlark/ci_tests/simple_arg_test/main.star"
+  starlark-test-args-file-test-args-json-relative-path:
+    type: string
+    default: "internal_testsuites/starlark/ci_tests/simple_arg_test/args.json"
   rendertemplate-cli-test-template-relative-path:
     type: string
     default: "internal_testsuites/resources/render_template_cli_test/template.txt"
@@ -315,6 +321,8 @@ jobs:
           root: .
           paths:
             - "<< pipeline.parameters.file-artifacts-expander-image-filename >>"
+            - "<< pipeline.parameters.starlark-test-args-file-test-main-star-relative-path >>"
+            - "<< pipeline.parameters.starlark-test-args-file-test-args-json-relative-path >>"
 
   build_core_launcher:
     docker:
@@ -756,6 +764,9 @@ jobs:
 
       # Execute simple startosis script in new enclave
       - run: "${KURTOSIS_BINPATH} run --enclave test-enclave << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.parameters.startosis-test-script-file-relative-path >>"
+
+      # Execute Simple Starlark Script to test --args-file
+      - run: "${KURTOSIS_BINPATH} run --enclave args-file-test << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipeline.starlark-test-args-file-test-main-star-relative-path >> --args-file << pipeline.parameters.workspace-with-cli-binary-and-images-mountpoint >>/<< pipelinestarlark-test-args-file-test-args-json-relative-path >>"
 
       # Execute github starlark module
       - run: "${KURTOSIS_BINPATH} run --enclave test-datastore github.com/kurtosis-tech/datastore-army-package '{\"num_datastores\": 2}'"
