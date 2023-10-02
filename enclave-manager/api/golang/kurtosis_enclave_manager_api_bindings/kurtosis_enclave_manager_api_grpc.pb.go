@@ -31,7 +31,7 @@ const (
 	KurtosisEnclaveManagerServer_CreateEnclave_FullMethodName                  = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/CreateEnclave"
 	KurtosisEnclaveManagerServer_InspectFilesArtifactContents_FullMethodName   = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/InspectFilesArtifactContents"
 	KurtosisEnclaveManagerServer_DestroyEnclave_FullMethodName                 = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/DestroyEnclave"
-	KurtosisEnclaveManagerServer_GetStarlarkRunConfig_FullMethodName           = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetStarlarkRunConfig"
+	KurtosisEnclaveManagerServer_GetStarlarkRun_FullMethodName                 = "/kurtosis_enclave_manager.KurtosisEnclaveManagerServer/GetStarlarkRun"
 )
 
 // KurtosisEnclaveManagerServerClient is the client API for KurtosisEnclaveManagerServer service.
@@ -47,7 +47,7 @@ type KurtosisEnclaveManagerServerClient interface {
 	CreateEnclave(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs, opts ...grpc.CallOption) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error)
 	InspectFilesArtifactContents(ctx context.Context, in *InspectFilesArtifactContentsRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error)
 	DestroyEnclave(ctx context.Context, in *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
-	GetStarlarkRunConfig(ctx context.Context, in *GetStarlarkRunConfigRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error)
+	GetStarlarkRun(ctx context.Context, in *GetStarlarkRunRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error)
 }
 
 type kurtosisEnclaveManagerServerClient struct {
@@ -185,9 +185,9 @@ func (c *kurtosisEnclaveManagerServerClient) DestroyEnclave(ctx context.Context,
 	return out, nil
 }
 
-func (c *kurtosisEnclaveManagerServerClient) GetStarlarkRunConfig(ctx context.Context, in *GetStarlarkRunConfigRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
+func (c *kurtosisEnclaveManagerServerClient) GetStarlarkRun(ctx context.Context, in *GetStarlarkRunRequest, opts ...grpc.CallOption) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
 	out := new(kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse)
-	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetStarlarkRunConfig_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, KurtosisEnclaveManagerServer_GetStarlarkRun_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -207,7 +207,7 @@ type KurtosisEnclaveManagerServerServer interface {
 	CreateEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs) (*kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse, error)
 	InspectFilesArtifactContents(context.Context, *InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error)
 	DestroyEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error)
-	GetStarlarkRunConfig(context.Context, *GetStarlarkRunConfigRequest) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error)
+	GetStarlarkRun(context.Context, *GetStarlarkRunRequest) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error)
 }
 
 // UnimplementedKurtosisEnclaveManagerServerServer should be embedded to have forward compatible implementations.
@@ -241,8 +241,8 @@ func (UnimplementedKurtosisEnclaveManagerServerServer) InspectFilesArtifactConte
 func (UnimplementedKurtosisEnclaveManagerServerServer) DestroyEnclave(context.Context, *kurtosis_engine_rpc_api_bindings.DestroyEnclaveArgs) (*emptypb.Empty, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DestroyEnclave not implemented")
 }
-func (UnimplementedKurtosisEnclaveManagerServerServer) GetStarlarkRunConfig(context.Context, *GetStarlarkRunConfigRequest) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method GetStarlarkRunConfig not implemented")
+func (UnimplementedKurtosisEnclaveManagerServerServer) GetStarlarkRun(context.Context, *GetStarlarkRunRequest) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetStarlarkRun not implemented")
 }
 
 // UnsafeKurtosisEnclaveManagerServerServer may be embedded to opt out of forward compatibility for this service.
@@ -424,20 +424,20 @@ func _KurtosisEnclaveManagerServer_DestroyEnclave_Handler(srv interface{}, ctx c
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KurtosisEnclaveManagerServer_GetStarlarkRunConfig_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetStarlarkRunConfigRequest)
+func _KurtosisEnclaveManagerServer_GetStarlarkRun_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStarlarkRunRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(KurtosisEnclaveManagerServerServer).GetStarlarkRunConfig(ctx, in)
+		return srv.(KurtosisEnclaveManagerServerServer).GetStarlarkRun(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: KurtosisEnclaveManagerServer_GetStarlarkRunConfig_FullMethodName,
+		FullMethod: KurtosisEnclaveManagerServer_GetStarlarkRun_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KurtosisEnclaveManagerServerServer).GetStarlarkRunConfig(ctx, req.(*GetStarlarkRunConfigRequest))
+		return srv.(KurtosisEnclaveManagerServerServer).GetStarlarkRun(ctx, req.(*GetStarlarkRunRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -478,8 +478,8 @@ var KurtosisEnclaveManagerServer_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KurtosisEnclaveManagerServer_DestroyEnclave_Handler,
 		},
 		{
-			MethodName: "GetStarlarkRunConfig",
-			Handler:    _KurtosisEnclaveManagerServer_GetStarlarkRunConfig_Handler,
+			MethodName: "GetStarlarkRun",
+			Handler:    _KurtosisEnclaveManagerServer_GetStarlarkRun_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
