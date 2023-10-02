@@ -79,9 +79,6 @@ const (
 
 	kurtosisYMLFilePath = "kurtosis.yml"
 
-	runFailed    = false
-	runSucceeded = true
-
 	portMappingSeparatorForLogs = ", "
 
 	mainFileFlagKey      = "main-file"
@@ -336,8 +333,6 @@ func run(
 	}
 
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
-	isStandAloneScript := false
-	packageOrScriptName := starlarkScriptOrPackagePath
 	if isRemotePackage {
 		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, packageArgs, dryRun, castedParallelism, experimentalFlags)
 	} else {
@@ -347,7 +342,6 @@ func run(
 		}
 
 		if isStandaloneScript(fileOrDir, kurtosisYMLFilePath) {
-			isStandAloneScript = true
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
@@ -359,7 +353,6 @@ func run(
 				starlarkScriptOrPackagePath = path.Dir(starlarkScriptOrPackagePath)
 			}
 			// we pass the sanitized path and look for a Kurtosis YML within it to get the package name
-			packageOrScriptName, err = getPackageName(starlarkScriptOrPackagePath)
 			if err != nil {
 				return stacktrace.Propagate(err, "Tried parsing Kurtosis YML at '%v' to get package name but failed", starlarkScriptOrPackagePath)
 			}
@@ -370,37 +363,19 @@ func run(
 		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrPackagePath)
 	}
 
-	if err = metricsClient.TrackKurtosisRun(packageOrScriptName, isRemotePackage, dryRun, isStandAloneScript); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Warn("An error occurred tracking kurtosis run event")
-	}
-
 	errRunningKurtosis = ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
-	var runStatusForMetrics bool
-	if errRunningKurtosis != nil {
-		runStatusForMetrics = runFailed
-	} else {
-		runStatusForMetrics = runSucceeded
-	}
 
 	if err = enclaveCtx.ConnectServices(ctx, connect); err != nil {
 		logrus.Warnf("An error occurred configuring the user services port forwarding\nError was: %v", err)
 	}
 
-	servicesInEnclavePostRun, servicesInEnclaveForMetricsError := enclaveCtx.GetServices()
-	if servicesInEnclaveForMetricsError != nil {
-		logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
-	} else {
-		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics); err != nil {
-			logrus.Warn("An error occurred tracking kurtosis run finished event")
-		}
-	}
+	servicesInEnclavePostRun, servicesInEnclaveForPortMapping := enclaveCtx.GetServices()
 
 	if errRunningKurtosis != nil {
 		return errRunningKurtosis
 	}
 
-	if servicesInEnclaveForMetricsError != nil {
+	if servicesInEnclaveForPortMapping != nil {
 		logrus.Warnf("Unable to retrieve the services running inside the enclave so their ports will not be" +
 			" mapped to local ports.")
 		return nil
@@ -635,15 +610,6 @@ func isStandaloneScript(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
 
 func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo, kurtosisYMLFilePath string) bool {
 	return fileInfo.Mode().IsRegular() && fileInfo.Name() == kurtosisYMLFilePath
-}
-
-func getPackageName(packagePath string) (string, error) {
-	fullPathToKurtosisYML := path.Join(packagePath, kurtosisYMLFilePath)
-	kurtosisYml, err := enclaves.ParseKurtosisYaml(fullPathToKurtosisYML)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Tried looking for and parsing Kurtosis YML at path '%v' but failed", fullPathToKurtosisYML)
-	}
-	return kurtosisYml.PackageName, nil
 }
 
 func scriptPathValidation(scriptPath string) (error, bool) {
