@@ -68,8 +68,6 @@ const (
 	isScript               = true
 	isNotScript            = false
 	isNotRemote            = false
-
-	defaultClonePackage = true
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
