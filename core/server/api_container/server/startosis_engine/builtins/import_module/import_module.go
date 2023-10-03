@@ -39,7 +39,7 @@ func NewImportModule(
 	recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError),
 	packageContentProvider startosis_packages.PackageContentProvider,
 	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
-	replaceDependencies map[string]string,
+	packageReplaceOptions map[string]string,
 ) *kurtosis_helper.KurtosisHelper {
 	return &kurtosis_helper.KurtosisHelper{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
@@ -75,7 +75,7 @@ func NewImportModule(
 			packageContentProvider: packageContentProvider,
 			recursiveInterpret:     recursiveInterpret,
 			moduleGlobalCache:      moduleGlobalCache,
-			replaceDependencies:    replaceDependencies,
+			packageReplaceOptions:  packageReplaceOptions,
 		},
 	}
 }
@@ -84,7 +84,7 @@ type importModuleCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 	recursiveInterpret     func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError)
 	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
-	replaceDependencies    map[string]string
+	packageReplaceOptions  map[string]string
 }
 
 func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -103,7 +103,7 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 	//TODO iterate under subpaths for subpackages
 	lastIndex := strings.LastIndex(moduleInPackage, "/")
 	modulePath := moduleInPackage[:lastIndex]
-	replacePath, ok := builtin.replaceDependencies[modulePath]
+	replacePath, ok := builtin.packageReplaceOptions[modulePath]
 	if ok {
 		logrus.Debugf("dependency replace found for '%s', package '%s' will be replaced with '%s'", moduleInPackage, modulePath, replacePath)
 		moduleInPackage = strings.Replace(moduleInPackage, modulePath, replacePath, 1)

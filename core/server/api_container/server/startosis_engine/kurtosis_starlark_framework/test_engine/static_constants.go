@@ -91,5 +91,5 @@ var (
 
 	TestGetRequestMethod = "GET"
 
-	TestNoReplaceDependencies = map[string]string{}
+	TestNopackageReplaceOptions = map[string]string{}
 )

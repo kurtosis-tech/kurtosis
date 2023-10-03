@@ -52,7 +52,7 @@ func (t *importModuleTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
 	recursiveInterpret := func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		return importModule_mockStarlarkModule.Members, nil
 	}
-	return import_module.NewImportModule("", recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache, TestNoReplaceDependencies)
+	return import_module.NewImportModule("", recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache, TestNopackageReplaceOptions)
 }
 
 func (t *importModuleTestCase) GetStarlarkCode() string {

@@ -104,9 +104,9 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
 
-	noReplaceDependencies := map[string]string{}
+	nopackageReplaceOptions := map[string]string{}
 
-	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, noReplaceDependencies, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
+	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, nopackageReplaceOptions, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
 	return nil
 }
 
@@ -191,13 +191,13 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
 	var packageName string
-	var replaceDependencies map[string]string
+	var packageReplaceOptions map[string]string
 	if args.ClonePackage != nil {
-		scriptWithRunFunction, packageName, replaceDependencies, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
+		scriptWithRunFunction, packageName, packageReplaceOptions, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
 	} else {
 		// old deprecated syntax in use
 		moduleContentIfLocal := args.GetLocal()
-		scriptWithRunFunction, packageName, replaceDependencies, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
+		scriptWithRunFunction, packageName, packageReplaceOptions, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
 	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
@@ -206,7 +206,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		return nil
 	}
 
-	apicService.runStarlark(parallelism, dryRun, packageName, replaceDependencies, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
+	apicService.runStarlark(parallelism, dryRun, packageName, packageReplaceOptions, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 	return nil
 }
 
@@ -655,12 +655,12 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 	var interpretationError *startosis_errors.InterpretationError
 	var packageName string
 	var kurtosisYml *yaml_parser.KurtosisYaml
-	var replaceDependencies = map[string]string{}
+	var packageReplaceOptions = map[string]string{}
 	if clonePackage {
 		packageRootPathOnDisk, kurtosisYml, interpretationError = apicService.startosisModuleContentProvider.ClonePackage(packageId)
 		packageName = kurtosisYml.GetPackageName()
-		replaceDependencies = kurtosisYml.GetReplaceDependencies()
-		logrus.Debugf("replace dependencies received from kurtosis.yml '%+v'", replaceDependencies)
+		packageReplaceOptions = kurtosisYml.GetpackageReplaceOptions()
+		logrus.Debugf("replace dependencies received from kurtosis.yml '%+v'", packageReplaceOptions)
 	} else if moduleContentIfLocal != nil {
 		// TODO: remove this once UploadStarlarkPackage is called prior to calling RunStarlarkPackage by all consumers
 		//  of this API
@@ -673,28 +673,28 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 		packageName = packageId
 	}
 	if interpretationError != nil {
-		return "", "", replaceDependencies, interpretationError
+		return "", "", packageReplaceOptions, interpretationError
 	}
 
 	pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
 
 	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", "", replaceDependencies, startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", "", packageReplaceOptions, startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
 	mainScriptToExecute, err := os.ReadFile(pathToMainFile)
 	if err != nil {
-		return "", "", replaceDependencies, startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", "", packageReplaceOptions, startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
-	return string(mainScriptToExecute), packageName, replaceDependencies, nil
+	return string(mainScriptToExecute), packageName, packageReplaceOptions, nil
 }
 
 func (apicService ApiContainerService) runStarlark(
 	parallelism int,
 	dryRun bool,
 	packageId string,
-	replaceDependencies map[string]string,
+	packageReplaceOptions map[string]string,
 	mainFunctionName string,
 	relativePathToMainFile string,
 	serializedStarlark string,
@@ -702,7 +702,7 @@ func (apicService ApiContainerService) runStarlark(
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, replaceDependencies, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():

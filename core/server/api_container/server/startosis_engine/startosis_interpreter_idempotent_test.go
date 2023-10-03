@@ -30,7 +30,7 @@ const (
 	noInputParams = "{}"
 )
 
-var noReplaceDependencies = map[string]string{}
+var nopackageReplaceOptions = map[string]string{}
 
 type StartosisInterpreterIdempotentTestSuite struct {
 	suite.Suite
@@ -91,7 +91,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		script,
 		noInputParams,
@@ -105,7 +105,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		script,
@@ -146,7 +146,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -165,7 +165,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
@@ -207,7 +207,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -224,7 +224,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_D
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
@@ -260,7 +260,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -279,7 +279,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_I
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
@@ -321,7 +321,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -341,7 +341,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_A
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
@@ -392,7 +392,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
 		useDefaultMainFunctionName,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		initialScript,
 		noInputParams,
@@ -417,7 +417,7 @@ func (suite *StartosisInterpreterIdempotentTestSuite) TestInterpretAndOptimize_U
 	_, instructionsPlan, interpretationError := suite.interpreter.InterpretAndOptimizePlan(
 		context.Background(),
 		startosis_constants.PackageIdPlaceholderForStandaloneScript,
-		noReplaceDependencies,
+		nopackageReplaceOptions,
 		useDefaultMainFunctionName,
 		startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		updatedScript,
