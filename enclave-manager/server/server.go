@@ -343,7 +343,7 @@ func (c *WebServer) GetStarlarkRun(
 			RelativePathToMainFile: result.Msg.RelativePathToMainFile,
 			MainFunctionName:       result.Msg.MainFunctionName,
 			ExperimentalFeatures:   result.Msg.ExperimentalFeatures,
-			IsProduction:           result.Msg.IsProduction,
+			RestartPolicy:          result.Msg.RestartPolicy,
 		},
 	}
 	return resp, nil

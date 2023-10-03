@@ -125,8 +125,8 @@ export const getStarlarkRunConfig = async (host, port, token, apiHost) => {
             "apicPort": port,
         }
     );
-    // return enclaveManagerClient.getStarlarkRun(request, createHeaderOptionsWithToken(token));
-    return rawData;
+    return enclaveManagerClient.getStarlarkRun(request, createHeaderOptionsWithToken(token));
+    // return rawData;
 }
 
 const rawData =
