@@ -37,6 +37,7 @@ import {parseKurtosisYaml} from "./kurtosis_yaml";
 import {Readable} from "stream";
 import {readStreamContentUntilClosed, StarlarkRunResult} from "./starlark_run_blocking";
 import {ServiceIdentifiers} from "../services/service_identifiers";
+import {StarlarkRunConfig} from "./starlark_run_config"
 
 export type EnclaveUUID = string;
 
@@ -104,18 +105,17 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptstring-serializedstarlarkscript-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkScript(
-        mainFunctionName: string,
         serializedStartosisScript: string,
-        serializedParams: string,
-        dryRun: boolean,
-        experimentalFeatures: Array<KurtosisFeatureFlag>,
+        runConfig: StarlarkRunConfig,
     ): Promise<Result<Readable, Error>> {
         const args = new RunStarlarkScriptArgs();
         args.setSerializedScript(serializedStartosisScript)
-        args.setSerializedParams(serializedParams)
-        args.setDryRun(dryRun)
-        args.setMainFunctionName(mainFunctionName)
-        args.setExperimentalFeaturesList(experimentalFeatures)
+        args.setSerializedParams(runConfig.serializedParams)
+        args.setDryRun(runConfig.dryRun)
+        args.setMainFunctionName(runConfig.mainFunctionName)
+        args.setExperimentalFeaturesList(runConfig.experimentalFeatureFlags)
+        args.setCloudInstanceId(runConfig.cloudInstanceId)
+        args.setCloudUserId(runConfig.cloudUserId)
         const scriptRunResult : Result<Readable, Error> = await this.backend.runStarlarkScript(args)
         if (scriptRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark script \n${scriptRunResult.error}`))
@@ -125,13 +125,10 @@ export class EnclaveContext {
 
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkscriptblockingstring-serializedstarlarkscript-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkScriptBlocking(
-        mainFunctionName: string,
         serializedStartosisScript: string,
-        serializedParams: string,
-        dryRun: boolean,
-        experimentalFeatures: Array<KurtosisFeatureFlag>,
+        runConfig: StarlarkRunConfig,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkScript(mainFunctionName, serializedStartosisScript, serializedParams, dryRun, experimentalFeatures)
+        const runAsyncResponse = await this.runStarlarkScript(serializedStartosisScript, runConfig)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
@@ -142,12 +139,9 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackagestring-packagerootpath-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkPackage(
         packageRootPath: string,
-        relativePathToMainFile: string,
-        mainFunctionName: string,
-        serializedParams: string,
-        dryRun: boolean,
+        runConfig: StarlarkRunConfig,
     ): Promise<Result<Readable, Error>> {
-        const args = await this.assembleRunStarlarkPackageArg(packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun)
+        const args = await this.assembleRunStarlarkPackageArg(packageRootPath, runConfig.relativePathToMainFile, runConfig.mainFunctionName, runConfig.serializedParams, runConfig.dryRun, runConfig.cloudInstanceId, runConfig.cloudUserId)
         if (args.isErr()) {
             return err(new Error(`Unexpected error while assembling arguments to pass to the Starlark executor \n${args.error}`))
         }
@@ -161,12 +155,9 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkPackageBlocking(
         packageRootPath: string,
-        relativePathToMainFile: string,
-        mainFunctionName: string,
-        serializedParams: string,
-        dryRun: boolean,
+        runConfig: StarlarkRunConfig,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkPackage(packageRootPath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun)
+        const runAsyncResponse = await this.runStarlarkPackage(packageRootPath, runConfig)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
@@ -177,18 +168,17 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosis.com/sdk/#runremotestarlarkpackagestring-packageid-string-serializedparams-boolean-dryrun---streamstarlarkrunresponseline-responselines-error-error
     public async runStarlarkRemotePackage(
         packageId: string,
-        relativePathToMainFile: string,
-        mainFunctionName: string,
-        serializedParams: string,
-        dryRun: boolean,
+        runConfig: StarlarkRunConfig,
     ): Promise<Result<Readable, Error>> {
         const args = new RunStarlarkPackageArgs();
         args.setPackageId(packageId)
-        args.setDryRun(dryRun)
-        args.setSerializedParams(serializedParams)
+        args.setDryRun(runConfig.dryRun)
+        args.setSerializedParams(runConfig.serializedParams)
         args.setRemote(true)
-        args.setRelativePathToMainFile(relativePathToMainFile)
-        args.setMainFunctionName(mainFunctionName)
+        args.setRelativePathToMainFile(runConfig.relativePathToMainFile)
+        args.setMainFunctionName(runConfig.mainFunctionName)
+        args.setCloudInstanceId(runConfig.cloudInstanceId)
+        args.setCloudUserId(runConfig.cloudUserId)
         const remotePackageRunResult : Result<Readable, Error> = await this.backend.runStarlarkPackage(args)
         if (remotePackageRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark package \n${remotePackageRunResult.error}`))
@@ -199,12 +189,9 @@ export class EnclaveContext {
     // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkremotepackageblockingstring-packageid-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
     public async runStarlarkRemotePackageBlocking(
         packageId: string,
-        relativePathToMainFile: string,
-        mainFunctionName: string,
-        serializedParams: string,
-        dryRun: boolean,
+        runConfig: StarlarkRunConfig,
     ): Promise<Result<StarlarkRunResult, Error>> {
-        const runAsyncResponse = await this.runStarlarkRemotePackage(packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun)
+        const runAsyncResponse = await this.runStarlarkRemotePackage(packageId, runConfig)
         if (runAsyncResponse.isErr()) {
             return err(runAsyncResponse.error)
         }
@@ -388,6 +375,8 @@ export class EnclaveContext {
         mainFunctionName: string,
         serializedParams: string,
         dryRun: boolean,
+        cloudInstanceId: string,
+        cloudUserId: string,
         ): Promise<Result<RunStarlarkPackageArgs, Error>> {
         const kurtosisYamlFilepath = path.join(packageRootPath, KURTOSIS_YAML_FILENAME)
 
@@ -409,6 +398,8 @@ export class EnclaveContext {
         args.setDryRun(dryRun)
         args.setRelativePathToMainFile(relativePathToMainFile)
         args.setMainFunctionName(mainFunctionName)
+        args.setCloudInstanceId(cloudInstanceId)
+        args.setCloudUserId(cloudUserId)
         return ok(args)
     }
 }

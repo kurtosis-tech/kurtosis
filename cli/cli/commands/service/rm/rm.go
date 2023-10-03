@@ -3,9 +3,9 @@ package rm
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/services"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/highlevel/enclave_id_arg"
@@ -35,14 +35,6 @@ const (
 def run(plan, args):
 	plan.remove_service(name=args["service_name"])
 `
-	doNotDryRun        = false
-	defaultParallelism = 4
-
-	useDefaultMainFile = ""
-)
-
-var (
-	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 )
 
 var ServiceRmCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -112,7 +104,7 @@ func run(
 
 func removeServiceStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, serviceName services.ServiceName) error {
 	params := fmt.Sprintf(`{"service_name": "%s"}`, serviceName)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, params, doNotDryRun, defaultParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(params)))
 	if err != nil {
 		return stacktrace.Propagate(err, "An unexpected error occurred on Starlark for rendering template")
 	}

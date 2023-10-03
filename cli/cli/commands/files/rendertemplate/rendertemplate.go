@@ -4,10 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"os"
 	"path"
 
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
@@ -68,15 +68,6 @@ def run(plan, args):
 		}
 	)
 `
-
-	doNotDryRun   = false
-	noParallelism = 1
-
-	useDefaultMainFile = ""
-)
-
-var (
-	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 )
 
 var RenderTemplateCommand = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -226,7 +217,7 @@ func renderTemplateStarlarkCommand(ctx context.Context, enclaveCtx *enclaves.Enc
 		return "", stacktrace.Propagate(err, "An error has occurred when parsing input params to render template Starlark command")
 	}
 	params := fmt.Sprintf(`{"file_name": "%s", "template": "%s", "template_data": %s, "name": "%s"}`, destRelFilepath, templateFileContents, string(templateDataBytes), artifactName)
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, template, params, doNotDryRun, noParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, template, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(params)))
 	if err != nil {
 		return "", stacktrace.Propagate(err, "An error occurred during Starlark script execution for rendering template. This is a bug in Kurtosis")
 	}

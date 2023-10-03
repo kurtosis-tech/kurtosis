@@ -153,6 +153,12 @@ message RunStarlarkScriptArgs {
   string main_function_name = 5;
 
   repeated KurtosisFeatureFlag experimental_features = 6;
+
+  // Defaults to empty
+  optional string cloud_instance_id = 7;
+
+  // Defaults to empty
+  optional string cloud_user_id = 8;
 }
 
 message RunStarlarkPackageArgs {
@@ -189,6 +195,12 @@ message RunStarlarkPackageArgs {
   string main_function_name = 10;
 
   repeated KurtosisFeatureFlag experimental_features = 11;
+
+  // Defaults to empty
+  optional string cloud_instance_id = 12;
+
+  // Defaults to empty
+  optional string cloud_user_id = 13;
 }
 
 enum KurtosisFeatureFlag {
