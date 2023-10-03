@@ -1,4 +1,3 @@
-import Heading  from "./Heading";
 import { useNavigate } from "react-router";
 
 const RightPanel = ({isServiceInfo, enclaveName}) => {
