@@ -6,6 +6,9 @@ import startCase from 'lodash/startCase'
 import {InfoOutlineIcon} from '@chakra-ui/icons'
 import {CodeEditor} from "./CodeEditor";
 import KeyValueTable from "./KeyValueTable";
+import {useParams} from "react-router-dom";
+import {getStarlarkRunConfig} from "../api/api";
+import {useAppContext} from "../context/AppState";
 
 const yaml = require("js-yaml")
 
@@ -307,28 +310,57 @@ const parseList = (data, rawDataType) => {
     return parsedJson
 }
 
-const PackageCatalogForm = ({createEnclave}) => {
+
+const loadPackageRunConfig = async (host, port, token, apiHost) => {
+    const data = await getStarlarkRunConfig(host, port, token, apiHost)
+    // consoloe.log(data)
+    return data;
+}
+
+const PackageCatalogForm = ({createEnclave, mode}) => {
+    const {appData} = useAppContext()
     const navigate = useNavigate()
     const location = useLocation()
     const {state} = location;
-    const {kurtosisPackage} = state
-
     const [runningPackage, setRunningPackage] = useState(false)
     const [enclaveName, setEnclaveName] = useState("")
     const [productionMode, setProductionMode] = useState(false)
 
+    let thisKurtosisPackage = {};
     let initialFormData = {}
-    kurtosisPackage.args.forEach(
+    let initialErrorData = {}
+
+    console.log(state)
+
+    if (mode === "create") {
+        const {kurtosisPackage} = state
+        thisKurtosisPackage = kurtosisPackage
+    } else if (mode === "edit") {
+        const {name, host, port} = state
+        const runConfigPromise = loadPackageRunConfig(host, port, appData.jwtToken, appData.apiHost)
+        runConfigPromise.then((runConfig) =>{
+            console.log(runConfig)
+        })
+
+
+    } else {
+        console.log("Unsupported package configuration mode", mode)
+    }
+
+    console.log("thisKurtosisPackage", thisKurtosisPackage)
+    console.log("thisKurtosisPackage", JSON.stringify(thisKurtosisPackage))
+
+    thisKurtosisPackage?.args.forEach(
         (arg, index) => {
             if (arg.name !== "plan") {
                 initialFormData[index] = ""
             }
         }
     )
+
     const [formData, setFormData] = useState(initialFormData)
 
-    let initialErrorData = {}
-    kurtosisPackage.args.forEach((arg, index) => {
+    thisKurtosisPackage.args.forEach((arg, index) => {
         if (arg.name !== "plan") {
             initialErrorData[index] = ""
         }
@@ -359,7 +391,7 @@ const PackageCatalogForm = ({createEnclave}) => {
         let errorsFound = {}
 
         Object.keys(formData).filter(key => {
-            const arg = kurtosisPackage.args[key]
+            const arg = thisKurtosisPackage.args[key]
             let type = ""
             try {
                 type = getType(arg)
@@ -398,7 +430,7 @@ const PackageCatalogForm = ({createEnclave}) => {
             } else if (type === "BOOL") {
                 typeToPrint = "BOOLEAN (TRUE/FALSE)"
             } else {
-                typeToPrint = prettyPrintTypeSpecialCases(type, kurtosisPackage.args[key])
+                typeToPrint = prettyPrintTypeSpecialCases(type, thisKurtosisPackage.args[key])
             }
 
             if (!valid) {
@@ -407,7 +439,7 @@ const PackageCatalogForm = ({createEnclave}) => {
         })
 
         Object.keys(formData).filter(key => {
-            const required = isRequired(kurtosisPackage.args[key])
+            const required = isRequired(thisKurtosisPackage.args[key])
             let valid = true;
             if (required) {
                 if (formData[key].length === 0) {
@@ -424,7 +456,7 @@ const PackageCatalogForm = ({createEnclave}) => {
             setRunningPackage(true)
             let args = {}
             Object.keys(formData).map(key => {
-                const arg = kurtosisPackage.args[key]
+                const arg = thisKurtosisPackage.args[key]
                 const argName = getArgName(arg)
                 let type = ""
                 try {
@@ -445,7 +477,7 @@ const PackageCatalogForm = ({createEnclave}) => {
                         val = parseFloat(value)
                         args[argName] = val
                     } else if (type === "LIST") {
-                        let subType = getFirstSubType(kurtosisPackage, key)
+                        let subType = getFirstSubType(thisKurtosisPackage, key)
                         val = parseList(value, subType)
                         args[argName] = val
                     } else if (type === "STRING") {
@@ -459,7 +491,7 @@ const PackageCatalogForm = ({createEnclave}) => {
 
             const stringifiedArgs = JSON.stringify(args)
             const runKurtosisPackageArgs = {
-                packageId: kurtosisPackage.name,
+                packageId: thisKurtosisPackage.name,
                 args: stringifiedArgs,
             }
 
@@ -500,7 +532,7 @@ const PackageCatalogForm = ({createEnclave}) => {
                 <GridItem area={'packageId'} p="1">
                     <Flex direction={"column"} gap={"2"}>
                         <Center>
-                            <Text color={"white"} fontSize={"2xl"}> {kurtosisPackage.name} </Text>
+                            <Text color={"white"} fontSize={"2xl"}> {thisKurtosisPackage.name} </Text>
                         </Center>
                         <Checkbox
                             marginLeft={2}
@@ -542,7 +574,7 @@ const PackageCatalogForm = ({createEnclave}) => {
                                 />
                             </Flex>
                         </Flex>
-                        {renderArgs(kurtosisPackage.args, handleFormDataChange, formData, errorData, kurtosisPackage.name)}
+                        {renderArgs(thisKurtosisPackage.args, handleFormDataChange, formData, errorData, thisKurtosisPackage.name)}
                     </Stack>
                 </GridItem>
                 <GridItem area={'configure'} m="10px">

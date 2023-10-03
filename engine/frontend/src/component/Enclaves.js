@@ -116,7 +116,7 @@ const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveToDelete, setEncl
     )
 }
 
-const Enclave = ({name, status, handleClick, onOpen, mode, setEnclave}) => {
+const Enclave = ({name, status, handleClick, onOpen, mode, setEnclave, handleEditEvent, host, port}) => {
     const backgroundColor = status === 1 ? "bg-[#24BA27]" : "bg-red-500"
     return (
         <Grid
@@ -136,7 +136,12 @@ const Enclave = ({name, status, handleClick, onOpen, mode, setEnclave}) => {
                         icon={<EditIcon/>}
                         onClick={(e) => {
                             e.stopPropagation()
-                            alert("test")
+                            // setEnclave({
+                            //     host: host,
+                            //     port: port,
+                            //     name: name,
+                            // })
+                            handleEditEvent(name, host, port)
                         }}
                     />
                 </Tooltip>
@@ -167,7 +172,7 @@ const Enclave = ({name, status, handleClick, onOpen, mode, setEnclave}) => {
     )
 }
 
-const EnclaveMainComponent = ({onOpen, enclaves, handleClick, handleDeleteClick, setEnclave}) => (
+const EnclaveMainComponent = ({onOpen, enclaves, handleClick, handleDeleteClick, setEnclave, handleEditEvent}) => (
     <div className='grid grid-cols-2 gap-4 flex-1'>
         {
             enclaves.map(enclave => {
@@ -178,10 +183,13 @@ const EnclaveMainComponent = ({onOpen, enclaves, handleClick, handleDeleteClick,
                         name={enclave.name}
                         status={enclave.status}
                         created={enclave.created}
+                        host={enclave.host}
+                        port={enclave.port}
                         handleClick={handleClick}
                         handleDeleteClick={handleDeleteClick}
                         setEnclave={setEnclave}
                         mode={enclave.mode ? enclave.mode : false}
+                        handleEditEvent={handleEditEvent}
                     />
                 )
             })
@@ -189,7 +197,15 @@ const EnclaveMainComponent = ({onOpen, enclaves, handleClick, handleDeleteClick,
     </div>
 )
 
-const EnclaveComponent = ({onOpen, enclaves, handleClick, handleCreateEnvClick, handleDeleteClick, setEnclave}) => {
+const EnclaveComponent = ({
+                              onOpen,
+                              enclaves,
+                              handleClick,
+                              handleCreateEnvClick,
+                              handleDeleteClick,
+                              setEnclave,
+                              handleEditEvent
+                          }) => {
     return (
         <div className="flex-1 bg-[#171923] overflow-auto">
             {
@@ -209,8 +225,13 @@ const EnclaveComponent = ({onOpen, enclaves, handleClick, handleCreateEnvClick, 
                         </div>
                     </div>
                     :
-                    <EnclaveMainComponent setEnclave={setEnclave} onOpen={onOpen} enclaves={enclaves}
-                                          handleClick={handleClick} handleDeleteClick={handleDeleteClick}/>
+                    <EnclaveMainComponent setEnclave={setEnclave}
+                                          onOpen={onOpen}
+                                          enclaves={enclaves}
+                                          handleClick={handleClick}
+                                          handleDeleteClick={handleDeleteClick}
+                                          handleEditEvent={handleEditEvent}
+                    />
             }
         </div>
     )
@@ -222,6 +243,9 @@ const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
     const [enclaveToDelete, setEnclave] = useState({})
     const {isOpen, onOpen, onClose} = useDisclosure()
 
+    console.log("Enclaves", enclaves)
+
+
     const handleCreateEnvClick = () => {
         navigate("/catalog")
     }
@@ -230,13 +254,30 @@ const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
         navigate(`/enclaves/${enclaveName}`)
     }
 
+    const handleEditEvent = (name, host, port) => {
+        navigate(`/catalog/edit`,
+            {
+                state: {
+                    name: name,
+                    host: host,
+                    port: port,
+                }
+            }
+        )
+    }
+
     return (
         <div className="flex h-full flex-grow">
             {
                 (isLoading) ? <LoadingOverlay/> :
-                    <EnclaveComponent setEnclave={setEnclave} onOpen={onOpen} enclaves={enclaves}
-                                      handleClick={handleClick} handleCreateEnvClick={handleCreateEnvClick}
-                                      handleDeleteClick={handleDeleteClick}/>
+                    <EnclaveComponent setEnclave={setEnclave}
+                                      onOpen={onOpen}
+                                      enclaves={enclaves}
+                                      handleClick={handleClick}
+                                      handleCreateEnvClick={handleCreateEnvClick}
+                                      handleDeleteClick={handleDeleteClick}
+                                      handleEditEvent={handleEditEvent}
+                    />
             }
             <DeleteAlertDialog
                 isOpen={isOpen}

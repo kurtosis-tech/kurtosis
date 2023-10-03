@@ -111,7 +111,10 @@ const Home = () => {
 
     const fetch = async () => {
         const response = await getEnclavesFromKurtosis(appData.jwtToken, appData.apiHost);
-        setEnclaves(response)
+        const filteredResponse = response.filter((e) => {
+            return e.name
+        });
+        setEnclaves(filteredResponse)
         setEnclaveLoading(false)
     }
 

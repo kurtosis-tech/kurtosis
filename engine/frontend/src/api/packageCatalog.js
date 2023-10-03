@@ -13,3 +13,4 @@ export const getKurtosisPackages = async () => {
         return []
     } 
 }
+

@@ -1,12 +1,13 @@
-import { Route, Routes, useNavigate } from 'react-router-dom';
+import {Route, Routes, useNavigate} from 'react-router-dom';
 import PackageCatalogForm from './PackageCatalogForm';
 import PackageCatalog from './PackageCatalog';
 import PackageCatalogProgress from "./PackageCatalogProgress";
-import { useEffect } from 'react';
+import {useEffect} from 'react';
 import {getKurtosisPackages} from "../api/packageCatalog";
 import {createEnclave} from "../api/enclave";
 import {useState} from "react";
 import {useAppContext} from "../context/AppState";
+import {getStarlarkRunConfig} from "../api/api";
 
 
 const PackageCatalogRouter = ({addEnclave}) => {
@@ -14,27 +15,29 @@ const PackageCatalogRouter = ({addEnclave}) => {
     const {appData} = useAppContext()
     const [kurtosisPackages, setKurtosisPackages] = useState([])
 
-    useEffect(()=> {
+    useEffect(() => {
         const fetchPackages = async () => {
             const resp = await getKurtosisPackages()
             setKurtosisPackages(resp)
         }
         fetchPackages();
-    },[])
+    }, [])
 
     const createNewEnclave = async (runArgs, enclaveName, productionMode) => {
         const request = async () => {
             try {
                 const enclave = await createEnclave(appData.jwtToken, appData.apiHost, enclaveName, productionMode);
                 addEnclave(enclave)
-                navigate("/catalog/progress", {state: {
-                    enclave,
-                    runArgs,
-                }})
-            } catch(ex) {
+                navigate("/catalog/progress", {
+                    state: {
+                        enclave,
+                        runArgs,
+                    }
+                })
+            } catch (ex) {
                 console.error(ex)
                 alert(`Error occurred while creating enclave for package. An error message should be printed in console, please share it with us to help debug this problem`)
-            } 
+            }
         }
         await request()
     }
@@ -44,13 +47,16 @@ const PackageCatalogRouter = ({addEnclave}) => {
             <Routes>
                 <Route path="/progress" element={
                     <PackageCatalogProgress appData={appData}/>
-                } />
-                <Route path="/form" element={
-                    <PackageCatalogForm createEnclave={createNewEnclave}/>
-                } />
+                }/>
+                <Route path="/create" element={
+                    <PackageCatalogForm createEnclave={createNewEnclave} mode={"create"}/>
+                }/>
+                <Route path="/edit/" element={
+                    <PackageCatalogForm createEnclave={createNewEnclave} mode={"edit"}/>
+                }/>
                 <Route path="/" element={
                     <PackageCatalog kurtosisPackages={kurtosisPackages}
-                />}/>
+                    />}/>
             </Routes>
         </div>
     )
