@@ -4,7 +4,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_helper"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"github.com/sirupsen/logrus"
@@ -50,23 +49,8 @@ func NewImportModule(
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.NonEmptyString(value, ModuleFileArgName)
+						return builtin_argument.RelativeOrRemoteAbsoluteLocator(value, packageId, ModuleFileArgName)
 					},
-					//TODO remove this deprecation warning when the local absolute locators block is implemented
-					Deprecation: starlark_warning.Deprecation(
-						starlark_warning.DeprecationDate{
-							Day: 0, Year: 0, Month: 0, //nolint:gomnd
-
-						},
-						"Local 'absolute locators' are being deprecated in favor of 'relative locators' to normalize when a locator is pointing to inside or outside the package. e.g.: if your package name is 'github.com/sample/sample-kurtosis-package' and the package contains a 'local absolute locator' for example 'github.com/sample/sample-kurtosis-package/component/component.star' it should be modified to a relative version like this '/component/component.star' or './component/component.star', or, if you are referencing it in a sub-folder, you can use a 'relative locator' like this '../component/component.star'.",
-						func(value starlark.Value) bool {
-							// err means that it is a local absolute locator
-							if err := builtin_argument.RelativeOrRemoteAbsoluteLocator(value, packageId, ModuleFileArgName); err != nil {
-								return true
-							}
-							return false
-						},
-					),
 				},
 			},
 		},

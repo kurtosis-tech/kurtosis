@@ -22,11 +22,13 @@ const (
 // TODO: use the mockery-generated mock: startosis_package.MockPackageContentProvider
 type MockPackageContentProvider struct {
 	starlarkPackages map[string]string
+	packageId        string
 }
 
 func NewMockPackageContentProvider() *MockPackageContentProvider {
 	return &MockPackageContentProvider{
 		starlarkPackages: make(map[string]string),
+		packageId:        "",
 	}
 }
 
@@ -70,8 +72,7 @@ func (provider *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleL
 	if strings.HasPrefix(relativeOrAbsoluteModulePath, startosis_constants.GithubDomainPrefix) {
 		return relativeOrAbsoluteModulePath, nil
 	}
-	// TODO implement properly so that it works with relative paths
-	return "", nil
+	return provider.packageId, nil
 }
 
 func (provider *MockPackageContentProvider) AddFileContent(packageId string, contents string) error {
@@ -80,6 +81,7 @@ func (provider *MockPackageContentProvider) AddFileContent(packageId string, con
 		return stacktrace.Propagate(err, "Error writing content to temporary file")
 	}
 	provider.starlarkPackages[packageId] = absFilePath
+	provider.packageId = packageId
 	return nil
 }
 

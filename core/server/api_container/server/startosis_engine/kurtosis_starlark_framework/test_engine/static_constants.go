@@ -21,7 +21,10 @@ var (
 
 	TestSrcPath = "/path/to/file.txt"
 
-	TestModuleFileName = "github.com/kurtosistech/test-package/helpers.star"
+	TestModulePackageId       = "github.com/kurtosistech/test-package"
+	TestModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
+	TestModuleRelativeLocator = "./helpers.star"
+	TestModuleDirpath         = "/kurtosistech/test-package"
 
 	TestContainerImageName = "kurtosistech/example-datastore-server"
 

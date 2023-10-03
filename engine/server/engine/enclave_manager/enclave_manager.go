@@ -63,6 +63,9 @@ type EnclaveManager struct {
 	enclaveCreator *EnclaveCreator
 	enclavePool    *EnclavePool
 	enclaveEnvVars string
+
+	metricsUserID               string
+	didUserAcceptSendingMetrics bool
 }
 
 func CreateEnclaveManager(
@@ -72,6 +75,8 @@ func CreateEnclaveManager(
 	engineVersion string,
 	poolSize uint8,
 	enclaveEnvVars string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*EnclaveManager, error) {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
@@ -82,7 +87,7 @@ func CreateEnclaveManager(
 
 	// The enclave pool feature is only available for Kubernetes so far
 	if kurtosisBackendType == args.KurtosisBackendType_Kubernetes {
-		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars)
+		enclavePool, err = CreateEnclavePool(kurtosisBackend, enclaveCreator, poolSize, engineVersion, enclaveEnvVars, metricsUserID, didUserAcceptSendingMetrics)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred creating enclave pool with pool-size '%v' and engine version '%v'", poolSize, engineVersion)
 		}
@@ -96,6 +101,8 @@ func CreateEnclaveManager(
 		enclaveCreator:                            enclaveCreator,
 		enclavePool:                               enclavePool,
 		enclaveEnvVars:                            enclaveEnvVars,
+		metricsUserID:                             metricsUserID,
+		didUserAcceptSendingMetrics:               didUserAcceptSendingMetrics,
 	}
 
 	return enclaveManager, nil
@@ -163,6 +170,8 @@ func (manager *EnclaveManager) CreateEnclave(
 			enclaveName,
 			manager.enclaveEnvVars,
 			isProduction,
+			manager.metricsUserID,
+			manager.didUserAcceptSendingMetrics,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(
