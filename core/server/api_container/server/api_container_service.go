@@ -702,7 +702,7 @@ func (apicService ApiContainerService) runStarlark(
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, replaceDependencies, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():

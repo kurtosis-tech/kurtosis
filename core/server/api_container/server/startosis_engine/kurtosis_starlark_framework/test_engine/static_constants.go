@@ -90,4 +90,6 @@ var (
 	TestReadyConditions2Timeout        = "2s"
 
 	TestGetRequestMethod = "GET"
+
+	TestNoReplaceDependencies = map[string]string{}
 )

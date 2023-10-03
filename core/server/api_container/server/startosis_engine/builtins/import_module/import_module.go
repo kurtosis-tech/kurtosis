@@ -7,8 +7,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
+	"strings"
 )
 
 const (
@@ -37,6 +39,7 @@ func NewImportModule(
 	recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError),
 	packageContentProvider startosis_packages.PackageContentProvider,
 	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
+	replaceDependencies map[string]string,
 ) *kurtosis_helper.KurtosisHelper {
 	return &kurtosis_helper.KurtosisHelper{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
@@ -72,6 +75,7 @@ func NewImportModule(
 			packageContentProvider: packageContentProvider,
 			recursiveInterpret:     recursiveInterpret,
 			moduleGlobalCache:      moduleGlobalCache,
+			replaceDependencies:    replaceDependencies,
 		},
 	}
 }
@@ -80,6 +84,7 @@ type importModuleCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 	recursiveInterpret     func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError)
 	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
+	replaceDependencies    map[string]string
 }
 
 func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -92,6 +97,19 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}
+	logrus.Debugf("importing module from absolute locator '%s'", moduleInPackage)
+
+	//TODO Move to a helper function or object
+	//TODO iterate under subpaths for subpackages
+	lastIndex := strings.LastIndex(moduleInPackage, "/")
+	modulePath := moduleInPackage[:lastIndex]
+	replacePath, ok := builtin.replaceDependencies[modulePath]
+	if ok {
+		logrus.Debugf("dependency replace found for '%s', package '%s' will be replaced with '%s'", moduleInPackage, modulePath, replacePath)
+		moduleInPackage = strings.Replace(moduleInPackage, modulePath, replacePath, 1)
+		logrus.Debugf("importing replaced module absolute locator '%s'", moduleInPackage)
+	}
+	//TODO Move to a helper function or object
 
 	var loadInProgress *startosis_packages.ModuleCacheEntry
 	cacheEntry, found := builtin.moduleGlobalCache[moduleInPackage]

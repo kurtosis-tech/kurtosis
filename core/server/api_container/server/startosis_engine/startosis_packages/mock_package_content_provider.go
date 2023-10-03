@@ -6,6 +6,7 @@ import (
 	io "io"
 
 	startosis_errors "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	yaml_parser "github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -23,13 +24,13 @@ func (_m *MockPackageContentProvider) EXPECT() *MockPackageContentProvider_Expec
 }
 
 // ClonePackage provides a mock function with given fields: packageId
-func (_m *MockPackageContentProvider) ClonePackage(packageId string) (string, string, *startosis_errors.InterpretationError) {
+func (_m *MockPackageContentProvider) ClonePackage(packageId string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	ret := _m.Called(packageId)
 
 	var r0 string
-	var r1 string
+	var r1 *yaml_parser.KurtosisYaml
 	var r2 *startosis_errors.InterpretationError
-	if rf, ok := ret.Get(0).(func(string) (string, string, *startosis_errors.InterpretationError)); ok {
+	if rf, ok := ret.Get(0).(func(string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)); ok {
 		return rf(packageId)
 	}
 	if rf, ok := ret.Get(0).(func(string) string); ok {
@@ -38,10 +39,12 @@ func (_m *MockPackageContentProvider) ClonePackage(packageId string) (string, st
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) string); ok {
+	if rf, ok := ret.Get(1).(func(string) *yaml_parser.KurtosisYaml); ok {
 		r1 = rf(packageId)
 	} else {
-		r1 = ret.Get(1).(string)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*yaml_parser.KurtosisYaml)
+		}
 	}
 
 	if rf, ok := ret.Get(2).(func(string) *startosis_errors.InterpretationError); ok {
@@ -73,12 +76,12 @@ func (_c *MockPackageContentProvider_ClonePackage_Call) Run(run func(packageId s
 	return _c
 }
 
-func (_c *MockPackageContentProvider_ClonePackage_Call) Return(_a0 string, _a1 string, _a2 *startosis_errors.InterpretationError) *MockPackageContentProvider_ClonePackage_Call {
+func (_c *MockPackageContentProvider_ClonePackage_Call) Return(_a0 string, _a1 *yaml_parser.KurtosisYaml, _a2 *startosis_errors.InterpretationError) *MockPackageContentProvider_ClonePackage_Call {
 	_c.Call.Return(_a0, _a1, _a2)
 	return _c
 }
 
-func (_c *MockPackageContentProvider_ClonePackage_Call) RunAndReturn(run func(string) (string, string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_ClonePackage_Call {
+func (_c *MockPackageContentProvider_ClonePackage_Call) RunAndReturn(run func(string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)) *MockPackageContentProvider_ClonePackage_Call {
 	_c.Call.Return(run)
 	return _c
 }

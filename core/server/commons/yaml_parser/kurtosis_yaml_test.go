@@ -38,7 +38,7 @@ func Test_parseKurtosisYamlInternal_IncorrectYaml(t *testing.T) {
 		return sampleInCorrectYaml, nil
 	}
 
-	actual, err := parseKurtosisYamlInternal(kurtosisYmlPath, mockRead)
-	require.Nil(t, err)
-	require.Equal(t, "", actual.GetPackageName())
+	_, err := parseKurtosisYamlInternal(kurtosisYmlPath, mockRead)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "incorrect_name_key not found")
 }

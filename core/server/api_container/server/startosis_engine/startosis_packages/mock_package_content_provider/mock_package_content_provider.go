@@ -3,6 +3,7 @@ package mock_package_content_provider
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"os"
@@ -40,7 +41,7 @@ func (provider *MockPackageContentProvider) GetOnDiskAbsoluteFilePath(packageId 
 	return absFilePath, nil
 }
 
-func (provider *MockPackageContentProvider) ClonePackage(_ string) (string, string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) ClonePackage(_ string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 

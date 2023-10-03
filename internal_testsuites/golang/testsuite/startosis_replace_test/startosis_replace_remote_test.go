@@ -14,7 +14,7 @@ const (
 
 	remotePackage = "github.com/kurtosis-tech/sample-startosis-load/sample-package"
 
-	executeParams          = `{ "expect_msg_from_main" : false }`
+	executeParams          = `{ "message_origin" : "another-main" }`
 	defaultParallelism     = 4
 	useDefaultMainFile     = ""
 	useDefaultFunctionName = ""
@@ -29,12 +29,12 @@ func TestStartosisReplaceRemotePackage(t *testing.T) {
 	ctx := context.Background()
 
 	// ------------------------------------- ENGINE SETUP ----------------------------------------------
-	enclaveCtx, _, destroyEnclaveFunc, err := test_helpers.CreateEnclave(t, ctx, testName)
+	enclaveCtx, _, _, err := test_helpers.CreateEnclave(t, ctx, testName)
 	require.NoError(t, err, "An error occurred creating an enclave")
-	defer func() {
+	/*defer func() {
 		err = destroyEnclaveFunc()
 		require.NoError(t, err, "An error occurred destroying the enclave after the test finished")
-	}()
+	}()*/
 
 	// ------------------------------------- TEST RUN ----------------------------------------------
 	logrus.Debugf("Executing Starlark Package: '%v'", remotePackage)

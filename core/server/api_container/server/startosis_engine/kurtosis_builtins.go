@@ -79,9 +79,9 @@ func KurtosisPlanInstructions(packageId string, serviceNetwork service_network.S
 // Kurtosis enclave.
 //
 // Example: read_file, import_package, etc.
-func KurtosisHelpers(packageId string, recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError), packageContentProvider startosis_packages.PackageContentProvider, packageGlobalCache map[string]*startosis_packages.ModuleCacheEntry) []*starlark.Builtin {
+func KurtosisHelpers(packageId string, recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError), packageContentProvider startosis_packages.PackageContentProvider, packageGlobalCache map[string]*startosis_packages.ModuleCacheEntry, replaceDependencies map[string]string) []*starlark.Builtin {
 	return []*starlark.Builtin{
-		starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.NewImportModule(packageId, recursiveInterpret, packageContentProvider, packageGlobalCache).CreateBuiltin()),
+		starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.NewImportModule(packageId, recursiveInterpret, packageContentProvider, packageGlobalCache, replaceDependencies).CreateBuiltin()),
 		starlark.NewBuiltin(print_builtin.PrintBuiltinName, print_builtin.GeneratePrintBuiltin()),
 		starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.NewReadFileHelper(packageId, packageContentProvider).CreateBuiltin()),
 	}
