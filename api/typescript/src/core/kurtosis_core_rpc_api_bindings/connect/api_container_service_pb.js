@@ -136,6 +136,8 @@ export const RunStarlarkScriptArgs = proto3.makeMessageType(
     { no: 4, name: "parallelism", kind: "scalar", T: 5 /* ScalarType.INT32 */, opt: true },
     { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 7, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 8, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 
@@ -155,6 +157,8 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 9, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 10, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 11, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
+    { no: 12, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 13, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 

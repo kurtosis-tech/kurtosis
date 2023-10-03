@@ -8,7 +8,6 @@ import {createEnclave} from "../api/enclave";
 import {useState} from "react";
 import {useAppContext} from "../context/AppState";
 
-
 const PackageCatalogRouter = ({addEnclave}) => {
     const navigate = useNavigate()
     const {appData} = useAppContext()

@@ -172,6 +172,12 @@ pub struct RunStarlarkScriptArgs {
     pub main_function_name: ::prost::alloc::string::String,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "6")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "7")]
+    pub cloud_instance_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "8")]
+    pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -202,6 +208,12 @@ pub struct RunStarlarkPackageArgs {
     pub main_function_name: ::prost::alloc::string::String,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "11")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "12")]
+    pub cloud_instance_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "13")]
+    pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
