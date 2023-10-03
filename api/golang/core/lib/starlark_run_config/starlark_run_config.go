@@ -25,9 +25,9 @@ type StarlarkRunConfig struct {
 	CloudUserId              string
 }
 
-type StarlarkRunConfigOption func(*StarlarkRunConfig)
+type starlarkRunConfigOption func(*StarlarkRunConfig)
 
-func NewRunStarlarkConfig(opts ...StarlarkRunConfigOption) *StarlarkRunConfig {
+func NewRunStarlarkConfig(opts ...starlarkRunConfigOption) *StarlarkRunConfig {
 	config := &StarlarkRunConfig{
 		RelativePathToMainFile:   defaultRelativePathToMainFile,
 		MainFunctionName:         defaultMainFunctionName,
@@ -46,49 +46,49 @@ func NewRunStarlarkConfig(opts ...StarlarkRunConfigOption) *StarlarkRunConfig {
 	return config
 }
 
-func WithRelativePathToMainFile(relativePathToMainFile string) StarlarkRunConfigOption {
+func WithRelativePathToMainFile(relativePathToMainFile string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.RelativePathToMainFile = relativePathToMainFile
 	}
 }
 
-func WithMainFunctionName(mainFunctionName string) StarlarkRunConfigOption {
+func WithMainFunctionName(mainFunctionName string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.MainFunctionName = mainFunctionName
 	}
 }
 
-func WithSerializedParams(serializedParams string) StarlarkRunConfigOption {
+func WithSerializedParams(serializedParams string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.SerializedParams = serializedParams
 	}
 }
 
-func WithDryRun(dryRun bool) StarlarkRunConfigOption {
+func WithDryRun(dryRun bool) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.DryRun = dryRun
 	}
 }
 
-func WithParallelism(parallelism int32) StarlarkRunConfigOption {
+func WithParallelism(parallelism int32) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.Parallelism = parallelism
 	}
 }
 
-func WithExperimentalFeatureFlags(experimentalFeatureFlags []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) StarlarkRunConfigOption {
+func WithExperimentalFeatureFlags(experimentalFeatureFlags []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.ExperimentalFeatureFlags = experimentalFeatureFlags
 	}
 }
 
-func WithCloudInstanceId(cloudInstanceId string) StarlarkRunConfigOption {
+func WithCloudInstanceId(cloudInstanceId string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.CloudInstanceId = cloudInstanceId
 	}
 }
 
-func WithCloudUserId(cloudUserId string) StarlarkRunConfigOption {
+func WithCloudUserId(cloudUserId string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.CloudUserId = cloudUserId
 	}

@@ -305,9 +305,9 @@ func run(
 		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFileFlagKey, inputArgsArgKey)
 	}
 
-	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
 	cloudUserId := ""
 	cloudInstanceId := ""
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
 	if err != nil {
 		logrus.Warnf("Could not retrieve the current context. Kurtosis will assume context is local (no cloud user & instance id) and not" +
 			"map the enclave service ports. If you're running on a remote context and are seeing this error, then" +
