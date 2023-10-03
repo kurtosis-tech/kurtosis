@@ -1,13 +1,9 @@
 import {createEnclave} from "../../test_helpers/enclave_setup";
 import {
-    DEFAULT_DRY_RUN,
     JEST_TIMEOUT_MS,
 } from "./shared_constants";
 import log from "loglevel";
-import {KurtosisFeatureFlag} from "kurtosis-sdk/build/core/kurtosis_core_rpc_api_bindings/api_container_service_pb";
-
-const DEFAULT_STARLARK_RUN_FUNC_NAME = "run"
-const NO_EXPERIMENTAL_FEATURE = new Array<KurtosisFeatureFlag>()
+import {StarlarkRunConfig} from "kurtosis-sdk";
 
 const VALID_SCRIPT_INPUT_TEST_NAME = "valid-package-with-input"
 const STARLARK_SCRIPT = `
@@ -30,11 +26,8 @@ test("Test valid Starlark script with input", async () => {
         // ------------------------------------- TEST SETUP ----------------------------------------------
         const params = `{"greetings": "bonjour!"}`
         const runResult = await enclaveContext.runStarlarkScriptBlocking(
-            DEFAULT_STARLARK_RUN_FUNC_NAME,
             STARLARK_SCRIPT,
-            params,
-            DEFAULT_DRY_RUN,
-            NO_EXPERIMENTAL_FEATURE,
+            new StarlarkRunConfig(StarlarkRunConfig.WithSerializedParams(params))
         )
 
         if (runResult.isErr()) {
@@ -68,11 +61,8 @@ test("Test valid Starlark package with input - missing key in params", async () 
         // ------------------------------------- TEST SETUP ----------------------------------------------
         const params = `{"hello": "world"}` // expecting key 'greetings' here
         const runResult = await enclaveContext.runStarlarkScriptBlocking(
-            DEFAULT_STARLARK_RUN_FUNC_NAME,
             STARLARK_SCRIPT,
-            params,
-            DEFAULT_DRY_RUN,
-            NO_EXPERIMENTAL_FEATURE,
+            new StarlarkRunConfig(StarlarkRunConfig.WithSerializedParams(params))
         )
 
         if (runResult.isErr()) {

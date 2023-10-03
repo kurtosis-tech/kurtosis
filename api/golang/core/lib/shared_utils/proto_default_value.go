@@ -7,3 +7,10 @@ func GetOrDefaultBool(optionalValue *bool, defaultValue bool) bool {
 	}
 	return *optionalValue
 }
+
+func GetOrDefaultString(optionalValue *string, defaultValue string) string {
+	if optionalValue == nil {
+		return defaultValue
+	}
+	return *optionalValue
+}

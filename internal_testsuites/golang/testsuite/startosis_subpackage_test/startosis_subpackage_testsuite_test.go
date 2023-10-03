@@ -3,8 +3,8 @@ package startosis_subpackage_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
@@ -13,16 +13,6 @@ import (
 
 const (
 	name = "startosis-ports-wait"
-
-	emptyRunParams         = "{}"
-	defaultDryRun          = false
-	defaultParallelism     = 4
-	useDefaultMainFile     = ""
-	useDefaultFunctionName = ""
-)
-
-var (
-	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
 )
 
 type StartosisSubpackageTestSuite struct {
@@ -58,23 +48,13 @@ func (suite *StartosisSubpackageTestSuite) RunPackage(ctx context.Context, packa
 		return suite.enclaveCtx.RunStarlarkRemotePackageBlocking(
 			ctx,
 			packageLocation,
-			useDefaultMainFile,
-			useDefaultFunctionName,
-			emptyRunParams,
-			defaultDryRun,
-			defaultParallelism,
-			noExperimentalFeature,
+			starlark_run_config.NewRunStarlarkConfig(),
 		)
 	}
 
 	return suite.enclaveCtx.RunStarlarkPackageBlocking(
 		ctx,
 		packageLocation,
-		useDefaultMainFile,
-		useDefaultFunctionName,
-		emptyRunParams,
-		defaultDryRun,
-		defaultParallelism,
-		noExperimentalFeature,
+		starlark_run_config.NewRunStarlarkConfig(),
 	)
 }
