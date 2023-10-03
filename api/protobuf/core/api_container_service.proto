@@ -509,6 +509,11 @@ message ConnectServicesResponse {
 //                               Get Run Starlark
 // ==============================================================================================
 
+enum RestartPolicy {
+  NEVER = 0;
+  ALWAYS = 1;
+}
+
 message GetStarlarkRunResponse {
   string package_id = 1;
 
@@ -524,5 +529,5 @@ message GetStarlarkRunResponse {
 
   repeated KurtosisFeatureFlag experimental_features = 7;
 
-  bool is_production = 8;
+  RestartPolicy restart_policy = 8;
 }

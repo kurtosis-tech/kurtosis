@@ -79,7 +79,7 @@ type ApiContainerService struct {
 
 	startosisModuleContentProvider startosis_packages.PackageContentProvider
 
-	isProduction bool
+	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy
 
 	starlarkRun *kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse
 }
@@ -89,14 +89,14 @@ func NewApiContainerService(
 	serviceNetwork service_network.ServiceNetwork,
 	startosisRunner *startosis_engine.StartosisRunner,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
-	isProduction bool,
+	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
 		startosisRunner:                startosisRunner,
 		startosisModuleContentProvider: startosisModuleContentProvider,
-		isProduction:                   isProduction,
+		restartPolicy:                  restartPolicy,
 		starlarkRun: &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 			PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
 			SerializedScript:       "",
@@ -105,7 +105,7 @@ func NewApiContainerService(
 			RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 			MainFunctionName:       "",
 			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
-			IsProduction:           false,
+			RestartPolicy:          kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
 		},
 	}
 
@@ -130,7 +130,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 		RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		MainFunctionName:       mainFuncName,
 		ExperimentalFeatures:   experimentalFeatures,
-		IsProduction:           apicService.isProduction,
+		RestartPolicy:          apicService.restartPolicy,
 	}
 
 	return nil
@@ -241,7 +241,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFuncName,
 		ExperimentalFeatures:   args.ExperimentalFeatures,
-		IsProduction:           apicService.isProduction,
+		RestartPolicy:          apicService.restartPolicy,
 	}
 
 	return nil

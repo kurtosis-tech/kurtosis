@@ -646,8 +646,8 @@ pub struct GetStarlarkRunResponse {
     pub main_function_name: ::prost::alloc::string::String,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "7")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
-    #[prost(bool, tag = "8")]
-    pub is_production: bool,
+    #[prost(enumeration = "RestartPolicy", tag = "8")]
+    pub restart_policy: i32,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
@@ -729,6 +729,32 @@ impl KurtosisFeatureFlag {
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
             "NO_INSTRUCTIONS_CACHING" => Some(Self::NoInstructionsCaching),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum RestartPolicy {
+    Never = 0,
+    Always = 1,
+}
+impl RestartPolicy {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            RestartPolicy::Never => "NEVER",
+            RestartPolicy::Always => "ALWAYS",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "NEVER" => Some(Self::Never),
+            "ALWAYS" => Some(Self::Always),
             _ => None,
         }
     }
