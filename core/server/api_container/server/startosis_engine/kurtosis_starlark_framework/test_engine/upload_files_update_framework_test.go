@@ -45,11 +45,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesUpdate() {
 }
 
 func (t *uploadFilesUpdateTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return upload_files.NewUploadFiles("", t.serviceNetwork, t.packageContentProvider)
+	return upload_files.NewUploadFiles(TestModulePackageId, t.serviceNetwork, t.packageContentProvider)
 }
 
 func (t *uploadFilesUpdateTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName, upload_files.ArtifactNameArgName, TestArtifactName)
+	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleRelativeLocator, upload_files.ArtifactNameArgName, TestArtifactName)
 }
 
 func (t *uploadFilesUpdateTestCase) GetStarlarkCodeForAssertion() string {

@@ -44,3 +44,14 @@ func (suite *KurtosisHelperTestSuite) run(builtin KurtosisHelperBaseTest) {
 
 	builtin.Assert(result)
 }
+
+func (suite *KurtosisHelperTestSuite) runShouldFail(builtin KurtosisHelperBaseTest, expectedErrMsg string) {
+	// Add the KurtosisPlanInstruction that is being tested
+	helper := builtin.GetHelper()
+	suite.starlarkEnv[helper.GetName()] = starlark.NewBuiltin(helper.GetName(), helper.CreateBuiltin())
+
+	starlarkCode := builtin.GetStarlarkCode()
+	_, err := starlark.ExecFile(suite.starlarkThread, startosis_constants.PackageIdPlaceholderForStandaloneScript, codeToExecute(starlarkCode), suite.starlarkEnv)
+	suite.Require().Error(err, "Expected to fail running starlark code %s, but it didn't fail", builtin.GetStarlarkCode())
+	suite.Require().Equal(expectedErrMsg, err.Error())
+}
