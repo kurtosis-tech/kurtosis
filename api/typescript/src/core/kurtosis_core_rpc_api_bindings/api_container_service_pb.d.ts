@@ -1207,8 +1207,8 @@ export class GetStarlarkRunResponse extends jspb.Message {
   clearExperimentalFeaturesList(): GetStarlarkRunResponse;
   addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): GetStarlarkRunResponse;
 
-  getIsProduction(): boolean;
-  setIsProduction(value: boolean): GetStarlarkRunResponse;
+  getRestartPolicy(): RestartPolicy;
+  setRestartPolicy(value: RestartPolicy): GetStarlarkRunResponse;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetStarlarkRunResponse.AsObject;
@@ -1227,7 +1227,7 @@ export namespace GetStarlarkRunResponse {
     relativePathToMainFile: string,
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
-    isProduction: boolean,
+    restartPolicy: RestartPolicy,
   }
 }
 
@@ -1242,4 +1242,8 @@ export enum Connect {
 }
 export enum KurtosisFeatureFlag { 
   NO_INSTRUCTIONS_CACHING = 0,
+}
+export enum RestartPolicy { 
+  NEVER = 0,
+  ALWAYS = 1,
 }

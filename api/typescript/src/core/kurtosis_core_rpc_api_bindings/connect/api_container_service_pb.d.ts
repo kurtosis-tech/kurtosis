@@ -61,6 +61,21 @@ export declare enum KurtosisFeatureFlag {
 }
 
 /**
+ * @generated from enum api_container_api.RestartPolicy
+ */
+export declare enum RestartPolicy {
+  /**
+   * @generated from enum value: NEVER = 0;
+   */
+  NEVER = 0,
+
+  /**
+   * @generated from enum value: ALWAYS = 1;
+   */
+  ALWAYS = 1,
+}
+
+/**
  * ==============================================================================================
  *                           Shared Objects (Used By Multiple Endpoints)
  * ==============================================================================================
@@ -1697,9 +1712,9 @@ export declare class GetStarlarkRunResponse extends Message<GetStarlarkRunRespon
   experimentalFeatures: KurtosisFeatureFlag[];
 
   /**
-   * @generated from field: bool is_production = 8;
+   * @generated from field: api_container_api.RestartPolicy restart_policy = 8;
    */
-  isProduction: boolean;
+  restartPolicy: RestartPolicy;
 
   constructor(data?: PartialMessage<GetStarlarkRunResponse>);
 

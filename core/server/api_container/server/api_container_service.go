@@ -79,7 +79,7 @@ type ApiContainerService struct {
 
 	startosisModuleContentProvider startosis_packages.PackageContentProvider
 
-	isProduction bool
+	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy
 
 	starlarkRun *kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse
 }
@@ -89,21 +89,30 @@ func NewApiContainerService(
 	serviceNetwork service_network.ServiceNetwork,
 	startosisRunner *startosis_engine.StartosisRunner,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
-	isProduction bool,
+	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
 		serviceNetwork:                 serviceNetwork,
 		startosisRunner:                startosisRunner,
 		startosisModuleContentProvider: startosisModuleContentProvider,
-		isProduction:                   isProduction,
-		starlarkRun:                    nil,
+		restartPolicy:                  restartPolicy,
+		starlarkRun: &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
+			PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
+			SerializedScript:       "",
+			SerializedParams:       "",
+			Parallelism:            0,
+			RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
+			MainFunctionName:       "",
+			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
+			RestartPolicy:          kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
+		},
 	}
 
 	return service, nil
 }
 
-func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
+func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkScriptServer) error {
 	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	parallelism := int(args.GetParallelism())
@@ -121,7 +130,7 @@ func (apicService ApiContainerService) RunStarlarkScript(args *kurtosis_core_rpc
 		RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 		MainFunctionName:       mainFuncName,
 		ExperimentalFeatures:   experimentalFeatures,
-		IsProduction:           apicService.isProduction,
+		RestartPolicy:          apicService.restartPolicy,
 	}
 
 	return nil
@@ -191,7 +200,7 @@ func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Co
 	}, nil
 }
 
-func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
+func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
 	packageId := args.GetPackageId()
 	parallelism := int(args.GetParallelism())
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
@@ -232,7 +241,7 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 		RelativePathToMainFile: relativePathToMainFile,
 		MainFunctionName:       mainFuncName,
 		ExperimentalFeatures:   args.ExperimentalFeatures,
-		IsProduction:           apicService.isProduction,
+		RestartPolicy:          apicService.restartPolicy,
 	}
 
 	return nil

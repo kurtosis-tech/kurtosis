@@ -41,6 +41,17 @@ export const KurtosisFeatureFlag = proto3.makeEnum(
 );
 
 /**
+ * @generated from enum api_container_api.RestartPolicy
+ */
+export const RestartPolicy = proto3.makeEnum(
+  "api_container_api.RestartPolicy",
+  [
+    {no: 0, name: "NEVER"},
+    {no: 1, name: "ALWAYS"},
+  ],
+);
+
+/**
  * ==============================================================================================
  *                           Shared Objects (Used By Multiple Endpoints)
  * ==============================================================================================
@@ -601,7 +612,7 @@ export const GetStarlarkRunResponse = proto3.makeMessageType(
     { no: 5, name: "relative_path_to_main_file", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 6, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 7, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
-    { no: 8, name: "is_production", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 8, name: "restart_policy", kind: "enum", T: proto3.getEnumType(RestartPolicy) },
   ],
 );
 

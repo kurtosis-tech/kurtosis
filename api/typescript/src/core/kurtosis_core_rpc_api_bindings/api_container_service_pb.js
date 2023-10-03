@@ -44,6 +44,7 @@ goog.exportSymbol('proto.api_container_api.KurtosisFeatureFlag', null, global);
 goog.exportSymbol('proto.api_container_api.ListFilesArtifactNamesAndUuidsResponse', null, global);
 goog.exportSymbol('proto.api_container_api.Port', null, global);
 goog.exportSymbol('proto.api_container_api.Port.TransportProtocol', null, global);
+goog.exportSymbol('proto.api_container_api.RestartPolicy', null, global);
 goog.exportSymbol('proto.api_container_api.RunStarlarkPackageArgs', null, global);
 goog.exportSymbol('proto.api_container_api.RunStarlarkPackageArgs.StarlarkPackageContentCase', null, global);
 goog.exportSymbol('proto.api_container_api.RunStarlarkScriptArgs', null, global);
@@ -9434,7 +9435,7 @@ proto.api_container_api.GetStarlarkRunResponse.toObject = function(includeInstan
     relativePathToMainFile: jspb.Message.getFieldWithDefault(msg, 5, ""),
     mainFunctionName: jspb.Message.getFieldWithDefault(msg, 6, ""),
     experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 7)) == null ? undefined : f,
-    isProduction: jspb.Message.getBooleanFieldWithDefault(msg, 8, false)
+    restartPolicy: jspb.Message.getFieldWithDefault(msg, 8, 0)
   };
 
   if (includeInstance) {
@@ -9502,8 +9503,8 @@ proto.api_container_api.GetStarlarkRunResponse.deserializeBinaryFromReader = fun
       }
       break;
     case 8:
-      var value = /** @type {boolean} */ (reader.readBool());
-      msg.setIsProduction(value);
+      var value = /** @type {!proto.api_container_api.RestartPolicy} */ (reader.readEnum());
+      msg.setRestartPolicy(value);
       break;
     default:
       reader.skipField();
@@ -9583,9 +9584,9 @@ proto.api_container_api.GetStarlarkRunResponse.serializeBinaryToWriter = functio
       f
     );
   }
-  f = message.getIsProduction();
-  if (f) {
-    writer.writeBool(
+  f = message.getRestartPolicy();
+  if (f !== 0.0) {
+    writer.writeEnum(
       8,
       f
     );
@@ -9739,20 +9740,20 @@ proto.api_container_api.GetStarlarkRunResponse.prototype.clearExperimentalFeatur
 
 
 /**
- * optional bool is_production = 8;
- * @return {boolean}
+ * optional RestartPolicy restart_policy = 8;
+ * @return {!proto.api_container_api.RestartPolicy}
  */
-proto.api_container_api.GetStarlarkRunResponse.prototype.getIsProduction = function() {
-  return /** @type {boolean} */ (jspb.Message.getBooleanFieldWithDefault(this, 8, false));
+proto.api_container_api.GetStarlarkRunResponse.prototype.getRestartPolicy = function() {
+  return /** @type {!proto.api_container_api.RestartPolicy} */ (jspb.Message.getFieldWithDefault(this, 8, 0));
 };
 
 
 /**
- * @param {boolean} value
+ * @param {!proto.api_container_api.RestartPolicy} value
  * @return {!proto.api_container_api.GetStarlarkRunResponse} returns this
  */
-proto.api_container_api.GetStarlarkRunResponse.prototype.setIsProduction = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 8, value);
+proto.api_container_api.GetStarlarkRunResponse.prototype.setRestartPolicy = function(value) {
+  return jspb.Message.setProto3EnumField(this, 8, value);
 };
 
 
@@ -9778,6 +9779,14 @@ proto.api_container_api.Connect = {
  */
 proto.api_container_api.KurtosisFeatureFlag = {
   NO_INSTRUCTIONS_CACHING: 0
+};
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.RestartPolicy = {
+  NEVER: 0,
+  ALWAYS: 1
 };
 
 goog.object.extend(exports, proto.api_container_api);
