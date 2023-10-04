@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.84.1](https://github.com/kurtosis-tech/kurtosis/compare/0.84.0...0.84.1) (2023-10-04)
+
+
+### Bug Fixes
+
+* autoscroll ([#1471](https://github.com/kurtosis-tech/kurtosis/issues/1471)) ([9948fad](https://github.com/kurtosis-tech/kurtosis/commit/9948fad01bd884cf75fbc832dd41516bc50cd6a6))
+* bug where we passed cloud user id for cloud instance id ([#1465](https://github.com/kurtosis-tech/kurtosis/issues/1465)) ([65b749c](https://github.com/kurtosis-tech/kurtosis/commit/65b749cd2e8c612a6ecabbe72eb1c29e9c53ced3))
+
 ## [0.84.0](https://github.com/kurtosis-tech/kurtosis/compare/0.83.16...0.84.0) (2023-10-03)
 
 
