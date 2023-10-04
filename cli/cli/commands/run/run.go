@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"gopkg.in/yaml.v2"
 	"os"
 	"os/signal"
@@ -79,9 +80,6 @@ const (
 
 	kurtosisYMLFilePath = "kurtosis.yml"
 
-	runFailed    = false
-	runSucceeded = true
-
 	portMappingSeparatorForLogs = ", "
 
 	mainFileFlagKey      = "main-file"
@@ -92,6 +90,12 @@ const (
 
 	noConnectFlagKey = "no-connect"
 	noConnectDefault = "false"
+
+	packageArgsFileFlagKey      = "args-file"
+	packageArgsFileDefaultValue = ""
+
+	runFailed    = false
+	runSucceeded = true
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -180,6 +184,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_Bool,
 			Default: noConnectDefault,
 		},
+		{
+			Key:     packageArgsFileFlagKey,
+			Usage:   "The file (JSON/YAML) will be used as arguments passed to the Kurtosis Package",
+			Type:    flags.FlagType_String,
+			Default: packageArgsFileDefaultValue,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -209,7 +219,7 @@ func run(
 	args *args.ParsedArgs,
 ) error {
 	// Args parsing and validation
-	serializedJsonArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
+	packageArgs, err := args.GetNonGreedyArg(inputArgsArgKey)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", inputArgsArgKey)
 	}
@@ -275,6 +285,52 @@ func run(
 		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", mainFunctionNameFlagKey)
 	}
 
+	packageArgsFile, err := flags.GetString(packageArgsFileFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "Expected a value for the '%v' flag but failed to get it", packageArgsFileFlagKey)
+	}
+
+	if packageArgs == inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
+		logrus.Debugf("'%v' is empty but '%v' is provided so we will go with the '%v' value", inputArgsArgKey, packageArgsFileFlagKey, packageArgsFileFlagKey)
+		packageArgsFileBytes, err := os.ReadFile(packageArgsFile)
+		if err != nil {
+			return stacktrace.Propagate(err, "attempted to read file provided by flag '%v' with path '%v' but failed", packageArgsFileFlagKey, packageArgsFile)
+		}
+		packageArgsFileStr := string(packageArgsFileBytes)
+		if packageArgParsingErr := validateSerializedArgs(packageArgsFileStr); packageArgParsingErr != nil {
+			return stacktrace.Propagate(err, "attempted to validate '%v' but failed", packageArgsFileFlagKey)
+		}
+		packageArgs = packageArgsFileStr
+	} else if packageArgs != inputArgsAreEmptyBracesByDefault && packageArgsFile != packageArgsFileDefaultValue {
+		logrus.Debugf("'%v' arg is not empty; ignoring value of '%v' flag as '%v' arg takes precedence", inputArgsArgKey, packageArgsFileFlagKey, inputArgsArgKey)
+	}
+
+	cloudUserId := ""
+	cloudInstanceId := ""
+	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
+	if err != nil {
+		logrus.Warnf("Could not retrieve the current context. Kurtosis will assume context is local (no cloud user & instance id) and not" +
+			"map the enclave service ports. If you're running on a remote context and are seeing this error, then" +
+			"the enclave services will be unreachable locally. Turn on debug logging to see the actual error.")
+		logrus.Debugf("Error was: %v", err.Error())
+	} else {
+		if store.IsRemote(currentContext) {
+			cloudUserId = currentContext.GetRemoteContextV0().GetCloudUserId()
+			cloudInstanceId = currentContext.GetRemoteContextV0().GetCloudUserId()
+		}
+	}
+
+	starlarkRunConfig := starlark_run_config.NewRunStarlarkConfig(
+		starlark_run_config.WithDryRun(dryRun),
+		starlark_run_config.WithParallelism(castedParallelism),
+		starlark_run_config.WithExperimentalFeatureFlags(experimentalFlags),
+		starlark_run_config.WithMainFunctionName(mainFunctionName),
+		starlark_run_config.WithRelativePathToMainFile(relativePathToTheMainFile),
+		starlark_run_config.WithSerializedParams(packageArgs),
+		starlark_run_config.WithCloudUserId(cloudUserId),
+		starlark_run_config.WithCloudInstanceId(cloudInstanceId),
+	)
+
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred connecting to the local Kurtosis engine")
@@ -307,10 +363,8 @@ func run(
 	}
 
 	isRemotePackage := strings.HasPrefix(starlarkScriptOrPackagePath, githubDomainPrefix)
-	isStandAloneScript := false
-	packageOrScriptName := starlarkScriptOrPackagePath
 	if isRemotePackage {
-		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism, experimentalFlags)
+		responseLineChan, cancelFunc, errRunningKurtosis = executeRemotePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
 	} else {
 		fileOrDir, err := os.Stat(starlarkScriptOrPackagePath)
 		if err != nil {
@@ -318,11 +372,10 @@ func run(
 		}
 
 		if isStandaloneScript(fileOrDir, kurtosisYMLFilePath) {
-			isStandAloneScript = true
 			if !strings.HasSuffix(starlarkScriptOrPackagePath, starlarkExtension) {
 				return stacktrace.NewError("Expected a script with a '%s' extension but got file '%v' with a different extension", starlarkExtension, starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism, experimentalFlags)
+			responseLineChan, cancelFunc, errRunningKurtosis = executeScript(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
 		} else {
 			// if the path is a file with `kurtosis.yml` at the end it's a module dir
 			// we remove the `kurtosis.yml` to get just the Dir containing the module
@@ -330,20 +383,14 @@ func run(
 				starlarkScriptOrPackagePath = path.Dir(starlarkScriptOrPackagePath)
 			}
 			// we pass the sanitized path and look for a Kurtosis YML within it to get the package name
-			packageOrScriptName, err = getPackageName(starlarkScriptOrPackagePath)
 			if err != nil {
 				return stacktrace.Propagate(err, "Tried parsing Kurtosis YML at '%v' to get package name but failed", starlarkScriptOrPackagePath)
 			}
-			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, relativePathToTheMainFile, mainFunctionName, serializedJsonArgs, dryRun, castedParallelism, experimentalFlags)
+			responseLineChan, cancelFunc, errRunningKurtosis = executePackage(ctx, enclaveCtx, starlarkScriptOrPackagePath, starlarkRunConfig)
 		}
 	}
 	if errRunningKurtosis != nil {
 		return stacktrace.Propagate(errRunningKurtosis, "An error starting the Kurtosis code execution '%v'", starlarkScriptOrPackagePath)
-	}
-
-	if err = metricsClient.TrackKurtosisRun(packageOrScriptName, isRemotePackage, dryRun, isStandAloneScript); err != nil {
-		//We don't want to interrupt users flow if something fails when tracking metrics
-		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
 
 	errRunningKurtosis = ReadAndPrintResponseLinesUntilClosed(responseLineChan, cancelFunc, verbosity, dryRun)
@@ -358,11 +405,12 @@ func run(
 		logrus.Warnf("An error occurred configuring the user services port forwarding\nError was: %v", err)
 	}
 
-	servicesInEnclavePostRun, servicesInEnclaveForMetricsError := enclaveCtx.GetServices()
-	if servicesInEnclaveForMetricsError != nil {
+	servicesInEnclavePostRun, servicesInEnclaveError := enclaveCtx.GetServices()
+	if servicesInEnclaveError != nil {
 		logrus.Warn("Tried getting number of services in the enclave to log metrics but failed")
 	} else {
-		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics); err != nil {
+		// TODO(gyani-cloud-metrics) move this to APIC
+		if err = metricsClient.TrackKurtosisRunFinishedEvent(starlarkScriptOrPackagePath, len(servicesInEnclavePostRun), runStatusForMetrics, cloudInstanceId, cloudUserId); err != nil {
 			logrus.Warn("An error occurred tracking kurtosis run finished event")
 		}
 	}
@@ -371,20 +419,16 @@ func run(
 		return errRunningKurtosis
 	}
 
-	if servicesInEnclaveForMetricsError != nil {
+	if servicesInEnclaveError != nil {
 		logrus.Warnf("Unable to retrieve the services running inside the enclave so their ports will not be" +
 			" mapped to local ports.")
 		return nil
 	}
 
-	currentContext, err := store.GetContextsConfigStore().GetCurrentContext()
-	if err != nil {
-		logrus.Warnf("Could not retrieve the current context. Kurtosis will assume context is local and not" +
-			"map the enclave service ports. If you're running on a remote context and are seeing this error, then" +
-			"the enclave services will be unreachable locally. Turn on debug logging to see the actual error.")
-		logrus.Debugf("Error was: %v", err.Error())
+	if currentContext != nil {
 		return nil
 	}
+
 	if !store.IsRemote(currentContext) {
 		logrus.Debugf("Current context is local, not mapping enclave service ports")
 		return nil
@@ -430,24 +474,19 @@ func run(
 //	Private Helper Functions
 //
 // ====================================================================================================
-func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, mainFunctionName string, serializedParams string, dryRun bool, parallelism int32, experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
+func executeScript(ctx context.Context, enclaveCtx *enclaves.EnclaveContext, scriptPath string, runConfig *starlark_run_config.StarlarkRunConfig) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	fileContentBytes, err := os.ReadFile(scriptPath)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Unable to read content of Starlark script file '%s'", scriptPath)
 	}
-	return enclaveCtx.RunStarlarkScript(ctx, mainFunctionName, string(fileContentBytes), serializedParams, dryRun, parallelism, experimentalFeatures)
+	return enclaveCtx.RunStarlarkScript(ctx, string(fileContentBytes), runConfig)
 }
 
 func executePackage(
 	ctx context.Context,
 	enclaveCtx *enclaves.EnclaveContext,
 	packagePath string,
-	relativePathToMainFile string,
-	mainFunctionName string,
-	serializedParams string,
-	dryRun bool,
-	parallelism int32,
-	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	// we get the absolute path so that the logs make more sense
 	absolutePackagePath, err := filepath.Abs(packagePath)
@@ -456,21 +495,16 @@ func executePackage(
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "An error occurred while getting the absolute path for '%v'", packagePath)
 	}
-	return enclaveCtx.RunStarlarkPackage(ctx, packagePath, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures)
+	return enclaveCtx.RunStarlarkPackage(ctx, packagePath, runConfig)
 }
 
 func executeRemotePackage(
 	ctx context.Context,
 	enclaveCtx *enclaves.EnclaveContext,
 	packageId string,
-	relativePathToMainFile string,
-	mainFunctionName string,
-	serializedParams string,
-	dryRun bool,
-	parallelism int32,
-	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
+	runConfig *starlark_run_config.StarlarkRunConfig,
 ) (<-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
-	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures)
+	return enclaveCtx.RunStarlarkRemotePackage(ctx, packageId, runConfig)
 }
 
 // ReadAndPrintResponseLinesUntilClosed TODO(victor.colombo): Extract this to somewhere reasonable
@@ -558,18 +592,7 @@ func validatePackageArgs(_ context.Context, _ *flags.ParsedFlags, args *args.Par
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the script/package arguments using flag key '%v'", inputArgsArgKey)
 	}
-	var result interface{}
-	var jsonError error
-	if jsonError = json.Unmarshal([]byte(serializedArgs), &result); jsonError == nil {
-		return nil
-	}
-	var yamlError error
-	if yamlError = yaml.Unmarshal([]byte(serializedArgs), &result); yamlError == nil {
-		return nil
-	}
-	return stacktrace.Propagate(
-		fmt.Errorf("JSON parsing error '%v', YAML parsing error '%v'", jsonError, yamlError),
-		"Error validating args, because it is not a valid JSON or YAML.")
+	return validateSerializedArgs(serializedArgs)
 }
 
 // parseVerbosityFlag Get the verbosity flag is present, and parse it to a valid Verbosity value
@@ -619,15 +642,6 @@ func isKurtosisYMLFileInPackageDir(fileInfo os.FileInfo, kurtosisYMLFilePath str
 	return fileInfo.Mode().IsRegular() && fileInfo.Name() == kurtosisYMLFilePath
 }
 
-func getPackageName(packagePath string) (string, error) {
-	fullPathToKurtosisYML := path.Join(packagePath, kurtosisYMLFilePath)
-	kurtosisYml, err := enclaves.ParseKurtosisYaml(fullPathToKurtosisYML)
-	if err != nil {
-		return "", stacktrace.Propagate(err, "Tried looking for and parsing Kurtosis YML at path '%v' but failed", fullPathToKurtosisYML)
-	}
-	return kurtosisYml.PackageName, nil
-}
-
 func scriptPathValidation(scriptPath string) (error, bool) {
 	// if it's a Github path we don't validate further, the APIC will do it for us
 	if strings.HasPrefix(scriptPath, githubDomainPrefix) {
@@ -635,4 +649,19 @@ func scriptPathValidation(scriptPath string) (error, bool) {
 	}
 
 	return nil, file_system_path_arg.ContinueWithDefaultValidation
+}
+
+func validateSerializedArgs(serializedArgs string) error {
+	var result interface{}
+	var jsonError error
+	if jsonError = json.Unmarshal([]byte(serializedArgs), &result); jsonError == nil {
+		return nil
+	}
+	var yamlError error
+	if yamlError = yaml.Unmarshal([]byte(serializedArgs), &result); yamlError == nil {
+		return nil
+	}
+	return stacktrace.Propagate(
+		fmt.Errorf("JSON parsing error '%v', YAML parsing error '%v'", jsonError, yamlError),
+		"Error validating args, because it is not a valid JSON or YAML.")
 }

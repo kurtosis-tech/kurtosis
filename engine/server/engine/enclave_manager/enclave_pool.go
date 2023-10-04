@@ -23,13 +23,15 @@ const (
 )
 
 type EnclavePool struct {
-	kurtosisBackend         backend_interface.KurtosisBackend
-	enclaveCreator          *EnclaveCreator
-	idleEnclavesChan        chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo
-	fillChan                chan bool
-	engineVersion           string
-	cancelSubRoutineCtxFunc context.CancelFunc
-	enclaveEnvVars          string
+	kurtosisBackend             backend_interface.KurtosisBackend
+	enclaveCreator              *EnclaveCreator
+	idleEnclavesChan            chan *kurtosis_engine_rpc_api_bindings.EnclaveInfo
+	fillChan                    chan bool
+	engineVersion               string
+	cancelSubRoutineCtxFunc     context.CancelFunc
+	enclaveEnvVars              string
+	metricsUserID               string
+	didUserAcceptSendingMetrics bool
 }
 
 // CreateEnclavePool will do the following:
@@ -43,6 +45,9 @@ func CreateEnclavePool(
 	poolSize uint8,
 	engineVersion string,
 	enclaveEnvVars string,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
+
 ) (*EnclavePool, error) {
 
 	//TODO the current implementation only removes the previous idle enclave, it's pending to implement the reusable feature
@@ -78,13 +83,15 @@ func CreateEnclavePool(
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(context.Background())
 
 	enclavePool := &EnclavePool{
-		kurtosisBackend:         kurtosisBackend,
-		enclaveCreator:          enclaveCreator,
-		idleEnclavesChan:        idleEnclavesChan,
-		fillChan:                fillChan,
-		engineVersion:           engineVersion,
-		cancelSubRoutineCtxFunc: cancelCtxFunc,
-		enclaveEnvVars:          enclaveEnvVars,
+		kurtosisBackend:             kurtosisBackend,
+		enclaveCreator:              enclaveCreator,
+		idleEnclavesChan:            idleEnclavesChan,
+		fillChan:                    fillChan,
+		engineVersion:               engineVersion,
+		cancelSubRoutineCtxFunc:     cancelCtxFunc,
+		enclaveEnvVars:              enclaveEnvVars,
+		metricsUserID:               metricsUserID,
+		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 	}
 
 	go enclavePool.run(ctxWithCancel)
@@ -267,6 +274,8 @@ func (pool *EnclavePool) createNewIdleEnclave(ctx context.Context) (*kurtosis_en
 		enclaveName,
 		pool.enclaveEnvVars,
 		createTestEnclave,
+		pool.metricsUserID,
+		pool.didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(
