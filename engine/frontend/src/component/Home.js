@@ -11,7 +11,7 @@ import {createBrowserRouter, Route, RouterProvider} from 'react-router-dom';
 import {useAppContext} from "../context/AppState";
 import LoadingOverlay from "./LoadingOverflow";
 import CreateEnclave from "./CreateEnclave";
-import {createRoutesFromElements} from "react-router";
+import {createRoutesFromElements, Outlet} from "react-router";
 
 const queryParamToBool = (value) => {
     return ((value + '').toLowerCase() === 'true')
@@ -33,6 +33,18 @@ const makeUrl = () => {
     if (path.charAt(0) !== "/") path = path + "/"
     return path;
 }
+
+const Layout = () => {
+    return (
+        <>
+            <TitleBar/>
+            <div className="flex h-[calc(100vh-4rem)]">
+                <Outlet/>
+            </div>
+        </>
+    )
+}
+
 const Home = () => {
     const [enclaves, setEnclaves] = useState([])
     const [enclaveLoading, setEnclaveLoading] = useState(false)
@@ -152,35 +164,38 @@ const Home = () => {
 
     const routes = (
         <>
-            <Route exact
-                   path="/enclaves"
-                   element={checkAuth(<Enclaves enclaves={enclaves}
-                                                isLoading={enclaveLoading}
-                                                handleDeleteClick={handleDeleteClick}
-                       />
-                   )}
-            />
-            <Route exact
-                   path="/enclave/*"
-                   element={checkAuth(<CreateEnclave addEnclave={addEnclave}/>)}
-            />
-            <Route path="/enclaves/:name"
-                   element={checkAuth(<EnclaveInfo enclaves={enclaves}/>)}
-            />
-            <Route path="/enclaves/:name/services/:uuid/*"
-                   element={checkAuth(<ServiceInfo/>)}
-            />
-            <Route path="/enclaves/:name/files/:fileArtifactName"
-                   element={checkAuth(<FileArtifactInfo enclaves={enclaves}/>)}
-            />
-            <Route exact
-                   path="/catalog/*"
-                   element={checkAuth(<PackageCatalogRouter addEnclave={addEnclave}/>)}
-            />
-            <Route
-                path="/"
-                element={checkAuth(<Main totalEnclaves={enclaves.length}/>)}
-            />
+            <Route path="/" element={checkAuth(<Layout/>)}>
+                <Route
+                    path="/enclaves"
+                    element={<Enclaves 
+                        enclaves={enclaves}
+                        isLoading={enclaveLoading}
+                        handleDeleteClick={handleDeleteClick}
+                    />
+                    }
+                />
+                <Route
+                    path="/enclave/*"
+                    element={<CreateEnclave addEnclave={addEnclave}/>}
+                />
+                <Route path="/enclaves/:name"
+                    element={<EnclaveInfo enclaves={enclaves}/>}
+                />
+                <Route path="/enclaves/:name/services/:uuid/*"
+                    element={<ServiceInfo/>}
+                />
+                <Route path="/enclaves/:name/files/:fileArtifactName"
+                    element={<FileArtifactInfo enclaves={enclaves}/>}
+                />
+                <Route
+                    path="/catalog/*"
+                    element={<PackageCatalogRouter addEnclave={addEnclave}/>}
+                />
+                <Route exact
+                    path="/"
+                    element={<Main totalEnclaves={enclaves.length}/>}
+                />
+            </Route>     
         </>
     )
 
@@ -193,10 +208,7 @@ const Home = () => {
 
     return (
         <div className="h-screen flex flex-col bg-[#171923]">
-            <TitleBar/>
-            <div className="flex h-[calc(100vh-4rem)]">
-                <RouterProvider router={router}/>
-            </div>
+            <RouterProvider router={router} />
         </div>
     );
 }

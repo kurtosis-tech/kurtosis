@@ -160,6 +160,16 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   clearExperimentalFeaturesList(): RunStarlarkScriptArgs;
   addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkScriptArgs;
 
+  getCloudInstanceId(): string;
+  setCloudInstanceId(value: string): RunStarlarkScriptArgs;
+  hasCloudInstanceId(): boolean;
+  clearCloudInstanceId(): RunStarlarkScriptArgs;
+
+  getCloudUserId(): string;
+  setCloudUserId(value: string): RunStarlarkScriptArgs;
+  hasCloudUserId(): boolean;
+  clearCloudUserId(): RunStarlarkScriptArgs;
+
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): RunStarlarkScriptArgs.AsObject;
   static toObject(includeInstance: boolean, msg: RunStarlarkScriptArgs): RunStarlarkScriptArgs.AsObject;
@@ -176,6 +186,8 @@ export namespace RunStarlarkScriptArgs {
     parallelism?: number,
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
+    cloudInstanceId?: string,
+    cloudUserId?: string,
   }
 
   export enum DryRunCase { 
@@ -186,6 +198,16 @@ export namespace RunStarlarkScriptArgs {
   export enum ParallelismCase { 
     _PARALLELISM_NOT_SET = 0,
     PARALLELISM = 4,
+  }
+
+  export enum CloudInstanceIdCase { 
+    _CLOUD_INSTANCE_ID_NOT_SET = 0,
+    CLOUD_INSTANCE_ID = 7,
+  }
+
+  export enum CloudUserIdCase { 
+    _CLOUD_USER_ID_NOT_SET = 0,
+    CLOUD_USER_ID = 8,
   }
 }
 
@@ -230,6 +252,16 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   clearExperimentalFeaturesList(): RunStarlarkPackageArgs;
   addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): RunStarlarkPackageArgs;
 
+  getCloudInstanceId(): string;
+  setCloudInstanceId(value: string): RunStarlarkPackageArgs;
+  hasCloudInstanceId(): boolean;
+  clearCloudInstanceId(): RunStarlarkPackageArgs;
+
+  getCloudUserId(): string;
+  setCloudUserId(value: string): RunStarlarkPackageArgs;
+  hasCloudUserId(): boolean;
+  clearCloudUserId(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -252,6 +284,8 @@ export namespace RunStarlarkPackageArgs {
     relativePathToMainFile: string,
     mainFunctionName: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
+    cloudInstanceId?: string,
+    cloudUserId?: string,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -273,6 +307,16 @@ export namespace RunStarlarkPackageArgs {
   export enum ClonePackageCase { 
     _CLONE_PACKAGE_NOT_SET = 0,
     CLONE_PACKAGE = 8,
+  }
+
+  export enum CloudInstanceIdCase { 
+    _CLOUD_INSTANCE_ID_NOT_SET = 0,
+    CLOUD_INSTANCE_ID = 12,
+  }
+
+  export enum CloudUserIdCase { 
+    _CLOUD_USER_ID_NOT_SET = 0,
+    CLOUD_USER_ID = 13,
   }
 }
 

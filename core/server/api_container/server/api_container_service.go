@@ -12,6 +12,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"io"
 	"math"
 	"net/http"
@@ -61,6 +62,12 @@ const (
 	emptyFileArtifactIdentifier = ""
 	unlimitedLineCount          = math.MaxInt
 	allFilePermissionsForOwner  = 0700
+
+	defaultCloudUserId     = ""
+	defaultCloudInstanceId = ""
+	isScript               = true
+	isNotScript            = false
+	isNotRemote            = false
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -82,6 +89,8 @@ type ApiContainerService struct {
 	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy
 
 	starlarkRun *kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse
+
+	metricsClient metrics_client.MetricsClient
 }
 
 func NewApiContainerService(
@@ -90,6 +99,7 @@ func NewApiContainerService(
 	startosisRunner *startosis_engine.StartosisRunner,
 	startosisModuleContentProvider startosis_packages.PackageContentProvider,
 	restartPolicy kurtosis_core_rpc_api_bindings.RestartPolicy,
+	metricsClient metrics_client.MetricsClient,
 ) (*ApiContainerService, error) {
 	service := &ApiContainerService{
 		filesArtifactStore:             filesArtifactStore,
@@ -107,6 +117,7 @@ func NewApiContainerService(
 			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
 			RestartPolicy:          kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
 		},
+		metricsClient:                  metricsClient,
 	}
 
 	return service, nil
@@ -119,7 +130,13 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
 	experimentalFeatures := args.GetExperimentalFeatures()
+	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
+	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, cloudInstanceID, cloudUserId)
+	if metricsErr != nil {
+		logrus.Warn("An error occurred tracking kurtosis run event")
+	}
 	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
@@ -207,6 +224,8 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	serializedParams := args.GetSerializedParams()
 	relativePathToMainFile := args.GetRelativePathToMainFile()
 	mainFuncName := args.GetMainFunctionName()
+	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
+	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 
 	if relativePathToMainFile == "" {
 		relativePathToMainFile = startosis_constants.MainFileName
@@ -217,11 +236,14 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
 	var packageName string
+	var isRemote bool
 	if args.ClonePackage != nil {
 		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
+		isRemote = args.GetClonePackage()
 	} else {
 		// old deprecated syntax in use
 		moduleContentIfLocal := args.GetLocal()
+		isRemote = args.GetRemote()
 		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
 	}
 	if interpretationError != nil {
@@ -231,6 +253,10 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		return nil
 	}
 
+	metricsErr := apicService.metricsClient.TrackKurtosisRun(packageName, isRemote, dryRun, isNotScript, cloudInstanceID, cloudUserId)
+	if metricsErr != nil {
+		logrus.Warn("An error occurred tracking kurtosis run event")
+	}
 	apicService.runStarlark(parallelism, dryRun, packageName, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{

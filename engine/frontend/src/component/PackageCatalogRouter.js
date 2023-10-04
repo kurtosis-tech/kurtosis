@@ -9,7 +9,6 @@ import {useState} from "react";
 import {useAppContext} from "../context/AppState";
 import {getStarlarkRunConfig} from "../api/api";
 
-
 const PackageCatalogRouter = ({addEnclave}) => {
     const navigate = useNavigate()
     const {appData} = useAppContext()

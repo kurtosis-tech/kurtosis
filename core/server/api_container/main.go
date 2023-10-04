@@ -31,6 +31,9 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/runtime_value_store"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/enclave_data_directory"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/analytics_logger"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	minimal_grpc_server "github.com/kurtosis-tech/minimal-grpc-server/golang/server"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -50,7 +53,14 @@ const (
 	logMethodAlongWithLogLine = true
 	functionPathSeparator     = "."
 	emptyFunctionName         = ""
+
+	shouldFlushMetricsClientQueueOnEachEvent = false
 )
+
+type doNothingMetricsClientCallback struct{}
+
+func (d doNothingMetricsClientCallback) Success()          {}
+func (d doNothingMetricsClientCallback) Failure(err error) {}
 
 func main() {
 	// This allows the filename & function to be reported
@@ -166,6 +176,26 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred creating the service network")
 	}
 
+	logger := logrus.StandardLogger()
+	metricsClient, closeClientFunc, err := metrics_client.CreateMetricsClient(
+		source.KurtosisCoreSource,
+		serverArgs.Version,
+		serverArgs.MetricsUserID,
+		serverArgs.KurtosisBackendType.String(),
+		serverArgs.DidUserAcceptSendingMetrics,
+		shouldFlushMetricsClientQueueOnEachEvent,
+		doNothingMetricsClientCallback{},
+		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
+	)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating the metrics client")
+	}
+	defer func() {
+		if err := closeClientFunc(); err != nil {
+			logrus.Warnf("We tried to close the metrics client, but doing so threw an error:\n%v", err)
+		}
+	}()
+
 	starlarkValueSerde := createStarlarkValueSerde()
 	runtimeValueStore, err := runtime_value_store.CreateRuntimeValueStore(starlarkValueSerde, enclaveDb)
 	if err != nil {
@@ -195,6 +225,7 @@ func runMain() error {
 		startosisRunner,
 		gitPackageContentProvider,
 		restartPolicy,
+		metricsClient,
 	)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating the API container service")

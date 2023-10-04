@@ -34,6 +34,8 @@ func NewRemoteV0Context(
 	tunnelPort uint32,
 	tlsConfig *generated.TlsConfig,
 	envVars *string,
+	cloudUserId *string,
+	cloudInstanceId *string,
 ) *generated.KurtosisContext {
 	return &generated.KurtosisContext{
 		Uuid: uuid,
@@ -46,6 +48,8 @@ func NewRemoteV0Context(
 				TunnelPort:          tunnelPort,
 				TlsConfig:           tlsConfig,
 				EnvVars:             envVars,
+				CloudUserId:         cloudUserId,
+				CloudInstanceId:     cloudInstanceId,
 			},
 		},
 	}

@@ -332,6 +332,20 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
    */
   experimentalFeatures: KurtosisFeatureFlag[];
 
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_instance_id = 7;
+   */
+  cloudInstanceId?: string;
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_user_id = 8;
+   */
+  cloudUserId?: string;
+
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
   static readonly runtime: typeof proto3;
@@ -431,6 +445,20 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 11;
    */
   experimentalFeatures: KurtosisFeatureFlag[];
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_instance_id = 12;
+   */
+  cloudInstanceId?: string;
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string cloud_user_id = 13;
+   */
+  cloudUserId?: string;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
