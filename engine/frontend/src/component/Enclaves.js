@@ -116,7 +116,7 @@ const DeleteAlertDialog = ({isOpen, cancelRef, onClose, enclaveToDelete, setEncl
     )
 }
 
-const Enclave = ({name, status, handleClick, onOpen, mode, setEnclave, handleEditEvent, host, port}) => {
+const Enclave = ({name, status, handleClick, onOpen, mode, setEnclave, handleEditEvent, host, port, enclave}) => {
     const backgroundColor = status === 1 ? "bg-[#24BA27]" : "bg-red-500"
     return (
         <Grid
@@ -136,12 +136,7 @@ const Enclave = ({name, status, handleClick, onOpen, mode, setEnclave, handleEdi
                         icon={<EditIcon/>}
                         onClick={(e) => {
                             e.stopPropagation()
-                            // setEnclave({
-                            //     host: host,
-                            //     port: port,
-                            //     name: name,
-                            // })
-                            handleEditEvent(name, host, port)
+                            handleEditEvent(name, host, port, enclave)
                         }}
                     />
                 </Tooltip>
@@ -179,6 +174,7 @@ const EnclaveMainComponent = ({onOpen, enclaves, handleClick, handleDeleteClick,
                 return (
                     <Enclave
                         onOpen={onOpen}
+                        enclave={enclave}
                         key={enclave.name}
                         name={enclave.name}
                         status={enclave.status}
@@ -254,13 +250,14 @@ const Enclaves = ({enclaves, isLoading, handleDeleteClick}) => {
         navigate(`/enclaves/${enclaveName}`)
     }
 
-    const handleEditEvent = (name, host, port) => {
+    const handleEditEvent = (name, host, port, enclave) => {
         navigate(`/catalog/edit`,
             {
                 state: {
                     name: name,
                     host: host,
                     port: port,
+                    enclave: enclave,
                 }
             }
         )

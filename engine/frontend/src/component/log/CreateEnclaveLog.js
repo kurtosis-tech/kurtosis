@@ -16,6 +16,8 @@ const INSTRUCTION_RESULT = "instructionResult"
 
 
 export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
+    console.log("enclave", enclave)
+
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
@@ -63,7 +65,7 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
                     readStreamData(result)    
                 }
             } catch (ex) {
-                console.error("Error occured while reading data from the enclave: ", enclave.name)
+                console.error("Error occurred while reading data from the enclave: ", enclave.name)
             } finally {
                 setLoading(false)
             }

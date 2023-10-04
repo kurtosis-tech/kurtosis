@@ -23,17 +23,27 @@ const PackageCatalogRouter = ({addEnclave}) => {
         fetchPackages();
     }, [])
 
-    const createNewEnclave = async (runArgs, enclaveName, productionMode) => {
+    const createNewEnclave = async (runArgs, enclaveName, productionMode, mode, existingEnclave) => {
         const request = async () => {
             try {
-                const enclave = await createEnclave(appData.jwtToken, appData.apiHost, enclaveName, productionMode);
-                addEnclave(enclave)
-                navigate("/catalog/progress", {
-                    state: {
-                        enclave,
-                        runArgs,
-                    }
-                })
+                if (mode === "create") {
+                    const enclave = await createEnclave(appData.jwtToken, appData.apiHost, enclaveName, productionMode);
+                    addEnclave(enclave)
+                    navigate("/catalog/progress", {
+                        state: {
+                            enclave,
+                            runArgs,
+                        }
+                    })
+                } else {
+                    addEnclave(existingEnclave)
+                    navigate("/catalog/progress", {
+                        state: {
+                            enclave: existingEnclave,
+                            runArgs,
+                        }
+                    })
+                }
             } catch (ex) {
                 console.error(ex)
                 alert(`Error occurred while creating enclave for package. An error message should be printed in console, please share it with us to help debug this problem`)

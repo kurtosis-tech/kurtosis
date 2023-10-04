@@ -1,7 +1,7 @@
 import {Box, Button, Center, Checkbox, Flex, Grid, GridItem, Input, Stack, Text, Tooltip,} from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
 import {useLocation, useNavigate} from "react-router";
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import startCase from 'lodash/startCase'
 import {InfoOutlineIcon} from '@chakra-ui/icons'
 import {CodeEditor} from "./CodeEditor";
@@ -9,6 +9,7 @@ import KeyValueTable from "./KeyValueTable";
 import {useParams} from "react-router-dom";
 import {getStarlarkRunConfig} from "../api/api";
 import {useAppContext} from "../context/AppState";
+import {getKurtosisPackages} from "../api/packageCatalog";
 
 const yaml = require("js-yaml")
 
@@ -118,7 +119,7 @@ const renderArgs = (args, handleChange, formData, errorData, packageName) => {
                           align={"right"}>{prettyPrintTypeSpecialCases(dataType, arg)}</Text>
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
-                    {errorData[index].length > 0 ?
+                    {errorData && errorData[index] && errorData[index].length > 0 ?
                         <Text marginLeft={3} align={"left"} fontSize={"xs"}
                               color="red.500">
                             {errorData[index]}
@@ -166,7 +167,7 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
                     border={errorData[index] ? "1px" : null}
                     borderColor={errorData[index] ? "red.400" : null}
                 >
-                    {KeyValueTable((data) => handleChange(data, index))}
+                    {/*{KeyValueTable((data) => handleChange(data, index))}*/}
                 </Box>
             )
 
@@ -325,47 +326,84 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
     const [runningPackage, setRunningPackage] = useState(false)
     const [enclaveName, setEnclaveName] = useState("")
     const [productionMode, setProductionMode] = useState(false)
+    const [thisKurtosisPackage, setThisKurtosisPackage] = useState({})
+    // const [initialFormData, setInitialFormData]= useState({})
+    // const [initialErrorData, setInitialErrorData]= useState({})
+    const [formData, setFormData] = useState({})
+    const [errorData, setErrorData] = useState({})
+    // const [runConfigParams, setRunConfigParams] = useState({})
 
-    let thisKurtosisPackage = {};
-    let initialFormData = {}
-    let initialErrorData = {}
+    // let thisKurtosisPackage = {};
+    // let initialFormData = {}
+    // let initialErrorData = {}
 
-    console.log(state)
-
-    if (mode === "create") {
-        const {kurtosisPackage} = state
-        thisKurtosisPackage = kurtosisPackage
-    } else if (mode === "edit") {
-        const {name, host, port} = state
-        const runConfigPromise = loadPackageRunConfig(host, port, appData.jwtToken, appData.apiHost)
-        runConfigPromise.then((runConfig) =>{
-            console.log(runConfig)
-        })
-
-
-    } else {
-        console.log("Unsupported package configuration mode", mode)
+    const isEditMode = () => {
+        return mode === "edit"
     }
 
-    console.log("thisKurtosisPackage", thisKurtosisPackage)
-    console.log("thisKurtosisPackage", JSON.stringify(thisKurtosisPackage))
-
-    thisKurtosisPackage?.args.forEach(
-        (arg, index) => {
-            if (arg.name !== "plan") {
-                initialFormData[index] = ""
+    const updateThisPackage = (currentPackage, formData, errorData, existingParamsMap) => {
+        let initialFormData = {}
+        let initialErrorData = {}
+        console.log("existingParamsMap", existingParamsMap)
+        currentPackage.args.forEach(
+            (arg, index) => {
+                if (arg.name !== "plan") {
+                    initialFormData[index] = ""
+                }
+                if (existingParamsMap && existingParamsMap[arg.name]) {
+                    initialFormData[index] = existingParamsMap[arg.name]
+                }
             }
-        }
-    )
+        )
+        currentPackage.args.forEach((arg, index) => {
+            if (arg.name !== "plan") {
+                initialErrorData[index] = ""
+            }
+        })
+        setFormData(initialFormData)
+        setErrorData(initialErrorData)
+        setThisKurtosisPackage(currentPackage)
+        console.log("thisKurtosisPackage", thisKurtosisPackage)
+    }
 
-    const [formData, setFormData] = useState(initialFormData)
-
-    thisKurtosisPackage.args.forEach((arg, index) => {
-        if (arg.name !== "plan") {
-            initialErrorData[index] = ""
+    useEffect(() => {
+        if (mode === "create") {
+            console.log(state)
+            const {kurtosisPackage} = state
+            // setThisKurtosisPackage(kurtosisPackage)
+            updateThisPackage(kurtosisPackage, formData, errorData, null)
+        } else if (isEditMode()) {
+            const {name, host, port, enclave} = state
+            console.log(enclave)
+            getKurtosisPackages() // TODO: Deboune this call. Only call once!
+                .then((packages) => {
+                    loadPackageRunConfig(host, port, appData.jwtToken, appData.apiHost)
+                        .then((runConfig) => {
+                            // console.log("RUN", runConfig)
+                            console.log("packages", packages)
+                            const matchedPackage = packages.find((p) => p.name === runConfig.packageId)
+                            console.log("match", matchedPackage)
+                            // setThisKurtosisPackage(matchedPackage)
+                            setEnclaveName(name)
+                            const existingParamsMap = JSON.parse(runConfig.serializedParams || '{}')
+                            console.log(existingParamsMap)
+                            // setRunConfigParams(deserializedParamsMap)
+                            if (matchedPackage) {
+                                updateThisPackage(matchedPackage, formData, errorData, existingParamsMap)
+                            } else {
+                                console.error(`Was not able to match a package to the running enclave ${runConfig.name} for package id: ${runConfig.packageId}`)
+                            }
+                        })
+                })
+        } else {
+            console.log("Unsupported package configuration mode", mode)
         }
-    })
-    const [errorData, setErrorData] = useState(initialErrorData)
+    }, [])
+
+    // useEffect(() => {
+    //     console.log("formData", formData)
+    //     console.log("errorData", errorData)
+    // }, [formData, errorData])
 
     const handleFormDataChange = (value, index) => {
         const newData = {
@@ -495,7 +533,13 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                 args: stringifiedArgs,
             }
 
-            handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
+            if(!isEditMode()){
+                handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode, mode, null)
+            } else {
+                const {enclave} = state
+                console.log("edit mode create!")
+                handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode, mode, enclave)
+            }
 
         } else {
             const newErrorData = {
@@ -506,8 +550,8 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
         }
     }
 
-    const handleCreateEnclave = async (runKurtosisPackageArgs, enclaveName, productionMode) => {
-        await createEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
+    const handleCreateEnclave = async (runKurtosisPackageArgs, enclaveName, productionMode, mode, maybeExistingEnclave) => {
+        await createEnclave(runKurtosisPackageArgs, enclaveName, productionMode, mode, maybeExistingEnclave)
         setRunningPackage(false)
     }
 
@@ -571,10 +615,15 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                                     color='gray.300'
                                     value={enclaveName}
                                     onChange={(e) => setEnclaveName(e.target.value)}
+                                    disabled={isEditMode()}
                                 />
                             </Flex>
                         </Flex>
-                        {renderArgs(thisKurtosisPackage.args, handleFormDataChange, formData, errorData, thisKurtosisPackage.name)}
+
+                        {thisKurtosisPackage.args &&
+                            formData &&
+                            errorData &&
+                            renderArgs(thisKurtosisPackage.args, handleFormDataChange, formData, errorData, thisKurtosisPackage.name)}
                     </Stack>
                 </GridItem>
                 <GridItem area={'configure'} m="10px">

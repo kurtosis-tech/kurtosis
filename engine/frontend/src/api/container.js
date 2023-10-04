@@ -1,15 +1,10 @@
 import {
     getServicesFromEnclaveManager,
     inspectFilesArtifactContentsFromEnclaveManager,
-    listFilesArtifactNamesAndUuidsFromEnclaveManager,
-    runStarlarkPackageFromEnclaveManager
+    listFilesArtifactNamesAndUuidsFromEnclaveManager
 } from "./api";
 
 const TransportProtocolEnum = ["tcp", "sctp", "udp"];
-
-export const runStarlarkPackage = async (host, port, packageId, args, token, apiHost) => {
-    return runStarlarkPackageFromEnclaveManager(host, port, packageId, args, token, apiHost)
-}
 
 const getDataFromApiContainer = async (request, process, token) => {
     const data = await request(token)
