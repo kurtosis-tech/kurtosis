@@ -12,6 +12,7 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"io"
 	"math"
@@ -200,6 +201,8 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	mainFuncName := args.GetMainFunctionName()
 	cloudUserId := shared_utils.GetOrDefaultString(args.CloudUserId, defaultCloudUserId)
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
+	packageReplaceOptions := args.PackageReplaceOptions
+	logrus.Debugf("package replace options received '%+v'", packageReplaceOptions)
 
 	if relativePathToMainFile == "" {
 		relativePathToMainFile = startosis_constants.MainFileName
@@ -211,15 +214,14 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	var interpretationError *startosis_errors.InterpretationError
 	var packageName string
 	var isRemote bool
-	var packageReplaceOptions map[string]string
 	if args.ClonePackage != nil {
-		scriptWithRunFunction, packageName, packageReplaceOptions, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
+		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile, packageReplaceOptions)
 		isRemote = args.GetClonePackage()
 	} else {
 		// old deprecated syntax in use
 		moduleContentIfLocal := args.GetLocal()
 		isRemote = args.GetRemote()
-		scriptWithRunFunction, packageName, packageReplaceOptions, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
+		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile, packageReplaceOptions)
 	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
@@ -676,17 +678,16 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 	clonePackage bool,
 	moduleContentIfLocal []byte,
 	relativePathToMainFile string,
-) (string, string, map[string]string, *startosis_errors.InterpretationError) {
+	packageReplaceOptions map[string]string,
+) (string, string, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
 	var packageName string
 	var kurtosisYml *yaml_parser.KurtosisYaml
-	var packageReplaceOptions = map[string]string{}
 	if clonePackage {
 		packageRootPathOnDisk, kurtosisYml, interpretationError = apicService.startosisModuleContentProvider.ClonePackage(packageId)
 		packageName = kurtosisYml.GetPackageName()
-		packageReplaceOptions = kurtosisYml.GetpackageReplaceOptions()
-		logrus.Debugf("replace dependencies received from kurtosis.yml '%+v'", packageReplaceOptions)
+
 	} else if moduleContentIfLocal != nil {
 		// TODO: remove this once UploadStarlarkPackage is called prior to calling RunStarlarkPackage by all consumers
 		//  of this API
@@ -699,21 +700,21 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 		packageName = packageId
 	}
 	if interpretationError != nil {
-		return "", "", packageReplaceOptions, interpretationError
+		return "", "", interpretationError
 	}
 
 	pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
 
 	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", "", packageReplaceOptions, startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
 	mainScriptToExecute, err := os.ReadFile(pathToMainFile)
 	if err != nil {
-		return "", "", packageReplaceOptions, startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
-	return string(mainScriptToExecute), packageName, packageReplaceOptions, nil
+	return string(mainScriptToExecute), packageName, nil
 }
 
 func (apicService ApiContainerService) runStarlark(

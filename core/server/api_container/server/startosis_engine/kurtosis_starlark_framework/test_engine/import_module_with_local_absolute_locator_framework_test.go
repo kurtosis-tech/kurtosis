@@ -50,7 +50,7 @@ func (t *importModuleWithLocalAbsoluteLocatorTestCase) GetHelper() *kurtosis_hel
 	recursiveInterpret := func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		return importModuleWithLocalAbsoluteLocator_mockStarlarkModule.Members, nil
 	}
-	return import_module.NewImportModule(TestModulePackageId, recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache)
+	return import_module.NewImportModule(TestModulePackageId, recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache, TestNoPackageReplaceOptions)
 }
 
 func (t *importModuleWithLocalAbsoluteLocatorTestCase) GetStarlarkCode() string {

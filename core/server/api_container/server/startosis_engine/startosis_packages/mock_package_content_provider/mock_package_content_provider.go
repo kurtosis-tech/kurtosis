@@ -68,7 +68,7 @@ func (provider *MockPackageContentProvider) GetModuleContents(fileInsidePackageU
 	return string(fileContent), nil
 }
 
-func (provider *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator(_ string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(_ string, relativeOrAbsoluteModulePath string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError) {
 	if strings.HasPrefix(relativeOrAbsoluteModulePath, startosis_constants.GithubDomainPrefix) {
 		return relativeOrAbsoluteModulePath, nil
 	}

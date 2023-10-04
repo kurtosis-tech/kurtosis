@@ -34,7 +34,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesWithLocalAbsoluteL
 }
 
 func (t *uploadFilesWithLocalAbsoluteLocatorTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return upload_files.NewUploadFiles(TestModulePackageId, t.serviceNetwork, t.packageContentProvider)
+	return upload_files.NewUploadFiles(TestModulePackageId, t.serviceNetwork, t.packageContentProvider, TestNoPackageReplaceOptions)
 }
 
 func (t *uploadFilesWithLocalAbsoluteLocatorTestCase) GetStarlarkCode() string {

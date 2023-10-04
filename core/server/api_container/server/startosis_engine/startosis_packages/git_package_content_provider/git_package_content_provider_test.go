@@ -17,6 +17,8 @@ const (
 	packagesTmpDirRelPath = "tmp-startosis-packages"
 )
 
+var noPackageReplaceOptions = map[string]string{}
+
 func TestGitPackageProvider_SucceedsForValidPackage(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
@@ -176,7 +178,7 @@ func TestGetAbsolutePathOnDisk_WorksForPureDirectories(t *testing.T) {
 	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "datastore-army-package", "src/helpers.star"), pathOnDisk)
 }
 
-func TestGetAbsoluteLocatorForRelativeModuleLocator_SucceedsForRelativeFile(t *testing.T) {
+func TestGetAbsolutePathOnDisk_WorksForNonInMainBranchLocators(t *testing.T) {
 	packageDir, err := os.MkdirTemp("", packagesDirRelPath)
 	require.Nil(t, err)
 	defer os.RemoveAll(packageDir)
@@ -186,9 +188,19 @@ func TestGetAbsoluteLocatorForRelativeModuleLocator_SucceedsForRelativeFile(t *t
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
+	packagePath := "github.com/kurtosis-tech/sample-dependency-package@no-main-branch/main.star"
+	pathOnDisk, err := provider.GetOnDiskAbsoluteFilePath(packagePath)
+
+	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-package existing")
+	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "datastore-army-package", "src/helpers.star"), pathOnDisk)
+}
+
+func TestGetAbsoluteLocatorForRelativeModuleLocator_SucceedsForRelativeFile(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "")
+
 	parentModuleId := "github.com/kurtosis-tech/avalanche-package/src/builder.star"
 	maybeRelativeLocator := "../static_files/config.json.tmpl"
-	absoluteLocator, err := provider.GetAbsoluteLocatorForRelativeModuleLocator(parentModuleId, maybeRelativeLocator)
+	absoluteLocator, err := provider.GetAbsoluteLocatorForRelativeLocator(parentModuleId, maybeRelativeLocator, noPackageReplaceOptions)
 
 	expectedAbsoluteLocator := "github.com/kurtosis-tech/avalanche-package/static_files/config.json.tmpl"
 	require.Nil(t, err)
@@ -196,11 +208,91 @@ func TestGetAbsoluteLocatorForRelativeModuleLocator_SucceedsForRelativeFile(t *t
 
 	parentModuleId2 := "github.com/kurtosis-tech/avalanche-package/src/builder.star"
 	maybeRelativeLocator2 := "/static_files/genesis.json"
-	absoluteLocator2, err2 := provider.GetAbsoluteLocatorForRelativeModuleLocator(parentModuleId2, maybeRelativeLocator2)
+	absoluteLocator2, err2 := provider.GetAbsoluteLocatorForRelativeLocator(parentModuleId2, maybeRelativeLocator2, noPackageReplaceOptions)
 
 	expectedAbsoluteLocator2 := "github.com/kurtosis-tech/avalanche-package/static_files/genesis.json"
 	require.Nil(t, err2)
 	require.Equal(t, expectedAbsoluteLocator2, absoluteLocator2)
+}
+
+func TestGetAbsoluteLocatorForRelativeModuleLocator_RegularReplaceSucceeds(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "")
+
+	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
+	maybeRelativeLocator := "github.com/kurtosis-tech/sample-dependency-package/main.star"
+	packageReplaceOptions := map[string]string{
+		"github.com/kurtosis-tech/sample-dependency-package": "github.com/kurtosis-tech/another-sample-dependency-package",
+	}
+	absoluteLocator, err := provider.GetAbsoluteLocatorForRelativeLocator(parentModuleId, maybeRelativeLocator, packageReplaceOptions)
+
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/another-sample-dependency-package/main.star"
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+
+}
+
+func TestGetAbsoluteLocatorForRelativeModuleLocator_RootPackageReplaceSucceeds(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "")
+
+	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
+	maybeRelativeLocator := "github.com/kurtosis-tech/another-sample-dependency-package/main.star"
+	packageReplaceOptions := map[string]string{
+		"github.com/kurtosis-tech/another-sample-dependency-package":            "github.com/kurtosis-tech/root-package-replaced",
+		"github.com/kurtosis-tech/another-sample-dependency-package/subpackage": "github.com/kurtosis-tech/sub-package-replaced",
+	}
+	absoluteLocator, err := provider.GetAbsoluteLocatorForRelativeLocator(parentModuleId, maybeRelativeLocator, packageReplaceOptions)
+
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/root-package-replaced/main.star"
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+
+}
+
+func TestGetAbsoluteLocatorForRelativeModuleLocator_SubPackageReplaceSucceeds(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "")
+
+	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
+	maybeRelativeLocator := "github.com/kurtosis-tech/another-sample-dependency-package/subpackage/main.star"
+	packageReplaceOptions := map[string]string{
+		"github.com/kurtosis-tech/another-sample-dependency-package":            "github.com/kurtosis-tech/root-package-replaced",
+		"github.com/kurtosis-tech/another-sample-dependency-package/subpackage": "github.com/kurtosis-tech/sub-package-replaced",
+	}
+	absoluteLocator, err := provider.GetAbsoluteLocatorForRelativeLocator(parentModuleId, maybeRelativeLocator, packageReplaceOptions)
+
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/sub-package-replaced/main.star"
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+
+}
+
+func TestGetAbsoluteLocatorForRelativeModuleLocator_ReplacePackageInternalModuleSucceeds(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "")
+
+	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
+	maybeRelativeLocator := "github.com/kurtosis-tech/another-sample-dependency-package/folder/module.star"
+	packageReplaceOptions := map[string]string{
+		"github.com/kurtosis-tech/another-sample-dependency-package": "github.com/kurtosis-tech/root-package-replaced",
+	}
+	absoluteLocator, err := provider.GetAbsoluteLocatorForRelativeLocator(parentModuleId, maybeRelativeLocator, packageReplaceOptions)
+
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/root-package-replaced/folder/module.star"
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+}
+
+func TestGetAbsoluteLocatorForRelativeModuleLocator_NoMainBranchReplaceSucceeds(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "")
+
+	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
+	maybeRelativeLocator := "github.com/kurtosis-tech/sample-dependency-package/main.star"
+	packageReplaceOptions := map[string]string{
+		"github.com/kurtosis-tech/sample-dependency-package": "github.com/kurtosis-tech/sample-dependency-package@no-main-branch",
+	}
+	absoluteLocator, err := provider.GetAbsoluteLocatorForRelativeLocator(parentModuleId, maybeRelativeLocator, packageReplaceOptions)
+
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/sample-dependency-package@no-main-branch/main.star"
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
 }
 
 func Test_getPathToPackageRoot(t *testing.T) {

@@ -32,6 +32,6 @@ type PackageContentProvider interface {
 	ClonePackage(packageId string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)
 
 	// GetAbsoluteLocatorForRelativeModuleLocator returns the absolute package path for a relative module path and replace the package path if
-	// there is a valid option in the packageReplaceOptions map
-	GetAbsoluteLocatorForRelativeModuleLocator(packageId string, relativeOrAbsoluteModulePath string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError)
+	// there is a valid option in the noPackageReplaceOptions map
+	GetAbsoluteLocatorForRelativeLocator(packageId string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError)
 }

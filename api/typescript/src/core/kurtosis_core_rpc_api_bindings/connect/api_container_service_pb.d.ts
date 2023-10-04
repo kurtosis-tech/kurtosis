@@ -445,6 +445,13 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    */
   cloudUserId?: string;
 
+  /**
+   * The package replace options list which will be used for replacing locators
+   *
+   * @generated from field: map<string, string> package_replace_options = 14;
+   */
+  packageReplaceOptions: { [key: string]: string };
+
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
   static readonly runtime: typeof proto3;

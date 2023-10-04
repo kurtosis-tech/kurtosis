@@ -18,7 +18,7 @@ type readFileTestCase struct {
 }
 
 func (suite *KurtosisHelperTestSuite) TestReadFile() {
-	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator).Return(TestModuleFileName, nil)
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator, TestNoPackageReplaceOptions).Return(TestModuleFileName, nil)
 	suite.packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
 
 	suite.run(&readFileTestCase{
@@ -28,7 +28,7 @@ func (suite *KurtosisHelperTestSuite) TestReadFile() {
 }
 
 func (t *readFileTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
-	return read_file.NewReadFileHelper(TestModulePackageId, t.packageContentProvider)
+	return read_file.NewReadFileHelper(TestModulePackageId, t.packageContentProvider, TestNoPackageReplaceOptions)
 }
 
 func (t *readFileTestCase) GetStarlarkCode() string {
@@ -40,7 +40,7 @@ func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
 }
 
 func (t *readFileTestCase) Assert(result starlark.Value) {
-	t.packageContentProvider.AssertCalled(t, "GetAbsoluteLocatorForRelativeModuleLocator", startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator)
+	t.packageContentProvider.AssertCalled(t, "GetAbsoluteLocatorForRelativeLocator", startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator, TestNoPackageReplaceOptions)
 	t.packageContentProvider.AssertCalled(t, "GetModuleContents", TestModuleFileName)
 	require.Equal(t, result, starlark.String("Hello World!"))
 }

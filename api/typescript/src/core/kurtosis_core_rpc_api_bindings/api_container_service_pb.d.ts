@@ -262,6 +262,9 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasCloudUserId(): boolean;
   clearCloudUserId(): RunStarlarkPackageArgs;
 
+  getPackageReplaceOptionsMap(): jspb.Map<string, string>;
+  clearPackageReplaceOptionsMap(): RunStarlarkPackageArgs;
+
   getStarlarkPackageContentCase(): RunStarlarkPackageArgs.StarlarkPackageContentCase;
 
   serializeBinary(): Uint8Array;
@@ -286,6 +289,7 @@ export namespace RunStarlarkPackageArgs {
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     cloudInstanceId?: string,
     cloudUserId?: string,
+    packageReplaceOptionsMap: Array<[string, string]>,
   }
 
   export enum StarlarkPackageContentCase { 

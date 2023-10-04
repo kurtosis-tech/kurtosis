@@ -9,7 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
-	"strings"
 )
 
 const (
@@ -72,31 +71,19 @@ type importModuleCapabilities struct {
 }
 
 func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	moduleInPackageStarlarkStr, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
+	moduleLocatorArgValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
 	if err != nil {
 		return nil, explicitInterpretationError(err)
 	}
-	moduleInPackage := moduleInPackageStarlarkStr.GoString()
-	moduleInPackage, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, moduleInPackage)
+	relativeOrAbsoluteModuleLocator := moduleLocatorArgValue.GoString()
+	absoluteModuleLocator, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteModuleLocator, builtin.packageReplaceOptions)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}
-	logrus.Debugf("importing module from absolute locator '%s'", moduleInPackage)
-
-	//TODO Move to a helper function or object
-	//TODO iterate under subpaths for subpackages
-	lastIndex := strings.LastIndex(moduleInPackage, "/")
-	modulePath := moduleInPackage[:lastIndex]
-	replacePath, ok := builtin.packageReplaceOptions[modulePath]
-	if ok {
-		logrus.Debugf("dependency replace found for '%s', package '%s' will be replaced with '%s'", moduleInPackage, modulePath, replacePath)
-		moduleInPackage = strings.Replace(moduleInPackage, modulePath, replacePath, 1)
-		logrus.Debugf("importing replaced module absolute locator '%s'", moduleInPackage)
-	}
-	//TODO Move to a helper function or object
+	logrus.Debugf("importing module from absolute locator '%s'", absoluteModuleLocator)
 
 	var loadInProgress *startosis_packages.ModuleCacheEntry
-	cacheEntry, found := builtin.moduleGlobalCache[moduleInPackage]
+	cacheEntry, found := builtin.moduleGlobalCache[absoluteModuleLocator]
 	if found && cacheEntry == loadInProgress {
 		return nil, startosis_errors.NewInterpretationError("There's a cycle in the import_module calls")
 	}
@@ -104,34 +91,34 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 		return cacheEntry.GetModule(), cacheEntry.GetError()
 	}
 
-	builtin.moduleGlobalCache[moduleInPackage] = loadInProgress
+	builtin.moduleGlobalCache[absoluteModuleLocator] = loadInProgress
 	shouldUnsetLoadInProgress := true
 	defer func() {
 		if shouldUnsetLoadInProgress {
-			delete(builtin.moduleGlobalCache, moduleInPackage)
+			delete(builtin.moduleGlobalCache, absoluteModuleLocator)
 		}
 	}()
 
 	// Load it.
-	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(moduleInPackage)
+	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(absoluteModuleLocator)
 	if interpretationError != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", moduleInPackage)
+		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", absoluteModuleLocator)
 	}
 
-	globalVariables, interpretationErr := builtin.recursiveInterpret(moduleInPackage, contents)
+	globalVariables, interpretationErr := builtin.recursiveInterpret(absoluteModuleLocator, contents)
 	// the above error goes unchecked as it needs to be persisted to the cache and then returned to the parent loader
 
 	// Update the cache.
 	if interpretationErr == nil {
 		newModule := &starlarkstruct.Module{
-			Name:    moduleInPackage,
+			Name:    absoluteModuleLocator,
 			Members: globalVariables,
 		}
 		cacheEntry = startosis_packages.NewModuleCacheEntry(newModule, nil)
 	} else {
 		cacheEntry = startosis_packages.NewModuleCacheEntry(nil, interpretationErr)
 	}
-	builtin.moduleGlobalCache[moduleInPackage] = cacheEntry
+	builtin.moduleGlobalCache[absoluteModuleLocator] = cacheEntry
 
 	shouldUnsetLoadInProgress = false
 	if cacheEntry.GetError() != nil {

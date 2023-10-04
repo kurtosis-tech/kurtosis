@@ -500,7 +500,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, packageRootPath)
 	}
-	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId), nil
+	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId, kurtosisYaml.PackageReplaceOptions), nil
 }
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {

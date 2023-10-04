@@ -39,7 +39,7 @@ func (suite *KurtosisHelperTestSuite) TestImportFile() {
 	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
 
 	suite.packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
-	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeModuleLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator).Return(TestModuleFileName, nil)
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator, TestNoPackageReplaceOptions).Return(TestModuleFileName, nil)
 
 	suite.run(&importModuleTestCase{
 		T:                      suite.T(),
@@ -52,7 +52,7 @@ func (t *importModuleTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
 	recursiveInterpret := func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		return importModule_mockStarlarkModule.Members, nil
 	}
-	return import_module.NewImportModule(TestModulePackageId, recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache, TestNopackageReplaceOptions)
+	return import_module.NewImportModule(TestModulePackageId, recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache, TestNoPackageReplaceOptions)
 }
 
 func (t *importModuleTestCase) GetStarlarkCode() string {

@@ -86,23 +86,23 @@ func (_c *MockPackageContentProvider_ClonePackage_Call) RunAndReturn(run func(st
 	return _c
 }
 
-// GetAbsoluteLocatorForRelativeModuleLocator provides a mock function with given fields: packageId, relativeOrAbsoluteModulePath
-func (_m *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator(packageId string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
-	ret := _m.Called(packageId, relativeOrAbsoluteModulePath)
+// GetAbsoluteLocatorForRelativeLocator provides a mock function with given fields: packageId, relativeOrAbsoluteLocator, packageReplaceOptions
+func (_m *MockPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(packageId string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError) {
+	ret := _m.Called(packageId, relativeOrAbsoluteLocator, packageReplaceOptions)
 
 	var r0 string
 	var r1 *startosis_errors.InterpretationError
-	if rf, ok := ret.Get(0).(func(string, string) (string, *startosis_errors.InterpretationError)); ok {
-		return rf(packageId, relativeOrAbsoluteModulePath)
+	if rf, ok := ret.Get(0).(func(string, string, map[string]string) (string, *startosis_errors.InterpretationError)); ok {
+		return rf(packageId, relativeOrAbsoluteLocator, packageReplaceOptions)
 	}
-	if rf, ok := ret.Get(0).(func(string, string) string); ok {
-		r0 = rf(packageId, relativeOrAbsoluteModulePath)
+	if rf, ok := ret.Get(0).(func(string, string, map[string]string) string); ok {
+		r0 = rf(packageId, relativeOrAbsoluteLocator, packageReplaceOptions)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string, string) *startosis_errors.InterpretationError); ok {
-		r1 = rf(packageId, relativeOrAbsoluteModulePath)
+	if rf, ok := ret.Get(1).(func(string, string, map[string]string) *startosis_errors.InterpretationError); ok {
+		r1 = rf(packageId, relativeOrAbsoluteLocator, packageReplaceOptions)
 	} else {
 		if ret.Get(1) != nil {
 			r1 = ret.Get(1).(*startosis_errors.InterpretationError)
@@ -112,31 +112,32 @@ func (_m *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator
 	return r0, r1
 }
 
-// MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteLocatorForRelativeModuleLocator'
-type MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call struct {
+// MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetAbsoluteLocatorForRelativeLocator'
+type MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call struct {
 	*mock.Call
 }
 
-// GetAbsoluteLocatorForRelativeModuleLocator is a helper method to define mock.On call
+// GetAbsoluteLocatorForRelativeLocator is a helper method to define mock.On call
 //   - packageId string
-//   - relativeOrAbsoluteModulePath string
-func (_e *MockPackageContentProvider_Expecter) GetAbsoluteLocatorForRelativeModuleLocator(packageId interface{}, relativeOrAbsoluteModulePath interface{}) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call {
-	return &MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call{Call: _e.mock.On("GetAbsoluteLocatorForRelativeModuleLocator", packageId, relativeOrAbsoluteModulePath)}
+//   - relativeOrAbsoluteLocator string
+//   - packageReplaceOptions map[string]string
+func (_e *MockPackageContentProvider_Expecter) GetAbsoluteLocatorForRelativeLocator(packageId interface{}, relativeOrAbsoluteLocator interface{}, packageReplaceOptions interface{}) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
+	return &MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call{Call: _e.mock.On("GetAbsoluteLocatorForRelativeLocator", packageId, relativeOrAbsoluteLocator, packageReplaceOptions)}
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call) Run(run func(packageId string, relativeOrAbsoluteModulePath string)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) Run(run func(packageId string, relativeOrAbsoluteLocator string, packageReplaceOptions map[string]string)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(string), args[1].(string))
+		run(args[0].(string), args[1].(string), args[2].(map[string]string))
 	})
 	return _c
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call) RunAndReturn(run func(string, string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeModuleLocator_Call {
+func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) RunAndReturn(run func(string, string, map[string]string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
 	_c.Call.Return(run)
 	return _c
 }

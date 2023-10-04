@@ -31,7 +31,7 @@ func (suite *KurtosisHelperTestSuite) TestReadFileWithLocalAbsoluteLocatorShould
 }
 
 func (t *readFileWithLocalAbsoluteLocatorTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
-	return read_file.NewReadFileHelper(TestModulePackageId, t.packageContentProvider)
+	return read_file.NewReadFileHelper(TestModulePackageId, t.packageContentProvider, TestNoPackageReplaceOptions)
 }
 
 func (t *readFileWithLocalAbsoluteLocatorTestCase) GetStarlarkCode() string {

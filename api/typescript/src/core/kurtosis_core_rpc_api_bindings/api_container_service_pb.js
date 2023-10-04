@@ -2382,7 +2382,8 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     mainFunctionName: jspb.Message.getFieldWithDefault(msg, 10, ""),
     experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f,
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 12, ""),
-    cloudUserId: jspb.Message.getFieldWithDefault(msg, 13, "")
+    cloudUserId: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    packageReplaceOptionsMap: (f = msg.getPackageReplaceOptionsMap()) ? f.toObject(includeInstance, undefined) : []
   };
 
   if (includeInstance) {
@@ -2468,6 +2469,12 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
     case 13:
       var value = /** @type {string} */ (reader.readString());
       msg.setCloudUserId(value);
+      break;
+    case 14:
+      var value = msg.getPackageReplaceOptionsMap();
+      reader.readMessage(value, function(message, reader) {
+        jspb.Map.deserializeBinary(message, reader, jspb.BinaryReader.prototype.readString, jspb.BinaryReader.prototype.readString, null, "", "");
+         });
       break;
     default:
       reader.skipField();
@@ -2581,6 +2588,10 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
       13,
       f
     );
+  }
+  f = message.getPackageReplaceOptionsMap(true);
+  if (f && f.getLength() > 0) {
+    f.serializeBinary(14, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeString);
   }
 };
 
@@ -2968,6 +2979,28 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.clearCloudUserId = func
 proto.api_container_api.RunStarlarkPackageArgs.prototype.hasCloudUserId = function() {
   return jspb.Message.getField(this, 13) != null;
 };
+
+
+/**
+ * map<string, string> package_replace_options = 14;
+ * @param {boolean=} opt_noLazyCreate Do not create the map if
+ * empty, instead returning `undefined`
+ * @return {!jspb.Map<string,string>}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getPackageReplaceOptionsMap = function(opt_noLazyCreate) {
+  return /** @type {!jspb.Map<string,string>} */ (
+      jspb.Message.getMapField(this, 14, opt_noLazyCreate,
+      null));
+};
+
+
+/**
+ * Clears values from the map. The map will be non-null.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearPackageReplaceOptionsMap = function() {
+  this.getPackageReplaceOptionsMap().clear();
+  return this;};
 
 
 
