@@ -1,11 +1,10 @@
 import React, {useEffect, useRef, useState} from "react";
 import useWindowDimensions from "../../utils/windowDimension";
-import {Flex, Box, Spacer, Tooltip} from "@chakra-ui/react";
-import {TriangleDownIcon, DownloadIcon} from '@chakra-ui/icons'
+import {Box, Flex, Spacer, Tooltip, useClipboard} from "@chakra-ui/react";
+import {DownloadIcon, TriangleDownIcon} from '@chakra-ui/icons'
 import parse from 'html-react-parser';
 import hasAnsi from 'has-ansi';
 import stripAnsi from 'strip-ansi';
-import {useClipboard} from '@chakra-ui/react'
 import {saveTextAsFile} from "../../utils/download";
 import {Virtuoso} from "react-virtuoso";
 
@@ -21,25 +20,17 @@ const Row = ({log}) => {
             txt = parse(parsedAnsi)
         }
         return (
-            <Box
-                style={styles.row}
-            >
-                {txt}
-            </Box>
+            <Box style={styles.row}>{txt}</Box>
         );
     }
     return <></>;
 };
 
 export const Log = ({logs, fileName}) => {
-    const [mouseOnDownload, setMouseOnDownload] = useState(false);
     const [displayLogs, setDisplayLogs] = useState(logs)
     const virtuosoRef = useRef(null)
-    const [isScrolling, setIsScrolling] = useState(false)
-    const [atBottom, setAtBottom] = useState(false)
-    const [endReached, setEndReached] = useState(false)
     const {height: windowHeight} = useWindowDimensions();
-    const {onCopy, value: copyValue, setValue: setCopyValue, hasCopied} = useClipboard("");
+    const {onCopy, setValue: setCopyValue, hasCopied} = useClipboard("");
 
     useEffect(() => {
         setDisplayLogs(logs);
@@ -47,7 +38,6 @@ export const Log = ({logs, fileName}) => {
             return stripAnsi(log)
         })
         setCopyValue(logsWithoutAnsi.join(os.EOL))
-        setEndReached(false)
     }, [logs]);
 
     const handleDownload = () => {
@@ -58,14 +48,11 @@ export const Log = ({logs, fileName}) => {
         saveTextAsFile(logsAsText, fileName)
     }
 
-    const handleToBottom = () => {
+    const handleScrollToBottom = () => {
         virtuosoRef.current.scrollToIndex({
             index: displayLogs.length - 1, behavior: 'smooth', align: "end"
         });
     }
-
-    const showToolTip = mouseOnDownload || (!endReached && !isScrolling)
-    const toolTipValue = (!endReached) ? "scroll to see new logs" : "scroll to bottom"
 
     return (
         <div className="flex flex-col bg-black">
@@ -74,25 +61,17 @@ export const Log = ({logs, fileName}) => {
                 ref={virtuosoRef}
                 data={displayLogs}
                 totalCount={displayLogs.length - 1}
-                endReached={() => {
-                    setEndReached(true)
-                }}
-                atBottomStateChange={(bottom) => {
-                    setAtBottom(bottom)
-                }}
-                isScrolling={(value) => {
-                    setIsScrolling(value)
-                }}
                 itemContent={(index, log) => {
-                    return (
-                        <Row index={index} log={log}/>
-                    )
+                    return (<Row index={index} log={log}/>);
                 }}
                 followOutput={"smooth"}
             />
             <Flex className="bg-black" style={{height: `80px`}}>
                 <Spacer/>
-                <Tooltip label={`${hasCopied ? "copied" : "copy"}`} placement='top-end' closeOnClick={false}>
+                <Tooltip label={`${hasCopied ? "Copied!" : "Copy"}`}
+                         placement='top-end'
+                         closeOnClick={false}
+                >
                     <Box p='2' m="4" onClick={onCopy} height={"40px"}>
                         <svg className="w-6 h-6 text-gray-800 dark:text-white" aria-hidden="true"
                              xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 18 20">
@@ -103,16 +82,19 @@ export const Log = ({logs, fileName}) => {
                         </svg>
                     </Box>
                 </Tooltip>
-                <Tooltip label={`download`} placement='top' closeOnClick={false}>
+                <Tooltip label={"Download"}
+                         placement='top'
+                >
                     <Box p='2' m="4" onClick={handleDownload} height={"40px"}>
                         <DownloadIcon textColor={"white"}/>
                     </Box>
                 </Tooltip>
-                <Tooltip label={toolTipValue} placement='top' closeOnClick={true} isOpen={showToolTip}>
+                <Tooltip label={"Autoscroll to bottom"}
+                         placement='top'
+                >
                     <Box p='2' m="4"
-                         onClick={handleToBottom} height={"40px"}
-                         onMouseEnter={() => setMouseOnDownload(true)}
-                         onMouseLeave={() => setMouseOnDownload(false)}
+                         height={"40px"}
+                         onClick={handleScrollToBottom}
                     >
                         <TriangleDownIcon textColor={"white"}/>
                     </Box>
