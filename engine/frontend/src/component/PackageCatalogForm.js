@@ -88,7 +88,6 @@ const renderArgs = (args, handleChange, formData, errorData, packageName) => {
                     dataType = "JSON"
             }
         } catch (e) {
-            console.log("no data type provided, falling back to string")
         }
 
         return (
@@ -150,6 +149,7 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
             )
 
         case "JSON":
+            const processedState = formData[index] === "" ? "{}" : formData[index]
             return (
                 <Box
                     border={errorData[index] ? "1px" : null}
@@ -158,6 +158,7 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
                     <CodeEditor
                         uniqueId={uniqueId}
                         dataCallback={dataCallback}
+                        defaultState={processedState}
                     />
                 </Box>
             )
@@ -167,7 +168,10 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
                     border={errorData[index] ? "1px" : null}
                     borderColor={errorData[index] ? "red.400" : null}
                 >
-                    <KeyValueTable dataCallback={dataCallback}/>
+                    <KeyValueTable
+                        dataCallback={dataCallback}
+                        defaultState={formData[index]}
+                    />
                 </Box>
             )
 
@@ -192,7 +196,7 @@ const checkValidJsonType = (data) => {
     }
 
     try {
-        JSON.parse(data)
+        JSON.parse(JSON.stringify(data))
         return true;
     } catch (ex) {
         return false
@@ -334,17 +338,28 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
             return mode === "edit"
         }
 
+        const serializeIfJson = (data) => {
+            let processedData = data // assumption is it's not json
+            try {
+                // serialize if it's json object
+                if( typeof processedData === 'object') {
+                    processedData = JSON.stringify(processedData)
+                }
+            } catch {
+            }
+            return processedData
+        }
+
         const updateThisPackage = (currentPackage, formData, errorData, existingParamsMap) => {
             let initialFormData = {}
             let initialErrorData = {}
-            console.log("existingParamsMap", existingParamsMap)
             currentPackage.args.forEach(
                 (arg, index) => {
                     if (arg.name !== "plan") {
                         initialFormData[index] = ""
                     }
                     if (existingParamsMap && existingParamsMap[arg.name]) {
-                        initialFormData[index] = existingParamsMap[arg.name]
+                        initialFormData[index] = serializeIfJson(existingParamsMap[arg.name])
                     }
                 }
             )
@@ -356,28 +371,21 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
             setFormData(initialFormData)
             setErrorData(initialErrorData)
             setThisKurtosisPackage(currentPackage)
-            console.log("thisKurtosisPackage", thisKurtosisPackage)
         }
 
         useEffect(() => {
             if (mode === "create") {
-                console.log(state)
                 const {kurtosisPackage} = state
-                // setThisKurtosisPackage(kurtosisPackage)
                 updateThisPackage(kurtosisPackage, formData, errorData, null)
             } else if (isEditMode()) {
                 const {name, host, port, enclave} = state
-                console.log(enclave)
-                getKurtosisPackages() // TODO: Deboune this call. Only call once!
+                getKurtosisPackages() // TODO: Debounce this call. Only call once!
                     .then((packages) => {
                         loadPackageRunConfig(host, port, appData.jwtToken, appData.apiHost)
                             .then((runConfig) => {
-                                console.log("packages", packages)
                                 const matchedPackage = packages.find((p) => p.name === runConfig.packageId)
-                                console.log("match", matchedPackage)
                                 setEnclaveName(name)
                                 const existingParamsMap = JSON.parse(runConfig.serializedParams || '{}')
-                                console.log(existingParamsMap)
                                 if (matchedPackage) {
                                     updateThisPackage(matchedPackage, formData, errorData, existingParamsMap)
                                 } else {
@@ -386,7 +394,7 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                             })
                     })
             } else {
-                console.log("Unsupported package configuration mode", mode)
+                console.error(`Unsupported package configuration mode: ${mode}`)
             }
         }, [])
 
@@ -517,12 +525,12 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                     packageId: thisKurtosisPackage.name,
                     args: stringifiedArgs,
                 }
+                console.log("Creating enclave with package args", runKurtosisPackageArgs)
 
                 if (!isEditMode()) {
                     handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode, mode, null)
                 } else {
                     const {enclave} = state
-                    console.log("edit mode create!")
                     handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode, mode, enclave)
                 }
 

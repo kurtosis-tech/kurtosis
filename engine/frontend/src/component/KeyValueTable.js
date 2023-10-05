@@ -2,12 +2,25 @@ import React, {useEffect, useState} from "react";
 import {Box, Button, HStack, Input, InputGroup, InputLeftAddon, Tooltip, useClipboard} from "@chakra-ui/react";
 import {ObjectInput} from "react-object-input";
 
-const KeyValueTable = ({dataCallback}) => {
-    const [value, setValue] = useState({})
+const KeyValueTable = ({
+                           dataCallback,
+                           defaultState = {}
+                       }) => {
+
+    // parse the inputs, even if it's serialized json
+    let parsed_json
+    try{
+        parsed_json = JSON.parse(defaultState)
+    } catch {
+        parsed_json = JSON.parse(JSON.stringify(defaultState))
+    }
+
+    const [value, setValue] = useState(parsed_json)
     const clipboard = useClipboard(value);
 
     useEffect(() => {
-        dataCallback(JSON.stringify(value))
+        const serialized = JSON.stringify(value)
+        dataCallback(serialized)
         clipboard.setValue(JSON.stringify(value, null, 2))
     }, [value])
 

@@ -116,6 +116,5 @@ export const getEnclaveInformation = async (host, port, token, apiHost) => {
     const fileArtifactsPromise = getDataFromApiContainer(makeFileArtifactRequest, processFileArtifactRequest)
 
     const [services, artifacts] = await Promise.all([servicesPromise, fileArtifactsPromise])
-    // console.log("sa", services, artifacts)
     return {services, artifacts}
 }

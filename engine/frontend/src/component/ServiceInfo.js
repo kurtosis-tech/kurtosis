@@ -45,7 +45,7 @@ const ServiceInfo = () => {
                     } 
                 }
             } catch (ex) {
-                console.log("Abort Initial Log Stream! with error ", ex)
+                console.error("Abort Initial Log Stream! with error ", ex)
             }
         }
 

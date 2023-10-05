@@ -16,8 +16,6 @@ const INSTRUCTION_RESULT = "instructionResult"
 
 
 export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
-    console.log("enclave", enclave)
-
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])

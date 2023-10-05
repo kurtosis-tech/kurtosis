@@ -57,7 +57,7 @@ const Home = () => {
                 await removeEnclave(appData.jwtToken, appData.apiHost, enclaveName)
                 setEnclaves(filteredEnclaves)
             } catch (ex) {
-                console.log(ex)
+                console.error(ex)
                 alert(`Sorry, unexpected error occurred while removing enclave with name: ${enclaveName}`)
             }
         }
