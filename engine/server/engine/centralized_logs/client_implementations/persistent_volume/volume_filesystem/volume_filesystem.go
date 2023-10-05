@@ -6,10 +6,6 @@ import (
 	"os"
 )
 
-const (
-	forwardSlash = "/"
-)
-
 // VolumeFilesystem interface is an abstraction of the disk filesystem
 // primarily for the purpose of enabling unit testing persistentVolumeLogsDatabaseClient
 type VolumeFilesystem interface {
