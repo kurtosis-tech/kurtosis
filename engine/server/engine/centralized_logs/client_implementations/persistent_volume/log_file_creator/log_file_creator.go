@@ -69,17 +69,17 @@ func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 				return err
 			}
 
-			logrus.Info("CREATING SYMLINKED FILES")
 			serviceNameFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceNameStr)
 			if err = creator.createSymlinkLogFile(serviceUuidFilePathStr, serviceNameFilePathStr); err != nil {
 				return err
 			}
+			logrus.Tracef("Created symlinked log file: '%v'", serviceNameFilePathStr)
 
 			serviceShortUuidFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceShortUuidStr)
 			if err = creator.createSymlinkLogFile(serviceUuidFilePathStr, serviceShortUuidFilePathStr); err != nil {
 				return err
 			}
-			logrus.Info("SUCCESSFULLY CREATED SYMLINKED FILES")
+			logrus.Tracef("Created symlinked log file: '%v'", serviceShortUuidFilePathStr)
 		}
 	}
 
@@ -115,6 +115,7 @@ func (creator *LogFileCreator) createLogFileIdempotently(logFilePath string) err
 		if _, err = creator.filesystem.Create(logFilePath); err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating a log file path at '%v'", logFilePath)
 		}
+		logrus.Tracef("Created log file: '%v'", logFilePath)
 		return nil
 	}
 	if err != nil {

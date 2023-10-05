@@ -155,16 +155,16 @@ func runMain() error {
 	go func() {
 		// TODO: Remove this when moving away from persistent volume logs db
 		// creating log file paths on an interval is a hack to prevent duplicate logs from being stored by the log aggregator
-		logrus.Debug("Scheduling log file path creation...")
 		fileCreator := log_file_creator.NewLogFileCreator(kurtosisBackend, osFs, realTime)
 		logFileCreatorTicker := time.NewTicker(volume_consts.CreateLogFilesInterval)
 		for range logFileCreatorTicker.C {
-			logrus.Debug("Attempting to create log file paths.")
+			logrus.Debug("Creating log file paths...")
 			err = fileCreator.CreateLogFiles(ctx)
 			if err != nil {
 				logrus.Errorf("An error occurred attempting to create log file paths: %v", err)
+			} else {
+				logrus.Debug("Successfully created log file paths.")
 			}
-			logrus.Debug("Successfully created log file paths.")
 		}
 	}()
 
