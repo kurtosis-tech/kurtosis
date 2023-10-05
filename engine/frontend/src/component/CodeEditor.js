@@ -5,21 +5,23 @@ import {saveTextAsFile} from "../utils/download";
 import Editor from "@monaco-editor/react";
 
 export const CodeEditor = (
-    uniqueId,
-    dataCallback = (data) => {
-    },
-    readOnly = false,
-    languages = ["json"],
-    defaultWidthPx = 500,
-    defaultState = languages.includes("json") ? "{\n}" : "",
-    autoFormat = false,
-    lineNumbers = false,
-    showCopyButton = true,
-    showDownloadButton = true,
-    showFormatButton = true,
-    buttonSizes = "sm",
-    border = "1px",
-    theme = "vs-dark",
+    {
+        uniqueId,
+        dataCallback = (data) => {
+        },
+        readOnly = false,
+        languages = ["json"],
+        defaultWidthPx = 500,
+        defaultState = languages.includes("json") ? "{\n}" : "",
+        autoFormat = false,
+        lineNumbers = false,
+        showCopyButton = true,
+        showDownloadButton = true,
+        showFormatButton = true,
+        buttonSizes = "sm",
+        border = "1px",
+        theme = "vs-dark",
+    }
 ) => {
     // https://github.com/microsoft/monaco-editor/blob/main/webpack-plugin/README.md#options
     const monacoRef = useRef(null);

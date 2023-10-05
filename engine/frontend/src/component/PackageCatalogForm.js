@@ -1,122 +1,16 @@
-import {
-    Box,
-    Button,
-    Center,
-    Checkbox,
-    Flex,
-    Grid,
-    GridItem,
-    HStack,
-    Input,
-    InputGroup,
-    InputLeftAddon,
-    Stack,
-    Text,
-    Tooltip,
-    useClipboard,
-} from '@chakra-ui/react'
+import {Box, Button, Center, Checkbox, Flex, Grid, GridItem, Input, Stack, Text, Tooltip,} from '@chakra-ui/react'
 import PackageCatalogOption from "./PackageCatalogOption";
 import {useLocation, useNavigate} from "react-router";
 import React, {useEffect, useState} from 'react';
 import startCase from 'lodash/startCase'
 import {InfoOutlineIcon} from '@chakra-ui/icons'
-import {ObjectInput} from 'react-object-input'
 import {CodeEditor} from "./CodeEditor";
+import KeyValueTable from "./KeyValueTable";
+import {getStarlarkRunConfig} from "../api/api";
+import {useAppContext} from "../context/AppState";
+import {getKurtosisPackages} from "../api/packageCatalog";
 
 const yaml = require("js-yaml")
-
-const KeyValueTable = (dataCallBack) => {
-    const [value, setValue] = useState({})
-    const clipboard = useClipboard(value);
-
-    useEffect(() => {
-        dataCallBack(JSON.stringify(value))
-        clipboard.setValue(JSON.stringify(value, null, 2))
-    }, [value])
-
-    const paste = async () => {
-        const clipboard = await window.navigator.clipboard.readText()
-        try {
-            const json = JSON.parse(clipboard)
-            setValue(json)
-        } catch (e) {
-            alert("Could not process the content in the clipboard. Please verify it's valid JSON")
-        }
-    }
-
-    return (
-        <Box
-            border="1px"
-            borderColor='gray.700'
-            borderRadius="7"
-            margin={"1px"}
-            padding={1}
-        >
-            <ObjectInput
-                obj={value}
-                onChange={setValue}
-                renderItem={(key, value, updateKey, updateValue, deleteProperty) => (
-                    <Box
-                        margin={1}
-                    >
-                        <HStack
-                            spacing={1}
-                            direction="row"
-                        >
-                            <InputGroup>
-                                <InputLeftAddon children='Key'/>
-                                <Input
-                                    type="text"
-                                    value={key}
-                                    onChange={e => updateKey(e.target.value)}
-                                    size="md"
-                                    variant='filled'
-                                />
-                            </InputGroup>
-
-                            <InputGroup>
-                                <InputLeftAddon children='Value'/>
-                                <Input
-                                    type="text"
-                                    value={value || " "} // value will be undefined for new rows
-                                    onChange={e => updateValue(e.target.value)}
-                                    size="md"
-                                    variant='filled'
-                                />
-                            </InputGroup>
-                            <Button
-                                onClick={deleteProperty}
-                            >
-                                x
-                            </Button>
-                        </HStack>
-                    </Box>
-                )}
-                renderAdd={addItem => <Button size={"sm"} margin={1} onClick={addItem}>Add item</Button>}
-                // renderEmpty={() => <p></p>}
-            />
-            <Button
-                margin={1}
-                size={"sm"}
-                onClick={clipboard.onCopy}
-            >
-                <Tooltip label="Copy as JSON">
-                    {clipboard.hasCopied ? "Copied!" : "Copy"}
-                </Tooltip>
-
-            </Button>
-            <Button
-                margin={1}
-                size={"sm"}
-                onClick={paste}
-            >
-                <Tooltip label='Paste as a JSON key value map, e.g. `{ "key_1": "value", "key_2": 1 }` '>
-                    Paste
-                </Tooltip>
-            </Button>
-        </Box>
-    )
-}
 
 const prettyPrintTypeSpecialCases = (type, arg) => {
     if (type === "LIST") {
@@ -194,7 +88,6 @@ const renderArgs = (args, handleChange, formData, errorData, packageName) => {
                     dataType = "JSON"
             }
         } catch (e) {
-            console.log("no data type provided, falling back to string")
         }
 
         return (
@@ -224,7 +117,7 @@ const renderArgs = (args, handleChange, formData, errorData, packageName) => {
                           align={"right"}>{prettyPrintTypeSpecialCases(dataType, arg)}</Text>
                 </Flex>
                 <Flex flex="1" mr="3" direction={"column"}>
-                    {errorData[index].length > 0 ?
+                    {errorData && errorData[index] && errorData[index].length > 0 ?
                         <Text marginLeft={3} align={"left"} fontSize={"xs"}
                               color="red.500">
                             {errorData[index]}
@@ -239,6 +132,7 @@ const renderArgs = (args, handleChange, formData, errorData, packageName) => {
 
 const renderSingleArg = (fieldName, type, errorData, formData, index, handleChange, packageName) => {
     const uniqueId = `${packageName}-${fieldName}`
+    const dataCallback = (data) => handleChange(data, index)
     switch (type) {
         case "INTEGER":
         case "STRING":
@@ -255,15 +149,17 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
             )
 
         case "JSON":
+            const processedState = formData[index] === "" ? "{}" : formData[index]
             return (
                 <Box
                     border={errorData[index] ? "1px" : null}
                     borderColor={errorData[index] ? "red.400" : null}
                 >
-                    {CodeEditor(
-                        uniqueId,
-                        (data) => handleChange(data, index)
-                    )}
+                    <CodeEditor
+                        uniqueId={uniqueId}
+                        dataCallback={dataCallback}
+                        defaultState={processedState}
+                    />
                 </Box>
             )
         case "DICT":
@@ -272,7 +168,10 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
                     border={errorData[index] ? "1px" : null}
                     borderColor={errorData[index] ? "red.400" : null}
                 >
-                    {KeyValueTable((data) => handleChange(data, index))}
+                    <KeyValueTable
+                        dataCallback={dataCallback}
+                        defaultState={formData[index]}
+                    />
                 </Box>
             )
 
@@ -297,7 +196,7 @@ const checkValidJsonType = (data) => {
     }
 
     try {
-        JSON.parse(data)
+        JSON.parse(JSON.stringify(data))
         return true;
     } catch (ex) {
         return false
@@ -416,259 +315,333 @@ const parseList = (data, rawDataType) => {
     return parsedJson
 }
 
-const PackageCatalogForm = ({createEnclave}) => {
-    const navigate = useNavigate()
-    const location = useLocation()
-    const {state} = location;
-    const {kurtosisPackage} = state
 
-    const [runningPackage, setRunningPackage] = useState(false)
-    const [enclaveName, setEnclaveName] = useState("")
-    const [productionMode, setProductionMode] = useState(false)
+const loadPackageRunConfig = async (host, port, token, apiHost) => {
+    const data = await getStarlarkRunConfig(host, port, token, apiHost)
+    // consoloe.log(data)
+    return data;
+}
 
-    let initialFormData = {}
-    kurtosisPackage.args.forEach(
-        (arg, index) => {
-            if (arg.name !== "plan") {
-                initialFormData[index] = ""
-            }
+const PackageCatalogForm = ({createEnclave, mode}) => {
+        const {appData} = useAppContext()
+        const navigate = useNavigate()
+        const location = useLocation()
+        const {state} = location;
+        const [runningPackage, setRunningPackage] = useState(false)
+        const [enclaveName, setEnclaveName] = useState("")
+        const [productionMode, setProductionMode] = useState(false)
+        const [thisKurtosisPackage, setThisKurtosisPackage] = useState({})
+        const [formData, setFormData] = useState({})
+        const [errorData, setErrorData] = useState({})
+
+        const isEditMode = () => {
+            return mode === "edit"
         }
-    )
-    const [formData, setFormData] = useState(initialFormData)
 
-    let initialErrorData = {}
-    kurtosisPackage.args.forEach((arg, index) => {
-        if (arg.name !== "plan") {
-            initialErrorData[index] = ""
-        }
-    })
-    const [errorData, setErrorData] = useState(initialErrorData)
-
-    const handleFormDataChange = (value, index) => {
-        const newData = {
-            ...formData,
-            [index]: value,
-        }
-        setFormData(newData)
-
-        if (errorData[index]) {
-            const newErrorData = {
-                ...errorData,
-                [index]: false,
-            }
-            setErrorData(newErrorData)
-        }
-    }
-
-    const handleCancelBtn = () => {
-        navigate("/catalog")
-    }
-
-    const handleRunBtn = () => {
-        let errorsFound = {}
-
-        Object.keys(formData).filter(key => {
-            const arg = kurtosisPackage.args[key]
-            let type = ""
+        const serializeIfJson = (data) => {
+            let processedData = data // assumption is it's not json
             try {
-                type = getType(arg)
+                // serialize if it's json object
+                if( typeof processedData === 'object') {
+                    processedData = JSON.stringify(processedData)
+                }
             } catch {
             }
-            const required = isRequired(arg)
+            return processedData
+        }
 
-            // if it's optional and empty it's fine
-            if (!required && formData[key].length === 0) {
-                return
-            }
-
-            let valid = true
-            if (type === "STRING") {
-                valid = checkValidStringType(formData[key])
-            } else if (type === "INTEGER") {
-                valid = checkValidIntType(formData[key])
-            } else if (type === "BOOL") {
-                valid = checkValidBooleanType(formData[key])
-            } else if (type === "FLOAT") {
-                valid = checkValidFloatType(formData[key])
-            } else if (type === "LIST") {
-                let subType = getFirstSubType(arg)
-                valid = checkValidListType(formData[key], subType)
-            } else if (type === "DICT") {
-                valid = checkValidJsonType(formData[key])
-            } else if (type === "JSON") {
-                valid = checkValidJsonType(formData[key])
-            } else {
-                valid = checkValidUndefinedType(formData[key])
-            }
-
-            let typeToPrint = type
-            if (type === undefined) {
-                typeToPrint = "JSON"
-            } else if (type === "BOOL") {
-                typeToPrint = "BOOLEAN (TRUE/FALSE)"
-            } else {
-                typeToPrint = prettyPrintTypeSpecialCases(type, kurtosisPackage.args[key])
-            }
-
-            if (!valid) {
-                errorsFound[key] = `Incorrect type: expected ${typeToPrint}`;
-            }
-        })
-
-        Object.keys(formData).filter(key => {
-            const required = isRequired(kurtosisPackage.args[key])
-            let valid = true;
-            if (required) {
-                if (formData[key].length === 0) {
-                    valid = false;
+        const updateThisPackage = (currentPackage, formData, errorData, existingParamsMap) => {
+            let initialFormData = {}
+            let initialErrorData = {}
+            currentPackage.args.forEach(
+                (arg, index) => {
+                    if (arg.name !== "plan") {
+                        initialFormData[index] = ""
+                    }
+                    if (existingParamsMap && existingParamsMap[arg.name]) {
+                        initialFormData[index] = serializeIfJson(existingParamsMap[arg.name])
+                    }
                 }
-            }
+            )
+            currentPackage.args.forEach((arg, index) => {
+                if (arg.name !== "plan") {
+                    initialErrorData[index] = ""
+                }
+            })
+            setFormData(initialFormData)
+            setErrorData(initialErrorData)
+            setThisKurtosisPackage(currentPackage)
+        }
 
-            if (!valid) {
-                errorsFound[key] = `This field is required and cannot be empty`;
+        useEffect(() => {
+            if (mode === "create") {
+                const {kurtosisPackage} = state
+                updateThisPackage(kurtosisPackage, formData, errorData, null)
+            } else if (isEditMode()) {
+                const {name, host, port, enclave} = state
+                getKurtosisPackages() // TODO: Debounce this call. Only call once!
+                    .then((packages) => {
+                        loadPackageRunConfig(host, port, appData.jwtToken, appData.apiHost)
+                            .then((runConfig) => {
+                                const matchedPackage = packages.find((p) => p.name === runConfig.packageId)
+                                setEnclaveName(name)
+                                const existingParamsMap = JSON.parse(runConfig.serializedParams || '{}')
+                                if (matchedPackage) {
+                                    updateThisPackage(matchedPackage, formData, errorData, existingParamsMap)
+                                } else {
+                                    console.error(`Was not able to match a package to the running enclave ${runConfig.name} for package id: ${runConfig.packageId}`)
+                                }
+                            })
+                    })
+            } else {
+                console.error(`Unsupported package configuration mode: ${mode}`)
             }
-        })
+        }, [])
 
-        if (Object.keys(errorsFound).length === 0) {
-            setRunningPackage(true)
-            let args = {}
-            Object.keys(formData).map(key => {
-                const arg = kurtosisPackage.args[key]
-                const argName = getArgName(arg)
+        const handleFormDataChange = (value, index) => {
+            const newData = {
+                ...formData,
+                [index]: value,
+            }
+            setFormData(newData)
+
+            if (errorData[index]) {
+                const newErrorData = {
+                    ...errorData,
+                    [index]: false,
+                }
+                setErrorData(newErrorData)
+            }
+        }
+
+        const handleCancelBtn = () => {
+            navigate("/catalog")
+        }
+
+        const handleRunBtn = () => {
+            let errorsFound = {}
+
+            Object.keys(formData).filter(key => {
+                const arg = thisKurtosisPackage.args[key]
                 let type = ""
                 try {
                     type = getType(arg)
                 } catch {
                 }
-                const value = formData[key]
+                const required = isRequired(arg)
 
-                let val;
-                if (value.length > 0) {
-                    if (type === "INTEGER") {
-                        val = parseInt(value)
-                        args[argName] = val
-                    } else if (type === "BOOL") {
-                        val = value.toUpperCase()
-                        args[argName] = (val === "TRUE") ? true : false
-                    } else if (type === "FLOAT") {
-                        val = parseFloat(value)
-                        args[argName] = val
-                    } else if (type === "LIST") {
-                        let subType = getFirstSubType(kurtosisPackage, key)
-                        val = parseList(value, subType)
-                        args[argName] = val
-                    } else if (type === "STRING") {
-                        args[argName] = value
-                    } else {
-                        val = JSON.parse(value)
-                        args[argName] = val
-                    }
+                // if it's optional and empty it's fine
+                if (!required && formData[key].length === 0) {
+                    return
+                }
+
+                let valid = true
+                if (type === "STRING") {
+                    valid = checkValidStringType(formData[key])
+                } else if (type === "INTEGER") {
+                    valid = checkValidIntType(formData[key])
+                } else if (type === "BOOL") {
+                    valid = checkValidBooleanType(formData[key])
+                } else if (type === "FLOAT") {
+                    valid = checkValidFloatType(formData[key])
+                } else if (type === "LIST") {
+                    let subType = getFirstSubType(arg)
+                    valid = checkValidListType(formData[key], subType)
+                } else if (type === "DICT") {
+                    valid = checkValidJsonType(formData[key])
+                } else if (type === "JSON") {
+                    valid = checkValidJsonType(formData[key])
+                } else {
+                    valid = checkValidUndefinedType(formData[key])
+                }
+
+                let typeToPrint = type
+                if (type === undefined) {
+                    typeToPrint = "JSON"
+                } else if (type === "BOOL") {
+                    typeToPrint = "BOOLEAN (TRUE/FALSE)"
+                } else {
+                    typeToPrint = prettyPrintTypeSpecialCases(type, thisKurtosisPackage.args[key])
+                }
+
+                if (!valid) {
+                    errorsFound[key] = `Incorrect type: expected ${typeToPrint}`;
                 }
             })
 
-            const stringifiedArgs = JSON.stringify(args)
-            const runKurtosisPackageArgs = {
-                packageId: kurtosisPackage.name,
-                args: stringifiedArgs,
-            }
+            Object.keys(formData).filter(key => {
+                const required = isRequired(thisKurtosisPackage.args[key])
+                let valid = true;
+                if (required) {
+                    if (formData[key].length === 0) {
+                        valid = false;
+                    }
+                }
 
-            handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
+                if (!valid) {
+                    errorsFound[key] = `This field is required and cannot be empty`;
+                }
+            })
 
-        } else {
-            const newErrorData = {
-                ...errorData,
-                ...errorsFound
+            if (Object.keys(errorsFound).length === 0) {
+                setRunningPackage(true)
+                let args = {}
+                Object.keys(formData).map(key => {
+                    const arg = thisKurtosisPackage.args[key]
+                    const argName = getArgName(arg)
+                    let type = ""
+                    try {
+                        type = getType(arg)
+                    } catch {
+                    }
+                    const value = formData[key]
+
+                    let val;
+                    if (value.length > 0) {
+                        if (type === "INTEGER") {
+                            val = parseInt(value)
+                            args[argName] = val
+                        } else if (type === "BOOL") {
+                            val = value.toUpperCase()
+                            args[argName] = (val === "TRUE") ? true : false
+                        } else if (type === "FLOAT") {
+                            val = parseFloat(value)
+                            args[argName] = val
+                        } else if (type === "LIST") {
+                            let subType = getFirstSubType(thisKurtosisPackage, key)
+                            val = parseList(value, subType)
+                            args[argName] = val
+                        } else if (type === "STRING") {
+                            args[argName] = value
+                        } else {
+                            val = JSON.parse(value)
+                            args[argName] = val
+                        }
+                    }
+                })
+
+                const stringifiedArgs = JSON.stringify(args)
+                const runKurtosisPackageArgs = {
+                    packageId: thisKurtosisPackage.name,
+                    args: stringifiedArgs,
+                }
+                console.log("Creating enclave with package args", runKurtosisPackageArgs)
+
+                if (!isEditMode()) {
+                    handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode, mode, null)
+                } else {
+                    const {enclave} = state
+                    handleCreateEnclave(runKurtosisPackageArgs, enclaveName, productionMode, mode, enclave)
+                }
+
+            } else {
+                const newErrorData = {
+                    ...errorData,
+                    ...errorsFound
+                }
+                setErrorData(newErrorData)
             }
-            setErrorData(newErrorData)
         }
-    }
 
-    const handleCreateEnclave = async (runKurtosisPackageArgs, enclaveName, productionMode) => {
-        await createEnclave(runKurtosisPackageArgs, enclaveName, productionMode)
-        setRunningPackage(false)
-    }
+        const handleCreateEnclave = async (runKurtosisPackageArgs, enclaveName, productionMode, mode, maybeExistingEnclave) => {
+            await createEnclave(runKurtosisPackageArgs, enclaveName, productionMode, mode, maybeExistingEnclave)
+            setRunningPackage(false)
+        }
 
-    return (
-        <div className='w-screen'>
-            <Grid
-                templateAreas={`"option"
+        const [renderedArgs, setRenderedArgs] = useState(<></>)
+
+        useEffect(() => {
+                if (thisKurtosisPackage.args && formData && errorData) {
+                    setRenderedArgs(
+                        renderArgs(thisKurtosisPackage.args, handleFormDataChange, formData, errorData, thisKurtosisPackage.name)
+                    )
+                }
+            }, [thisKurtosisPackage.args, formData, errorData, thisKurtosisPackage.name]
+        )
+
+        return (
+            <div className='w-screen'>
+                <Grid
+                    templateAreas={`"option"
                                 "packageId"
                                 "main"
                                 "configure"`}
-                gridTemplateRows={'60px 60px 1fr 60px'}
-                gridTemplateColumns={'1fr'}
-                h='100%'
-                w='100%'
-                color='blackAlpha.700'
-                fontWeight='bold'
-                gap={2}
-            >
-                <GridItem area={'option'} pt="1">
-                    <PackageCatalogOption catalog={true}/>
-                </GridItem>
-                <GridItem area={'packageId'} p="1">
-                    <Flex direction={"column"} gap={"2"}>
-                        <Center>
-                            <Text color={"white"} fontSize={"2xl"}> {kurtosisPackage.name} </Text>
-                        </Center>
-                        <Checkbox
-                            marginLeft={2}
-                            color={"white"}
-                            fontSize={"xl"}
-                            isChecked={productionMode}
-                            onChange={(e) => setProductionMode(e.target.checked)}
-                        >
-                            <Text>
-                                Restart services
-                                <Tooltip
-                                    label="When enabled, Kurtosis will automatically restart any services that crash inside the enclave">
-                                    <InfoOutlineIcon marginLeft={2}/>
-                                </Tooltip>
-
-                            </Text>
-                        </Checkbox>
-                    </Flex>
-                </GridItem>
-                <GridItem area={'main'} h="90%" overflowY={"scroll"} mt="10">
-                    <Stack spacing={4}>
-                        <Flex color={"white"}>
-                            <Flex mr="3" direction={"column"} w="15%">
-                                <Text
-                                    marginLeft={3}
-                                    align={"right"}
-                                    fontSize={"l"}
-                                >Enclave Name
-                                    <Tooltip label="Leave empty to auto-generate an enclave name">
+                    gridTemplateRows={'60px 60px 1fr 60px'}
+                    gridTemplateColumns={'1fr'}
+                    h='100%'
+                    w='100%'
+                    color='blackAlpha.700'
+                    fontWeight='bold'
+                    gap={2}
+                >
+                    <GridItem area={'option'} pt="1">
+                        <PackageCatalogOption catalog={true}/>
+                    </GridItem>
+                    <GridItem area={'packageId'} p="1">
+                        <Flex direction={"column"} gap={"2"}>
+                            <Center>
+                                <Text color={"white"} fontSize={"2xl"}> {thisKurtosisPackage.name} </Text>
+                            </Center>
+                            <Checkbox
+                                marginLeft={2}
+                                color={"white"}
+                                fontSize={"xl"}
+                                isChecked={productionMode}
+                                onChange={(e) => setProductionMode(e.target.checked)}
+                            >
+                                <Text>
+                                    Restart services
+                                    <Tooltip
+                                        label="When enabled, Kurtosis will automatically restart any services that crash inside the enclave">
                                         <InfoOutlineIcon marginLeft={2}/>
                                     </Tooltip>
+
                                 </Text>
-                            </Flex>
-                            <Flex flex="1" mr="3" direction={"column"}>
-                                <Input
-                                    color='gray.300'
-                                    value={enclaveName}
-                                    onChange={(e) => setEnclaveName(e.target.value)}
-                                />
-                            </Flex>
+                            </Checkbox>
                         </Flex>
-                        {renderArgs(kurtosisPackage.args, handleFormDataChange, formData, errorData, kurtosisPackage.name)}
-                    </Stack>
-                </GridItem>
-                <GridItem area={'configure'} m="10px">
-                    <Flex gap={5}>
-                        <Button colorScheme='red' w="50%" onClick={handleCancelBtn}> Cancel </Button>
-                        <Button bg='#24BA27'
-                                w="50%"
-                                onClick={handleRunBtn}
-                                isLoading={runningPackage}
-                                loadingText="Running..."
-                        >
-                            Run
-                        </Button>
-                    </Flex>
-                </GridItem>
-            </Grid>
-        </div>
-    );
-};
+                    </GridItem>
+                    <GridItem area={'main'} h="90%" overflowY={"scroll"} mt="10">
+                        <Stack spacing={4}>
+                            <Flex color={"white"}>
+                                <Flex mr="3" direction={"column"} w="15%">
+                                    <Text
+                                        marginLeft={3}
+                                        align={"right"}
+                                        fontSize={"l"}
+                                    >Enclave Name
+                                        <Tooltip label="Leave empty to auto-generate an enclave name">
+                                            <InfoOutlineIcon marginLeft={2}/>
+                                        </Tooltip>
+                                    </Text>
+                                </Flex>
+                                <Flex flex="1" mr="3" direction={"column"}>
+                                    <Input
+                                        color='gray.300'
+                                        value={enclaveName}
+                                        onChange={(e) => setEnclaveName(e.target.value)}
+                                        disabled={isEditMode()}
+                                    />
+                                </Flex>
+                            </Flex>
+                            {renderedArgs}
+                        </Stack>
+                    </GridItem>
+                    <GridItem area={'configure'} m="10px">
+                        <Flex gap={5}>
+                            <Button colorScheme='red' w="50%" onClick={handleCancelBtn}> Cancel </Button>
+                            <Button bg='#24BA27'
+                                    w="50%"
+                                    onClick={handleRunBtn}
+                                    isLoading={runningPackage}
+                                    loadingText="Running..."
+                            >
+                                Run
+                            </Button>
+                        </Flex>
+                    </GridItem>
+                </Grid>
+            </div>
+        );
+    }
+;
 export default PackageCatalogForm;

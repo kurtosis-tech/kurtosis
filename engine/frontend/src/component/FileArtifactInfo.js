@@ -9,7 +9,7 @@ import RightPanel from "./RightPanel";
 import LoadingOverlay from "./LoadingOverflow";
 import {useAppContext} from "../context/AppState";
 import {CodeEditor} from "./CodeEditor";
-import {Box} from "@chakra-ui/react";
+import {Box, Code} from "@chakra-ui/react";
 
 const BreadCrumbs = ({currentPath, handleOnClick, handleCleanButton}) => {
     const total = currentPath.length;
@@ -181,18 +181,13 @@ const FileArtifactInfo = ({enclaves}) => {
                             <p className="text-sm font-bold text-left"> Type: {detailInfo.extension} </p>
                             {detailInfo.textPreview.length > 0 ?
                                 <Box>
-                                    {
-                                        CodeEditor(
-                                            uniqueEditorFileId,
-                                            () => {
-                                            },
-                                            true,
-                                            [detailInfo.extension],
-                                            500,
-                                            detailInfo.textPreview,
-                                            false,
-                                        )
-                                    }
+                                    <CodeEditor
+                                        uniqueId={uniqueEditorFileId}
+                                        readOnly={true}
+                                        languages={[detailInfo.extension]}
+                                        defaultState={detailInfo.textPreview}
+                                        lineNumbers={false}
+                                    />
                                 </Box>
                                 :
                                 <p className="break-all overflow-y-auto">

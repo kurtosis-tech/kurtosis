@@ -4,7 +4,6 @@ const DEFAULT_FILE_TYPE = "text/plain"
 export const saveTextAsFile = (text, fileName, options = {}) => {
     const elementName = options["elementName"] ? options["elementName"] : DEFAULT_ELEMENT_NAME
     const fileType = options["fileType"] ? options["fileType"] : DEFAULT_FILE_TYPE
-    console.log(fileName, fileType, elementName)
 
     const blob = new Blob([text], {type: fileType});
     const downloadLink = document.createElement(elementName);
