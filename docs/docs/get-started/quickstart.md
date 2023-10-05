@@ -9,7 +9,7 @@ sidebar_position: 1
 Introduction
 ------------
 
-Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~5 minutes and will walk you through how to use a Kurtosis package to spin up a distributed system over Docker. Specifically, you will use the [eth2-package][eth2-package] to bootstrap and start-up a private Ethereum testnet. 
+Welcome to the [Kurtosis][homepage] quickstart! This guide takes ~5 minutes and will walk you through how to use a Kurtosis package to spin up a distributed system over Docker. Specifically, you will use the [ethereum-package][ethereum-package] to bootstrap and start-up a private Ethereum testnet. 
 
 Kurtosis is a platform for packaging and launching environments of containerized services and serve two types of users: the author of an environment definition, referred to as a [Kurtosis package][packages-reference], and the consumer or user of the environment definition. This quickstart is intended to put you in the shoes of the consumer - someone who needs a quick and easy way to get a production-like environment to develop and test changes quicker for your distributed system. A separate guide is [available here][how-to-set-up-postgres-guide] to introduce you to the world of Kurtosis package authoring and how one might define and build an environment with Kurtosis for themselves or for their team.
 
@@ -27,7 +27,7 @@ This guide is in a "code along" format, which means you are expected to follow t
 
 This quickstart is in a "code along" format. You can also dive straight into running the end results and exploring the code too.
  
-**Open the Playground: [Start](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/eth2-package)**
+**Open the Playground: [Start](https://gitpod.io/?autoStart=true&editor=code#https://github.com/kurtosis-tech/ethereum-package)**
 
 Click on the "New Workspace" button! You don't have to worry about the Context URL, Editor or Class. It's all pre-configured for you.
  
@@ -46,7 +46,7 @@ Define how your system should look like
 
 Kurtosis environment definitions, referred to here on as [Kurtosis packages][packages-reference], support parameterization out of the box. This means your teams or your communities can leverage the same package with different configurations for their specific use-case, eliminating the need to maintain different Bash scripts or `docker-compose.yml` files per use of the environment definition.
 
-You're now going to create a file to house the parameters that you will pass in at runtime when your system starts up. Check out the README for the [eth2-package][eth2-package] to see the full list of configuration options and flags available for use.
+You're now going to create a file to house the parameters that you will pass in at runtime when your system starts up. Check out the README for the [ethereum-package][ethereum-package] to see the full list of configuration options and flags available for use.
 
 Create a file titled: `network_params.json` in your home directory, populate it with the below contents, and save your file:
 ```json
@@ -90,7 +90,7 @@ Spin up your system!
 --------------------
 Great! You're now ready to bring up your own network. Simply run:
 ```console
-kurtosis run --enclave eth-network github.com/kurtosis-tech/eth2-package "$(cat ~/network_params.json)"
+kurtosis run --enclave eth-network github.com/kurtosis-tech/ethereum-package "$(cat ~/network_params.json)"
 ```
 
 Kurtosis will then begin to spin up your private Ethereum testnet by interpreting the instructions in the Kurtosis package, validating the plan to ensure there are no conflicts or obvious errors, and then finally executes the plan (read more about multi-phase runs [here][multi-phase-runs-reference]). Kurtosis first spins up an isolated, ephemeral environment on your machine called an [enclave][enclaves-reference] where all the services and [files artifacts][files-artifacts-reference] for your system will reside in. Then, those services will be bootstrapped and required files generated to start up the system.
@@ -243,7 +243,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [cassandra-package-example]: https://github.com/kurtosis-tech/cassandra-package
 [go-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/go-test
 [ts-test-example]: https://github.com/kurtosis-tech/awesome-kurtosis/tree/main/quickstart/ts-test
-[eth2-package]: https://github.com/kurtosis-tech/eth2-package/
+[ethereum-package]: https://github.com/kurtosis-tech/ethereum-package/
 
 <!-- Misc -->
 [homepage]: home.md
@@ -252,7 +252,6 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [bazel-github]: https://github.com/bazelbuild/bazel/
 [starlark-github-repo]: https://github.com/bazelbuild/starlark
 [postgrest]: https://postgrest.org/en/stable/
-[ethereum-package]: https://github.com/kurtosis-tech/eth2-package
 [waku-package]: https://github.com/logos-co/wakurtosis
 [near-package]: https://github.com/kurtosis-tech/near-package
 [iterm]: https://iterm2.com/
