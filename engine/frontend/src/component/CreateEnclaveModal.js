@@ -16,7 +16,7 @@ export const CreateEnclaveModal = ({enclaveName, handleSubmit, name, setName, ar
         addEnclave(enclave)
         handleSubmit(enclave);
       } catch(ex) {
-        console.log(ex);
+        console.error(ex);
         alert(`Error occurred while creating enclave for package: ${name}. An error message should be printed in console, please share it with us to help debug this problem`)
       } finally {
         setRunningPackage(false)

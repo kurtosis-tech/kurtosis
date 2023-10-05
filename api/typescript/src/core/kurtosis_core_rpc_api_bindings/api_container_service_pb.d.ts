@@ -1227,6 +1227,54 @@ export namespace ConnectServicesResponse {
   }
 }
 
+export class GetStarlarkRunResponse extends jspb.Message {
+  getPackageId(): string;
+  setPackageId(value: string): GetStarlarkRunResponse;
+
+  getSerializedScript(): string;
+  setSerializedScript(value: string): GetStarlarkRunResponse;
+
+  getSerializedParams(): string;
+  setSerializedParams(value: string): GetStarlarkRunResponse;
+
+  getParallelism(): number;
+  setParallelism(value: number): GetStarlarkRunResponse;
+
+  getRelativePathToMainFile(): string;
+  setRelativePathToMainFile(value: string): GetStarlarkRunResponse;
+
+  getMainFunctionName(): string;
+  setMainFunctionName(value: string): GetStarlarkRunResponse;
+
+  getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
+  setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): GetStarlarkRunResponse;
+  clearExperimentalFeaturesList(): GetStarlarkRunResponse;
+  addExperimentalFeatures(value: KurtosisFeatureFlag, index?: number): GetStarlarkRunResponse;
+
+  getRestartPolicy(): RestartPolicy;
+  setRestartPolicy(value: RestartPolicy): GetStarlarkRunResponse;
+
+  serializeBinary(): Uint8Array;
+  toObject(includeInstance?: boolean): GetStarlarkRunResponse.AsObject;
+  static toObject(includeInstance: boolean, msg: GetStarlarkRunResponse): GetStarlarkRunResponse.AsObject;
+  static serializeBinaryToWriter(message: GetStarlarkRunResponse, writer: jspb.BinaryWriter): void;
+  static deserializeBinary(bytes: Uint8Array): GetStarlarkRunResponse;
+  static deserializeBinaryFromReader(message: GetStarlarkRunResponse, reader: jspb.BinaryReader): GetStarlarkRunResponse;
+}
+
+export namespace GetStarlarkRunResponse {
+  export type AsObject = {
+    packageId: string,
+    serializedScript: string,
+    serializedParams: string,
+    parallelism: number,
+    relativePathToMainFile: string,
+    mainFunctionName: string,
+    experimentalFeaturesList: Array<KurtosisFeatureFlag>,
+    restartPolicy: RestartPolicy,
+  }
+}
+
 export enum ServiceStatus { 
   STOPPED = 0,
   RUNNING = 1,
@@ -1238,4 +1286,8 @@ export enum Connect {
 }
 export enum KurtosisFeatureFlag { 
   NO_INSTRUCTIONS_CACHING = 0,
+}
+export enum RestartPolicy { 
+  NEVER = 0,
+  ALWAYS = 1,
 }

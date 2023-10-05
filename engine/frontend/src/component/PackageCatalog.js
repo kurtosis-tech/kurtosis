@@ -35,7 +35,7 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
     }
 
     const handleConfigureButtonClick = () => {
-        navigate("/catalog/form", {state: {kurtosisPackage: chosenPackage}})
+        navigate("/catalog/create", {state: {kurtosisPackage: chosenPackage}})
     }
 
     const handleSearchEvent = (e) => {

@@ -1,15 +1,23 @@
-import {runStarlarkPackage} from "./container"
-import {createClient, createEnclaveFromEnclaveManager, getEnclavesFromEnclaveManager, removeEnclaveFromEnclaveManager} from "./api";
+import {
+    createClient,
+    createEnclaveFromEnclaveManager,
+    getEnclavesFromEnclaveManager,
+    removeEnclaveFromEnclaveManager,
+    runStarlarkPackageFromEnclaveManager
+} from "./api";
 
 export const getEnclavesFromKurtosis = async (token, apiHost) => {
     const data = await getEnclavesFromEnclaveManager(token, apiHost);
     if ("enclaveInfo" in data) {
         return Object.keys(data.enclaveInfo).map(key => {
             const enclave = data.enclaveInfo[key]
+            if (!enclave.containersStatus) {
+                return {}
+            }
             return {
                 uuid: enclave.enclaveUuid,
                 name: enclave.name,
-                // created: enclave.creationTime,
+                created: enclave.creationTime,
                 status: enclave.apiContainerStatus,
                 host: enclave.apiContainerInfo.bridgeIpAddress,
                 port: enclave.apiContainerInfo.grpcPortInsideEnclave,
@@ -58,6 +66,6 @@ export const getServiceLogs = async (ctrl, enclaveName, serviceUuid, apiHost, fo
 }
 
 export const runStarlark = async (host, port, packageId, args, token, apiHost) => {
-    const stream = await runStarlarkPackage(host, port, packageId, args, token, apiHost)
+    const stream = await runStarlarkPackageFromEnclaveManager(host, port, packageId, args, token, apiHost)
     return stream;
 }

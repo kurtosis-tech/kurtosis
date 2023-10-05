@@ -316,7 +316,7 @@ func run(
 	} else {
 		if store.IsRemote(currentContext) {
 			cloudUserId = currentContext.GetRemoteContextV0().GetCloudUserId()
-			cloudInstanceId = currentContext.GetRemoteContextV0().GetCloudUserId()
+			cloudInstanceId = currentContext.GetRemoteContextV0().GetCloudInstanceId()
 		}
 	}
 
