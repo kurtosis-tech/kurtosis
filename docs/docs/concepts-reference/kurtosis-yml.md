@@ -42,7 +42,7 @@ Replace
 -------
 There are often times when you want to substitute one of your Kurtosis package’s dependencies with another dependency. For example, someone might have forked one of your package's dependencies, and you want to test your package against their fork rather than the normal version. Finding and updating all the dependency-referencing commands (`import_module` , `upload_file`, `read_file`, etc.) in your package is tedious and error-prone, so the `kurtosis.yml` supports a `replace` key to do it for you.
 
-The `replace` key accepts a key-value map where each key is the [locator](locators) of a package to be replaced, and each value is the package locator to replace it with.
+The `replace` key accepts a key-value map where each key is the [locator][locators] of a package to be replaced, and each value is the package locator to replace it with.
 
 For example:
 
