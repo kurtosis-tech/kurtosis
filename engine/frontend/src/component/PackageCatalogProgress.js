@@ -8,6 +8,8 @@ const PackageCatalogProgress = ({appData}) => {
     const packageId = state.runArgs.packageId;
     const args = state.runArgs.args;
 
+    console.log("state", state)
+
     return (
         <div className='h-full w-full flex'>
             <CreateEnclaveLog 

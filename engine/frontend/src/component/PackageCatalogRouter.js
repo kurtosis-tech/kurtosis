@@ -35,7 +35,7 @@ const PackageCatalogRouter = ({addEnclave}) => {
                         }
                     })
                 } else {
-                    addEnclave(existingEnclave)
+                    // Navigating to the progress component and includes running the Starlark package itself
                     navigate("/catalog/progress", {
                         state: {
                             enclave: existingEnclave,

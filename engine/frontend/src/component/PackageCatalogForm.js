@@ -327,15 +327,8 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
     const [enclaveName, setEnclaveName] = useState("")
     const [productionMode, setProductionMode] = useState(false)
     const [thisKurtosisPackage, setThisKurtosisPackage] = useState({})
-    // const [initialFormData, setInitialFormData]= useState({})
-    // const [initialErrorData, setInitialErrorData]= useState({})
     const [formData, setFormData] = useState({})
     const [errorData, setErrorData] = useState({})
-    // const [runConfigParams, setRunConfigParams] = useState({})
-
-    // let thisKurtosisPackage = {};
-    // let initialFormData = {}
-    // let initialErrorData = {}
 
     const isEditMode = () => {
         return mode === "edit"
@@ -379,15 +372,12 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                 .then((packages) => {
                     loadPackageRunConfig(host, port, appData.jwtToken, appData.apiHost)
                         .then((runConfig) => {
-                            // console.log("RUN", runConfig)
                             console.log("packages", packages)
                             const matchedPackage = packages.find((p) => p.name === runConfig.packageId)
                             console.log("match", matchedPackage)
-                            // setThisKurtosisPackage(matchedPackage)
                             setEnclaveName(name)
                             const existingParamsMap = JSON.parse(runConfig.serializedParams || '{}')
                             console.log(existingParamsMap)
-                            // setRunConfigParams(deserializedParamsMap)
                             if (matchedPackage) {
                                 updateThisPackage(matchedPackage, formData, errorData, existingParamsMap)
                             } else {
@@ -399,11 +389,6 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
             console.log("Unsupported package configuration mode", mode)
         }
     }, [])
-
-    // useEffect(() => {
-    //     console.log("formData", formData)
-    //     console.log("errorData", errorData)
-    // }, [formData, errorData])
 
     const handleFormDataChange = (value, index) => {
         const newData = {
