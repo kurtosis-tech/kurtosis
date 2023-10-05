@@ -9,7 +9,8 @@ export const getKurtosisPackages = async () => {
         } 
         return []
     } catch {
-        console.log("error occurred")
+        console.error("error occurred")
         return []
     } 
 }
+

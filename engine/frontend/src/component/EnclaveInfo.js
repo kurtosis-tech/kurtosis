@@ -79,7 +79,6 @@ const EnclaveInfo = ({enclaves}) => {
     const [encalveInfoLoading, setEnclaveInfoLoading] = useState(false)
 
     useEffect(() => {
-        // console.log("EnclaveInfo: ", enclaves)
         setEnclaveInfoLoading(true)
         const fetch = async () => {
             const selected = enclaves.filter(enclave => enclave.name === name);
@@ -105,7 +104,6 @@ const EnclaveInfo = ({enclaves}) => {
     }
 
     const handleFileArtifactClick = async (fileArtifactName, fileArtifacts) => {
-        // console.log("Artifacts: ", fileArtifacts)
         const selected = enclaves.filter(enclave => enclave.name === name);
         if (selected.length > 0) {
             navigate(`/enclaves/${selected[0].name}/files/${fileArtifactName}`, {state: {fileArtifacts}})

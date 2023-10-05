@@ -5,7 +5,8 @@ import {
     GetListFilesArtifactNamesAndUuidsRequest,
     GetServicesRequest,
     InspectFilesArtifactContentsRequest,
-    RunStarlarkPackageRequest
+    RunStarlarkPackageRequest,
+    GetStarlarkRunRequest,
 } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import {CreateEnclaveArgs, DestroyEnclaveArgs, EnclaveMode} from "enclave-manager-sdk/build/engine_service_pb";
 import {RunStarlarkPackageArgs} from "enclave-manager-sdk/build/api_container_service_pb";
@@ -80,7 +81,7 @@ export const removeEnclaveFromEnclaveManager = async (enclaveIdentifier, token, 
 
 export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, versionTag, token, apiHost, productionMode) => {
     const enclaveManagerClient = createClient(apiHost);
-    const mode = productionMode ? EnclaveMode.PRODUCTION : EnclaveMode.TEST; 
+    const mode = productionMode ? EnclaveMode.PRODUCTION : EnclaveMode.TEST;
     const request = new CreateEnclaveArgs(
         {
             "enclaveName": enclaveName,
@@ -95,7 +96,6 @@ export const createEnclaveFromEnclaveManager = async (enclaveName, logLevel, ver
 
 export const runStarlarkPackageFromEnclaveManager = async (host, port, packageId, args, token, apiHost) => {
     const enclaveManagerClient = createClient(apiHost);
-    
     const runStarlarkPackageArgs = new RunStarlarkPackageArgs(
         {
             "dryRun": false,
@@ -113,4 +113,16 @@ export const runStarlarkPackageFromEnclaveManager = async (host, port, packageId
         }
     );
     return enclaveManagerClient.runStarlarkPackage(request, createHeaderOptionsWithToken(token));
+}
+
+
+export const getStarlarkRunConfig = async (host, port, token, apiHost) => {
+    const enclaveManagerClient = createClient(apiHost);
+    const request = new GetStarlarkRunRequest(
+        {
+            "apicIpAddress": host,
+            "apicPort": port,
+        }
+    );
+    return enclaveManagerClient.getStarlarkRun(request, createHeaderOptionsWithToken(token));
 }

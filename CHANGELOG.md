@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.84.2](https://github.com/kurtosis-tech/kurtosis/compare/0.84.1...0.84.2) (2023-10-05)
+
+
+### Features
+
+* Edit Enclave ([#1478](https://github.com/kurtosis-tech/kurtosis/issues/1478)) ([d11736a](https://github.com/kurtosis-tech/kurtosis/commit/d11736a8a28bbda44b7499bd9977b4f00b1bea74))
+* Get Starlark Run APIC endpoint ([#1455](https://github.com/kurtosis-tech/kurtosis/issues/1455)) ([503cb8d](https://github.com/kurtosis-tech/kurtosis/commit/503cb8d5ad781b51e96524d8fa7068478370e5dd))
+
 ## [0.84.1](https://github.com/kurtosis-tech/kurtosis/compare/0.84.0...0.84.1) (2023-10-04)
 
 
