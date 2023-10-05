@@ -28,12 +28,12 @@ func TestLogRemover_Run(t *testing.T) {
 	week1filepath := getWeekFilepathStr(2023, 1)
 	week2filepath := getWeekFilepathStr(2023, 2)
 
-	mockFs.Create(week49filepath)
-	mockFs.Create(week50filepath)
-	mockFs.Create(week51filepath)
-	mockFs.Create(week52filepath)
-	mockFs.Create(week1filepath)
-	mockFs.Create(week2filepath)
+	_, _ = mockFs.Create(week49filepath)
+	_, _ = mockFs.Create(week50filepath)
+	_, _ = mockFs.Create(week51filepath)
+	_, _ = mockFs.Create(week52filepath)
+	_, _ = mockFs.Create(week1filepath)
+	_, _ = mockFs.Create(week2filepath)
 
 	currentWeek := 2
 

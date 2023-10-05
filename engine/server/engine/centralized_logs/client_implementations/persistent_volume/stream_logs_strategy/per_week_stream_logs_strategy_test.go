@@ -34,12 +34,12 @@ func TestGetLogFilePaths(t *testing.T) {
 	week16filepath := getWeekFilepathStr(defaultYear, 16)
 	week17filepath := getWeekFilepathStr(defaultYear, 17)
 
-	filesystem.Create(week12filepath)
-	filesystem.Create(week13filepath)
-	filesystem.Create(week14filepath)
-	filesystem.Create(week15filepath)
-	filesystem.Create(week16filepath)
-	filesystem.Create(week17filepath)
+	_, _ = filesystem.Create(week12filepath)
+	_, _ = filesystem.Create(week13filepath)
+	_, _ = filesystem.Create(week14filepath)
+	_, _ = filesystem.Create(week15filepath)
+	_, _ = filesystem.Create(week16filepath)
+	_, _ = filesystem.Create(week17filepath)
 
 	currentWeek := 17
 
@@ -72,11 +72,11 @@ func TestGetLogFilePathsAcrossNewYear(t *testing.T) {
 	week1filepath := getWeekFilepathStr(defaultYear, 1)
 	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
-	filesystem.Create(week50filepath)
-	filesystem.Create(week51filepath)
-	filesystem.Create(week52filepath)
-	filesystem.Create(week1filepath)
-	filesystem.Create(week2filepath)
+	_, _ = filesystem.Create(week50filepath)
+	_, _ = filesystem.Create(week51filepath)
+	_, _ = filesystem.Create(week52filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week2filepath)
 
 	currentWeek := 2
 
@@ -109,11 +109,11 @@ func TestGetLogFilePathsAcrossNewYearWith53Weeks(t *testing.T) {
 	week2filepath := getWeekFilepathStr(2016, 2)
 	week3filepath := getWeekFilepathStr(2016, 3)
 
-	filesystem.Create(week52filepath)
-	filesystem.Create(week53filepath)
-	filesystem.Create(week1filepath)
-	filesystem.Create(week2filepath)
-	filesystem.Create(week3filepath)
+	_, _ = filesystem.Create(week52filepath)
+	_, _ = filesystem.Create(week53filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week2filepath)
+	_, _ = filesystem.Create(week3filepath)
 
 	currentWeek := 3
 
@@ -144,9 +144,9 @@ func TestGetLogFilePathsWithDiffRetentionPeriod(t *testing.T) {
 	week1filepath := getWeekFilepathStr(defaultYear, 1)
 	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
-	filesystem.Create(week52filepath)
-	filesystem.Create(week1filepath)
-	filesystem.Create(week2filepath)
+	_, _ = filesystem.Create(week52filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week2filepath)
 
 	currentWeek := 2
 	retentionPeriod := 2
@@ -176,9 +176,9 @@ func TestGetLogFilePathsReturnsAllAvailableWeeks(t *testing.T) {
 	week1filepath := getWeekFilepathStr(defaultYear, 1)
 	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
-	filesystem.Create(week52filepath)
-	filesystem.Create(week1filepath)
-	filesystem.Create(week2filepath)
+	_, _ = filesystem.Create(week52filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week2filepath)
 
 	// should return existing file paths even though log files going all the back to retention period don't exist
 	expectedLogFilePaths := []string{
@@ -208,9 +208,9 @@ func TestGetLogFilePathsReturnsCorrectPathsIfWeeksMissingInBetween(t *testing.T)
 	week1filepath := getWeekFilepathStr(defaultYear, 1)
 	week3filepath := getWeekFilepathStr(defaultYear, 3)
 
-	filesystem.Create(week52filepath)
-	filesystem.Create(week1filepath)
-	filesystem.Create(week3filepath)
+	_, _ = filesystem.Create(week52filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week3filepath)
 
 	currentWeek := 3
 
@@ -235,8 +235,8 @@ func TestGetLogFilePathsReturnsCorrectPathsIfCurrentWeekHasNoLogsYet(t *testing.
 	week2filepath := getWeekFilepathStr(defaultYear, 2)
 
 	// no logs for week current week exist yet
-	filesystem.Create(week1filepath)
-	filesystem.Create(week2filepath)
+	_, _ = filesystem.Create(week1filepath)
+	_, _ = filesystem.Create(week2filepath)
 
 	// should return week 1 and 2 logs, even though no logs for current week yet
 	expectedLogFilePaths := []string{

@@ -89,14 +89,14 @@ func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 func (creator *LogFileCreator) getEnclaveAndServiceInfo(ctx context.Context) (map[enclave.EnclaveUUID][]*service.ServiceRegistration, error) {
 	enclaveToServicesMap := map[enclave.EnclaveUUID][]*service.ServiceRegistration{}
 
-	enclaves, err := creator.kurtosisBackend.GetEnclaves(ctx, &enclave.EnclaveFilters{})
+	enclaves, err := creator.kurtosisBackend.GetEnclaves(ctx, &enclave.EnclaveFilters{UUIDs: nil, Statuses: nil})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get all enclaves from kurtosis backend.")
 	}
 	for enclaveUuid := range enclaves {
 		var serviceRegistrations []*service.ServiceRegistration
 
-		enclaveServices, err := creator.kurtosisBackend.GetUserServices(ctx, enclaveUuid, &service.ServiceFilters{})
+		enclaveServices, err := creator.kurtosisBackend.GetUserServices(ctx, enclaveUuid, &service.ServiceFilters{Names: nil, UUIDs: nil, Statuses: nil})
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while trying to get user services for enclave '%v' from kurtosis backend.", enclaveUuid)
 		}
