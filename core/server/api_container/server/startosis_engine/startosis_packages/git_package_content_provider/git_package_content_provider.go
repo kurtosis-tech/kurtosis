@@ -207,7 +207,6 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 ) (string, *startosis_errors.InterpretationError) {
 	var absoluteLocator string
 
-	logrus.Infof("parentModuleId '%s', maybeRelativeLocator '%s', packageReplaceOptions '%+v'", parentModuleId, maybeRelativeLocator, packageReplaceOptions)
 	// maybe it's not a relative url in which case we return the url
 	_, errorParsingUrl := parseGitURL(maybeRelativeLocator)
 	if errorParsingUrl == nil {
