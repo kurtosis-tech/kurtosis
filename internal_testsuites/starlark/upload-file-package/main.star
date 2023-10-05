@@ -3,7 +3,7 @@
 # named large-file.bin. This file is generated on the spot to avoid checking it into GitHub
 def run(plan, args):
     plan.print("Starting upload")
-    large_file_artifact_id = plan.upload_files("github.com/kurtosis-tech/kurtosis/internal_testsuites/starlark/upload-file-package/large-file.bin")
+    large_file_artifact_id = plan.upload_files("./large-file.bin")
 
     plan.print("Upload finished - Comparing file hash to parameter")
 
