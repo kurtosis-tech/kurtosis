@@ -12,6 +12,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
+	"os"
 	"strconv"
 )
 
@@ -44,16 +45,13 @@ func NewLogFileCreator(
 // CreateLogFiles creates three log files for every service across all running enclaves.
 // The first is a file with the name ending in the uuid of the service.
 // The other two file paths are symlinks to the uuid file, ending with the shortened uuid and service name respectively.
-// The file paths are created idempotently meaning if they already exist, new ones are not created.
 // If files exist for the shortened uuid and service name files, but they are not symlinks, they are removed and symlink files
 // are created to prevent duplicate log storage.
 func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 	var err error
 
-	// get year and time for the file paths
 	year, week := creator.time.Now().ISOWeek()
 
-	// collect enclave and service info for the file paths
 	enclaveToServicesMap, err := creator.getEnclaveAndServiceInfo(ctx)
 	if err != nil {
 		// already wrapped with propagate
@@ -66,24 +64,19 @@ func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 			serviceNameStr := string(serviceRegistration.GetName())
 			serviceShortUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
 
-			// create log file for the uuid idempotently
 			serviceUuidFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceUuidStr)
-			_, err = creator.filesystem.Open(serviceUuidFilePathStr)
-			if err != nil {
-				return stacktrace.Propagate(err, "An error occurred creating log file path '%v'.", serviceUuidFilePathStr)
+			if err = creator.createLogFileIdempotently(serviceUuidFilePathStr); err != nil {
+				return err
 			}
 
 			logrus.Info("CREATING SYMLINKED FILES")
-			// create symlinks for name and shortened uuid log files
 			serviceNameFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceNameStr)
-			err = creator.createSymlinkLogFile(serviceUuidFilePathStr, serviceNameFilePathStr)
-			if err != nil {
+			if err = creator.createSymlinkLogFile(serviceUuidFilePathStr, serviceNameFilePathStr); err != nil {
 				return err
 			}
 
 			serviceShortUuidFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceShortUuidStr)
-			err = creator.createSymlinkLogFile(serviceUuidFilePathStr, serviceShortUuidFilePathStr)
-			if err != nil {
+			if err = creator.createSymlinkLogFile(serviceUuidFilePathStr, serviceShortUuidFilePathStr); err != nil {
 				return err
 			}
 			logrus.Info("SUCCESSFULLY CREATED SYMLINKED FILES")
@@ -96,7 +89,6 @@ func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 func (creator *LogFileCreator) getEnclaveAndServiceInfo(ctx context.Context) (map[enclave.EnclaveUUID][]*service.ServiceRegistration, error) {
 	enclaveToServicesMap := map[enclave.EnclaveUUID][]*service.ServiceRegistration{}
 
-	// collect info of all services in enclaves
 	enclaves, err := creator.kurtosisBackend.GetEnclaves(ctx, &enclave.EnclaveFilters{})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get all enclaves from kurtosis backend.")
@@ -115,6 +107,20 @@ func (creator *LogFileCreator) getEnclaveAndServiceInfo(ctx context.Context) (ma
 		enclaveToServicesMap[enclaveUuid] = serviceRegistrations
 	}
 	return enclaveToServicesMap, nil
+}
+
+func (creator *LogFileCreator) createLogFileIdempotently(logFilePath string) error {
+	var err error
+	if _, err = creator.filesystem.Stat(logFilePath); os.IsNotExist(err) {
+		if _, err = creator.filesystem.Create(logFilePath); err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating a log file path at '%v'", logFilePath)
+		}
+		return nil
+	}
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred checking if log file path at '%v' existed.", logFilePath)
+	}
+	return nil
 }
 
 func (creator *LogFileCreator) createSymlinkLogFile(targetLogFilePath, symlinkLogFilePath string) error {

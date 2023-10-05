@@ -15,6 +15,7 @@ const (
 // primarily for the purpose of enabling unit testing persistentVolumeLogsDatabaseClient
 type VolumeFilesystem interface {
 	Open(name string) (VolumeFile, error)
+	Create(name string) (VolumeFile, error)
 	Stat(name string) (VolumeFileInfo, error)
 	RemoveAll(path string) error
 	Symlink(target, link string) error
@@ -40,6 +41,10 @@ func (fs *OsVolumeFilesystem) Open(name string) (VolumeFile, error) {
 	return os.Open(name)
 }
 
+func (fs *OsVolumeFilesystem) Create(name string) (VolumeFile, error) {
+	return os.Create(name)
+}
+
 func (fs *OsVolumeFilesystem) Stat(name string) (VolumeFileInfo, error) {
 	return os.Stat(name)
 }
@@ -54,7 +59,7 @@ func (fs *OsVolumeFilesystem) Symlink(target, link string) error {
 
 // MockedVolumeFilesystem is an implementation used for unit testing
 type MockedVolumeFilesystem struct {
-	// we use an underlying map filesystem that's easy to mock file data with
+	// uses an underlying map filesystem that's easy to mock file data with
 	mapFS *fstest.MapFS
 }
 
@@ -63,6 +68,12 @@ func NewMockedVolumeFilesystem(fs *fstest.MapFS) *MockedVolumeFilesystem {
 }
 
 func (fs *MockedVolumeFilesystem) Open(name string) (VolumeFile, error) {
+	// Trim any forward slashes from this filepath
+	// fstest.MapFS doesn't like absolute paths!!!
+	return fs.mapFS.Open(trimForwardSlash(name))
+}
+
+func (fs *MockedVolumeFilesystem) Create(name string) (VolumeFile, error) {
 	// Trim any forward slashes from this filepath
 	// fstest.MapFS doesn't like absolute paths!!!
 	return fs.mapFS.Open(trimForwardSlash(name))
