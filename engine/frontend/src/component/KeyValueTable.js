@@ -2,12 +2,12 @@ import React, {useEffect, useState} from "react";
 import {Box, Button, HStack, Input, InputGroup, InputLeftAddon, Tooltip, useClipboard} from "@chakra-ui/react";
 import {ObjectInput} from "react-object-input";
 
-const KeyValueTable = (dataCallBack) => {
+const KeyValueTable = ({dataCallback}) => {
     const [value, setValue] = useState({})
     const clipboard = useClipboard(value);
 
     useEffect(() => {
-        dataCallBack(JSON.stringify(value))
+        dataCallback(JSON.stringify(value))
         clipboard.setValue(JSON.stringify(value, null, 2))
     }, [value])
 
@@ -70,7 +70,6 @@ const KeyValueTable = (dataCallBack) => {
                     </Box>
                 )}
                 renderAdd={addItem => <Button size={"sm"} margin={1} onClick={addItem}>Add item</Button>}
-                // renderEmpty={() => <p></p>}
             />
             <Button
                 margin={1}
