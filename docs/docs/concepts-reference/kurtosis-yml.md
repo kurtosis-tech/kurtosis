@@ -14,6 +14,11 @@ The `kurtosis.yml` file is a manifest file necessary to turn a directory into [a
 ```yaml
 # The locator naming this package.
 name: github.com/package-author/package-repo/path/to/directory-with-kurtosis.yml
+# The package's description which will be shown in the Enclave Manager on the UI.
+description: A sentence describing what the package does
+# The package's dependencies replace options
+replace:
+  
 ```
 
 Example usage:
