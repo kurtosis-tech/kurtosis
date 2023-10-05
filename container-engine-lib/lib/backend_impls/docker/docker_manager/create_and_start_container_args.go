@@ -1,8 +1,9 @@
 package docker_manager
 
 import (
-	"github.com/docker/go-connections/nat"
 	"net"
+
+	"github.com/docker/go-connections/nat"
 )
 
 // See CreateAndStartContainerArgsBuilder for detailed documentation on the fields
@@ -29,6 +30,7 @@ type CreateAndStartContainerArgs struct {
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
+	latestImagePulling                       LatestImagePulling
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -55,6 +57,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
+	latestImagePulling                       LatestImagePulling
 }
 
 /*
@@ -88,6 +91,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		skipAddingToBridgeNetworkIfStaticIpIsSet: false,
 		containerInitEnabled:                     false,
 		restartPolicy:                            NoRestart,
+		latestImagePulling:                       Missing,
 	}
 }
 
@@ -115,6 +119,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		skipAddingToBridgeNetworkIfStaticIpIsSet: builder.skipAddingToBridgeNetworkIfStaticIpIsSet,
 		containerInitEnabled:                     builder.containerInitEnabled,
 		restartPolicy:                            builder.restartPolicy,
+		latestImagePulling:                       builder.latestImagePulling,
 	}
 }
 
@@ -247,5 +252,20 @@ func (builder *CreateAndStartContainerArgsBuilder) WithSkipAddingToBridgeNetwork
 // container. tini makes sure it keeps track of all processes and can kill the zombie ones appropriately.
 func (builder *CreateAndStartContainerArgsBuilder) WithContainerInitEnabled(containerInitEnabled bool) *CreateAndStartContainerArgsBuilder {
 	builder.containerInitEnabled = containerInitEnabled
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageAlways() *CreateAndStartContainerArgsBuilder {
+	builder.latestImagePulling = Always
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageNever() *CreateAndStartContainerArgsBuilder {
+	builder.latestImagePulling = Never
+	return builder
+}
+
+func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageOnMissing() *CreateAndStartContainerArgsBuilder {
+	builder.latestImagePulling = Missing
 	return builder
 }

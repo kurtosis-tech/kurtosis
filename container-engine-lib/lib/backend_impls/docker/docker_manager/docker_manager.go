@@ -10,6 +10,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"math"
+	"net"
+	"regexp"
+	"strings"
+	"sync"
+	"time"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -27,13 +35,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
-	"io"
-	"math"
-	"net"
-	"regexp"
-	"strings"
-	"sync"
-	"time"
 )
 
 const (
@@ -522,7 +523,16 @@ func (manager *DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	_, err := manager.FetchImage(ctx, dockerImage)
+	var err error
+	switch image_pulling := args.latestImagePulling; image_pulling {
+	case Always:
+		err = manager.FetchLatestImage(ctx, dockerImage)
+	case Missing:
+		_, err = manager.FetchImage(ctx, dockerImage)
+	case Never:
+		return "", nil, stacktrace.NewError("Undefined image pulling mode: '%v'", image_pulling)
+	}
+
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
