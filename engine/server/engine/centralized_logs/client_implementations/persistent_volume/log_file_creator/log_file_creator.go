@@ -11,6 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/stacktrace"
+	"github.com/sirupsen/logrus"
 	"strconv"
 )
 
@@ -72,6 +73,7 @@ func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 				return stacktrace.Propagate(err, "An error occurred creating log file path '%v'.", serviceUuidFilePathStr)
 			}
 
+			logrus.Info("CREATING SYMLINKED FILES")
 			// create symlinks for name and shortened uuid log files
 			serviceNameFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceNameStr)
 			err = creator.createSymlinkLogFile(serviceUuidFilePathStr, serviceNameFilePathStr)
@@ -84,6 +86,7 @@ func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
+			logrus.Info("SUCCESSFULLY CREATED SYMLINKED FILES")
 		}
 	}
 
@@ -91,7 +94,7 @@ func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 }
 
 func (creator *LogFileCreator) getEnclaveAndServiceInfo(ctx context.Context) (map[enclave.EnclaveUUID][]*service.ServiceRegistration, error) {
-	var enclaveToServicesMap map[enclave.EnclaveUUID][]*service.ServiceRegistration
+	enclaveToServicesMap := map[enclave.EnclaveUUID][]*service.ServiceRegistration{}
 
 	// collect info of all services in enclaves
 	enclaves, err := creator.kurtosisBackend.GetEnclaves(ctx, &enclave.EnclaveFilters{})
@@ -114,13 +117,14 @@ func (creator *LogFileCreator) getEnclaveAndServiceInfo(ctx context.Context) (ma
 	return enclaveToServicesMap, nil
 }
 
-func (creator *LogFileCreator) createSymlinkLogFile(targetFilePath, symlinkFilePath string) error {
-	// in case a log file (symlink or not) already exists, remove it
-	if err := creator.filesystem.RemoveAll(symlinkFilePath); err != nil {
-		return stacktrace.Propagate(err, "An error occurred attempting to remove an existing log file at the symlink file path '%v'.", symlinkFilePath)
+func (creator *LogFileCreator) createSymlinkLogFile(targetLogFilePath, symlinkLogFilePath string) error {
+	// remove existing log files that could be storing logs at this path
+	if err := creator.filesystem.RemoveAll(symlinkLogFilePath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred attempting to remove an existing log file at the symlink file path '%v'.", symlinkLogFilePath)
 	}
-	if err := creator.filesystem.Symlink(targetFilePath, symlinkFilePath); err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating a symlink file path '%v' for target file path '%v'.", symlinkFilePath, targetFilePath)
+	// replace with symlink
+	if err := creator.filesystem.Symlink(targetLogFilePath, symlinkLogFilePath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred creating a symlink file path '%v' for target file path '%v'.", targetLogFilePath, targetLogFilePath)
 	}
 	return nil
 }
