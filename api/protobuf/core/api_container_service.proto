@@ -47,7 +47,7 @@ service ApiContainerService {
   rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (ListFilesArtifactNamesAndUuidsResponse) {}
 
   rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (InspectFilesArtifactContentsResponse) {}
-  
+
   // User services port forwarding
   rpc ConnectServices(ConnectServicesArgs) returns (ConnectServicesResponse) {};
 }
@@ -201,9 +201,6 @@ message RunStarlarkPackageArgs {
 
   // Defaults to empty
   optional string cloud_user_id = 13;
-
-  // The package replace options list which will be used for replacing locators
-  map<string, string> package_replace_options = 14;
 }
 
 enum KurtosisFeatureFlag {

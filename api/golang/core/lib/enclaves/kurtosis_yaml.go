@@ -12,9 +12,7 @@ const (
 
 // fields are public because it's needed for YAML decoding
 type KurtosisYaml struct {
-	PackageName           string            `yaml:"name"`
-	PackageDescription    string            `yaml:"description"`
-	PackageReplaceOptions map[string]string `yaml:"replace"`
+	PackageName string `yaml:"name"`
 }
 
 func ParseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
@@ -27,7 +25,7 @@ func ParseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
 	}
 
 	var kurtosisYaml KurtosisYaml
-	err = yaml.UnmarshalStrict(kurtosisYamlContents, &kurtosisYaml)
+	err = yaml.Unmarshal(kurtosisYamlContents, &kurtosisYaml)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while parsing the '%v' file at '%v'", kurtosisYamlFilename, kurtosisYamlFilepath)
 	}

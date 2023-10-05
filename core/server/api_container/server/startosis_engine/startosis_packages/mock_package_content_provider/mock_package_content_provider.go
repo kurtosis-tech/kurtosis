@@ -43,7 +43,7 @@ func (provider *MockPackageContentProvider) GetOnDiskAbsoluteFilePath(packageId 
 	return absFilePath, nil
 }
 
-func (provider *MockPackageContentProvider) ClonePackage(_ string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) ClonePackage(_ string) (string, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 
@@ -53,6 +53,10 @@ func (provider *MockPackageContentProvider) GetOnDiskAbsolutePackagePath(package
 }
 
 func (provider *MockPackageContentProvider) StorePackageContents(_ string, _ io.Reader, _ bool) (string, *startosis_errors.InterpretationError) {
+	panic(unimplementedMessage)
+}
+
+func (provider *MockPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOnDisk string) (*yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 

@@ -70,7 +70,6 @@ func NewRunStarlarkPackageArgs(
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	cloudInstanceId string,
 	cloudUserId string,
-	packageReplaceOptions map[string]string,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -91,7 +90,6 @@ func NewRunStarlarkPackageArgs(
 		ExperimentalFeatures:   experimentalFeatures,
 		CloudInstanceId:        cloudInstanceIdCopy,
 		CloudUserId:            cloudUserIdCopy,
-		PackageReplaceOptions:  packageReplaceOptions,
 	}
 }
 

@@ -24,13 +24,12 @@ func (_m *MockPackageContentProvider) EXPECT() *MockPackageContentProvider_Expec
 }
 
 // ClonePackage provides a mock function with given fields: packageId
-func (_m *MockPackageContentProvider) ClonePackage(packageId string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
+func (_m *MockPackageContentProvider) ClonePackage(packageId string) (string, *startosis_errors.InterpretationError) {
 	ret := _m.Called(packageId)
 
 	var r0 string
-	var r1 *yaml_parser.KurtosisYaml
-	var r2 *startosis_errors.InterpretationError
-	if rf, ok := ret.Get(0).(func(string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)); ok {
+	var r1 *startosis_errors.InterpretationError
+	if rf, ok := ret.Get(0).(func(string) (string, *startosis_errors.InterpretationError)); ok {
 		return rf(packageId)
 	}
 	if rf, ok := ret.Get(0).(func(string) string); ok {
@@ -39,23 +38,15 @@ func (_m *MockPackageContentProvider) ClonePackage(packageId string) (string, *y
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(string) *yaml_parser.KurtosisYaml); ok {
+	if rf, ok := ret.Get(1).(func(string) *startosis_errors.InterpretationError); ok {
 		r1 = rf(packageId)
 	} else {
 		if ret.Get(1) != nil {
-			r1 = ret.Get(1).(*yaml_parser.KurtosisYaml)
+			r1 = ret.Get(1).(*startosis_errors.InterpretationError)
 		}
 	}
 
-	if rf, ok := ret.Get(2).(func(string) *startosis_errors.InterpretationError); ok {
-		r2 = rf(packageId)
-	} else {
-		if ret.Get(2) != nil {
-			r2 = ret.Get(2).(*startosis_errors.InterpretationError)
-		}
-	}
-
-	return r0, r1, r2
+	return r0, r1
 }
 
 // MockPackageContentProvider_ClonePackage_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ClonePackage'
@@ -76,12 +67,12 @@ func (_c *MockPackageContentProvider_ClonePackage_Call) Run(run func(packageId s
 	return _c
 }
 
-func (_c *MockPackageContentProvider_ClonePackage_Call) Return(_a0 string, _a1 *yaml_parser.KurtosisYaml, _a2 *startosis_errors.InterpretationError) *MockPackageContentProvider_ClonePackage_Call {
-	_c.Call.Return(_a0, _a1, _a2)
+func (_c *MockPackageContentProvider_ClonePackage_Call) Return(_a0 string, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_ClonePackage_Call {
+	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockPackageContentProvider_ClonePackage_Call) RunAndReturn(run func(string) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)) *MockPackageContentProvider_ClonePackage_Call {
+func (_c *MockPackageContentProvider_ClonePackage_Call) RunAndReturn(run func(string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_ClonePackage_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -138,6 +129,62 @@ func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) 
 }
 
 func (_c *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call) RunAndReturn(run func(string, string, map[string]string) (string, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetAbsoluteLocatorForRelativeLocator_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetKurtosisYaml provides a mock function with given fields: packageAbsolutePathOnDisk
+func (_m *MockPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOnDisk string) (*yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
+	ret := _m.Called(packageAbsolutePathOnDisk)
+
+	var r0 *yaml_parser.KurtosisYaml
+	var r1 *startosis_errors.InterpretationError
+	if rf, ok := ret.Get(0).(func(string) (*yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)); ok {
+		return rf(packageAbsolutePathOnDisk)
+	}
+	if rf, ok := ret.Get(0).(func(string) *yaml_parser.KurtosisYaml); ok {
+		r0 = rf(packageAbsolutePathOnDisk)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*yaml_parser.KurtosisYaml)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(string) *startosis_errors.InterpretationError); ok {
+		r1 = rf(packageAbsolutePathOnDisk)
+	} else {
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).(*startosis_errors.InterpretationError)
+		}
+	}
+
+	return r0, r1
+}
+
+// MockPackageContentProvider_GetKurtosisYaml_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetKurtosisYaml'
+type MockPackageContentProvider_GetKurtosisYaml_Call struct {
+	*mock.Call
+}
+
+// GetKurtosisYaml is a helper method to define mock.On call
+//   - packageAbsolutePathOnDisk string
+func (_e *MockPackageContentProvider_Expecter) GetKurtosisYaml(packageAbsolutePathOnDisk interface{}) *MockPackageContentProvider_GetKurtosisYaml_Call {
+	return &MockPackageContentProvider_GetKurtosisYaml_Call{Call: _e.mock.On("GetKurtosisYaml", packageAbsolutePathOnDisk)}
+}
+
+func (_c *MockPackageContentProvider_GetKurtosisYaml_Call) Run(run func(packageAbsolutePathOnDisk string)) *MockPackageContentProvider_GetKurtosisYaml_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(string))
+	})
+	return _c
+}
+
+func (_c *MockPackageContentProvider_GetKurtosisYaml_Call) Return(_a0 *yaml_parser.KurtosisYaml, _a1 *startosis_errors.InterpretationError) *MockPackageContentProvider_GetKurtosisYaml_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockPackageContentProvider_GetKurtosisYaml_Call) RunAndReturn(run func(string) (*yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)) *MockPackageContentProvider_GetKurtosisYaml_Call {
 	_c.Call.Return(run)
 	return _c
 }

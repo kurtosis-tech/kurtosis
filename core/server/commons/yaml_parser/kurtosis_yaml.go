@@ -9,12 +9,12 @@ import (
 
 var noPackageNameFound = ""
 var naPackageDescriptionFound = ""
-var noReplaceDependencies = map[string]string{}
+var noPackageReplaceOptions = map[string]string{}
 
 type KurtosisYaml struct {
-	PackageName         string            `yaml:"name"`
-	PackageDescription  string            `yaml:"description"`
-	ReplaceDependencies map[string]string `yaml:"replace"`
+	PackageName           string            `yaml:"name"`
+	PackageDescription    string            `yaml:"description"`
+	PackageReplaceOptions map[string]string `yaml:"replace"`
 }
 
 func (parser *KurtosisYaml) GetPackageName() string {
@@ -31,11 +31,11 @@ func (parser *KurtosisYaml) GetPackageDescription() string {
 	return parser.PackageDescription
 }
 
-func (parser *KurtosisYaml) GetReplaceDependencies() map[string]string {
+func (parser *KurtosisYaml) GetPackageReplaceOptions() map[string]string {
 	if parser == nil {
-		return noReplaceDependencies
+		return noPackageReplaceOptions
 	}
-	return parser.ReplaceDependencies
+	return parser.PackageReplaceOptions
 }
 
 // TODO: this parsing logic is similar to what have we in the api, maybe we should move everything into one

@@ -148,7 +148,6 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 11, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
     { no: 12, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 13, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
-    { no: 14, name: "package_replace_options", kind: "map", K: 9 /* ScalarType.STRING */, V: {kind: "scalar", T: 9 /* ScalarType.STRING */} },
   ],
 );
 
