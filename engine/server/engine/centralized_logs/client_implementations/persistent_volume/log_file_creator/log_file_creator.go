@@ -93,7 +93,7 @@ func (creator *LogFileCreator) getEnclaveAndServiceInfo(ctx context.Context) (ma
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get all enclaves from kurtosis backend.")
 	}
-	for enclaveUuid, _ := range enclaves {
+	for enclaveUuid := range enclaves {
 		var serviceRegistrations []*service.ServiceRegistration
 
 		enclaveServices, err := creator.kurtosisBackend.GetUserServices(ctx, enclaveUuid, &service.ServiceFilters{})
