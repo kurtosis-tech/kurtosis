@@ -50,6 +50,9 @@ service ApiContainerService {
   
   // User services port forwarding
   rpc ConnectServices(ConnectServicesArgs) returns (ConnectServicesResponse) {};
+  
+  // Get last Starlark run
+  rpc GetStarlarkRun(google.protobuf.Empty) returns (GetStarlarkRunResponse) {};
 }
 
 // ==============================================================================================
@@ -153,6 +156,12 @@ message RunStarlarkScriptArgs {
   string main_function_name = 5;
 
   repeated KurtosisFeatureFlag experimental_features = 6;
+
+  // Defaults to empty
+  optional string cloud_instance_id = 7;
+
+  // Defaults to empty
+  optional string cloud_user_id = 8;
 }
 
 message RunStarlarkPackageArgs {
@@ -189,6 +198,12 @@ message RunStarlarkPackageArgs {
   string main_function_name = 10;
 
   repeated KurtosisFeatureFlag experimental_features = 11;
+
+  // Defaults to empty
+  optional string cloud_instance_id = 12;
+
+  // Defaults to empty
+  optional string cloud_user_id = 13;
 }
 
 enum KurtosisFeatureFlag {
@@ -500,4 +515,31 @@ message ConnectServicesArgs {
 }
 
 message ConnectServicesResponse {
+}
+
+// ==============================================================================================
+//                               Get Run Starlark
+// ==============================================================================================
+
+enum RestartPolicy {
+  NEVER = 0;
+  ALWAYS = 1;
+}
+
+message GetStarlarkRunResponse {
+  string package_id = 1;
+
+  string serialized_script = 2;
+
+  string serialized_params = 3;
+
+  int32 parallelism = 4;
+
+  string relative_path_to_main_file = 5;
+
+  string main_function_name = 6;
+
+  repeated KurtosisFeatureFlag experimental_features = 7;
+
+  RestartPolicy restart_policy = 8;
 }

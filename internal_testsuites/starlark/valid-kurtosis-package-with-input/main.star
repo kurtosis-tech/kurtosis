@@ -1,4 +1,4 @@
-lib = import_module("github.com/kurtosis-tech/kurtosis/internal_testsuites/starlark/valid-kurtosis-package-with-input/lib/lib.star")
+lib = import_module("./lib/lib.star")
 
 
 def run(plan, args):

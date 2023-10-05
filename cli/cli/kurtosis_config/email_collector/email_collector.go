@@ -2,11 +2,11 @@ package email_collector
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/do_nothing_metrics_client_callback"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/logrus_logger_converter"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/metrics_user_id_store"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/prompt_displayer"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
+	"github.com/kurtosis-tech/metrics-library/golang/lib/analytics_logger"
 	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"github.com/kurtosis-tech/metrics-library/golang/lib/source"
 	"github.com/sirupsen/logrus"
@@ -51,7 +51,7 @@ func logUserEmailAddressAsMetric(userEmail string) {
 		sendUserMetrics,
 		flushQueueOnEachEvent,
 		do_nothing_metrics_client_callback.NewDoNothingMetricsClientCallback(),
-		logrus_logger_converter.ConvertLogrusLoggerToAnalyticsLogger(logger),
+		analytics_logger.ConvertLogrusLoggerToAnalyticsLogger(logger),
 	)
 	if err != nil {
 		logrus.Debugf("tried creating a metrics client but failed with error:\n%v", err)

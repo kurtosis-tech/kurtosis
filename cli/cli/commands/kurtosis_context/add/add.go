@@ -20,6 +20,9 @@ const (
 	contextFilePathArgKey        = "context-config"
 	isContextFilePathArgOptional = false
 	defaultContextFilePathArg    = ""
+
+	cloudUserIdDefaultValue     = ""
+	cloudInstanceIdDefaultValue = ""
 )
 
 var ContextAddCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -52,12 +55,16 @@ func run(_ context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error {
 	if err != nil {
 		return stacktrace.Propagate(err, "Unable to read content of context file at '%s'", contextFilePath)
 	}
-	return AddContext(newContextToAdd, nil)
+	return AddContext(newContextToAdd, nil, cloudInstanceIdDefaultValue, cloudUserIdDefaultValue)
 }
 
-func AddContext(newContextToAdd *generated.KurtosisContext, envVars *string) error {
+func AddContext(newContextToAdd *generated.KurtosisContext, envVars *string, cloudInstanceId string, cloudUserId string) error {
 	logrus.Infof("Adding new context '%s'", newContextToAdd.GetName())
 	contextsConfigStore := store.GetContextsConfigStore()
+	cloudInstanceIdCopy := new(string)
+	*cloudInstanceIdCopy = cloudInstanceId
+	cloudUserIdCopy := new(string)
+	*cloudUserIdCopy = cloudUserId
 	var enrichedContextData *generated.KurtosisContext
 	if envVars != nil && *envVars != "" {
 		enrichedContextData = golang.NewRemoteV0Context(
@@ -69,6 +76,8 @@ func AddContext(newContextToAdd *generated.KurtosisContext, envVars *string) err
 			newContextToAdd.GetRemoteContextV0().GetTunnelPort(),
 			newContextToAdd.GetRemoteContextV0().GetTlsConfig(),
 			envVars,
+			cloudInstanceIdCopy,
+			cloudUserIdCopy,
 		)
 	} else {
 		enrichedContextData = newContextToAdd

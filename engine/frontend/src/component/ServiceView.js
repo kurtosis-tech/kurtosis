@@ -44,23 +44,16 @@ const codeBox = (serviceUuid, serviceName, parameterName, data) => {
     const uniqueId = `${serviceUuid}-${serviceName}-${parameterName}.json`
     return (
         <Box>
-            {
-                CodeEditor(
-                    uniqueId,
-                    () => {},
-                    true,
-                    ["json"],
-                    250,
-                    serializedData,
-                    true,
-                    false,
-                    true,
-                    true,
-                    false,
-                    "xs",
-                )
-            }
-        </Box>
+            <CodeEditor
+                uniqueId={uniqueId}
+                readOnly={true}
+                defaultWidthPx={250}
+                defaultState={serializedData}
+                autoFormat={true}
+                showFormatButton={false}
+                buttonSizes={"xs"}
+            />
+            </Box>
     );
 }
 

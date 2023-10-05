@@ -94,6 +94,13 @@ export class ApiContainerServiceClient {
                response: api_container_service_pb.ConnectServicesResponse) => void
   ): grpcWeb.ClientReadableStream<api_container_service_pb.ConnectServicesResponse>;
 
+  getStarlarkRun(
+    request: google_protobuf_empty_pb.Empty,
+    metadata: grpcWeb.Metadata | undefined,
+    callback: (err: grpcWeb.RpcError,
+               response: api_container_service_pb.GetStarlarkRunResponse) => void
+  ): grpcWeb.ClientReadableStream<api_container_service_pb.GetStarlarkRunResponse>;
+
 }
 
 export class ApiContainerServicePromiseClient {
@@ -165,6 +172,11 @@ export class ApiContainerServicePromiseClient {
     request: api_container_service_pb.ConnectServicesArgs,
     metadata?: grpcWeb.Metadata
   ): Promise<api_container_service_pb.ConnectServicesResponse>;
+
+  getStarlarkRun(
+    request: google_protobuf_empty_pb.Empty,
+    metadata?: grpcWeb.Metadata
+  ): Promise<api_container_service_pb.GetStarlarkRunResponse>;
 
 }
 

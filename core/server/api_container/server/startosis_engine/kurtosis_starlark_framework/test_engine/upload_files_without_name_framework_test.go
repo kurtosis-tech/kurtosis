@@ -52,11 +52,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesWithoutName() {
 }
 
 func (t *uploadFilesWithoutNameTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return upload_files.NewUploadFiles("", t.serviceNetwork, t.packageContentProvider)
+	return upload_files.NewUploadFiles(TestModulePackageId, t.serviceNetwork, t.packageContentProvider)
 }
 
 func (t *uploadFilesWithoutNameTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName)
+	return fmt.Sprintf("%s(%s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleRelativeLocator)
 }
 
 func (t *uploadFilesWithoutNameTestCase) GetStarlarkCodeForAssertion() string {

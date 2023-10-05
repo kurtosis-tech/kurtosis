@@ -3,6 +3,7 @@ package add
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"strconv"
 	"strings"
 
@@ -84,13 +85,9 @@ const (
 	fullUuidsFlagKey       = "full-uuids"
 	fullUuidFlagKeyDefault = "false"
 
-	defaultParallelism = 1
-
 	portMappingSeparatorForLogs = ", "
 
 	defaultPortWaitTimeoutStr = "15s"
-
-	useDefaultMainFile = ""
 )
 
 var (
@@ -109,7 +106,6 @@ var (
 		portIdSpecDelimiter,
 		serviceAddSpec,
 	)
-	noExperimentalFeature []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 )
 
 var ServiceAddCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -292,7 +288,7 @@ func run(
 	starlarkScript := fmt.Sprintf(`def run(plan):
 	plan.add_service(name = "%s", config = %s)
 `, serviceName, serviceConfigStarlark)
-	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, starlarkScript, "{}", false, defaultParallelism, noExperimentalFeature)
+	starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlark_run_config.NewRunStarlarkConfig())
 	if err != nil {
 		return stacktrace.Propagate(err, "An error has occurred when running Starlark to add service")
 	}

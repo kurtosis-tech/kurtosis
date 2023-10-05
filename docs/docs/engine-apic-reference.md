@@ -236,66 +236,54 @@ Gets the UUID of the enclave that this [EnclaveContext][enclavecontext] object r
 ### `getEnclaveName() -> String`
 Gets the name of the enclave that this [EnclaveContext][enclavecontext] object represents.
 
-### `runStarlarkScript(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun, List<String> experimentalFeatureFlags, String connect) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkScript(String serializedStarlarkScript, StarlarkRunConfig runConfig) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a provided Starlark script inside the enclave.
 
 **Args**
 
-* `mainFunctionName`: The main function name, an empty string can be passed to use the default value 'run'
 * `serializedStarlarkScript`: The Starlark script provided as a string
-* `dryRun`: When set to true, the Kurtosis instructions are not executed.
-* `experimentalFeatureFlags`: List of experimental features to turn on for this run. Leave empty to leave any experimental feature disabled.
-* `connect`: When set to 'CONNECT', the user service ports are forwarded.  When set to 'NO_CONNECT', the user service ports are not forwarded.
+* `starlarkRunConfig`: A configuration object of type [StarlarkRunConfig][starlarkrunconfig]
 
 **Returns**
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkPackage(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, List<String> experimentalFeatureFlags, String connect) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkPackage(String packageRootPath, StarlarkRunConfig starlarkRunConfig) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a provided Starlark script inside the enclave.
 
 **Args**
 
 * `packageRootPath`: The path to the root of the package
-* `relativePathToMainFile`: The relative filepath (relative to the package's root) to the main file, and empty string can be passed to use the default value 'main.star'. Example: if your main file is located in a path like this `github.com/my-org/my-package/src/internal/my-file.star` you should set `src/internal/my-file.star` as the relative path.
-* `mainFunctionName`: The main function name, an empty string can be passed to use the default value 'run'.
-* `serializedParams`: The parameters to pass to the package for the run. It should be a serialized JSON string.
-* `dryRun`: When set to true, the Kurtosis instructions are not executed.
-* `experimentalFeatureFlags`: List of experimental features to turn on for this run. Leave empty to leave any experimental feature disabled.
-* `connect`: When set to 'CONNECT', the user service ports are forwarded.  When set to 'NO_CONNECT', the user service ports are not forwarded.
+* `starlarkRunConfig`: A configuration object of type [StarlarkRunConfig][starlarkrunconfig]
 
 **Returns**
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkRemotePackage(String packageId, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, String connect) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
+### `runStarlarkRemotePackage(String packageId, StarlarkRunConfig starlarkRunConfig) -> (Stream<StarlarkRunResponseLine> responseLines, Error error)`
 
 Run a Starlark script hosted in a remote github.com repo inside the enclave.
 
 **Args**
 
 * `packageId`: The ID of the package pointing to the github.com repo hosting the package. For example `github.com/kurtosistech/datastore-army-package`
-* `relativePathToMainFile`: The relative filepath (relative to the package's root) to the main file, and empty string can be passed to use the default value 'main.star'. Example: if your main file is located in a path like this `github.com/my-org/my-package/src/internal/my-file.star` you should set `src/internal/my-file.star` as the relative path.
-* `mainFunctionName`: The main function name, an empty string can be passed to use the default value 'run'.
-* `serializedParams`: The parameters to pass to the package for the run. It should be a serialized JSON string.
-* `dryRun`: When set to true, the Kurtosis instructions are not executed.
-* `connect`: When set to 'CONNECT', the user service ports are forwarded.  When set to 'NO_CONNECT', the user service ports are not forwarded.
+* `starlarkRunConfig`: A configuration object of type [StarlarkRunConfig][starlarkrunconfig]
 
 **Returns**
 
 * `responseLines`: A stream of [StarlarkRunResponseLine][starlarkrunresponseline] objects
 
-### `runStarlarkScriptBlocking(String mainFunctionName, String serializedStarlarkScript, Boolean dryRun, String connect) -> (StarlarkRunResult runResult, Error error)`
+### `runStarlarkScriptBlocking(String mainFunctionName, StarlarkRunConfig starlarkRunConfig) -> (StarlarkRunResult runResult, Error error)`
 
 Convenience wrapper around [EnclaveContext.runStarlarkScript][enclavecontext_runstarlarkscript], that blocks until the execution of the script is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
-### `runStarlarkPackageBlocking(String packageRootPath, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, String connect) -> (StarlarkRunResult runResult, Error error)`
+### `runStarlarkPackageBlocking(String packageRootPath, StarlarkRunConfig starlarkRunConfig) -> (StarlarkRunResult runResult, Error error)`
 
 Convenience wrapper around [EnclaveContext.runStarlarkPackage][enclavecontext_runstarlarkpackage], that blocks until the execution of the package is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
-### `runStarlarkRemotePackageBlocking(String packageId, String relativePathToMainFile, String mainFunctionName, String serializedParams, Boolean dryRun, String connect) -> (StarlarkRunResult runResult, Error error)`
+### `runStarlarkRemotePackageBlocking(String packageId, StarlarkRunConfig starlarkRunConfig) -> (StarlarkRunResult runResult, Error error)`
 
 Convenience wrapper around [EnclaveContext.runStarlarkRemotePackage][enclavecontext_runstarlarkremotepackage], that blocks until the execution of the package is finished and returns a single [StarlarkRunResult][starlarkrunresult] object containing the result of the run.
 
@@ -357,6 +345,10 @@ Get a list of all files artifacts that are registered with the enclave represent
 
 **Returns**
 * `filesArtifactNameAndUuids`: A list of files artifact names and their corresponding uuids.
+
+### `getStarlarkRun() -> (GetStarlarkRunResponse getStarlarkResponse, Error error)`
+
+Get the last Starlark run from the enclave.
 
 ServiceIdentifiers
 -------------------
@@ -473,6 +465,21 @@ StarlarkRunResult
 
 * `runOutput`: The full output of the run, composed of the concatenated output for each instruction that was executed (separated by a newline)
 
+
+StarlarkRunConfig
+-----------------
+
+This is a configuration object for Starlark Runs:
+
+* `RelativePathToMainFile`: The relative filepath (relative to the package's root) to the main file, if not set will use the default value 'main.star'. Example: if your main file is located in a path like this `github.com/my-org/my-package/src/internal/my-file.star` you should set `src/internal/my-file.star` as the relative path. Configurable using `WithRelativePathToMainFile`
+* `MainFunctionName`: The main function name, if not set will use the default value 'run'. Configurable using `WithMainFunctionName`
+* `SerializedParams`: The parameters to pass to the package for the run. It should be a serialized JSON/YAML string. Configurable using `WithSerializedParams`; defaults to `{}` if not set.
+* `DryRun`: When set to true, the Kurtosis instructions are not executed. Configurable using `WithDryRun`; defaults to false.
+* `Parallelism`: The level of parallelism for instructions that support parallelism. Configurable using `WithParallelism`; defaults to 4
+* `ExperimentalFeatureFlags`: List of experimental features to turn on for this run. Leave empty to leave any experimental feature disabled. Configurable using `WithExperimentalFeatureFlags`; defaults to empty
+* `CloudInstanceId`: The `CloudInstanceId` if running on Cloud Kurtosis. Configurable using `WithCloudInstanceID`; defaults to "".
+* `CloudUserId`: The `CloudUserId` if running on Cloud Kurtosis. Configurable using `WithCloudUserId`; defaults to "".
+
 ServiceContext
 --------------
 This Kurtosis-provided class is the lowest-level representation of a service running inside a Docker container. It is your handle for retrieving container information and manipulating the container.
@@ -543,9 +550,9 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 [servicelog]: #servicelog
 
 [enclavecontext]: #enclavecontext
-[enclavecontext_runstarlarkscript]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags-string-connect---streamstarlarkrunresponseline-responselines-error-error
-[enclavecontext_runstarlarkpackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags-string-connect---streamstarlarkrunresponseline-responselines-error-error
-[enclavecontext_runstarlarkremotepackage]: #runstarlarkscriptstring-mainfunctionname-string-serializedstarlarkscript-boolean-dryrun-liststring-experimentalfeatureflags-string-connect---streamstarlarkrunresponseline-responselines-error-error
+[enclavecontext_runstarlarkscript]: #runstarlarkscriptstring-serializedstarlarkscript-starlarkrunconfig-runconfig---streamstarlarkrunresponseline-responselines-error-error
+[enclavecontext_runstarlarkpackage]: #runstarlarkpackagestring-packagerootpath-starlarkrunconfig-starlarkrunconfig---streamstarlarkrunresponseline-responselines-error-error
+[enclavecontext_runstarlarkremotepackage]: #runstarlarkremotepackagestring-packageid-starlarkrunconfig-starlarkrunconfig---streamstarlarkrunresponseline-responselines-error-error
 
 [starlarkrunresponseline]: #starlarkrunresponseline
 [starlarkinstruction]: #starlarkinstruction
@@ -555,6 +562,7 @@ Uses [Docker exec](https://docs.docker.com/engine/reference/commandline/exec/) f
 [starlarkrunfinishedevent]: #starlarkrunfinishedevent
 [starlarkwarning]: #starlarkwarning
 [starlarkrunresult]: #starlarkrunresult
+[starlarkrunconfig]: #starlarkrunconfig
 
 [servicecontext]: #servicecontext
 [servicecontext_getpublicports]: #getpublicports---mapportid-portspec

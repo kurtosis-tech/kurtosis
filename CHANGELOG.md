@@ -1,5 +1,43 @@
 # Changelog
 
+## [0.84.2](https://github.com/kurtosis-tech/kurtosis/compare/0.84.1...0.84.2) (2023-10-05)
+
+
+### Features
+
+* Edit Enclave ([#1478](https://github.com/kurtosis-tech/kurtosis/issues/1478)) ([d11736a](https://github.com/kurtosis-tech/kurtosis/commit/d11736a8a28bbda44b7499bd9977b4f00b1bea74))
+* Get Starlark Run APIC endpoint ([#1455](https://github.com/kurtosis-tech/kurtosis/issues/1455)) ([503cb8d](https://github.com/kurtosis-tech/kurtosis/commit/503cb8d5ad781b51e96524d8fa7068478370e5dd))
+
+## [0.84.1](https://github.com/kurtosis-tech/kurtosis/compare/0.84.0...0.84.1) (2023-10-04)
+
+
+### Bug Fixes
+
+* autoscroll ([#1471](https://github.com/kurtosis-tech/kurtosis/issues/1471)) ([9948fad](https://github.com/kurtosis-tech/kurtosis/commit/9948fad01bd884cf75fbc832dd41516bc50cd6a6))
+* bug where we passed cloud user id for cloud instance id ([#1465](https://github.com/kurtosis-tech/kurtosis/issues/1465)) ([65b749c](https://github.com/kurtosis-tech/kurtosis/commit/65b749cd2e8c612a6ecabbe72eb1c29e9c53ced3))
+
+## [0.84.0](https://github.com/kurtosis-tech/kurtosis/compare/0.83.16...0.84.0) (2023-10-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* block 'local absolute locators', users should replace' local absolute locators' with 'relative locators' ([#1446](https://github.com/kurtosis-tech/kurtosis/issues/1446))
+* move run metrics to the APIC & refactor SDK ([#1456](https://github.com/kurtosis-tech/kurtosis/issues/1456))
+
+### Features
+
+* block 'local absolute locators', users should replace' local absolute locators' with 'relative locators' ([#1446](https://github.com/kurtosis-tech/kurtosis/issues/1446)) ([27ded02](https://github.com/kurtosis-tech/kurtosis/commit/27ded02f79b71998f378ea3728ae8c93358738c7))
+
+
+### Bug Fixes
+
+* add navigation to kurtosis enclave manager  ([#1458](https://github.com/kurtosis-tech/kurtosis/issues/1458)) ([f27a00a](https://github.com/kurtosis-tech/kurtosis/commit/f27a00aced78d48c04961c7238907e9c8a3f0261))
+
+
+### Code Refactoring
+
+* move run metrics to the APIC & refactor SDK ([#1456](https://github.com/kurtosis-tech/kurtosis/issues/1456)) ([2a6c908](https://github.com/kurtosis-tech/kurtosis/commit/2a6c9080f470385f6d0f4ee5c54ab73a25d97c5f))
+
 ## [0.83.16](https://github.com/kurtosis-tech/kurtosis/compare/0.83.15...0.83.16) (2023-10-02)
 
 
