@@ -50,6 +50,9 @@ service ApiContainerService {
   
   // User services port forwarding
   rpc ConnectServices(ConnectServicesArgs) returns (ConnectServicesResponse) {};
+  
+  // Get last Starlark run
+  rpc GetStarlarkRun(google.protobuf.Empty) returns (GetStarlarkRunResponse) {};
 }
 
 // ==============================================================================================
@@ -512,4 +515,31 @@ message ConnectServicesArgs {
 }
 
 message ConnectServicesResponse {
+}
+
+// ==============================================================================================
+//                               Get Run Starlark
+// ==============================================================================================
+
+enum RestartPolicy {
+  NEVER = 0;
+  ALWAYS = 1;
+}
+
+message GetStarlarkRunResponse {
+  string package_id = 1;
+
+  string serialized_script = 2;
+
+  string serialized_params = 3;
+
+  int32 parallelism = 4;
+
+  string relative_path_to_main_file = 5;
+
+  string main_function_name = 6;
+
+  repeated KurtosisFeatureFlag experimental_features = 7;
+
+  RestartPolicy restart_policy = 8;
 }
