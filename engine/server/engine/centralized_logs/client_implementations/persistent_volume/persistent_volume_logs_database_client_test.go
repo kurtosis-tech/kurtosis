@@ -16,7 +16,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"testing/fstest"
 	"time"
 )
 
@@ -256,12 +255,12 @@ func TestStreamUserServiceLogs_ThousandsOfLogLinesSuccessfulExecution(t *testing
 		testUserService1Uuid: true,
 	}
 
-	file1 := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpathForTests, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
-	underlyingFs := &fstest.MapFS{
-		file1: {
-			Data: []byte(logLinesStr),
-		},
-	}
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+
+	file1PathStr := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
+	file1, _ := underlyingFs.Create(file1PathStr)
+	file1.WriteString(logLinesStr)
+
 	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -307,12 +306,11 @@ func TestStreamUserServiceLogsPerWeek_ThousandsOfLogLinesSuccessfulExecution(t *
 		testUserService1Uuid: true,
 	}
 
-	file1 := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
-	underlyingFs := &fstest.MapFS{
-		file1: {
-			Data: []byte(logLinesStr),
-		},
-	}
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
+	file1, _ := underlyingFs.Create(file1PathStr)
+	file1.WriteString(logLinesStr)
+
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
@@ -351,12 +349,11 @@ func TestStreamUserServiceLogs_EmptyLogLines(t *testing.T) {
 
 	logLinesStr := ""
 
-	file1 := fmt.Sprintf("%s%s/%s%s", volume_consts.LogsStorageDirpathForTests, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
-	underlyingFs := &fstest.MapFS{
-		file1: {
-			Data: []byte(logLinesStr),
-		},
-	}
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+	file1PathStr := fmt.Sprintf("%s%s/%s%s", volume_consts.LogsStorageDirpath, string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
+	file1, _ := underlyingFs.Create(file1PathStr)
+	file1.WriteString(logLinesStr)
+
 	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
 
 	receivedUserServiceLogsByUuid, testEvaluationErr := executeStreamCallAndGetReceivedServiceLogLines(
@@ -393,12 +390,11 @@ func TestStreamUserServiceLogsPerWeek_EmptyLogLines(t *testing.T) {
 
 	logLinesStr := ""
 
-	file1 := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
-	underlyingFs := &fstest.MapFS{
-		file1: {
-			Data: []byte(logLinesStr),
-		},
-	}
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(startingWeek), string(enclaveUuid), testUserService1Uuid, volume_consts.Filetype)
+	file1, _ := underlyingFs.Create(file1PathStr)
+	file1.WriteString(logLinesStr)
+
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, startingWeek, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
@@ -448,20 +444,19 @@ func TestStreamUserServiceLogsPerWeek_WithLogsAcrossWeeks(t *testing.T) {
 		logLine3b,
 		logLine4}
 
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+
 	week3logLinesStr := strings.Join(week3logLines, "\n") + "\n"
 	week4logLinesStr := strings.Join(week4logLines, "\n")
 
-	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(4), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(3), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(4), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week4, _ := underlyingFs.Create(week4filepath)
+	week4.WriteString(week4logLinesStr)
 
-	underlyingFs := &fstest.MapFS{
-		week4filepath: {
-			Data: []byte(week4logLinesStr),
-		},
-		week3filepath: {
-			Data: []byte(week3logLinesStr),
-		},
-	}
+	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(3), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week3, _ := underlyingFs.Create(week3filepath)
+	week3.WriteString(week3logLinesStr)
+
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
@@ -512,20 +507,19 @@ func TestStreamUserServiceLogsPerWeek_WithLogLineAcrossWeeks(t *testing.T) {
 		logLine2,
 		logLine3a}
 
+	underlyingFs := volume_filesystem.NewMockedVolumeFilesystem()
+
 	week3logLinesStr := strings.Join(week3logLines, "\n") + "\n"
 	week4logLinesStr := strings.Join(week4logLines, "\n") + "\n"
 
-	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(4), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(3), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week4filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(4), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week4, _ := underlyingFs.Create(week4filepath)
+	week4.WriteString(week4logLinesStr)
 
-	underlyingFs := &fstest.MapFS{
-		week4filepath: {
-			Data: []byte(week4logLinesStr),
-		},
-		week3filepath: {
-			Data: []byte(week3logLinesStr),
-		},
-	}
+	week3filepath := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(3), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	week3, _ := underlyingFs.Create(week3filepath)
+	week3.WriteString(week3logLinesStr)
+
 	mockTime := logs_clock.NewMockLogsClock(defaultYear, 4, defaultDay)
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(mockTime)
 
@@ -560,7 +554,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 	userServiceUuids map[service.ServiceUUID]bool,
 	expectedServiceAmountLogLinesByServiceUuid map[service.ServiceUUID]int,
 	shouldFollowLogs bool,
-	underlyingFs *fstest.MapFS,
+	underlyingFs volume_filesystem.VolumeFilesystem,
 	streamStrategy stream_logs_strategy.StreamLogsStrategy,
 ) (map[service.ServiceUUID][]logline.LogLine, error) {
 	ctx := context.Background()
@@ -573,8 +567,7 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 
 	kurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 
-	mockedFs := volume_filesystem.NewMockedVolumeFilesystem(underlyingFs)
-	logsDatabaseClient := NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, mockedFs, streamStrategy)
+	logsDatabaseClient := NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, underlyingFs, streamStrategy)
 
 	userServiceLogsByUuidChan, errChan, receivedCancelCtxFunc, err := logsDatabaseClient.StreamUserServiceLogs(ctx, enclaveUuid, userServiceUuids, logLinesFilters, shouldFollowLogs, defaultShouldReturnAllLogs, defaultNumLogLines)
 	if err != nil {
@@ -629,90 +622,76 @@ func executeStreamCallAndGetReceivedServiceLogLines(
 	return receivedServiceLogsByUuid, nil
 }
 
-func createFilledPerFileFilesystem() *fstest.MapFS {
+func createFilledPerFileFilesystem() volume_filesystem.VolumeFilesystem {
 	logLines := []string{logLine1, logLine2, logLine3a, logLine3b, logLine4, logLine5, logLine6, logLine7, logLine8}
 
 	logLinesStr := strings.Join(logLines, "\n")
 
-	file1 := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpathForTests, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	file2 := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpathForTests, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
-	file3 := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpathForTests, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
+	file1PathStr := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file2PathStr := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
+	file3PathStr := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
 
-	mapFs := &fstest.MapFS{
-		file1: {
-			Data: []byte(logLinesStr),
-		},
-		file2: {
-			Data: []byte(logLinesStr),
-		},
-		file3: {
-			Data: []byte(logLinesStr),
-		},
-	}
+	mapFs := volume_filesystem.NewMockedVolumeFilesystem()
+
+	file1, _ := mapFs.Create(file1PathStr)
+	file1.WriteString(logLinesStr)
+
+	file2, _ := mapFs.Create(file2PathStr)
+	file2.WriteString(logLinesStr)
+
+	file3, _ := mapFs.Create(file3PathStr)
+	file3.WriteString(logLinesStr)
 
 	return mapFs
 }
 
-func createFilledPerWeekFilesystem(week int) *fstest.MapFS {
+func createFilledPerWeekFilesystem(week int) volume_filesystem.VolumeFilesystem {
 	logLines := []string{logLine1, logLine2, logLine3a, logLine3b, logLine4, logLine5, logLine6, logLine7, logLine8}
 
 	logLinesStr := strings.Join(logLines, "\n")
 
-	file1 := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	file2 := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
-	file3 := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
+	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file2PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
+	file3PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
 
-	mapFs := &fstest.MapFS{
-		file1: {
-			Data: []byte(logLinesStr),
-		},
-		file2: {
-			Data: []byte(logLinesStr),
-		},
-		file3: {
-			Data: []byte(logLinesStr),
-		},
-	}
+	mapFs := volume_filesystem.NewMockedVolumeFilesystem()
 
-	return mapFs
-}
+	file1, _ := mapFs.Create(file1PathStr)
+	file1.WriteString(logLinesStr)
 
-func createEmptyPerFileFilesystem() *fstest.MapFS {
-	file1 := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpathForTests, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	file2 := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpathForTests, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
-	file3 := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpathForTests, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
+	file2, _ := mapFs.Create(file2PathStr)
+	file2.WriteString(logLinesStr)
 
-	mapFs := &fstest.MapFS{
-		file1: {
-			Data: []byte{},
-		},
-		file2: {
-			Data: []byte{},
-		},
-		file3: {
-			Data: []byte{},
-		},
-	}
+	file3, _ := mapFs.Create(file3PathStr)
+	file3.WriteString(logLinesStr)
 
 	return mapFs
 }
 
-func createEmptyPerWeekFilesystem(week int) *fstest.MapFS {
-	file1 := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
-	file2 := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
-	file3 := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpathForTests, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
+func createEmptyPerFileFilesystem() volume_filesystem.VolumeFilesystem {
+	file1PathStr := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file2PathStr := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
+	file3PathStr := fmt.Sprintf(volume_consts.PerFileFmtStr, volume_consts.LogsStorageDirpath, testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
 
-	mapFs := &fstest.MapFS{
-		file1: {
-			Data: []byte{},
-		},
-		file2: {
-			Data: []byte{},
-		},
-		file3: {
-			Data: []byte{},
-		},
-	}
+	mapFs := volume_filesystem.NewMockedVolumeFilesystem()
+
+	mapFs.Create(file1PathStr)
+	mapFs.Create(file2PathStr)
+	mapFs.Create(file3PathStr)
+
+	return mapFs
+}
+
+func createEmptyPerWeekFilesystem(week int) volume_filesystem.VolumeFilesystem {
+	file1PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
+	file2PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService2Uuid, volume_consts.Filetype)
+	file3PathStr := fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(defaultYear), strconv.Itoa(week), testEnclaveUuid, testUserService3Uuid, volume_consts.Filetype)
+
+	mapFs := volume_filesystem.NewMockedVolumeFilesystem()
+
+	mapFs.Create(file1PathStr)
+	mapFs.Create(file2PathStr)
+	mapFs.Create(file3PathStr)
 
 	return mapFs
 }

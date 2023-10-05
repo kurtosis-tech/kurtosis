@@ -126,7 +126,7 @@ func (creator *LogFileCreator) createLogFileIdempotently(logFilePath string) err
 
 func (creator *LogFileCreator) createSymlinkLogFile(targetLogFilePath, symlinkLogFilePath string) error {
 	// remove existing log files that could be storing logs at this path
-	if err := creator.filesystem.RemoveAll(symlinkLogFilePath); err != nil {
+	if err := creator.filesystem.Remove(symlinkLogFilePath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred attempting to remove an existing log file at the symlink file path '%v'.", symlinkLogFilePath)
 	}
 	// replace with symlink

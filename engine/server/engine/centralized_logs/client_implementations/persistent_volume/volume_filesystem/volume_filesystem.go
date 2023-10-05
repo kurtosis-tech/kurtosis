@@ -1,10 +1,9 @@
 package volume_filesystem
 
 import (
+	"github.com/spf13/afero"
 	"io"
 	"os"
-	"strings"
-	"testing/fstest"
 )
 
 const (
@@ -18,12 +17,14 @@ type VolumeFilesystem interface {
 	Create(name string) (VolumeFile, error)
 	Stat(name string) (VolumeFileInfo, error)
 	RemoveAll(path string) error
+	Remove(filepath string) error
 	Symlink(target, link string) error
 }
 
 type VolumeFile interface {
 	io.Reader
 	Close() error
+	WriteString(s string) (int, error)
 }
 
 type VolumeFileInfo interface {
@@ -53,6 +54,10 @@ func (fs *OsVolumeFilesystem) RemoveAll(path string) error {
 	return os.RemoveAll(path)
 }
 
+func (fs *OsVolumeFilesystem) Remove(filepath string) error {
+	return os.Remove(filepath)
+}
+
 func (fs *OsVolumeFilesystem) Symlink(target, link string) error {
 	return os.Symlink(target, link)
 }
@@ -60,48 +65,35 @@ func (fs *OsVolumeFilesystem) Symlink(target, link string) error {
 // MockedVolumeFilesystem is an implementation used for unit testing
 type MockedVolumeFilesystem struct {
 	// uses an underlying map filesystem that's easy to mock file data with
-	mapFS *fstest.MapFS
+	mapFS afero.Fs
 }
 
-func NewMockedVolumeFilesystem(fs *fstest.MapFS) *MockedVolumeFilesystem {
-	return &MockedVolumeFilesystem{mapFS: fs}
+func NewMockedVolumeFilesystem() *MockedVolumeFilesystem {
+	return &MockedVolumeFilesystem{mapFS: afero.NewMemMapFs()}
 }
 
 func (fs *MockedVolumeFilesystem) Open(name string) (VolumeFile, error) {
-	// Trim any forward slashes from this filepath
-	// fstest.MapFS doesn't like absolute paths!!!
-	return fs.mapFS.Open(trimForwardSlash(name))
+	return fs.mapFS.Open(name)
 }
 
 func (fs *MockedVolumeFilesystem) Create(name string) (VolumeFile, error) {
-	// Trim any forward slashes from this filepath
-	// fstest.MapFS doesn't like absolute paths!!!
-	return fs.mapFS.Open(trimForwardSlash(name))
+	return fs.mapFS.Create(name)
 }
 
 func (fs *MockedVolumeFilesystem) Stat(name string) (VolumeFileInfo, error) {
-	// Trim any forward slashes from this filepath
-	// fstest.MapFS doesn't like absolute paths!!!
-	return fs.mapFS.Stat(trimForwardSlash(name))
+	return fs.mapFS.Stat(name)
 }
 
 func (fs *MockedVolumeFilesystem) RemoveAll(path string) error {
-	path = trimForwardSlash(path)
-	for filepath := range *fs.mapFS {
-		if strings.HasPrefix(filepath, path) {
-			delete(*fs.mapFS, filepath)
-		}
-	}
-	return nil
+	return fs.mapFS.RemoveAll(path)
+}
+
+func (fs *MockedVolumeFilesystem) Remove(filepath string) error {
+	return fs.mapFS.Remove(filepath)
 }
 
 func (fs *MockedVolumeFilesystem) Symlink(target, link string) error {
-	// fstest.MapFs doesn't support mocking symlinks
-	// the best we can do is test the file exists
-	_, err := fs.mapFS.Open(trimForwardSlash(link))
+	// afero.MemMapFs doesn't support symlinks so the best we can do is create the symlink
+	_, err := fs.mapFS.Create(link)
 	return err
-}
-
-func trimForwardSlash(name string) string {
-	return strings.TrimLeft(name, forwardSlash)
 }
