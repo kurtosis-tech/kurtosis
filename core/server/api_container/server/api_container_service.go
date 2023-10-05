@@ -858,7 +858,7 @@ func getTextRepresentation(reader io.Reader, lineCount int) (*string, error) {
 				return nil, stacktrace.NewError("File has no text representation because '%v' is not printable", char)
 			}
 		}
-		textRepresentation.WriteString(line)
+		textRepresentation.WriteString(fmt.Sprintf("%s\n", line))
 	}
 
 	if err := scanner.Err(); err != nil {
