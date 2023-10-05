@@ -408,6 +408,15 @@ func (enclaveCtx *EnclaveContext) ConnectServices(ctx context.Context, connect k
 	return nil
 }
 
+// Docs available at https://docs.kurtosis.com/#getstarlarkrun
+func (enclaveCtx *EnclaveContext) GetStarlarkRun(ctx context.Context) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
+	response, err := enclaveCtx.client.GetStarlarkRun(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred while getting the last starlark run")
+	}
+	return response, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods

@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 
-import { ConnectServicesArgs, ConnectServicesResponse, DownloadFilesArtifactArgs, ExecCommandArgs, ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse, GetServicesArgs, GetServicesResponse, InspectFilesArtifactContentsRequest, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkRunResponseLine, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse, StreamedDataChunk, UploadFilesArtifactResponse, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "./api_container_service_pb.js";
+import { ConnectServicesArgs, ConnectServicesResponse, DownloadFilesArtifactArgs, ExecCommandArgs, ExecCommandResponse, GetExistingAndHistoricalServiceIdentifiersResponse, GetServicesArgs, GetServicesResponse, GetStarlarkRunResponse, InspectFilesArtifactContentsRequest, InspectFilesArtifactContentsResponse, ListFilesArtifactNamesAndUuidsResponse, RunStarlarkPackageArgs, RunStarlarkScriptArgs, StarlarkRunResponseLine, StoreFilesArtifactFromServiceArgs, StoreFilesArtifactFromServiceResponse, StoreWebFilesArtifactArgs, StoreWebFilesArtifactResponse, StreamedDataChunk, UploadFilesArtifactResponse, WaitForHttpGetEndpointAvailabilityArgs, WaitForHttpPostEndpointAvailabilityArgs } from "./api_container_service_pb.js";
 import { Empty, MethodKind } from "@bufbuild/protobuf";
 
 /**
@@ -171,6 +171,17 @@ export declare const ApiContainerService: {
       readonly name: "ConnectServices",
       readonly I: typeof ConnectServicesArgs,
       readonly O: typeof ConnectServicesResponse,
+      readonly kind: MethodKind.Unary,
+    },
+    /**
+     * Get last Starlark run
+     *
+     * @generated from rpc api_container_api.ApiContainerService.GetStarlarkRun
+     */
+    readonly getStarlarkRun: {
+      readonly name: "GetStarlarkRun",
+      readonly I: typeof Empty,
+      readonly O: typeof GetStarlarkRunResponse,
       readonly kind: MethodKind.Unary,
     },
   }
