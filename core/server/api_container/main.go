@@ -8,6 +8,13 @@ package main
 import (
 	"context"
 	"fmt"
+	"net"
+	"os"
+	"path"
+	"runtime"
+	"strings"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/backend_creator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/kubernetes_kurtosis_backend"
@@ -32,12 +39,6 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"google.golang.org/grpc"
-	"net"
-	"os"
-	"path"
-	"runtime"
-	"strings"
-	"time"
 )
 
 const (
@@ -214,11 +215,16 @@ func runMain() error {
 		startosis_engine.NewStartosisExecutor(starlarkValueSerde, runtimeValueStore, enclavePlan, enclaveDb))
 
 	//Creation of ApiContainerService
+	restartPolicy := kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER
+	if serverArgs.IsProductionEnclave {
+		restartPolicy = kurtosis_core_rpc_api_bindings.RestartPolicy_ALWAYS
+	}
 	apiContainerService, err := server.NewApiContainerService(
 		filesArtifactStore,
 		serviceNetwork,
 		startosisRunner,
 		gitPackageContentProvider,
+		restartPolicy,
 		metricsClient,
 	)
 	if err != nil {
