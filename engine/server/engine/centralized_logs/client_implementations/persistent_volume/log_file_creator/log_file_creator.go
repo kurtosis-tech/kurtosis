@@ -22,21 +22,21 @@ import (
 // To prevent storing duplicate logs, the LogFileCreator will ensure that the service name and short uuid log files are just
 // symlinks to the uuid log file path.
 type LogFileCreator struct {
-	time logs_clock.LogsClock
+	kurtosisBackend backend_interface.KurtosisBackend
 
 	filesystem volume_filesystem.VolumeFilesystem
 
-	kurtosisBackend backend_interface.KurtosisBackend
+	time logs_clock.LogsClock
 }
 
 func NewLogFileCreator(
-	time logs_clock.LogsClock,
 	kurtosisBackend backend_interface.KurtosisBackend,
-	filesystem volume_filesystem.VolumeFilesystem) *LogFileCreator {
+	filesystem volume_filesystem.VolumeFilesystem,
+	time logs_clock.LogsClock) *LogFileCreator {
 	return &LogFileCreator{
-		time:            time,
 		kurtosisBackend: kurtosisBackend,
 		filesystem:      filesystem,
+		time:            time,
 	}
 }
 

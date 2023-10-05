@@ -17,6 +17,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_remover"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -119,7 +120,7 @@ func CreateEngine(
 		// do a first removal
 		logRemover.Run()
 
-		logRemovalTicker := time.NewTicker(removeLogsWaitHours)
+		logRemovalTicker := time.NewTicker(volume_consts.RemoveLogsWaitHours)
 		for range logRemovalTicker.C {
 			logRemover.Run()
 		}

@@ -1,6 +1,9 @@
 package volume_consts
 
-import "strings"
+import (
+	"strings"
+	"time"
+)
 
 const (
 	// Location of logs on the filesystem of the engine
@@ -16,6 +19,10 @@ const (
 	EndOfJsonLine = "}"
 
 	LogRetentionPeriodInWeeks = 4
+
+	RemoveLogsWaitHours = 6 * time.Hour
+
+	CreateLogFilesInterval = 3 * time.Minute
 
 	// basepath/enclave uuid/service uuid <filetype>
 	PerFileFmtStr = "%s%s/%s%s"
