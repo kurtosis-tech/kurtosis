@@ -12,7 +12,6 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"io"
 	"math"
 	"net/http"
@@ -21,6 +20,8 @@ import (
 	"strings"
 	"time"
 	"unicode"
+
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 
@@ -117,7 +118,7 @@ func NewApiContainerService(
 			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
 			RestartPolicy:          kurtosis_core_rpc_api_bindings.RestartPolicy_NEVER,
 		},
-		metricsClient:                  metricsClient,
+		metricsClient: metricsClient,
 	}
 
 	return service, nil
