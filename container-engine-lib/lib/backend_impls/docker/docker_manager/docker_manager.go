@@ -25,7 +25,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
-	"github.com/kurtosis-tech/kurtosis/kurtosis_version"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -306,7 +305,7 @@ func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.Ima
 			continue
 		}
 		for _, tag := range image.RepoTags {
-			if strings.Contains(tag, kurtosisTagPrefix) && containsSemVer(tag) && !strings.Contains(tag, kurtosis_version.KurtosisVersion) && !strings.Contains(tag, kurtosis_sdk_version.KurtosisVersion) {
+			if strings.Contains(tag, kurtosisTagPrefix) && containsSemVer(tag) && !strings.Contains(tag, kurtosis_sdk_version.KurtosisVersion) {
 				unusedImages = append(unusedImages, image)
 			}
 		}
