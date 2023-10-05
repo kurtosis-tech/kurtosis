@@ -17,6 +17,7 @@ type VolumeFilesystem interface {
 	Open(name string) (VolumeFile, error)
 	Stat(name string) (VolumeFileInfo, error)
 	RemoveAll(path string) error
+	Symlink(target, link string) error
 }
 
 type VolumeFile interface {
@@ -25,6 +26,7 @@ type VolumeFile interface {
 }
 
 type VolumeFileInfo interface {
+	Mode() os.FileMode
 }
 
 // OsVolumeFilesystem is an implementation of the filesystem using disk
@@ -44,6 +46,10 @@ func (fs *OsVolumeFilesystem) Stat(name string) (VolumeFileInfo, error) {
 
 func (fs *OsVolumeFilesystem) RemoveAll(path string) error {
 	return os.RemoveAll(path)
+}
+
+func (fs *OsVolumeFilesystem) Symlink(target, link string) error {
+	return os.Symlink(target, link)
 }
 
 // MockedVolumeFilesystem is an implementation used for unit testing
@@ -76,6 +82,13 @@ func (fs *MockedVolumeFilesystem) RemoveAll(path string) error {
 		}
 	}
 	return nil
+}
+
+func (fs *MockedVolumeFilesystem) Symlink(target, link string) error {
+	// fstest.MapFs doesn't support mocking symlinks
+	// the best we can do is test the file exists
+	_, err := fs.mapFS.Open(trimForwardSlash(link))
+	return err
 }
 
 func trimForwardSlash(name string) string {
