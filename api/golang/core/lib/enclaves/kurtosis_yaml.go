@@ -13,6 +13,7 @@ const (
 // fields are public because it's needed for YAML decoding
 type KurtosisYaml struct {
 	PackageName           string            `yaml:"name"`
+	PackageDescription    string            `yaml:"description"`
 	PackageReplaceOptions map[string]string `yaml:"replace"`
 }
 

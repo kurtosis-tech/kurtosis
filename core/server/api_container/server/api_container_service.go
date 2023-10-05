@@ -215,13 +215,13 @@ func (apicService ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rp
 	var packageName string
 	var isRemote bool
 	if args.ClonePackage != nil {
-		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile, packageReplaceOptions)
+		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
 		isRemote = args.GetClonePackage()
 	} else {
 		// old deprecated syntax in use
 		moduleContentIfLocal := args.GetLocal()
 		isRemote = args.GetRemote()
-		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile, packageReplaceOptions)
+		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
 	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
@@ -678,7 +678,6 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 	clonePackage bool,
 	moduleContentIfLocal []byte,
 	relativePathToMainFile string,
-	packageReplaceOptions map[string]string,
 ) (string, string, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
@@ -687,7 +686,6 @@ func (apicService ApiContainerService) runStarlarkPackageSetup(
 	if clonePackage {
 		packageRootPathOnDisk, kurtosisYml, interpretationError = apicService.startosisModuleContentProvider.ClonePackage(packageId)
 		packageName = kurtosisYml.GetPackageName()
-
 	} else if moduleContentIfLocal != nil {
 		// TODO: remove this once UploadStarlarkPackage is called prior to calling RunStarlarkPackage by all consumers
 		//  of this API

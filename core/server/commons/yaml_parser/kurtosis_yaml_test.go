@@ -8,9 +8,14 @@ import (
 )
 
 var (
-	kurtosisYmlPath   = "/root/kurtosis.yml"
-	sampleCorrectYaml = []byte(`
+	kurtosisYmlPath                = "/root/kurtosis.yml"
+	sampleCorrectYamlOnlyNameField = []byte(`
 name: github.com/test-author/test-repo
+`)
+	sampleCompleteCorrectYaml = []byte(`
+name: github.com/test-author/test-repo
+description: |
+  Some words to describe the package.
 replace:
   github.com/kurtosis-tech/sample-dependency-package: github.com/kurtosis-tech/another-sample-dependency-package
   github.com/kurtosis-tech/ethereum-package: github.com/my-forked/ethereum-package
@@ -26,7 +31,17 @@ replace:
 
 func Test_parseKurtosisYamlInternal_Success(t *testing.T) {
 	mockRead := func(filename string) ([]byte, error) {
-		return sampleCorrectYaml, nil
+		return sampleCompleteCorrectYaml, nil
+	}
+
+	actual, err := parseKurtosisYamlInternal(kurtosisYmlPath, mockRead)
+	require.Nil(t, err)
+	require.Equal(t, "github.com/test-author/test-repo", actual.GetPackageName())
+}
+
+func Test_parseKurtosisYamlInternal_OnlyNameSuccess(t *testing.T) {
+	mockRead := func(filename string) ([]byte, error) {
+		return sampleCorrectYamlOnlyNameField, nil
 	}
 
 	actual, err := parseKurtosisYamlInternal(kurtosisYmlPath, mockRead)

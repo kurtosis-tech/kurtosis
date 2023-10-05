@@ -188,11 +188,11 @@ func TestGetAbsolutePathOnDisk_WorksForNonInMainBranchLocators(t *testing.T) {
 
 	provider := NewGitPackageContentProvider(packageDir, packageTmpDir)
 
-	packagePath := "github.com/kurtosis-tech/sample-dependency-package@no-main-branch/main.star"
-	pathOnDisk, err := provider.GetOnDiskAbsoluteFilePath(packagePath)
+	absoluteFileLocator := "github.com/kurtosis-tech/sample-dependency-package@test-branch/main.star"
+	pathOnDisk, err := provider.GetOnDiskAbsoluteFilePath(absoluteFileLocator)
 
 	require.Nil(t, err, "This test depends on your internet working and the kurtosis-tech/datastore-army-package existing")
-	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "datastore-army-package", "src/helpers.star"), pathOnDisk)
+	require.Equal(t, path.Join(packageDir, "kurtosis-tech", "sample-dependency-package", "main.star"), pathOnDisk)
 }
 
 func TestGetAbsoluteLocatorForRelativeModuleLocator_SucceedsForRelativeFile(t *testing.T) {

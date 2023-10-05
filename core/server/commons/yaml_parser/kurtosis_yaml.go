@@ -8,10 +8,12 @@ import (
 )
 
 var noPackageNameFound = ""
+var naPackageDescriptionFound = ""
 var noReplaceDependencies = map[string]string{}
 
 type KurtosisYaml struct {
 	PackageName         string            `yaml:"name"`
+	PackageDescription  string            `yaml:"description"`
 	ReplaceDependencies map[string]string `yaml:"replace"`
 }
 
@@ -20,6 +22,13 @@ func (parser *KurtosisYaml) GetPackageName() string {
 		return noPackageNameFound
 	}
 	return parser.PackageName
+}
+
+func (parser *KurtosisYaml) GetPackageDescription() string {
+	if parser == nil {
+		return naPackageDescriptionFound
+	}
+	return parser.PackageDescription
 }
 
 func (parser *KurtosisYaml) GetReplaceDependencies() map[string]string {

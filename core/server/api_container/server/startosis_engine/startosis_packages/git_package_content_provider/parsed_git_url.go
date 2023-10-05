@@ -125,9 +125,21 @@ func cleanPathAndSplit(urlPath string) []string {
 	return sliceWithoutEmptyStrings
 }
 
-// parseOutTagBranchOrCommit splits the string around "@"
+// parseOutTagBranchOrCommit splits the string around "@" and then split the after string around "/"
 func parseOutTagBranchOrCommit(input string) (string, string) {
 	cleanInput := path.Clean(input)
-	pathWithoutVersion, maybeTagBranchOrCommit, _ := strings.Cut(cleanInput, tagBranchOrCommitDelimiter)
+	pathWithoutVersion, maybeTagBranchOrCommitWithFile, _ := strings.Cut(cleanInput, tagBranchOrCommitDelimiter)
+
+	// input can have been set with version in two diff ways
+	// 1- github.com/kurtosis-tech/sample-dependency-packagemain.star@branch-or-version (when is called from cli run command)
+	// 2- github.com/kurtosis-tech/sample-dependency-package@branch-or-version/main.star (when is declared in the replace section of the kurtosis.yml file)
+	// we check if there is a file in maybeTagBranchOrCommitWithFile and then add it to pathWithoutVersion
+	maybeTagBranchOrCommit, maybeFileNameAndExtension, _ := strings.Cut(maybeTagBranchOrCommitWithFile, urlPathSeparator)
+
+	if maybeFileNameAndExtension != "" {
+		// we assume pathWithoutVersion does not contain a file inside yet
+		pathWithoutVersion = path.Join(pathWithoutVersion, maybeFileNameAndExtension)
+	}
+
 	return pathWithoutVersion, maybeTagBranchOrCommit
 }
