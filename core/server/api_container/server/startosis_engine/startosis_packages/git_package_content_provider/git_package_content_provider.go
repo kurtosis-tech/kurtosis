@@ -36,8 +36,6 @@ const (
 
 	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
 	osPathSeparatorString = string(os.PathSeparator)
-
-	slashChar = "/"
 )
 
 type GitPackageContentProvider struct {
@@ -243,15 +241,14 @@ func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[st
 func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string]string) (bool, string, string) {
 	pathToAnalyze := absoluteLocator
 	for {
-		numberSlashes := strings.Count(pathToAnalyze, slashChar)
+		numberSlashes := strings.Count(pathToAnalyze, urlPathSeparator)
+
 		// check for the minimal path e.g.: github.com/org/package
-		if numberSlashes < 2 {
+		if numberSlashes < minimumSubPathsForValidGitURL {
 			break
 		}
-		lastIndex := strings.LastIndex(pathToAnalyze, slashChar)
-		if lastIndex < 1 {
-			return false, "", ""
-		}
+		lastIndex := strings.LastIndex(pathToAnalyze, urlPathSeparator)
+
 		packageToBeReplaced := pathToAnalyze[:lastIndex]
 		replaceWithPackage, ok := packageReplaceOptions[packageToBeReplaced]
 		if ok {

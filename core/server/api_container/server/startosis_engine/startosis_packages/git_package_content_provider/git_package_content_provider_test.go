@@ -13,8 +13,9 @@ import (
 )
 
 const (
-	packagesDirRelPath    = "startosis-packages"
-	packagesTmpDirRelPath = "tmp-startosis-packages"
+	packagesDirRelPath        = "startosis-packages"
+	packagesTmpDirRelPath     = "tmp-startosis-packages"
+	packageDescriptionForTest = "package description test"
 )
 
 var noPackageReplaceOptions = map[string]string{}
@@ -421,9 +422,7 @@ func Test_validatePackageNameMatchesKurtosisYamlLocation(t *testing.T) {
 		{
 			name: "failure - mismatch package name and path (incorrect package name)",
 			args: args{
-				kurtosisYaml: &yaml_parser.KurtosisYaml{
-					PackageName: "github.com/author/repo/packageIncorrect",
-				},
+				kurtosisYaml:                    createKurtosisYml("github.com/author/repo/packageIncorrect"),
 				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/package/kurtosis.yml",
 				packagesDir:                     "/root/folder",
 			},
@@ -432,9 +431,7 @@ func Test_validatePackageNameMatchesKurtosisYamlLocation(t *testing.T) {
 		{
 			name: "failure - mismatch package name and path (different location)",
 			args: args{
-				kurtosisYaml: &yaml_parser.KurtosisYaml{
-					PackageName: "github.com/author/repo",
-				},
+				kurtosisYaml:                    createKurtosisYml("github.com/author/repo"),
 				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/subfolder/kurtosis.yml",
 				packagesDir:                     "/root/folder",
 			},
@@ -443,9 +440,7 @@ func Test_validatePackageNameMatchesKurtosisYamlLocation(t *testing.T) {
 		{
 			name: "failure - contains a trailing '/'",
 			args: args{
-				kurtosisYaml: &yaml_parser.KurtosisYaml{
-					PackageName: "github.com/author/repo/subfolder/",
-				},
+				kurtosisYaml:                    createKurtosisYml("github.com/author/repo/subfolder/"),
 				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/subfolder/kurtosis.yml",
 				packagesDir:                     "/root/folder",
 			},
@@ -454,9 +449,7 @@ func Test_validatePackageNameMatchesKurtosisYamlLocation(t *testing.T) {
 		{
 			name: "success - kurtosis.yml found in repo folder",
 			args: args{
-				kurtosisYaml: &yaml_parser.KurtosisYaml{
-					PackageName: "github.com/author/repo",
-				},
+				kurtosisYaml:                    createKurtosisYml("github.com/author/repo"),
 				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/kurtosis.yml",
 				packagesDir:                     "/root/folder",
 			},
@@ -465,9 +458,7 @@ func Test_validatePackageNameMatchesKurtosisYamlLocation(t *testing.T) {
 		{
 			name: "success - kurtosis.yml found in sub folder folder",
 			args: args{
-				kurtosisYaml: &yaml_parser.KurtosisYaml{
-					PackageName: "github.com/author/repo/subfolder",
-				},
+				kurtosisYaml:                    createKurtosisYml("github.com/author/repo/subfolder"),
 				absPathToPackageWithKurtosisYml: "/root/folder/author/repo/subfolder/kurtosis.yml",
 				packagesDir:                     "/root/folder",
 			},
@@ -483,5 +474,13 @@ func Test_validatePackageNameMatchesKurtosisYamlLocation(t *testing.T) {
 				require.EqualError(t, err, tt.want.Error())
 			}
 		})
+	}
+}
+
+func createKurtosisYml(packageName string) *yaml_parser.KurtosisYaml {
+	return &yaml_parser.KurtosisYaml{
+		PackageName:           packageName,
+		PackageDescription:    packageDescriptionForTest,
+		PackageReplaceOptions: noPackageReplaceOptions,
 	}
 }
