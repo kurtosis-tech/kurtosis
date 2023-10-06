@@ -85,28 +85,29 @@ func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 	return nil
 }
 
-func (manager *LogFileManager) RemoveEnclaveLogs(enclaveIdentifier string) error {
-	// enclave logs only exist within the retention
+func (manager *LogFileManager) RemoveEnclaveLogs(enclaveUuid string) error {
+	currentTime := manager.time.Now()
 	for i := 0; i < volume_consts.LogRetentionPeriodInWeeks; i++ {
-
+		year, week := currentTime.Add(time.Duration(-i) * oneWeek).ISOWeek()
+		enclaveLogsDirPathForWeek := getEnclaveLogsDirPath(year, week, enclaveUuid)
+		if err := manager.filesystem.RemoveAll(enclaveLogsDirPathForWeek); err != nil {
+			return stacktrace.Propagate(err, "An error occurred attempting to remove logs for enclave '%v' logs at the following path: %v", enclaveUuid, enclaveLogsDirPathForWeek)
+		}
 	}
-	// remove all
 	return nil
 }
 
 // RemoveLogsBeyondRetentionPeriod implements the Job cron interface. It removes logs a week older than the log retention period.
 func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
-	// [LogRetentionPeriodInWeeks] weeks plus an extra week of logs are retained so remove logs a week past that, hence +1
-	numWeeksBack := volume_consts.LogRetentionPeriodInWeeks
-
 	// compute the next oldest week
-	year, weekToRemove := manager.time.Now().Add(time.Duration(-numWeeksBack) * oneWeek).ISOWeek()
+	year, weekToRemove := manager.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks) * oneWeek).ISOWeek()
 
 	// remove directory for that week
 	oldLogsDirPath := fmt.Sprintf(volume_consts.PerWeekDirPathStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(weekToRemove))
 	if err := manager.filesystem.RemoveAll(oldLogsDirPath); err != nil {
 		logrus.Warnf("An error occurred removing old logs at the following path '%v': %v\n", oldLogsDirPath, err)
 	}
+	logrus.Debugf("Removed logs beyond retention period at the following path: '%v'", oldLogsDirPath)
 }
 
 func (manager *LogFileManager) getEnclaveAndServiceInfo(ctx context.Context) (map[enclave.EnclaveUUID][]*service.ServiceRegistration, error) {
