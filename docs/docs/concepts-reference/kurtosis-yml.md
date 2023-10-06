@@ -49,8 +49,8 @@ For example:
 ```yaml
 name: github.com/my-github-user/my-package
 replace:
-	# Replacing the official Postgres package with my fork
-	github.com/kurtosis-tech/postgres-package: github.com/my-github-user/postgres-package
+  # Replacing the official Postgres package with my fork
+  github.com/kurtosis-tech/postgres-package: github.com/my-github-user/postgres-package
 ```
 
 This behaves just as if you’d manually updated each Starlark dependency-referencing command that consumes `github.com/kurtosis-tech/postgres-package` and replaced it with `github.com/my-github-user/postgres-package`. This replace includes transitive dependencies: a dependency package that itself uses `github.com/kurtosis-tech/postgres-package` will _also_ instead now use `github.com/my-github-user/postgres-package`!
@@ -66,8 +66,8 @@ For example:
 ```yaml
 name: github.com/my-github-user/my-package
 replace:
-	# Replacing the official Postgres package with version 1.2.3
-	github.com/kurtosis-tech/postgres-package: github.com/my-github-user/postgres-package@1.2.3
+  # Replacing the official Postgres package with version 1.2.3
+  github.com/kurtosis-tech/postgres-package: github.com/my-github-user/postgres-package@1.2.3
 ```
 
 Like `import_module` and all other dependency-referencing commands, the version can be a tag, branch, or a full commit hash.
@@ -89,8 +89,8 @@ Dependency:
 
 name: github.com/somebody/dependency
 replace:
-    # Replace the official Postgres package with the fork from user 'someboday'
-    github.com/kurtosis-tech/postgres-package: github.com/somebody/postgres-package
+  # Replace the official Postgres package with the fork from user 'someboday'
+  github.com/kurtosis-tech/postgres-package: github.com/somebody/postgres-package
 ```
 
 Consumer:
@@ -119,11 +119,11 @@ When one package exists in a subpath of another, the more specific (child) packa
 ```yaml
 name: github.com/mieubrisse/my-package
 replace:
-	# Replace parent with new-parent
-	github.com/kurtosis-tech/parent: github.com/mieubrisse/new-parent
+  # Replace parent with new-parent
+  github.com/kurtosis-tech/parent: github.com/mieubrisse/new-parent
 
-	# Replace child with new-child
-	github.com/kurtosis-tech/parent/child: github.com/mieubrisse/new-child
+  # Replace child with new-child
+  github.com/kurtosis-tech/parent/child: github.com/mieubrisse/new-child
 ```
 
 ...and you have Starlark code inside your package that looks like this...
