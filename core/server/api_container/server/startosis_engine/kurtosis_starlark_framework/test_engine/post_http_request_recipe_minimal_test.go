@@ -24,8 +24,8 @@ type postHttpRequestRecipeMinimalTestCase struct {
 func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipeMinimal() {
 	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(TestServiceName),
-		TestPrivatePortId,
+		string(testServiceName),
+		testPrivatePortId,
 		"POST",
 		"application/json",
 		"/test",
@@ -58,14 +58,14 @@ func (suite *KurtosisTypeConstructorTestSuite) TestPostHttpRequestRecipeMinimal(
 }
 
 func (t *postHttpRequestRecipeMinimalTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q)", recipe.PostHttpRecipeTypeName, recipe.PortIdAttr, TestPrivatePortId, recipe.EndpointAttr, "/test")
+	return fmt.Sprintf("%s(%s=%q, %s=%q)", recipe.PostHttpRecipeTypeName, recipe.PortIdAttr, testPrivatePortId, recipe.EndpointAttr, "/test")
 }
 
 func (t *postHttpRequestRecipeMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	postHttpRequestRecipe, ok := typeValue.(*recipe.PostHttpRequestRecipe)
 	require.True(t, ok)
 
-	_, err := postHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, TestServiceName)
+	_, err := postHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, testServiceName)
 	require.NoError(t, err)
 
 	returnValue, interpretationErr := postHttpRequestRecipe.CreateStarlarkReturnValue("result-fake-uuid")

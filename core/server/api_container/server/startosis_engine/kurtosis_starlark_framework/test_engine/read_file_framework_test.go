@@ -18,8 +18,8 @@ type readFileTestCase struct {
 }
 
 func (suite *KurtosisHelperTestSuite) TestReadFile() {
-	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator, TestNoPackageReplaceOptions).Return(TestModuleFileName, nil)
-	suite.packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, testModuleRelativeLocator, testNoPackageReplaceOptions).Return(testModuleFileName, nil)
+	suite.packageContentProvider.EXPECT().GetModuleContents(testModuleFileName).Return("Hello World!", nil)
 
 	suite.run(&readFileTestCase{
 		T:                      suite.T(),
@@ -28,11 +28,11 @@ func (suite *KurtosisHelperTestSuite) TestReadFile() {
 }
 
 func (t *readFileTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
-	return read_file.NewReadFileHelper(TestModulePackageId, t.packageContentProvider, TestNoPackageReplaceOptions)
+	return read_file.NewReadFileHelper(testModulePackageId, t.packageContentProvider, testNoPackageReplaceOptions)
 }
 
 func (t *readFileTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf(`%s(%s=%q)`, read_file.ReadFileBuiltinName, read_file.SrcArgName, TestModuleRelativeLocator)
+	return fmt.Sprintf(`%s(%s=%q)`, read_file.ReadFileBuiltinName, read_file.SrcArgName, testModuleRelativeLocator)
 }
 
 func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
@@ -40,7 +40,7 @@ func (t *readFileTestCase) GetStarlarkCodeForAssertion() string {
 }
 
 func (t *readFileTestCase) Assert(result starlark.Value) {
-	t.packageContentProvider.AssertCalled(t, "GetAbsoluteLocatorForRelativeLocator", startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator, TestNoPackageReplaceOptions)
-	t.packageContentProvider.AssertCalled(t, "GetModuleContents", TestModuleFileName)
+	t.packageContentProvider.AssertCalled(t, "GetAbsoluteLocatorForRelativeLocator", startosis_constants.PackageIdPlaceholderForStandaloneScript, testModuleRelativeLocator, testNoPackageReplaceOptions)
+	t.packageContentProvider.AssertCalled(t, "GetModuleContents", testModuleFileName)
 	require.Equal(t, result, starlark.String("Hello World!"))
 }

@@ -27,7 +27,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceObject() {
 func (t serviceObjectTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q, %s=%q, %s=%q, %s=%s)",
 		kurtosis_types.ServiceTypeName,
-		kurtosis_types.ServiceNameAttr, TestServiceName,
+		kurtosis_types.ServiceNameAttr, testServiceName,
 		kurtosis_types.HostnameAttr, testServiceHostname,
 		kurtosis_types.IpAddressAttr, testServiceIpAddress,
 		kurtosis_types.PortsAttr, testServicePorts)
@@ -39,7 +39,7 @@ func (t serviceObjectTestCase) Assert(typeValue builtin_argument.KurtosisValueTy
 
 	resultServiceName, interpretationErr := serviceStarlark.GetName()
 	require.Nil(t, interpretationErr)
-	require.Equal(t, TestServiceName, resultServiceName)
+	require.Equal(t, testServiceName, resultServiceName)
 
 	resultServiceHostname, interpretationErr := serviceStarlark.GetHostname()
 	require.Nil(t, interpretationErr)

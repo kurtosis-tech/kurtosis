@@ -19,18 +19,18 @@ type uploadFilesUpdateTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesUpdate() {
-	suite.Require().Nil(suite.packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
+	suite.Require().Nil(suite.packageContentProvider.AddFileContent(testModuleFileName, "Hello World!"))
 
 	suite.serviceNetwork.EXPECT().GetFilesArtifactMd5(
-		TestArtifactName,
+		testArtifactName,
 	).Times(1).Return(
-		TestArtifactUuid,
+		testArtifactUuid,
 		[]byte{},
 		true,
 		nil,
 	)
 	suite.serviceNetwork.EXPECT().UpdateFilesArtifact(
-		TestArtifactUuid,
+		testArtifactUuid,
 		mock.Anything, // data gets written to disk and compressed to it's a bit tricky to replicate here.
 		mock.Anything, // and same for the hash
 	).Times(1).Return(
@@ -45,11 +45,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesUpdate() {
 }
 
 func (t *uploadFilesUpdateTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return upload_files.NewUploadFiles(TestModulePackageId, t.serviceNetwork, t.packageContentProvider, TestNoPackageReplaceOptions)
+	return upload_files.NewUploadFiles(testModulePackageId, t.serviceNetwork, t.packageContentProvider, testNoPackageReplaceOptions)
 }
 
 func (t *uploadFilesUpdateTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleRelativeLocator, upload_files.ArtifactNameArgName, TestArtifactName)
+	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, testModuleRelativeLocator, upload_files.ArtifactNameArgName, testArtifactName)
 }
 
 func (t *uploadFilesUpdateTestCase) GetStarlarkCodeForAssertion() string {
@@ -57,8 +57,8 @@ func (t *uploadFilesUpdateTestCase) GetStarlarkCodeForAssertion() string {
 }
 
 func (t *uploadFilesUpdateTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
-	require.Equal(t, starlark.String(TestArtifactName), interpretationResult)
+	require.Equal(t, starlark.String(testArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' with artifact UUID '%s' updated", TestArtifactName, TestArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Files with artifact name '%s' with artifact UUID '%s' updated", testArtifactName, testArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 }

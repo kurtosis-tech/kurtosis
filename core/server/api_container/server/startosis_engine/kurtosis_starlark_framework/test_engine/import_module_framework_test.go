@@ -19,7 +19,7 @@ const (
 
 var (
 	importModule_mockStarlarkModule = &starlarkstruct.Module{
-		Name: TestModuleFileName,
+		Name: testModuleFileName,
 		Members: starlark.StringDict{
 			importModule_moduleConstKey: starlark.String("Hello World!"),
 		},
@@ -38,8 +38,8 @@ func (suite *KurtosisHelperTestSuite) TestImportFile() {
 	// start with an empty cache to validate it gets populated
 	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
 
-	suite.packageContentProvider.EXPECT().GetModuleContents(TestModuleFileName).Return("Hello World!", nil)
-	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, TestModuleRelativeLocator, TestNoPackageReplaceOptions).Return(TestModuleFileName, nil)
+	suite.packageContentProvider.EXPECT().GetModuleContents(testModuleFileName).Return("Hello World!", nil)
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(startosis_constants.PackageIdPlaceholderForStandaloneScript, testModuleRelativeLocator, testNoPackageReplaceOptions).Return(testModuleFileName, nil)
 
 	suite.run(&importModuleTestCase{
 		T:                      suite.T(),
@@ -52,11 +52,11 @@ func (t *importModuleTestCase) GetHelper() *kurtosis_helper.KurtosisHelper {
 	recursiveInterpret := func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		return importModule_mockStarlarkModule.Members, nil
 	}
-	return import_module.NewImportModule(TestModulePackageId, recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache, TestNoPackageReplaceOptions)
+	return import_module.NewImportModule(testModulePackageId, recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache, testNoPackageReplaceOptions)
 }
 
 func (t *importModuleTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", import_module.ImportModuleBuiltinName, import_module.ModuleFileArgName, TestModuleRelativeLocator)
+	return fmt.Sprintf("%s(%s=%q)", import_module.ImportModuleBuiltinName, import_module.ModuleFileArgName, testModuleRelativeLocator)
 }
 
 func (t *importModuleTestCase) GetStarlarkCodeForAssertion() string {
@@ -66,7 +66,7 @@ func (t *importModuleTestCase) GetStarlarkCodeForAssertion() string {
 func (t *importModuleTestCase) Assert(result starlark.Value) {
 	loadedModule, ok := result.(*starlarkstruct.Module)
 	require.True(t, ok, "object returned was not a starlark module")
-	require.Equal(t, loadedModule.Name, TestModuleFileName)
+	require.Equal(t, loadedModule.Name, testModuleFileName)
 	require.Len(t, loadedModule.Members, 1)
 	require.Contains(t, loadedModule.Members, importModule_moduleConstKey)
 }
