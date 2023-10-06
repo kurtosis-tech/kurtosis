@@ -477,20 +477,14 @@ func (manager *EnclaveManager) cleanEnclaves(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves during cleaning")
 	}
 
-	enclaveDestructionErrors := []error{}
-	for _, destructionError := range erroredEnclaves {
-		enclaveDestructionErrors = append(enclaveDestructionErrors, destructionError)
-	}
-
 	successfullyDestroyedEnclaveIdStrs := []string{}
 	for enclaveId := range successfullyDestroyedEnclaves {
 		successfullyDestroyedEnclaveIdStrs = append(successfullyDestroyedEnclaveIdStrs, string(enclaveId))
+	}
 
-		// attempt to remove successfully destroyed enclaves logs
-		if err = manager.enclaveLogFileManager.RemoveEnclaveLogs(string(enclaveId)); err != nil {
-			enclaveLogRemovalErr := stacktrace.Propagate(err, "An error occurred attempting to remove enclave '%v' logs after it was successfully destroyed.", enclaveId)
-			enclaveDestructionErrors = append(enclaveDestructionErrors, enclaveLogRemovalErr)
-		}
+	enclaveDestructionErrors := []error{}
+	for _, destructionError := range erroredEnclaves {
+		enclaveDestructionErrors = append(enclaveDestructionErrors, destructionError)
 	}
 
 	return successfullyDestroyedEnclaveIdStrs, enclaveDestructionErrors, nil

@@ -29,7 +29,6 @@ const (
 	oldEngineCleaningPhaseTitle = "old Kurtosis engine containers"
 	enclavesCleaningPhaseTitle  = "enclaves"
 	unusedImagesPhaseTitle      = "unused images"
-	logsPhaseTitle              = "all logs"
 
 	kurtosisBackendCtxKey = "kurtosis-backend"
 	engineClientCtxKey    = "engine-client"
@@ -88,16 +87,12 @@ func run(
 			// Don't use stacktrace b/c the only reason this function exists is to pass in the right args
 			return cleanUnusedImages(ctx, kurtosisBackend, shouldCleanAll)
 		},
-		logsPhaseTitle: func() ([]string, []error, error) {
-			return cleanLogs(ctx, kurtosisBackend)
-		},
 	}
 
 	executeOnlyIfAllFlagIsEnabled := map[string]bool{
 		oldEngineCleaningPhaseTitle: false,
 		enclavesCleaningPhaseTitle:  false,
 		unusedImagesPhaseTitle:      true,
-		logsPhaseTitle:              true,
 	}
 
 	phasesWithErrors := []string{}
@@ -202,9 +197,4 @@ func formattedUuidAndName(enclaveUuidWithName *kurtosis_engine_rpc_api_bindings.
 func cleanUnusedImages(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend, shouldCleanAll bool) ([]string, []error, error) {
 	cleanedImages, cleanErr := kurtosisBackend.PruneUnusedImages(ctx)
 	return cleanedImages, nil, cleanErr
-}
-
-func cleanLogs(ctx context.Context, kurtosisBackend backend_interface.KurtosisBackend) ([]string, []error, error) {
-	cleanErr := kurtosisBackend.DestroyLogsStorage(ctx)
-	return []string{}, nil, cleanErr
 }

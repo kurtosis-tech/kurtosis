@@ -85,6 +85,13 @@ func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 	return nil
 }
 
+func (manager *LogFileManager) RemoveAllLogs() error {
+	if err := manager.filesystem.RemoveAll(volume_consts.LogsStorageDirpath); err != nil {
+		return stacktrace.Propagate(err, "An error occurred attempting to remove all logs.")
+	}
+	return nil
+}
+
 func (manager *LogFileManager) RemoveEnclaveLogs(enclaveUuid string) error {
 	currentTime := manager.time.Now()
 	for i := 0; i < volume_consts.LogRetentionPeriodInWeeks; i++ {

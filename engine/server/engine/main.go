@@ -230,7 +230,8 @@ func runMain() error {
 		serverArgs.MetricsUserID,
 		serverArgs.DidUserAcceptSendingMetrics,
 		perWeekLogsDatabaseClient,
-		perFileLogsDatabaseClient)
+		perFileLogsDatabaseClient,
+		logFileManager)
 	apiPath, handler := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceHandler(engineConnectServer)
 	defer func() {
 		if err := engineConnectServer.Close(); err != nil {
