@@ -4,13 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
-	"gopkg.in/yaml.v2"
 	"os"
 	"os/signal"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
+	"gopkg.in/yaml.v2"
 
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/enclaves"
@@ -96,6 +97,9 @@ const (
 
 	runFailed    = false
 	runSucceeded = true
+
+	imageDownloadFlagKey = "image-download"
+	defaultImageDownload = "missing"
 )
 
 var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisCommand{
@@ -190,6 +194,12 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 			Type:    flags.FlagType_String,
 			Default: packageArgsFileDefaultValue,
 		},
+		{
+			Key:     imageDownloadFlagKey,
+			Usage:   fmt.Sprintf("The image-download of the command output: %s. If unset, it defaults to `brief` for a concise and explicit output. Use `detailed` to display the exhaustive list of arguments for each command. `executable` will generate executable Starlark instructions.", strings.Join(command_args_run.VerbosityStrings(), ", ")),
+			Type:    flags.FlagType_String,
+			Default: defaultImageDownload,
+		},
 	},
 	Args: []*args.ArgConfig{
 		// TODO add a `Usage` description here when ArgConfig supports it
@@ -248,6 +258,11 @@ func run(
 	verbosity, err := parseVerbosityFlag(flags)
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the verbosity using flag key '%s'", verbosityFlagKey)
+	}
+
+	imageDownload, err := parseImageDownloadFlag(flags)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
 	}
 
 	showFullUuids, err := flags.GetBool(fullUuidsFlagKey)
@@ -329,6 +344,7 @@ func run(
 		starlark_run_config.WithSerializedParams(packageArgs),
 		starlark_run_config.WithCloudUserId(cloudUserId),
 		starlark_run_config.WithCloudInstanceId(cloudInstanceId),
+		starlark_run_config.WithImageDownloadMode(string(imageDownload)),
 	)
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -606,6 +622,19 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 		return 0, stacktrace.Propagate(err, "Invalid verbosity value: '%s'. Possible values are %s", verbosityStr, strings.Join(command_args_run.VerbosityStrings(), ", "))
 	}
 	return verbosity, nil
+}
+
+// Get the image download flag is present, and parse it to a valid ImageDownload value
+func parseImageDownloadFlag(flags *flags.ParsedFlags) (command_args_run.ImageDownload, error) {
+	imageDownloadStr, err := flags.GetString(imageDownloadFlagKey)
+	if err != nil {
+		return command_args_run.Missing, stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
+	}
+	imageDownload, err := command_args_run.ImageDownloadString(imageDownloadStr)
+	if err != nil {
+		return command_args_run.Missing, stacktrace.Propagate(err, "Invalid image-download value: '%s'. Possible values are %s", imageDownloadStr, strings.Join(command_args_run.ImageDownloadStrings(), ", "))
+	}
+	return imageDownload, nil
 }
 
 // parseExperimentalFlag parses the sert of experimental features enabled for this run

@@ -10,6 +10,7 @@ const (
 	defaultParallelism            = 4
 	defaultCloudInstanceId        = ""
 	defaultCloudUserId            = ""
+	defaultImageDownload          = "missing"
 )
 
 var defaultExperimentalFeatureFlags = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag(nil)
@@ -23,6 +24,7 @@ type StarlarkRunConfig struct {
 	ExperimentalFeatureFlags []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag
 	CloudInstanceId          string
 	CloudUserId              string
+	ImageDownload            string
 }
 
 type starlarkRunConfigOption func(*StarlarkRunConfig)
@@ -37,6 +39,7 @@ func NewRunStarlarkConfig(opts ...starlarkRunConfigOption) *StarlarkRunConfig {
 		ExperimentalFeatureFlags: defaultExperimentalFeatureFlags,
 		CloudInstanceId:          defaultCloudInstanceId,
 		CloudUserId:              defaultCloudUserId,
+		ImageDownload:            defaultImageDownload,
 	}
 
 	for _, opt := range opts {
@@ -91,5 +94,11 @@ func WithCloudInstanceId(cloudInstanceId string) starlarkRunConfigOption {
 func WithCloudUserId(cloudUserId string) starlarkRunConfigOption {
 	return func(config *StarlarkRunConfig) {
 		config.CloudUserId = cloudUserId
+	}
+}
+
+func WithImageDownloadMode(imageDownloadMode string) starlarkRunConfigOption {
+	return func(config *StarlarkRunConfig) {
+		config.ImageDownload = imageDownloadMode
 	}
 }
