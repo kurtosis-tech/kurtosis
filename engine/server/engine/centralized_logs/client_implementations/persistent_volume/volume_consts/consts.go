@@ -17,7 +17,8 @@ const (
 
 	EndOfJsonLine = "}"
 
-	LogRetentionPeriodInWeeks = 4
+	// promise to keep 4 weeks of logs for users, but store an additional week for safety
+	LogRetentionPeriodInWeeks = 5
 
 	RemoveLogsWaitHours = 6 * time.Hour
 

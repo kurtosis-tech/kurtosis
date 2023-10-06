@@ -86,13 +86,18 @@ func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 }
 
 func (manager *LogFileManager) RemoveEnclaveLogs(enclaveIdentifier string) error {
+	// enclave logs only exist within the retention
+	for i := 0; i < volume_consts.LogRetentionPeriodInWeeks; i++ {
+
+	}
+	// remove all
 	return nil
 }
 
 // RemoveLogsBeyondRetentionPeriod implements the Job cron interface. It removes logs a week older than the log retention period.
 func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
 	// [LogRetentionPeriodInWeeks] weeks plus an extra week of logs are retained so remove logs a week past that, hence +1
-	numWeeksBack := volume_consts.LogRetentionPeriodInWeeks + 1
+	numWeeksBack := volume_consts.LogRetentionPeriodInWeeks
 
 	// compute the next oldest week
 	year, weekToRemove := manager.time.Now().Add(time.Duration(-numWeeksBack) * oneWeek).ISOWeek()
@@ -157,4 +162,9 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 // creates a filepath of format /<filepath_base>/year/week/<enclave>/serviceIdentifier.<filetype>
 func getFilepathStr(year, week int, enclaveUuid, serviceIdentifier string) string {
 	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceIdentifier, volume_consts.Filetype)
+}
+
+func getEnclaveLogsDirPath(year, week int, enclaveUuid string) string {
+	logsDirPathForYearAndWeek := fmt.Sprintf(volume_consts.PerWeekDirPathStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week))
+	return fmt.Sprintf("%s/%s/", logsDirPathForYearAndWeek, enclaveUuid)
 }
