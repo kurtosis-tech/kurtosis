@@ -2,6 +2,9 @@ package startosis_engine
 
 import (
 	"context"
+	"strings"
+	"sync"
+
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/binding_constructors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/enclave_structure"
@@ -9,8 +12,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/instructions_plan/resolver"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/starlark_warning"
 	"github.com/sirupsen/logrus"
-	"strings"
-	"sync"
 )
 
 type StartosisRunner struct {
@@ -53,6 +54,7 @@ func (runner *StartosisRunner) Run(
 	relativePathToMainFile string,
 	serializedStartosis string,
 	serializedParams string,
+	imageDownloadMode string,
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 ) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	runner.mutex.Lock()

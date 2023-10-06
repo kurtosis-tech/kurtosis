@@ -1935,7 +1935,8 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
     mainFunctionName: jspb.Message.getFieldWithDefault(msg, 5, ""),
     experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 7, ""),
-    cloudUserId: jspb.Message.getFieldWithDefault(msg, 8, "")
+    cloudUserId: jspb.Message.getFieldWithDefault(msg, 8, ""),
+    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 9, "")
   };
 
   if (includeInstance) {
@@ -2005,6 +2006,10 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
     case 8:
       var value = /** @type {string} */ (reader.readString());
       msg.setCloudUserId(value);
+      break;
+    case 9:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setImageDownloadMode(value);
       break;
     default:
       reader.skipField();
@@ -2088,6 +2093,13 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
   if (f != null) {
     writer.writeString(
       8,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 9));
+  if (f != null) {
+    writer.writeString(
+      9,
       f
     );
   }
@@ -2329,6 +2341,42 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.hasCloudUserId = functio
 };
 
 
+/**
+ * optional string image_download_mode = 9;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.getImageDownloadMode = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.setImageDownloadMode = function(value) {
+  return jspb.Message.setField(this, 9, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearImageDownloadMode = function() {
+  return jspb.Message.setField(this, 9, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasImageDownloadMode = function() {
+  return jspb.Message.getField(this, 9) != null;
+};
+
+
 
 /**
  * List of repeated fields within this message type.
@@ -2405,7 +2453,8 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     mainFunctionName: jspb.Message.getFieldWithDefault(msg, 10, ""),
     experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f,
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 12, ""),
-    cloudUserId: jspb.Message.getFieldWithDefault(msg, 13, "")
+    cloudUserId: jspb.Message.getFieldWithDefault(msg, 13, ""),
+    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 14, "")
   };
 
   if (includeInstance) {
@@ -2491,6 +2540,10 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
     case 13:
       var value = /** @type {string} */ (reader.readString());
       msg.setCloudUserId(value);
+      break;
+    case 14:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setImageDownloadMode(value);
       break;
     default:
       reader.skipField();
@@ -2602,6 +2655,13 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
   if (f != null) {
     writer.writeString(
       13,
+      f
+    );
+  }
+  f = /** @type {string} */ (jspb.Message.getField(message, 14));
+  if (f != null) {
+    writer.writeString(
+      14,
       f
     );
   }
@@ -2990,6 +3050,42 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.clearCloudUserId = func
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.hasCloudUserId = function() {
   return jspb.Message.getField(this, 13) != null;
+};
+
+
+/**
+ * optional string image_download_mode = 14;
+ * @return {string}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.getImageDownloadMode = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 14, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.setImageDownloadMode = function(value) {
+  return jspb.Message.setField(this, 14, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.clearImageDownloadMode = function() {
+  return jspb.Message.setField(this, 14, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkPackageArgs.prototype.hasImageDownloadMode = function() {
+  return jspb.Message.getField(this, 14) != null;
 };
 
 

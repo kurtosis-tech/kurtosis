@@ -346,6 +346,13 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
    */
   cloudUserId?: string;
 
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string image_download_mode = 9;
+   */
+  imageDownloadMode?: string;
+
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
   static readonly runtime: typeof proto3;
@@ -459,6 +466,13 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * @generated from field: optional string cloud_user_id = 13;
    */
   cloudUserId?: string;
+
+  /**
+   * Defaults to empty
+   *
+   * @generated from field: optional string image_download_mode = 14;
+   */
+  imageDownloadMode?: string;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
