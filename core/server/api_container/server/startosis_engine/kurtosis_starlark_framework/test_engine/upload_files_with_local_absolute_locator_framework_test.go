@@ -21,7 +21,7 @@ type uploadFilesWithLocalAbsoluteLocatorTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesWithLocalAbsoluteLocatorShouldNotBeValid() {
-	suite.Require().Nil(suite.packageContentProvider.AddFileContent(TestModuleFileName, "Hello World!"))
+	suite.Require().Nil(suite.packageContentProvider.AddFileContent(testModuleFileName, "Hello World!"))
 
 	suite.runShouldFail(
 		&uploadFilesWithLocalAbsoluteLocatorTestCase{
@@ -34,11 +34,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestUploadFilesWithLocalAbsoluteL
 }
 
 func (t *uploadFilesWithLocalAbsoluteLocatorTestCase) GetInstruction() *kurtosis_plan_instruction.KurtosisPlanInstruction {
-	return upload_files.NewUploadFiles(TestModulePackageId, t.serviceNetwork, t.packageContentProvider)
+	return upload_files.NewUploadFiles(testModulePackageId, t.serviceNetwork, t.packageContentProvider, testNoPackageReplaceOptions)
 }
 
 func (t *uploadFilesWithLocalAbsoluteLocatorTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, TestModuleFileName, upload_files.ArtifactNameArgName, TestArtifactName)
+	return fmt.Sprintf("%s(%s=%q, %s=%q)", upload_files.UploadFilesBuiltinName, upload_files.SrcArgName, testModuleFileName, upload_files.ArtifactNameArgName, testArtifactName)
 }
 
 func (t *uploadFilesWithLocalAbsoluteLocatorTestCase) GetStarlarkCodeForAssertion() string {

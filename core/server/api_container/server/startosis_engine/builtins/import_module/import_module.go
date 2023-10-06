@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
+	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"go.starlark.net/starlarkstruct"
 )
@@ -36,6 +37,7 @@ func NewImportModule(
 	recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError),
 	packageContentProvider startosis_packages.PackageContentProvider,
 	moduleGlobalCache map[string]*startosis_packages.ModuleCacheEntry,
+	packageReplaceOptions map[string]string,
 ) *kurtosis_helper.KurtosisHelper {
 	return &kurtosis_helper.KurtosisHelper{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
@@ -56,6 +58,7 @@ func NewImportModule(
 			packageContentProvider: packageContentProvider,
 			recursiveInterpret:     recursiveInterpret,
 			moduleGlobalCache:      moduleGlobalCache,
+			packageReplaceOptions:  packageReplaceOptions,
 		},
 	}
 }
@@ -64,21 +67,23 @@ type importModuleCapabilities struct {
 	packageContentProvider startosis_packages.PackageContentProvider
 	recursiveInterpret     func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError)
 	moduleGlobalCache      map[string]*startosis_packages.ModuleCacheEntry
+	packageReplaceOptions  map[string]string
 }
 
 func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
-	moduleInPackageStarlarkStr, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
+	moduleLocatorArgValue, err := builtin_argument.ExtractArgumentValue[starlark.String](arguments, ModuleFileArgName)
 	if err != nil {
 		return nil, explicitInterpretationError(err)
 	}
-	moduleInPackage := moduleInPackageStarlarkStr.GoString()
-	moduleInPackage, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, moduleInPackage)
+	relativeOrAbsoluteModuleLocator := moduleLocatorArgValue.GoString()
+	absoluteModuleLocator, relativePathParsingInterpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, relativeOrAbsoluteModuleLocator, builtin.packageReplaceOptions)
 	if relativePathParsingInterpretationErr != nil {
 		return nil, relativePathParsingInterpretationErr
 	}
+	logrus.Debugf("importing module from absolute locator '%s'", absoluteModuleLocator)
 
 	var loadInProgress *startosis_packages.ModuleCacheEntry
-	cacheEntry, found := builtin.moduleGlobalCache[moduleInPackage]
+	cacheEntry, found := builtin.moduleGlobalCache[absoluteModuleLocator]
 	if found && cacheEntry == loadInProgress {
 		return nil, startosis_errors.NewInterpretationError("There's a cycle in the import_module calls")
 	}
@@ -86,34 +91,34 @@ func (builtin *importModuleCapabilities) Interpret(locatorOfModuleInWhichThisBui
 		return cacheEntry.GetModule(), cacheEntry.GetError()
 	}
 
-	builtin.moduleGlobalCache[moduleInPackage] = loadInProgress
+	builtin.moduleGlobalCache[absoluteModuleLocator] = loadInProgress
 	shouldUnsetLoadInProgress := true
 	defer func() {
 		if shouldUnsetLoadInProgress {
-			delete(builtin.moduleGlobalCache, moduleInPackage)
+			delete(builtin.moduleGlobalCache, absoluteModuleLocator)
 		}
 	}()
 
 	// Load it.
-	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(moduleInPackage)
+	contents, interpretationError := builtin.packageContentProvider.GetModuleContents(absoluteModuleLocator)
 	if interpretationError != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", moduleInPackage)
+		return nil, startosis_errors.WrapWithInterpretationError(interpretationError, "An error occurred while loading the module '%v'", absoluteModuleLocator)
 	}
 
-	globalVariables, interpretationErr := builtin.recursiveInterpret(moduleInPackage, contents)
+	globalVariables, interpretationErr := builtin.recursiveInterpret(absoluteModuleLocator, contents)
 	// the above error goes unchecked as it needs to be persisted to the cache and then returned to the parent loader
 
 	// Update the cache.
 	if interpretationErr == nil {
 		newModule := &starlarkstruct.Module{
-			Name:    moduleInPackage,
+			Name:    absoluteModuleLocator,
 			Members: globalVariables,
 		}
 		cacheEntry = startosis_packages.NewModuleCacheEntry(newModule, nil)
 	} else {
 		cacheEntry = startosis_packages.NewModuleCacheEntry(nil, interpretationErr)
 	}
-	builtin.moduleGlobalCache[moduleInPackage] = cacheEntry
+	builtin.moduleGlobalCache[absoluteModuleLocator] = cacheEntry
 
 	shouldUnsetLoadInProgress = false
 	if cacheEntry.GetError() != nil {

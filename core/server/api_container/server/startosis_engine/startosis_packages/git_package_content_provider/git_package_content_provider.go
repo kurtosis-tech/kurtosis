@@ -36,6 +36,8 @@ const (
 
 	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
 	osPathSeparatorString = string(os.PathSeparator)
+
+	onlyOneReplace = 1
 )
 
 type GitPackageContentProvider struct {
@@ -50,31 +52,36 @@ func NewGitPackageContentProvider(moduleDir string, tmpDir string) *GitPackageCo
 	}
 }
 
-func (provider *GitPackageContentProvider) ClonePackage(packageId string) (string, string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) ClonePackage(packageId string) (string, *startosis_errors.InterpretationError) {
 	parsedURL, interpretationError := parseGitURL(packageId)
 	if interpretationError != nil {
-		return "", "", interpretationError
+		return "", interpretationError
 	}
 
 	interpretationError = provider.atomicClone(parsedURL)
 	if interpretationError != nil {
-		return "", "", interpretationError
+		return "", interpretationError
 	}
 
 	relPackagePathToPackagesDir := getPathToPackageRoot(parsedURL)
 	packageAbsolutePathOnDisk := path.Join(provider.packagesDir, relPackagePathToPackagesDir)
 
+	return packageAbsolutePathOnDisk, nil
+}
+
+func (provider *GitPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOnDisk string) (*yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	pathToKurtosisYaml := path.Join(packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName)
 	if _, err := os.Stat(pathToKurtosisYaml); err != nil {
-		return "", "", startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
-			startosis_constants.KurtosisYamlName, packageId, startosis_constants.KurtosisYamlName, packageDocLink)
+		return nil, startosis_errors.WrapWithInterpretationError(err, "Couldn't find a '%v' in the root of the package: '%v'. Packages are expected to have a '%v' at root; for more information have a look at %v",
+			startosis_constants.KurtosisYamlName, packageAbsolutePathOnDisk, startosis_constants.KurtosisYamlName, packageDocLink)
 	}
 
 	kurtosisYaml, interpretationError := validateAndGetKurtosisYaml(pathToKurtosisYaml, provider.packagesDir)
 	if interpretationError != nil {
-		return "", "", interpretationError
+		return nil, interpretationError
 	}
-	return packageAbsolutePathOnDisk, kurtosisYaml.PackageName, nil
+
+	return kurtosisYaml, nil
 }
 
 func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
@@ -106,7 +113,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsideP
 		return "", interpretationError
 	}
 
-	// check whether kurtosis yaml exists in th path
+	// check whether kurtosis yaml exists in the path
 	maybeKurtosisYamlPath, err := getKurtosisYamlPathForFileUrl(pathToFileOnDisk, provider.packagesDir)
 	if err != nil {
 		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while verifying whether '%v' belongs to a Kurtosis package.", fileInsidePackageUrl)
@@ -193,19 +200,68 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	return packageAbsolutePathOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator(parentModuleId string, maybeRelativeLocator string) (string, *startosis_errors.InterpretationError) {
+func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
+	parentModuleId string,
+	maybeRelativeLocator string,
+	packageReplaceOptions map[string]string,
+) (string, *startosis_errors.InterpretationError) {
+	var absoluteLocator string
+
 	// maybe it's not a relative url in which case we return the url
 	_, errorParsingUrl := parseGitURL(maybeRelativeLocator)
 	if errorParsingUrl == nil {
-		return maybeRelativeLocator, nil
+		absoluteLocator = maybeRelativeLocator
+	} else {
+		parsedParentModuleId, errorParsingPackageId := parseGitURL(parentModuleId)
+		if errorParsingPackageId != nil {
+			return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
+		}
+
+		absoluteLocator = parsedParentModuleId.getAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator)
 	}
 
-	parsedParentModuleId, errorParsingPackageId := parseGitURL(parentModuleId)
-	if errorParsingPackageId != nil {
-		return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
+	replacedAbsoluteLocator := replaceAbsoluteLocator(absoluteLocator, packageReplaceOptions)
+
+	return replacedAbsoluteLocator, nil
+}
+
+func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[string]string) string {
+	if absoluteLocator == "" {
+		return absoluteLocator
 	}
 
-	return parsedParentModuleId.getAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator), nil
+	found, packageToBeReplaced, replaceWithPackage := findPackageReplace(absoluteLocator, packageReplaceOptions)
+	if found {
+		replacedAbsoluteLocator := strings.Replace(absoluteLocator, packageToBeReplaced, replaceWithPackage, onlyOneReplace)
+		logrus.Debugf("absoluteLocator '%s' replaced with '%s'", absoluteLocator, replacedAbsoluteLocator)
+		return replacedAbsoluteLocator
+	}
+
+	return absoluteLocator
+}
+
+func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string]string) (bool, string, string) {
+	pathToAnalyze := absoluteLocator
+	for {
+		numberSlashes := strings.Count(pathToAnalyze, urlPathSeparator)
+
+		// check for the minimal path e.g.: github.com/org/package
+		if numberSlashes < minimumSubPathsForValidGitURL {
+			break
+		}
+		lastIndex := strings.LastIndex(pathToAnalyze, urlPathSeparator)
+
+		packageToBeReplaced := pathToAnalyze[:lastIndex]
+		replaceWithPackage, ok := packageReplaceOptions[packageToBeReplaced]
+		if ok {
+			logrus.Debugf("dependency replace found for '%s', package '%s' will be replaced with '%s'", absoluteLocator, packageToBeReplaced, replaceWithPackage)
+			return true, packageToBeReplaced, replaceWithPackage
+		}
+
+		pathToAnalyze = packageToBeReplaced
+	}
+
+	return false, "", ""
 }
 
 // atomicClone This first clones to a temporary directory and then moves it

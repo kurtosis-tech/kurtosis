@@ -48,6 +48,7 @@ func (runner *StartosisRunner) Run(
 	dryRun bool,
 	parallelism int,
 	packageId string,
+	packageReplaceOptions map[string]string,
 	mainFunctionName string,
 	relativePathToMainFile string,
 	serializedStartosis string,
@@ -101,6 +102,7 @@ func (runner *StartosisRunner) Run(
 				ctx,
 				packageId,
 				mainFunctionName,
+				packageReplaceOptions,
 				relativePathToMainFile,
 				serializedStartosis,
 				serializedParams,
@@ -111,6 +113,7 @@ func (runner *StartosisRunner) Run(
 			serializedScriptOutput, instructionsPlan, interpretationError = runner.startosisInterpreter.InterpretAndOptimizePlan(
 				ctx,
 				packageId,
+				packageReplaceOptions,
 				mainFunctionName,
 				relativePathToMainFile,
 				serializedStartosis,

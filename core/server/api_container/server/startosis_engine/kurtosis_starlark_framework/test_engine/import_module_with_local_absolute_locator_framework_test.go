@@ -17,7 +17,7 @@ const (
 
 var (
 	importModuleWithLocalAbsoluteLocator_mockStarlarkModule = &starlarkstruct.Module{
-		Name: TestModuleFileName,
+		Name: testModuleFileName,
 		Members: starlark.StringDict{
 			importModule_moduleConstKey: starlark.String("Hello World!"),
 		},
@@ -50,11 +50,11 @@ func (t *importModuleWithLocalAbsoluteLocatorTestCase) GetHelper() *kurtosis_hel
 	recursiveInterpret := func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError) {
 		return importModuleWithLocalAbsoluteLocator_mockStarlarkModule.Members, nil
 	}
-	return import_module.NewImportModule(TestModulePackageId, recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache)
+	return import_module.NewImportModule(testModulePackageId, recursiveInterpret, t.packageContentProvider, t.moduleGlobalCache, testNoPackageReplaceOptions)
 }
 
 func (t *importModuleWithLocalAbsoluteLocatorTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", import_module.ImportModuleBuiltinName, import_module.ModuleFileArgName, TestModuleFileName)
+	return fmt.Sprintf("%s(%s=%q)", import_module.ImportModuleBuiltinName, import_module.ModuleFileArgName, testModuleFileName)
 }
 
 func (t *importModuleWithLocalAbsoluteLocatorTestCase) GetStarlarkCodeForAssertion() string {

@@ -28,17 +28,17 @@ func (t *readyConditionsExecRecipeTestCase) GetStarlarkCode() string {
 		service_config.RecipeAttr,
 		recipe.ExecRecipeTypeName,
 		recipe.CommandAttr,
-		fmt.Sprintf("[%q, %q]", TestReadyConditionsRecipeCommand[0], TestReadyConditionsRecipeCommand[1]),
+		fmt.Sprintf("[%q, %q]", testReadyConditionsRecipeCommand[0], testReadyConditionsRecipeCommand[1]),
 		service_config.FieldAttr,
-		TestReadyConditionsField,
+		testReadyConditionsField,
 		service_config.AssertionAttr,
-		TestReadyConditionsAssertion,
+		testReadyConditionsAssertion,
 		service_config.TargetAttr,
-		TestReadyConditionsTarget,
+		testReadyConditionsTarget,
 		service_config.IntervalAttr,
-		TestReadyConditionsInterval,
+		testReadyConditionsInterval,
 		service_config.TimeoutAttr,
-		TestReadyConditionsTimeout,
+		testReadyConditionsTimeout,
 	)
 }
 
@@ -55,33 +55,33 @@ func (t *readyConditionsExecRecipeTestCase) Assert(typeValue builtin_argument.Ku
 		if assert.Nil(t, err) {
 			command, ok := commandAttrValue.(*starlark.List)
 			require.True(t, ok)
-			require.Equal(t, command.Len(), len(TestReadyConditionsRecipeCommand))
+			require.Equal(t, command.Len(), len(testReadyConditionsRecipeCommand))
 			for i := 0; i < command.Len(); i++ {
 				commandPart, ok := command.Index(i).(starlark.String)
 				require.True(t, ok)
-				require.Equal(t, TestReadyConditionsRecipeCommand[i], commandPart.GoString())
+				require.Equal(t, testReadyConditionsRecipeCommand[i], commandPart.GoString())
 			}
 		}
 	}
 
 	field, err := receivedReadyConditions.GetField()
 	if assert.Nil(t, err) {
-		require.Equal(t, TestReadyConditionsField, field)
+		require.Equal(t, testReadyConditionsField, field)
 	}
 
 	assertion, err := receivedReadyConditions.GetAssertion()
 	if assert.Nil(t, err) {
-		require.Equal(t, TestReadyConditionsAssertion, assertion)
+		require.Equal(t, testReadyConditionsAssertion, assertion)
 	}
 
 	target, err := receivedReadyConditions.GetTarget()
 	if assert.Nil(t, err) {
-		require.Equal(t, TestReadyConditionsTarget, target.String())
+		require.Equal(t, testReadyConditionsTarget, target.String())
 	}
 
 	interval, err := receivedReadyConditions.GetInterval()
 	if assert.Nil(t, err) {
-		expectedInterval, err := time.ParseDuration(TestReadyConditionsInterval)
+		expectedInterval, err := time.ParseDuration(testReadyConditionsInterval)
 		if assert.Nil(t, err) {
 			require.Equal(t, expectedInterval, interval)
 		}
@@ -89,7 +89,7 @@ func (t *readyConditionsExecRecipeTestCase) Assert(typeValue builtin_argument.Ku
 
 	timeout, err := receivedReadyConditions.GetTimeout()
 	if assert.Nil(t, err) {
-		expectedTimeout, err := time.ParseDuration(TestReadyConditionsTimeout)
+		expectedTimeout, err := time.ParseDuration(testReadyConditionsTimeout)
 		if assert.Nil(t, err) {
 			require.Equal(t, expectedTimeout, timeout)
 		}

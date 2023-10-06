@@ -30,7 +30,12 @@ const (
 	readOnlyFilePerm        = 0400
 )
 
-func NewUploadFiles(packageId string, serviceNetwork service_network.ServiceNetwork, packageContentProvider startosis_packages.PackageContentProvider) *kurtosis_plan_instruction.KurtosisPlanInstruction {
+func NewUploadFiles(
+	packageId string,
+	serviceNetwork service_network.ServiceNetwork,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string,
+) *kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return &kurtosis_plan_instruction.KurtosisPlanInstruction{
 		KurtosisBaseBuiltin: &kurtosis_starlark_framework.KurtosisBaseBuiltin{
 			Name: UploadFilesBuiltinName,
@@ -58,10 +63,11 @@ func NewUploadFiles(packageId string, serviceNetwork service_network.ServiceNetw
 				serviceNetwork:         serviceNetwork,
 				packageContentProvider: packageContentProvider,
 
-				src:               "",  // populated at interpretation time
-				artifactName:      "",  // populated at interpretation time
-				archivePathOnDisk: "",  // populated at interpretation time
-				filesArtifactMd5:  nil, // populated at interpretation time
+				src:                   "",  // populated at interpretation time
+				artifactName:          "",  // populated at interpretation time
+				archivePathOnDisk:     "",  // populated at interpretation time
+				filesArtifactMd5:      nil, // populated at interpretation time
+				packageReplaceOptions: packageReplaceOptions,
 			}
 		},
 
@@ -76,10 +82,11 @@ type UploadFilesCapabilities struct {
 	serviceNetwork         service_network.ServiceNetwork
 	packageContentProvider startosis_packages.PackageContentProvider
 
-	src               string
-	artifactName      string
-	archivePathOnDisk string
-	filesArtifactMd5  []byte
+	src                   string
+	artifactName          string
+	archivePathOnDisk     string
+	filesArtifactMd5      []byte
+	packageReplaceOptions map[string]string
 }
 
 func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuiltInIsBeingCalled string, arguments *builtin_argument.ArgumentValuesSet) (starlark.Value, *startosis_errors.InterpretationError) {
@@ -102,7 +109,7 @@ func (builtin *UploadFilesCapabilities) Interpret(locatorOfModuleInWhichThisBuil
 		return nil, startosis_errors.WrapWithInterpretationError(err, "Unable to extract value for '%s' argument", SrcArgName)
 	}
 
-	absoluteLocator, interpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeModuleLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, src.GoString())
+	absoluteLocator, interpretationErr := builtin.packageContentProvider.GetAbsoluteLocatorForRelativeLocator(locatorOfModuleInWhichThisBuiltInIsBeingCalled, src.GoString(), builtin.packageReplaceOptions)
 	if interpretationErr != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "Tried to convert locator '%v' into absolute locator but failed", src.GoString())
 	}
