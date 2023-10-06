@@ -35,8 +35,8 @@ func NewRunStarlarkConfig(opts ...starlarkRunConfigOption) *StarlarkRunConfig {
 		DryRun:                   defaultDryRun,
 		Parallelism:              defaultParallelism,
 		ExperimentalFeatureFlags: defaultExperimentalFeatureFlags,
-		CloudInstanceId:          defaultCloudUserId,
-		CloudUserId:              defaultCloudInstanceId,
+		CloudInstanceId:          defaultCloudInstanceId,
+		CloudUserId:              defaultCloudUserId,
 	}
 
 	for _, opt := range opts {
