@@ -334,6 +334,9 @@ type KurtosisBackend interface {
 	// Destroy the logs collector for enclave with UUID
 	DestroyLogsCollectorForEnclave(ctx context.Context, enclaveUuid enclave.EnclaveUUID) error
 
+	// Destroys any storage related to logs if it exists
+	DestroyLogsStorage(ctx context.Context) error
+
 	// GetAvailableCPUAndMemory - gets available memory in megabytes and cpu in millicores, the boolean indicates whether the information is complete
 	GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error)
 }

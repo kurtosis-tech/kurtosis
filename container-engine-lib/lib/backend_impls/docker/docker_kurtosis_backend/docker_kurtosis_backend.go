@@ -473,6 +473,10 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 	return nil
 }
 
+func (backend *DockerKurtosisBackend) DestroyLogsStorage(ctx context.Context) error {
+	return nil
+}
+
 func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
