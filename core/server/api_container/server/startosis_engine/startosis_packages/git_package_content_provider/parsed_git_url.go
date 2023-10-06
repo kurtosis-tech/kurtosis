@@ -131,7 +131,7 @@ func parseOutTagBranchOrCommit(input string) (string, string) {
 	pathWithoutVersion, maybeTagBranchOrCommitWithFile, _ := strings.Cut(cleanInput, tagBranchOrCommitDelimiter)
 
 	// input can have been set with version in two diff ways
-	// 1- github.com/kurtosis-tech/sample-dependency-packagemain.star@branch-or-version (when is called from cli run command)
+	// 1- github.com/kurtosis-tech/sample-dependency-package/main.star@branch-or-version (when is called from cli run command)
 	// 2- github.com/kurtosis-tech/sample-dependency-package@branch-or-version/main.star (when is declared in the replace section of the kurtosis.yml file)
 	// we check if there is a file in maybeTagBranchOrCommitWithFile and then add it to pathWithoutVersion
 	maybeTagBranchOrCommit, maybeFileNameAndExtension, _ := strings.Cut(maybeTagBranchOrCommitWithFile, urlPathSeparator)
