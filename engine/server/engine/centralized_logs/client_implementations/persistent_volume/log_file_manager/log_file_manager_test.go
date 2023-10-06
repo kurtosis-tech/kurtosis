@@ -1,13 +1,11 @@
-package log_remover
+package log_file_manager
 
 import (
-	"fmt"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/stretchr/testify/require"
 	"os"
-	"strconv"
 	"testing"
 )
 
@@ -20,13 +18,14 @@ const (
 
 func TestLogRemover_Run(t *testing.T) {
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
+	mockKurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 
-	week49filepath := getWeekFilepathStr(2022, 49)
-	week50filepath := getWeekFilepathStr(2022, 50)
-	week51filepath := getWeekFilepathStr(2022, 51)
-	week52filepath := getWeekFilepathStr(2022, 52)
-	week1filepath := getWeekFilepathStr(2023, 1)
-	week2filepath := getWeekFilepathStr(2023, 2)
+	week49filepath := getFilepathStr(2022, 49, testEnclaveUuid, testUserService1Uuid)
+	week50filepath := getFilepathStr(2022, 50, testEnclaveUuid, testUserService1Uuid)
+	week51filepath := getFilepathStr(2022, 51, testEnclaveUuid, testUserService1Uuid)
+	week52filepath := getFilepathStr(2022, 52, testEnclaveUuid, testUserService1Uuid)
+	week1filepath := getFilepathStr(2023, 1, testEnclaveUuid, testUserService1Uuid)
+	week2filepath := getFilepathStr(2023, 2, testEnclaveUuid, testUserService1Uuid)
 
 	_, _ = mockFs.Create(week49filepath)
 	_, _ = mockFs.Create(week50filepath)
@@ -38,16 +37,12 @@ func TestLogRemover_Run(t *testing.T) {
 	currentWeek := 2
 
 	mockTime := logs_clock.NewMockLogsClock(2023, currentWeek, defaultDay)
-	logRemover := NewLogRemover(mockFs, mockTime)
+	logFileManager := NewLogFileManager(mockKurtosisBackend, mockFs, mockTime)
 
-	// log remover should remove week 49 logs
-	logRemover.Run()
+	// should remove week 49 logs
+	logFileManager.RemoveLogsBeyondRetentionPeriod()
 
 	_, err := mockFs.Stat(week49filepath)
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err))
-}
-
-func getWeekFilepathStr(year, week int) string {
-	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), testEnclaveUuid, testUserService1Uuid, volume_consts.Filetype)
 }

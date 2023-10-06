@@ -1,4 +1,4 @@
-package log_file_creator
+package log_file_manager
 
 import (
 	"context"
@@ -14,16 +14,15 @@ import (
 	"github.com/sirupsen/logrus"
 	"os"
 	"strconv"
+	"time"
 )
 
-// LogFileCreator is responsible for creating the necessary file paths for service logs across all enclaves.
-// Context:
-// The LogsAggregator is configured to write logs to three different log file paths, one for uuid, service name, and shortened uuid.
-// This is so that the logs are retrievable by each identifier even when enclaves are stopped.
-// (More context on this here: https://github.com/kurtosis-tech/kurtosis/pull/1213)
-// To prevent storing duplicate logs, the LogFileCreator will ensure that the service name and short uuid log files are just
-// symlinks to the uuid log file path.
-type LogFileCreator struct {
+const (
+	oneWeek = 7 * 24 * time.Hour
+)
+
+// LogFileManager is responsible for creating and removing log files from filesystem.
+type LogFileManager struct {
 	kurtosisBackend backend_interface.KurtosisBackend
 
 	filesystem volume_filesystem.VolumeFilesystem
@@ -31,11 +30,11 @@ type LogFileCreator struct {
 	time logs_clock.LogsClock
 }
 
-func NewLogFileCreator(
+func NewLogFileManager(
 	kurtosisBackend backend_interface.KurtosisBackend,
 	filesystem volume_filesystem.VolumeFilesystem,
-	time logs_clock.LogsClock) *LogFileCreator {
-	return &LogFileCreator{
+	time logs_clock.LogsClock) *LogFileManager {
+	return &LogFileManager{
 		kurtosisBackend: kurtosisBackend,
 		filesystem:      filesystem,
 		time:            time,
@@ -47,12 +46,12 @@ func NewLogFileCreator(
 // The other two file paths are symlinks to the uuid file, ending with the shortened uuid and service name respectively.
 // If files exist for the shortened uuid and service name files, but they are not symlinks, they are removed and symlink files
 // are created to prevent duplicate log storage.
-func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
+func (manager *LogFileManager) CreateLogFiles(ctx context.Context) error {
 	var err error
 
-	year, week := creator.time.Now().ISOWeek()
+	year, week := manager.time.Now().ISOWeek()
 
-	enclaveToServicesMap, err := creator.getEnclaveAndServiceInfo(ctx)
+	enclaveToServicesMap, err := manager.getEnclaveAndServiceInfo(ctx)
 	if err != nil {
 		// already wrapped with propagate
 		return err
@@ -65,18 +64,18 @@ func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 			serviceShortUuidStr := uuid_generator.ShortenedUUIDString(serviceUuidStr)
 
 			serviceUuidFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceUuidStr)
-			if err = creator.createLogFileIdempotently(serviceUuidFilePathStr); err != nil {
+			if err = manager.createLogFileIdempotently(serviceUuidFilePathStr); err != nil {
 				return err
 			}
 
 			serviceNameFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceNameStr)
-			if err = creator.createSymlinkLogFile(serviceUuidFilePathStr, serviceNameFilePathStr); err != nil {
+			if err = manager.createSymlinkLogFile(serviceUuidFilePathStr, serviceNameFilePathStr); err != nil {
 				return err
 			}
 			logrus.Tracef("Created symlinked log file: '%v'", serviceNameFilePathStr)
 
 			serviceShortUuidFilePathStr := getFilepathStr(year, week, string(enclaveUuid), serviceShortUuidStr)
-			if err = creator.createSymlinkLogFile(serviceUuidFilePathStr, serviceShortUuidFilePathStr); err != nil {
+			if err = manager.createSymlinkLogFile(serviceUuidFilePathStr, serviceShortUuidFilePathStr); err != nil {
 				return err
 			}
 			logrus.Tracef("Created symlinked log file: '%v'", serviceShortUuidFilePathStr)
@@ -86,17 +85,36 @@ func (creator *LogFileCreator) CreateLogFiles(ctx context.Context) error {
 	return nil
 }
 
-func (creator *LogFileCreator) getEnclaveAndServiceInfo(ctx context.Context) (map[enclave.EnclaveUUID][]*service.ServiceRegistration, error) {
+func (manager *LogFileManager) RemoveEnclaveLogs(enclaveIdentifier string) error {
+	return nil
+}
+
+// RemoveLogsBeyondRetentionPeriod implements the Job cron interface. It removes logs a week older than the log retention period.
+func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
+	// [LogRetentionPeriodInWeeks] weeks plus an extra week of logs are retained so remove logs a week past that, hence +1
+	numWeeksBack := volume_consts.LogRetentionPeriodInWeeks + 1
+
+	// compute the next oldest week
+	year, weekToRemove := manager.time.Now().Add(time.Duration(-numWeeksBack) * oneWeek).ISOWeek()
+
+	// remove directory for that week
+	oldLogsDirPath := fmt.Sprintf(volume_consts.PerWeekDirPathStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(weekToRemove))
+	if err := manager.filesystem.RemoveAll(oldLogsDirPath); err != nil {
+		logrus.Warnf("An error occurred removing old logs at the following path '%v': %v\n", oldLogsDirPath, err)
+	}
+}
+
+func (manager *LogFileManager) getEnclaveAndServiceInfo(ctx context.Context) (map[enclave.EnclaveUUID][]*service.ServiceRegistration, error) {
 	enclaveToServicesMap := map[enclave.EnclaveUUID][]*service.ServiceRegistration{}
 
-	enclaves, err := creator.kurtosisBackend.GetEnclaves(ctx, &enclave.EnclaveFilters{UUIDs: nil, Statuses: nil})
+	enclaves, err := manager.kurtosisBackend.GetEnclaves(ctx, &enclave.EnclaveFilters{UUIDs: nil, Statuses: nil})
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while trying to get all enclaves from kurtosis backend.")
 	}
 	for enclaveUuid := range enclaves {
 		var serviceRegistrations []*service.ServiceRegistration
 
-		enclaveServices, err := creator.kurtosisBackend.GetUserServices(ctx, enclaveUuid, &service.ServiceFilters{Names: nil, UUIDs: nil, Statuses: nil})
+		enclaveServices, err := manager.kurtosisBackend.GetUserServices(ctx, enclaveUuid, &service.ServiceFilters{Names: nil, UUIDs: nil, Statuses: nil})
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while trying to get user services for enclave '%v' from kurtosis backend.", enclaveUuid)
 		}
@@ -109,10 +127,10 @@ func (creator *LogFileCreator) getEnclaveAndServiceInfo(ctx context.Context) (ma
 	return enclaveToServicesMap, nil
 }
 
-func (creator *LogFileCreator) createLogFileIdempotently(logFilePath string) error {
+func (manager *LogFileManager) createLogFileIdempotently(logFilePath string) error {
 	var err error
-	if _, err = creator.filesystem.Stat(logFilePath); os.IsNotExist(err) {
-		if _, err = creator.filesystem.Create(logFilePath); err != nil {
+	if _, err = manager.filesystem.Stat(logFilePath); os.IsNotExist(err) {
+		if _, err = manager.filesystem.Create(logFilePath); err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating a log file path at '%v'", logFilePath)
 		}
 		logrus.Tracef("Created log file: '%v'", logFilePath)
@@ -124,13 +142,13 @@ func (creator *LogFileCreator) createLogFileIdempotently(logFilePath string) err
 	return nil
 }
 
-func (creator *LogFileCreator) createSymlinkLogFile(targetLogFilePath, symlinkLogFilePath string) error {
+func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLogFilePath string) error {
 	// remove existing log files that could be storing logs at this path
-	if err := creator.filesystem.Remove(symlinkLogFilePath); err != nil {
+	if err := manager.filesystem.Remove(symlinkLogFilePath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred attempting to remove an existing log file at the symlink file path '%v'.", symlinkLogFilePath)
 	}
 	// replace with symlink
-	if err := creator.filesystem.Symlink(targetLogFilePath, symlinkLogFilePath); err != nil {
+	if err := manager.filesystem.Symlink(targetLogFilePath, symlinkLogFilePath); err != nil {
 		return stacktrace.Propagate(err, "An error occurred creating a symlink file path '%v' for target file path '%v'.", targetLogFilePath, targetLogFilePath)
 	}
 	return nil

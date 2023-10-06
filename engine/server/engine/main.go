@@ -20,8 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_creator"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_remover"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
@@ -137,46 +136,40 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
-	}
-
-	// osFs is a wrapper around disk
 	osFs := volume_filesystem.NewOsVolumeFilesystem()
+	realTime := logs_clock.NewRealClock()
+
 	// pulls logs per enclave/per service id
 	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
 	perFileLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perFileStreamStrategy)
 
 	// pulls logs /per week/per enclave/per service
-	realTime := logs_clock.NewRealClock()
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime)
 	perWeekLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamStrategy)
 
-	// schedule log removal for log retention
+	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
 	go func() {
 		logrus.Debug("Scheduling log removal for log retention every '%v' hours...", volume_consts.RemoveLogsWaitHours)
-		logRemover := log_remover.NewLogRemover(osFs, realTime)
-		// do a first removal
-		logRemover.Run()
+		logFileManager.RemoveLogsBeyondRetentionPeriod()
 
 		logRemovalTicker := time.NewTicker(volume_consts.RemoveLogsWaitHours)
 		for range logRemovalTicker.C {
 			logrus.Debug("Attempting to remove old log file paths...")
-			logRemover.Run()
+			logFileManager.RemoveLogsBeyondRetentionPeriod()
 		}
 	}()
-
 	go func() {
 		// TODO: Remove this when moving away from persistent volume logs db
-		// creating log file paths on an interval is a hack to prevent duplicate logs from being stored by the log aggregator
-		fileCreator := log_file_creator.NewLogFileCreator(kurtosisBackend, osFs, realTime)
+		// Creating log file paths on an interval is a hack to prevent duplicate logs from being stored by the log aggregator
+		// The LogsAggregator is configured to write logs to three different log file paths, one for uuid, service name, and shortened uuid
+		// This is so that the logs are retrievable by each identifier even when enclaves are stopped. More context on this here: https://github.com/kurtosis-tech/kurtosis/pull/1213
+		// To prevent storing duplicate logs, the CreateLogFiles will ensure that the service name and short uuid log files are just symlinks to the uuid log file path
 		logFileCreatorTicker := time.NewTicker(volume_consts.CreateLogsWaitMinutes)
 
-		logrus.Debug("Scheduling log file path creationg every '%v' minutes...", volume_consts.CreateLogsWaitMinutes)
+		logrus.Debug("Scheduling log file path creation every '%v' minutes...", volume_consts.CreateLogsWaitMinutes)
 		for range logFileCreatorTicker.C {
 			logrus.Debug("Creating log file paths...")
-			err = fileCreator.CreateLogFiles(ctx)
+			err = logFileManager.CreateLogFiles(ctx)
 			if err != nil {
 				logrus.Errorf("An error occurred attempting to create log file paths: %v", err)
 			} else {
@@ -184,6 +177,11 @@ func runMain() error {
 			}
 		}
 	}()
+
+	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
+	}
 
 	go func() {
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
@@ -254,6 +252,7 @@ func getEnclaveManager(
 	engineVersion string,
 	poolSize uint8,
 	enclaveEnvVars string,
+	enclaveLogFileManager *log_file_manager.LogFileManager,
 ) (*enclave_manager.EnclaveManager, error) {
 	var apiContainerKurtosisBackendConfigSupplier api_container_launcher.KurtosisBackendConfigSupplier
 	switch kurtosisBackendType {
@@ -272,6 +271,7 @@ func getEnclaveManager(
 		engineVersion,
 		poolSize,
 		enclaveEnvVars,
+		enclaveLogFileManager,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating enclave manager for backend type '%+v' using pool-size '%v' and engine version '%v'", kurtosisBackendType, poolSize, engineVersion)

@@ -3,6 +3,7 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"sort"
 	"strings"
 	"sync"
@@ -60,9 +61,10 @@ type EnclaveManager struct {
 	// this is an append only list
 	allExistingAndHistoricalIdentifiers []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers
 
-	enclaveCreator *EnclaveCreator
-	enclavePool    *EnclavePool
-	enclaveEnvVars string
+	enclaveCreator        *EnclaveCreator
+	enclavePool           *EnclavePool
+	enclaveEnvVars        string
+	enclaveLogFileManager *log_file_manager.LogFileManager
 }
 
 func CreateEnclaveManager(
@@ -72,6 +74,7 @@ func CreateEnclaveManager(
 	engineVersion string,
 	poolSize uint8,
 	enclaveEnvVars string,
+	enclaveLogFileManager *log_file_manager.LogFileManager,
 ) (*EnclaveManager, error) {
 	enclaveCreator := newEnclaveCreator(kurtosisBackend, apiContainerKurtosisBackendConfigSupplier)
 
@@ -96,6 +99,7 @@ func CreateEnclaveManager(
 		enclaveCreator:                            enclaveCreator,
 		enclavePool:                               enclavePool,
 		enclaveEnvVars:                            enclaveEnvVars,
+		enclaveLogFileManager:                     enclaveLogFileManager,
 	}
 
 	return enclaveManager, nil
