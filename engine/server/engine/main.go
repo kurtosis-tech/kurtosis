@@ -149,7 +149,7 @@ func runMain() error {
 
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
 	go func() {
-		logrus.Debug("Scheduling log removal for log retention every '%v' hours...", volume_consts.RemoveLogsWaitHours)
+		logrus.Debugf("Scheduling log removal for log retention every '%v' hours...", volume_consts.RemoveLogsWaitHours)
 		logFileManager.RemoveLogsBeyondRetentionPeriod()
 
 		logRemovalTicker := time.NewTicker(volume_consts.RemoveLogsWaitHours)
@@ -166,7 +166,7 @@ func runMain() error {
 		// To prevent storing duplicate logs, the CreateLogFiles will ensure that the service name and short uuid log files are just symlinks to the uuid log file path
 		logFileCreatorTicker := time.NewTicker(volume_consts.CreateLogsWaitMinutes)
 
-		logrus.Debug("Scheduling log file path creation every '%v' minutes...", volume_consts.CreateLogsWaitMinutes)
+		logrus.Debugf("Scheduling log file path creation every '%v' minutes...", volume_consts.CreateLogsWaitMinutes)
 		for range logFileCreatorTicker.C {
 			logrus.Debug("Creating log file paths...")
 			err = logFileManager.CreateLogFiles(ctx)

@@ -103,7 +103,7 @@ func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
 	year, weekToRemove := manager.time.Now().Add(time.Duration(-volume_consts.LogRetentionPeriodInWeeks) * oneWeek).ISOWeek()
 
 	// remove directory for that week
-	oldLogsDirPath := fmt.Sprintf(volume_consts.PerWeekDirPathStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(weekToRemove))
+	oldLogsDirPath := getLogsDirPathForWeek(year, weekToRemove)
 	if err := manager.filesystem.RemoveAll(oldLogsDirPath); err != nil {
 		logrus.Warnf("An error occurred removing old logs at the following path '%v': %v\n", oldLogsDirPath, err)
 	}
@@ -168,4 +168,8 @@ func getFilepathStr(year, week int, enclaveUuid, serviceIdentifier string) strin
 func getEnclaveLogsDirPath(year, week int, enclaveUuid string) string {
 	logsDirPathForYearAndWeek := fmt.Sprintf(volume_consts.PerWeekDirPathStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week))
 	return fmt.Sprintf("%s/%s/", logsDirPathForYearAndWeek, enclaveUuid)
+}
+
+func getLogsDirPathForWeek(year, week int) string {
+	return fmt.Sprintf(volume_consts.PerWeekDirPathStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week))
 }
