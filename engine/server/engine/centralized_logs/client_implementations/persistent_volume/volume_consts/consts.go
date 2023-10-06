@@ -21,7 +21,7 @@ const (
 
 	RemoveLogsWaitHours = 6 * time.Hour
 
-	CreateLogFilesInterval = 3 * time.Minute
+	CreateLogsWaitMinutes = 3 * time.Minute
 
 	// basepath/enclave uuid/service uuid <filetype>
 	PerFileFmtStr = "%s%s/%s%s"

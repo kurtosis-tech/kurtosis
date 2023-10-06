@@ -21,6 +21,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_creator"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_remover"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
@@ -152,11 +153,27 @@ func runMain() error {
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime)
 	perWeekLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamStrategy)
 
+	// schedule log removal for log retention
+	go func() {
+		logrus.Debug("Scheduling log removal for log retention every '%v' hours...", volume_consts.RemoveLogsWaitHours)
+		logRemover := log_remover.NewLogRemover(osFs, realTime)
+		// do a first removal
+		logRemover.Run()
+
+		logRemovalTicker := time.NewTicker(volume_consts.RemoveLogsWaitHours)
+		for range logRemovalTicker.C {
+			logrus.Debug("Attempting to remove old log file paths...")
+			logRemover.Run()
+		}
+	}()
+
 	go func() {
 		// TODO: Remove this when moving away from persistent volume logs db
 		// creating log file paths on an interval is a hack to prevent duplicate logs from being stored by the log aggregator
 		fileCreator := log_file_creator.NewLogFileCreator(kurtosisBackend, osFs, realTime)
-		logFileCreatorTicker := time.NewTicker(volume_consts.CreateLogFilesInterval)
+		logFileCreatorTicker := time.NewTicker(volume_consts.CreateLogsWaitMinutes)
+
+		logrus.Debug("Scheduling log file path creationg every '%v' minutes...", volume_consts.CreateLogsWaitMinutes)
 		for range logFileCreatorTicker.C {
 			logrus.Debug("Creating log file paths...")
 			err = fileCreator.CreateLogFiles(ctx)
