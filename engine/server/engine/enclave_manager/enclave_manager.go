@@ -496,7 +496,7 @@ func (manager *EnclaveManager) cleanEnclaves(
 		successfullyDestroyedEnclaveIdStrs = append(successfullyDestroyedEnclaveIdStrs, string(enclaveId))
 
 		if err := manager.enclaveLogFileManager.RemoveEnclaveLogs(string(enclaveId)); err != nil {
-			logRemovalErr := stacktrace.Propagate(err, "An error occurred removing enclave '$v' logs.")
+			logRemovalErr := stacktrace.Propagate(err, "An error occurred removing enclave '%v' logs.", enclaveId)
 			enclaveDestructionErrors = append(enclaveDestructionErrors, logRemovalErr)
 		}
 	}
