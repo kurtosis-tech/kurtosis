@@ -36,6 +36,8 @@ const (
 
 	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
 	osPathSeparatorString = string(os.PathSeparator)
+
+	onlyOneReplace = 1
 )
 
 type GitPackageContentProvider struct {
@@ -230,7 +232,7 @@ func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[st
 
 	found, packageToBeReplaced, replaceWithPackage := findPackageReplace(absoluteLocator, packageReplaceOptions)
 	if found {
-		replacedAbsoluteLocator := strings.Replace(absoluteLocator, packageToBeReplaced, replaceWithPackage, 1)
+		replacedAbsoluteLocator := strings.Replace(absoluteLocator, packageToBeReplaced, replaceWithPackage, onlyOneReplace)
 		logrus.Debugf("absoluteLocator '%s' replaced with '%s'", absoluteLocator, replacedAbsoluteLocator)
 		return replacedAbsoluteLocator
 	}
