@@ -222,6 +222,14 @@ func (service *ApiContainerGatewayServiceServer) UploadStarlarkPackage(server ku
 	return nil
 }
 
+func (service *ApiContainerGatewayServiceServer) GetStarlarkRun(ctx context.Context, args *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
+	remoteApiContainerResponse, err := service.remoteApiContainerClient.GetStarlarkRun(ctx, &emptypb.Empty{})
+	if err != nil {
+		return nil, stacktrace.Propagate(err, errorCallingRemoteApiContainerFromGateway)
+	}
+	return remoteApiContainerResponse, nil
+}
+
 // ====================================================================================================
 //
 //	Private helper methods

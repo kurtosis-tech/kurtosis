@@ -3,6 +3,7 @@ package mock_package_content_provider
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/kurtosis-tech/stacktrace"
 	"io"
 	"os"
@@ -21,11 +22,13 @@ const (
 // TODO: use the mockery-generated mock: startosis_package.MockPackageContentProvider
 type MockPackageContentProvider struct {
 	starlarkPackages map[string]string
+	packageId        string
 }
 
 func NewMockPackageContentProvider() *MockPackageContentProvider {
 	return &MockPackageContentProvider{
 		starlarkPackages: make(map[string]string),
+		packageId:        "",
 	}
 }
 
@@ -40,7 +43,7 @@ func (provider *MockPackageContentProvider) GetOnDiskAbsoluteFilePath(packageId 
 	return absFilePath, nil
 }
 
-func (provider *MockPackageContentProvider) ClonePackage(_ string) (string, string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) ClonePackage(_ string) (string, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 
@@ -50,6 +53,10 @@ func (provider *MockPackageContentProvider) GetOnDiskAbsolutePackagePath(package
 }
 
 func (provider *MockPackageContentProvider) StorePackageContents(_ string, _ io.Reader, _ bool) (string, *startosis_errors.InterpretationError) {
+	panic(unimplementedMessage)
+}
+
+func (provider *MockPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOnDisk string) (*yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	panic(unimplementedMessage)
 }
 
@@ -65,12 +72,11 @@ func (provider *MockPackageContentProvider) GetModuleContents(fileInsidePackageU
 	return string(fileContent), nil
 }
 
-func (provider *MockPackageContentProvider) GetAbsoluteLocatorForRelativeModuleLocator(_ string, relativeOrAbsoluteModulePath string) (string, *startosis_errors.InterpretationError) {
+func (provider *MockPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(_ string, relativeOrAbsoluteModulePath string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError) {
 	if strings.HasPrefix(relativeOrAbsoluteModulePath, startosis_constants.GithubDomainPrefix) {
 		return relativeOrAbsoluteModulePath, nil
 	}
-	// TODO implement properly so that it works with relative paths
-	return "", nil
+	return provider.packageId, nil
 }
 
 func (provider *MockPackageContentProvider) AddFileContent(packageId string, contents string) error {
@@ -79,6 +85,7 @@ func (provider *MockPackageContentProvider) AddFileContent(packageId string, con
 		return stacktrace.Propagate(err, "Error writing content to temporary file")
 	}
 	provider.starlarkPackages[packageId] = absFilePath
+	provider.packageId = packageId
 	return nil
 }
 

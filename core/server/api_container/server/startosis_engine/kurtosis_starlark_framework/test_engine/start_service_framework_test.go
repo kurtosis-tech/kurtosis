@@ -19,7 +19,7 @@ type startServiceTestCase struct {
 func (suite *KurtosisPlanInstructionTestSuite) TestStartService() {
 	suite.serviceNetwork.EXPECT().StartService(
 		mock.Anything,
-		string(TestServiceName),
+		string(testServiceName),
 	).Times(1).Return(
 		nil,
 	)
@@ -35,7 +35,7 @@ func (t *startServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurto
 }
 
 func (t *startServiceTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", start_service.StartServiceBuiltinName, start_service.ServiceNameArgName, TestServiceName)
+	return fmt.Sprintf("%s(%s=%q)", start_service.StartServiceBuiltinName, start_service.ServiceNameArgName, testServiceName)
 }
 
 func (t *startServiceTestCase) GetStarlarkCodeForAssertion() string {
@@ -45,6 +45,6 @@ func (t *startServiceTestCase) GetStarlarkCodeForAssertion() string {
 func (t *startServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Service '%s' started", TestServiceName)
+	expectedExecutionResult := fmt.Sprintf("Service '%s' started", testServiceName)
 	require.Regexp(t, expectedExecutionResult, *executionResult)
 }

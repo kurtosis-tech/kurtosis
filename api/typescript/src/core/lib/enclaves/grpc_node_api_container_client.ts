@@ -11,6 +11,7 @@ import {
     GetExistingAndHistoricalServiceIdentifiersResponse,
     GetServicesArgs,
     GetServicesResponse,
+    GetStarlarkRunResponse,
     ListFilesArtifactNamesAndUuidsResponse,
     RunStarlarkPackageArgs,
     RunStarlarkScriptArgs,
@@ -346,5 +347,30 @@ export class GrpcNodeApiContainerClient implements GenericApiContainerClient {
 
         const connectServicesResponse = resultConnectServices.value;
         return ok(connectServicesResponse)
+    }
+    
+    public async getStarlarkRun(): Promise<Result<GetStarlarkRunResponse, Error>> {
+        const emptyArg: google_protobuf_empty_pb.Empty = new google_protobuf_empty_pb.Empty()
+        const getStarlarkRunPromise: Promise<Result<GetStarlarkRunResponse, Error>> = new Promise((resolve, _unusedReject) => {
+            this.client.getStarlarkRun(emptyArg, {},(error: ServiceError | null, response?: GetStarlarkRunResponse) => {
+                if (error === null) {
+                    if (!response) {
+                        resolve(err(new Error("No error was encountered but the response was still falsy; this should never happen")));
+                    } else {
+                        resolve(ok(response!));
+                    }
+                } else {
+                    resolve(err(error));
+                }
+            })
+        });
+
+        const getStarlarkRunResponseResult: Result<GetStarlarkRunResponse, Error> = await getStarlarkRunPromise;
+        if(getStarlarkRunResponseResult.isErr()){
+            return err(getStarlarkRunResponseResult.error)
+        }
+
+        const getStarlarkRunResponse = getStarlarkRunResponseResult.value;
+        return ok(getStarlarkRunResponse)
     }
 }

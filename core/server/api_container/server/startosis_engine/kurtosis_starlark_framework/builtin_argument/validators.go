@@ -113,6 +113,10 @@ func DurationOrNone(value starlark.Value, attributeName string) *startosis_error
 
 func RelativeOrRemoteAbsoluteLocator(locatorStarlarkValue starlark.Value, packageId string, argNameForLogging string) *startosis_errors.InterpretationError {
 
+	if err := NonEmptyString(locatorStarlarkValue, argNameForLogging); err != nil {
+		return err
+	}
+
 	locatorStarlarkStr, ok := locatorStarlarkValue.(starlark.String)
 	if !ok {
 		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.String but was '%s'", argNameForLogging, reflect.TypeOf(locatorStarlarkValue))

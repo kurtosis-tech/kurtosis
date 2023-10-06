@@ -854,5 +854,66 @@ proto.api_container_api.ApiContainerServicePromiseClient.prototype.connectServic
 };
 
 
+/**
+ * @const
+ * @type {!grpc.web.MethodDescriptor<
+ *   !proto.google.protobuf.Empty,
+ *   !proto.api_container_api.GetStarlarkRunResponse>}
+ */
+const methodDescriptor_ApiContainerService_GetStarlarkRun = new grpc.web.MethodDescriptor(
+  '/api_container_api.ApiContainerService/GetStarlarkRun',
+  grpc.web.MethodType.UNARY,
+  google_protobuf_empty_pb.Empty,
+  proto.api_container_api.GetStarlarkRunResponse,
+  /**
+   * @param {!proto.google.protobuf.Empty} request
+   * @return {!Uint8Array}
+   */
+  function(request) {
+    return request.serializeBinary();
+  },
+  proto.api_container_api.GetStarlarkRunResponse.deserializeBinary
+);
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>} metadata User defined
+ *     call metadata
+ * @param {function(?grpc.web.RpcError, ?proto.api_container_api.GetStarlarkRunResponse)}
+ *     callback The callback function(error, response)
+ * @return {!grpc.web.ClientReadableStream<!proto.api_container_api.GetStarlarkRunResponse>|undefined}
+ *     The XHR Node Readable Stream
+ */
+proto.api_container_api.ApiContainerServiceClient.prototype.getStarlarkRun =
+    function(request, metadata, callback) {
+  return this.client_.rpcCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetStarlarkRun',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetStarlarkRun,
+      callback);
+};
+
+
+/**
+ * @param {!proto.google.protobuf.Empty} request The
+ *     request proto
+ * @param {?Object<string, string>=} metadata User defined
+ *     call metadata
+ * @return {!Promise<!proto.api_container_api.GetStarlarkRunResponse>}
+ *     Promise that resolves to the response
+ */
+proto.api_container_api.ApiContainerServicePromiseClient.prototype.getStarlarkRun =
+    function(request, metadata) {
+  return this.client_.unaryCall(this.hostname_ +
+      '/api_container_api.ApiContainerService/GetStarlarkRun',
+      request,
+      metadata || {},
+      methodDescriptor_ApiContainerService_GetStarlarkRun);
+};
+
+
 module.exports = proto.api_container_api;
 

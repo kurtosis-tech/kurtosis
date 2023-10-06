@@ -19,9 +19,9 @@ type removeServiceTestCase struct {
 func (suite *KurtosisPlanInstructionTestSuite) TestRemoveService() {
 	suite.serviceNetwork.EXPECT().RemoveService(
 		mock.Anything,
-		string(TestServiceName),
+		string(testServiceName),
 	).Times(1).Return(
-		TestServiceUuid,
+		testServiceUuid,
 		nil,
 	)
 
@@ -36,7 +36,7 @@ func (t *removeServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurt
 }
 
 func (t *removeServiceTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", remove_service.RemoveServiceBuiltinName, remove_service.ServiceNameArgName, TestServiceName)
+	return fmt.Sprintf("%s(%s=%q)", remove_service.RemoveServiceBuiltinName, remove_service.ServiceNameArgName, testServiceName)
 }
 
 func (t *removeServiceTestCase) GetStarlarkCodeForAssertion() string {
@@ -46,6 +46,6 @@ func (t *removeServiceTestCase) GetStarlarkCodeForAssertion() string {
 func (t *removeServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Service '%s' with service UUID '%s' removed", TestServiceName, TestServiceUuid)
+	expectedExecutionResult := fmt.Sprintf("Service '%s' with service UUID '%s' removed", testServiceName, testServiceUuid)
 	require.Regexp(t, expectedExecutionResult, *executionResult)
 }

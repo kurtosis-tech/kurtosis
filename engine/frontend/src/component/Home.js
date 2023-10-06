@@ -57,7 +57,7 @@ const Home = () => {
                 await removeEnclave(appData.jwtToken, appData.apiHost, enclaveName)
                 setEnclaves(filteredEnclaves)
             } catch (ex) {
-                console.log(ex)
+                console.error(ex)
                 alert(`Sorry, unexpected error occurred while removing enclave with name: ${enclaveName}`)
             }
         }
@@ -123,7 +123,10 @@ const Home = () => {
 
     const fetch = async () => {
         const response = await getEnclavesFromKurtosis(appData.jwtToken, appData.apiHost);
-        setEnclaves(response)
+        const filteredResponse = response.filter((e) => {
+            return e.name
+        });
+        setEnclaves(filteredResponse)
         setEnclaveLoading(false)
     }
 

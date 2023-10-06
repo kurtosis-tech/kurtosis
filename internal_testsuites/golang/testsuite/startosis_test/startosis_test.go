@@ -3,17 +3,15 @@ package startosis_test
 import (
 	"context"
 	"github.com/kurtosis-tech/kurtosis-cli/golang_internal_testsuite/test_helpers"
-	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/starlark_run_config"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
 
 const (
-	testName           = "module"
-	defaultDryRun      = false
-	defaultParallelism = 4
-	greetingsArg       = `{"greeting": "World!"}`
+	testName     = "module"
+	greetingsArg = `{"greeting": "World!"}`
 
 	serviceName                   = "example-datastore-server-1"
 	serviceIdForDependentService  = "example-datastore-server-2"
@@ -101,11 +99,6 @@ def run(plan, args):
 	plan.print("Deployed " + SERVICE_DEPENDENT_ON_DATASTORE_SERVICE + " successfully")
 	return {"ip-address": deployed_service.ip_address}
 `
-	useDefaultMainFile = ""
-)
-
-var (
-	noExperimentalFeature = []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{}
 )
 
 func TestStartosis(t *testing.T) {
@@ -123,7 +116,7 @@ func TestStartosis(t *testing.T) {
 	logrus.Infof("Executing Startosis script...")
 	logrus.Debugf("Startosis script content: \n%v", startosisScript)
 
-	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, useDefaultMainFile, startosisScript, greetingsArg, defaultDryRun, defaultParallelism, noExperimentalFeature)
+	runResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, startosisScript, starlark_run_config.NewRunStarlarkConfig(starlark_run_config.WithSerializedParams(greetingsArg)))
 	require.NoError(t, err, "Unexpected error executing startosis script")
 
 	require.Nil(t, runResult.InterpretationError, "Unexpected interpretation error. This test requires you to be online for the read_file command to run")

@@ -93,6 +93,17 @@ function deserialize_api_container_api_GetServicesResponse(buffer_arg) {
   return api_container_service_pb.GetServicesResponse.deserializeBinary(new Uint8Array(buffer_arg));
 }
 
+function serialize_api_container_api_GetStarlarkRunResponse(arg) {
+  if (!(arg instanceof api_container_service_pb.GetStarlarkRunResponse)) {
+    throw new Error('Expected argument of type api_container_api.GetStarlarkRunResponse');
+  }
+  return Buffer.from(arg.serializeBinary());
+}
+
+function deserialize_api_container_api_GetStarlarkRunResponse(buffer_arg) {
+  return api_container_service_pb.GetStarlarkRunResponse.deserializeBinary(new Uint8Array(buffer_arg));
+}
+
 function serialize_api_container_api_InspectFilesArtifactContentsRequest(arg) {
   if (!(arg instanceof api_container_service_pb.InspectFilesArtifactContentsRequest)) {
     throw new Error('Expected argument of type api_container_api.InspectFilesArtifactContentsRequest');
@@ -437,6 +448,18 @@ connectServices: {
     requestDeserialize: deserialize_api_container_api_ConnectServicesArgs,
     responseSerialize: serialize_api_container_api_ConnectServicesResponse,
     responseDeserialize: deserialize_api_container_api_ConnectServicesResponse,
+  },
+  // Get last Starlark run
+getStarlarkRun: {
+    path: '/api_container_api.ApiContainerService/GetStarlarkRun',
+    requestStream: false,
+    responseStream: false,
+    requestType: google_protobuf_empty_pb.Empty,
+    responseType: api_container_service_pb.GetStarlarkRunResponse,
+    requestSerialize: serialize_google_protobuf_Empty,
+    requestDeserialize: deserialize_google_protobuf_Empty,
+    responseSerialize: serialize_api_container_api_GetStarlarkRunResponse,
+    responseDeserialize: deserialize_api_container_api_GetStarlarkRunResponse,
   },
 };
 

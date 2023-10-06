@@ -172,6 +172,12 @@ pub struct RunStarlarkScriptArgs {
     pub main_function_name: ::prost::alloc::string::String,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "6")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "7")]
+    pub cloud_instance_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "8")]
+    pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -202,6 +208,12 @@ pub struct RunStarlarkPackageArgs {
     pub main_function_name: ::prost::alloc::string::String,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "11")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "12")]
+    pub cloud_instance_id: ::core::option::Option<::prost::alloc::string::String>,
+    /// Defaults to empty
+    #[prost(string, optional, tag = "13")]
+    pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -629,6 +641,26 @@ pub struct ConnectServicesArgs {
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct ConnectServicesResponse {}
+#[allow(clippy::derive_partial_eq_without_eq)]
+#[derive(Clone, PartialEq, ::prost::Message)]
+pub struct GetStarlarkRunResponse {
+    #[prost(string, tag = "1")]
+    pub package_id: ::prost::alloc::string::String,
+    #[prost(string, tag = "2")]
+    pub serialized_script: ::prost::alloc::string::String,
+    #[prost(string, tag = "3")]
+    pub serialized_params: ::prost::alloc::string::String,
+    #[prost(int32, tag = "4")]
+    pub parallelism: i32,
+    #[prost(string, tag = "5")]
+    pub relative_path_to_main_file: ::prost::alloc::string::String,
+    #[prost(string, tag = "6")]
+    pub main_function_name: ::prost::alloc::string::String,
+    #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "7")]
+    pub experimental_features: ::prost::alloc::vec::Vec<i32>,
+    #[prost(enumeration = "RestartPolicy", tag = "8")]
+    pub restart_policy: i32,
+}
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ServiceStatus {
@@ -709,6 +741,32 @@ impl KurtosisFeatureFlag {
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
             "NO_INSTRUCTIONS_CACHING" => Some(Self::NoInstructionsCaching),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum RestartPolicy {
+    Never = 0,
+    Always = 1,
+}
+impl RestartPolicy {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            RestartPolicy::Never => "NEVER",
+            RestartPolicy::Always => "ALWAYS",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "NEVER" => Some(Self::Never),
+            "ALWAYS" => Some(Self::Always),
             _ => None,
         }
     }
@@ -1256,6 +1314,37 @@ pub mod api_container_service_client {
                 );
             self.inner.unary(req, path, codec).await
         }
+        /// Get last Starlark run
+        pub async fn get_starlark_run(
+            &mut self,
+            request: impl tonic::IntoRequest<()>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetStarlarkRunResponse>,
+            tonic::Status,
+        > {
+            self.inner
+                .ready()
+                .await
+                .map_err(|e| {
+                    tonic::Status::new(
+                        tonic::Code::Unknown,
+                        format!("Service was not ready: {}", e.into()),
+                    )
+                })?;
+            let codec = tonic::codec::ProstCodec::default();
+            let path = http::uri::PathAndQuery::from_static(
+                "/api_container_api.ApiContainerService/GetStarlarkRun",
+            );
+            let mut req = request.into_request();
+            req.extensions_mut()
+                .insert(
+                    GrpcMethod::new(
+                        "api_container_api.ApiContainerService",
+                        "GetStarlarkRun",
+                    ),
+                );
+            self.inner.unary(req, path, codec).await
+        }
     }
 }
 /// Generated server implementations.
@@ -1390,6 +1479,14 @@ pub mod api_container_service_server {
             request: tonic::Request<super::ConnectServicesArgs>,
         ) -> std::result::Result<
             tonic::Response<super::ConnectServicesResponse>,
+            tonic::Status,
+        >;
+        /// Get last Starlark run
+        async fn get_starlark_run(
+            &self,
+            request: tonic::Request<()>,
+        ) -> std::result::Result<
+            tonic::Response<super::GetStarlarkRunResponse>,
             tonic::Status,
         >;
     }
@@ -2182,6 +2279,47 @@ pub mod api_container_service_server {
                     let fut = async move {
                         let inner = inner.0;
                         let method = ConnectServicesSvc(inner);
+                        let codec = tonic::codec::ProstCodec::default();
+                        let mut grpc = tonic::server::Grpc::new(codec)
+                            .apply_compression_config(
+                                accept_compression_encodings,
+                                send_compression_encodings,
+                            )
+                            .apply_max_message_size_config(
+                                max_decoding_message_size,
+                                max_encoding_message_size,
+                            );
+                        let res = grpc.unary(method, req).await;
+                        Ok(res)
+                    };
+                    Box::pin(fut)
+                }
+                "/api_container_api.ApiContainerService/GetStarlarkRun" => {
+                    #[allow(non_camel_case_types)]
+                    struct GetStarlarkRunSvc<T: ApiContainerService>(pub Arc<T>);
+                    impl<T: ApiContainerService> tonic::server::UnaryService<()>
+                    for GetStarlarkRunSvc<T> {
+                        type Response = super::GetStarlarkRunResponse;
+                        type Future = BoxFuture<
+                            tonic::Response<Self::Response>,
+                            tonic::Status,
+                        >;
+                        fn call(&mut self, request: tonic::Request<()>) -> Self::Future {
+                            let inner = Arc::clone(&self.0);
+                            let fut = async move {
+                                (*inner).get_starlark_run(request).await
+                            };
+                            Box::pin(fut)
+                        }
+                    }
+                    let accept_compression_encodings = self.accept_compression_encodings;
+                    let send_compression_encodings = self.send_compression_encodings;
+                    let max_decoding_message_size = self.max_decoding_message_size;
+                    let max_encoding_message_size = self.max_encoding_message_size;
+                    let inner = self.inner.clone();
+                    let fut = async move {
+                        let inner = inner.0;
+                        let method = GetStarlarkRunSvc(inner);
                         let codec = tonic::codec::ProstCodec::default();
                         let mut grpc = tonic::server::Grpc::new(codec)
                             .apply_compression_config(

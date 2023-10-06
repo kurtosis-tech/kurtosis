@@ -1,10 +1,6 @@
-import { 
-    Grid, 
-    GridItem, 
-    Center 
-} from '@chakra-ui/react'
+import {Center, Grid, GridItem} from '@chakra-ui/react'
 
-import { useNavigate, useLocation} from 'react-router';
+import {useNavigate} from 'react-router';
 
 const PackageCatalogOption = ({catalog}) => {
     const navigate = useNavigate();

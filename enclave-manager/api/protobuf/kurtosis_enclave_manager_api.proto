@@ -18,6 +18,7 @@ service KurtosisEnclaveManagerServer {
   rpc CreateEnclave(engine_api.CreateEnclaveArgs) returns (engine_api.CreateEnclaveResponse) {};
   rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (api_container_api.InspectFilesArtifactContentsResponse) {}
   rpc DestroyEnclave(engine_api.DestroyEnclaveArgs) returns (google.protobuf.Empty) {};
+  rpc GetStarlarkRun(GetStarlarkRunRequest) returns (api_container_api.GetStarlarkRunResponse) {};
 }
 
 message HealthCheckRequest {
@@ -54,4 +55,9 @@ message InspectFilesArtifactContentsRequest {
   string apic_ip_address = 1;
   int32 apic_port = 2;
   api_container_api.FilesArtifactNameAndUuid file_names_and_uuid = 3;
+}
+
+message GetStarlarkRunRequest{
+  string apic_ip_address = 1;
+  int32 apic_port = 2;
 }
