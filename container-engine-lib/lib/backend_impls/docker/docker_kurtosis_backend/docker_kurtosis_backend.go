@@ -474,6 +474,14 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 }
 
 func (backend *DockerKurtosisBackend) DestroyLogsStorage(ctx context.Context) error {
+	logsStorageAttrs, err := backend.objAttrsProvider.ForLogsStorageVolume()
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred attempting to destroy logs storage.")
+	}
+	logsStorageVolNameStr := logsStorageAttrs.GetName().GetString()
+	if err = backend.dockerManager.RemoveVolume(ctx, logsStorageVolNameStr); err != nil {
+		return stacktrace.Propagate(err, "An error occurred attempting to destroy logs storage.")
+	}
 	return nil
 }
 
