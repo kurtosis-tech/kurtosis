@@ -1,14 +1,3 @@
-##############
-# Yaml Anchors
-##############
-# Don't run cli jobs on  main branches
-filters_ignore_main: &filters_ignore_main
-  filters:
-    branches:
-      ignore:
-        - main
-
-
 # cli cluster param used to run test suites against docker/kubernetes tests
 param_cli_cluster_backend: &param_cli_cluster_backend
   cli-cluster-backend:
@@ -1224,7 +1213,6 @@ workflows:
                 - main
 
       - build_cli:
-          <<: *filters_ignore_main
       - test_basic_cli_functionality:
           name: "Test Basic CLI Functionality in Docker"
           cli-cluster-backend: "docker"
@@ -1235,19 +1223,6 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
-
-      #      - test_basic_cli_functionality:
-      #          name: "Test Basic CLI Functionality in Kubernetes"
-      #          cli-cluster-backend: "kubernetes"
-      #          context:
-      #            - docker-user
-      #          requires:
-      #            - build_cli
-      #            - build_api_container_server
-      #            - build_engine_server
-      #            - build_files_artifacts_expander
-      #          <<: *filters_ignore_main
 
       - test_ci_for_failure:
           name: "Test Basic CLI for failure"
@@ -1259,7 +1234,6 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Docker"
@@ -1271,7 +1245,6 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
 
       - build_golang_testsuite:
           name: "Build golang testsuite against Kubernetes"
@@ -1283,7 +1256,6 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
 
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Docker"
@@ -1295,7 +1267,6 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
 
       - build_typescript_testsuite:
           name: "Build typescript testsuite against Kubernetes"
@@ -1307,7 +1278,6 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
 
       - test_old_enclave_continuity:
           context:
@@ -1317,7 +1287,6 @@ workflows:
             - build_api_container_server
             - build_engine_server
             - build_files_artifacts_expander
-          <<: *filters_ignore_main
 
       # -- Artifact-publishing jobs --------------------------------
       - publish_kurtosis_sdk_rust:
