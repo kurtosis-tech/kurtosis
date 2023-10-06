@@ -20,8 +20,10 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_creator"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
@@ -149,6 +151,22 @@ func runMain() error {
 	realTime := logs_clock.NewRealClock()
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime)
 	perWeekLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamStrategy)
+
+	go func() {
+		// TODO: Remove this when moving away from persistent volume logs db
+		// creating log file paths on an interval is a hack to prevent duplicate logs from being stored by the log aggregator
+		fileCreator := log_file_creator.NewLogFileCreator(kurtosisBackend, osFs, realTime)
+		logFileCreatorTicker := time.NewTicker(volume_consts.CreateLogFilesInterval)
+		for range logFileCreatorTicker.C {
+			logrus.Debug("Creating log file paths...")
+			err = fileCreator.CreateLogFiles(ctx)
+			if err != nil {
+				logrus.Errorf("An error occurred attempting to create log file paths: %v", err)
+			} else {
+				logrus.Debug("Successfully created log file paths.")
+			}
+		}
+	}()
 
 	go func() {
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
