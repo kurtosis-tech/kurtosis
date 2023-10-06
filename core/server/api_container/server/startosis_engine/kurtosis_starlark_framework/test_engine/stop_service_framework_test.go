@@ -19,7 +19,7 @@ type stopServiceTestCase struct {
 func (suite *KurtosisPlanInstructionTestSuite) TestStopService() {
 	suite.serviceNetwork.EXPECT().StopService(
 		mock.Anything,
-		string(TestServiceName),
+		string(testServiceName),
 	).Times(1).Return(
 		nil,
 	)
@@ -35,7 +35,7 @@ func (t *stopServiceTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 }
 
 func (t *stopServiceTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q)", stop_service.StopServiceBuiltinName, stop_service.ServiceNameArgName, TestServiceName)
+	return fmt.Sprintf("%s(%s=%q)", stop_service.StopServiceBuiltinName, stop_service.ServiceNameArgName, testServiceName)
 }
 
 func (t *stopServiceTestCase) GetStarlarkCodeForAssertion() string {
@@ -45,6 +45,6 @@ func (t *stopServiceTestCase) GetStarlarkCodeForAssertion() string {
 func (t *stopServiceTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
 	require.Equal(t, starlark.None, interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Service '%s' stopped", TestServiceName)
+	expectedExecutionResult := fmt.Sprintf("Service '%s' stopped", testServiceName)
 	require.Regexp(t, expectedExecutionResult, *executionResult)
 }

@@ -52,7 +52,13 @@ func Predeclared() starlark.StringDict {
 // can have an effect at both interpretation and execution time.
 //
 // Examples: add_service, exec, wait, etc.
-func KurtosisPlanInstructions(packageId string, serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore, packageContentProvider startosis_packages.PackageContentProvider) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
+func KurtosisPlanInstructions(
+	packageId string,
+	serviceNetwork service_network.ServiceNetwork,
+	runtimeValueStore *runtime_value_store.RuntimeValueStore,
+	packageContentProvider startosis_packages.PackageContentProvider,
+	packageReplaceOptions map[string]string,
+) []*kurtosis_plan_instruction.KurtosisPlanInstruction {
 	return []*kurtosis_plan_instruction.KurtosisPlanInstruction{
 		add_service.NewAddService(serviceNetwork, runtimeValueStore),
 		add_service.NewAddServices(serviceNetwork, runtimeValueStore),
@@ -67,7 +73,7 @@ func KurtosisPlanInstructions(packageId string, serviceNetwork service_network.S
 		tasks.NewRunShService(serviceNetwork, runtimeValueStore),
 		stop_service.NewStopService(serviceNetwork),
 		store_service_files.NewStoreServiceFiles(serviceNetwork),
-		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider),
+		upload_files.NewUploadFiles(packageId, serviceNetwork, packageContentProvider, packageReplaceOptions),
 		wait.NewWait(serviceNetwork, runtimeValueStore),
 	}
 }
@@ -79,11 +85,11 @@ func KurtosisPlanInstructions(packageId string, serviceNetwork service_network.S
 // Kurtosis enclave.
 //
 // Example: read_file, import_package, etc.
-func KurtosisHelpers(packageId string, recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError), packageContentProvider startosis_packages.PackageContentProvider, packageGlobalCache map[string]*startosis_packages.ModuleCacheEntry) []*starlark.Builtin {
+func KurtosisHelpers(packageId string, recursiveInterpret func(moduleId string, scriptContent string) (starlark.StringDict, *startosis_errors.InterpretationError), packageContentProvider startosis_packages.PackageContentProvider, packageGlobalCache map[string]*startosis_packages.ModuleCacheEntry, packageReplaceOptions map[string]string) []*starlark.Builtin {
 	return []*starlark.Builtin{
-		starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.NewImportModule(packageId, recursiveInterpret, packageContentProvider, packageGlobalCache).CreateBuiltin()),
+		starlark.NewBuiltin(import_module.ImportModuleBuiltinName, import_module.NewImportModule(packageId, recursiveInterpret, packageContentProvider, packageGlobalCache, packageReplaceOptions).CreateBuiltin()),
 		starlark.NewBuiltin(print_builtin.PrintBuiltinName, print_builtin.GeneratePrintBuiltin()),
-		starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.NewReadFileHelper(packageId, packageContentProvider).CreateBuiltin()),
+		starlark.NewBuiltin(read_file.ReadFileBuiltinName, read_file.NewReadFileHelper(packageId, packageContentProvider, packageReplaceOptions).CreateBuiltin()),
 	}
 }
 

@@ -50,6 +50,9 @@ message RemoteContextV0 {
   optional TlsConfig tls_config = 5;
 
   optional string env_vars = 6;
+
+  optional string cloud_user_id = 7;
+  optional string cloud_instance_id = 8;
 }
 
 message TlsConfig {

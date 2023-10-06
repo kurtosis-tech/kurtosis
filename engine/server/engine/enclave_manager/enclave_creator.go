@@ -37,6 +37,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 	enclaveName string,
 	enclaveEnvVars string,
 	isProduction bool,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (*kurtosis_engine_rpc_api_bindings.EnclaveInfo, error) {
 
 	uuid, err := uuid_generator.GenerateUUIDString()
@@ -76,6 +78,8 @@ func (creator *EnclaveCreator) CreateEnclave(
 		apiContainerListenGrpcPortNumInsideNetwork,
 		enclaveEnvVars,
 		isProduction,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 
 	if err != nil {
@@ -157,6 +161,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 	grpcListenPort uint16,
 	enclaveEnvVars string,
 	isProduction bool,
+	metricsUserID string,
+	didUserAcceptSendingMetrics bool,
 ) (
 	resultApiContainer *api_container.APIContainer,
 	resultErr error,
@@ -174,6 +180,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 			creator.apiContainerKurtosisBackendConfigSupplier,
 			enclaveEnvVars,
 			isProduction,
+			metricsUserID,
+			didUserAcceptSendingMetrics,
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with custom version '%v', but an error occurred", enclaveUuid, apiContainerImageVersionTag)
@@ -188,6 +196,8 @@ func (creator *EnclaveCreator) launchApiContainer(
 		creator.apiContainerKurtosisBackendConfigSupplier,
 		enclaveEnvVars,
 		isProduction,
+		metricsUserID,
+		didUserAcceptSendingMetrics,
 	)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "Expected to be able to launch api container for enclave '%v' with the default version, but an error occurred", enclaveUuid)

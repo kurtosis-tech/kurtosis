@@ -24,8 +24,8 @@ type getHttpRequestRecipeNoExtractorTestCase struct {
 func (suite *KurtosisTypeConstructorTestSuite) TestGetHttpRequestRecipeNoExtractor() {
 	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(TestServiceName),
-		TestPrivatePortId,
+		string(testServiceName),
+		testPrivatePortId,
 		"GET",
 		"",
 		"/test",
@@ -58,14 +58,14 @@ func (suite *KurtosisTypeConstructorTestSuite) TestGetHttpRequestRecipeNoExtract
 }
 
 func (t *getHttpRequestRecipeNoExtractorTestCase) GetStarlarkCode() string {
-	return fmt.Sprintf("%s(%s=%q, %s=%q)", recipe.GetHttpRecipeTypeName, recipe.PortIdAttr, TestPrivatePortId, recipe.EndpointAttr, "/test")
+	return fmt.Sprintf("%s(%s=%q, %s=%q)", recipe.GetHttpRecipeTypeName, recipe.PortIdAttr, testPrivatePortId, recipe.EndpointAttr, "/test")
 }
 
 func (t *getHttpRequestRecipeNoExtractorTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
 	getHttpRequestRecipe, ok := typeValue.(*recipe.GetHttpRequestRecipe)
 	require.True(t, ok)
 
-	_, err := getHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, TestServiceName)
+	_, err := getHttpRequestRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, testServiceName)
 	require.NoError(t, err)
 
 	returnValue, interpretationErr := getHttpRequestRecipe.CreateStarlarkReturnValue("result-fake-uuid")

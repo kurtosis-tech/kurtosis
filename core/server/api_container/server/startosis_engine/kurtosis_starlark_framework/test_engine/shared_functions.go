@@ -8,14 +8,14 @@ import (
 
 func getDefaultReadyConditionsScriptPart() string {
 	return getCustomReadyConditionsScripPart(
-		TestReadyConditionsRecipePortId,
-		TestReadyConditionsRecipeEndpoint,
-		TestReadyConditionsRecipeExtract,
-		TestReadyConditionsField,
-		TestReadyConditionsAssertion,
-		TestReadyConditionsTarget,
-		TestReadyConditionsInterval,
-		TestReadyConditionsTimeout,
+		testReadyConditionsRecipePortId,
+		testReadyConditionsRecipeEndpoint,
+		testReadyConditionsRecipeExtract,
+		testReadyConditionsField,
+		testReadyConditionsAssertion,
+		testReadyConditionsTarget,
+		testReadyConditionsInterval,
+		testReadyConditionsTimeout,
 	)
 }
 
