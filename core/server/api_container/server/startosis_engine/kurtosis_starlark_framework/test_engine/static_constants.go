@@ -24,7 +24,6 @@ var (
 	testModulePackageId       = "github.com/kurtosistech/test-package"
 	testModuleFileName        = "github.com/kurtosistech/test-package/helpers.star"
 	testModuleRelativeLocator = "./helpers.star"
-	testModuleDirpath         = "/kurtosistech/test-package"
 
 	testContainerImageName = "kurtosistech/example-datastore-server"
 
