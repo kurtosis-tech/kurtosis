@@ -16,7 +16,7 @@ const (
 	defaultDay = 0
 )
 
-func TestLogRemover_Run(t *testing.T) {
+func TestRemoveLogsBeyondRetentionPeriod(t *testing.T) {
 	mockFs := volume_filesystem.NewMockedVolumeFilesystem()
 	mockKurtosisBackend := backend_interface.NewMockKurtosisBackend(t)
 
