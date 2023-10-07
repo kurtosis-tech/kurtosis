@@ -32,6 +32,7 @@ import (
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/concurrent_writer"
 	"github.com/kurtosis-tech/stacktrace"
 	"github.com/sirupsen/logrus"
@@ -524,12 +525,12 @@ func (manager *DockerManager) CreateAndStartContainer(
 	}
 
 	var err error
-	switch image_pulling := args.latestImagePulling; image_pulling {
-	case Always:
+	switch image_pulling := args.imageDownloadMode; image_pulling {
+	case image_download_mode.Always:
 		err = manager.FetchLatestImage(ctx, dockerImage)
-	case Missing:
+	case image_download_mode.Missing:
 		_, err = manager.FetchImageMissing(ctx, dockerImage)
-	case Never:
+	case image_download_mode.Never:
 		return "", nil, stacktrace.NewError("Undefined image pulling mode: '%v'", image_pulling)
 	}
 

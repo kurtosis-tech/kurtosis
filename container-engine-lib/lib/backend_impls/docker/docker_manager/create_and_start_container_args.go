@@ -4,6 +4,7 @@ import (
 	"net"
 
 	"github.com/docker/go-connections/nat"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 )
 
 // See CreateAndStartContainerArgsBuilder for detailed documentation on the fields
@@ -30,7 +31,7 @@ type CreateAndStartContainerArgs struct {
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
-	latestImagePulling                       LatestImagePulling
+	imageDownloadMode                        image_download_mode.ImageDownloadMode
 }
 
 // Builder for creating CreateAndStartContainerArgs object
@@ -57,7 +58,7 @@ type CreateAndStartContainerArgsBuilder struct {
 	skipAddingToBridgeNetworkIfStaticIpIsSet bool
 	containerInitEnabled                     bool
 	restartPolicy                            RestartPolicy
-	latestImagePulling                       LatestImagePulling
+	imageDownloadMode                        image_download_mode.ImageDownloadMode
 }
 
 /*
@@ -91,7 +92,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		skipAddingToBridgeNetworkIfStaticIpIsSet: false,
 		containerInitEnabled:                     false,
 		restartPolicy:                            NoRestart,
-		latestImagePulling:                       Missing,
+		imageDownloadMode:                        image_download_mode.Missing,
 	}
 }
 
@@ -119,7 +120,7 @@ func (builder *CreateAndStartContainerArgsBuilder) Build() *CreateAndStartContai
 		skipAddingToBridgeNetworkIfStaticIpIsSet: builder.skipAddingToBridgeNetworkIfStaticIpIsSet,
 		containerInitEnabled:                     builder.containerInitEnabled,
 		restartPolicy:                            builder.restartPolicy,
-		latestImagePulling:                       builder.latestImagePulling,
+		imageDownloadMode:                        builder.imageDownloadMode,
 	}
 }
 
@@ -256,16 +257,16 @@ func (builder *CreateAndStartContainerArgsBuilder) WithContainerInitEnabled(cont
 }
 
 func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageAlways() *CreateAndStartContainerArgsBuilder {
-	builder.latestImagePulling = Always
+	builder.imageDownloadMode = image_download_mode.Always
 	return builder
 }
 
 func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageNever() *CreateAndStartContainerArgsBuilder {
-	builder.latestImagePulling = Never
+	builder.imageDownloadMode = image_download_mode.Never
 	return builder
 }
 
 func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageOnMissing() *CreateAndStartContainerArgsBuilder {
-	builder.latestImagePulling = Missing
+	builder.imageDownloadMode = image_download_mode.Missing
 	return builder
 }
