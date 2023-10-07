@@ -473,18 +473,6 @@ func (backend *DockerKurtosisBackend) DestroyLogsCollectorForEnclave(ctx context
 	return nil
 }
 
-func (backend *DockerKurtosisBackend) DestroyLogsStorage(ctx context.Context) error {
-	logsStorageAttrs, err := backend.objAttrsProvider.ForLogsStorageVolume()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred retrieving log storage attributes while attempting to destroy logs storage.")
-	}
-	logsStorageVolNameStr := logsStorageAttrs.GetName().GetString()
-	if err = backend.dockerManager.RemoveVolume(ctx, logsStorageVolNameStr); err != nil {
-		return stacktrace.Propagate(err, "An error occurred attempting remove log storage volume: %v.", logsStorageVolNameStr)
-	}
-	return nil
-}
-
 func (backend *DockerKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, err := backend.dockerManager.GetAvailableCPUAndMemory(ctx)
 	if err != nil {

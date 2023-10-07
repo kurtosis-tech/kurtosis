@@ -457,11 +457,6 @@ func (backend *KubernetesKurtosisBackend) DestroyLogsCollectorForEnclave(ctx con
 	return stacktrace.NewError("Destroy the logs collector for enclave isn't yet implemented on Kubernetes")
 }
 
-func (backend *KubernetesKurtosisBackend) DestroyLogsStorage(ctx context.Context) error {
-	// TODO IMPLEMENT
-	return stacktrace.NewError("Log storage isn't yet implemented on Kubernetes")
-}
-
 // ====================================================================================================
 //
 //	Private Helper Functions

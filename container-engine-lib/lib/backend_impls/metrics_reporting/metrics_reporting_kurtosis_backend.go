@@ -436,10 +436,6 @@ func (backend *MetricsReportingKurtosisBackend) DestroyLogsCollectorForEnclave(c
 	return nil
 }
 
-func (backend *MetricsReportingKurtosisBackend) DestroyLogsStorage(ctx context.Context) error {
-	return backend.underlying.DestroyLogsStorage(ctx)
-}
-
 func (backend *MetricsReportingKurtosisBackend) GetAvailableCPUAndMemory(ctx context.Context) (compute_resources.MemoryInMegaBytes, compute_resources.CpuMilliCores, bool, error) {
 	availableMemory, availableCpu, isResourceInformationComplete, err := backend.underlying.GetAvailableCPUAndMemory(ctx)
 	if err != nil {
