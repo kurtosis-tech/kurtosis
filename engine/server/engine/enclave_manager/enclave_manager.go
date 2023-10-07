@@ -3,6 +3,7 @@ package enclave_manager
 import (
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"sort"
 	"strings"
 	"sync"
@@ -60,9 +61,10 @@ type EnclaveManager struct {
 	// this is an append only list
 	allExistingAndHistoricalIdentifiers []*kurtosis_engine_rpc_api_bindings.EnclaveIdentifiers
 
-	enclaveCreator *EnclaveCreator
-	enclavePool    *EnclavePool
-	enclaveEnvVars string
+	enclaveCreator        *EnclaveCreator
+	enclavePool           *EnclavePool
+	enclaveEnvVars        string
+	enclaveLogFileManager *log_file_manager.LogFileManager
 
 	metricsUserID               string
 	didUserAcceptSendingMetrics bool
@@ -75,6 +77,7 @@ func CreateEnclaveManager(
 	engineVersion string,
 	poolSize uint8,
 	enclaveEnvVars string,
+	enclaveLogFileManager *log_file_manager.LogFileManager,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (*EnclaveManager, error) {
@@ -101,6 +104,7 @@ func CreateEnclaveManager(
 		enclaveCreator:                            enclaveCreator,
 		enclavePool:                               enclavePool,
 		enclaveEnvVars:                            enclaveEnvVars,
+		enclaveLogFileManager:                     enclaveLogFileManager,
 		metricsUserID:                             metricsUserID,
 		didUserAcceptSendingMetrics:               didUserAcceptSendingMetrics,
 	}
@@ -253,6 +257,9 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdenti
 		return stacktrace.Propagate(err, "An error occurred destroying the enclave")
 	}
 	if _, found := successfullyDestroyedEnclaves[enclaveUuid]; found {
+		if err = manager.enclaveLogFileManager.RemoveEnclaveLogs(string(enclaveUuid)); err != nil {
+			return stacktrace.Propagate(err, "An error occurred attempting to remove enclave '%v' logs after it was destroyed.", enclaveIdentifier)
+		}
 		return nil
 	}
 	destructionErr, found := erroredEnclaves[enclaveUuid]
@@ -479,14 +486,19 @@ func (manager *EnclaveManager) cleanEnclaves(
 		return nil, nil, stacktrace.Propagate(err, "An error occurred destroying enclaves during cleaning")
 	}
 
-	successfullyDestroyedEnclaveIdStrs := []string{}
-	for enclaveId := range successfullyDestroyedEnclaves {
-		successfullyDestroyedEnclaveIdStrs = append(successfullyDestroyedEnclaveIdStrs, string(enclaveId))
-	}
-
 	enclaveDestructionErrors := []error{}
 	for _, destructionError := range erroredEnclaves {
 		enclaveDestructionErrors = append(enclaveDestructionErrors, destructionError)
+	}
+
+	successfullyDestroyedEnclaveIdStrs := []string{}
+	for enclaveId := range successfullyDestroyedEnclaves {
+		successfullyDestroyedEnclaveIdStrs = append(successfullyDestroyedEnclaveIdStrs, string(enclaveId))
+
+		if err := manager.enclaveLogFileManager.RemoveEnclaveLogs(string(enclaveId)); err != nil {
+			logRemovalErr := stacktrace.Propagate(err, "An error occurred removing enclave '%v' logs.", enclaveId)
+			enclaveDestructionErrors = append(enclaveDestructionErrors, logRemovalErr)
+		}
 	}
 
 	return successfullyDestroyedEnclaveIdStrs, enclaveDestructionErrors, nil

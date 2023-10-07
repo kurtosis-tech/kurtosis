@@ -149,7 +149,7 @@ func TestGetLogFilePathsWithDiffRetentionPeriod(t *testing.T) {
 	_, _ = filesystem.Create(week2filepath)
 
 	currentWeek := 2
-	retentionPeriod := 2
+	retentionPeriod := 3
 
 	expectedLogFilePaths := []string{
 		week52filepath,
