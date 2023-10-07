@@ -7,35 +7,37 @@ import (
 	"strings"
 )
 
-const _ImageDownloadName = "NEVERALWAYSMISSING_ONLY"
+const _ImageDownloadName = "NEVERALWAYSMISSING"
 
 var _ImageDownloadIndex = [...]uint8{0, 5, 11, 18}
 
-const _ImageDownloadLowerName = "neveralwaysmissing_only"
+const _ImageDownloadLowerName = "neveralwaysmissing"
 
 func (i ImageDownload) String() string {
-	return i.String()
+	if i < 0 || i >= ImageDownload(len(_ImageDownloadIndex)-1) {
+		return fmt.Sprintf("ImageDownload(%d)", i)
+	}
+	return _ImageDownloadName[_ImageDownloadIndex[i]:_ImageDownloadIndex[i+1]]
 }
 
 // An "invalid array index" compiler error signifies that the constant values have changed.
 // Re-run the stringer command to generate them again.
 func _ImageDownloadNoOp() {
 	var x [1]struct{}
-	_ = x[Brief-(0)]
-	_ = x[Detailed-(1)]
-	_ = x[Executable-(2)]
-	_ = x[OutputOnly-(3)]
+	_ = x[never-(0)]
+	_ = x[always-(1)]
+	_ = x[missing-(2)]
 }
 
-var _ImageDownloadValues = []ImageDownload{Never, Always, Missing}
+var _ImageDownloadValues = []ImageDownload{never, always, missing}
 
 var _ImageDownloadNameToValueMap = map[string]ImageDownload{
-	_ImageDownloadName[0:5]:        Never,
-	_ImageDownloadLowerName[0:5]:   Never,
-	_ImageDownloadName[5:11]:       Always,
-	_ImageDownloadLowerName[5:11]:  Always,
-	_ImageDownloadName[11:18]:      Missing,
-	_ImageDownloadLowerName[11:18]: Missing,
+	_ImageDownloadName[0:5]:        never,
+	_ImageDownloadLowerName[0:5]:   never,
+	_ImageDownloadName[5:11]:       always,
+	_ImageDownloadLowerName[5:11]:  always,
+	_ImageDownloadName[11:18]:      missing,
+	_ImageDownloadLowerName[11:18]: missing,
 }
 
 var _ImageDownloadNames = []string{
@@ -54,7 +56,7 @@ func ImageDownloadString(s string) (ImageDownload, error) {
 	if val, ok := _ImageDownloadNameToValueMap[strings.ToLower(s)]; ok {
 		return val, nil
 	}
-	return Missing, fmt.Errorf("%s does not belong to ImageDownload values", s)
+	return 0, fmt.Errorf("%s does not belong to ImageDownload values", s)
 }
 
 // ImageDownloadValues returns all values of the enum

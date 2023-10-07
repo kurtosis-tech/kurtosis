@@ -1,10 +1,10 @@
 package run
 
 //go:generate go run github.com/dmarkham/enumer -type=Verbosity -transform=snake-upper
-type ImageDownload string
+type ImageDownload int
 
 const (
-	Never   ImageDownload = "never"
-	Always                = "always"
-	Missing               = "missing"
+	never ImageDownload = iota
+	always
+	missing
 )
