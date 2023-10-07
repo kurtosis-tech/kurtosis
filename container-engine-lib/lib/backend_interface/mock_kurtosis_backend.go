@@ -14,6 +14,8 @@ import (
 
 	exec_result "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 
+	image_download_mode "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
+
 	io "io"
 
 	logs_aggregator "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
@@ -800,23 +802,23 @@ func (_c *MockKurtosisBackend_DumpKurtosis_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// FetchImage provides a mock function with given fields: ctx, image
-func (_m *MockKurtosisBackend) FetchImage(ctx context.Context, image string) (bool, error) {
-	ret := _m.Called(ctx, image)
+// FetchImage provides a mock function with given fields: ctx, image, download_mode
+func (_m *MockKurtosisBackend) FetchImage(ctx context.Context, image string, download_mode image_download_mode.ImageDownloadMode) (bool, error) {
+	ret := _m.Called(ctx, image, download_mode)
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
-		return rf(ctx, image)
+	if rf, ok := ret.Get(0).(func(context.Context, string, image_download_mode.ImageDownloadMode) (bool, error)); ok {
+		return rf(ctx, image, download_mode)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
-		r0 = rf(ctx, image)
+	if rf, ok := ret.Get(0).(func(context.Context, string, image_download_mode.ImageDownloadMode) bool); ok {
+		r0 = rf(ctx, image, download_mode)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, image)
+	if rf, ok := ret.Get(1).(func(context.Context, string, image_download_mode.ImageDownloadMode) error); ok {
+		r1 = rf(ctx, image, download_mode)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -832,13 +834,14 @@ type MockKurtosisBackend_FetchImage_Call struct {
 // FetchImage is a helper method to define mock.On call
 //   - ctx context.Context
 //   - image string
-func (_e *MockKurtosisBackend_Expecter) FetchImage(ctx interface{}, image interface{}) *MockKurtosisBackend_FetchImage_Call {
-	return &MockKurtosisBackend_FetchImage_Call{Call: _e.mock.On("FetchImage", ctx, image)}
+//   - download_mode image_download_mode.ImageDownloadMode
+func (_e *MockKurtosisBackend_Expecter) FetchImage(ctx interface{}, image interface{}, download_mode interface{}) *MockKurtosisBackend_FetchImage_Call {
+	return &MockKurtosisBackend_FetchImage_Call{Call: _e.mock.On("FetchImage", ctx, image, download_mode)}
 }
 
-func (_c *MockKurtosisBackend_FetchImage_Call) Run(run func(ctx context.Context, image string)) *MockKurtosisBackend_FetchImage_Call {
+func (_c *MockKurtosisBackend_FetchImage_Call) Run(run func(ctx context.Context, image string, download_mode image_download_mode.ImageDownloadMode)) *MockKurtosisBackend_FetchImage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		run(args[0].(context.Context), args[1].(string), args[2].(image_download_mode.ImageDownloadMode))
 	})
 	return _c
 }
@@ -848,7 +851,7 @@ func (_c *MockKurtosisBackend_FetchImage_Call) Return(_a0 bool, _a1 error) *Mock
 	return _c
 }
 
-func (_c *MockKurtosisBackend_FetchImage_Call) RunAndReturn(run func(context.Context, string) (bool, error)) *MockKurtosisBackend_FetchImage_Call {
+func (_c *MockKurtosisBackend_FetchImage_Call) RunAndReturn(run func(context.Context, string, image_download_mode.ImageDownloadMode) (bool, error)) *MockKurtosisBackend_FetchImage_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -2149,13 +2152,12 @@ func (_c *MockKurtosisBackend_UpdateEnclave_Call) RunAndReturn(run func(context.
 	return _c
 }
 
-type mockConstructorTestingTNewMockKurtosisBackend interface {
+// NewMockKurtosisBackend creates a new instance of MockKurtosisBackend. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewMockKurtosisBackend(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewMockKurtosisBackend creates a new instance of MockKurtosisBackend. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewMockKurtosisBackend(t mockConstructorTestingTNewMockKurtosisBackend) *MockKurtosisBackend {
+}) *MockKurtosisBackend {
 	mock := &MockKurtosisBackend{}
 	mock.Mock.Test(t)
 

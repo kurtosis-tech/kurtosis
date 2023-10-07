@@ -2,16 +2,18 @@ package backend_interface
 
 import (
 	"context"
+	"io"
+	"time"
+
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/api_container"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_aggregator"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/logs_collector"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
-	"io"
-	"time"
 )
 
 // TODO This mega-backend should really have its individual functionalities split up into
@@ -29,7 +31,7 @@ type KurtosisBackend interface {
 	// FetchImage always attempts to retrieve the latest image.
 	// If retrieving the latest [dockerImage] fails, the local image will be used.
 	// Returns True is it was retrieved from cloud or False if it's a local image
-	FetchImage(ctx context.Context, image string) (bool, error)
+	FetchImage(ctx context.Context, image string, download_mode image_download_mode.ImageDownloadMode) (bool, error)
 
 	PruneUnusedImages(ctx context.Context) ([]string, error)
 

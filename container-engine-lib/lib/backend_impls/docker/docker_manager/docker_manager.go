@@ -528,7 +528,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 	case Always:
 		err = manager.FetchLatestImage(ctx, dockerImage)
 	case Missing:
-		_, err = manager.FetchImage(ctx, dockerImage)
+		_, err = manager.FetchImageMissing(ctx, dockerImage)
 	case Never:
 		return "", nil, stacktrace.NewError("Undefined image pulling mode: '%v'", image_pulling)
 	}
@@ -1190,10 +1190,10 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	return result, nil
 }
 
-// [FetchImage] uses the local [dockerImage] if it's available.
+// [FetchImageMissing] uses the local [dockerImage] if it's available.
 // If unavailable, will attempt to fetch the latest image.
 // Returns error if local [dockerImage] is unavailable and pulling image fails.
-func (manager *DockerManager) FetchImage(ctx context.Context, dockerImage string) (bool, error) {
+func (manager *DockerManager) FetchImageMissing(ctx context.Context, dockerImage string) (bool, error) {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
