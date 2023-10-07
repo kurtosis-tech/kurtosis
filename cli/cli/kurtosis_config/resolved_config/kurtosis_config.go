@@ -165,6 +165,10 @@ func (kurtosisConfig *KurtosisConfig) GetShouldSendMetrics() bool {
 	return kurtosisConfig.shouldSendMetrics
 }
 
+func (kurtosisConfig *KurtosisConfig) GetGitProxy() string {
+	return kurtosisConfig.gitProxy
+}
+
 func (kurtosisConfig *KurtosisConfig) GetKurtosisClusters() map[string]*KurtosisClusterConfig {
 	return kurtosisConfig.clusters
 }
