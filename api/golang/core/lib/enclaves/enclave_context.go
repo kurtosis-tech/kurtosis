@@ -532,7 +532,7 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	cloudInstanceId string,
 	cloudUserId string,
-	imageDownloadMode string,
+	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 ) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 
 	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId, imageDownloadMode), nil

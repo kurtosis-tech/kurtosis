@@ -18,6 +18,18 @@ export const ServiceStatus = proto3.makeEnum(
 );
 
 /**
+ * @generated from enum api_container_api.ImageDownloadMode
+ */
+export const ImageDownloadMode = proto3.makeEnum(
+  "api_container_api.ImageDownloadMode",
+  [
+    {no: 0, name: "never"},
+    {no: 1, name: "always"},
+    {no: 2, name: "missing"},
+  ],
+);
+
+/**
  * User services port forwarding
  *
  * @generated from enum api_container_api.Connect
@@ -138,7 +150,7 @@ export const RunStarlarkScriptArgs = proto3.makeMessageType(
     { no: 6, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
     { no: 7, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 8, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
-    { no: 9, name: "image_download_mode", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 9, name: "image_download_mode", kind: "enum", T: proto3.getEnumType(ImageDownloadMode), opt: true },
   ],
 );
 
@@ -160,7 +172,7 @@ export const RunStarlarkPackageArgs = proto3.makeMessageType(
     { no: 11, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
     { no: 12, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 13, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
-    { no: 14, name: "image_download_mode", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 14, name: "image_download_mode", kind: "enum", T: proto3.getEnumType(ImageDownloadMode), opt: true },
   ],
 );
 

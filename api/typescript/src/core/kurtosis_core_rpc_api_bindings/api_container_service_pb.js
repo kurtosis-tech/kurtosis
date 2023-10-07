@@ -38,6 +38,7 @@ goog.exportSymbol('proto.api_container_api.GetExistingAndHistoricalServiceIdenti
 goog.exportSymbol('proto.api_container_api.GetServicesArgs', null, global);
 goog.exportSymbol('proto.api_container_api.GetServicesResponse', null, global);
 goog.exportSymbol('proto.api_container_api.GetStarlarkRunResponse', null, global);
+goog.exportSymbol('proto.api_container_api.ImageDownloadMode', null, global);
 goog.exportSymbol('proto.api_container_api.InspectFilesArtifactContentsRequest', null, global);
 goog.exportSymbol('proto.api_container_api.InspectFilesArtifactContentsResponse', null, global);
 goog.exportSymbol('proto.api_container_api.KurtosisFeatureFlag', null, global);
@@ -1936,7 +1937,7 @@ proto.api_container_api.RunStarlarkScriptArgs.toObject = function(includeInstanc
     experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 6)) == null ? undefined : f,
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 7, ""),
     cloudUserId: jspb.Message.getFieldWithDefault(msg, 8, ""),
-    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 9, "")
+    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 9, 0)
   };
 
   if (includeInstance) {
@@ -2008,7 +2009,7 @@ proto.api_container_api.RunStarlarkScriptArgs.deserializeBinaryFromReader = func
       msg.setCloudUserId(value);
       break;
     case 9:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {!proto.api_container_api.ImageDownloadMode} */ (reader.readEnum());
       msg.setImageDownloadMode(value);
       break;
     default:
@@ -2096,9 +2097,9 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
       f
     );
   }
-  f = /** @type {string} */ (jspb.Message.getField(message, 9));
+  f = /** @type {!proto.api_container_api.ImageDownloadMode} */ (jspb.Message.getField(message, 9));
   if (f != null) {
-    writer.writeString(
+    writer.writeEnum(
       9,
       f
     );
@@ -2342,16 +2343,16 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.hasCloudUserId = functio
 
 
 /**
- * optional string image_download_mode = 9;
- * @return {string}
+ * optional ImageDownloadMode image_download_mode = 9;
+ * @return {!proto.api_container_api.ImageDownloadMode}
  */
 proto.api_container_api.RunStarlarkScriptArgs.prototype.getImageDownloadMode = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 9, ""));
+  return /** @type {!proto.api_container_api.ImageDownloadMode} */ (jspb.Message.getFieldWithDefault(this, 9, 0));
 };
 
 
 /**
- * @param {string} value
+ * @param {!proto.api_container_api.ImageDownloadMode} value
  * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
  */
 proto.api_container_api.RunStarlarkScriptArgs.prototype.setImageDownloadMode = function(value) {
@@ -2454,7 +2455,7 @@ proto.api_container_api.RunStarlarkPackageArgs.toObject = function(includeInstan
     experimentalFeaturesList: (f = jspb.Message.getRepeatedField(msg, 11)) == null ? undefined : f,
     cloudInstanceId: jspb.Message.getFieldWithDefault(msg, 12, ""),
     cloudUserId: jspb.Message.getFieldWithDefault(msg, 13, ""),
-    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 14, "")
+    imageDownloadMode: jspb.Message.getFieldWithDefault(msg, 14, 0)
   };
 
   if (includeInstance) {
@@ -2542,7 +2543,7 @@ proto.api_container_api.RunStarlarkPackageArgs.deserializeBinaryFromReader = fun
       msg.setCloudUserId(value);
       break;
     case 14:
-      var value = /** @type {string} */ (reader.readString());
+      var value = /** @type {!proto.api_container_api.ImageDownloadMode} */ (reader.readEnum());
       msg.setImageDownloadMode(value);
       break;
     default:
@@ -2658,9 +2659,9 @@ proto.api_container_api.RunStarlarkPackageArgs.serializeBinaryToWriter = functio
       f
     );
   }
-  f = /** @type {string} */ (jspb.Message.getField(message, 14));
+  f = /** @type {!proto.api_container_api.ImageDownloadMode} */ (jspb.Message.getField(message, 14));
   if (f != null) {
-    writer.writeString(
+    writer.writeEnum(
       14,
       f
     );
@@ -3054,16 +3055,16 @@ proto.api_container_api.RunStarlarkPackageArgs.prototype.hasCloudUserId = functi
 
 
 /**
- * optional string image_download_mode = 14;
- * @return {string}
+ * optional ImageDownloadMode image_download_mode = 14;
+ * @return {!proto.api_container_api.ImageDownloadMode}
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.getImageDownloadMode = function() {
-  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 14, ""));
+  return /** @type {!proto.api_container_api.ImageDownloadMode} */ (jspb.Message.getFieldWithDefault(this, 14, 0));
 };
 
 
 /**
- * @param {string} value
+ * @param {!proto.api_container_api.ImageDownloadMode} value
  * @return {!proto.api_container_api.RunStarlarkPackageArgs} returns this
  */
 proto.api_container_api.RunStarlarkPackageArgs.prototype.setImageDownloadMode = function(value) {
@@ -10052,6 +10053,15 @@ proto.api_container_api.ServiceStatus = {
   STOPPED: 0,
   RUNNING: 1,
   UNKNOWN: 2
+};
+
+/**
+ * @enum {number}
+ */
+proto.api_container_api.ImageDownloadMode = {
+  NEVER: 0,
+  ALWAYS: 1,
+  MISSING: 2
 };
 
 /**

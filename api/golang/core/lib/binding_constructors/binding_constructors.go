@@ -41,14 +41,14 @@ func NewRunStarlarkScriptArgs(
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	cloudInstanceId string,
 	cloudUserId string,
-	imageDownloadMode string,
+	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs {
 	cloudInstanceIdCopy := new(string)
 	*cloudInstanceIdCopy = cloudInstanceId
 	cloudUserIdCopy := new(string)
 	*cloudUserIdCopy = cloudUserId
-	imageDownloadModeCopy := new(string)
-	*imageDownloadModeCopy = cloudUserId
+	imageDownloadModeCopy := new(kurtosis_core_rpc_api_bindings.ImageDownloadMode)
+	*imageDownloadModeCopy = imageDownloadMode
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
@@ -74,7 +74,7 @@ func NewRunStarlarkPackageArgs(
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	cloudInstanceId string,
 	cloudUserId string,
-	imageDownloadMode string,
+	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -82,8 +82,8 @@ func NewRunStarlarkPackageArgs(
 	*cloudInstanceIdCopy = cloudInstanceId
 	cloudUserIdCopy := new(string)
 	*cloudUserIdCopy = cloudUserId
-	imageDownloadModeCopy := new(string)
-	*imageDownloadModeCopy = cloudUserId
+	imageDownloadModeCopy := new(kurtosis_core_rpc_api_bindings.ImageDownloadMode)
+	*imageDownloadModeCopy = imageDownloadMode
 	clonePackage := false
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{
 		PackageId:              packageId,
@@ -111,7 +111,7 @@ func NewRunStarlarkRemotePackageArgs(
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	cloudInstanceId string,
 	cloudUserId string,
-	imageDownloadMode string,
+	imageDownloadMode kurtosis_core_rpc_api_bindings.ImageDownloadMode,
 ) *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs {
 	parallelismCopy := new(int32)
 	*parallelismCopy = parallelism
@@ -119,7 +119,7 @@ func NewRunStarlarkRemotePackageArgs(
 	*cloudInstanceIdCopy = cloudInstanceId
 	cloudUserIdCopy := new(string)
 	*cloudUserIdCopy = cloudUserId
-	imageDownloadModeCopy := new(string)
+	imageDownloadModeCopy := new(kurtosis_core_rpc_api_bindings.ImageDownloadMode)
 	*imageDownloadModeCopy = imageDownloadMode
 	clonePackage := true
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs{

@@ -14,3 +14,10 @@ func GetOrDefaultString(optionalValue *string, defaultValue string) string {
 	}
 	return *optionalValue
 }
+
+func GetOrDefault[T any](optionalValue *T, defaultValue T) T {
+	if optionalValue == nil {
+		return defaultValue
+	}
+	return *optionalValue
+}

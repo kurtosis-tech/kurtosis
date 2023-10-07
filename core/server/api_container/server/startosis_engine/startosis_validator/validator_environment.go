@@ -2,6 +2,7 @@ package startosis_validator
 
 import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/image_download_mode"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
@@ -18,10 +19,10 @@ type ValidatorEnvironment struct {
 	isResourceInformationComplete bool
 	minCPUByServiceName           map[service.ServiceName]compute_resources.CpuMilliCores
 	minMemoryByServiceName        map[service.ServiceName]compute_resources.MemoryInMegaBytes
-	imageDownloadMode             string
+	imageDownloadMode             image_download_mode.ImageDownloadMode
 }
 
-func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool, image_download_mode string) *ValidatorEnvironment {
+func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool, image_download_mode image_download_mode.ImageDownloadMode) *ValidatorEnvironment {
 	serviceNamesWithComponentExistence := map[service.ServiceName]ComponentExistence{}
 	for serviceName := range serviceNames {
 		serviceNamesWithComponentExistence[serviceName] = ComponentExistedBeforePackageRun

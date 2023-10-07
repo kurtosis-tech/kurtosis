@@ -179,8 +179,8 @@ pub struct RunStarlarkScriptArgs {
     #[prost(string, optional, tag = "8")]
     pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to empty
-    #[prost(string, optional, tag = "9")]
-    pub image_download_mode: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(enumeration = "ImageDownloadMode", optional, tag = "9")]
+    pub image_download_mode: ::core::option::Option<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]
@@ -218,8 +218,8 @@ pub struct RunStarlarkPackageArgs {
     #[prost(string, optional, tag = "13")]
     pub cloud_user_id: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to empty
-    #[prost(string, optional, tag = "14")]
-    pub image_download_mode: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(enumeration = "ImageDownloadMode", optional, tag = "14")]
+    pub image_download_mode: ::core::option::Option<i32>,
     /// Deprecated: If the package is local, it should have been uploaded with UploadStarlarkPackage prior to calling
     /// RunStarlarkPackage. If the package is remote and must be cloned within the APIC, use the standalone boolean flag
     /// clone_package below
@@ -692,6 +692,35 @@ impl ServiceStatus {
             "STOPPED" => Some(Self::Stopped),
             "RUNNING" => Some(Self::Running),
             "UNKNOWN" => Some(Self::Unknown),
+            _ => None,
+        }
+    }
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
+#[repr(i32)]
+pub enum ImageDownloadMode {
+    Never = 0,
+    Always = 1,
+    Missing = 2,
+}
+impl ImageDownloadMode {
+    /// String value of the enum field names used in the ProtoBuf definition.
+    ///
+    /// The values are not transformed in any way and thus are considered stable
+    /// (if the ProtoBuf definition does not change) and safe for programmatic use.
+    pub fn as_str_name(&self) -> &'static str {
+        match self {
+            ImageDownloadMode::Never => "never",
+            ImageDownloadMode::Always => "always",
+            ImageDownloadMode::Missing => "missing",
+        }
+    }
+    /// Creates an enum from field names used in the ProtoBuf definition.
+    pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
+        match value {
+            "never" => Some(Self::Never),
+            "always" => Some(Self::Always),
+            "missing" => Some(Self::Missing),
             _ => None,
         }
     }

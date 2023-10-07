@@ -170,8 +170,8 @@ export class RunStarlarkScriptArgs extends jspb.Message {
   hasCloudUserId(): boolean;
   clearCloudUserId(): RunStarlarkScriptArgs;
 
-  getImageDownloadMode(): string;
-  setImageDownloadMode(value: string): RunStarlarkScriptArgs;
+  getImageDownloadMode(): ImageDownloadMode;
+  setImageDownloadMode(value: ImageDownloadMode): RunStarlarkScriptArgs;
   hasImageDownloadMode(): boolean;
   clearImageDownloadMode(): RunStarlarkScriptArgs;
 
@@ -193,7 +193,7 @@ export namespace RunStarlarkScriptArgs {
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     cloudInstanceId?: string,
     cloudUserId?: string,
-    imageDownloadMode?: string,
+    imageDownloadMode?: ImageDownloadMode,
   }
 
   export enum DryRunCase { 
@@ -273,8 +273,8 @@ export class RunStarlarkPackageArgs extends jspb.Message {
   hasCloudUserId(): boolean;
   clearCloudUserId(): RunStarlarkPackageArgs;
 
-  getImageDownloadMode(): string;
-  setImageDownloadMode(value: string): RunStarlarkPackageArgs;
+  getImageDownloadMode(): ImageDownloadMode;
+  setImageDownloadMode(value: ImageDownloadMode): RunStarlarkPackageArgs;
   hasImageDownloadMode(): boolean;
   clearImageDownloadMode(): RunStarlarkPackageArgs;
 
@@ -302,7 +302,7 @@ export namespace RunStarlarkPackageArgs {
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     cloudInstanceId?: string,
     cloudUserId?: string,
-    imageDownloadMode?: string,
+    imageDownloadMode?: ImageDownloadMode,
   }
 
   export enum StarlarkPackageContentCase { 
@@ -1301,6 +1301,11 @@ export enum ServiceStatus {
   STOPPED = 0,
   RUNNING = 1,
   UNKNOWN = 2,
+}
+export enum ImageDownloadMode { 
+  NEVER = 0,
+  ALWAYS = 1,
+  MISSING = 2,
 }
 export enum Connect { 
   CONNECT = 0,

@@ -27,6 +27,26 @@ export declare enum ServiceStatus {
 }
 
 /**
+ * @generated from enum api_container_api.ImageDownloadMode
+ */
+export declare enum ImageDownloadMode {
+  /**
+   * @generated from enum value: never = 0;
+   */
+  never = 0,
+
+  /**
+   * @generated from enum value: always = 1;
+   */
+  always = 1,
+
+  /**
+   * @generated from enum value: missing = 2;
+   */
+  missing = 2,
+}
+
+/**
  * User services port forwarding
  *
  * @generated from enum api_container_api.Connect
@@ -349,9 +369,9 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
   /**
    * Defaults to empty
    *
-   * @generated from field: optional string image_download_mode = 9;
+   * @generated from field: optional api_container_api.ImageDownloadMode image_download_mode = 9;
    */
-  imageDownloadMode?: string;
+  imageDownloadMode?: ImageDownloadMode;
 
   constructor(data?: PartialMessage<RunStarlarkScriptArgs>);
 
@@ -470,9 +490,9 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
   /**
    * Defaults to empty
    *
-   * @generated from field: optional string image_download_mode = 14;
+   * @generated from field: optional api_container_api.ImageDownloadMode image_download_mode = 14;
    */
-  imageDownloadMode?: string;
+  imageDownloadMode?: ImageDownloadMode;
 
   constructor(data?: PartialMessage<RunStarlarkPackageArgs>);
 
