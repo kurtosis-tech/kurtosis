@@ -257,7 +257,7 @@ func (manager *EnclaveManager) DestroyEnclave(ctx context.Context, enclaveIdenti
 		return stacktrace.Propagate(err, "An error occurred destroying the enclave")
 	}
 	if _, found := successfullyDestroyedEnclaves[enclaveUuid]; found {
-		if err = manager.enclaveLogFileManager.RemoveEnclaveLogs(enclaveIdentifier); err != nil {
+		if err = manager.enclaveLogFileManager.RemoveEnclaveLogs(string(enclaveUuid)); err != nil {
 			return stacktrace.Propagate(err, "An error occurred attempting to remove enclave '%v' logs after it was destroyed.", enclaveIdentifier)
 		}
 		return nil

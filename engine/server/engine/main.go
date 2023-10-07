@@ -23,7 +23,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
-	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_consts"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/server"
@@ -139,6 +138,7 @@ func runMain() error {
 	osFs := volume_filesystem.NewOsVolumeFilesystem()
 	realTime := logs_clock.NewRealClock()
 
+	// TODO: remove once users are fully migrated to log retention/new log schema
 	// pulls logs per enclave/per service id
 	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
 	perFileLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perFileStreamStrategy)
@@ -147,36 +147,9 @@ func runMain() error {
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime)
 	perWeekLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamStrategy)
 
+	// TODO: Move logFileManager into LogsDatabaseClient
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
-	go func() {
-		logrus.Debugf("Scheduling log removal for log retention every '%v' hours...", volume_consts.RemoveLogsWaitHours)
-		logFileManager.RemoveLogsBeyondRetentionPeriod()
-
-		logRemovalTicker := time.NewTicker(volume_consts.RemoveLogsWaitHours)
-		for range logRemovalTicker.C {
-			logrus.Debug("Attempting to remove old log file paths...")
-			logFileManager.RemoveLogsBeyondRetentionPeriod()
-		}
-	}()
-	go func() {
-		// TODO: Remove this when moving away from persistent volume logs db
-		// Creating log file paths on an interval is a hack to prevent duplicate logs from being stored by the log aggregator
-		// The LogsAggregator is configured to write logs to three different log file paths, one for uuid, service name, and shortened uuid
-		// This is so that the logs are retrievable by each identifier even when enclaves are stopped. More context on this here: https://github.com/kurtosis-tech/kurtosis/pull/1213
-		// To prevent storing duplicate logs, the CreateLogFiles will ensure that the service name and short uuid log files are just symlinks to the uuid log file path
-		logFileCreatorTicker := time.NewTicker(volume_consts.CreateLogsWaitMinutes)
-
-		logrus.Debugf("Scheduling log file path creation every '%v' minutes...", volume_consts.CreateLogsWaitMinutes)
-		for range logFileCreatorTicker.C {
-			logrus.Debug("Creating log file paths...")
-			err = logFileManager.CreateLogFiles(ctx)
-			if err != nil {
-				logrus.Errorf("An error occurred attempting to create log file paths: %v", err)
-			} else {
-				logrus.Debug("Successfully created log file paths.")
-			}
-		}
-	}()
+	logFileManager.StartLogFileManagement(ctx)
 
 	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
 	if err != nil {
