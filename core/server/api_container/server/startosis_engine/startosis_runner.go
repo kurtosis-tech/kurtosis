@@ -145,7 +145,7 @@ func (runner *StartosisRunner) Run(
 			startingValidationMsg, defaultCurrentStepNumber, totalNumberOfInstructions)
 		starlarkRunResponseLines <- progressInfo
 
-		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence)
+		validationErrorsChan := runner.startosisValidator.Validate(ctx, instructionsSequence, imageDownloadMode)
 		if isRunFinished, isRunSuccessful := forwardKurtosisResponseLineChannelUntilSourceIsClosed(validationErrorsChan, starlarkRunResponseLines); isRunFinished {
 			if !isRunSuccessful {
 				logrus.Warnf("An error occurred validating the sequence of Kurtosis instructions. See logs above for more details")
