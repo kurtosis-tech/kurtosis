@@ -524,16 +524,7 @@ func (manager *DockerManager) CreateAndStartContainer(
 		dockerImage = dockerImage + dockerTagSeparatorChar + dockerDefaultTag
 	}
 
-	var err error
-	switch image_pulling := args.imageDownloadMode; image_pulling {
-	case image_download_mode.Always:
-		err = manager.FetchLatestImage(ctx, dockerImage)
-	case image_download_mode.Missing:
-		_, err = manager.FetchImageMissing(ctx, dockerImage)
-	case image_download_mode.Never:
-		return "", nil, stacktrace.NewError("Undefined image pulling mode: '%v'", image_pulling)
-	}
-
+	_, err := manager.FetchImage(ctx, dockerImage, args.imageDownloadMode)
 	if err != nil {
 		return "", nil, stacktrace.Propagate(err, "An error occurred fetching image '%v'", dockerImage)
 	}
@@ -1254,6 +1245,26 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 	}
 
 	return nil
+}
+
+func (manager *DockerManager) FetchImage(ctx context.Context, image string, download_mode image_download_mode.ImageDownloadMode) (bool, error) {
+	var err error
+	var pulledFromRemote bool = true
+
+	switch image_pulling := download_mode; image_pulling {
+	case image_download_mode.Always:
+		err = manager.FetchLatestImage(ctx, image)
+	case image_download_mode.Missing:
+		pulledFromRemote, err = manager.FetchImageMissing(ctx, image)
+	case image_download_mode.Never:
+		return false, stacktrace.NewError("Undefined image pulling mode: '%v'", image_pulling)
+	}
+
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred fetching image '%v'", image)
+	}
+
+	return pulledFromRemote, nil
 }
 
 func (manager *DockerManager) CreateContainerExec(context context.Context, containerId string, cmd []string) (*types.HijackedResponse, error) {

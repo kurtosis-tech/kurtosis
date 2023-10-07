@@ -81,23 +81,7 @@ func NewDockerKurtosisBackend(
 }
 
 func (backend *DockerKurtosisBackend) FetchImage(ctx context.Context, image string, download_mode image_download_mode.ImageDownloadMode) (bool, error) {
-	var err error
-	var pulledFromRemote bool = false
-
-	switch image_pulling := download_mode; image_pulling {
-	case image_download_mode.Always:
-		err = backend.dockerManager.FetchLatestImage(ctx, image)
-	case image_download_mode.Missing:
-		pulledFromRemote, err = backend.dockerManager.FetchImageMissing(ctx, image)
-	case image_download_mode.Never:
-		return false, stacktrace.NewError("Undefined image pulling mode: '%v'", image_pulling)
-	}
-
-	if err != nil {
-		return false, stacktrace.Propagate(err, "An error occurred fetching image from kurtosis backend")
-	}
-
-	return pulledFromRemote, nil
+	return backend.dockerManager.FetchImage(ctx, image, download_mode)
 }
 
 func (backend *DockerKurtosisBackend) PruneUnusedImages(ctx context.Context) ([]string, error) {
