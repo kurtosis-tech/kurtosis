@@ -28,21 +28,21 @@ func (t *readyConditionsHttpRecipeTestCase) GetStarlarkCode() string {
 		service_config.RecipeAttr,
 		recipe.GetHttpRecipeTypeName,
 		recipe.PortIdAttr,
-		TestReadyConditionsRecipePortId,
+		testReadyConditionsRecipePortId,
 		recipe.EndpointAttr,
-		TestReadyConditionsRecipeEndpoint,
+		testReadyConditionsRecipeEndpoint,
 		recipe.ExtractAttr,
-		TestReadyConditionsRecipeExtract,
+		testReadyConditionsRecipeExtract,
 		service_config.FieldAttr,
-		TestReadyConditionsField,
+		testReadyConditionsField,
 		service_config.AssertionAttr,
-		TestReadyConditionsAssertion,
+		testReadyConditionsAssertion,
 		service_config.TargetAttr,
-		TestReadyConditionsTarget,
+		testReadyConditionsTarget,
 		service_config.IntervalAttr,
-		TestReadyConditionsInterval,
+		testReadyConditionsInterval,
 		service_config.TimeoutAttr,
-		TestReadyConditionsTimeout,
+		testReadyConditionsTimeout,
 	)
 }
 
@@ -59,14 +59,14 @@ func (t *readyConditionsHttpRecipeTestCase) Assert(typeValue builtin_argument.Ku
 		if assert.Nil(t, err) {
 			portId, ok := portIdAttrValue.(starlark.String)
 			require.True(t, ok)
-			require.Equal(t, TestReadyConditionsRecipePortId, portId.GoString())
+			require.Equal(t, testReadyConditionsRecipePortId, portId.GoString())
 		}
 
 		endpointAttrValue, err := castedRecipe.Attr(recipe.EndpointAttr)
 		if assert.Nil(t, err) {
 			endpoint, ok := endpointAttrValue.(starlark.String)
 			require.True(t, ok)
-			require.Equal(t, TestReadyConditionsRecipeEndpoint, endpoint.GoString())
+			require.Equal(t, testReadyConditionsRecipeEndpoint, endpoint.GoString())
 		}
 
 		extractAttrValue, err := castedRecipe.Attr(recipe.ExtractAttr)
@@ -80,22 +80,22 @@ func (t *readyConditionsHttpRecipeTestCase) Assert(typeValue builtin_argument.Ku
 
 	field, err := receivedReadyConditions.GetField()
 	if assert.Nil(t, err) {
-		require.Equal(t, TestReadyConditionsField, field)
+		require.Equal(t, testReadyConditionsField, field)
 	}
 
 	assertion, err := receivedReadyConditions.GetAssertion()
 	if assert.Nil(t, err) {
-		require.Equal(t, TestReadyConditionsAssertion, assertion)
+		require.Equal(t, testReadyConditionsAssertion, assertion)
 	}
 
 	target, err := receivedReadyConditions.GetTarget()
 	if assert.Nil(t, err) {
-		require.Equal(t, TestReadyConditionsTarget, target.String())
+		require.Equal(t, testReadyConditionsTarget, target.String())
 	}
 
 	interval, err := receivedReadyConditions.GetInterval()
 	if assert.Nil(t, err) {
-		expectedInterval, err := time.ParseDuration(TestReadyConditionsInterval)
+		expectedInterval, err := time.ParseDuration(testReadyConditionsInterval)
 		if assert.Nil(t, err) {
 			require.Equal(t, expectedInterval, interval)
 		}
@@ -103,7 +103,7 @@ func (t *readyConditionsHttpRecipeTestCase) Assert(typeValue builtin_argument.Ku
 
 	timeout, err := receivedReadyConditions.GetTimeout()
 	if assert.Nil(t, err) {
-		expectedTimeout, err := time.ParseDuration(TestReadyConditionsTimeout)
+		expectedTimeout, err := time.ParseDuration(testReadyConditionsTimeout)
 		if assert.Nil(t, err) {
 			require.Equal(t, expectedTimeout, timeout)
 		}

@@ -28,8 +28,8 @@ type addServicesTestCase struct {
 }
 
 func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
-	suite.serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName).Times(1).Return(false, nil)
-	suite.serviceNetwork.EXPECT().ExistServiceRegistration(TestServiceName2).Times(1).Return(false, nil)
+	suite.serviceNetwork.EXPECT().ExistServiceRegistration(testServiceName).Times(1).Return(false, nil)
+	suite.serviceNetwork.EXPECT().ExistServiceRegistration(testServiceName2).Times(1).Return(false, nil)
 	suite.serviceNetwork.EXPECT().UpdateServices(
 		mock.Anything,
 		map[service.ServiceName]*service.ServiceConfig{},
@@ -43,11 +43,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		mock.Anything,
 		mock.MatchedBy(func(configs map[service.ServiceName]*service.ServiceConfig) bool {
 			suite.Require().Len(configs, 2)
-			suite.Require().Contains(configs, TestServiceName)
-			suite.Require().Contains(configs, TestServiceName2)
+			suite.Require().Contains(configs, testServiceName)
+			suite.Require().Contains(configs, testServiceName2)
 
 			expectedServiceConfig1 := service.NewServiceConfig(
-				TestContainerImageName,
+				testContainerImageName,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,
@@ -61,11 +61,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				0,
 				0,
 			)
-			actualServiceConfig1 := configs[TestServiceName]
+			actualServiceConfig1 := configs[testServiceName]
 			suite.Assert().Equal(expectedServiceConfig1, actualServiceConfig1)
 
 			expectedServiceConfig2 := service.NewServiceConfig(
-				TestContainerImageName,
+				testContainerImageName,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
 				nil,
@@ -73,21 +73,21 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				map[string]string{},
 				nil,
 				nil,
-				TestCpuAllocation,
-				TestMemoryAllocation,
+				testCpuAllocation,
+				testMemoryAllocation,
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
 			)
-			actualServiceConfig2 := configs[TestServiceName2]
+			actualServiceConfig2 := configs[testServiceName2]
 			suite.Assert().Equal(expectedServiceConfig2, actualServiceConfig2)
 			return true
 		}),
 		mock.Anything,
 	).Times(1).Return(
 		map[service.ServiceName]*service.Service{
-			TestServiceName:  service.NewService(service.NewServiceRegistration(TestServiceName, TestServiceUuid, TestEnclaveUuid, nil, string(TestServiceName)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, TestContainerImageName, nil, nil, nil)),
-			TestServiceName2: service.NewService(service.NewServiceRegistration(TestServiceName2, TestServiceUuid2, TestEnclaveUuid, nil, string(TestServiceName2)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, TestContainerImageName, nil, nil, nil)),
+			testServiceName:  service.NewService(service.NewServiceRegistration(testServiceName, testServiceUuid, testEnclaveUuid, nil, string(testServiceName)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil)),
+			testServiceName2: service.NewService(service.NewServiceRegistration(testServiceName2, testServiceUuid2, testEnclaveUuid, nil, string(testServiceName2)), nil, nil, nil, container.NewContainer(container.ContainerStatus_Running, testContainerImageName, nil, nil, nil)),
 		},
 		map[service.ServiceName]error{},
 		nil,
@@ -95,11 +95,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 
 	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(TestServiceName),
-		TestReadyConditionsRecipePortId,
-		TestGetRequestMethod,
+		string(testServiceName),
+		testReadyConditionsRecipePortId,
+		testGetRequestMethod,
 		"",
-		TestReadyConditionsRecipeEndpoint,
+		testReadyConditionsRecipeEndpoint,
 		"",
 	).Times(1).Return(&http.Response{
 		Status:     "200 OK",
@@ -109,7 +109,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		ProtoMinor: 1,
 		Header:     http.Header{},
 		Request: &http.Request{ //nolint:exhaustruct
-			Method: TestGetRequestMethod,
+			Method: testGetRequestMethod,
 			URL:    &url.URL{}, //nolint:exhaustruct
 		},
 		Close:            true,
@@ -123,11 +123,11 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 
 	suite.serviceNetwork.EXPECT().HttpRequestService(
 		mock.Anything,
-		string(TestServiceName2),
-		TestReadyConditions2RecipePortId,
-		TestGetRequestMethod,
+		string(testServiceName2),
+		testReadyConditions2RecipePortId,
+		testGetRequestMethod,
 		"",
-		TestReadyConditions2RecipeEndpoint,
+		testReadyConditions2RecipeEndpoint,
 		"",
 	).Times(1).Return(&http.Response{
 		Status:     "201 OK",
@@ -137,7 +137,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 		ProtoMinor: 1,
 		Header:     http.Header{},
 		Request: &http.Request{
-			Method: TestGetRequestMethod,
+			Method: testGetRequestMethod,
 			URL: &url.URL{ //nolint:exhaustruct
 				Path:        "",
 				Scheme:      "",
@@ -193,18 +193,18 @@ func (t *addServicesTestCase) GetInstruction() *kurtosis_plan_instruction.Kurtos
 func (t *addServicesTestCase) GetStarlarkCode() string {
 	service1ReadyConditionsScriptPart := getDefaultReadyConditionsScriptPart()
 	service2ReadyConditionsScriptPart := getCustomReadyConditionsScripPart(
-		TestReadyConditions2RecipePortId,
-		TestReadyConditions2RecipeEndpoint,
-		TestReadyConditions2RecipeExtract,
-		TestReadyConditions2Field,
-		TestReadyConditions2Assertion,
-		TestReadyConditions2Target,
-		TestReadyConditions2Interval,
-		TestReadyConditions2Timeout,
+		testReadyConditions2RecipePortId,
+		testReadyConditions2RecipeEndpoint,
+		testReadyConditions2RecipeExtract,
+		testReadyConditions2Field,
+		testReadyConditions2Assertion,
+		testReadyConditions2Target,
+		testReadyConditions2Interval,
+		testReadyConditions2Timeout,
 	)
-	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, ready_conditions=%s)", TestContainerImageName, service1ReadyConditionsScriptPart)
-	serviceConfig2 := fmt.Sprintf("ServiceConfig(image=%q, cpu_allocation=%d, memory_allocation=%d, ready_conditions=%s)", TestContainerImageName, TestCpuAllocation, TestMemoryAllocation, service2ReadyConditionsScriptPart)
-	return fmt.Sprintf(`%s(%s={%q: %s, %q: %s})`, add_service.AddServicesBuiltinName, add_service.ConfigsArgName, TestServiceName, serviceConfig1, TestServiceName2, serviceConfig2)
+	serviceConfig1 := fmt.Sprintf("ServiceConfig(image=%q, ready_conditions=%s)", testContainerImageName, service1ReadyConditionsScriptPart)
+	serviceConfig2 := fmt.Sprintf("ServiceConfig(image=%q, cpu_allocation=%d, memory_allocation=%d, ready_conditions=%s)", testContainerImageName, testCpuAllocation, testMemoryAllocation, service2ReadyConditionsScriptPart)
+	return fmt.Sprintf(`%s(%s={%q: %s, %q: %s})`, add_service.AddServicesBuiltinName, add_service.ConfigsArgName, testServiceName, serviceConfig1, testServiceName2, serviceConfig2)
 }
 
 func (t *addServicesTestCase) GetStarlarkCodeForAssertion() string {
@@ -215,10 +215,10 @@ func (t *addServicesTestCase) Assert(interpretationResult starlark.Value, execut
 	resultDict, ok := interpretationResult.(*starlark.Dict)
 	require.True(t, ok, "interpretation result should be a dictionary")
 	require.Equal(t, resultDict.Len(), 2)
-	require.Contains(t, resultDict.Keys(), starlark.String(TestServiceName))
-	require.Contains(t, resultDict.Keys(), starlark.String(TestServiceName2))
+	require.Contains(t, resultDict.Keys(), starlark.String(testServiceName))
+	require.Contains(t, resultDict.Keys(), starlark.String(testServiceName2))
 
 	require.Contains(t, *executionResult, "Successfully added the following '2' services:")
-	require.Contains(t, *executionResult, fmt.Sprintf("Service '%s' added with UUID '%s'", TestServiceName, TestServiceUuid))
-	require.Contains(t, *executionResult, fmt.Sprintf("Service '%s' added with UUID '%s'", TestServiceName2, TestServiceUuid2))
+	require.Contains(t, *executionResult, fmt.Sprintf("Service '%s' added with UUID '%s'", testServiceName, testServiceUuid))
+	require.Contains(t, *executionResult, fmt.Sprintf("Service '%s' added with UUID '%s'", testServiceName2, testServiceUuid2))
 }

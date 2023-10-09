@@ -20,6 +20,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args"
 	"github.com/kurtosis-tech/kurtosis/engine/launcher/args/kurtosis_backend_config"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/logs_clock"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/stream_logs_strategy"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/volume_filesystem"
@@ -134,21 +135,26 @@ func runMain() error {
 		return stacktrace.Propagate(err, "An error occurred getting the Kurtosis backend for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
 	}
 
-	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
-	if err != nil {
-		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
-	}
-
-	// osFs is a wrapper around disk
 	osFs := volume_filesystem.NewOsVolumeFilesystem()
+	realTime := logs_clock.NewRealClock()
+
+	// TODO: remove once users are fully migrated to log retention/new log schema
 	// pulls logs per enclave/per service id
 	perFileStreamStrategy := stream_logs_strategy.NewPerFileStreamLogsStrategy()
 	perFileLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perFileStreamStrategy)
 
 	// pulls logs /per week/per enclave/per service
-	realTime := logs_clock.NewRealClock()
 	perWeekStreamStrategy := stream_logs_strategy.NewPerWeekStreamLogsStrategy(realTime)
 	perWeekLogsDatabaseClient := persistent_volume.NewPersistentVolumeLogsDatabaseClient(kurtosisBackend, osFs, perWeekStreamStrategy)
+
+	// TODO: Move logFileManager into LogsDatabaseClient
+	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
+	logFileManager.StartLogFileManagement(ctx)
+
+	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
+	if err != nil {
+		return stacktrace.Propagate(err, "Failed to create an enclave manager for backend type '%v' and config '%+v'", serverArgs.KurtosisBackendType, backendConfig)
+	}
 
 	go func() {
 		fileServer := http.FileServer(http.Dir(pathToStaticFolder))
@@ -219,6 +225,7 @@ func getEnclaveManager(
 	engineVersion string,
 	poolSize uint8,
 	enclaveEnvVars string,
+	enclaveLogFileManager *log_file_manager.LogFileManager,
 	metricsUserID string,
 	didUserAcceptSendingMetrics bool,
 ) (*enclave_manager.EnclaveManager, error) {
@@ -239,6 +246,7 @@ func getEnclaveManager(
 		engineVersion,
 		poolSize,
 		enclaveEnvVars,
+		enclaveLogFileManager,
 		metricsUserID,
 		didUserAcceptSendingMetrics,
 	)
