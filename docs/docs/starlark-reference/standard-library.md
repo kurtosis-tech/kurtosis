@@ -1,5 +1,4 @@
 ---
-id: standard-library
 title: Standard Library
 sidebar_label: Standard Library
 sidebar_position: 2
