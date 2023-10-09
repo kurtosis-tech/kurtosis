@@ -48,7 +48,7 @@ func NewImportModule(
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.LocatorValidator(value, packageId, ModuleFileArgName)
+						return builtin_argument.NonEmptyString(value, ModuleFileArgName)
 					},
 				},
 			},
