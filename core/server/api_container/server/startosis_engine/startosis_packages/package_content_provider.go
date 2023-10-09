@@ -35,4 +35,8 @@ type PackageContentProvider interface {
 
 	// GetKurtosisYaml returns the package kurtosis.yml file content
 	GetKurtosisYaml(packageAbsolutePathOnDisk string) (*yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError)
+
+	//TODO add comments
+	// RefreshCache it compare the
+	RefreshCache(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError
 }

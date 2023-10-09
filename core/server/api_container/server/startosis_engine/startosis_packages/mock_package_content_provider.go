@@ -351,6 +351,50 @@ func (_c *MockPackageContentProvider_GetOnDiskAbsolutePackagePath_Call) RunAndRe
 	return _c
 }
 
+// RefreshCache provides a mock function with given fields: currentPackageReplaceOptions
+func (_m *MockPackageContentProvider) RefreshCache(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
+	ret := _m.Called(currentPackageReplaceOptions)
+
+	var r0 *startosis_errors.InterpretationError
+	if rf, ok := ret.Get(0).(func(map[string]string) *startosis_errors.InterpretationError); ok {
+		r0 = rf(currentPackageReplaceOptions)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*startosis_errors.InterpretationError)
+		}
+	}
+
+	return r0
+}
+
+// MockPackageContentProvider_RefreshCache_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RefreshCache'
+type MockPackageContentProvider_RefreshCache_Call struct {
+	*mock.Call
+}
+
+// RefreshCache is a helper method to define mock.On call
+//   - currentPackageReplaceOptions map[string]string
+func (_e *MockPackageContentProvider_Expecter) RefreshCache(currentPackageReplaceOptions interface{}) *MockPackageContentProvider_RefreshCache_Call {
+	return &MockPackageContentProvider_RefreshCache_Call{Call: _e.mock.On("RefreshCache", currentPackageReplaceOptions)}
+}
+
+func (_c *MockPackageContentProvider_RefreshCache_Call) Run(run func(currentPackageReplaceOptions map[string]string)) *MockPackageContentProvider_RefreshCache_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(map[string]string))
+	})
+	return _c
+}
+
+func (_c *MockPackageContentProvider_RefreshCache_Call) Return(_a0 *startosis_errors.InterpretationError) *MockPackageContentProvider_RefreshCache_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockPackageContentProvider_RefreshCache_Call) RunAndReturn(run func(map[string]string) *startosis_errors.InterpretationError) *MockPackageContentProvider_RefreshCache_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // StorePackageContents provides a mock function with given fields: packageId, packageContent, overwriteExisting
 func (_m *MockPackageContentProvider) StorePackageContents(packageId string, packageContent io.Reader, overwriteExisting bool) (string, *startosis_errors.InterpretationError) {
 	ret := _m.Called(packageId, packageContent, overwriteExisting)
