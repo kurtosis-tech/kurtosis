@@ -4,6 +4,7 @@ title: Starlark Introduction
 sidebar_label: Introduction
 slug: /starlark-reference
 sidebar_position: 1
+pagination_next: starlark-reference/standard-library
 ---
 
 This section details the Kurtosis Starlark DSL used to manipulate the contents of enclaves. Feel free to use the [official Kurtosis Starlark VS Code extension][vscode-plugin] when writing Starlark with VSCode for features like syntax highlighting, method signature suggestions, hover preview for functions, and auto-completion for Kurtosis custom types.

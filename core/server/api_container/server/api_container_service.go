@@ -69,6 +69,7 @@ const (
 	isScript               = true
 	isNotScript            = false
 	isNotRemote            = false
+	defaultParallelism     = 4
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -112,7 +113,7 @@ func NewApiContainerService(
 			PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
 			SerializedScript:       "",
 			SerializedParams:       "",
-			Parallelism:            0,
+			Parallelism:            defaultParallelism,
 			RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 			MainFunctionName:       "",
 			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
@@ -128,6 +129,9 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	parallelism := int(args.GetParallelism())
+	if parallelism == 0 {
+		parallelism = defaultParallelism
+	}
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
 	experimentalFeatures := args.GetExperimentalFeatures()
@@ -223,6 +227,9 @@ func (apicService *ApiContainerService) InspectFilesArtifactContents(_ context.C
 func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
 	packageId := args.GetPackageId()
 	parallelism := int(args.GetParallelism())
+	if parallelism == 0 {
+		parallelism = defaultParallelism
+	}
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	serializedParams := args.GetSerializedParams()
 	relativePathToMainFile := args.GetRelativePathToMainFile()
