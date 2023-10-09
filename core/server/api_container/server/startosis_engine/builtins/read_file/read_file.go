@@ -29,7 +29,7 @@ func NewReadFileHelper(
 					IsOptional:        false,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[starlark.String],
 					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
-						return builtin_argument.RelativeOrRemoteAbsoluteLocator(value, packageId, SrcArgName)
+						return builtin_argument.LocatorValidator(value, packageId, SrcArgName)
 					},
 				},
 			},

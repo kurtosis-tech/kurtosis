@@ -2,7 +2,6 @@ package builtin_argument
 
 import (
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
-	"github.com/sirupsen/logrus"
 	"go.starlark.net/starlark"
 	"reflect"
 	"regexp"
@@ -112,28 +111,15 @@ func DurationOrNone(value starlark.Value, attributeName string) *startosis_error
 	return nil
 }
 
-func RelativeOrRemoteAbsoluteLocator(locatorStarlarkValue starlark.Value, packageId string, argNameForLogging string) *startosis_errors.InterpretationError {
+func LocatorValidator(locatorStarlarkValue starlark.Value, packageId string, argNameForLogging string) *startosis_errors.InterpretationError {
 
 	if err := NonEmptyString(locatorStarlarkValue, argNameForLogging); err != nil {
 		return err
 	}
 
-	locatorStarlarkStr, ok := locatorStarlarkValue.(starlark.String)
+	_, ok := locatorStarlarkValue.(starlark.String)
 	if !ok {
 		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.String but was '%s'", argNameForLogging, reflect.TypeOf(locatorStarlarkValue))
 	}
-	locatorStr := locatorStarlarkStr.GoString()
-
-	logrus.Infof("MONDAY this is the information i have %v %v %v", locatorStarlarkValue, packageId, argNameForLogging)
-
-	// if absolute and local return error
-	if isLocalAbsoluteLocator(locatorStr, packageId) {
-		return startosis_errors.NewInterpretationError("The locator '%s' set in attribute '%v' is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'", locatorStarlarkStr, argNameForLogging)
-	}
 	return nil
-}
-
-func isLocalAbsoluteLocator(locatorStr string, packageId string) bool {
-	logrus.Debug(packageId, locatorStr)
-	return strings.HasPrefix(locatorStr, packageId)
 }
