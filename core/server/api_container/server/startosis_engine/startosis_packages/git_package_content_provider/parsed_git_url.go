@@ -20,6 +20,8 @@ const (
 	emptyTagBranchOrCommit     = ""
 
 	packageRootPrefixIndicatorInRelativeLocators = "/"
+	substrNotPresent                             = -1
+	extensionCharacter                           = "."
 )
 
 // ParsedGitURL an object representing a parsed moduleURL
@@ -130,16 +132,28 @@ func parseOutTagBranchOrCommit(input string) (string, string) {
 	cleanInput := path.Clean(input)
 	pathWithoutVersion, maybeTagBranchOrCommitWithFile, _ := strings.Cut(cleanInput, tagBranchOrCommitDelimiter)
 
-	// input can have been set with version in two diff ways
+	// input can have been set with version in few diff ways
 	// 1- github.com/kurtosis-tech/sample-dependency-package/main.star@branch-or-version (when is called from cli run command)
 	// 2- github.com/kurtosis-tech/sample-dependency-package@branch-or-version/main.star (when is declared in the replace section of the kurtosis.yml file)
+	// 3- github.com/kurtosis-tech/sample-dependency-package/main.star@foo/bar - here the tag is foo/bar;
+	// 3- github.com/kurtosis-tech/sample-dependency-package@foo/bar/mains.tar - here the tag is foo/bar; while file is /kurtosis-tech/sample-dependency-package/main.star
 	// we check if there is a file in maybeTagBranchOrCommitWithFile and then add it to pathWithoutVersion
-	maybeTagBranchOrCommit, maybeFileNameAndExtension, _ := strings.Cut(maybeTagBranchOrCommitWithFile, urlPathSeparator)
+	maybeTagBranchOrCommit, lastSectionOfTagBranchCommitWithFile, _ := cutLast(maybeTagBranchOrCommitWithFile, urlPathSeparator)
 
-	if maybeFileNameAndExtension != "" {
+	if lastSectionOfTagBranchCommitWithFile != "" && strings.Contains(lastSectionOfTagBranchCommitWithFile, extensionCharacter) {
 		// we assume pathWithoutVersion does not contain a file inside yet
-		pathWithoutVersion = path.Join(pathWithoutVersion, maybeFileNameAndExtension)
+		pathWithoutVersion = path.Join(pathWithoutVersion, lastSectionOfTagBranchCommitWithFile)
+	} else if lastSectionOfTagBranchCommitWithFile != "" && !strings.Contains(lastSectionOfTagBranchCommitWithFile, extensionCharacter) {
+		maybeTagBranchOrCommit = path.Join(maybeTagBranchOrCommit, lastSectionOfTagBranchCommitWithFile)
 	}
 
 	return pathWithoutVersion, maybeTagBranchOrCommit
+}
+
+func cutLast(pathToCut string, separator string) (string, string, bool) {
+	lastIndex := strings.LastIndex(pathToCut, separator)
+	if lastIndex == substrNotPresent {
+		return pathToCut, "", false
+	}
+	return pathToCut[:lastIndex], pathToCut[lastIndex+1:], false
 }
