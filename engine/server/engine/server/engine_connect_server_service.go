@@ -143,7 +143,6 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
 	}
-
 	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: removedEnclaveUuidsAndNames}
 	return connect.NewResponse(response), nil
 }
