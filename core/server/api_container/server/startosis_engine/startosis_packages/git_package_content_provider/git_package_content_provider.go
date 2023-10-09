@@ -232,6 +232,11 @@ func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[st
 
 	found, packageToBeReplaced, replaceWithPackage := findPackageReplace(absoluteLocator, packageReplaceOptions)
 	if found {
+		// we skip if it's a local replace because we will use the same absolute locator
+		// due the file was already uploaded in the enclave's package cache
+		if isLocalDependencyReplace(replaceWithPackage) {
+			return absoluteLocator
+		}
 		replacedAbsoluteLocator := strings.Replace(absoluteLocator, packageToBeReplaced, replaceWithPackage, onlyOneReplace)
 		logrus.Debugf("absoluteLocator '%s' replaced with '%s'", absoluteLocator, replacedAbsoluteLocator)
 		return replacedAbsoluteLocator
@@ -490,4 +495,12 @@ func getKurtosisYamlPathForFileUrlInternal(absPathToFile string, packagesDir str
 		}
 	}
 	return filePathToKurtosisYamlNotFound, nil
+}
+
+func isLocalDependencyReplace(replace string) bool {
+	//TODO replace harcoded values
+	if strings.HasPrefix(replace, "/") || strings.HasPrefix(replace, ".") {
+		return true
+	}
+	return false
 }

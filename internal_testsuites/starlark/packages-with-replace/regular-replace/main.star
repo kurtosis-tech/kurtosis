@@ -6,7 +6,6 @@ EXPECTED_MSG_FROM_ANOTHER_SAMPLE_MAIN = "another-dependency-loaded-from-main"
 MSG_ORIGIN_MAIN = "main"
 MSG_ORIGIN_ANOTHER_SAMPLE_MAIN = "another-main"
 
-# TODO remove https://github.com/kurtosis-tech/sample-startosis-load/tree/main/sample-package if it's not used
 def run(plan, message_origin=MSG_ORIGIN_MAIN):
     plan.print("Regular replace package loaded.")
 

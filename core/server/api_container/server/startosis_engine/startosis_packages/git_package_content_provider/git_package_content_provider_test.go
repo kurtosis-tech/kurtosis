@@ -296,6 +296,21 @@ func TestGetAbsoluteLocatorForRelativeModuleLocator_NoMainBranchReplaceSucceeds(
 	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
 }
 
+func TestGetAbsoluteLocatorForRelativeModuleLocator_LocalPackagehReplaceSucceeds(t *testing.T) {
+	provider := NewGitPackageContentProvider("", "")
+
+	parentModuleId := "github.com/kurtosis-tech/sample-startosis-load/sample-package/main.star"
+	maybeRelativeLocator := "github.com/kurtosis-tech/sample-dependency-package/main.star"
+	packageReplaceOptions := map[string]string{
+		"github.com/kurtosis-tech/sample-dependency-package": "../local-sample-dependency-package",
+	}
+	absoluteLocator, err := provider.GetAbsoluteLocatorForRelativeLocator(parentModuleId, maybeRelativeLocator, packageReplaceOptions)
+
+	expectedAbsoluteLocator := "github.com/kurtosis-tech/sample-dependency-package/main.star"
+	require.Nil(t, err)
+	require.Equal(t, expectedAbsoluteLocator, absoluteLocator)
+}
+
 func Test_getPathToPackageRoot(t *testing.T) {
 	githubUrlWithKurtosisPackageInSubfolder := "github.com/sample/sample-package/folder/subpackage"
 	parsedGitUrl, err := parseGitURL(githubUrlWithKurtosisPackageInSubfolder)
