@@ -4,6 +4,7 @@ title: CLI Introduction
 sidebar_label: Introduction
 slug: /cli
 sidebar_position: 1
+pagination_next: cli-reference/analytics-disable
 ---
 
 The Kurtosis CLI is a Go CLI wrapped around the Kurtosis Go [SDK][sdk-reference]. This section will go through the most common Kurtosis CLI commands and some useful tips on getting started. If you have not already done so, the CLI can be installed by following the instructions [here][installing-the-cli].
