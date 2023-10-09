@@ -136,7 +136,7 @@ func parseOutTagBranchOrCommit(input string) (string, string) {
 	// 1- github.com/kurtosis-tech/sample-dependency-package/main.star@branch-or-version (when is called from cli run command)
 	// 2- github.com/kurtosis-tech/sample-dependency-package@branch-or-version/main.star (when is declared in the replace section of the kurtosis.yml file)
 	// 3- github.com/kurtosis-tech/sample-dependency-package/main.star@foo/bar - here the tag is foo/bar;
-	// 3- github.com/kurtosis-tech/sample-dependency-package@foo/bar/mains.tar - here the tag is foo/bar; while file is /kurtosis-tech/sample-dependency-package/main.star
+	// 4- github.com/kurtosis-tech/sample-dependency-package@foo/bar/mains.tar - here the tag is foo/bar; while file is /kurtosis-tech/sample-dependency-package/main.star
 	// we check if there is a file in maybeTagBranchOrCommitWithFile and then add it to pathWithoutVersion
 	maybeTagBranchOrCommit, lastSectionOfTagBranchCommitWithFile, _ := cutLast(maybeTagBranchOrCommitWithFile, urlPathSeparator)
 
