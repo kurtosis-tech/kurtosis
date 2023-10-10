@@ -110,26 +110,3 @@ func DurationOrNone(value starlark.Value, attributeName string) *startosis_error
 	}
 	return nil
 }
-
-func RelativeOrRemoteAbsoluteLocator(locatorStarlarkValue starlark.Value, packageId string, argNameForLogging string) *startosis_errors.InterpretationError {
-
-	if err := NonEmptyString(locatorStarlarkValue, argNameForLogging); err != nil {
-		return err
-	}
-
-	locatorStarlarkStr, ok := locatorStarlarkValue.(starlark.String)
-	if !ok {
-		return startosis_errors.NewInterpretationError("Value for '%s' was expected to be a starlark.String but was '%s'", argNameForLogging, reflect.TypeOf(locatorStarlarkValue))
-	}
-	locatorStr := locatorStarlarkStr.GoString()
-
-	// if absolute and local return error
-	if isLocalAbsoluteLocator(locatorStr, packageId) {
-		return startosis_errors.NewInterpretationError("The locator '%s' set in attribute '%v' is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'", locatorStarlarkStr, argNameForLogging)
-	}
-	return nil
-}
-
-func isLocalAbsoluteLocator(locatorStr string, packageId string) bool {
-	return strings.HasPrefix(locatorStr, packageId)
-}

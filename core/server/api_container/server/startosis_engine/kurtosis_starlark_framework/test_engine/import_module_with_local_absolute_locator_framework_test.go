@@ -12,7 +12,7 @@ import (
 )
 
 const (
-	importModuleWithLocalAbsoluteLocatorExpectedErrorMsg = "Cannot construct 'import_module' from the provided arguments.\n\tCaused by: The following argument(s) could not be parsed or did not pass validation: {\"module_file\":\"The locator '\\\"github.com/kurtosistech/test-package/helpers.star\\\"' set in attribute 'module_file' is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'\"}"
+	importModuleWithLocalAbsoluteLocatorExpectedErrorMsg = "Cannot use absolute locators"
 )
 
 var (
@@ -33,10 +33,13 @@ type importModuleWithLocalAbsoluteLocatorTestCase struct {
 }
 
 func (suite *KurtosisHelperTestSuite) TestImportFileWithLocalAbsoluteLocatorShouldNotBeValid() {
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(testModulePackageId, testModuleFileName, testNoPackageReplaceOptions).Return("", startosis_errors.NewInterpretationError(importModuleWithLocalAbsoluteLocatorExpectedErrorMsg))
+
 	// start with an empty cache to validate it gets populated
 	moduleGlobalCache := map[string]*startosis_packages.ModuleCacheEntry{}
 
 	suite.runShouldFail(
+		testModulePackageId,
 		&importModuleWithLocalAbsoluteLocatorTestCase{
 			T:                      suite.T(),
 			moduleGlobalCache:      moduleGlobalCache,

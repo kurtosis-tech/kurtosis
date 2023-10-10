@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.84.3](https://github.com/kurtosis-tech/kurtosis/compare/0.84.2...0.84.3) (2023-10-09)
+
+
+### Features
+
+* regular replace package dependency and replace package with no-main-branch ([#1481](https://github.com/kurtosis-tech/kurtosis/issues/1481)) ([bec49ac](https://github.com/kurtosis-tech/kurtosis/commit/bec49ac496d763d4a3002433274d684d7fc06a62))
+* remove logs on enclave rm and clean -a ([#1489](https://github.com/kurtosis-tech/kurtosis/issues/1489)) ([9ea344e](https://github.com/kurtosis-tech/kurtosis/commit/9ea344ededfaac909342df32dddf23757c8e873d))
+
+
+### Bug Fixes
+
+* Add new line while inspecting file contents ([#1477](https://github.com/kurtosis-tech/kurtosis/issues/1477)) ([545aa53](https://github.com/kurtosis-tech/kurtosis/commit/545aa53d6e86b1cb2be6e8f118d34380d656f583))
+* improve absolute locator checks ([#1498](https://github.com/kurtosis-tech/kurtosis/issues/1498)) ([cda001d](https://github.com/kurtosis-tech/kurtosis/commit/cda001d08b9d332a18d661ac8eae2c081511c538))
+* kurtosis web cmd work for remote context ([#1486](https://github.com/kurtosis-tech/kurtosis/issues/1486)) ([8d8634c](https://github.com/kurtosis-tech/kurtosis/commit/8d8634c6d9b6ee7925346b79eef82ecf5e5b40da))
+* make vector use ISO week time ([#1497](https://github.com/kurtosis-tech/kurtosis/issues/1497)) ([e6d1f5e](https://github.com/kurtosis-tech/kurtosis/commit/e6d1f5e536e84a5121103a78117d37e9baf5ca4a))
+* replace duplicate log files with symlinks ([#1472](https://github.com/kurtosis-tech/kurtosis/issues/1472)) ([57da901](https://github.com/kurtosis-tech/kurtosis/commit/57da901da2bc76fc345b4060225db39a550de023))
+
 ## [0.84.2](https://github.com/kurtosis-tech/kurtosis/compare/0.84.1...0.84.2) (2023-10-05)
 
 
