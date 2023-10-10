@@ -46,7 +46,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 func getActiveClusterFlag(clusterName string) string {
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	activeClusterName, _ := clusterSettingStore.GetClusterSetting()
-	
+
 	activeClusterFlag := "  "
 	if clusterName == activeClusterName {
 		activeClusterFlag = "* "
