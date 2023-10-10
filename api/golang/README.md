@@ -33,6 +33,8 @@ enclaveName := "my-enclave"
 enclaveCtx, err := kurtosisCtx.CreateEnclave(ctx, enclaveName)
 ```
 
+## Configure for Starlark Runs
+
 Using the Enclave Context, you can perform actions like adding services using Starlark scripts:
 
 ```go
