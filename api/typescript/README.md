@@ -1,4 +1,4 @@
-# Kurtosis Go SDK
+# Kurtosis Typescript SDK
 
 This guide provides instructions and code snippets to help you get started with the Kurtosis Typescript SDK. It enables you to create and manage enclaves programmatically, without having to rely on the Kurtosis Enclave Manager (UI) or the Kurtosis CLI.
 
