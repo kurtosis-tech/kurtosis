@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
@@ -36,7 +37,19 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 	}
 	sort.Strings(clusterList)
 	for _, clusterName := range clusterList {
-		out.PrintOutLn(clusterName)
+		activeClusterFlag := getActiveClusterFlag(clusterName)
+		out.PrintOutLn(activeClusterFlag + clusterName)
 	}
 	return nil
+}
+
+func getActiveClusterFlag(clusterName string) string {
+	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
+	activeClusterName, _ := clusterSettingStore.GetClusterSetting()
+	
+	activeClusterFlag := "  "
+	if clusterName == activeClusterName {
+		activeClusterFlag = "* "
+	}
+	return activeClusterFlag
 }
