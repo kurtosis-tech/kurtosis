@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
@@ -41,14 +42,16 @@ const (
 )
 
 type GitPackageContentProvider struct {
-	packagesTmpDir string
-	packagesDir    string
+	packagesTmpDir                  string
+	packagesDir                     string
+	packageReplaceOptionsRepository *packageReplaceOptionsRepository
 }
 
-func NewGitPackageContentProvider(moduleDir string, tmpDir string) *GitPackageContentProvider {
+func NewGitPackageContentProvider(moduleDir string, tmpDir string, enclaveDb *enclave_db.EnclaveDB) *GitPackageContentProvider {
 	return &GitPackageContentProvider{
-		packagesDir:    moduleDir,
-		packagesTmpDir: tmpDir,
+		packagesDir:                     moduleDir,
+		packagesTmpDir:                  tmpDir,
+		packageReplaceOptionsRepository: NewPackageReplaceOptionsRepository(enclaveDb),
 	}
 }
 
@@ -225,13 +228,11 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 	return replacedAbsoluteLocator, nil
 }
 
-func (provider *GitPackageContentProvider) RefreshCache(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
+func (provider *GitPackageContentProvider) CloneReplacedPackagesIfNeeded(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
 
-	historicalPackageReplaceOptions := map[string]string{} //TODO get this from the repository
-
-	//TODO remove this line it's just for test purpose
-	historicalPackageReplaceOptions = map[string]string{
-		"github.com/kurtosis-tech/sample-dependency-package": "../local-sample-dependency-package",
+	historicalPackageReplaceOptions, err := provider.packageReplaceOptionsRepository.Get()
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the historical package replace options from the repository")
 	}
 
 	for packageId, historicalReplace := range historicalPackageReplaceOptions {
@@ -261,14 +262,16 @@ func (provider *GitPackageContentProvider) RefreshCache(currentPackageReplaceOpt
 				return startosis_errors.WrapWithInterpretationError(err, "An error occurred cloning package '%v'", packageId)
 			}
 		}
+	}
 
+	// upgrade the historical-replace list with the new values
+	for packageId, currentReplace := range currentPackageReplaceOptions {
 		historicalPackageReplaceOptions[packageId] = currentReplace
 	}
 
-	//TODO remove this debug
-	logrus.Debugf("historicalPackageReplaceOptions '%v' ", historicalPackageReplaceOptions)
-
-	//TODO store historical in the repository
+	if err = provider.packageReplaceOptionsRepository.Save(historicalPackageReplaceOptions); err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred saving the historical package replace options from the repository")
+	}
 	return nil
 }
 

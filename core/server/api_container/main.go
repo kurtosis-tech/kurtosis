@@ -125,14 +125,14 @@ func runMain() error {
 		return stacktrace.NewError("Kurtosis backend type is '%v' but cluster configuration parameters are null.", args.KurtosisBackendType_Kubernetes.String())
 	}
 
-	gitPackageContentProvider, err := enclaveDataDir.GetGitPackageContentProvider()
-	if err != nil {
-		return stacktrace.Propagate(err, "An error occurred while creating the Git module content provider")
-	}
-
 	enclaveDb, err := enclave_db.GetOrCreateEnclaveDatabase()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred while getting the enclave db")
+	}
+
+	gitPackageContentProvider, err := enclaveDataDir.GetGitPackageContentProvider(enclaveDb)
+	if err != nil {
+		return stacktrace.Propagate(err, "An error occurred while creating the Git module content provider")
 	}
 
 	// TODO Extract into own function

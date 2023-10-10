@@ -93,7 +93,7 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	currentEnclavePlan *enclave_plan_persistence.EnclavePlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
-	if interpretationErr := interpreter.moduleContentProvider.RefreshCache(packageReplaceOptions); interpretationErr != nil {
+	if interpretationErr := interpreter.moduleContentProvider.CloneReplacedPackagesIfNeeded(packageReplaceOptions); interpretationErr != nil {
 		return "", nil, interpretationErr.ToAPIType()
 	}
 

@@ -60,7 +60,7 @@ func (provider *MockPackageContentProvider) GetKurtosisYaml(packageAbsolutePathO
 	panic(unimplementedMessage)
 }
 
-func (provider *MockPackageContentProvider) RefreshCache(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
+func (provider *MockPackageContentProvider) CloneReplacedPackagesIfNeeded(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
 	return nil
 }
 

@@ -6,6 +6,7 @@
 package enclave_data_directory
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db/file_artifacts_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages/git_package_content_provider"
 	"github.com/kurtosis-tech/stacktrace"
@@ -65,7 +66,7 @@ func (dir EnclaveDataDirectory) GetFilesArtifactStore() (*FilesArtifactStore, er
 	return currentFilesArtifactStore, dbError
 }
 
-func (dir EnclaveDataDirectory) GetGitPackageContentProvider() (*git_package_content_provider.GitPackageContentProvider, error) {
+func (dir EnclaveDataDirectory) GetGitPackageContentProvider(enclaveDb *enclave_db.EnclaveDB) (*git_package_content_provider.GitPackageContentProvider, error) {
 	packageStoreDirpath := path.Join(dir.absMountDirpath, startosisPackageStoreDirname)
 	if err := ensureDirpathExists(packageStoreDirpath); err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the Starlark package store dirpath '%v' exists.", packageStoreDirpath)
@@ -76,5 +77,5 @@ func (dir EnclaveDataDirectory) GetGitPackageContentProvider() (*git_package_con
 		return nil, stacktrace.Propagate(err, "An error occurred ensuring the Starlark temporary package store dirpath '%v' exists.", tempPackageStoreDirpath)
 	}
 
-	return git_package_content_provider.NewGitPackageContentProvider(packageStoreDirpath, tempPackageStoreDirpath), nil
+	return git_package_content_provider.NewGitPackageContentProvider(packageStoreDirpath, tempPackageStoreDirpath, enclaveDb), nil
 }

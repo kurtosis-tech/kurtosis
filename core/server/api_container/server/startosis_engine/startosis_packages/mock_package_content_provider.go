@@ -352,7 +352,7 @@ func (_c *MockPackageContentProvider_GetOnDiskAbsolutePackagePath_Call) RunAndRe
 }
 
 // RefreshCache provides a mock function with given fields: currentPackageReplaceOptions
-func (_m *MockPackageContentProvider) RefreshCache(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
+func (_m *MockPackageContentProvider) CloneReplacedPackagesIfNeeded(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
 	ret := _m.Called(currentPackageReplaceOptions)
 
 	var r0 *startosis_errors.InterpretationError
@@ -367,7 +367,7 @@ func (_m *MockPackageContentProvider) RefreshCache(currentPackageReplaceOptions 
 	return r0
 }
 
-// MockPackageContentProvider_RefreshCache_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'RefreshCache'
+// MockPackageContentProvider_RefreshCache_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'CloneReplacedPackagesIfNeeded'
 type MockPackageContentProvider_RefreshCache_Call struct {
 	*mock.Call
 }
@@ -375,7 +375,7 @@ type MockPackageContentProvider_RefreshCache_Call struct {
 // RefreshCache is a helper method to define mock.On call
 //   - currentPackageReplaceOptions map[string]string
 func (_e *MockPackageContentProvider_Expecter) RefreshCache(currentPackageReplaceOptions interface{}) *MockPackageContentProvider_RefreshCache_Call {
-	return &MockPackageContentProvider_RefreshCache_Call{Call: _e.mock.On("RefreshCache", currentPackageReplaceOptions)}
+	return &MockPackageContentProvider_RefreshCache_Call{Call: _e.mock.On("CloneReplacedPackagesIfNeeded", currentPackageReplaceOptions)}
 }
 
 func (_c *MockPackageContentProvider_RefreshCache_Call) Run(run func(currentPackageReplaceOptions map[string]string)) *MockPackageContentProvider_RefreshCache_Call {
