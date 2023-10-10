@@ -11,7 +11,7 @@ This guide will also help you create and get these contexts.
 
 ## Setting Up
 
-To use the Kurtosis Typescript SDK, you need to add it as a dependency to your Go module. You can do this with the following `go get` command:
+To use the Kurtosis Typescript SDK, you need to add it as a dependency to your NPM package. You can do this with the following `npm i` command:
 
 ```console
 $ npm i kurtosis-sdk
