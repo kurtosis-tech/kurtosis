@@ -12,6 +12,8 @@ import (
 	"compress/gzip"
 	"context"
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
+	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 	"io"
 	"math"
 	"net/http"
@@ -20,8 +22,6 @@ import (
 	"strings"
 	"time"
 	"unicode"
-
-	metrics_client "github.com/kurtosis-tech/metrics-library/golang/lib/client"
 
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/uuid_generator"
 
@@ -69,6 +69,7 @@ const (
 	isScript               = true
 	isNotScript            = false
 	isNotRemote            = false
+	defaultParallelism     = 4
 )
 
 // Guaranteed (by a unit test) to be a 1:1 mapping between API port protos and port spec protos
@@ -112,7 +113,7 @@ func NewApiContainerService(
 			PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
 			SerializedScript:       "",
 			SerializedParams:       "",
-			Parallelism:            0,
+			Parallelism:            defaultParallelism,
 			RelativePathToMainFile: startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript,
 			MainFunctionName:       "",
 			ExperimentalFeatures:   []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag{},
@@ -128,6 +129,9 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	serializedStarlarkScript := args.GetSerializedScript()
 	serializedParams := args.GetSerializedParams()
 	parallelism := int(args.GetParallelism())
+	if parallelism == 0 {
+		parallelism = defaultParallelism
+	}
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	mainFuncName := args.GetMainFunctionName()
 	experimentalFeatures := args.GetExperimentalFeatures()
@@ -138,7 +142,9 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
-	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
+	noPackageReplaceOptions := map[string]string{}
+
+	apicService.runStarlark(parallelism, dryRun, startosis_constants.PackageIdPlaceholderForStandaloneScript, noPackageReplaceOptions, mainFuncName, startosis_constants.PlaceHolderMainFileForPlaceStandAloneScript, serializedStarlarkScript, serializedParams, args.GetExperimentalFeatures(), stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 		PackageId:              startosis_constants.PackageIdPlaceholderForStandaloneScript,
@@ -154,7 +160,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	return nil
 }
 
-func (apicService ApiContainerService) UploadStarlarkPackage(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadStarlarkPackageServer) error {
+func (apicService *ApiContainerService) UploadStarlarkPackage(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadStarlarkPackageServer) error {
 	var packageId string
 	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, emptypb.Empty](server)
 
@@ -188,7 +194,7 @@ func (apicService ApiContainerService) UploadStarlarkPackage(server kurtosis_cor
 	return nil
 }
 
-func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Context, args *kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
+func (apicService *ApiContainerService) InspectFilesArtifactContents(_ context.Context, args *kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsRequest) (*kurtosis_core_rpc_api_bindings.InspectFilesArtifactContentsResponse, error) {
 	artifactIdentifier := ""
 	if args.GetFileNamesAndUuid().GetFileUuid() != emptyFileArtifactIdentifier {
 		artifactIdentifier = args.GetFileNamesAndUuid().GetFileUuid()
@@ -221,6 +227,9 @@ func (apicService ApiContainerService) InspectFilesArtifactContents(_ context.Co
 func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, stream kurtosis_core_rpc_api_bindings.ApiContainerService_RunStarlarkPackageServer) error {
 	packageId := args.GetPackageId()
 	parallelism := int(args.GetParallelism())
+	if parallelism == 0 {
+		parallelism = defaultParallelism
+	}
 	dryRun := shared_utils.GetOrDefaultBool(args.DryRun, defaultStartosisDryRun)
 	serializedParams := args.GetSerializedParams()
 	relativePathToMainFile := args.GetRelativePathToMainFile()
@@ -236,16 +245,16 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	//  right now the TS SDK still uses the old deprecated behavior
 	var scriptWithRunFunction string
 	var interpretationError *startosis_errors.InterpretationError
-	var packageName string
 	var isRemote bool
+	var kurtosisYml *yaml_parser.KurtosisYaml
 	if args.ClonePackage != nil {
-		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
+		scriptWithRunFunction, kurtosisYml, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetClonePackage(), nil, relativePathToMainFile)
 		isRemote = args.GetClonePackage()
 	} else {
 		// old deprecated syntax in use
 		moduleContentIfLocal := args.GetLocal()
 		isRemote = args.GetRemote()
-		scriptWithRunFunction, packageName, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
+		scriptWithRunFunction, kurtosisYml, interpretationError = apicService.runStarlarkPackageSetup(packageId, args.GetRemote(), moduleContentIfLocal, relativePathToMainFile)
 	}
 	if interpretationError != nil {
 		if err := stream.SendMsg(binding_constructors.NewStarlarkRunResponseLineFromInterpretationError(interpretationError.ToAPIType())); err != nil {
@@ -253,12 +262,15 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		}
 		return nil
 	}
+	packageName := kurtosisYml.GetPackageName()
+	packageReplaceOptions := kurtosisYml.GetPackageReplaceOptions()
+	logrus.Debugf("package replace options received '%+v'", packageReplaceOptions)
 
 	metricsErr := apicService.metricsClient.TrackKurtosisRun(packageName, isRemote, dryRun, isNotScript, cloudInstanceID, cloudUserId)
 	if metricsErr != nil {
 		logrus.Warn("An error occurred tracking kurtosis run event")
 	}
-	apicService.runStarlark(parallelism, dryRun, packageName, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
+	apicService.runStarlark(parallelism, dryRun, packageName, packageReplaceOptions, mainFuncName, relativePathToMainFile, scriptWithRunFunction, serializedParams, args.ExperimentalFeatures, stream)
 
 	apicService.starlarkRun = &kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse{
 		PackageId:              packageId,
@@ -270,11 +282,10 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 		ExperimentalFeatures:   args.ExperimentalFeatures,
 		RestartPolicy:          apicService.restartPolicy,
 	}
-
 	return nil
 }
 
-func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
+func (apicService *ApiContainerService) ExecCommand(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ExecCommandArgs) (*kurtosis_core_rpc_api_bindings.ExecCommandResponse, error) {
 	serviceIdentifier := args.ServiceIdentifier
 	command := args.CommandArgs
 	execResult, err := apicService.serviceNetwork.RunExec(ctx, serviceIdentifier, command)
@@ -301,7 +312,7 @@ func (apicService ApiContainerService) ExecCommand(ctx context.Context, args *ku
 	return resp, nil
 }
 
-func (apicService ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
+func (apicService *ApiContainerService) WaitForHttpGetEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpGetEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 
 	serviceIdentifier := args.ServiceIdentifier
 
@@ -326,7 +337,7 @@ func (apicService ApiContainerService) WaitForHttpGetEndpointAvailability(ctx co
 	return &emptypb.Empty{}, nil
 }
 
-func (apicService ApiContainerService) WaitForHttpPostEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
+func (apicService *ApiContainerService) WaitForHttpPostEndpointAvailability(ctx context.Context, args *kurtosis_core_rpc_api_bindings.WaitForHttpPostEndpointAvailabilityArgs) (*emptypb.Empty, error) {
 	serviceIdentifier := args.ServiceIdentifier
 
 	if err := apicService.waitForEndpointAvailability(
@@ -350,7 +361,7 @@ func (apicService ApiContainerService) WaitForHttpPostEndpointAvailability(ctx c
 	return &emptypb.Empty{}, nil
 }
 
-func (apicService ApiContainerService) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
+func (apicService *ApiContainerService) GetServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.GetServicesArgs) (*kurtosis_core_rpc_api_bindings.GetServicesResponse, error) {
 	serviceInfos := map[string]*kurtosis_core_rpc_api_bindings.ServiceInfo{}
 	filterServiceIdentifiers := args.ServiceIdentifiers
 
@@ -382,12 +393,12 @@ func (apicService ApiContainerService) GetServices(ctx context.Context, args *ku
 	return resp, nil
 }
 
-func (apicService ApiContainerService) ConnectServices(ctx context.Context, args *kurtosis_core_rpc_api_bindings.ConnectServicesArgs) (*kurtosis_core_rpc_api_bindings.ConnectServicesResponse, error) {
+func (apicService *ApiContainerService) ConnectServices(_ context.Context, _ *kurtosis_core_rpc_api_bindings.ConnectServicesArgs) (*kurtosis_core_rpc_api_bindings.ConnectServicesResponse, error) {
 	resp := binding_constructors.NewConnectServicesResponse()
 	return resp, nil
 }
 
-func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifiers(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse, error) {
+func (apicService *ApiContainerService) GetExistingAndHistoricalServiceIdentifiers(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetExistingAndHistoricalServiceIdentifiersResponse, error) {
 	allIdentifiers, err := apicService.serviceNetwork.GetExistingAndHistoricalServiceIdentifiers()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting existing and historical service identifiers")
@@ -409,7 +420,7 @@ func (apicService ApiContainerService) GetExistingAndHistoricalServiceIdentifier
 	return existingAndHistoricalServiceIdentifiersResponse, nil
 }
 
-func (apicService ApiContainerService) UploadFilesArtifact(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactServer) error {
+func (apicService *ApiContainerService) UploadFilesArtifact(server kurtosis_core_rpc_api_bindings.ApiContainerService_UploadFilesArtifactServer) error {
 	var maybeArtifactName string
 	serverStream := grpc_file_streaming.NewServerStream[kurtosis_core_rpc_api_bindings.StreamedDataChunk, kurtosis_core_rpc_api_bindings.UploadFilesArtifactResponse](server)
 
@@ -445,7 +456,7 @@ func (apicService ApiContainerService) UploadFilesArtifact(server kurtosis_core_
 	return nil
 }
 
-func (apicService ApiContainerService) DownloadFilesArtifact(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactServer) error {
+func (apicService *ApiContainerService) DownloadFilesArtifact(args *kurtosis_core_rpc_api_bindings.DownloadFilesArtifactArgs, server kurtosis_core_rpc_api_bindings.ApiContainerService_DownloadFilesArtifactServer) error {
 	artifactIdentifier := args.Identifier
 	if strings.TrimSpace(artifactIdentifier) == "" {
 		return stacktrace.NewError("Cannot download file with empty files artifact identifier")
@@ -500,7 +511,7 @@ func (apicService ApiContainerService) DownloadFilesArtifact(args *kurtosis_core
 	return nil
 }
 
-func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
+func (apicService *ApiContainerService) StoreWebFilesArtifact(_ context.Context, args *kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactArgs) (*kurtosis_core_rpc_api_bindings.StoreWebFilesArtifactResponse, error) {
 	url := args.Url
 	artifactName := args.Name
 
@@ -522,7 +533,7 @@ func (apicService ApiContainerService) StoreWebFilesArtifact(ctx context.Context
 	return response, nil
 }
 
-func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs) (*kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse, error) {
+func (apicService *ApiContainerService) StoreFilesArtifactFromService(ctx context.Context, args *kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceArgs) (*kurtosis_core_rpc_api_bindings.StoreFilesArtifactFromServiceResponse, error) {
 	serviceIdentifier := args.ServiceIdentifier
 	srcPath := args.SourcePath
 	name := args.Name
@@ -536,7 +547,7 @@ func (apicService ApiContainerService) StoreFilesArtifactFromService(ctx context
 	return response, nil
 }
 
-func (apicService ApiContainerService) ListFilesArtifactNamesAndUuids(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error) {
+func (apicService *ApiContainerService) ListFilesArtifactNamesAndUuids(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse, error) {
 	filesArtifactsNamesAndUuids := apicService.filesArtifactStore.GetFileNamesAndUuids()
 	var filesArtifactNamesAndUuids []*kurtosis_core_rpc_api_bindings.FilesArtifactNameAndUuid
 	for _, nameAndUuid := range filesArtifactsNamesAndUuids {
@@ -549,7 +560,7 @@ func (apicService ApiContainerService) ListFilesArtifactNamesAndUuids(_ context.
 	return &kurtosis_core_rpc_api_bindings.ListFilesArtifactNamesAndUuidsResponse{FileNamesAndUuids: filesArtifactNamesAndUuids}, nil
 }
 
-func (apicService ApiContainerService) GetStarlarkRun(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
+func (apicService *ApiContainerService) GetStarlarkRun(_ context.Context, _ *emptypb.Empty) (*kurtosis_core_rpc_api_bindings.GetStarlarkRunResponse, error) {
 	return apicService.starlarkRun, nil
 }
 
@@ -562,7 +573,7 @@ func transformPortSpecToApiPort(port *port_spec.PortSpec) (*kurtosis_core_rpc_ap
 	portNumUint16 := port.GetNumber()
 	portSpecProto := port.GetTransportProtocol()
 
-	// Yes, this isn't the most efficient way to do this, but the map is tiny so it doesn't matter
+	// Yes, this isn't the most efficient way to do this, but the map is tiny, so it doesn't matter
 	var apiProto kurtosis_core_rpc_api_bindings.Port_TransportProtocol
 	foundApiProto := false
 	for mappedApiProto, mappedPortSpecProto := range apiContainerPortProtoToPortSpecPortProto {
@@ -602,7 +613,7 @@ func transformPortSpecMapToApiPortsMap(apiPorts map[string]*port_spec.PortSpec) 
 	return result, nil
 }
 
-func (apicService ApiContainerService) waitForEndpointAvailability(
+func (apicService *ApiContainerService) waitForEndpointAvailability(
 	ctx context.Context,
 	serviceIdStr string,
 	httpMethod string,
@@ -698,7 +709,7 @@ func makeHttpRequest(httpMethod string, url string, body string) (*http.Response
 	return resp, nil
 }
 
-func (apicService ApiContainerService) getServiceInfoForIdentifier(ctx context.Context, serviceIdentifier string) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
+func (apicService *ApiContainerService) getServiceInfoForIdentifier(ctx context.Context, serviceIdentifier string) (*kurtosis_core_rpc_api_bindings.ServiceInfo, error) {
 	serviceObj, err := apicService.serviceNetwork.GetService(
 		ctx,
 		serviceIdentifier,
@@ -713,50 +724,55 @@ func (apicService ApiContainerService) getServiceInfoForIdentifier(ctx context.C
 	return serviceInfo, nil
 }
 
-func (apicService ApiContainerService) runStarlarkPackageSetup(
+func (apicService *ApiContainerService) runStarlarkPackageSetup(
 	packageId string,
 	clonePackage bool,
 	moduleContentIfLocal []byte,
 	relativePathToMainFile string,
-) (string, string, *startosis_errors.InterpretationError) {
+) (string, *yaml_parser.KurtosisYaml, *startosis_errors.InterpretationError) {
 	var packageRootPathOnDisk string
 	var interpretationError *startosis_errors.InterpretationError
-	var packageName string
+
 	if clonePackage {
-		packageRootPathOnDisk, packageName, interpretationError = apicService.startosisModuleContentProvider.ClonePackage(packageId)
+		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.ClonePackage(packageId)
 	} else if moduleContentIfLocal != nil {
 		// TODO: remove this once UploadStarlarkPackage is called prior to calling RunStarlarkPackage by all consumers
 		//  of this API
 		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.StorePackageContents(packageId, bytes.NewReader(moduleContentIfLocal), doOverwriteExistingModule)
-		packageName = packageId
 	} else {
 		// We just need to retrieve the absolute path, the content is will not be stored here since it has been uploaded
 		// prior to this call
 		packageRootPathOnDisk, interpretationError = apicService.startosisModuleContentProvider.GetOnDiskAbsolutePackagePath(packageId)
-		packageName = packageId
+
 	}
 	if interpretationError != nil {
-		return "", "", interpretationError
+		return "", nil, interpretationError
+	}
+
+	kurtosisYml, interpretationError := apicService.startosisModuleContentProvider.GetKurtosisYaml(packageRootPathOnDisk)
+	if interpretationError != nil {
+		return "", nil, interpretationError
 	}
 
 	pathToMainFile := path.Join(packageRootPathOnDisk, relativePathToMainFile)
 
 	if _, err := os.Stat(pathToMainFile); err != nil {
-		return "", "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while verifying that '%v' exists in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
 	mainScriptToExecute, err := os.ReadFile(pathToMainFile)
 	if err != nil {
-		return "", "", startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
+		return "", nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while reading '%v' in the package '%v' at '%v'", startosis_constants.MainFileName, packageId, pathToMainFile)
 	}
 
-	return string(mainScriptToExecute), packageName, nil
+	return string(mainScriptToExecute), kurtosisYml, nil
 }
 
-func (apicService ApiContainerService) runStarlark(
+func (apicService *ApiContainerService) runStarlark(
 	parallelism int,
 	dryRun bool,
 	packageId string,
+	packageReplaceOptions map[string]string,
 	mainFunctionName string,
 	relativePathToMainFile string,
 	serializedStarlark string,
@@ -764,7 +780,7 @@ func (apicService ApiContainerService) runStarlark(
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	stream grpc.ServerStream,
 ) {
-	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, experimentalFeatures)
+	responseLineStream := apicService.startosisRunner.Run(stream.Context(), dryRun, parallelism, packageId, packageReplaceOptions, mainFunctionName, relativePathToMainFile, serializedStarlark, serializedParams, experimentalFeatures)
 	for {
 		select {
 		case <-stream.Context().Done():

@@ -47,7 +47,7 @@ service ApiContainerService {
   rpc ListFilesArtifactNamesAndUuids(google.protobuf.Empty) returns (ListFilesArtifactNamesAndUuidsResponse) {}
 
   rpc InspectFilesArtifactContents(InspectFilesArtifactContentsRequest) returns (InspectFilesArtifactContentsResponse) {}
-  
+
   // User services port forwarding
   rpc ConnectServices(ConnectServicesArgs) returns (ConnectServicesResponse) {};
   

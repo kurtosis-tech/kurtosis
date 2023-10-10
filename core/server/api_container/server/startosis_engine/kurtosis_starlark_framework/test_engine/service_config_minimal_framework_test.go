@@ -26,7 +26,7 @@ func (suite *KurtosisTypeConstructorTestSuite) TestServiceConfigMinimal() {
 func (t *serviceConfigMinimalTestCase) GetStarlarkCode() string {
 	return fmt.Sprintf("%s(%s=%q)",
 		service_config.ServiceConfigTypeName,
-		service_config.ImageAttr, TestContainerImageName)
+		service_config.ImageAttr, testContainerImageName)
 }
 
 func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.KurtosisValueType) {
@@ -37,7 +37,7 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 	require.Nil(t, err)
 
 	expectedServiceConfig := service.NewServiceConfig(
-		TestContainerImageName,
+		testContainerImageName,
 		map[string]*port_spec.PortSpec{},
 		map[string]*port_spec.PortSpec{},
 		nil,

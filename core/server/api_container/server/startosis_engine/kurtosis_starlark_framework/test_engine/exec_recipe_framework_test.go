@@ -23,7 +23,7 @@ type execRecipeTestCase struct {
 func (suite *KurtosisTypeConstructorTestSuite) TestExecRecipe() {
 	suite.serviceNetwork.EXPECT().RunExec(
 		mock.Anything,
-		string(TestServiceName),
+		string(testServiceName),
 		[]string{"echo", "run"},
 	).Times(1).Return(
 		exec_result.NewExecResult(0, "run"),
@@ -50,7 +50,7 @@ func (t *execRecipeTestCase) Assert(typeValue builtin_argument.KurtosisValueType
 	execRecipe, ok := typeValue.(*recipe.ExecRecipe)
 	require.True(t, ok)
 
-	_, err := execRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, TestServiceName)
+	_, err := execRecipe.Execute(context.Background(), t.serviceNetwork, t.runtimeValueStore, testServiceName)
 	require.NoError(t, err)
 
 	returnValue, err := execRecipe.CreateStarlarkReturnValue("result-fake-uuid")

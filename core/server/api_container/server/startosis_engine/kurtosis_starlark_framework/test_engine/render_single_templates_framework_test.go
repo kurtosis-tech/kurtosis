@@ -34,7 +34,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestRenderSingleTemplate() {
 		renderTemplate_SingleTemplate_filePath: templateData,
 	}
 
-	suite.serviceNetwork.EXPECT().RenderTemplates(templateAndData, TestArtifactName).Times(1).Return(TestArtifactUuid, nil)
+	suite.serviceNetwork.EXPECT().RenderTemplates(templateAndData, testArtifactName).Times(1).Return(testArtifactUuid, nil)
 
 	suite.run(&renderSingleTemplateTestCase{
 		T:                 suite.T(),
@@ -49,7 +49,7 @@ func (t *renderSingleTemplateTestCase) GetInstruction() *kurtosis_plan_instructi
 
 func (t *renderSingleTemplateTestCase) GetStarlarkCode() string {
 	configValue := fmt.Sprintf(`{%q: struct(data=%q, template=%q)}`, renderTemplate_SingleTemplate_filePath, renderTemplate_SingleTemplate_data, renderTemplate_SingleTemplate_template)
-	return fmt.Sprintf(`%s(%s=%s, %s=%q)`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue, render_templates.ArtifactNameArgName, TestArtifactName)
+	return fmt.Sprintf(`%s(%s=%s, %s=%q)`, render_templates.RenderTemplatesBuiltinName, render_templates.TemplateAndDataByDestinationRelFilepathArg, configValue, render_templates.ArtifactNameArgName, testArtifactName)
 }
 
 func (t *renderSingleTemplateTestCase) GetStarlarkCodeForAssertion() string {
@@ -57,9 +57,9 @@ func (t *renderSingleTemplateTestCase) GetStarlarkCodeForAssertion() string {
 }
 
 func (t *renderSingleTemplateTestCase) Assert(interpretationResult starlark.Value, executionResult *string) {
-	require.Equal(t, starlark.String(TestArtifactName), interpretationResult)
+	require.Equal(t, starlark.String(testArtifactName), interpretationResult)
 
-	expectedExecutionResult := fmt.Sprintf("Templates artifact name '%s' rendered with artifact UUID '%s'", TestArtifactName, TestArtifactUuid)
+	expectedExecutionResult := fmt.Sprintf("Templates artifact name '%s' rendered with artifact UUID '%s'", testArtifactName, testArtifactUuid)
 	require.Equal(t, expectedExecutionResult, *executionResult)
 
 	// no need to check for the mocked method as we set `.Times(1)` when we declared it

@@ -1,0 +1,4 @@
+name: github.com/kurtosis-tech/sample-startosis-load/replace-subpackage
+replace:
+  # Replacing the package with the 'another branch' in the same package
+  github.com/kurtosis-tech/sample-dependency-package: github.com/kurtosis-tech/sample-dependency-package@test-branch

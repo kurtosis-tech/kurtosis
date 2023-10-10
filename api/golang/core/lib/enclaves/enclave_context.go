@@ -125,7 +125,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	serializedParams, err := maybeParseYaml(runConfig.SerializedParams)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for package '%v'", serializedParams)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for package '%v'", serializedParams)
 	}
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
@@ -193,7 +193,7 @@ func (enclaveCtx *EnclaveContext) RunStarlarkRemotePackage(
 ) (chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine, context.CancelFunc, error) {
 	serializedParams, err := maybeParseYaml(runConfig.SerializedParams)
 	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "An error occured when parsing YAML args for remote package '%v'", serializedParams)
+		return nil, nil, stacktrace.Propagate(err, "An error occurred when parsing YAML args for remote package '%v'", serializedParams)
 	}
 	executionStartedSuccessfully := false
 	ctxWithCancel, cancelCtxFunc := context.WithCancel(ctx)
