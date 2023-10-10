@@ -32,6 +32,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/types/known/emptypb"
 	"io"
+	"os"
 	"path"
 	"strings"
 )
@@ -41,6 +42,10 @@ type EnclaveUUID string
 const (
 	kurtosisYamlFilename    = "kurtosis.yml"
 	enforceMaxFileSizeLimit = true
+
+	osPathSeparatorString = string(os.PathSeparator)
+
+	dotRelativePathIndicatorString = "."
 )
 
 // Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
@@ -136,7 +141,13 @@ func (enclaveCtx *EnclaveContext) RunStarlarkPackage(
 	}()
 
 	starlarkResponseLineChan := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
-	executeStartosisPackageArgs, kurtosisYml, err := enclaveCtx.assembleRunStartosisPackageArg(packageRootPath, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId)
+
+	kurtosisYml, err := getKurtosisYaml(packageRootPath)
+	if err != nil {
+		return nil, nil, stacktrace.Propagate(err, "An error occurred getting Kurtosis yaml file from path '%s'", packageRootPath)
+	}
+
+	executeStartosisPackageArgs, err := enclaveCtx.assembleRunStartosisPackageArg(kurtosisYml, runConfig.RelativePathToMainFile, runConfig.MainFunctionName, serializedParams, runConfig.DryRun, runConfig.Parallelism, runConfig.ExperimentalFeatureFlags, runConfig.CloudInstanceId, runConfig.CloudUserId)
 	if err != nil {
 		return nil, nil, stacktrace.Propagate(err, "Error preparing package '%s' for execution", packageRootPath)
 	}
@@ -172,14 +183,6 @@ func (enclaveCtx *EnclaveContext) uploadLocalStarlarkPackageDependencies(package
 		}
 	}
 	return nil
-}
-
-func isLocalDependencyReplace(replace string) bool {
-	//TODO replace harcoded values
-	if strings.HasPrefix(replace, "/") || strings.HasPrefix(replace, ".") {
-		return true
-	}
-	return false
 }
 
 // Docs available at https://docs.kurtosis.com/sdk/#runstarlarkpackageblockingstring-packagerootpath-string-serializedparams-boolean-dryrun---starlarkrunresult-runresult-error-error
@@ -519,7 +522,7 @@ func getErrFromStarlarkRunResult(result *StarlarkRunResult) error {
 }
 
 func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
-	packageRootPath string,
+	kurtosisYaml *KurtosisYaml,
 	relativePathToMainFile string,
 	mainFunctionName string,
 	serializedParams string,
@@ -528,14 +531,9 @@ func (enclaveCtx *EnclaveContext) assembleRunStartosisPackageArg(
 	experimentalFeatures []kurtosis_core_rpc_api_bindings.KurtosisFeatureFlag,
 	cloudInstanceId string,
 	cloudUserId string,
-) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, *KurtosisYaml, error) {
-	kurtosisYamlFilepath := path.Join(packageRootPath, kurtosisYamlFilename)
+) (*kurtosis_core_rpc_api_bindings.RunStarlarkPackageArgs, error) {
 
-	kurtosisYaml, err := ParseKurtosisYaml(kurtosisYamlFilepath)
-	if err != nil {
-		return nil, nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, packageRootPath)
-	}
-	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId), kurtosisYaml, nil
+	return binding_constructors.NewRunStarlarkPackageArgs(kurtosisYaml.PackageName, relativePathToMainFile, mainFunctionName, serializedParams, dryRun, parallelism, experimentalFeatures, cloudInstanceId, cloudUserId), nil
 }
 
 func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packageRootPath string) error {
@@ -571,4 +569,21 @@ func (enclaveCtx *EnclaveContext) uploadStarlarkPackage(packageId string, packag
 		return stacktrace.Propagate(err, "An error was encountered while uploading data to the API Container.")
 	}
 	return nil
+}
+
+func getKurtosisYaml(packageRootPath string) (*KurtosisYaml, error) {
+	kurtosisYamlFilepath := path.Join(packageRootPath, kurtosisYamlFilename)
+
+	kurtosisYaml, err := ParseKurtosisYaml(kurtosisYamlFilepath)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "There was an error parsing the '%v' at '%v'", kurtosisYamlFilename, packageRootPath)
+	}
+	return kurtosisYaml, nil
+}
+
+func isLocalDependencyReplace(replace string) bool {
+	if strings.HasPrefix(replace, osPathSeparatorString) || strings.HasPrefix(replace, dotRelativePathIndicatorString) {
+		return true
+	}
+	return false
 }

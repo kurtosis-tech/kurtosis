@@ -38,6 +38,8 @@ const (
 	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
 	osPathSeparatorString = string(os.PathSeparator)
 
+	dotRelativePathIndicatorString = "."
+
 	onlyOneReplace = 1
 )
 
@@ -548,8 +550,7 @@ func getKurtosisYamlPathForFileUrlInternal(absPathToFile string, packagesDir str
 }
 
 func isLocalDependencyReplace(replace string) bool {
-	//TODO replace harcoded values
-	if strings.HasPrefix(replace, "/") || strings.HasPrefix(replace, ".") {
+	if strings.HasPrefix(replace, osPathSeparatorString) || strings.HasPrefix(replace, dotRelativePathIndicatorString) {
 		return true
 	}
 	return false
