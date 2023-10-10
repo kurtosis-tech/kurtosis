@@ -46,7 +46,7 @@ def run(plan):
 `
 starlarkRunResult, err := enclaveCtx.RunStarlarkScriptBlocking(ctx, starlarkScript, starlarkRunConfig)
 ```
-
+## Interacting with services
 After adding a service, you can interact with it by obtaining a service context and running commands:
 
 ```go
