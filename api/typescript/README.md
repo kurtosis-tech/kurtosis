@@ -27,7 +27,7 @@ Make note of the Engine's version and status information.
 
 ## Creating an Enclave
 
-The first step is to obtain a Kurtosis Context, which represents a Kurtosis instance in your Go code:
+The first step is to obtain a Kurtosis Context, which represents a Kurtosis instance in your Typescript code:
 
 ```typescript
 const newKurtosisContextResult = await KurtosisContext.newKurtosisContextFromLocalEngine()
