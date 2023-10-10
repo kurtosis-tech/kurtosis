@@ -1,6 +1,6 @@
 # Kurtosis Go SDK
 
-This guide provides instructions and code snippets to help you get started with the Kurtosis Go SDK. It enables you to create and manage enclaves programmatically, without having to rely on the Kurtosis Enclave Manager (UI) or the Kurtosis CLI.
+This guide provides instructions and code snippets to help you get started with the Kurtosis Typescript SDK. It enables you to create and manage enclaves programmatically, without having to rely on the Kurtosis Enclave Manager (UI) or the Kurtosis CLI.
 
 The main way to interact with objects from the Kurtosis ecosystem is by getting its *context*. There are three main contexts:
 1. **KurtosisContext**: contains methods for interacting with Kurtosis Engine, allowing manipulation of enclaves.
