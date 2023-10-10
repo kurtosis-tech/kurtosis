@@ -245,7 +245,7 @@ The `network_params` struct configures the network settings that are used to cre
 Save your edited params file in any directory you wish (in the example below, it is saved to the desktop) and then use it to run your Kurtosis package by running:
 
 ```bash
-kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/kurtosis-tech/ethereum-package "$(cat ~/eth-network-params.json)"
+kurtosis clean -a && kurtosis run --enclave local-eth-testnet github.com/kurtosis-tech/ethereum-package --args-file ~/eth-network-params.json
 ```
 :::TIP
 Note that the `kurtosis clean -a` command is used here to instruct Kurtosis to destroy the old testnet and its contents before starting a new one up.

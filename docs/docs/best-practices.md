@@ -12,11 +12,10 @@ Passing [package parameters][package-parameterization] via the CLI can get hairy
    ```bash
    kurtosis run github.com/user/repo '{"some_param":5,"some_other_param":"My value"}'
    ```
-1. **When you have a large number of arguments:** put them in a `.json` file and use [Bash command substitution](https://www.gnu.org/software/bash/manual/html_node/Command-Substitution.html) _inside double quotes_ to slot them into the `kurtosis run` command. E.g.:
+1. **When you have a large number of arguments:** put them in a `.json` file and use `--args-file` to slot them into the `kurtosis run` command. E.g.:
    ```bash
-   kurtosis run github.com/user/repo "$(cat my-params.json)"
+   kurtosis run github.com/user/repo --args-file cat my-params.json
    ```
-   The double quotes around the `$(cat my-params.json)` are important so any spaces inside `my-params.json` don't fool Bash into thinking you're passing in two separate arguments.
 
 Choosing the right wait
 -----------------------
