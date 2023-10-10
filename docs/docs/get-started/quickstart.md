@@ -76,8 +76,8 @@ Create a file titled: `network_params.json` in your home directory, populate it 
 	"verifications_epoch_limit": 5,
 	"global_client_log_level": "info",
 	"mev_type": "none",
-    // When set to true, Kurtosis will bootstrap and start a Grafana and Prometheus instance alongside other network monitoring tools.
-    "launch_additional_services": false,
+    // The default value bootstraps a bunch of services like grafana, prometheus, el/cl forkmons, explorers
+    "additional_services": [],
 }
 ```
 The arrays in the `participant` object enables you to define the specific Ethereum client types and respective image tags you want to use in your network, alongside any extra parameters for the validator, beacon, or builder as well as some useful flags for the verbosity of log lines. In this example you'll be using the `latest` image tags for the Geth and Lighthouse clients and have specified `2` nodes to be spun up.
