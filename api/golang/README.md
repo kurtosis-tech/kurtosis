@@ -1,6 +1,6 @@
 # Kurtosis Go SDK
 
-This README provides instructions and code snippets to help you get started with the Kurtosis Go SDK. The SDK enables you to create and manage enclaves, which are isolated environments for running services in a Kurtosis instance.
+This guide provides instructions and code snippets to help you get started with the Kurtosis Go SDK. The SDK enables you to create and manage enclaves programmatically, without having to rely on Kurtosis UI or CLI.
 
 ## Setting Up
 
