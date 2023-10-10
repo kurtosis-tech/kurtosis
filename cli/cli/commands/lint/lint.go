@@ -37,6 +37,7 @@ const (
 	allStarlarkFilesMatch   = "\\.star?$"
 	dirVolumeSeparator      = ":"
 	presentWorkingDirectory = "."
+	versionArg              = "version"
 
 	linterFailedAsThingsNeedToBeReformattedExitCode = 1
 	linterFailedWithInternalErrorsExitCode          = 123
@@ -94,6 +95,11 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 
 	if _, err := exec.LookPath(dockerBinary); err != nil {
 		return stacktrace.Propagate(err, "'%v' uses '%v' underneath in order to use the '%v' image but it couldn't find '%v' in path", command_str_consts.KurtosisLintCmdStr, dockerBinary, pyBlackDockerImage, dockerBinary)
+	}
+
+	versionCommand := exec.Command(dockerBinary, versionArg)
+	if _, err := versionCommand.CombinedOutput(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred checking Docker version. Please ensure Docker engine is running and try again.")
 	}
 
 	for _, fileOrDirToLint := range fileOrDirToLintArg {
