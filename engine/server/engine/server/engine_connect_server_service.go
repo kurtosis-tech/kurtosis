@@ -150,7 +150,7 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 	}
 	if args.ShouldCleanAll {
 		if err = service.logFileManager.RemoveAllLogs(); err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred removing all nodes.")
+			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
 		}
 	}
 	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: removedEnclaveUuidsAndNames}

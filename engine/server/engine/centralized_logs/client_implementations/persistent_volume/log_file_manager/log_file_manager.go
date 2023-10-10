@@ -136,6 +136,7 @@ func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
 }
 
 func (manager *LogFileManager) RemoveAllLogs() error {
+	// only removes logs for this year because Docker prevents all logs from base logs storage file path
 	year, _ := manager.time.Now().ISOWeek()
 	if err := manager.filesystem.RemoveAll(getLogsDirPathForYear(year)); err != nil {
 		return stacktrace.Propagate(err, "An error occurred attempting to remove all logs.")
