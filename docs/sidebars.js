@@ -37,6 +37,14 @@ const sidebars = {
         },
         {
             type: 'category',
+            label: 'SDK Examples',
+            collapsed: true,
+            items: [
+                'go-sdk-example'
+            ]
+        },
+        {
+            type: 'category',
             label: 'API Reference',
             collapsed: true,
             items: [
