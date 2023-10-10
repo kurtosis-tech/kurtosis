@@ -19,6 +19,7 @@ import (
 	"github.com/docker/docker/pkg/jsonmessage"
 	"github.com/docker/docker/pkg/stdcopy"
 	"github.com/docker/go-connections/nat"
+	kurtosis_sdk_version "github.com/kurtosis-tech/kurtosis/api/golang/kurtosis_version"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_kurtosis_backend/consts"
 	docker_manager_types "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/docker_manager/types"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/compute_resources"
@@ -304,7 +305,7 @@ func (manager *DockerManager) ListUnusedImages(ctx context.Context) ([]types.Ima
 			continue
 		}
 		for _, tag := range image.RepoTags {
-			if strings.Contains(tag, kurtosisTagPrefix) && containsSemVer(tag) {
+			if strings.Contains(tag, kurtosisTagPrefix) && containsSemVer(tag) && !strings.Contains(tag, kurtosis_sdk_version.KurtosisVersion) {
 				unusedImages = append(unusedImages, image)
 			}
 		}

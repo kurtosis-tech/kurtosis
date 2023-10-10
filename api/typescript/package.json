@@ -25,9 +25,9 @@
     "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
     "license": "Apache-2.0",
     "bugs": {
-        "url": "https://github.com/kurtosis-tech/kurtosis-sdk/issues"
+        "url": "https://github.com/kurtosis-tech/kurtosis/issues"
     },
-    "homepage": "https://github.com/kurtosis-tech/kurtosis-sdk#readme",
+    "homepage": "https://github.com/kurtosis-tech/kurtosis",
     "engines": {
         "node": ">=16.13.0"
     },
