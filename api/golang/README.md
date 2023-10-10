@@ -1,6 +1,6 @@
 # Kurtosis Go SDK
 
-This guide provides instructions and code snippets to help you get started with the Kurtosis Go SDK. The SDK enables you to create and manage enclaves programmatically, without having to rely on Kurtosis UI or CLI.
+This guide provides instructions and code snippets to help you get started with the Kurtosis Go SDK. The SDK enables you to create and manage enclaves programmatically, without having to rely on the Kurtosis Enclave Manager (UI) or the Kurtosis CLI.
 
 ## Setting Up
 
