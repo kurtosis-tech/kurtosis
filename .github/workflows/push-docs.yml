@@ -29,8 +29,11 @@ jobs:
       - name: Append changelog
         run: cat CHANGELOG.md >> docs/docs/changelog.md
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
-      - name: Append changelog
+      - name: Append Go README
         run: cat api/golang/README.md >> docs/docs/sdk-examples/go-sdk-example.md
+        if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
+      - name: Append TS README
+        run: cat api/typescript/README.md >> docs/docs/sdk-examples/ts-sdk-example.md
         if: github.ref == 'refs/heads/main' || steps.docs-diff.outputs.DOCS_CHANGED != 0
       - name: Yarn Install
         run: yarn --cwd ./docs --frozen-lockfile install

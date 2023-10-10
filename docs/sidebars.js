@@ -40,7 +40,8 @@ const sidebars = {
             label: 'SDK Examples',
             collapsed: true,
             items: [
-                'sdk-examples/go-sdk-example'
+                'sdk-examples/go-sdk-example',
+                'sdk-examples/ts-sdk-example'
             ]
         },
         {
