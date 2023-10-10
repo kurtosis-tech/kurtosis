@@ -6,11 +6,18 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/args"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_cluster_setting"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/out"
 	"github.com/kurtosis-tech/stacktrace"
 	"sort"
+)
+
+const (
+	clusterCurrentColumnHeader = ""
+	clusterNameColumnHeader    = "Name"
+
+	isCurrentClusterStrIndicator = "*"
 )
 
 var LsCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -36,20 +43,26 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		clusterList = append(clusterList, clusterName)
 	}
 	sort.Strings(clusterList)
+
+	tablePrinter := output_printers.NewTablePrinter(clusterCurrentColumnHeader, clusterNameColumnHeader)
+
 	for _, clusterName := range clusterList {
-		activeClusterFlag := getActiveClusterFlag(clusterName)
-		out.PrintOutLn(activeClusterFlag + clusterName)
+		currentClusterStr := ""
+		if isCurrentCluster(clusterName) {
+			currentClusterStr = isCurrentClusterStrIndicator
+		}
+		tablePrinter.AddRow(currentClusterStr, clusterName)
 	}
+	tablePrinter.Print()
 	return nil
 }
 
-func getActiveClusterFlag(clusterName string) string {
+func isCurrentCluster(clusterName string) bool {
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
-	activeClusterName, _ := clusterSettingStore.GetClusterSetting()
+	currentClusterName, _ := clusterSettingStore.GetClusterSetting()
 
-	activeClusterFlag := "    "
-	if clusterName == activeClusterName {
-		activeClusterFlag = "*   "
+	if clusterName == currentClusterName {
+		return true
 	}
-	return activeClusterFlag
+	return false
 }
