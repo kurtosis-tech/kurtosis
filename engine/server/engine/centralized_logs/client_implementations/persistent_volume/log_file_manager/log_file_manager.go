@@ -136,7 +136,8 @@ func (manager *LogFileManager) RemoveLogsBeyondRetentionPeriod() {
 }
 
 func (manager *LogFileManager) RemoveAllLogs() error {
-	if err := manager.filesystem.RemoveAll(volume_consts.LogsStorageDirpath); err != nil {
+	year, _ := manager.time.Now().ISOWeek()
+	if err := manager.filesystem.RemoveAll(getLogsDirPathForYear(year)); err != nil {
 		return stacktrace.Propagate(err, "An error occurred attempting to remove all logs.")
 	}
 	return nil
@@ -204,6 +205,7 @@ func (manager *LogFileManager) createSymlinkLogFile(targetLogFilePath, symlinkLo
 	return nil
 }
 
+// TODO: Implement a FilePath Builder to remove exploding constructors
 // creates a filepath of format /<filepath_base>/year/week/<enclave>/serviceIdentifier.<filetype>
 func getFilepathStr(year, week int, enclaveUuid, serviceIdentifier string) string {
 	return fmt.Sprintf(volume_consts.PerWeekFilePathFmtStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week), enclaveUuid, serviceIdentifier, volume_consts.Filetype)
@@ -217,5 +219,11 @@ func getEnclaveLogsDirPath(year, week int, enclaveUuid string) string {
 
 // creates a directory path of format /<filepath_base>/year/week/
 func getLogsDirPathForWeek(year, week int) string {
-	return fmt.Sprintf(volume_consts.PerWeekDirPathStr, volume_consts.LogsStorageDirpath, strconv.Itoa(year), strconv.Itoa(week))
+	logsDirPathForYear := getLogsDirPathForYear(year)
+	return fmt.Sprintf("%s/%s/", logsDirPathForYear, strconv.Itoa(week))
+}
+
+// creates a directory path of format /<filepath_base>/year/
+func getLogsDirPathForYear(year int) string {
+	return fmt.Sprintf("%s/%s/", volume_consts.LogsStorageDirpath, strconv.Itoa(year))
 }
