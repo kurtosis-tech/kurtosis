@@ -98,7 +98,7 @@ func run(_ context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) err
 	}
 
 	versionCommand := exec.Command(dockerBinary, versionArg)
-	if _, err := versionCommand.CombinedOutput(); err != nil {
+	if err := versionCommand.Run(); err != nil {
 		return stacktrace.Propagate(err, "An error occurred checking Docker version. Please ensure Docker engine is running and try again.")
 	}
 
