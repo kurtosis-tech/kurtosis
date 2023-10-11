@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.84.4](https://github.com/kurtosis-tech/kurtosis/compare/0.84.3...0.84.4) (2023-10-10)
+
+
+### Features
+
+* Always keep latest released version of Kurtosis images ([#1473](https://github.com/kurtosis-tech/kurtosis/issues/1473)) ([7fbdfd0](https://github.com/kurtosis-tech/kurtosis/commit/7fbdfd0abbf13232357322e8fe51ef6b36d082a3))
+* make clean -a remove all logs ([#1517](https://github.com/kurtosis-tech/kurtosis/issues/1517)) ([3ec7d88](https://github.com/kurtosis-tech/kurtosis/commit/3ec7d88a3dcec7a33ac5003c7bb167fe5c4805b9))
+
+
+### Bug Fixes
+
+* check docker engine is prior to linting and give a useful error when it is not ([#1506](https://github.com/kurtosis-tech/kurtosis/issues/1506)) ([542d435](https://github.com/kurtosis-tech/kurtosis/commit/542d4351fd75391adea537a260bef0aaa7d98eb8))
+* set parallelism to 4 when its passed as 0 ([#1502](https://github.com/kurtosis-tech/kurtosis/issues/1502)) ([4af67d5](https://github.com/kurtosis-tech/kurtosis/commit/4af67d5d12af30919afcdf8701432ab6ee92a4ca))
+
 ## [0.84.3](https://github.com/kurtosis-tech/kurtosis/compare/0.84.2...0.84.3) (2023-10-09)
 
 

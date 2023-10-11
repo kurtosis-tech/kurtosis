@@ -44,6 +44,7 @@ Finally, open the `http` link printed in the last line in your browser.
 If you have an issue or feature request, we'd love to hear about it through one of the following:
 
 - [Asking for help on our Discord server][discord]
+- Submitting a discussion point on our [forum](https://github.com/kurtosis-tech/kurtosis/discussions)
 - Filing an issue on our [Github](https://github.com/kurtosis-tech/kurtosis/issues/new/choose) (which can also be done via `kurtosis feedback --bug` or `kurtosis feedback --feature`)
 - [Messaging us on Twitter][twitter]
 
