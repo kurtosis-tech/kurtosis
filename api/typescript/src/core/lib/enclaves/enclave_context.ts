@@ -162,12 +162,12 @@ export class EnclaveContext {
 
         const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(packageRootPath)
         if (archiverResponse.isErr()){
-            return err(archiverResponse.error) //TODO add msg
+            return err(new Error(`Unexpected error while creating the package's tgs file from '${packageRootPath}'\n${archiverResponse.error}`))
         }
 
         const uploadStarlarkPackageResponse = await this.backend.uploadStarlarkPackage(packageId, archiverResponse.value)
         if (uploadStarlarkPackageResponse.isErr()){
-            return err(uploadStarlarkPackageResponse.error) // TODO add msg
+            return err(new Error(`Unexpected error while uploading Starlark package '${packageId}'\n${uploadStarlarkPackageResponse.error}`))
         }
 
         if (packageReplaceOptions.size > 0) {
