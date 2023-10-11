@@ -52,8 +52,7 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 			currentClusterStr = isCurrentClusterStrIndicator
 		}
 
-		err = tablePrinter.AddRow(currentClusterStr, clusterName) 
-		if err != nil {
+		if err = tablePrinter.AddRow(currentClusterStr, clusterName); err != nil {
 			return stacktrace.Propagate(err, "Error adding cluster to the table to be displayed")
 		}
 	}
