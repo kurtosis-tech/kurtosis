@@ -170,7 +170,7 @@ export class EnclaveContext {
             return err(new Error(`Unexpected error while uploading Starlark package '${packageId}'\n${uploadStarlarkPackageResponse.error}`))
         }
 
-        if (packageReplaceOptions.size > 0) {
+        if (packageReplaceOptions !== undefined && packageReplaceOptions.size > 0) {
             const uploadLocalStarlarkPackageDependenciesResponse = await this.uploadLocalStarlarkPackageDependencies(packageRootPath, packageReplaceOptions)
             if (uploadLocalStarlarkPackageDependenciesResponse.isErr()) {
                 return err(new Error(`Unexpected error while uploading local Starlark package dependencies '${packageReplaceOptions}' from '${packageRootPath}' \n${uploadLocalStarlarkPackageDependenciesResponse.error}`))
