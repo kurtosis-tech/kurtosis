@@ -9,7 +9,6 @@ import (
 
 var (
 	packageReplaceOptionsBucketName = []byte("package-replace-options-repository")
-	emptyValue                      = []byte{}
 )
 
 type packageReplaceOptionsRepository struct {
