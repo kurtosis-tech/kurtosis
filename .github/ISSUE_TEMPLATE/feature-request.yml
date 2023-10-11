@@ -36,3 +36,16 @@ body:
       - Nice to have; this feature would make using Kurtosis more enjoyable.
     validations:
       required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: What area of the product does this pertain to?
+      multiple: false
+      # Update .github/issue-labeler.yml when updating the list of options
+      options:
+      - "CLI: the Command Line Interface"
+      - "Frontend: the Graphical User Interface, including the Enclave Manager"
+      - "SDK: the Software Development Kit libraries - Typescript, Go, etc."
+      - "Other: anything not covered by the above"
+    validations:
+      required: true
