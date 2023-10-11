@@ -13,6 +13,8 @@ const (
 	githubSampleURL                                        = "github.com/" + testModuleAuthor + "/" + testModuleName + "/" + testFileName
 	githubSampleUrlWithTag                                 = githubSampleURL + "@5.33.2"
 	githubSampleUrlWithBranchContainingVersioningDelimiter = githubSampleURL + "@my@favorite-branch"
+	githubSampleUrlWithVersionWithSlash                    = "github.com/kurtosis-tech/sample-startosis-load/sample.star@foo/bar"
+	githubSampleUrlWithVersionWithSlashAndFile             = "github.com/kurtosis-tech/sample-startosis-load@foo/bar/main.star"
 )
 
 func TestParsedGitURL_SimpleParse(t *testing.T) {
@@ -152,4 +154,16 @@ func TestParsedGitUrl_ResolvesRelativeUrlForUrlWithTag(t *testing.T) {
 	require.Nil(t, err)
 	expected = "github.com/kurtosis-tech/sample-startosis-load/src/lib.star"
 	require.Equal(t, expected, absoluteUrl)
+}
+
+func TestParsedGitUrl_ResolvesWithUrlWithVersionBranchWithSlash(t *testing.T) {
+	parsedUrl, err := parseGitURL(githubSampleUrlWithVersionWithSlash)
+	require.Nil(t, err)
+
+	require.Equal(t, "foo/bar", parsedUrl.tagBranchOrCommit)
+
+	parsedUrl, err = parseGitURL(githubSampleUrlWithVersionWithSlashAndFile)
+	require.Nil(t, err)
+	require.Equal(t, "foo/bar", parsedUrl.tagBranchOrCommit)
+	require.Equal(t, "kurtosis-tech/sample-startosis-load/main.star", parsedUrl.relativeFilePath)
 }

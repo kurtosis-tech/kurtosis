@@ -212,6 +212,10 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 ) (string, *startosis_errors.InterpretationError) {
 	var absoluteLocator string
 
+	if isLocalAbsoluteLocator(maybeRelativeLocator, parentModuleId) {
+		return "", startosis_errors.NewInterpretationError("The locator '%s' set in attribute is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'", maybeRelativeLocator)
+	}
+
 	// maybe it's not a relative url in which case we return the url
 	_, errorParsingUrl := parseGitURL(maybeRelativeLocator)
 	if errorParsingUrl == nil {
@@ -547,6 +551,10 @@ func getKurtosisYamlPathForFileUrlInternal(absPathToFile string, packagesDir str
 		}
 	}
 	return filePathToKurtosisYamlNotFound, nil
+}
+
+func isLocalAbsoluteLocator(locator string, parentPackageId string) bool {
+	return strings.HasPrefix(locator, parentPackageId)
 }
 
 func isLocalDependencyReplace(replace string) bool {

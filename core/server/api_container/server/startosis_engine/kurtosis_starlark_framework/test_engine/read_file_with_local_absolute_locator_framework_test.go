@@ -4,24 +4,27 @@ import (
 	"fmt"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/builtins/read_file"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_helper"
+	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_packages"
 	"go.starlark.net/starlark"
 	"testing"
 )
 
 const (
-	readFileWithLocalAbsoluteLocatorExpectedErrorMsg = "Cannot construct 'read_file' from the provided arguments.\n\tCaused by: The following argument(s) could not be parsed or did not pass validation: {\"src\":\"The locator '\\\"github.com/kurtosistech/test-package/helpers.star\\\"' set in attribute 'src' is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'\"}"
+	readFileWithLocalAbsoluteLocatorExpectedErrorMsg = "Cannot use absolute locators"
 )
 
 type readFileWithLocalAbsoluteLocatorTestCase struct {
 	*testing.T
 
-	packageContentProvider *startosis_packages.MockPackageContentProvider
+	packageContentProvider startosis_packages.PackageContentProvider
 }
 
 func (suite *KurtosisHelperTestSuite) TestReadFileWithLocalAbsoluteLocatorShouldNotBeValid() {
+	suite.packageContentProvider.EXPECT().GetAbsoluteLocatorForRelativeLocator(testModulePackageId, testModuleFileName, testNoPackageReplaceOptions).Return("", startosis_errors.NewInterpretationError(readFileWithLocalAbsoluteLocatorExpectedErrorMsg))
 
 	suite.runShouldFail(
+		testModulePackageId,
 		&readFileWithLocalAbsoluteLocatorTestCase{
 			T:                      suite.T(),
 			packageContentProvider: suite.packageContentProvider,

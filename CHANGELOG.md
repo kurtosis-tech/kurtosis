@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.84.4](https://github.com/kurtosis-tech/kurtosis/compare/0.84.3...0.84.4) (2023-10-10)
+
+
+### Features
+
+* Always keep latest released version of Kurtosis images ([#1473](https://github.com/kurtosis-tech/kurtosis/issues/1473)) ([7fbdfd0](https://github.com/kurtosis-tech/kurtosis/commit/7fbdfd0abbf13232357322e8fe51ef6b36d082a3))
+* make clean -a remove all logs ([#1517](https://github.com/kurtosis-tech/kurtosis/issues/1517)) ([3ec7d88](https://github.com/kurtosis-tech/kurtosis/commit/3ec7d88a3dcec7a33ac5003c7bb167fe5c4805b9))
+
+
+### Bug Fixes
+
+* check docker engine is prior to linting and give a useful error when it is not ([#1506](https://github.com/kurtosis-tech/kurtosis/issues/1506)) ([542d435](https://github.com/kurtosis-tech/kurtosis/commit/542d4351fd75391adea537a260bef0aaa7d98eb8))
+* set parallelism to 4 when its passed as 0 ([#1502](https://github.com/kurtosis-tech/kurtosis/issues/1502)) ([4af67d5](https://github.com/kurtosis-tech/kurtosis/commit/4af67d5d12af30919afcdf8701432ab6ee92a4ca))
+
+## [0.84.3](https://github.com/kurtosis-tech/kurtosis/compare/0.84.2...0.84.3) (2023-10-09)
+
+
+### Features
+
+* regular replace package dependency and replace package with no-main-branch ([#1481](https://github.com/kurtosis-tech/kurtosis/issues/1481)) ([bec49ac](https://github.com/kurtosis-tech/kurtosis/commit/bec49ac496d763d4a3002433274d684d7fc06a62))
+* remove logs on enclave rm and clean -a ([#1489](https://github.com/kurtosis-tech/kurtosis/issues/1489)) ([9ea344e](https://github.com/kurtosis-tech/kurtosis/commit/9ea344ededfaac909342df32dddf23757c8e873d))
+
+
+### Bug Fixes
+
+* Add new line while inspecting file contents ([#1477](https://github.com/kurtosis-tech/kurtosis/issues/1477)) ([545aa53](https://github.com/kurtosis-tech/kurtosis/commit/545aa53d6e86b1cb2be6e8f118d34380d656f583))
+* improve absolute locator checks ([#1498](https://github.com/kurtosis-tech/kurtosis/issues/1498)) ([cda001d](https://github.com/kurtosis-tech/kurtosis/commit/cda001d08b9d332a18d661ac8eae2c081511c538))
+* kurtosis web cmd work for remote context ([#1486](https://github.com/kurtosis-tech/kurtosis/issues/1486)) ([8d8634c](https://github.com/kurtosis-tech/kurtosis/commit/8d8634c6d9b6ee7925346b79eef82ecf5e5b40da))
+* make vector use ISO week time ([#1497](https://github.com/kurtosis-tech/kurtosis/issues/1497)) ([e6d1f5e](https://github.com/kurtosis-tech/kurtosis/commit/e6d1f5e536e84a5121103a78117d37e9baf5ca4a))
+* replace duplicate log files with symlinks ([#1472](https://github.com/kurtosis-tech/kurtosis/issues/1472)) ([57da901](https://github.com/kurtosis-tech/kurtosis/commit/57da901da2bc76fc345b4060225db39a550de023))
+
 ## [0.84.2](https://github.com/kurtosis-tech/kurtosis/compare/0.84.1...0.84.2) (2023-10-05)
 
 
