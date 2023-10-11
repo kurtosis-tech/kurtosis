@@ -51,7 +51,11 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		if isCurrentCluster(clusterName) {
 			currentClusterStr = isCurrentClusterStrIndicator
 		}
-		tablePrinter.AddRow(currentClusterStr, clusterName)
+		
+		err = tablePrinter.AddRow(currentClusterStr, clusterName) 
+		if err != nil {
+			return stacktrace.Propagate(err, "Error adding cluster to the table to be displayed")
+		}
 	}
 	tablePrinter.Print()
 	return nil
@@ -61,8 +65,5 @@ func isCurrentCluster(clusterName string) bool {
 	clusterSettingStore := kurtosis_cluster_setting.GetKurtosisClusterSettingStore()
 	currentClusterName, _ := clusterSettingStore.GetClusterSetting()
 
-	if clusterName == currentClusterName {
-		return true
-	}
-	return false
+	return clusterName == currentClusterName
 }
