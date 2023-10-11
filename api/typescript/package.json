@@ -1,7 +1,7 @@
 {
     "name": "kurtosis-sdk",
     "//": "NOTE: DO NOT UPDATE THIS VERSION MANUALLY - IT WILL BE UPDATED DURING THE RELEASE PROCESS!",
-    "version": "0.84.3",
+    "version": "0.84.4",
     "main": "./build/index",
     "description": "This repo contains a Typescript client for communicating with the Kurtosis Engine server, which is responsible for creating, managing and destroying Kurtosis Enclaves.",
     "types": "./build/index",
@@ -25,9 +25,9 @@
     "author": "Kurtosis Technologies Inc <support@kurtosistech.com> (https://www.kurtosistech.com/)",
     "license": "Apache-2.0",
     "bugs": {
-        "url": "https://github.com/kurtosis-tech/kurtosis-sdk/issues"
+        "url": "https://github.com/kurtosis-tech/kurtosis/issues"
     },
-    "homepage": "https://github.com/kurtosis-tech/kurtosis-sdk#readme",
+    "homepage": "https://github.com/kurtosis-tech/kurtosis",
     "engines": {
         "node": ">=16.13.0"
     },

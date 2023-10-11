@@ -7,6 +7,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	user_service "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs"
+	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/client_implementations/persistent_volume/log_file_manager"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/centralized_logs/logline"
 	"github.com/kurtosis-tech/kurtosis/engine/server/engine/enclave_manager"
 	"github.com/kurtosis-tech/stacktrace"
@@ -39,6 +40,8 @@ type EngineConnectServerService struct {
 	// per file pulls logs from enclaves created pre log retention feature
 	// TODO: remove once users are fully migrated to log retention/new log schema
 	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient
+
+	logFileManager *log_file_manager.LogFileManager
 }
 
 func NewEngineConnectServerService(
@@ -48,6 +51,7 @@ func NewEngineConnectServerService(
 	didUserAcceptSendingMetrics bool,
 	perWeekLogsDatabaseClient centralized_logs.LogsDatabaseClient,
 	perFileLogsDatabaseClient centralized_logs.LogsDatabaseClient,
+	logFileManager *log_file_manager.LogFileManager,
 ) *EngineConnectServerService {
 	service := &EngineConnectServerService{
 		imageVersionTag:             imageVersionTag,
@@ -56,6 +60,7 @@ func NewEngineConnectServerService(
 		didUserAcceptSendingMetrics: didUserAcceptSendingMetrics,
 		perWeekLogsDatabaseClient:   perWeekLogsDatabaseClient,
 		perFileLogsDatabaseClient:   perFileLogsDatabaseClient,
+		logFileManager:              logFileManager,
 	}
 	return service
 }
@@ -142,6 +147,11 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 	removedEnclaveUuidsAndNames, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
+	}
+	if args.ShouldCleanAll {
+		if err = service.logFileManager.RemoveAllLogs(); err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
+		}
 	}
 	response := &kurtosis_engine_rpc_api_bindings.CleanResponse{RemovedEnclaveNameAndUuids: removedEnclaveUuidsAndNames}
 	return connect.NewResponse(response), nil
