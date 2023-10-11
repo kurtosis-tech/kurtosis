@@ -14,7 +14,7 @@ Passing [package parameters][package-parameterization] via the CLI can get hairy
    ```
 1. **When you have a large number of arguments:** put them in a `.json` file and use `--args-file` to slot them into the `kurtosis run` command. E.g.:
    ```bash
-   kurtosis run github.com/user/repo --args-file cat my-params.json
+   kurtosis run github.com/user/repo --args-file my-params.json
    ```
 
 Choosing the right wait
