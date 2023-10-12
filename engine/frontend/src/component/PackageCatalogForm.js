@@ -342,7 +342,7 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
             let processedData = data // assumption is it's not json
             try {
                 // serialize if it's json object
-                if( typeof processedData === 'object') {
+                if (typeof processedData === 'object') {
                     processedData = JSON.stringify(processedData)
                 }
             } catch {
@@ -502,8 +502,8 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                             val = parseInt(value)
                             args[argName] = val
                         } else if (type === "BOOL") {
-                            val = value.toUpperCase()
-                            args[argName] = (val === "TRUE") ? true : false
+                            val = value.trim().toUpperCase()
+                            args[argName] = val === "TRUE"
                         } else if (type === "FLOAT") {
                             val = parseFloat(value)
                             args[argName] = val
@@ -513,12 +513,33 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                             args[argName] = val
                         } else if (type === "STRING") {
                             args[argName] = value
+                        } else if (type === "DICT") {
+                            if (typeof value === "string") {
+                                try {
+                                    val = JSON.parse(value)
+                                    // Check that the object is non-empty before adding it
+                                    if (Object.keys(val).length > 0) {
+                                        args[argName] = val
+                                    }
+                                } catch {
+                                    console.error(`Expected data to be serialized json, but parsing failed. arg=${argName}, value=${value}`)
+                                }
+                            } else if (typeof value === "object") {
+                                // Check that the object is non-empty before adding it
+                                if (Object.keys(value).length > 0) {
+                                    args[argName] = value
+                                }
+                            } else {
+                                console.error(`Data field '${argName}' was not a valid object but was type ${typeof value}. Contained value: '${value}'`)
+                            }
                         } else {
                             val = JSON.parse(value)
                             args[argName] = val
                         }
                     }
                 })
+
+                console.log("args", args)
 
                 const stringifiedArgs = JSON.stringify(args)
                 const runKurtosisPackageArgs = {
