@@ -107,6 +107,24 @@ name: github.com/somebody/consumer
 
 If the user runs Consumer (`kurtosis run github.com/somebody/consumer`), **Dependency's `replace` will not be evaluated**. This is because `replace` instructions are only executed in the `kurtosis.yml` of the root package.
 
+### Local Paths
+You might need to replace one of your package's GitHub dependencies with a local version on your filesystem. For example, suppose you're developing on one of your package's dependencies. When doing so, updating all the dependency-referencing commands like `import_module` would be painful. To support this use case, the value of a `replace` line can be an absolute or relative path on your local filesystem to a Kurtosis package (a directory containing a `kurtosis.yml` file).
+
+For example:
+
+```yaml
+name: github.com/mieubrisse/my-package
+
+replace:
+    # Replace the official Postgres package with the version on my filesystem (relative import)
+    github.com/kurtosis-tech/postgres-package: ../postgres-package
+
+    # Replace the official MongoDB package with the version on my filesystem (absolute import)
+    github.com/kurtosis-tech/mongodb-package: /home/code/mongodb-package
+```
+
+Kurtosis identifies a local package filepath whenever the replacement package locator begins with `/` or `.`. If the filepath does not point to a directory containing a `kurtosis.yml` file, an error will be thrown. When local filepath locators are used, any `@` in the value will be treated as part of the filepath (rather than indicating a version).
+
 ### Colliding Replace Values
 It is possible to have two Kurtosis packages, one nested within the other.
 For example, suppose we have `github.com/kurtosis-tech/parent` and `github.com/kurtosis-tech/parent/child`.
