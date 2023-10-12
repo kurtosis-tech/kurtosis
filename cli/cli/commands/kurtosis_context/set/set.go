@@ -52,23 +52,23 @@ func SetContext(
 	ctx context.Context,
 	contextIdentifier string,
 ) error {
-	isContextSwitchSuccessful := false
+	isContextSetSuccessful := false
 	logrus.Info("Switching context...")
 
 	contextsConfigStore := store.GetContextsConfigStore()
-	contextPriorToSwitch, err := contextsConfigStore.GetCurrentContext()
+	contextPriorToSet, err := contextsConfigStore.GetCurrentContext()
 	if err != nil {
-		return stacktrace.NewError("An error occurred retrieving current context prior to switching to the new one '%s'", contextIdentifier)
+		return stacktrace.NewError("An error occurred retrieving current context prior to setting to the new one '%s'", contextIdentifier)
 	}
 
-	if !store.IsRemote(contextPriorToSwitch) {
+	if !store.IsRemote(contextPriorToSet) {
 		engineManager, err := engine_manager.NewEngineManager(ctx)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred creating an engine manager.")
 		}
 		if err := engineManager.StopEngineIdempotently(ctx); err != nil {
 			return stacktrace.Propagate(err, "An error occurred stopping the local engine. The local engine"+
-				"needs to be stopped before the context can be switched. The engine status can be obtained running"+
+				"needs to be stopped before the context can be set. The engine status can be obtained running"+
 				"kurtosis %s %s and it can be stopped manually by running kurtosis %s %s.",
 				command_str_consts.EngineCmdStr, command_str_consts.EngineStatusCmdStr,
 				command_str_consts.EngineCmdStr, command_str_consts.EngineStopCmdStr)
@@ -79,36 +79,36 @@ func SetContext(
 	if err != nil {
 		return stacktrace.Propagate(err, "Error searching for context matching context identifier: '%s'", contextIdentifier)
 	}
-	contextUuidToSwitchTo, found := contextsMatchingIdentifiers[contextIdentifier]
+	contextUuidToSet, found := contextsMatchingIdentifiers[contextIdentifier]
 	if !found {
 		return stacktrace.NewError("No context matching identifier '%s' could be found", contextIdentifier)
 	}
 
-	if contextUuidToSwitchTo.GetValue() == contextPriorToSwitch.GetUuid().GetValue() {
-		logrus.Infof("Already on context '%s'", contextPriorToSwitch.GetName())
+	if contextUuidToSet.GetValue() == contextPriorToSet.GetUuid().GetValue() {
+		logrus.Infof("Context '%s' already set", contextPriorToSet.GetName())
 		return nil
 	}
 
-	if err = contextsConfigStore.SwitchContext(contextUuidToSwitchTo); err != nil {
-		return stacktrace.Propagate(err, "An error occurred switching to context '%s' with UUID '%s'", contextIdentifier, contextUuidToSwitchTo.GetValue())
+	if err = contextsConfigStore.SetContext(contextUuidToSet); err != nil {
+		return stacktrace.Propagate(err, "An error occurred setting context '%s' with UUID '%s'", contextIdentifier, contextUuidToSet.GetValue())
 	}
 	defer func() {
-		if isContextSwitchSuccessful {
+		if isContextSetSuccessful {
 			return
 		}
-		if err = contextsConfigStore.SwitchContext(contextPriorToSwitch.GetUuid()); err != nil {
-			logrus.Errorf("An unexpected error occurred switching to context '%s' with UUID "+
+		if err = contextsConfigStore.SetContext(contextPriorToSet.GetUuid()); err != nil {
+			logrus.Errorf("An unexpected error occurred setting context '%s' with UUID "+
 				"'%s'. Kurtosis tried to roll back to previous context '%s' with UUID '%s' but the roll back "+
 				"failed. It is likely that the current context is still set to '%s' but it is not fully functional. "+
-				"Try manually switching back to '%s' to get back to a working state. Error was:\n%v",
-				contextIdentifier, contextUuidToSwitchTo.GetValue(), contextPriorToSwitch.GetName(),
-				contextPriorToSwitch.GetUuid(), contextIdentifier, contextPriorToSwitch.GetName(), err.Error())
+				"Try manually reverting to context '%s' to get back to a working state. Error was:\n%v",
+				contextIdentifier, contextUuidToSet.GetValue(), contextPriorToSet.GetName(),
+				contextPriorToSet.GetUuid(), contextIdentifier, contextPriorToSet.GetName(), err.Error())
 		}
 	}()
 
 	currentContext, err := contextsConfigStore.GetCurrentContext()
 	if err != nil {
-		return stacktrace.Propagate(err, "Error retrieving context info for context '%s' after switching to it", contextIdentifier)
+		return stacktrace.Propagate(err, "Error retrieving context info for context '%s' after setting it", contextIdentifier)
 	}
 
 	portalManager := portal_manager.NewPortalManager()
@@ -133,7 +133,7 @@ func SetContext(
 		}
 	}
 
-	logrus.Infof("Context switched to '%s', Kurtosis engine will now be restarted", contextIdentifier)
+	logrus.Infof("Context set to '%s', Kurtosis engine will now be restarted", contextIdentifier)
 
 	// Instantiate the engine manager after storing the new context so the manager can read it.
 	engineManager, err := engine_manager.NewEngineManager(ctx)
@@ -143,7 +143,7 @@ func SetContext(
 
 	_, engineClientCloseFunc, startEngineErr := engineManager.StartEngineIdempotentlyWithDefaultVersion(ctx, logrus.InfoLevel, defaults.DefaultEngineEnclavePoolSize)
 	if startEngineErr != nil {
-		logrus.Warnf("The context was successfully switched to '%s' but Kurtosis failed to start an engine in "+
+		logrus.Warnf("The context was successfully set to '%s' but Kurtosis failed to start an engine in "+
 			"this new context. A new engine should be started manually with '%s %s %s'. The error was:\n%v",
 			contextIdentifier, command_str_consts.KurtosisCmdStr, command_str_consts.EngineCmdStr, command_str_consts.EngineRestartCmdStr, startEngineErr)
 	} else {
@@ -153,9 +153,9 @@ func SetContext(
 					contextIdentifier, err)
 			}
 		}()
-		logrus.Info("Successfully switched context")
+		logrus.Info("Successfully set context")
 	}
 
-	isContextSwitchSuccessful = true
+	isContextSetSuccessful = true
 	return nil
 }
