@@ -63,7 +63,7 @@ func getPackageReplaceOptionsRepositoryForTest(t *testing.T) *packageReplaceOpti
 	enclaveDb := &enclave_db.EnclaveDB{
 		DB: db,
 	}
-	repository := NewPackageReplaceOptionsRepository(enclaveDb)
+	repository := newPackageReplaceOptionsRepository(enclaveDb)
 
 	return repository
 }

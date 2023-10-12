@@ -51,7 +51,7 @@ func NewGitPackageContentProvider(moduleDir string, tmpDir string, enclaveDb *en
 	return &GitPackageContentProvider{
 		packagesDir:                     moduleDir,
 		packagesTmpDir:                  tmpDir,
-		packageReplaceOptionsRepository: NewPackageReplaceOptionsRepository(enclaveDb),
+		packageReplaceOptionsRepository: newPackageReplaceOptionsRepository(enclaveDb),
 	}
 }
 
