@@ -8,6 +8,7 @@ import (
 
 const (
 	dotRelativePathIndicatorString = "."
+	subStrNotPresentIndicator      = -1
 )
 
 func isLocalLocator(locator string) bool {
@@ -45,6 +46,10 @@ func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[st
 }
 
 func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string]string) (bool, string, string, *startosis_errors.InterpretationError) {
+	if len(packageReplaceOptions) == 0 {
+		return false, "", "", nil
+	}
+
 	urlToAnalyze, interpretationErr := parseGitURL(absoluteLocator)
 	if interpretationErr != nil {
 		return false, "", "", interpretationErr
@@ -55,6 +60,9 @@ func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string
 
 		lastIndex := strings.LastIndex(gitUrl, urlPathSeparator)
 
+		if len(gitUrl) <= lastIndex || lastIndex == subStrNotPresentIndicator {
+			break
+		}
 		packageToBeReplaced := gitUrl[:lastIndex]
 		replaceWithPackage, ok := packageReplaceOptions[packageToBeReplaced]
 		if ok {
