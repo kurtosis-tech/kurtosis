@@ -2,7 +2,7 @@ package _package
 
 import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/package/init"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/package/init_cmd"
 	"github.com/spf13/cobra"
 )
 
@@ -15,5 +15,5 @@ var PackageCmd = &cobra.Command{
 }
 
 func init() {
-	PackageCmd.AddCommand(init.InitCmd.MustGetCobraCommand())
+	PackageCmd.AddCommand(init_cmd.InitCmd.MustGetCobraCommand())
 }
