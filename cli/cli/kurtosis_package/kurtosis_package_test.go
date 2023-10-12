@@ -11,11 +11,12 @@ import (
 )
 
 func TestInitializeKurtosisPackage_Success(t *testing.T) {
-	packageDirpath := os.TempDir()
+	packageDirpath, err := os.MkdirTemp("", "package-initialize-test-dir-*")
+	require.NoError(t, err)
 	defer os.RemoveAll(packageDirpath)
 
 	packageName := "github.com/org/my-package"
-	err := InitializeKurtosisPackage(packageDirpath, packageName)
+	err = InitializeKurtosisPackage(packageDirpath, packageName)
 	require.NoError(t, err)
 
 	// check kurtosis.yml file creation
@@ -35,11 +36,12 @@ func TestInitializeKurtosisPackage_Success(t *testing.T) {
 }
 
 func TestInitializeKurtosisPackage_FailsIfKurtosisYmlAlreadyExist(t *testing.T) {
-	packageDirpath := os.TempDir()
+	packageDirpath, err := os.MkdirTemp("", "package-initialize-test-dir-*")
+	require.NoError(t, err)
 	defer os.RemoveAll(packageDirpath)
 
 	packageName := "github.com/org/my-package"
-	err := InitializeKurtosisPackage(packageDirpath, packageName)
+	err = InitializeKurtosisPackage(packageDirpath, packageName)
 	require.NoError(t, err)
 
 	expectedKurtosisYamlFilepath := path.Join(packageDirpath, "kurtosis.yml")
@@ -60,11 +62,12 @@ func TestInitializeKurtosisPackage_FailsIfKurtosisYmlAlreadyExist(t *testing.T) 
 }
 
 func TestInitializeKurtosisPackage_FailsIfMainStarFileAlreadyExist(t *testing.T) {
-	packageDirpath := os.TempDir()
+	packageDirpath, err := os.MkdirTemp("", "package-initialize-test-dir-*")
+	require.NoError(t, err)
 	defer os.RemoveAll(packageDirpath)
 
 	packageName := "github.com/org/my-package"
-	err := InitializeKurtosisPackage(packageDirpath, packageName)
+	err = InitializeKurtosisPackage(packageDirpath, packageName)
 	require.NoError(t, err)
 
 	expectedKurtosisYamlFilepath := path.Join(packageDirpath, "kurtosis.yml")
@@ -89,11 +92,12 @@ func TestInitializeKurtosisPackage_FailsIfMainStarFileAlreadyExist(t *testing.T)
 }
 
 func TestInitializeKurtosisPackage_InvalidPackageNameError(t *testing.T) {
-	packageDirpath := os.TempDir()
+	packageDirpath, err := os.MkdirTemp("", "package-initialize-test-dir-*")
+	require.NoError(t, err)
 	defer os.RemoveAll(packageDirpath)
 
 	packageName := "my-rul/org/my-package"
-	err := InitializeKurtosisPackage(packageDirpath, packageName)
+	err = InitializeKurtosisPackage(packageDirpath, packageName)
 	require.Error(t, err)
 	require.ErrorContains(t, err, "invalid GitHub URL")
 }
