@@ -37,7 +37,7 @@ Only locators pointing to public GitHub repositories are currently allowed.
 :::
 
 ### Important Package Restriction
-If your Starlark script relies on resources of any kind (remote or local) then those resources *must* be part of a [Kurtosis package][packages]. Resources can be other Starlark scripts or files.
+If your Starlark script relies on local resources of any kind (i.e. files or packages available on your filesystem) then those resources *must* be part of a [Kurtosis package][packages]. 
 
 For example, suppose we had a [Kurtosis package][packages] like so:
 
