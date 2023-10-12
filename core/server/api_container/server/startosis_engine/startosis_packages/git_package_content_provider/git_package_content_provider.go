@@ -38,8 +38,6 @@ const (
 	packageDocLink        = "https://docs.kurtosis.com/concepts-reference/packages"
 	osPathSeparatorString = string(os.PathSeparator)
 
-	dotRelativePathIndicatorString = "."
-
 	onlyOneReplace = 1
 )
 
@@ -205,14 +203,14 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	return packageAbsolutePathOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
+func (provider *GitPackageContentProvider) GetAbsoluteLocatorForxRelativeLocator(
 	parentModuleId string,
 	maybeRelativeLocator string,
 	packageReplaceOptions map[string]string,
 ) (string, *startosis_errors.InterpretationError) {
 	var absoluteLocator string
 
-	if isLocalAbsoluteLocator(maybeRelativeLocator, parentModuleId) {
+	if isSamePackageLocalAbsoluteLocator(maybeRelativeLocator, parentModuleId) {
 		return "", startosis_errors.NewInterpretationError("The locator '%s' set in attribute is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'", maybeRelativeLocator)
 	}
 
@@ -229,7 +227,10 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 		absoluteLocator = parsedParentModuleId.getAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator)
 	}
 
-	replacedAbsoluteLocator := replaceAbsoluteLocator(absoluteLocator, packageReplaceOptions)
+	replacedAbsoluteLocator, interpretationErr := replaceAbsoluteLocator(absoluteLocator, packageReplaceOptions)
+	if interpretationErr != nil {
+		return "", interpretationErr
+	}
 
 	return replacedAbsoluteLocator, nil
 }
@@ -245,13 +246,13 @@ func (provider *GitPackageContentProvider) CloneReplacedPackagesIfNeeded(current
 
 		shouldClonePackage := false
 
-		isExistingLocalReplace := isLocalDependencyReplace(existingReplace)
+		isExistingLocalReplace := isLocalLocator(existingReplace)
 		logrus.Debugf("existingReplace '%v' isExistingLocalReplace? '%v', ", existingReplace, isExistingLocalReplace)
 
 		currentReplace, isCurrentReplace := currentPackageReplaceOptions[packageId]
 		if isCurrentReplace {
 			// the package will be cloned if the current replace is remote and the existing is local
-			isCurrentRemoteReplace := !isLocalDependencyReplace(currentReplace)
+			isCurrentRemoteReplace := !isLocalLocator(currentReplace)
 			logrus.Debugf("currentReplace '%v' isCurrentRemoteReplace? '%v', ", isCurrentRemoteReplace, currentReplace)
 			if isCurrentRemoteReplace && isExistingLocalReplace {
 				shouldClonePackage = true
@@ -377,50 +378,6 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 		return startosis_errors.NewInterpretationError("Cloning the package '%s' failed. An error occurred while moving package at temporary destination '%s' to final destination '%s'", parsedURL.gitURL, gitClonePath, packagePath)
 	}
 	return nil
-}
-
-func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[string]string) string {
-	if absoluteLocator == "" {
-		return absoluteLocator
-	}
-
-	found, packageToBeReplaced, replaceWithPackage := findPackageReplace(absoluteLocator, packageReplaceOptions)
-	if found {
-		// we skip if it's a local replace because we will use the same absolute locator
-		// due the file was already uploaded in the enclave's package cache
-		if isLocalDependencyReplace(replaceWithPackage) {
-			return absoluteLocator
-		}
-		replacedAbsoluteLocator := strings.Replace(absoluteLocator, packageToBeReplaced, replaceWithPackage, onlyOneReplace)
-		logrus.Debugf("absoluteLocator '%s' replaced with '%s'", absoluteLocator, replacedAbsoluteLocator)
-		return replacedAbsoluteLocator
-	}
-
-	return absoluteLocator
-}
-
-func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string]string) (bool, string, string) {
-	pathToAnalyze := absoluteLocator
-	for {
-		numberSlashes := strings.Count(pathToAnalyze, urlPathSeparator)
-
-		// check for the minimal path e.g.: github.com/org/package
-		if numberSlashes < minimumSubPathsForValidGitURL {
-			break
-		}
-		lastIndex := strings.LastIndex(pathToAnalyze, urlPathSeparator)
-
-		packageToBeReplaced := pathToAnalyze[:lastIndex]
-		replaceWithPackage, ok := packageReplaceOptions[packageToBeReplaced]
-		if ok {
-			logrus.Debugf("dependency replace found for '%s', package '%s' will be replaced with '%s'", absoluteLocator, packageToBeReplaced, replaceWithPackage)
-			return true, packageToBeReplaced, replaceWithPackage
-		}
-
-		pathToAnalyze = packageToBeReplaced
-	}
-
-	return false, "", ""
 }
 
 // methods checks whether the root of the package is same as repository root
@@ -551,15 +508,4 @@ func getKurtosisYamlPathForFileUrlInternal(absPathToFile string, packagesDir str
 		}
 	}
 	return filePathToKurtosisYamlNotFound, nil
-}
-
-func isLocalAbsoluteLocator(locator string, parentPackageId string) bool {
-	return strings.HasPrefix(locator, parentPackageId)
-}
-
-func isLocalDependencyReplace(replace string) bool {
-	if strings.HasPrefix(replace, osPathSeparatorString) || strings.HasPrefix(replace, dotRelativePathIndicatorString) {
-		return true
-	}
-	return false
 }
