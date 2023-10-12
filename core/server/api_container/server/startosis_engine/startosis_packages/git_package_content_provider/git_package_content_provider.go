@@ -60,12 +60,12 @@ func NewGitPackageContentProvider(moduleDir string, tmpDir string, enclaveDb *en
 }
 
 func (provider *GitPackageContentProvider) ClonePackage(packageId string) (string, *startosis_errors.InterpretationError) {
-	parsedURL, interpretationError := shared_utils.ParseGitURL(packageId)
-	if interpretationError != nil {
-		return "", interpretationError
+	parsedURL, err := shared_utils.ParseGitURL(packageId)
+	if err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for package ID '%s'", packageId)
 	}
 
-	interpretationError = provider.atomicClone(parsedURL)
+	interpretationError := provider.atomicClone(parsedURL)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
@@ -92,9 +92,9 @@ func (provider *GitPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOn
 }
 
 func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(absoluteFileLocator string) (string, *startosis_errors.InterpretationError) {
-	parsedURL, interpretationError := shared_utils.ParseGitURL(absoluteFileLocator)
-	if interpretationError != nil {
-		return "", interpretationError
+	parsedURL, err := shared_utils.ParseGitURL(absoluteFileLocator)
+	if err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for absolute file locator '%s'", absoluteFileLocator)
 	}
 	if parsedURL.GetRelativeFilePath() == "" {
 		return "", startosis_errors.NewInterpretationError("The path '%v' needs to point to a specific file but it didn't. Users can only read or import specific files and not entire packages.", absoluteFileLocator)
@@ -115,7 +115,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(absoluteFil
 	}
 
 	// Otherwise clone the repo and return the absolute path of the requested file
-	interpretationError = provider.atomicClone(parsedURL)
+	interpretationError := provider.atomicClone(parsedURL)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
@@ -153,15 +153,15 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 }
 
 func (provider *GitPackageContentProvider) GetOnDiskAbsolutePackagePath(packageId string) (string, *startosis_errors.InterpretationError) {
-	parsedPackageId, interpretationError := shared_utils.ParseGitURL(packageId)
-	if interpretationError != nil {
-		return "", interpretationError
+	parsedPackageId, err := shared_utils.ParseGitURL(packageId)
+	if err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for package ID '%s'", packageId)
 	}
 
 	relPackagePathToPackagesDir := getPathToPackageRoot(parsedPackageId)
 	packageAbsolutePathOnDisk := path.Join(provider.packagesDir, relPackagePathToPackagesDir)
 
-	_, err := os.Stat(packageAbsolutePathOnDisk)
+	_, err = os.Stat(packageAbsolutePathOnDisk)
 	if err != nil {
 		return "", startosis_errors.NewInterpretationError("Package '%v' does not exist on disk at '%s'", packageId, packageAbsolutePathOnDisk)
 	}
@@ -169,9 +169,9 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsolutePackagePath(packageI
 }
 
 func (provider *GitPackageContentProvider) StorePackageContents(packageId string, moduleTar io.Reader, overwriteExisting bool) (string, *startosis_errors.InterpretationError) {
-	parsedPackageId, interpretationError := shared_utils.ParseGitURL(packageId)
-	if interpretationError != nil {
-		return "", interpretationError
+	parsedPackageId, err := shared_utils.ParseGitURL(packageId)
+	if err != nil {
+		return "", startosis_errors.WrapWithInterpretationError(err, "An error occurred parsing Git URL for package ID '%s'", packageId)
 	}
 
 	relPackagePathToPackagesDir := getPathToPackageRoot(parsedPackageId)
@@ -184,7 +184,7 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 		}
 	}
 
-	_, err := os.Stat(packageAbsolutePathOnDisk)
+	_, err = os.Stat(packageAbsolutePathOnDisk)
 	if err == nil {
 		return "", startosis_errors.NewInterpretationError("Package '%v' already exists on disk, not overwriting", packageAbsolutePathOnDisk)
 	}
@@ -489,7 +489,7 @@ func validateAndGetKurtosisYaml(absPathToKurtosisYmlInThePackage string, package
 // this method validates whether the package name found in kurtosis yml is same as the location where kurtosis.yml is found
 func validatePackageNameMatchesKurtosisYamlLocation(kurtosisYaml *yaml_parser.KurtosisYaml, absPathToKurtosisYmlInThePackage string, packageDir string) *startosis_errors.InterpretationError {
 	// get package name from absolute path to package
-	packageNameFromAbsPackagePath := strings.Replace(absPathToKurtosisYmlInThePackage, packageDir, startosis_constants.GithubDomainPrefix, replaceCountPackageDirWithGithubConstant)
+	packageNameFromAbsPackagePath := strings.Replace(absPathToKurtosisYmlInThePackage, packageDir, shared_utils.GithubDomainPrefix, replaceCountPackageDirWithGithubConstant)
 	packageName := kurtosisYaml.GetPackageName()
 
 	if strings.HasSuffix(packageName, osPathSeparatorString) {

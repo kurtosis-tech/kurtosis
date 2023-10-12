@@ -11,12 +11,24 @@ import (
 	"github.com/kurtosis-tech/stacktrace"
 )
 
+const (
+	packageNameArgKey = 
+)
+
 var InitCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:               command_str_consts.InitCmdStr,
 	ShortDescription:         "Creates a new Kurtosis package",
-	LongDescription:          "This command initializes the current directory to be a Kurtosis package  by creating a `kurtosis.yml` with the given package name.",
+	LongDescription:          "This command initializes the current directory to be a Kurtosis package by creating a `kurtosis.yml` with the given package name.",
 	Flags:                    nil,
-	Args:                     nil,
+	Args: []*args.ArgConfig{
+		{
+			Key:            fileOrDirToLintArgKey,
+			DefaultValue:   fileOrDirToLintDefaultValue,
+			IsOptional:     fileOrDirToLintArgKeyIsOptional,
+			IsGreedy:       fileOrDirToLintArgKeyIsGreedy,
+			ValidationFunc: validateFileOrDirToLintArg,
+		},
+	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
 	PostValidationAndRunFunc: nil,

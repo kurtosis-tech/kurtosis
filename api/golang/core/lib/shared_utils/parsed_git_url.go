@@ -2,16 +2,16 @@ package shared_utils
 
 import (
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
+	"github.com/kurtosis-tech/stacktrace"
 	"net/url"
 	"path"
 	"strings"
 )
 
 const (
-	httpsSchema      = "https"
-	UrlPathSeparator = "/"
+	GithubDomainPrefix = "github.com"
+	httpsSchema        = "https"
+	UrlPathSeparator   = "/"
 	//MinimumSubPathsForValidGitURL for a valid GitURl we need it to look like github.com/author/moduleName
 	// the last two are the minimum requirements for a valid Startosis URL
 	MinimumSubPathsForValidGitURL = 2
@@ -80,32 +80,32 @@ func (parsedUrl *ParsedGitURL) GetTagBranchOrCommit() string {
 
 func (parsedUrl *ParsedGitURL) GetAbsoluteLocatorRelativeToThisURL(relativeUrl string) string {
 	if strings.HasPrefix(relativeUrl, packageRootPrefixIndicatorInRelativeLocators) {
-		return path.Join(startosis_constants.GithubDomainPrefix, parsedUrl.relativeRepoPath, relativeUrl)
+		return path.Join(GithubDomainPrefix, parsedUrl.relativeRepoPath, relativeUrl)
 	}
-	return path.Join(startosis_constants.GithubDomainPrefix, path.Dir(parsedUrl.relativeFilePath), relativeUrl)
+	return path.Join(GithubDomainPrefix, path.Dir(parsedUrl.relativeFilePath), relativeUrl)
 }
 
 // ParseGitURL this takes a Git url (GitHub) for now and converts it into the struct ParsedGitURL
 // This can in the future be extended to GitLab or BitBucket or any other Git Host
-func ParseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.InterpretationError) {
+func ParseGitURL(packageURL string) (*ParsedGitURL, error) {
 	// we expect something like github.com/author/module/path.star
 	// we don't want schemas
 	parsedURL, err := url.Parse(packageURL)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Error parsing the URL of module '%v'", packageURL)
+		return nil, stacktrace.Propagate(err, "Error parsing the URL of module '%v'", packageURL)
 	}
 	if parsedURL.Scheme != "" {
-		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module '%v'. Expected schema to be empty got '%v'", packageURL, parsedURL.Scheme)
+		return nil, stacktrace.NewError("Error parsing the URL of module '%v'. Expected schema to be empty got '%v'", packageURL, parsedURL.Scheme)
 	}
 
 	// we prefix schema and make sure that the URL still parses
 	packageURLPrefixedWithHttps := httpsSchema + "://" + packageURL
 	parsedURL, err = url.Parse(packageURLPrefixedWithHttps)
 	if err != nil {
-		return nil, startosis_errors.WrapWithInterpretationError(err, "Error parsing the URL with scheme for module '%v'", packageURLPrefixedWithHttps)
+		return nil, stacktrace.Propagate(err, "Error parsing the URL with scheme for module '%v'", packageURLPrefixedWithHttps)
 	}
-	if parsedURL.Host != startosis_constants.GithubDomainPrefix {
-		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module. We only support modules on Github for now but got '%v'", packageURL)
+	if parsedURL.Host != GithubDomainPrefix {
+		return nil, stacktrace.NewError("Error parsing the URL of module. We only support modules on Github for now but got '%v'", packageURL)
 	}
 
 	pathWithoutVersion, maybeTagBranchOrCommit := parseOutTagBranchOrCommit(parsedURL.Path)
@@ -113,12 +113,12 @@ func ParseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 	splitURLPath := cleanPathAndSplit(pathWithoutVersion)
 
 	if len(splitURLPath) < MinimumSubPathsForValidGitURL {
-		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module: '%v'. The path should contain at least %d subpaths got '%v'", packageURL, MinimumSubPathsForValidGitURL, splitURLPath)
+		return nil, stacktrace.NewError("Error parsing the URL of module: '%v'. The path should contain at least %d subpaths got '%v'", packageURL, MinimumSubPathsForValidGitURL, splitURLPath)
 	}
 
 	moduleAuthor := splitURLPath[0]
 	moduleName := splitURLPath[1]
-	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, startosis_constants.GithubDomainPrefix, moduleAuthor, moduleName)
+	gitURL := fmt.Sprintf("%v://%v/%v/%v.git", httpsSchema, GithubDomainPrefix, moduleAuthor, moduleName)
 	relativeModulePath := path.Join(moduleAuthor, moduleName)
 
 	relativeFilePath := ""

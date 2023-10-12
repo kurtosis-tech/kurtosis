@@ -17,6 +17,10 @@ type KurtosisYaml struct {
 	PackageReplaceOptions map[string]string `yaml:"replace"`
 }
 
+func NewKurtosisYaml(packageName string, packageDescription string, packageReplaceOptions map[string]string) *KurtosisYaml {
+	return &KurtosisYaml{PackageName: packageName, PackageDescription: packageDescription, PackageReplaceOptions: packageReplaceOptions}
+}
+
 func ParseKurtosisYaml(kurtosisYamlFilepath string) (*KurtosisYaml, error) {
 	kurtosisYamlContents, err := os.ReadFile(kurtosisYamlFilepath)
 	if err != nil {

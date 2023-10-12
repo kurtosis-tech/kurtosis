@@ -87,3 +87,13 @@ func TestInitializeKurtosisPackage_FailsIfMainStarFileAlreadyExist(t *testing.T)
 
 	require.Equal(t, secondPackageName, kurtosisYamlObj.PackageName)
 }
+
+func TestInitializeKurtosisPackage_InvalidPackageNameError(t *testing.T) {
+	packageDirpath := os.TempDir()
+	defer os.RemoveAll(packageDirpath)
+
+	packageName := "my-rul/org/my-package"
+	err := InitializeKurtosisPackage(packageDirpath, packageName)
+	require.Error(t, err)
+	require.ErrorContains(t, err, "invalid GitHub URL")
+}
