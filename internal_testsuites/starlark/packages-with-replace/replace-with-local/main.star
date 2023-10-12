@@ -6,7 +6,6 @@ EXPECTED_MSG_FROM_LOCAL_PACKAGE_MAIN = "msg-loaded-from-local-dependency"
 MSG_ORIGIN_MAIN = "main"
 MSG_ORIGIN_LOCAL_DEPENDENCY = "local"
 
-# TODO remove https://github.com/kurtosis-tech/sample-startosis-load/tree/main/sample-package if it's not used
 def run(plan, message_origin=MSG_ORIGIN_MAIN):
     plan.print("Replace with local package loaded.")
 

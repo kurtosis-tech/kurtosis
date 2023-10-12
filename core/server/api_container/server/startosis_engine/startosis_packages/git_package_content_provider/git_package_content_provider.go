@@ -203,7 +203,7 @@ func (provider *GitPackageContentProvider) StorePackageContents(packageId string
 	return packageAbsolutePathOnDisk, nil
 }
 
-func (provider *GitPackageContentProvider) GetAbsoluteLocatorForxRelativeLocator(
+func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 	parentModuleId string,
 	maybeRelativeLocator string,
 	packageReplaceOptions map[string]string,

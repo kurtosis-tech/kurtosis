@@ -24,15 +24,40 @@ func TestSaveAnGet_Success(t *testing.T) {
 	require.Equal(t, allPackageReplaceOptionsForTest, historicalReplacePackageOptions)
 }
 
+func TestSaveAnGet_OverwriteSuccess(t *testing.T) {
+	repository := getPackageReplaceOptionsRepositoryForTest(t)
+
+	err := repository.Save(allPackageReplaceOptionsForTest)
+	require.NoError(t, err)
+
+	randomReplaceOptionsForTest := map[string]string{
+		"github.com/kurtosis-tech/sample-dependency-package": "github.com/kurtosis-tech/random-package",
+		"github.com/kurtosis-tech/avalanche-package":         "github.com/another-org/avalanche-package",
+	}
+
+	err = repository.Save(randomReplaceOptionsForTest)
+	require.NoError(t, err)
+
+	expectedReplacePackageOptions := map[string]string{
+		"github.com/kurtosis-tech/sample-dependency-package": "github.com/kurtosis-tech/random-package",
+		"github.com/kurtosis-tech/avalanche-package":         "github.com/another-org/avalanche-package",
+		"github.com/kurtosis-tech/ethereum-package":          "github.com/another-org/ethereum-package",
+	}
+
+	existingReplacePackageOptions, err := repository.Get()
+	require.NoError(t, err)
+	require.Equal(t, expectedReplacePackageOptions, existingReplacePackageOptions)
+}
+
 func TestSaveAnGet_SuccessForNoReplacePackageOptions(t *testing.T) {
 	repository := getPackageReplaceOptionsRepositoryForTest(t)
 
 	err := repository.Save(noPackageReplaceOptions)
 	require.NoError(t, err)
 
-	historicalReplacePackageOptions, err := repository.Get()
+	existingReplacePackageOptions, err := repository.Get()
 	require.NoError(t, err)
-	require.Equal(t, noPackageReplaceOptions, historicalReplacePackageOptions)
+	require.Equal(t, noPackageReplaceOptions, existingReplacePackageOptions)
 }
 
 func TestSave_ErrorWhenSavingNil(t *testing.T) {
@@ -45,9 +70,9 @@ func TestSave_ErrorWhenSavingNil(t *testing.T) {
 func TestGet_SuccessEmptyRepository(t *testing.T) {
 	repository := getPackageReplaceOptionsRepositoryForTest(t)
 
-	historicalReplacePackageOptions, err := repository.Get()
+	existingReplacePackageOptions, err := repository.Get()
 	require.NoError(t, err)
-	require.Equal(t, noPackageReplaceOptions, historicalReplacePackageOptions)
+	require.Equal(t, noPackageReplaceOptions, existingReplacePackageOptions)
 }
 
 func getPackageReplaceOptionsRepositoryForTest(t *testing.T) *packageReplaceOptionsRepository {
