@@ -509,10 +509,6 @@ func getKurtosisYamlPathForFileUrlInternal(absPathToFile string, packagesDir str
 	return filePathToKurtosisYamlNotFound, nil
 }
 
-func isLocalAbsoluteLocator(locator string, parentPackageId string) bool {
-	return strings.HasPrefix(locator, parentPackageId)
-}
-
 func isLocalDependencyReplace(replace string) bool {
 	if strings.HasPrefix(replace, osPathSeparatorString) || strings.HasPrefix(replace, dotRelativePathIndicatorString) {
 		return true
