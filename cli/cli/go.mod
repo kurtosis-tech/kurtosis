@@ -55,7 +55,6 @@ require (
 	github.com/mholt/archiver v3.1.1+incompatible
 	github.com/xlab/treeprint v1.2.0
 	golang.org/x/exp v0.0.0-20230725093048-515e97ebf090
-	gopkg.in/segmentio/analytics-go.v3 v3.1.0
 	k8s.io/api v0.27.2
 )
 

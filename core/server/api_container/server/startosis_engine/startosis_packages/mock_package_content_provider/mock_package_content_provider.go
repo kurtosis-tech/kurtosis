@@ -60,6 +60,10 @@ func (provider *MockPackageContentProvider) GetKurtosisYaml(packageAbsolutePathO
 	panic(unimplementedMessage)
 }
 
+func (provider *MockPackageContentProvider) CloneReplacedPackagesIfNeeded(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
+	return nil
+}
+
 func (provider *MockPackageContentProvider) GetModuleContents(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
 	absFilePath, found := provider.starlarkPackages[fileInsidePackageUrl]
 	if !found {
