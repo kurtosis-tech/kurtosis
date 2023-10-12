@@ -36,9 +36,8 @@ github.com/kurtosis-tech/kurtosis/starlark/test.star
 Only locators pointing to public GitHub repositories are currently allowed.
 :::
 
-### Package Restriction
-Any Starlark script that wishes to use external resources must be
-a part of a [Kurtosis package][packages].
+### Important Package Restriction
+If your Starlark script relies on resources of any kind (remote or local) then those resources *must* be part of a [Kurtosis package][packages]. Resources can be other Starlark scripts or files.
 
 For example, suppose we had a [Kurtosis package][packages] like so:
 
@@ -60,16 +59,18 @@ with a `kurtosis.yml` file like so:
 name: github.com/package-author/package-repo/my-package
 ```
 
-The `main.star` file would import the `random-script.star` from the `helpers` subdirectory of `my-package` like so:
+In your `main.star` file, yiou would be able to import the `random-script.star` from the `helpers` subdirectory of `my-package` like so:
 
 ```python
+# Valid
 helpers = import_module("github.com/package-author/package-repo/my-package/helpers/random-script.star")
 ```
 
-The import statement below will not succeed, because `main.star` cannot import from non-packages.
+However, if you try to import `package-repo/not-a-package/random-script.star`, then it will not work because `package-repo/not-a-package/random-script.star` is not part of a package. In essense, the import statement below will not succeed, because `main.star` cannot import from non-packages:
 (see [how import works][how-do-kurtosis-imports-work-explanation] for more information)
 
 ```python
+# Invalid
 helpers = import_module("github.com/package-author/package-repo/not-a-package/random-script.star")
 ```
 

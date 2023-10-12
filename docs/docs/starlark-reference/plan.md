@@ -602,7 +602,7 @@ The return value is a [future reference][future-references-reference] to the nam
 upload_files
 ------------
 
-`upload_files` instruction packages the files specified by the [locator][locators-reference] into a [files artifact][files-artifacts-reference] that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container.
+The `upload_files` instruction packages the files specified by the [locator][locators-reference] into a [files artifact][files-artifacts-reference] that gets stored inside the enclave. This is particularly useful when a static file needs to be loaded to a service container. 
 
 ```python
 artifact_name = plan.upload_files(
