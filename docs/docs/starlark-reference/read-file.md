@@ -3,7 +3,7 @@ title: read_file
 sidebar_label: read_file
 ---
 
-The `read_file` function reads the contents of a file specified by the given [locator][locators-reference] and executes [at interpretation time][multi-phase-runs-reference] so the file contents won't be displayed in the preview. This instruction returns the content of the file in a string type. Please note that the files being read from must themselves be part of a Kurtosis package, as explained [here](../concepts-reference/locators.md#important-package-restriction).
+The `read_file` function reads the contents of a file specified by the given [locator][locators-reference] and executes [at interpretation time][multi-phase-runs-reference]. This instruction returns the content of the file in a string type. Please note that the files being read from must themselves be part of a Kurtosis package, as explained [here](../concepts-reference/locators.md#important-package-restriction).
 
 ```python
 read_file(
