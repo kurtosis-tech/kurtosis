@@ -1,0 +1,4 @@
+name: github.com/kurtosis-tech/sample-startosis-load/regular-replace
+replace:
+  # Replacing the package with the 'local version' of the package
+  github.com/kurtosis-tech/sample-dependency-package: ../local-sample-dependency-package
