@@ -4,9 +4,13 @@ import (
 	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	transport "github.com/go-git/go-git/v5/plumbing/transport"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_config/resolved_config"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
+	"github.com/kurtosis-tech/stacktrace"
 	"github.com/mholt/archiver"
 	"github.com/sirupsen/logrus"
 	"io"
@@ -284,6 +288,12 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 		depth = depthAssumingBranchTagsCommitsAreSpecified
 	}
 
+	kurtosisConfig, err := getKurtosisConfig()
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the Kurtosis config")
+	}
+	gitProxy := kurtosisConfig.GetGitProxy()
+
 	repo, err := git.PlainClone(gitClonePath, isNotBareClone, &git.CloneOptions{
 		URL:               parsedURL.gitURL,
 		Auth:              nil,
@@ -297,6 +307,7 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 		Tags:              0,
 		InsecureSkipTLS:   false,
 		CABundle:          nil,
+		ProxyOptions:      transport.ProxyOptions{URL: gitProxy},
 	})
 	if err != nil {
 		// TODO remove public repository from error after we support private repositories
@@ -364,6 +375,16 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 		return startosis_errors.NewInterpretationError("Cloning the package '%s' failed. An error occurred while moving package at temporary destination '%s' to final destination '%s'", parsedURL.gitURL, gitClonePath, packagePath)
 	}
 	return nil
+}
+
+func getKurtosisConfig() (*resolved_config.KurtosisConfig, error) {
+	configStore := kurtosis_config.GetKurtosisConfigStore()
+	configProvider := kurtosis_config.NewKurtosisConfigProvider(configStore)
+	kurtosisConfig, err := configProvider.GetOrInitializeConfig()
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred getting or initializing the Kurtosis config")
+	}
+	return kurtosisConfig, nil
 }
 
 // methods checks whether the root of the package is same as repository root
