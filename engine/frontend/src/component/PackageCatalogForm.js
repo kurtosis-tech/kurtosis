@@ -63,7 +63,7 @@ const renderArgs = (args, handleChange, formData, errorData, packageName) => {
             return
         }
 
-        let dataType = "STRING";
+        let dataType = "JSON";
         try {
             switch (getType(arg)) {
                 case "INTEGER":
@@ -183,24 +183,38 @@ const renderSingleArg = (fieldName, type, errorData, formData, index, handleChan
 
 const checkValidUndefinedType = (data) => {
     try {
-        const val = yaml.load(data)
+        yaml.load(data)
     } catch (ex) {
         return false;
     }
     return true;
 }
 
-const checkValidJsonType = (data) => {
-    if (data === undefined || data === "undefined" || data.length === 0) {
-        return false
+const checkValidJsonType = (rawData, required) => {
+    // data is normally going to be a string serialized json object as it comes from the CodeEditor, so we try and process it as such
+    if (typeof rawData === "string") {
+        try {
+            const parsed = JSON.parse(rawData)
+            if (required && Object.keys(parsed).length < 1) {
+                return false
+            }
+            return true;
+        } catch (ex) {
+            console.error("Data is not serialized json", rawData)
+            return false
+        }
+    } else if (typeof rawData === "object") {
+        // if it's already an object then we only check that it's non-empty (if it's required)
+        try {
+            if (required && Object.keys(rawData).length < 1) {
+                return false
+            }
+            return true;
+        } catch (ex) {
+            return false
+        }
     }
-
-    try {
-        JSON.parse(JSON.stringify(data))
-        return true;
-    } catch (ex) {
-        return false
-    }
+    console.error(`Data is unknown type ${typeof rawData}`, rawData)
 }
 
 const checkValidStringType = (data) => {
@@ -342,7 +356,7 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
             let processedData = data // assumption is it's not json
             try {
                 // serialize if it's json object
-                if( typeof processedData === 'object') {
+                if (typeof processedData === 'object') {
                     processedData = JSON.stringify(processedData)
                 }
             } catch {
@@ -448,14 +462,15 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                     let subType = getFirstSubType(arg)
                     valid = checkValidListType(formData[key], subType)
                 } else if (type === "DICT") {
-                    valid = checkValidJsonType(formData[key])
+                    valid = checkValidJsonType(formData[key], required)
                 } else if (type === "JSON") {
-                    valid = checkValidJsonType(formData[key])
+                    // required = false, always because we have a later check that ensures the object is not null
+                    valid = checkValidJsonType(formData[key], false)
                 } else {
                     valid = checkValidUndefinedType(formData[key])
                 }
 
-                let typeToPrint = type
+                let typeToPrint
                 if (type === undefined) {
                     typeToPrint = "JSON"
                 } else if (type === "BOOL") {
@@ -502,8 +517,8 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                             val = parseInt(value)
                             args[argName] = val
                         } else if (type === "BOOL") {
-                            val = value.toUpperCase()
-                            args[argName] = (val === "TRUE") ? true : false
+                            val = value.trim().toUpperCase()
+                            args[argName] = val === "TRUE"
                         } else if (type === "FLOAT") {
                             val = parseFloat(value)
                             args[argName] = val
@@ -513,13 +528,37 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                             args[argName] = val
                         } else if (type === "STRING") {
                             args[argName] = value
+                        } else if (type === "DICT") {
+                            if (typeof value === "string") {
+                                try {
+                                    val = JSON.parse(value)
+                                    // Check that the object is non-empty before adding it
+                                    if (Object.keys(val).length > 0) {
+                                        args[argName] = val
+                                    }
+                                } catch {
+                                    console.error(`Expected data to be serialized json, but parsing failed. arg=${argName}, value=${value}`)
+                                }
+                            } else if (typeof value === "object") {
+                                // Check that the object is non-empty before adding it
+                                if (Object.keys(value).length > 0) {
+                                    args[argName] = value
+                                }
+                            } else {
+                                console.error(`Data field '${argName}' was not a valid object but was type ${typeof value}. Contained value: '${value}'`)
+                            }
                         } else {
-                            val = JSON.parse(value)
-                            args[argName] = val
+                            try {
+                                val = JSON.parse(value)
+                                args[argName] = val
+                            } catch (ex) {
+                                console.error(`Data field '${argName}' was not a valid object but was type ${typeof value}. Contained value: '${value}'`)
+                            }
                         }
                     }
                 })
 
+                console.log("raw args", args)
                 const stringifiedArgs = JSON.stringify(args)
                 const runKurtosisPackageArgs = {
                     packageId: thisKurtosisPackage.name,

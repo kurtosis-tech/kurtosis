@@ -6,13 +6,9 @@ const KeyValueTable = ({
                            dataCallback,
                            defaultState = {}
                        }) => {
-
-    // parse the inputs, even if it's serialized json
-    let parsed_json
-    try{
+    let parsed_json = {}
+    if (defaultState !== undefined && defaultState !== "") {
         parsed_json = JSON.parse(defaultState)
-    } catch {
-        parsed_json = JSON.parse(JSON.stringify(defaultState))
     }
 
     const [value, setValue] = useState(parsed_json)
@@ -68,7 +64,7 @@ const KeyValueTable = ({
                                 <InputLeftAddon children='Value'/>
                                 <Input
                                     type="text"
-                                    value={value || "   "} // value will be undefined for new rows
+                                    value={value || ""} // value will be undefined for new rows
                                     onChange={e => updateValue(e.target.value)}
                                     size="md"
                                     variant='filled'
