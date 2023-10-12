@@ -227,10 +227,7 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 		absoluteLocator = parsedParentModuleId.getAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator)
 	}
 
-	replacedAbsoluteLocator, interpretationErr := replaceAbsoluteLocator(absoluteLocator, packageReplaceOptions)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
+	replacedAbsoluteLocator := replaceAbsoluteLocator(absoluteLocator, packageReplaceOptions)
 
 	return replacedAbsoluteLocator, nil
 }

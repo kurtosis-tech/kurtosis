@@ -1,7 +1,6 @@
 package git_package_content_provider
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
@@ -22,56 +21,51 @@ func isSamePackageLocalAbsoluteLocator(locator string, parentPackageId string) b
 	return strings.HasPrefix(locator, parentPackageId)
 }
 
-func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[string]string) (string, *startosis_errors.InterpretationError) {
+func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[string]string) string {
 	if absoluteLocator == "" {
-		return absoluteLocator, nil
+		return absoluteLocator
 	}
 
-	found, packageToBeReplaced, replaceWithPackage, interpretationErr := findPackageReplace(absoluteLocator, packageReplaceOptions)
-	if interpretationErr != nil {
-		return "", interpretationErr
-	}
+	found, packageToBeReplaced, replaceWithPackage := findPackageReplace(absoluteLocator, packageReplaceOptions)
+
 	if found {
 		// we skip if it's a local replace because we will use the same absolute locator
 		// due the file was already uploaded in the enclave's package cache
 		if isLocalLocator(replaceWithPackage) {
-			return absoluteLocator, nil
+			return absoluteLocator
 		}
 		replacedAbsoluteLocator := strings.Replace(absoluteLocator, packageToBeReplaced, replaceWithPackage, onlyOneReplace)
 		logrus.Debugf("absoluteLocator '%s' replaced with '%s'", absoluteLocator, replacedAbsoluteLocator)
-		return replacedAbsoluteLocator, nil
+		return replacedAbsoluteLocator
 	}
 
-	return absoluteLocator, nil
+	return absoluteLocator
 }
 
-func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string]string) (bool, string, string, *startosis_errors.InterpretationError) {
+func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string]string) (bool, string, string) {
 	if len(packageReplaceOptions) == 0 {
-		return false, "", "", nil
+		return false, "", ""
 	}
 
-	urlToAnalyze, interpretationErr := parseGitURL(absoluteLocator)
-	if interpretationErr != nil {
-		return false, "", "", interpretationErr
-	}
-	gitUrl := urlToAnalyze.gitURL
-
+	pathToAnalyze := absoluteLocator
 	for {
+		numberSlashes := strings.Count(pathToAnalyze, urlPathSeparator)
 
-		lastIndex := strings.LastIndex(gitUrl, urlPathSeparator)
-
-		if len(gitUrl) <= lastIndex || lastIndex == subStrNotPresentIndicator {
+		// check for the minimal path e.g.: github.com/org/package
+		if numberSlashes < minimumSubPathsForValidGitURL {
 			break
 		}
-		packageToBeReplaced := gitUrl[:lastIndex]
+		lastIndex := strings.LastIndex(pathToAnalyze, urlPathSeparator)
+
+		packageToBeReplaced := pathToAnalyze[:lastIndex]
 		replaceWithPackage, ok := packageReplaceOptions[packageToBeReplaced]
 		if ok {
 			logrus.Debugf("dependency replace found for '%s', package '%s' will be replaced with '%s'", absoluteLocator, packageToBeReplaced, replaceWithPackage)
-			return true, packageToBeReplaced, replaceWithPackage, nil
+			return true, packageToBeReplaced, replaceWithPackage
 		}
 
-		gitUrl = packageToBeReplaced
+		pathToAnalyze = packageToBeReplaced
 	}
 
-	return false, "", "", nil
+	return false, "", ""
 }
