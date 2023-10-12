@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.84.5](https://github.com/kurtosis-tech/kurtosis/compare/0.84.4...0.84.5) (2023-10-12)
+
+
+### Features
+
+* highlight the active cluster in kurtosis cluster ls ([#1514](https://github.com/kurtosis-tech/kurtosis/issues/1514)) ([67e0111](https://github.com/kurtosis-tech/kurtosis/commit/67e0111af7483efdab14743f5e10897054db96a2))
+* local replace package dependency ([#1521](https://github.com/kurtosis-tech/kurtosis/issues/1521)) ([d5e3126](https://github.com/kurtosis-tech/kurtosis/commit/d5e3126900f1a16523a3c8ba33b25c3a7bed6e0d))
+* manage script return value ([#1546](https://github.com/kurtosis-tech/kurtosis/issues/1546)) ([a53508f](https://github.com/kurtosis-tech/kurtosis/commit/a53508f825985a26e306e10038305798f3e3ce4d))
+
+
+### Bug Fixes
+
+* run package bug ([#1539](https://github.com/kurtosis-tech/kurtosis/issues/1539)) ([1f5380a](https://github.com/kurtosis-tech/kurtosis/commit/1f5380afeb91c3dfe8b365b7752494f5444376e7)), closes [#1501](https://github.com/kurtosis-tech/kurtosis/issues/1501) [#1479](https://github.com/kurtosis-tech/kurtosis/issues/1479)
+
 ## [0.84.4](https://github.com/kurtosis-tech/kurtosis/compare/0.84.3...0.84.4) (2023-10-10)
 
 
