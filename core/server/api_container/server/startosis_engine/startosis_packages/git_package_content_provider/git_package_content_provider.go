@@ -236,30 +236,30 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 
 func (provider *GitPackageContentProvider) CloneReplacedPackagesIfNeeded(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
 
-	historicalPackageReplaceOptions, err := provider.packageReplaceOptionsRepository.Get()
+	existingPackageReplaceOptions, err := provider.packageReplaceOptionsRepository.Get()
 	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the historical package replace options from the repository")
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the existing package replace options from the repository")
 	}
 
-	for packageId, historicalReplace := range historicalPackageReplaceOptions {
+	for packageId, existingReplace := range existingPackageReplaceOptions {
 
 		shouldClonePackage := false
 
-		isHistoricalLocalReplace := isLocalDependencyReplace(historicalReplace)
-		logrus.Debugf("historicalReplace '%v' isHistoricalLocalReplace? '%v', ", historicalReplace, isHistoricalLocalReplace)
+		isExistingLocalReplace := isLocalDependencyReplace(existingReplace)
+		logrus.Debugf("existingReplace '%v' isExistingLocalReplace? '%v', ", existingReplace, isExistingLocalReplace)
 
 		currentReplace, isCurrentReplace := currentPackageReplaceOptions[packageId]
 		if isCurrentReplace {
-			// the package will be cloned if the current replace is remote and the historical is local
+			// the package will be cloned if the current replace is remote and the existing is local
 			isCurrentRemoteReplace := !isLocalDependencyReplace(currentReplace)
 			logrus.Debugf("currentReplace '%v' isCurrentRemoteReplace? '%v', ", isCurrentRemoteReplace, currentReplace)
-			if isCurrentRemoteReplace && isHistoricalLocalReplace {
+			if isCurrentRemoteReplace && isExistingLocalReplace {
 				shouldClonePackage = true
 			}
 		}
 
 		// there is no current replace for this dependency but the version in the cache is local
-		if !isCurrentReplace && isHistoricalLocalReplace {
+		if !isCurrentReplace && isExistingLocalReplace {
 			shouldClonePackage = true
 		}
 
@@ -270,13 +270,13 @@ func (provider *GitPackageContentProvider) CloneReplacedPackagesIfNeeded(current
 		}
 	}
 
-	// upgrade the historical-replace list with the new values
+	// upgrade the existing-replace list with the new values
 	for packageId, currentReplace := range currentPackageReplaceOptions {
-		historicalPackageReplaceOptions[packageId] = currentReplace
+		existingPackageReplaceOptions[packageId] = currentReplace
 	}
 
-	if err = provider.packageReplaceOptionsRepository.Save(historicalPackageReplaceOptions); err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "An error occurred saving the historical package replace options from the repository")
+	if err = provider.packageReplaceOptionsRepository.Save(existingPackageReplaceOptions); err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred saving the existing package replace options from the repository")
 	}
 	return nil
 }
