@@ -1,12 +1,13 @@
 import React, {useEffect, useRef, useState} from "react";
 import useWindowDimensions from "../../utils/windowDimension";
-import {Box, Flex, Spacer, Tooltip, useClipboard} from "@chakra-ui/react";
-import {DownloadIcon, TriangleDownIcon} from '@chakra-ui/icons'
+import {Box, Flex, Spacer, Spinner, Tooltip, useClipboard} from "@chakra-ui/react";
 import parse from 'html-react-parser';
 import hasAnsi from 'has-ansi';
 import stripAnsi from 'strip-ansi';
 import {saveTextAsFile} from "../../utils/download";
 import {Virtuoso} from "react-virtuoso";
+import {CheckIcon, DownloadIcon, TriangleDownIcon, WarningIcon} from '@chakra-ui/icons'
+import {PROCESSING_EVENT, RUN_FINISHED_EVENT} from "./CreateEnclaveLog";
 
 var os = require('os-browserify/browser')
 const Convert = require('ansi-to-html');
@@ -26,11 +27,46 @@ const Row = ({log}) => {
     return <></>;
 };
 
-export const Log = ({logs, fileName}) => {
+const logsStatus = (event, errorStatus) => {
+    if (event === RUN_FINISHED_EVENT && (errorStatus === "")) {
+        return (
+            <>
+                <Tooltip label='Success! Script finished successfully'>
+                    <CheckIcon color='green'/>
+                </Tooltip>
+            </>
+        )
+    } else if (event === PROCESSING_EVENT) {
+        return (
+            <>
+                <Tooltip label='Script is running...'>
+                    <Spinner/>
+                </Tooltip>
+            </>
+        )
+    } else if (event === RUN_FINISHED_EVENT && errorStatus) {
+        return (
+            <>
+                <Tooltip label='Error! Script finished with an error'>
+                    <WarningIcon color='red'/>
+                </Tooltip>
+            </>
+        )
+    } else {
+        return (
+            <>
+            </>
+        )
+    }
+}
+
+
+export const Log = ({logs, fileName, currentExecutionStatus, errorStatus}) => {
     const [displayLogs, setDisplayLogs] = useState(logs)
     const virtuosoRef = useRef(null)
     const {height: windowHeight} = useWindowDimensions();
     const {onCopy, setValue: setCopyValue, hasCopied} = useClipboard("");
+    const [logsExecutionStatus, setLogsExecutionStatus] = useState(<></>)
 
     useEffect(() => {
         setDisplayLogs(logs);
@@ -38,6 +74,7 @@ export const Log = ({logs, fileName}) => {
             return stripAnsi(log)
         })
         setCopyValue(logsWithoutAnsi.join(os.EOL))
+        setLogsExecutionStatus(logsStatus(currentExecutionStatus, errorStatus))
     }, [logs]);
 
     const handleDownload = () => {
@@ -68,7 +105,12 @@ export const Log = ({logs, fileName}) => {
             />
             <Flex className="bg-black" style={{height: `80px`}}>
                 <Spacer/>
-                <Tooltip label={`${hasCopied ? "Copied!" : "Copy"}`}
+                <Box p='2' m="4"
+                     height={"40px"}
+                >
+                    <Box>{logsExecutionStatus}</Box>
+                </Box>
+                <Tooltip label={`${hasCopied ? "Copied!" : "Copy to clipboard"}`}
                          placement='top-end'
                          closeOnClick={false}
                 >
@@ -82,7 +124,7 @@ export const Log = ({logs, fileName}) => {
                         </svg>
                     </Box>
                 </Tooltip>
-                <Tooltip label={"Download"}
+                <Tooltip label={"Download to file"}
                          placement='top'
                 >
                     <Box p='2' m="4" onClick={handleDownload} height={"40px"}>
