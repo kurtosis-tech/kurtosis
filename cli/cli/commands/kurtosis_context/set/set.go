@@ -1,4 +1,4 @@
-package context_switch
+package set
 
 import (
 	"context"
@@ -23,11 +23,11 @@ const (
 	contextIdentifierArgIsGreedy = false
 )
 
-var ContextSwitchCmd = &lowlevel.LowlevelKurtosisCommand{
-	CommandStr:       command_str_consts.ContextSwitchCmdStr,
-	ShortDescription: "Switches to a different Kurtosis context",
-	LongDescription: fmt.Sprintf("Switches to a different Kurtosis context. The context needs to be added "+
-		"first using the `%s` command. When switching to a remote context, the connection will be established with "+
+var ContextSetCmd = &lowlevel.LowlevelKurtosisCommand{
+	CommandStr:       command_str_consts.ContextSetCmdStr,
+	ShortDescription: "Sets the active Kurtosis context",
+	LongDescription: fmt.Sprintf("Sets the active Kurtosis context. The context needs to be added "+
+		"first using the `%s` command. When setting a remote context, the connection will be established with "+
 		"the remote Kurtosis server. Kurtosis Portal needs to be running for this. If the remote server can't be "+
 		"reached, the context will remain unchanged.", command_str_consts.ContextAddCmdStr),
 	Flags: []*flags.FlagConfig{},
@@ -45,10 +45,10 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		return stacktrace.Propagate(err, "Expected a value for context identifier arg '%v' but none was found; this is a bug in the Kurtosis CLI!", contextIdentifierArgKey)
 	}
 
-	return SwitchContext(ctx, contextIdentifier)
+	return SetContext(ctx, contextIdentifier)
 }
 
-func SwitchContext(
+func SetContext(
 	ctx context.Context,
 	contextIdentifier string,
 ) error {
