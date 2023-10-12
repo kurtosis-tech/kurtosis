@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -21,6 +22,7 @@ const (
 	temporaryRepoDirPattern     = "tmp-repo-dir-*"
 	temporaryArchiveFilePattern = "temp-module-archive-*.tgz"
 	defaultTmpDir               = ""
+	emptyTagBranchOrCommit      = ""
 
 	onlyOneReplacement       = 1
 	replacedWithEmptyString  = ""
@@ -58,7 +60,7 @@ func NewGitPackageContentProvider(moduleDir string, tmpDir string, enclaveDb *en
 }
 
 func (provider *GitPackageContentProvider) ClonePackage(packageId string) (string, *startosis_errors.InterpretationError) {
-	parsedURL, interpretationError := parseGitURL(packageId)
+	parsedURL, interpretationError := shared_utils.ParseGitURL(packageId)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
@@ -90,15 +92,15 @@ func (provider *GitPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOn
 }
 
 func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(absoluteFileLocator string) (string, *startosis_errors.InterpretationError) {
-	parsedURL, interpretationError := parseGitURL(absoluteFileLocator)
+	parsedURL, interpretationError := shared_utils.ParseGitURL(absoluteFileLocator)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
-	if parsedURL.relativeFilePath == "" {
+	if parsedURL.GetRelativeFilePath() == "" {
 		return "", startosis_errors.NewInterpretationError("The path '%v' needs to point to a specific file but it didn't. Users can only read or import specific files and not entire packages.", absoluteFileLocator)
 	}
-	pathToFileOnDisk := path.Join(provider.packagesDir, parsedURL.relativeFilePath)
-	packagePath := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
+	pathToFileOnDisk := path.Join(provider.packagesDir, parsedURL.GetRelativeFilePath())
+	packagePath := path.Join(provider.packagesDir, parsedURL.GetRelativeRepoPath())
 
 	// Return the file path straight if it exists
 	if _, err := os.Stat(pathToFileOnDisk); err == nil {
@@ -108,8 +110,8 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(absoluteFil
 	// Check if the repo exists
 	// If the repo exists but the `pathToFileOnDisk` doesn't that means there's a mistake in the locator
 	if _, err := os.Stat(packagePath); err == nil {
-		relativeFilePathWithoutPackageName := strings.Replace(parsedURL.relativeFilePath, parsedURL.relativeRepoPath, replacedWithEmptyString, onlyOneReplacement)
-		return "", startosis_errors.NewInterpretationError("'%v' doesn't exist in the package '%v'", relativeFilePathWithoutPackageName, parsedURL.relativeRepoPath)
+		relativeFilePathWithoutPackageName := strings.Replace(parsedURL.GetRelativeFilePath(), parsedURL.GetRelativeRepoPath(), replacedWithEmptyString, onlyOneReplacement)
+		return "", startosis_errors.NewInterpretationError("'%v' doesn't exist in the package '%v'", relativeFilePathWithoutPackageName, parsedURL.GetRelativeRepoPath())
 	}
 
 	// Otherwise clone the repo and return the absolute path of the requested file
@@ -151,7 +153,7 @@ func (provider *GitPackageContentProvider) GetModuleContents(fileInsideModuleUrl
 }
 
 func (provider *GitPackageContentProvider) GetOnDiskAbsolutePackagePath(packageId string) (string, *startosis_errors.InterpretationError) {
-	parsedPackageId, interpretationError := parseGitURL(packageId)
+	parsedPackageId, interpretationError := shared_utils.ParseGitURL(packageId)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
@@ -167,7 +169,7 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsolutePackagePath(packageI
 }
 
 func (provider *GitPackageContentProvider) StorePackageContents(packageId string, moduleTar io.Reader, overwriteExisting bool) (string, *startosis_errors.InterpretationError) {
-	parsedPackageId, interpretationError := parseGitURL(packageId)
+	parsedPackageId, interpretationError := shared_utils.ParseGitURL(packageId)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
@@ -217,16 +219,16 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 	}
 
 	// maybe it's not a relative url in which case we return the url
-	_, errorParsingUrl := parseGitURL(maybeRelativeLocator)
+	_, errorParsingUrl := shared_utils.ParseGitURL(maybeRelativeLocator)
 	if errorParsingUrl == nil {
 		absoluteLocator = maybeRelativeLocator
 	} else {
-		parsedParentModuleId, errorParsingPackageId := parseGitURL(parentModuleId)
+		parsedParentModuleId, errorParsingPackageId := shared_utils.ParseGitURL(parentModuleId)
 		if errorParsingPackageId != nil {
 			return "", startosis_errors.NewInterpretationError("Parent package id '%v' isn't a valid locator; relative URLs don't work with standalone scripts", parentModuleId)
 		}
 
-		absoluteLocator = parsedParentModuleId.getAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator)
+		absoluteLocator = parsedParentModuleId.GetAbsoluteLocatorRelativeToThisURL(maybeRelativeLocator)
 	}
 
 	replacedAbsoluteLocator := replaceAbsoluteLocator(absoluteLocator, packageReplaceOptions)
@@ -283,22 +285,22 @@ func (provider *GitPackageContentProvider) CloneReplacedPackagesIfNeeded(current
 
 // atomicClone This first clones to a temporary directory and then moves it
 // TODO make this support versioning via tags, commit hashes or branches
-func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) *startosis_errors.InterpretationError {
+func (provider *GitPackageContentProvider) atomicClone(parsedURL *shared_utils.ParsedGitURL) *startosis_errors.InterpretationError {
 	// First we clone into a temporary directory
 	tempRepoDirPath, err := os.MkdirTemp(provider.packagesTmpDir, temporaryRepoDirPattern)
 	if err != nil {
-		return startosis_errors.WrapWithInterpretationError(err, "Cloning the module '%s' failed. Error creating temporary directory for the repository to be cloned into", parsedURL.gitURL)
+		return startosis_errors.WrapWithInterpretationError(err, "Cloning the module '%s' failed. Error creating temporary directory for the repository to be cloned into", parsedURL.GetGitURL())
 	}
 	defer os.RemoveAll(tempRepoDirPath)
-	gitClonePath := path.Join(tempRepoDirPath, parsedURL.relativeRepoPath)
+	gitClonePath := path.Join(tempRepoDirPath, parsedURL.GetRelativeRepoPath())
 
 	depth := defaultDepth
-	if parsedURL.tagBranchOrCommit != emptyTagBranchOrCommit {
+	if parsedURL.GetTagBranchOrCommit() != emptyTagBranchOrCommit {
 		depth = depthAssumingBranchTagsCommitsAreSpecified
 	}
 
 	repo, err := git.PlainClone(gitClonePath, isNotBareClone, &git.CloneOptions{
-		URL:               parsedURL.gitURL,
+		URL:               parsedURL.GetGitURL(),
 		Auth:              nil,
 		RemoteName:        "",
 		ReferenceName:     "",
@@ -315,11 +317,11 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 		// TODO remove public repository from error after we support private repositories
 		// We silent the underlying error here as it can be confusing to the user. For example, when there's a typo in
 		// the repo name, pointing to a non existing repo, the underlying error is: "authentication required"
-		logrus.Errorf("Error cloning git repository: '%s' to '%s'. Error was: \n%s", parsedURL.gitURL, gitClonePath, err.Error())
-		return startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists and is a public repository.", parsedURL.gitURL, gitClonePath, parsedURL.gitURL)
+		logrus.Errorf("Error cloning git repository: '%s' to '%s'. Error was: \n%s", parsedURL.GetGitURL(), gitClonePath, err.Error())
+		return startosis_errors.NewInterpretationError("Error in cloning git repository '%s' to '%s'. Make sure that '%v' exists and is a public repository.", parsedURL.GetGitURL(), gitClonePath, parsedURL.GetGitURL())
 	}
 
-	if parsedURL.tagBranchOrCommit != emptyTagBranchOrCommit {
+	if parsedURL.GetTagBranchOrCommit() != emptyTagBranchOrCommit {
 		referenceTagOrBranch, found, referenceErr := getReferenceName(repo, parsedURL)
 		if err != nil {
 			return referenceErr
@@ -336,45 +338,45 @@ func (provider *GitPackageContentProvider) atomicClone(parsedURL *ParsedGitURL) 
 			// if we have a tag or branch we set it
 			checkoutOptions.Branch = referenceTagOrBranch
 		} else {
-			maybeHash := plumbing.NewHash(parsedURL.tagBranchOrCommit)
+			maybeHash := plumbing.NewHash(parsedURL.GetTagBranchOrCommit())
 			// check whether the hash is a valid hash
 			_, err = repo.CommitObject(maybeHash)
 			if err != nil {
-				return startosis_errors.NewInterpretationError("Tried using the passed version '%v' as commit as we couldn't find a tag/branch for it in the repo '%v' but failed", parsedURL.tagBranchOrCommit, parsedURL.gitURL)
+				return startosis_errors.NewInterpretationError("Tried using the passed version '%v' as commit as we couldn't find a tag/branch for it in the repo '%v' but failed", parsedURL.GetTagBranchOrCommit(), parsedURL.GetGitURL())
 			}
 			checkoutOptions.Hash = maybeHash
 		}
 
 		workTree, err := repo.Worktree()
 		if err != nil {
-			return startosis_errors.NewInterpretationError("Tried getting worktree for cloned repo '%v' but failed", parsedURL.gitURL)
+			return startosis_errors.NewInterpretationError("Tried getting worktree for cloned repo '%v' but failed", parsedURL.GetGitURL())
 		}
 
 		if err := workTree.Checkout(checkoutOptions); err != nil {
-			return startosis_errors.NewInterpretationError("Tried checking out '%v' on repository '%v' but failed", parsedURL.tagBranchOrCommit, parsedURL.gitURL)
+			return startosis_errors.NewInterpretationError("Tried checking out '%v' on repository '%v' but failed", parsedURL.GetTagBranchOrCommit(), parsedURL.GetGitURL())
 		}
 	}
 
 	// Then we move it into the target directory
-	packageAuthorPath := path.Join(provider.packagesDir, parsedURL.moduleAuthor)
-	packagePath := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
+	packageAuthorPath := path.Join(provider.packagesDir, parsedURL.GetModuleAuthor())
+	packagePath := path.Join(provider.packagesDir, parsedURL.GetRelativeRepoPath())
 	fileMode, err := os.Stat(packageAuthorPath)
 	if err == nil && !fileMode.IsDir() {
 		return startosis_errors.WrapWithInterpretationError(err, "Expected '%s' to be a directory but it is something else", packageAuthorPath)
 	}
 	if err != nil {
 		if err = os.Mkdir(packageAuthorPath, moduleDirPermission); err != nil {
-			return startosis_errors.WrapWithInterpretationError(err, "Cloning the package '%s' failed. An error occurred while creating the directory '%s'.", parsedURL.gitURL, packageAuthorPath)
+			return startosis_errors.WrapWithInterpretationError(err, "Cloning the package '%s' failed. An error occurred while creating the directory '%s'.", parsedURL.GetGitURL(), packageAuthorPath)
 		}
 	}
 	if _, err = os.Stat(packagePath); !os.IsNotExist(err) {
-		logrus.Debugf("Package '%s' already exists in enclave at path '%s'. Going to remove previous version.", parsedURL.gitURL, packagePath)
+		logrus.Debugf("Package '%s' already exists in enclave at path '%s'. Going to remove previous version.", parsedURL.GetGitURL(), packagePath)
 		if err = os.RemoveAll(packagePath); err != nil {
-			return startosis_errors.NewInterpretationError("Unable to remove a previous version of package '%s' existing inside Kurtosis enclave at '%s'.", parsedURL.gitURL, packagePath)
+			return startosis_errors.NewInterpretationError("Unable to remove a previous version of package '%s' existing inside Kurtosis enclave at '%s'.", parsedURL.GetGitURL(), packagePath)
 		}
 	}
 	if err = os.Rename(gitClonePath, packagePath); err != nil {
-		return startosis_errors.NewInterpretationError("Cloning the package '%s' failed. An error occurred while moving package at temporary destination '%s' to final destination '%s'", parsedURL.gitURL, gitClonePath, packagePath)
+		return startosis_errors.NewInterpretationError("Cloning the package '%s' failed. An error occurred while moving package at temporary destination '%s' to final destination '%s'", parsedURL.GetGitURL(), gitClonePath, packagePath)
 	}
 	return nil
 }
@@ -402,13 +404,13 @@ func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[st
 func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string]string) (bool, string, string) {
 	pathToAnalyze := absoluteLocator
 	for {
-		numberSlashes := strings.Count(pathToAnalyze, urlPathSeparator)
+		numberSlashes := strings.Count(pathToAnalyze, shared_utils.UrlPathSeparator)
 
 		// check for the minimal path e.g.: github.com/org/package
-		if numberSlashes < minimumSubPathsForValidGitURL {
+		if numberSlashes < shared_utils.MinimumSubPathsForValidGitURL {
 			break
 		}
-		lastIndex := strings.LastIndex(pathToAnalyze, urlPathSeparator)
+		lastIndex := strings.LastIndex(pathToAnalyze, shared_utils.UrlPathSeparator)
 
 		packageToBeReplaced := pathToAnalyze[:lastIndex]
 		replaceWithPackage, ok := packageReplaceOptions[packageToBeReplaced]
@@ -425,32 +427,32 @@ func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string
 
 // methods checks whether the root of the package is same as repository root
 // or it is a sub-folder under it
-func getPathToPackageRoot(parsedPackagePath *ParsedGitURL) string {
-	packagePathOnDisk := parsedPackagePath.relativeRepoPath
-	if parsedPackagePath.relativeFilePath != relativeFilePathNotFound {
-		packagePathOnDisk = parsedPackagePath.relativeFilePath
+func getPathToPackageRoot(parsedPackagePath *shared_utils.ParsedGitURL) string {
+	packagePathOnDisk := parsedPackagePath.GetRelativeRepoPath()
+	if parsedPackagePath.GetRelativeFilePath() != relativeFilePathNotFound {
+		packagePathOnDisk = parsedPackagePath.GetRelativeFilePath()
 	}
 	return packagePathOnDisk
 }
 
-func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.ReferenceName, bool, *startosis_errors.InterpretationError) {
-	tag, err := repo.Tag(parsedURL.tagBranchOrCommit)
+func getReferenceName(repo *git.Repository, parsedURL *shared_utils.ParsedGitURL) (plumbing.ReferenceName, bool, *startosis_errors.InterpretationError) {
+	tag, err := repo.Tag(parsedURL.GetTagBranchOrCommit())
 	if err == nil {
 		return tag.Name(), true, nil
 	}
 	if err != nil && err != git.ErrTagNotFound {
-		return "", false, startosis_errors.NewInterpretationError("An error occurred while checking whether '%v' is a tag and exists in '%v'", parsedURL.tagBranchOrCommit, parsedURL.gitURL)
+		return "", false, startosis_errors.NewInterpretationError("An error occurred while checking whether '%v' is a tag and exists in '%v'", parsedURL.GetTagBranchOrCommit(), parsedURL.GetGitURL())
 	}
 
 	// for branches there is repo.Branch() but that doesn't work with remote branches
 	refs, err := repo.References()
 	if err != nil {
-		return "", false, startosis_errors.NewInterpretationError("An error occurred while fetching references for repository '%v'", parsedURL.gitURL)
+		return "", false, startosis_errors.NewInterpretationError("An error occurred while fetching references for repository '%v'", parsedURL.GetGitURL())
 	}
 
 	var branchReference *plumbing.Reference
 	err = refs.ForEach(func(r *plumbing.Reference) error {
-		if r.Name() == plumbing.NewRemoteReferenceName(git.DefaultRemoteName, parsedURL.tagBranchOrCommit) {
+		if r.Name() == plumbing.NewRemoteReferenceName(git.DefaultRemoteName, parsedURL.GetTagBranchOrCommit()) {
 			branchReference = r
 			return nil
 		}
@@ -459,7 +461,7 @@ func getReferenceName(repo *git.Repository, parsedURL *ParsedGitURL) (plumbing.R
 
 	// checking the error even though the above can't ever error
 	if err != nil {
-		return "", false, startosis_errors.NewInterpretationError("An error occurred while iterating through references in repository '%v'; This is a bug in Kurtosis", parsedURL.gitURL)
+		return "", false, startosis_errors.NewInterpretationError("An error occurred while iterating through references in repository '%v'; This is a bug in Kurtosis", parsedURL.GetGitURL())
 	}
 
 	if branchReference != nil {
@@ -494,8 +496,8 @@ func validatePackageNameMatchesKurtosisYamlLocation(kurtosisYaml *yaml_parser.Ku
 		return startosis_errors.NewInterpretationError("Kurtosis package name cannot have trailing %q; package name: %v and kurtosis.yml is found at: %v", osPathSeparatorString, packageName, packageNameFromAbsPackagePath)
 	}
 
-	// re-using parseGitURL with packageName found from kurtosis.yml as it already does some validations
-	_, err := parseGitURL(packageName)
+	// re-using ParseGitURL with packageName found from kurtosis.yml as it already does some validations
+	_, err := shared_utils.ParseGitURL(packageName)
 	if err != nil {
 		return startosis_errors.WrapWithInterpretationError(err, "Error occurred while validating package name: %v which is found in kurtosis.yml at: '%v'", kurtosisYaml.GetPackageName(), packageNameFromAbsPackagePath)
 	}

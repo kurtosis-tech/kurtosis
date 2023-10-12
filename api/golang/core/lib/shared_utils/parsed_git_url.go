@@ -1,4 +1,4 @@
-package git_package_content_provider
+package shared_utils
 
 import (
 	"fmt"
@@ -11,10 +11,10 @@ import (
 
 const (
 	httpsSchema      = "https"
-	urlPathSeparator = "/"
-	// for a valid GitURl we need it to look like github.com/author/moduleName
+	UrlPathSeparator = "/"
+	//MinimumSubPathsForValidGitURL for a valid GitURl we need it to look like github.com/author/moduleName
 	// the last two are the minimum requirements for a valid Startosis URL
-	minimumSubPathsForValidGitURL = 2
+	MinimumSubPathsForValidGitURL = 2
 
 	tagBranchOrCommitDelimiter = "@"
 	emptyTagBranchOrCommit     = ""
@@ -54,9 +54,40 @@ func newParsedGitURL(moduleAuthor, moduleName, gitURL, relativeRepoPath, relativ
 	}
 }
 
-// parseGitURL this takes a Git url (GitHub) for now and converts it into the struct ParsedGitURL
+func (parsedUrl *ParsedGitURL) GetModuleAuthor() string {
+	return parsedUrl.moduleAuthor
+}
+
+func (parsedUrl *ParsedGitURL) GetModuleName() string {
+	return parsedUrl.moduleName
+}
+
+func (parsedUrl *ParsedGitURL) GetGitURL() string {
+	return parsedUrl.gitURL
+}
+
+func (parsedUrl *ParsedGitURL) GetRelativeRepoPath() string {
+	return parsedUrl.relativeRepoPath
+}
+
+func (parsedUrl *ParsedGitURL) GetRelativeFilePath() string {
+	return parsedUrl.relativeFilePath
+}
+
+func (parsedUrl *ParsedGitURL) GetTagBranchOrCommit() string {
+	return parsedUrl.tagBranchOrCommit
+}
+
+func (parsedUrl *ParsedGitURL) GetAbsoluteLocatorRelativeToThisURL(relativeUrl string) string {
+	if strings.HasPrefix(relativeUrl, packageRootPrefixIndicatorInRelativeLocators) {
+		return path.Join(startosis_constants.GithubDomainPrefix, parsedUrl.relativeRepoPath, relativeUrl)
+	}
+	return path.Join(startosis_constants.GithubDomainPrefix, path.Dir(parsedUrl.relativeFilePath), relativeUrl)
+}
+
+// ParseGitURL this takes a Git url (GitHub) for now and converts it into the struct ParsedGitURL
 // This can in the future be extended to GitLab or BitBucket or any other Git Host
-func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.InterpretationError) {
+func ParseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.InterpretationError) {
 	// we expect something like github.com/author/module/path.star
 	// we don't want schemas
 	parsedURL, err := url.Parse(packageURL)
@@ -81,8 +112,8 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 
 	splitURLPath := cleanPathAndSplit(pathWithoutVersion)
 
-	if len(splitURLPath) < minimumSubPathsForValidGitURL {
-		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module: '%v'. The path should contain at least %d subpaths got '%v'", packageURL, minimumSubPathsForValidGitURL, splitURLPath)
+	if len(splitURLPath) < MinimumSubPathsForValidGitURL {
+		return nil, startosis_errors.NewInterpretationError("Error parsing the URL of module: '%v'. The path should contain at least %d subpaths got '%v'", packageURL, MinimumSubPathsForValidGitURL, splitURLPath)
 	}
 
 	moduleAuthor := splitURLPath[0]
@@ -91,7 +122,7 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 	relativeModulePath := path.Join(moduleAuthor, moduleName)
 
 	relativeFilePath := ""
-	if len(splitURLPath) > minimumSubPathsForValidGitURL {
+	if len(splitURLPath) > MinimumSubPathsForValidGitURL {
 		relativeFilePath = path.Join(splitURLPath...)
 	}
 
@@ -107,17 +138,10 @@ func parseGitURL(packageURL string) (*ParsedGitURL, *startosis_errors.Interpreta
 	return parsedGitURL, nil
 }
 
-func (parsedUrl *ParsedGitURL) getAbsoluteLocatorRelativeToThisURL(relativeUrl string) string {
-	if strings.HasPrefix(relativeUrl, packageRootPrefixIndicatorInRelativeLocators) {
-		return path.Join(startosis_constants.GithubDomainPrefix, parsedUrl.relativeRepoPath, relativeUrl)
-	}
-	return path.Join(startosis_constants.GithubDomainPrefix, path.Dir(parsedUrl.relativeFilePath), relativeUrl)
-}
-
 // cleanPath removes empty "" from the string slice
 func cleanPathAndSplit(urlPath string) []string {
 	cleanPath := path.Clean(urlPath)
-	splitPath := strings.Split(cleanPath, urlPathSeparator)
+	splitPath := strings.Split(cleanPath, UrlPathSeparator)
 	var sliceWithoutEmptyStrings []string
 	for _, subPath := range splitPath {
 		if subPath != "" {
@@ -138,7 +162,7 @@ func parseOutTagBranchOrCommit(input string) (string, string) {
 	// 3- github.com/kurtosis-tech/sample-dependency-package/main.star@foo/bar - here the tag is foo/bar;
 	// 4- github.com/kurtosis-tech/sample-dependency-package@foo/bar/mains.tar - here the tag is foo/bar; while file is /kurtosis-tech/sample-dependency-package/main.star
 	// we check if there is a file in maybeTagBranchOrCommitWithFile and then add it to pathWithoutVersion
-	maybeTagBranchOrCommit, lastSectionOfTagBranchCommitWithFile, _ := cutLast(maybeTagBranchOrCommitWithFile, urlPathSeparator)
+	maybeTagBranchOrCommit, lastSectionOfTagBranchCommitWithFile, _ := cutLast(maybeTagBranchOrCommitWithFile, UrlPathSeparator)
 
 	if lastSectionOfTagBranchCommitWithFile != "" && strings.Contains(lastSectionOfTagBranchCommitWithFile, extensionCharacter) {
 		// we assume pathWithoutVersion does not contain a file inside yet
