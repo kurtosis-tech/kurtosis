@@ -15,7 +15,7 @@ type packageReplaceOptionsRepository struct {
 	enclaveDb *enclave_db.EnclaveDB
 }
 
-func NewPackageReplaceOptionsRepository(
+func newPackageReplaceOptionsRepository(
 	enclaveDb *enclave_db.EnclaveDB,
 ) *packageReplaceOptionsRepository {
 	return &packageReplaceOptionsRepository{
