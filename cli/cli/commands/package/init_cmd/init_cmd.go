@@ -38,7 +38,7 @@ var InitCmd = &lowlevel.LowlevelKurtosisCommand{
 	Flags: []*flags.FlagConfig{
 		{
 			Key:     executablePackageFlagKey,
-			Usage:   "Indicates that the created package is an executable package, and generates a `main.star` if one does not already exist.",
+			Usage:   "indicates that the created package is an executable package, and generates a 'main.star' if one does not already exist.",
 			Type:    flags.FlagType_Bool,
 			Default: executablePackageFlagDefaultValue,
 		},
