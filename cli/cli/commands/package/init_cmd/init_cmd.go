@@ -17,13 +17,15 @@ const (
 	packageNameArgDefaultValue = ""
 	packageNameArgIsOptional   = false
 	packageNameArgIsGreedy     = false
+
+	executablePackageFlagKey          = "main"
+	executablePackageFlagDefaultValue = "false"
 )
 
 var InitCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.InitCmdStr,
 	ShortDescription: "Creates a new Kurtosis package",
 	LongDescription:  "This command initializes the current directory to be a Kurtosis package by creating a `kurtosis.yml` with the given package name.",
-	Flags:            nil,
 	Args: []*args.ArgConfig{
 		{
 			Key:            packageNameArgKey,
@@ -31,6 +33,14 @@ var InitCmd = &lowlevel.LowlevelKurtosisCommand{
 			IsOptional:     packageNameArgIsOptional,
 			IsGreedy:       packageNameArgIsGreedy,
 			ValidationFunc: validatePackageNameArg,
+		},
+	},
+	Flags: []*flags.FlagConfig{
+		{
+			Key:     executablePackageFlagKey,
+			Usage:   "Indicates that the created package is an executable package, and generates a `main.star` if one does not already exist.",
+			Type:    flags.FlagType_Bool,
+			Default: executablePackageFlagDefaultValue,
 		},
 	},
 	PreValidationAndRunFunc:  nil,
@@ -44,12 +54,17 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "an error occurred getting the value of argument with key '%v'", packageNameArgKey)
 	}
 
+	executablePackageFlag, err := flags.GetBool(executablePackageFlagKey)
+	if err != nil {
+		return stacktrace.Propagate(err, "an error occurred getting the value of flag '%v'", executablePackageFlagKey)
+	}
+
 	packageDestinationDirpath, err := os.Getwd()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the current working directory for creating the Kurtosis package")
 	}
 
-	if err := kurtosis_package.InitializeKurtosisPackage(packageDestinationDirpath, packageNameArg); err != nil {
+	if err := kurtosis_package.InitializeKurtosisPackage(packageDestinationDirpath, packageNameArg, executablePackageFlag); err != nil {
 		return stacktrace.Propagate(err, "An error occurred initializing the Kurtosis package '%s' in '%s'", packageNameArg, packageDestinationDirpath)
 	}
 

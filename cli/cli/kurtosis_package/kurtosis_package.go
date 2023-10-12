@@ -21,7 +21,7 @@ const (
 	kurtosisYmlDescriptionFormat = "# %s\nEnter description Markdown here."
 )
 
-func InitializeKurtosisPackage(packageDirpath string, packageName string) error {
+func InitializeKurtosisPackage(packageDirpath string, packageName string, isExecutablePackage bool) error {
 
 	// validate package name
 	_, err := shared_utils.ParseGitURL(packageName)
@@ -34,9 +34,12 @@ func InitializeKurtosisPackage(packageDirpath string, packageName string) error 
 		return stacktrace.Propagate(err, "An error occurred creating the '%s' on '%s'", kurtosisYmlFilename, packageDirpath)
 	}
 
-	if err := createMainStarFile(packageDirpath); err != nil {
-		return stacktrace.Propagate(err, "An error occurred creating the '%s' on '%s'", mainStarFilename, packageDirpath)
+	if isExecutablePackage {
+		if err := createMainStarFile(packageDirpath); err != nil {
+			return stacktrace.Propagate(err, "An error occurred creating the '%s' on '%s'", mainStarFilename, packageDirpath)
+		}
 	}
+
 	logrus.Debugf("...'%s' Kurtosis package successfully initialized", packageName)
 
 	return nil
