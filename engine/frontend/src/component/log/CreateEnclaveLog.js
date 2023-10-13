@@ -5,8 +5,9 @@ import {useNavigate} from "react-router-dom";
 import {runStarlark} from "../../api/enclave";
 import {getEnclaveInformation} from "../../api/container";
 import LoadingOverlay from "../LoadingOverflow";
-import {Box, Text, Flex, Spacer, Center} from "@chakra-ui/react";
-import {useEffect, useState} from "react";
+import {Box, Text, Flex, Spacer, Center, Tooltip, Spinner, CircularProgress} from "@chakra-ui/react";
+import React, {useEffect, useState} from "react";
+import {CheckIcon, WarningIcon} from "@chakra-ui/icons";
 
 const SERVICE_IS_ADDED = "added with service";
 export const ERROR = "error"
@@ -16,13 +17,66 @@ const INSTRUCTION_RESULT = "instructionResult"
 export const RUN_FINISHED_EVENT = "runFinishedEvent"
 export const PROCESSING_EVENT = PROGRESS_INFO
 
+const EXECUTION_IN_PROGRESS = "Execution in progress"
+const STARTING_EXECUTION = "Starting execution"
+
+
+const SCRIPT_RUN_STATUS_PROCESSING_INDETERMINATE = "processing_indeterminate"
+const SCRIPT_RUN_STATUS_PROCESSING = "processing"
+const SCRIPT_RUN_STATUS_ERROR = "error"
+const SCRIPT_RUN_STATUS_SUCCESS = "success"
+
+const logsStatus = (event, progress) => {
+    if (event === SCRIPT_RUN_STATUS_SUCCESS) {
+        return (
+            <>
+                <Tooltip label='Success! Script finished successfully'>
+                    <CheckIcon boxSize={6} color='green'/>
+                </Tooltip>
+            </>
+        )
+    } else if (event === SCRIPT_RUN_STATUS_PROCESSING) {
+        return (
+            <>
+                <Tooltip label='Script is running...'>
+                    <CircularProgress size="30px" value={progress} color="green">
+                    </CircularProgress>
+                </Tooltip>
+            </>
+        )
+    } else if (event === SCRIPT_RUN_STATUS_PROCESSING_INDETERMINATE) {
+        return (
+            <>
+                <Tooltip label='Script is running...'>
+                    <CircularProgress size="30px" isIndeterminate color="green"></CircularProgress>
+                </Tooltip>
+            </>
+        )
+    } else if (event === SCRIPT_RUN_STATUS_ERROR) {
+        return (
+            <>
+                <Tooltip label='Error! Script finished with an error'>
+                    <WarningIcon boxSize={5} color='red'/>
+                </Tooltip>
+            </>
+        )
+    } else {
+        return (
+            <>
+            </>
+        )
+    }
+}
+
+
 export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
-    const [logsCurrentExecutionStatus, setLogsCurrentExecutionStatus] = useState("")
-    const [logsErrorExecutionStatus, setLogsErrorExecutionStatus] = useState("")
+    const [logsCurrentExecutionStatus, setLogsCurrentExecutionStatus] = useState(<></>)
+    const [logsExecutionStatusText, setLogsExecutionStatusText] = useState("")
     const [services, setServices] = useState([])
+    const [logsComponent, setLogsComponent] = useState(<></>)
 
     const getServices = async (enclave) => {
         const {services: newServices} = await getEnclaveInformation(enclave.host, enclave.port, appData.jwtToken, appData.apiHost);
@@ -32,12 +86,27 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
     }
 
     const readStreamData = (result) => {
+        // console.log(`${result.case} ${JSON.stringify(result.value)}`)
         if (result.case === INSTRUCTION) {
             setLogs(logs => [...logs, result.value.executableInstruction])
         }
 
+        if (result.case === PROGRESS_INFO && (result.value.currentStepInfo[0] === EXECUTION_IN_PROGRESS || result.value.currentStepInfo[0] === STARTING_EXECUTION)) {
+            const text = `${result.value.currentStepInfo[0]}: ${result.value.currentStepNumber} / ${result.value.totalSteps}`
+            // console.log(text)
+            let progress = ((result.value.currentStepNumber + 1) / (result.value.totalSteps + 1)) * 100
+            if (isNaN(progress) || progress < 0.0 || progress > 100.0) {
+                setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_PROCESSING_INDETERMINATE, null))
+            } else {
+                setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_PROCESSING, progress))
+            }
+            setLogsExecutionStatusText(text)
+        } else if (result.case === PROGRESS_INFO && result.value.currentStepInfo.length > 0) {
+            setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_PROCESSING_INDETERMINATE))
+        }
+
+
         if (result.case === PROGRESS_INFO && result.value.currentStepInfo.length > 0) {
-            setLogsCurrentExecutionStatus(PROCESSING_EVENT)
             if (result.value.currentStepInfo[result.value.currentStepNumber] !== undefined) {
                 setLogs(logs => [...logs, result.value.currentStepInfo[result.value.currentStepNumber]])
             }
@@ -53,12 +122,17 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
         if (result.case === ERROR) {
             const errorMessage = result.value.error.value.errorMessage;
             setLogs(logs => [...logs, errorMessage])
-            setLogsCurrentExecutionStatus(ERROR)
-            setLogsErrorExecutionStatus(ERROR)
         }
 
         if (result.case === RUN_FINISHED_EVENT) {
-            setLogsCurrentExecutionStatus(RUN_FINISHED_EVENT)
+            console.log(result.value)
+            if (result.value.isRunSuccessful) {
+                setLogsExecutionStatusText("Script completed")
+                setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_SUCCESS, null))
+            } else {
+                setLogsExecutionStatusText("Script failed")
+                setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_ERROR, null))
+            }
         }
     }
 
@@ -96,16 +170,17 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
         })
     }
 
-    const renderLogView = () => {
-        return (
-            (logs.length > 0) ? <Log
-                logs={logs}
-                fileName={enclave.name}
-                currentExecutionStatus={logsCurrentExecutionStatus}
-                errorStatus={logsErrorExecutionStatus}
-            /> : <Center color="white"> No Logs Available</Center>
+    useEffect(() => {
+        setLogsComponent(
+            (logs.length > 0) ?
+                <Log
+                    logs={logs}
+                    fileName={enclave.name}
+                    currentExecutionStatus={logsCurrentExecutionStatus}
+                    executionStatusText={logsExecutionStatusText}
+                /> : <Center color="white"> No Logs Available</Center>
         )
-    }
+    }, [logs, logsCurrentExecutionStatus, logsExecutionStatusText])
 
     return (
         <div className="flex h-full">
@@ -126,7 +201,7 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
                             </Box>
                             <Spacer/>
                         </Flex>
-                        {(loading && logs.length === 0) ? <LoadingOverlay/> : renderLogView()}
+                        {(loading && logs.length === 0) ? <LoadingOverlay/> : logsComponent}
                     </div>
                 </div>
                 <RightPanel home={false} isServiceInfo={!loading} enclaveName={enclave.name}/>
