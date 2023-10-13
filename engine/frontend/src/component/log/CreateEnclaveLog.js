@@ -6,21 +6,24 @@ import {runStarlark} from "../../api/enclave";
 import {getEnclaveInformation} from "../../api/container";
 import LoadingOverlay from "../LoadingOverflow";
 import {Box, Text, Flex, Spacer, Center} from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import {useEffect, useState} from "react";
 
 const SERVICE_IS_ADDED = "added with service";
-const ERROR = "error"
+export const ERROR = "error"
 const INSTRUCTION = "instruction"
 const PROGRESS_INFO = "progressInfo"
 const INSTRUCTION_RESULT = "instructionResult"
-
+export const RUN_FINISHED_EVENT = "runFinishedEvent"
+export const PROCESSING_EVENT = PROGRESS_INFO
 
 export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(false)
     const [logs, setLogs] = useState([])
+    const [logsCurrentExecutionStatus, setLogsCurrentExecutionStatus] = useState("")
+    const [logsErrorExecutionStatus, setLogsErrorExecutionStatus] = useState("")
     const [services, setServices] = useState([])
-    
+
     const getServices = async (enclave) => {
         const {services: newServices} = await getEnclaveInformation(enclave.host, enclave.port, appData.jwtToken, appData.apiHost);
         if (newServices.length > services.length) {
@@ -34,6 +37,7 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
         }
 
         if (result.case === PROGRESS_INFO && result.value.currentStepInfo.length > 0) {
+            setLogsCurrentExecutionStatus(PROCESSING_EVENT)
             if (result.value.currentStepInfo[result.value.currentStepNumber] !== undefined) {
                 setLogs(logs => [...logs, result.value.currentStepInfo[result.value.currentStepNumber]])
             }
@@ -49,6 +53,12 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
         if (result.case === ERROR) {
             const errorMessage = result.value.error.value.errorMessage;
             setLogs(logs => [...logs, errorMessage])
+            setLogsCurrentExecutionStatus(ERROR)
+            setLogsErrorExecutionStatus(ERROR)
+        }
+
+        if (result.case === RUN_FINISHED_EVENT) {
+            setLogsCurrentExecutionStatus(RUN_FINISHED_EVENT)
         }
     }
 
@@ -60,7 +70,7 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
                 stream = await runStarlark(enclave.host, enclave.port, packageId, args, appData.jwtToken, appData.apiHost);
                 for await (const res of stream) {
                     const result = res["runResponseLine"]
-                    readStreamData(result)    
+                    readStreamData(result)
                 }
             } catch (ex) {
                 console.error("Error occurred while reading data from the enclave: ", enclave.name)
@@ -78,7 +88,8 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
     const renderServices = (services, handleClick) => {
         return services.map(service => {
             return (
-                <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={service.name} onClick={()=>handleClick(service)}>
+                <div className={`flex items-center justify-center h-14 text-base bg-[#24BA27]`} key={service.name}
+                     onClick={() => handleClick(service)}>
                     <div className='cursor-default text-lg text-white'> {service.name} </div>
                 </div>
             )
@@ -87,32 +98,37 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
 
     const renderLogView = () => {
         return (
-            (logs.length > 0) ? <Log logs={logs} fileName={enclave.name} />: <Center color="white"> No Logs Available</Center>
+            (logs.length > 0) ? <Log
+                logs={logs}
+                fileName={enclave.name}
+                currentExecutionStatus={logsCurrentExecutionStatus}
+                errorStatus={logsErrorExecutionStatus}
+            /> : <Center color="white"> No Logs Available</Center>
         )
     }
 
     return (
         <div className="flex h-full">
             <div className="flex h-full">
-                <LeftPanel 
-                    home={false} 
-                    heading={"Services"} 
+                <LeftPanel
+                    home={false}
+                    heading={"Services"}
                     isServiceInfo={true}
-                    renderList={ ()=> renderServices(services, handleServiceClick)}
+                    renderList={() => renderServices(services, handleServiceClick)}
                 />
                 <div className="flex h-full w-[calc(100vw-39rem)] flex-col space-y-5">
                     <div className='flex flex-col h-full space-y-1 bg-[#171923]'>
-                        <Flex bg={"#171923"} height={`80px`}>    
-                            <Box p='2' m="4"> 
-                                <Text color={"white"} fontSize='xl' as='b'> 
-                                    Logs  for {enclave.name} 
+                        <Flex bg={"#171923"} height={`80px`}>
+                            <Box p='2' m="4">
+                                <Text color={"white"} fontSize='xl' as='b'>
+                                    Logs for {enclave.name}
                                 </Text>
                             </Box>
                             <Spacer/>
                         </Flex>
-                        { (loading && logs.length === 0) ? <LoadingOverlay /> : renderLogView()}
-                    </div>  
-                </div>                    
+                        {(loading && logs.length === 0) ? <LoadingOverlay/> : renderLogView()}
+                    </div>
+                </div>
                 <RightPanel home={false} isServiceInfo={!loading} enclaveName={enclave.name}/>
             </div>
         </div>

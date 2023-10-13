@@ -93,6 +93,10 @@ func (interpreter *StartosisInterpreter) InterpretAndOptimizePlan(
 	currentEnclavePlan *enclave_plan_persistence.EnclavePlan,
 ) (string, *instructions_plan.InstructionsPlan, *kurtosis_core_rpc_api_bindings.StarlarkInterpretationError) {
 
+	if interpretationErr := interpreter.moduleContentProvider.CloneReplacedPackagesIfNeeded(packageReplaceOptions); interpretationErr != nil {
+		return "", nil, interpretationErr.ToAPIType()
+	}
+
 	// run interpretation with no mask at all to generate the list of instructions as if the enclave was empty
 	enclaveComponents := enclave_structure.NewEnclaveComponents()
 	emptyPlanInstructionsMask := resolver.NewInstructionsPlanMask(0)

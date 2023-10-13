@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
@@ -41,14 +42,16 @@ const (
 )
 
 type GitPackageContentProvider struct {
-	packagesTmpDir string
-	packagesDir    string
+	packagesTmpDir                  string
+	packagesDir                     string
+	packageReplaceOptionsRepository *packageReplaceOptionsRepository
 }
 
-func NewGitPackageContentProvider(moduleDir string, tmpDir string) *GitPackageContentProvider {
+func NewGitPackageContentProvider(moduleDir string, tmpDir string, enclaveDb *enclave_db.EnclaveDB) *GitPackageContentProvider {
 	return &GitPackageContentProvider{
-		packagesDir:    moduleDir,
-		packagesTmpDir: tmpDir,
+		packagesDir:                     moduleDir,
+		packagesTmpDir:                  tmpDir,
+		packageReplaceOptionsRepository: newPackageReplaceOptionsRepository(enclaveDb),
 	}
 }
 
@@ -84,13 +87,13 @@ func (provider *GitPackageContentProvider) GetKurtosisYaml(packageAbsolutePathOn
 	return kurtosisYaml, nil
 }
 
-func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsidePackageUrl string) (string, *startosis_errors.InterpretationError) {
-	parsedURL, interpretationError := parseGitURL(fileInsidePackageUrl)
+func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(absoluteFileLocator string) (string, *startosis_errors.InterpretationError) {
+	parsedURL, interpretationError := parseGitURL(absoluteFileLocator)
 	if interpretationError != nil {
 		return "", interpretationError
 	}
 	if parsedURL.relativeFilePath == "" {
-		return "", startosis_errors.NewInterpretationError("The path '%v' needs to point to a specific file but it didn't. Users can only read or import specific files and not entire packages.", fileInsidePackageUrl)
+		return "", startosis_errors.NewInterpretationError("The path '%v' needs to point to a specific file but it didn't. Users can only read or import specific files and not entire packages.", absoluteFileLocator)
 	}
 	pathToFileOnDisk := path.Join(provider.packagesDir, parsedURL.relativeFilePath)
 	packagePath := path.Join(provider.packagesDir, parsedURL.relativeRepoPath)
@@ -116,11 +119,11 @@ func (provider *GitPackageContentProvider) GetOnDiskAbsoluteFilePath(fileInsideP
 	// check whether kurtosis yaml exists in the path
 	maybeKurtosisYamlPath, err := getKurtosisYamlPathForFileUrl(pathToFileOnDisk, provider.packagesDir)
 	if err != nil {
-		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while verifying whether '%v' belongs to a Kurtosis package.", fileInsidePackageUrl)
+		return "", startosis_errors.WrapWithInterpretationError(err, "Error occurred while verifying whether '%v' belongs to a Kurtosis package.", absoluteFileLocator)
 	}
 
 	if maybeKurtosisYamlPath == filePathToKurtosisYamlNotFound {
-		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, fileInsidePackageUrl, howImportWorksLink)
+		return "", startosis_errors.NewInterpretationError("%v is not found in the path of '%v'; files can only be accessed from Kurtosis packages. For more information, go to: %v", startosis_constants.KurtosisYamlName, absoluteFileLocator, howImportWorksLink)
 	}
 
 	if _, interpretationError = validateAndGetKurtosisYaml(maybeKurtosisYamlPath, provider.packagesDir); interpretationError != nil {
@@ -207,7 +210,7 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 ) (string, *startosis_errors.InterpretationError) {
 	var absoluteLocator string
 
-	if isLocalAbsoluteLocator(maybeRelativeLocator, parentModuleId) {
+	if isSamePackageLocalAbsoluteLocator(maybeRelativeLocator, parentModuleId) {
 		return "", startosis_errors.NewInterpretationError("The locator '%s' set in attribute is not a 'local relative locator'. Local absolute locators are not allowed you should modified it to be a valid 'local relative locator'", maybeRelativeLocator)
 	}
 
@@ -229,43 +232,51 @@ func (provider *GitPackageContentProvider) GetAbsoluteLocatorForRelativeLocator(
 	return replacedAbsoluteLocator, nil
 }
 
-func replaceAbsoluteLocator(absoluteLocator string, packageReplaceOptions map[string]string) string {
-	if absoluteLocator == "" {
-		return absoluteLocator
+func (provider *GitPackageContentProvider) CloneReplacedPackagesIfNeeded(currentPackageReplaceOptions map[string]string) *startosis_errors.InterpretationError {
+
+	existingPackageReplaceOptions, err := provider.packageReplaceOptionsRepository.Get()
+	if err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred getting the existing package replace options from the repository")
 	}
 
-	found, packageToBeReplaced, replaceWithPackage := findPackageReplace(absoluteLocator, packageReplaceOptions)
-	if found {
-		replacedAbsoluteLocator := strings.Replace(absoluteLocator, packageToBeReplaced, replaceWithPackage, onlyOneReplace)
-		logrus.Debugf("absoluteLocator '%s' replaced with '%s'", absoluteLocator, replacedAbsoluteLocator)
-		return replacedAbsoluteLocator
-	}
+	for packageId, existingReplace := range existingPackageReplaceOptions {
 
-	return absoluteLocator
-}
+		shouldClonePackage := false
 
-func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string]string) (bool, string, string) {
-	pathToAnalyze := absoluteLocator
-	for {
-		numberSlashes := strings.Count(pathToAnalyze, urlPathSeparator)
+		isExistingLocalReplace := isLocalLocator(existingReplace)
+		logrus.Debugf("existingReplace '%v' isExistingLocalReplace? '%v', ", existingReplace, isExistingLocalReplace)
 
-		// check for the minimal path e.g.: github.com/org/package
-		if numberSlashes < minimumSubPathsForValidGitURL {
-			break
-		}
-		lastIndex := strings.LastIndex(pathToAnalyze, urlPathSeparator)
-
-		packageToBeReplaced := pathToAnalyze[:lastIndex]
-		replaceWithPackage, ok := packageReplaceOptions[packageToBeReplaced]
-		if ok {
-			logrus.Debugf("dependency replace found for '%s', package '%s' will be replaced with '%s'", absoluteLocator, packageToBeReplaced, replaceWithPackage)
-			return true, packageToBeReplaced, replaceWithPackage
+		currentReplace, isCurrentReplace := currentPackageReplaceOptions[packageId]
+		if isCurrentReplace {
+			// the package will be cloned if the current replace is remote and the existing is local
+			isCurrentRemoteReplace := !isLocalLocator(currentReplace)
+			logrus.Debugf("currentReplace '%v' isCurrentRemoteReplace? '%v', ", isCurrentRemoteReplace, currentReplace)
+			if isCurrentRemoteReplace && isExistingLocalReplace {
+				shouldClonePackage = true
+			}
 		}
 
-		pathToAnalyze = packageToBeReplaced
+		// there is no current replace for this dependency but the version in the cache is local
+		if !isCurrentReplace && isExistingLocalReplace {
+			shouldClonePackage = true
+		}
+
+		if shouldClonePackage {
+			if _, err := provider.ClonePackage(packageId); err != nil {
+				return startosis_errors.WrapWithInterpretationError(err, "An error occurred cloning package '%v'", packageId)
+			}
+		}
 	}
 
-	return false, "", ""
+	// upgrade the existing-replace list with the new values
+	for packageId, currentReplace := range currentPackageReplaceOptions {
+		existingPackageReplaceOptions[packageId] = currentReplace
+	}
+
+	if err = provider.packageReplaceOptionsRepository.Save(existingPackageReplaceOptions); err != nil {
+		return startosis_errors.WrapWithInterpretationError(err, "An error occurred saving the existing package replace options from the repository")
+	}
+	return nil
 }
 
 // atomicClone This first clones to a temporary directory and then moves it
@@ -494,8 +505,4 @@ func getKurtosisYamlPathForFileUrlInternal(absPathToFile string, packagesDir str
 		}
 	}
 	return filePathToKurtosisYamlNotFound, nil
-}
-
-func isLocalAbsoluteLocator(locator string, parentPackageId string) bool {
-	return strings.HasPrefix(locator, parentPackageId)
 }
