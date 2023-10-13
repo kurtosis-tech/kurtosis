@@ -7,9 +7,6 @@ on:
       - reopened
       - edited
       - synchronize
-  push:
-    branches:
-      - gh-readonly-queue/main/**
   merge_group:
 
 # cancel redundant builds
