@@ -3,6 +3,7 @@ name: Do Not Merge
 on:
   pull_request:
     types: [synchronize, opened, reopened, labeled, unlabeled]
+  merge_group:
 
 jobs:
   do-not-merge:
