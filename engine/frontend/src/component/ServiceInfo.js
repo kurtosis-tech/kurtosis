@@ -24,7 +24,6 @@ const renderServices = (services, handleClick) => {
 
 const ServiceInfo = () => {
     const navigate = useNavigate();
-    const [viewLog, setViewLog] = useState(false)
     const [logs, setLogs] = useState([])
     const {state} = useLocation();
     const {services, selected} = state;

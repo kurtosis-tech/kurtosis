@@ -34,7 +34,7 @@ import {
     GetStarlarkRunResponse,
 } from "../../kurtosis_core_rpc_api_bindings/api_container_service_pb";
 import * as path from "path";
-import {parseKurtosisYaml} from "./kurtosis_yaml";
+import {parseKurtosisYaml, KurtosisYaml} from "./kurtosis_yaml";
 import {Readable} from "stream";
 import {readStreamContentUntilClosed, StarlarkRunResult} from "./starlark_run_blocking";
 import {ServiceIdentifiers} from "../services/service_identifiers";
@@ -43,6 +43,10 @@ import {StarlarkRunConfig} from "./starlark_run_config"
 export type EnclaveUUID = string;
 
 export const KURTOSIS_YAML_FILENAME = "kurtosis.yml";
+
+const OS_PATH_SEPARATOR_STRING = "/"
+
+const DOT_RELATIVE_PATH_INDICATOR_STRING = "."
 
 
 // Docs available at https://docs.kurtosis.com/sdk/#enclavecontext
@@ -142,10 +146,37 @@ export class EnclaveContext {
         packageRootPath: string,
         runConfig: StarlarkRunConfig,
     ): Promise<Result<Readable, Error>> {
-        const args = await this.assembleRunStarlarkPackageArg(packageRootPath, runConfig.relativePathToMainFile, runConfig.mainFunctionName, runConfig.serializedParams, runConfig.dryRun, runConfig.cloudInstanceId, runConfig.cloudUserId)
+        const kurtosisYmlResult = await this.getKurtosisYaml(packageRootPath)
+        if (kurtosisYmlResult.isErr()) {
+            return err(new Error(`Unexpected error while getting the Kurtosis yaml file from path '${packageRootPath}'`))
+        }
+
+        const kurtosisYaml: KurtosisYaml = kurtosisYmlResult.value
+        const packageId: string = kurtosisYaml.name
+        const packageReplaceOptions: Map<string, string> = kurtosisYaml.packageReplaceOptions
+
+        const args = await this.assembleRunStarlarkPackageArg(kurtosisYaml, runConfig.relativePathToMainFile, runConfig.mainFunctionName, runConfig.serializedParams, runConfig.dryRun, runConfig.cloudInstanceId, runConfig.cloudUserId)
         if (args.isErr()) {
             return err(new Error(`Unexpected error while assembling arguments to pass to the Starlark executor \n${args.error}`))
         }
+
+        const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(packageRootPath)
+        if (archiverResponse.isErr()){
+            return err(new Error(`Unexpected error while creating the package's tgs file from '${packageRootPath}'\n${archiverResponse.error}`))
+        }
+
+        const uploadStarlarkPackageResponse = await this.backend.uploadStarlarkPackage(packageId, archiverResponse.value)
+        if (uploadStarlarkPackageResponse.isErr()){
+            return err(new Error(`Unexpected error while uploading Starlark package '${packageId}'\n${uploadStarlarkPackageResponse.error}`))
+        }
+
+        if (packageReplaceOptions !== undefined && packageReplaceOptions.size > 0) {
+            const uploadLocalStarlarkPackageDependenciesResponse = await this.uploadLocalStarlarkPackageDependencies(packageRootPath, packageReplaceOptions)
+            if (uploadLocalStarlarkPackageDependenciesResponse.isErr()) {
+                return err(new Error(`Unexpected error while uploading local Starlark package dependencies '${packageReplaceOptions}' from '${packageRootPath}' \n${uploadLocalStarlarkPackageDependenciesResponse.error}`))
+            }
+        }
+
         const packageRunResult : Result<Readable, Error> = await this.backend.runStarlarkPackage(args.value)
         if (packageRunResult.isErr()) {
             return err(new Error(`Unexpected error happened executing Starlark package \n${packageRunResult.error}`))
@@ -381,7 +412,7 @@ export class EnclaveContext {
     }
 
     private async assembleRunStarlarkPackageArg(
-        packageRootPath: string,
+        kurtosisYaml: KurtosisYaml,
         relativePathToMainFile: string,
         mainFunctionName: string,
         serializedParams: string,
@@ -389,21 +420,8 @@ export class EnclaveContext {
         cloudInstanceId: string,
         cloudUserId: string,
         ): Promise<Result<RunStarlarkPackageArgs, Error>> {
-        const kurtosisYamlFilepath = path.join(packageRootPath, KURTOSIS_YAML_FILENAME)
-
-        const resultParseKurtosisYaml = await parseKurtosisYaml(kurtosisYamlFilepath)
-        if (resultParseKurtosisYaml.isErr()) {
-            return err(resultParseKurtosisYaml.error)
-        }
-        const kurtosisYaml = resultParseKurtosisYaml.value
-
-        const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(packageRootPath)
-        if (archiverResponse.isErr()){
-            return err(archiverResponse.error)
-        }
 
         const args = new RunStarlarkPackageArgs;
-        args.setLocal(archiverResponse.value)
         args.setPackageId(kurtosisYaml.name)
         args.setSerializedParams(serializedParams)
         args.setDryRun(dryRun)
@@ -412,5 +430,48 @@ export class EnclaveContext {
         args.setCloudInstanceId(cloudInstanceId)
         args.setCloudUserId(cloudUserId)
         return ok(args)
+    }
+
+    private async getKurtosisYaml(packageRootPath: string): Promise<Result<KurtosisYaml, Error>> {
+        const kurtosisYamlFilepath = path.join(packageRootPath, KURTOSIS_YAML_FILENAME)
+
+        const resultParseKurtosisYaml = await parseKurtosisYaml(kurtosisYamlFilepath)
+        if (resultParseKurtosisYaml.isErr()) {
+            return err(resultParseKurtosisYaml.error)
+        }
+        const kurtosisYaml = resultParseKurtosisYaml.value
+
+        return ok(kurtosisYaml)
+    }
+
+
+    private async uploadLocalStarlarkPackageDependencies(
+        packageRootPath: string,
+        packageReplaceOptions: Map<string, string>,
+    ): Promise<Result<null, Error>> {
+        for (const [dependencyPackageId, replaceOption] of packageReplaceOptions.entries()) {
+            if (this.isLocalDependencyReplace(replaceOption)) {
+                const localPackagePath: string = path.join(packageRootPath, replaceOption)
+
+                const archiverResponse = await this.genericTgzArchiver.createTgzByteArray(localPackagePath)
+                if (archiverResponse.isErr()){
+                    return err(archiverResponse.error)
+                }
+
+                const uploadStarlarkPackageResponse = await this.backend.uploadStarlarkPackage(dependencyPackageId, archiverResponse.value)
+                if (uploadStarlarkPackageResponse.isErr()){
+                    return err(uploadStarlarkPackageResponse.error)
+                }
+                return ok(null)
+            }
+        }
+        return ok(null)
+    }
+
+    private isLocalDependencyReplace(replace: string): boolean {
+        if (replace.startsWith(OS_PATH_SEPARATOR_STRING) || replace.startsWith(DOT_RELATIVE_PATH_INDICATOR_STRING)) {
+            return true
+        }
+        return false
     }
 }

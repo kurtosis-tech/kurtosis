@@ -1,6 +1,8 @@
 name: Deploy documentation
 
-on: push
+on:
+  push:
+  merge_group:
 
 jobs:
   publish:
