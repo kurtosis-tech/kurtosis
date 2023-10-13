@@ -1732,7 +1732,7 @@ func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.
 func (manager *KubernetesManager) HasComputeNodes(ctx context.Context) (bool, error) {
 	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 	if err != nil {
-		return false, stacktrace.Propagate(err, "an error occurred while checking if the Kubernetes cluster has any nodes")
+		return false, stacktrace.Propagate(err, "An error occurred while checking if the Kubernetes cluster has any nodes")
 	}
 	return len(nodes.Items) != 0, nil
 }
