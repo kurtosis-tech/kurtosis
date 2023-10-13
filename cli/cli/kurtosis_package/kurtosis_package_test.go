@@ -29,8 +29,13 @@ func TestInitializeKurtosisPackage_Success(t *testing.T) {
 	fileBytes, err := os.ReadFile(expectedKurtosisYamlFilepath)
 	require.NoError(t, err)
 
-	kurtosisYamlObj := &enclaves.KurtosisYaml{}
-	yaml.UnmarshalStrict(fileBytes, kurtosisYamlObj)
+	kurtosisYamlObj := &enclaves.KurtosisYaml{
+		PackageName:           "",
+		PackageDescription:    "",
+		PackageReplaceOptions: map[string]string{},
+	}
+	err = yaml.UnmarshalStrict(fileBytes, kurtosisYamlObj)
+	require.NoError(t, err)
 	require.Equal(t, packageName, kurtosisYamlObj.PackageName)
 
 	// check main.star file creation
@@ -54,8 +59,13 @@ func TestInitializeKurtosisPackage_IsNotExecutablePackageSuccess(t *testing.T) {
 	fileBytes, err := os.ReadFile(expectedKurtosisYamlFilepath)
 	require.NoError(t, err)
 
-	kurtosisYamlObj := &enclaves.KurtosisYaml{}
-	yaml.UnmarshalStrict(fileBytes, kurtosisYamlObj)
+	kurtosisYamlObj := &enclaves.KurtosisYaml{
+		PackageName:           "",
+		PackageDescription:    "",
+		PackageReplaceOptions: map[string]string{},
+	}
+	err = yaml.UnmarshalStrict(fileBytes, kurtosisYamlObj)
+	require.NoError(t, err)
 	require.Equal(t, packageName, kurtosisYamlObj.PackageName)
 
 	// check main.star file was not created
@@ -63,6 +73,7 @@ func TestInitializeKurtosisPackage_IsNotExecutablePackageSuccess(t *testing.T) {
 	fileBytes, err = os.ReadFile(expectedMainStarFilepath)
 	require.Error(t, err)
 	require.True(t, os.IsNotExist(err))
+	require.Nil(t, fileBytes)
 }
 
 func TestInitializeKurtosisPackage_FailsIfKurtosisYmlAlreadyExist(t *testing.T) {
@@ -84,9 +95,14 @@ func TestInitializeKurtosisPackage_FailsIfKurtosisYmlAlreadyExist(t *testing.T) 
 	expectedErrorMsgPortion := "'kurtosis.yml' already exist on this path"
 	require.Contains(t, stacktrace.RootCause(err).Error(), expectedErrorMsgPortion)
 
-	kurtosisYamlObj := &enclaves.KurtosisYaml{}
+	kurtosisYamlObj := &enclaves.KurtosisYaml{
+		PackageName:           "",
+		PackageDescription:    "",
+		PackageReplaceOptions: map[string]string{},
+	}
 
-	yaml.UnmarshalStrict(fileBytes, kurtosisYamlObj)
+	err = yaml.UnmarshalStrict(fileBytes, kurtosisYamlObj)
+	require.NoError(t, err)
 
 	require.Equal(t, packageName, kurtosisYamlObj.PackageName)
 }
@@ -114,9 +130,14 @@ func TestInitializeKurtosisPackage_FailsIfMainStarFileAlreadyExist(t *testing.T)
 	fileBytes, err := os.ReadFile(expectedKurtosisYamlFilepath)
 	require.NoError(t, err)
 
-	kurtosisYamlObj := &enclaves.KurtosisYaml{}
+	kurtosisYamlObj := &enclaves.KurtosisYaml{
+		PackageName:           "",
+		PackageDescription:    "",
+		PackageReplaceOptions: map[string]string{},
+	}
 
-	yaml.UnmarshalStrict(fileBytes, kurtosisYamlObj)
+	err = yaml.UnmarshalStrict(fileBytes, kurtosisYamlObj)
+	require.NoError(t, err)
 
 	require.Equal(t, secondPackageName, kurtosisYamlObj.PackageName)
 }
