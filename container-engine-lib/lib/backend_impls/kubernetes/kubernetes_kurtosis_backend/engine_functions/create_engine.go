@@ -42,6 +42,14 @@ func CreateEngine(
 	*engine.Engine,
 	error,
 ) {
+	hasNodes, err := kubernetesManager.HasComputeNodes(ctx)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "an error occurred while verifying whether the Kubernetes cluster has any compute nodes")
+	}
+	if !hasNodes {
+		return nil, stacktrace.NewError("can't start engine on the Kubernetes cluster as it has no compute nodes")
+	}
+
 	engineGuidStr, err := uuid_generator.GenerateUUIDString()
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred generating a UUID string for the engine")
