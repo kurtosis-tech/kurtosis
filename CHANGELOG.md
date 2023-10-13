@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.84.6](https://github.com/kurtosis-tech/kurtosis/compare/0.84.5...0.84.6) (2023-10-13)
+
+
+### Features
+
+* Unused images are cleaned even without -a flag ([#1551](https://github.com/kurtosis-tech/kurtosis/issues/1551)) ([e1317aa](https://github.com/kurtosis-tech/kurtosis/commit/e1317aaa0853943d73234dde344fa5102ab41bd8)), closes [#1523](https://github.com/kurtosis-tech/kurtosis/issues/1523)
+
 ## [0.84.5](https://github.com/kurtosis-tech/kurtosis/compare/0.84.4...0.84.5) (2023-10-12)
 
 
