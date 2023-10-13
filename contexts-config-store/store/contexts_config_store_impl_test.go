@@ -68,7 +68,7 @@ func TestGetCurrentContext_failureInconsistentContextConfig(t *testing.T) {
 	require.Nil(t, result)
 }
 
-func TestSwitchContext(t *testing.T) {
+func TestSetContext(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
 	contextsConfig := api.NewKurtosisContextsConfig(contextUuid, localContext, otherLocalContext)
@@ -79,11 +79,11 @@ func TestSwitchContext(t *testing.T) {
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
-	err := testContextConfigStore.SwitchContext(otherContextUuid)
+	err := testContextConfigStore.SetContext(otherContextUuid)
 	require.NoError(t, err)
 }
 
-func TestSwitchContext_NonExistingContextFailure(t *testing.T) {
+func TestSetContext_NonExistingContextFailure(t *testing.T) {
 	// Setup storage mock
 	storage := persistence.NewMockConfigPersistence(t)
 	contextsConfig := api.NewKurtosisContextsConfig(contextUuid, localContext)
@@ -91,7 +91,7 @@ func TestSwitchContext_NonExistingContextFailure(t *testing.T) {
 
 	// Run test
 	testContextConfigStore := NewContextConfigStore(storage)
-	err := testContextConfigStore.SwitchContext(otherContextUuid)
+	err := testContextConfigStore.SetContext(otherContextUuid)
 	require.Error(t, err)
 	expectedErr := fmt.Sprintf("Context with UUID '%s' does not exist in store. Known contexts are: '%s'",
 		otherContextUuid.GetValue(), contextUuid.GetValue())
