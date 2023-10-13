@@ -122,6 +122,22 @@ var (
 		},
 		ResourceVersion: "",
 	}
+	globalListOptions = metav1.ListOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        "",
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
+		SendInitialEvents:    nil,
+	}
 )
 
 type KubernetesManager struct {
@@ -1730,7 +1746,7 @@ func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.
 }
 
 func (manager *KubernetesManager) HasComputeNodes(ctx context.Context) (bool, error) {
-	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
+	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, globalListOptions)
 	if err != nil {
 		return false, stacktrace.Propagate(err, "An error occurred while checking if the Kubernetes cluster has any nodes")
 	}
