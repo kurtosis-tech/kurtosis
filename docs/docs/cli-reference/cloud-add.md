@@ -11,5 +11,5 @@ kurtosis cloud add
 ```
 
 :::note
-Only certain users with elevated permissions are allowed to create more than 1 Kurtosis Cloud instance.
+Currently, Kurtosis limits users to 1 remote instance per valid API key. 
 :::
