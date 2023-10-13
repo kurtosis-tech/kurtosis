@@ -10,6 +10,7 @@ on:
   push:
     branches:
       - gh-readonly-queue/main/**
+  merge_group:
 
 # cancel redundant builds
 concurrency:

@@ -18,6 +18,7 @@ on:
     branches:
       - gh-readonly-queue/main/**
   pull_request:
+  merge_group:
 
 env:
   GOLINT_VERSION: v1.53.3
