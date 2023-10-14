@@ -87,7 +87,8 @@ message GetOrCreatePaymentConfigResponse {
 }
 
 message RefreshDefaultPaymentMethodArgs {
-  string payment_method_id = 1;
+  string access_token = 1;
+  string payment_method_id = 2;
 }
 
 message AwsKey {
