@@ -13,6 +13,7 @@ service KurtosisCloudBackendServer {
   rpc GetOrCreateApiKey(GetOrCreateApiKeyRequest) returns (GetOrCreateApiKeyResponse) {};
   rpc GetOrCreateInstance(GetOrCreateInstanceRequest) returns (GetOrCreateInstanceResponse) {};
   rpc GetOrCreatePaymentConfig(GetOrCreatePaymentConfigArgs) returns (GetOrCreatePaymentConfigResponse) {};
+  rpc RefreshDefaultPaymentMethod (RefreshDefaultPaymentMethodArgs) returns (google.protobuf.Empty) {};
 }
 
 message GetOrCreateApiKeyRequest {
@@ -83,6 +84,10 @@ message GetOrCreatePaymentConfigResponse {
   string user_id = 1;
   string client_secret = 2;
   PaymentMethod payment_method = 3;
+}
+
+message RefreshDefaultPaymentMethodArgs {
+  string payment_method_id = 1;
 }
 
 message AwsKey {
