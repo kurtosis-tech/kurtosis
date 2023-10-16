@@ -92,9 +92,10 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
         }
 
         if (result.case === PROGRESS_INFO && (result.value.currentStepInfo[0] === EXECUTION_IN_PROGRESS || result.value.currentStepInfo[0] === STARTING_EXECUTION)) {
-            const text = `${result.value.currentStepInfo[0]}: ${result.value.currentStepNumber} / ${result.value.totalSteps}`
-            const progress = (result.value.currentStepNumber / (result.value.totalSteps + 1)) * 100
-            console.log(`${text}, progress = ${progress}%`)
+            const totalSteps = result.value.totalSteps
+            const completedSteps = Math.max(result.value.currentStepNumber - 1, 0)
+            const text = `Completed ${completedSteps} of ${result.value.totalSteps}`
+            const progress = (completedSteps / totalSteps) * 100
             if (isNaN(progress) || progress < 0.0 || progress > 100.0) {
                 setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_PROCESSING_INDETERMINATE, null))
             } else {
