@@ -5,6 +5,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/api/golang/core/kurtosis_core_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/kurtosis_engine_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/api/golang/engine/lib/kurtosis_context"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/container_status_stringifier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/output_printers"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/service_status_stringifier"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/helpers/user_services"
@@ -12,15 +13,11 @@ import (
 )
 
 const (
-	userServiceUUIDColHeader      = "UUID"
-	userServiceNameColHeader      = "Name"
-	userServicePortsColHeader     = "Ports"
-	userServiceStatusColHeader    = "Status"
-	defaultEmptyIPAddrForServices = ""
-	emptyApplicationProtocol      = ""
-	missingPortPlaceholder        = "<none>"
-	linkDelimeter                 = "://"
-	defaultEmptyIPAddrForAPIC     = ""
+	userServiceUUIDColHeader            = "UUID"
+	userServiceNameColHeader            = "Name"
+	userServicePortsColHeader           = "Ports"
+	userServiceStatusColHeader          = "Service Status"
+	userServiceContainerStatusColHeader = "Container Status"
 )
 
 func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext, enclaveInfo *kurtosis_engine_rpc_api_bindings.EnclaveInfo, showFullUuids bool, isAPIContainerRunning bool) error {
@@ -39,6 +36,7 @@ func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext,
 		userServiceNameColHeader,
 		userServicePortsColHeader,
 		userServiceStatusColHeader,
+		userServiceContainerStatusColHeader,
 	)
 	sortedUserServices := user_services.GetSortedUserServiceSliceFromUserServiceMap(userServices)
 	for _, userService := range sortedUserServices {
@@ -52,6 +50,9 @@ func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext,
 		serviceStatus := userService.GetServiceStatus()
 		serviceStatusStr := service_status_stringifier.ServiceStatusStringifier(serviceStatus)
 
+		containerStatus := userService.GetContainer().GetStatus()
+		containerStatusStr := container_status_stringifier.ContainerStatusStringifier(containerStatus)
+
 		portBindingLines, err := user_services.GetUserServicePortBindingStrings(userService)
 		if err != nil {
 			return stacktrace.Propagate(err, "An error occurred getting the port binding strings")
@@ -59,7 +60,7 @@ func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext,
 		firstPortBindingLine := portBindingLines[0]
 		additionalPortBindingLines := portBindingLines[1:]
 
-		if err := tablePrinter.AddRow(uuidToPrint, serviceIdStr, firstPortBindingLine, serviceStatusStr); err != nil {
+		if err := tablePrinter.AddRow(uuidToPrint, serviceIdStr, firstPortBindingLine, serviceStatusStr, containerStatusStr); err != nil {
 			return stacktrace.Propagate(
 				err,
 				"An error occurred adding row for user service with UUID '%v' to the table printer",
@@ -68,7 +69,7 @@ func printUserServices(ctx context.Context, _ *kurtosis_context.KurtosisContext,
 		}
 
 		for _, additionalPortBindingLine := range additionalPortBindingLines {
-			if err := tablePrinter.AddRow("", "", additionalPortBindingLine, ""); err != nil {
+			if err := tablePrinter.AddRow("", "", additionalPortBindingLine, "", ""); err != nil {
 				return stacktrace.Propagate(
 					err,
 					"An error occurred adding additional port binding row '%v' for user service with UUID '%v' to the table printer",
