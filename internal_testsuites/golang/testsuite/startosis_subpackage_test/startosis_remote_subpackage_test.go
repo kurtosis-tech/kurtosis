@@ -36,9 +36,10 @@ func (suite *StartosisSubpackageTestSuite) TestStarlarkRemotePackage() {
 func (suite *StartosisSubpackageTestSuite) TestStartosisSiblingRemotePackages_RelativeImports() {
 	ctx := context.Background()
 	isRemotePackage := true
-	runResult, _ := suite.RunPackage(ctx, packageWithSiblingImport, isRemotePackage)
+	runResult, err := suite.RunPackage(ctx, packageWithSiblingImport, isRemotePackage)
 
 	t := suite.T()
+	require.NoError(t, err)
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)

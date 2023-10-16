@@ -60,7 +60,7 @@ func (store *contextConfigStoreImpl) GetCurrentContext() (*generated.KurtosisCon
 		strings.Join(contextUuidsInStore, contextUuidsSeparator))
 }
 
-func (store *contextConfigStoreImpl) SwitchContext(contextUuid *generated.ContextUuid) error {
+func (store *contextConfigStoreImpl) SetContext(contextUuid *generated.ContextUuid) error {
 	store.Lock()
 	defer store.Unlock()
 

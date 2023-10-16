@@ -33,6 +33,10 @@ I. Install & Start Docker
    docker image ls
    ```
 
+:::note
+For some users, Kurtosis fails to run if Docker was not installed in `sudo` mode. We have a workaround detailed in [#1140](https://github.com/kurtosis-tech/kurtosis/issues/1140) while we work on a more graceful solution, outlined in [#1469](https://github.com/kurtosis-tech/kurtosis/issues/1469).
+:::
+
 II. Install the CLI
 -------------------------
 
