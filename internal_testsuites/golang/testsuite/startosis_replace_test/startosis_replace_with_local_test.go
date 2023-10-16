@@ -12,9 +12,10 @@ const (
 
 func (suite *StartosisReplaceTestSuite) TestStartosisReplaceWithLocal() {
 	ctx := context.Background()
-	runResult, _ := suite.RunPackageWithParams(ctx, packageWithLocalReplaceRelPath, packageWithLocalReplaceParams)
+	runResult, err := suite.RunPackageWithParams(ctx, packageWithLocalReplaceRelPath, packageWithLocalReplaceParams)
 
 	t := suite.T()
+	require.NoError(t, err)
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)

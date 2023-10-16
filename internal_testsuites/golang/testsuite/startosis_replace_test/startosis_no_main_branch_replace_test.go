@@ -12,9 +12,10 @@ const (
 
 func (suite *StartosisReplaceTestSuite) TestStartosisNoMainBranchReplace() {
 	ctx := context.Background()
-	runResult, _ := suite.RunPackageWithParams(ctx, packageWithNoMainBranchReplaceRelPath, packageWithNoMainBranchReplaceParams)
+	runResult, err := suite.RunPackageWithParams(ctx, packageWithNoMainBranchReplaceRelPath, packageWithNoMainBranchReplaceParams)
 
 	t := suite.T()
+	require.NoError(t, err)
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)

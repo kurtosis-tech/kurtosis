@@ -11,9 +11,10 @@ const (
 
 func (suite *StartosisPackageTestSuite) TestStartosisPackage_RelativeImports() {
 	ctx := context.Background()
-	runResult, _ := suite.RunPackage(ctx, packageWithRelativeImport)
+	runResult, err := suite.RunPackage(ctx, packageWithRelativeImport)
 
 	t := suite.T()
+	require.NoError(t, err)
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
