@@ -15,6 +15,8 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_RelativeImports() {
 
 	t := suite.T()
 	require.NoError(t, err)
+	require.NotNil(t, runResult)
+
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
