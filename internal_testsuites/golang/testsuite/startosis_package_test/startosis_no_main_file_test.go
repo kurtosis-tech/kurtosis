@@ -15,7 +15,8 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_NoMainFile() {
 
 	t := suite.T()
 
-	require.NoError(t, err)
+	require.Error(t, err)
+	require.NotNil(t, runResult)
 
 	expectedErrorContents := `An error occurred while verifying that 'main.star' exists in the package 'github.com/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-main-star' at '/kurtosis-data/startosis-packages/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-main-star/main.star'
 	Caused by: stat /kurtosis-data/startosis-packages/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-main-star/main.star: no such file or directory`

@@ -62,7 +62,10 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_ValidPackageWithInp
 	runResult, err := suite.RunPackageWithParams(ctx, validPackageWithInputRelPath, params)
 
 	t := suite.T()
-	require.NoError(t, err)
+
+	require.Error(t, err)
+	require.NotNil(t, runResult)
+
 	require.NotNil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), "Evaluation error: key \"greetings\" not in dict")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")

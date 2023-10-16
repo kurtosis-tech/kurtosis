@@ -15,7 +15,8 @@ func (suite *StartosisPackageTestSuite) TestStartosisPackage_NoMainInMainStar() 
 
 	t := suite.T()
 
-	require.NoError(t, err)
+	require.Error(t, err)
+	require.NotNil(t, runResult)
 
 	expectedInterpretationErr := "No 'run' function found in the main file of package 'github.com/kurtosis-tech/kurtosis/internal_testsuites/starlark/no-run-in-main-star'; a 'run' entrypoint function with the signature `run(plan, args)` or `run()` is required in the main file of the Kurtosis package"
 	require.NotNil(t, runResult.InterpretationError)
