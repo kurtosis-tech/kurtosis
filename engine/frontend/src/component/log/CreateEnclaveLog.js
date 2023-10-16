@@ -93,8 +93,8 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
 
         if (result.case === PROGRESS_INFO && (result.value.currentStepInfo[0] === EXECUTION_IN_PROGRESS || result.value.currentStepInfo[0] === STARTING_EXECUTION)) {
             const text = `${result.value.currentStepInfo[0]}: ${result.value.currentStepNumber} / ${result.value.totalSteps}`
-            // console.log(text)
-            let progress = ((result.value.currentStepNumber + 1) / (result.value.totalSteps + 1)) * 100
+            const progress = (result.value.currentStepNumber / (result.value.totalSteps + 1)) * 100
+            console.log(`${text}, progress = ${progress}%`)
             if (isNaN(progress) || progress < 0.0 || progress > 100.0) {
                 setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_PROCESSING_INDETERMINATE, null))
             } else {
@@ -104,7 +104,6 @@ export const CreateEnclaveLog = ({packageId, enclave, args, appData}) => {
         } else if (result.case === PROGRESS_INFO && result.value.currentStepInfo.length > 0) {
             setLogsCurrentExecutionStatus(logsStatus(SCRIPT_RUN_STATUS_PROCESSING_INDETERMINATE))
         }
-
 
         if (result.case === PROGRESS_INFO && result.value.currentStepInfo.length > 0) {
             if (result.value.currentStepInfo[result.value.currentStepNumber] !== undefined) {
