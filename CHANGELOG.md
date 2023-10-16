@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.84.7](https://github.com/kurtosis-tech/kurtosis/compare/0.84.6...0.84.7) (2023-10-16)
+
+
+### Features
+
+* Add create enclave utils to SDK ([#1550](https://github.com/kurtosis-tech/kurtosis/issues/1550)) ([eb952bb](https://github.com/kurtosis-tech/kurtosis/commit/eb952bb9d00ff30adeb3e78a71f39d6f546dd180))
+* provide granular progress of starlark package run ([#1548](https://github.com/kurtosis-tech/kurtosis/issues/1548)) ([8b20031](https://github.com/kurtosis-tech/kurtosis/commit/8b2003109f426ab3ba6498b63eb37dad4c697e40))
+* rename kurtosis context "switch" to "set" ([#1537](https://github.com/kurtosis-tech/kurtosis/issues/1537)) ([ccff275](https://github.com/kurtosis-tech/kurtosis/commit/ccff2756b53e84516376c41ff1a36958b072acf3))
+
+
+### Bug Fixes
+
+* propagate unexpected test errors via the test framework ([#1559](https://github.com/kurtosis-tech/kurtosis/issues/1559)) ([c463ae2](https://github.com/kurtosis-tech/kurtosis/commit/c463ae278b0d8846edcbc248784f56fdb74ad5be))
+* show container status instead of service status in enclave inspect ([#1560](https://github.com/kurtosis-tech/kurtosis/issues/1560)) ([3e1208b](https://github.com/kurtosis-tech/kurtosis/commit/3e1208bc9340302db49a041fc93b1e2d565e6abc)), closes [#1351](https://github.com/kurtosis-tech/kurtosis/issues/1351)
+
 ## [0.84.6](https://github.com/kurtosis-tech/kurtosis/compare/0.84.5...0.84.6) (2023-10-13)
 
 
