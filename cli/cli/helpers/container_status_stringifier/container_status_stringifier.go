@@ -13,9 +13,9 @@ var (
 func ContainerStatusStringifier(containerStatus kurtosis_core_rpc_api_bindings.Container_Status) string {
 	containerStatusStr := kurtosis_core_rpc_api_bindings.Container_Status_name[int32(containerStatus)]
 	switch containerStatus {
-	case kurtosis_core_rpc_api_bindings.Container_RUNNING:
-		return colorizeStopped(containerStatusStr)
 	case kurtosis_core_rpc_api_bindings.Container_STOPPED:
+		return colorizeStopped(containerStatusStr)
+	case kurtosis_core_rpc_api_bindings.Container_RUNNING:
 		return colorizeRunning(containerStatusStr)
 	default:
 		return containerStatusStr
