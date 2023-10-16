@@ -65,8 +65,8 @@ kurtosis-clusters:
 IV. Configure Kurtosis
 --------------------------------
 
-1. Run `kurtosis cluster set cloud`.  This will start the engine remotely. 
-1. *In another terminal*, run `kurtosis gateway`. This will act as a middle man between your computer's ports and your services deployed on Kubernetes ports and has to stay running as a separate proccess.
+1. Run `kurtosis cluster set cloud`.  This will start the engine remotely. See the CLI reference for more information about `kurtosis cluster` commands [here](../cli-reference/cluster-set.md).
+1. *In another terminal*, run [`kurtosis gateway`](../cli-reference/gateway.md). This will act as a middle man between your computer's ports and your services deployed on Kubernetes ports and has to stay running as a separate proccess.
 
 Done! Now you can run any Kurtosis command or package just like if you were doing it locally.
 

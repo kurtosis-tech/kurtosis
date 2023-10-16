@@ -11,7 +11,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/add"
-	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/context_switch"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context/set"
 	cloudhelper "github.com/kurtosis-tech/kurtosis/cli/cli/helpers/cloud"
 	api "github.com/kurtosis-tech/kurtosis/cloud/api/golang/kurtosis_backend_server_rpc_api_bindings"
 	"github.com/kurtosis-tech/kurtosis/contexts-config-store/store"
@@ -105,7 +105,7 @@ func run(ctx context.Context, _ *flags.ParsedFlags, args *args.ParsedArgs) error
 		return stacktrace.Propagate(err, "Unable to add context to context store")
 	}
 	contextIdentifier := parsedContext.GetName()
-	return context_switch.SwitchContext(ctx, contextIdentifier)
+	return set.SetContext(ctx, contextIdentifier)
 }
 
 func assembleEnvVars(cloudInstanceConfig *api.GetCloudInstanceConfigResponse) *string {
