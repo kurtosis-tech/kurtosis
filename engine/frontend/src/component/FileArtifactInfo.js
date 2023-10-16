@@ -187,6 +187,7 @@ const FileArtifactInfo = ({enclaves}) => {
                                         languages={[detailInfo.extension]}
                                         defaultState={detailInfo.textPreview}
                                         lineNumbers={false}
+                                        autoFormat={true}
                                     />
                                 </Box>
                                 :

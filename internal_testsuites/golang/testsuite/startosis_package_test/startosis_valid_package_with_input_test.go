@@ -59,9 +59,13 @@ Hello World!
 func (suite *StartosisPackageTestSuite) TestStartosisPackage_ValidPackageWithInput_MissingKeyInParams() {
 	ctx := context.Background()
 	params := `{"hello": "world"}` // expecting key 'greetings' here
-	runResult, _ := suite.RunPackageWithParams(ctx, validPackageWithInputRelPath, params)
+	runResult, err := suite.RunPackageWithParams(ctx, validPackageWithInputRelPath, params)
 
 	t := suite.T()
+
+	require.Error(t, err)
+	require.NotNil(t, runResult)
+
 	require.NotNil(t, runResult.InterpretationError, "Unexpected interpretation error")
 	require.Contains(t, runResult.InterpretationError.GetErrorMessage(), "Evaluation error: key \"greetings\" not in dict")
 	require.Empty(t, runResult.ValidationErrors, "Unexpected validation error")
