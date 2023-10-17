@@ -122,6 +122,22 @@ var (
 		},
 		ResourceVersion: "",
 	}
+	globalListOptions = metav1.ListOptions{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "",
+			APIVersion: "",
+		},
+		LabelSelector:        "",
+		FieldSelector:        "",
+		Watch:                false,
+		AllowWatchBookmarks:  false,
+		ResourceVersion:      "",
+		ResourceVersionMatch: "",
+		TimeoutSeconds:       nil,
+		Limit:                0,
+		Continue:             "",
+		SendInitialEvents:    nil,
+	}
 )
 
 type KubernetesManager struct {
@@ -1727,6 +1743,14 @@ func (manager *KubernetesManager) GetExecStream(ctx context.Context, pod *apiv1.
 			Stderr:            os.Stderr,
 			Tty:               true,
 		})
+}
+
+func (manager *KubernetesManager) HasComputeNodes(ctx context.Context) (bool, error) {
+	nodes, err := manager.kubernetesClientSet.CoreV1().Nodes().List(ctx, globalListOptions)
+	if err != nil {
+		return false, stacktrace.Propagate(err, "An error occurred while checking if the Kubernetes cluster has any nodes")
+	}
+	return len(nodes.Items) != 0, nil
 }
 
 // TODO Delete this after 2022-08-01 if we're not using Jobs

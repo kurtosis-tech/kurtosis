@@ -1,6 +1,7 @@
 package git_package_content_provider
 
 import (
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/sirupsen/logrus"
 	"strings"
 )
@@ -49,13 +50,13 @@ func findPackageReplace(absoluteLocator string, packageReplaceOptions map[string
 
 	pathToAnalyze := absoluteLocator
 	for {
-		numberSlashes := strings.Count(pathToAnalyze, urlPathSeparator)
+		numberSlashes := strings.Count(pathToAnalyze, shared_utils.UrlPathSeparator)
 
 		// check for the minimal path e.g.: github.com/org/package
-		if numberSlashes < minimumSubPathsForValidGitURL {
+		if numberSlashes < shared_utils.MinimumSubPathsForValidGitURL {
 			break
 		}
-		lastIndex := strings.LastIndex(pathToAnalyze, urlPathSeparator)
+		lastIndex := strings.LastIndex(pathToAnalyze, shared_utils.UrlPathSeparator)
 
 		packageToBeReplaced := pathToAnalyze[:lastIndex]
 		replaceWithPackage, ok := packageReplaceOptions[packageToBeReplaced]

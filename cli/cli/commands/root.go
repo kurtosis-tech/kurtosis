@@ -27,6 +27,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/kurtosis_context"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lint"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/lsp"
+	_package "github.com/kurtosis-tech/kurtosis/cli/cli/commands/package"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/port"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/portal"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/commands/run"
@@ -130,6 +131,7 @@ func init() {
 	RootCmd.AddCommand(twitter.TwitterCmd.MustGetCobraCommand())
 	RootCmd.AddCommand(version.VersionCmd)
 	RootCmd.AddCommand(web.WebCmd.MustGetCobraCommand())
+	RootCmd.AddCommand(_package.PackageCmd)
 }
 
 // ====================================================================================================
