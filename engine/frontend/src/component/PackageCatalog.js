@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
 import {
+    Box,
     Button,
     Center,
     Grid,
@@ -79,12 +80,11 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                         <Center h="60px" w="100%">
                             <Stack>
                                 <Tooltip label={
-                                    <>
-                                        Last indexed&nbsp;
-                                        <Moment fromNow={true} date={date.toJSON()}/>
+                                    <Box>
+                                        Indexed <Moment fromNow={true} date={date.toJSON()}/>
                                         <br />
                                         (<Moment fromNow={true} format="YYYY-MM-DD HH:mm:ss" date={date.toJSON()}/>)
-                                    </>
+                                    </Box>
                                 }>
                                     <Text
                                         fontSize={"sm"}

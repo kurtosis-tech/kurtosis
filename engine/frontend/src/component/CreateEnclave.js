@@ -43,9 +43,7 @@ const CreateEnclave = ({addEnclave}) => {
                 />
                 <Route path="/load"
                        element={
-                           <LoadSinglePackageManually
-
-                           />
+                           <LoadSinglePackageManually />
                 }
                 />
                 <Route path="/progress" element={

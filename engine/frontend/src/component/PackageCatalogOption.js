@@ -28,7 +28,7 @@ const PackageCatalogOption = ({catalog}) => {
             </GridItem>
             <GridItem area={'load'}>
                 <Center h="100%" w="100%" color='white' bg="#24BA27" p="2" onClick={ () => navigate("/enclave/load")}>
-                    Custom
+                    Custom Package
                 </Center>
             </GridItem>
             <GridItem area={'manual'}>

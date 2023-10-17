@@ -25,25 +25,39 @@ const LoadSinglePackageManually = () => {
     const [isLoading, setIsLoading] = useState(false)
     const navigate = useNavigate();
     const [input, setInput] = useState('')
+    const [validUrl, setValidUrl] = useState(null)
+    const [errorMessage, setErrorMessage] = useState("")
+    const [modal, setModal] = useState(<></>)
     const handleInputChange = (e) => setInput(e.target.value)
 
-    const initialRef = useRef(null)
-    const finalRef = useRef(null)
+    // github.com/adschwartz/text
 
     useEffect(() => {
-        console.log(isOpen)
-    }, [isOpen])
+        if (input === '') {
+            setErrorMessage("")
+        } else if (validUrl !== null && !validUrl) {
+            setErrorMessage("No package was found at the entered URL")
+        } else if (isError()) {
+            setErrorMessage("The package URL must follow the template 'github.com/owner/repo'")
+        }
+
+    }, [validUrl, input])
 
     useEffect(() => {
-        console.log(input)
+        // clear the url validity when new data is entered
+        setValidUrl(null)
     }, [input])
 
-
     const isError = () => {
+        if(validUrl !== null && !validUrl) {
+            return true
+        }
+        if (input === "") {
+            return false
+        }
         try {
             getOwnerNameFromUrl(input)
         } catch (e) {
-            console.log(e)
             return true
         }
         return false
@@ -53,60 +67,56 @@ const LoadSinglePackageManually = () => {
         if (!isError()) {
             setIsLoading(true)
             getSinglePackageManuallyWithFullUrl(input)
-                // getSinglePackageManuallyWithFullUrl("github.com/adschwartz/basic-service-package")
-                // getSinglePackageManually(
-                //     "github.com",
-                //     "adschwartz",
-                //     "basic-service-package",
-                // )
-                .then(r =>
-                    navigate("/catalog/create", {state: {kurtosisPackage: r.package}})
+                .then(r => {
+                        console.log(r)
+                        console.log(!r.package)
+                        if (!r.package) {
+                            setValidUrl(false)
+                            setIsLoading(false)
+                            setErrorMessage("No package was found at the entered URL")
+                            console.log("No package was downloaded")
+                        } else {
+                            navigate("/catalog/create", {state: {kurtosisPackage: r.package}})
+                        }
+                    }
                 )
         }
     }
 
-    return (
-        <>
-            <Button onClick={onOpen}>Open Modal</Button>
-            {/*<Button ml={4} ref={finalRef}>*/}
-            {/*    I'll receive focus on close*/}
-            {/*</Button>*/}
+    const close = () => {
+        onClose()
+        navigate("/catalog")
+    }
 
+    useEffect(() => {
+        setModal(
             <Modal
-                initialFocusRef={initialRef}
-                finalFocusRef={finalRef}
-                isOpen={isOpen}
-                onClose={onClose}
+                isOpen={true}
+                onClose={close}
             >
                 <ModalOverlay/>
                 <ModalContent>
-                    <ModalHeader>Load custom package</ModalHeader>
+                    <ModalHeader>Load Package</ModalHeader>
                     <ModalCloseButton/>
                     <ModalBody pb={6}>
                         <FormControl isInvalid={isError()}>
                             <FormLabel>Enter Github URL</FormLabel>
-                            <Input ref={initialRef}
-                                   value={input} onChange={handleInputChange}
-                                   placeholder=''/>
-                            {!isError ? (
-                                <FormHelperText>
-                                    Enter the package you would like to load, e.g.
-                                    `github.com/kurtosis-tech/etcd-package`
-                                </FormHelperText>
-                            ) : (
-                                <FormErrorMessage>The package URL must follow the template
-                                    'github.com/owner/repo'</FormErrorMessage>
-                            )}
+                            <Input value={input} onChange={handleInputChange} placeholder='github.com/owner/repo'/>
+                            <FormErrorMessage>{errorMessage}</FormErrorMessage>
                         </FormControl>
                     </ModalBody>
-
                     <ModalFooter>
-                        <Button variant='ghost' mr={3} onClick={onClose}>Cancel</Button>
+                        <Button variant='ghost'
+                                mr={3}
+                                onClick={close}
+                        >
+                            Cancel
+                        </Button>
                         <Button
                             type="submit"
                             colorScheme='green'
                             onClick={loadAndConfigure}
-                            isDisabled={isLoading || isError()}
+                            isDisabled={isLoading || isError() || input === ""}
                             loadingText="Loading package..."
                         >
                             Load
@@ -114,8 +124,10 @@ const LoadSinglePackageManually = () => {
                     </ModalFooter>
                 </ModalContent>
             </Modal>
-        </>
-    )
+        )
+    }, [errorMessage, input, isLoading, validUrl])
+
+    return modal;
 }
 
 export default LoadSinglePackageManually;
