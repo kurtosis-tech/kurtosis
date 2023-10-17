@@ -4,7 +4,7 @@ sidebar_label: clean
 slug: /clean
 ---
 
-The `clean` command is used to remove stopped enclaves and their contents to free up resources. If the `-a` flag is passed in, all running enclaves, their contents, and unused engine containers will be removed as well.
+The `clean` command serves the purpose of freeing up resources from your local machine by removing unused Kurtosis images and any stopped enclaves (along with their contents). 
 
 - Removes stopped enclaves and stopped engine containers
 - Removes all services within stopped enclaves
