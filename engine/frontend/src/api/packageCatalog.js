@@ -64,12 +64,7 @@ export const getSinglePackageManuallyWithFullUrl = (fullUrl) => {
 }
 
 export const getOwnerNameFromUrl = (fullUrl) => {
-    // // first check that it's even a valid url
-    // new URL(fullUrl)
-
-    // second check that it's a proper github url
     const components = fullUrl.split('/');
-    console.log("components", components)
     if(components.length < 3) {
         throw `Illegal url, invalid number of components: ${fullUrl}`
     }

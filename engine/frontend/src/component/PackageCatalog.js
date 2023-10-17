@@ -1,21 +1,25 @@
 import {useEffect, useState} from "react";
 import {
+    Button,
+    Center,
     Grid,
     GridItem,
-    Center,
-    List,
-    ListItem,
+    Input,
     InputGroup,
     InputLeftElement,
-    Input,
-    Button,
-    Text
+    List,
+    ListItem,
+    Stack,
+    Text,
+    Tooltip
 } from '@chakra-ui/react'
 
 import {SearchIcon} from '@chakra-ui/icons'
 import PackageCatalogOption from "./PackageCatalogOption";
 import PackageCatalogMainComponent from "./PackageCatalogMainComponent";
 import {useNavigate} from "react-router";
+import {getOwnerNameFromUrl} from "../api/packageCatalog";
+import Moment from "react-moment";
 
 const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
     const navigate = useNavigate()
@@ -55,18 +59,42 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
         setKurtosisPackages(filteredPackages)
     }
 
-    const simplifyName = (packageName) => {
+    const getOwner = (packageName) => {
+        const {owner} = getOwnerNameFromUrl(packageName)
+        return owner
+    }
 
+    const getName = (packageName) => {
+        const {name} = getOwnerNameFromUrl(packageName)
+        return name
     }
 
     const renderKurtosisPackages = () => (
         kurtosisPackages.map((kurtosisPackage, index) => {
             const bgcolor = (kurtosisPackage.name === chosenPackage.name) ? '#24BA27' : 'gray.300'
             if ("name" in kurtosisPackage) {
+                const date = new Date(kurtosisPackage.parsingTime)
                 return (
                     <ListItem bg={bgcolor} key={index} onClick={() => selectPackage(kurtosisPackage)}>
-                        <Center h="70px" w="100%">
-                            <Text fontSize={"xl"} color='blue.800' fontWeight={"bold"}> {kurtosisPackage.name} </Text>
+                        <Center h="60px" w="100%">
+                            <Stack>
+                                <Tooltip label={
+                                    <>
+                                        Last indexed&nbsp;
+                                        <Moment fromNow={true} date={date.toJSON()}/>
+                                        <br />
+                                        (<Moment fromNow={true} format="YYYY-MM-DD HH:mm:ss" date={date.toJSON()}/>)
+                                    </>
+                                }>
+                                    <Text
+                                        fontSize={"sm"}
+                                        color='blue.800'
+                                        fontWeight={"bold"}
+                                    >
+                                        {getOwner(kurtosisPackage.name)} / {getName(kurtosisPackage.name)}
+                                    </Text>
+                                </Tooltip>
+                            </Stack>
                         </Center>
                     </ListItem>
                 )

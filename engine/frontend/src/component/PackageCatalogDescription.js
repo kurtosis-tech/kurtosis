@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import remarkGfm from 'remark-gfm'
+import {Text} from "@chakra-ui/react";
 
 const PackageCatalogDescription = ({content}) => {
   return (
