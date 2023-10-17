@@ -210,8 +210,8 @@ func (_c *MockContextsConfigStore_RemoveContext_Call) RunAndReturn(run func(*gen
 	return _c
 }
 
-// SwitchContext provides a mock function with given fields: contextUuid
-func (_m *MockContextsConfigStore) SwitchContext(contextUuid *generated.ContextUuid) error {
+// SetContext provides a mock function with given fields: contextUuid
+func (_m *MockContextsConfigStore) SetContext(contextUuid *generated.ContextUuid) error {
 	ret := _m.Called(contextUuid)
 
 	var r0 error
@@ -224,30 +224,30 @@ func (_m *MockContextsConfigStore) SwitchContext(contextUuid *generated.ContextU
 	return r0
 }
 
-// MockContextsConfigStore_SwitchContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SwitchContext'
-type MockContextsConfigStore_SwitchContext_Call struct {
+// MockContextsConfigStore_SetContext_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'SetContext'
+type MockContextsConfigStore_SetContext_Call struct {
 	*mock.Call
 }
 
-// SwitchContext is a helper method to define mock.On call
+// SetContext is a helper method to define mock.On call
 //   - contextUuid *generated.ContextUuid
-func (_e *MockContextsConfigStore_Expecter) SwitchContext(contextUuid interface{}) *MockContextsConfigStore_SwitchContext_Call {
-	return &MockContextsConfigStore_SwitchContext_Call{Call: _e.mock.On("SwitchContext", contextUuid)}
+func (_e *MockContextsConfigStore_Expecter) SetContext(contextUuid interface{}) *MockContextsConfigStore_SetContext_Call {
+	return &MockContextsConfigStore_SetContext_Call{Call: _e.mock.On("SetContext", contextUuid)}
 }
 
-func (_c *MockContextsConfigStore_SwitchContext_Call) Run(run func(contextUuid *generated.ContextUuid)) *MockContextsConfigStore_SwitchContext_Call {
+func (_c *MockContextsConfigStore_SetContext_Call) Run(run func(contextUuid *generated.ContextUuid)) *MockContextsConfigStore_SetContext_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(*generated.ContextUuid))
 	})
 	return _c
 }
 
-func (_c *MockContextsConfigStore_SwitchContext_Call) Return(_a0 error) *MockContextsConfigStore_SwitchContext_Call {
+func (_c *MockContextsConfigStore_SetContext_Call) Return(_a0 error) *MockContextsConfigStore_SetContext_Call {
 	_c.Call.Return(_a0)
 	return _c
 }
 
-func (_c *MockContextsConfigStore_SwitchContext_Call) RunAndReturn(run func(*generated.ContextUuid) error) *MockContextsConfigStore_SwitchContext_Call {
+func (_c *MockContextsConfigStore_SetContext_Call) RunAndReturn(run func(*generated.ContextUuid) error) *MockContextsConfigStore_SetContext_Call {
 	_c.Call.Return(run)
 	return _c
 }

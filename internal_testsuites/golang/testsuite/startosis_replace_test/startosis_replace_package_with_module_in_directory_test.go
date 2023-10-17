@@ -12,13 +12,15 @@ const (
 
 func (suite *StartosisReplaceTestSuite) TestStartosisReplaceWithModuleInDirectory() {
 	ctx := context.Background()
-	runResult, _ := suite.RunPackageWithParams(ctx, packageWithReplaceModuleInDirectoryRelPath, packageWithReplaceModuleInDirectoryParams)
+	runResult, err := suite.RunPackageWithParams(ctx, packageWithReplaceModuleInDirectoryRelPath, packageWithReplaceModuleInDirectoryParams)
 
 	t := suite.T()
+	require.NoError(t, err)
+	require.NotNil(t, runResult)
+
 	require.Nil(t, runResult.InterpretationError)
 	require.Empty(t, runResult.ValidationErrors)
 	require.Nil(t, runResult.ExecutionError)
 	expectedResult := "Replace with module in directory sample package loaded.\nVerification succeeded. Value is '\"another-dependency-loaded-from-internal-module-in-main-branch\"'.\n"
 	require.Regexp(t, expectedResult, string(runResult.RunOutput))
-
 }
