@@ -205,7 +205,7 @@ Thank you for trying our quickstart. We hope you enjoyed it.
 [enclaves-reference]: ../concepts-reference/enclaves.md
 [services-explanation]: ../explanations/architecture.md#services
 [reusable-environment-definitions-explanation]: ../explanations/reusable-environment-definitions.md
-[why-we-built-kurtosis-explanation]: ../explanations/why-we-built-kurtosis.md
+[why-kurtosis-explanation]: ../explanations/why-kurtosis.md
 [how-do-imports-work-explanation]: ../explanations/how-do-kurtosis-imports-work.md
 [why-multi-phase-runs-explanation]: ../explanations/why-multi-phase-runs.md
 

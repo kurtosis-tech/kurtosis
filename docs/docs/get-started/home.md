@@ -16,7 +16,7 @@ Kurtosis is formed of:
 - A runtime that makes a Kurtosis app Just Work, independent of whether it's running on Docker or Kubernetes, local or in the cloud
 - A set of tools to ease common distributed app development needs (e.g. a log aggregator to ease log-diving, automatic port-forwarding to ease connectivity, a `kurtosis service shell` command to ease container filesystem exploration, etc.)
 
-Go [here](../explanations/why-we-built-kurtosis.md) to learn more about what inspired us to build Kurtosis.
+Go [here](../explanations/why-kurtosis.md) to learn more about why developers use Kurtosis.
 
 ## Why should I use Kurtosis?
 Kurtosis shines when creating, working with, and destroying self-contained distributed application environments. Currently, our users report this to be most useful when:
