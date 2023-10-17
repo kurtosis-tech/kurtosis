@@ -17,7 +17,7 @@ const (
 	mainStarFilename                           = "main.star"
 	mainStarFileContentStr                     = `def run(plan):
     # TODO
-    pass`
+    plan.print("hello world!")`
 	kurtosisYmlDescriptionFormat = "# %s\nEnter description Markdown here."
 )
 
