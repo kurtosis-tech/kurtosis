@@ -159,8 +159,8 @@ pub struct ServiceInfo {
 pub struct RunStarlarkScriptArgs {
     #[prost(string, tag = "1")]
     pub serialized_script: ::prost::alloc::string::String,
-    #[prost(string, tag = "2")]
-    pub serialized_params: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to false
     #[prost(bool, optional, tag = "3")]
     pub dry_run: ::core::option::Option<bool>,
@@ -168,8 +168,8 @@ pub struct RunStarlarkScriptArgs {
     #[prost(int32, optional, tag = "4")]
     pub parallelism: ::core::option::Option<i32>,
     /// The name of the main function, the default value is "run"
-    #[prost(string, tag = "5")]
-    pub main_function_name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "5")]
+    pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "6")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
     /// Defaults to empty

@@ -2042,8 +2042,8 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
       f
     );
   }
-  f = message.getSerializedParams();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 2));
+  if (f != null) {
     writer.writeString(
       2,
       f
@@ -2063,8 +2063,8 @@ proto.api_container_api.RunStarlarkScriptArgs.serializeBinaryToWriter = function
       f
     );
   }
-  f = message.getMainFunctionName();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
     writer.writeString(
       5,
       f
@@ -2126,7 +2126,25 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.getSerializedParams = fu
  * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
  */
 proto.api_container_api.RunStarlarkScriptArgs.prototype.setSerializedParams = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
+  return jspb.Message.setField(this, 2, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearSerializedParams = function() {
+  return jspb.Message.setField(this, 2, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasSerializedParams = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 
@@ -2216,7 +2234,25 @@ proto.api_container_api.RunStarlarkScriptArgs.prototype.getMainFunctionName = fu
  * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
  */
 proto.api_container_api.RunStarlarkScriptArgs.prototype.setMainFunctionName = function(value) {
-  return jspb.Message.setProto3StringField(this, 5, value);
+  return jspb.Message.setField(this, 5, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.RunStarlarkScriptArgs} returns this
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.clearMainFunctionName = function() {
+  return jspb.Message.setField(this, 5, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.RunStarlarkScriptArgs.prototype.hasMainFunctionName = function() {
+  return jspb.Message.getField(this, 5) != null;
 };
 
 

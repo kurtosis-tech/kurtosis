@@ -302,9 +302,9 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
   serializedScript: string;
 
   /**
-   * @generated from field: string serialized_params = 2;
+   * @generated from field: optional string serialized_params = 2;
    */
-  serializedParams: string;
+  serializedParams?: string;
 
   /**
    * Defaults to false
@@ -323,9 +323,9 @@ export declare class RunStarlarkScriptArgs extends Message<RunStarlarkScriptArgs
   /**
    * The name of the main function, the default value is "run"
    *
-   * @generated from field: string main_function_name = 5;
+   * @generated from field: optional string main_function_name = 5;
    */
-  mainFunctionName: string;
+  mainFunctionName?: string;
 
   /**
    * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 6;

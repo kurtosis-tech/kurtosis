@@ -131,10 +131,10 @@ export const RunStarlarkScriptArgs = proto3.makeMessageType(
   "api_container_api.RunStarlarkScriptArgs",
   () => [
     { no: 1, name: "serialized_script", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 2, name: "serialized_params", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 3, name: "dry_run", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
     { no: 4, name: "parallelism", kind: "scalar", T: 5 /* ScalarType.INT32 */, opt: true },
-    { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 5, name: "main_function_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 6, name: "experimental_features", kind: "enum", T: proto3.getEnumType(KurtosisFeatureFlag), repeated: true },
     { no: 7, name: "cloud_instance_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
     { no: 8, name: "cloud_user_id", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },

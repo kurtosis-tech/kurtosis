@@ -144,7 +144,7 @@ enum Connect {
 message RunStarlarkScriptArgs {
   string serialized_script = 1;
 
-  string serialized_params = 2;
+  optional string serialized_params = 2;
 
   // Defaults to false
   optional bool dry_run = 3;
@@ -153,7 +153,7 @@ message RunStarlarkScriptArgs {
   optional int32 parallelism = 4;
 
   // The name of the main function, the default value is "run"
-  string main_function_name = 5;
+  optional string main_function_name = 5;
 
   repeated KurtosisFeatureFlag experimental_features = 6;
 

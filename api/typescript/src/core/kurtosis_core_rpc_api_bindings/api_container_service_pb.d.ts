@@ -141,6 +141,8 @@ export class RunStarlarkScriptArgs extends jspb.Message {
 
   getSerializedParams(): string;
   setSerializedParams(value: string): RunStarlarkScriptArgs;
+  hasSerializedParams(): boolean;
+  clearSerializedParams(): RunStarlarkScriptArgs;
 
   getDryRun(): boolean;
   setDryRun(value: boolean): RunStarlarkScriptArgs;
@@ -154,6 +156,8 @@ export class RunStarlarkScriptArgs extends jspb.Message {
 
   getMainFunctionName(): string;
   setMainFunctionName(value: string): RunStarlarkScriptArgs;
+  hasMainFunctionName(): boolean;
+  clearMainFunctionName(): RunStarlarkScriptArgs;
 
   getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
   setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): RunStarlarkScriptArgs;
@@ -181,13 +185,18 @@ export class RunStarlarkScriptArgs extends jspb.Message {
 export namespace RunStarlarkScriptArgs {
   export type AsObject = {
     serializedScript: string,
-    serializedParams: string,
+    serializedParams?: string,
     dryRun?: boolean,
     parallelism?: number,
-    mainFunctionName: string,
+    mainFunctionName?: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     cloudInstanceId?: string,
     cloudUserId?: string,
+  }
+
+  export enum SerializedParamsCase { 
+    _SERIALIZED_PARAMS_NOT_SET = 0,
+    SERIALIZED_PARAMS = 2,
   }
 
   export enum DryRunCase { 
@@ -198,6 +207,11 @@ export namespace RunStarlarkScriptArgs {
   export enum ParallelismCase { 
     _PARALLELISM_NOT_SET = 0,
     PARALLELISM = 4,
+  }
+
+  export enum MainFunctionNameCase { 
+    _MAIN_FUNCTION_NAME_NOT_SET = 0,
+    MAIN_FUNCTION_NAME = 5,
   }
 
   export enum CloudInstanceIdCase { 

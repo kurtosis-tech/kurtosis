@@ -50,10 +50,10 @@ func NewRunStarlarkScriptArgs(
 	*parallelismCopy = parallelism
 	return &kurtosis_core_rpc_api_bindings.RunStarlarkScriptArgs{
 		SerializedScript:     serializedString,
-		SerializedParams:     serializedParams,
+		SerializedParams:     &serializedParams,
 		DryRun:               &dryRun,
 		Parallelism:          parallelismCopy,
-		MainFunctionName:     mainFunctionName,
+		MainFunctionName:     &mainFunctionName,
 		ExperimentalFeatures: experimentalFeatures,
 		CloudInstanceId:      cloudInstanceIdCopy,
 		CloudUserId:          cloudUserIdCopy,
