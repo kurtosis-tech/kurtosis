@@ -941,21 +941,33 @@ export class WaitForHttpPostEndpointAvailabilityArgs extends jspb.Message {
 
   getPath(): string;
   setPath(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  hasPath(): boolean;
+  clearPath(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getRequestBody(): string;
   setRequestBody(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  hasRequestBody(): boolean;
+  clearRequestBody(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getInitialDelayMilliseconds(): number;
   setInitialDelayMilliseconds(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  hasInitialDelayMilliseconds(): boolean;
+  clearInitialDelayMilliseconds(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getRetries(): number;
   setRetries(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  hasRetries(): boolean;
+  clearRetries(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getRetriesDelayMilliseconds(): number;
   setRetriesDelayMilliseconds(value: number): WaitForHttpPostEndpointAvailabilityArgs;
+  hasRetriesDelayMilliseconds(): boolean;
+  clearRetriesDelayMilliseconds(): WaitForHttpPostEndpointAvailabilityArgs;
 
   getBodyText(): string;
   setBodyText(value: string): WaitForHttpPostEndpointAvailabilityArgs;
+  hasBodyText(): boolean;
+  clearBodyText(): WaitForHttpPostEndpointAvailabilityArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): WaitForHttpPostEndpointAvailabilityArgs.AsObject;
@@ -969,12 +981,42 @@ export namespace WaitForHttpPostEndpointAvailabilityArgs {
   export type AsObject = {
     serviceIdentifier: string,
     port: number,
-    path: string,
-    requestBody: string,
-    initialDelayMilliseconds: number,
-    retries: number,
-    retriesDelayMilliseconds: number,
-    bodyText: string,
+    path?: string,
+    requestBody?: string,
+    initialDelayMilliseconds?: number,
+    retries?: number,
+    retriesDelayMilliseconds?: number,
+    bodyText?: string,
+  }
+
+  export enum PathCase { 
+    _PATH_NOT_SET = 0,
+    PATH = 3,
+  }
+
+  export enum RequestBodyCase { 
+    _REQUEST_BODY_NOT_SET = 0,
+    REQUEST_BODY = 4,
+  }
+
+  export enum InitialDelayMillisecondsCase { 
+    _INITIAL_DELAY_MILLISECONDS_NOT_SET = 0,
+    INITIAL_DELAY_MILLISECONDS = 5,
+  }
+
+  export enum RetriesCase { 
+    _RETRIES_NOT_SET = 0,
+    RETRIES = 6,
+  }
+
+  export enum RetriesDelayMillisecondsCase { 
+    _RETRIES_DELAY_MILLISECONDS_NOT_SET = 0,
+    RETRIES_DELAY_MILLISECONDS = 7,
+  }
+
+  export enum BodyTextCase { 
+    _BODY_TEXT_NOT_SET = 0,
+    BODY_TEXT = 8,
   }
 }
 

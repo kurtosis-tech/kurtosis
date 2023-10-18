@@ -421,12 +421,12 @@ export const WaitForHttpPostEndpointAvailabilityArgs = proto3.makeMessageType(
   () => [
     { no: 1, name: "service_identifier", kind: "scalar", T: 9 /* ScalarType.STRING */ },
     { no: 2, name: "port", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 3, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "request_body", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 5, name: "initial_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 6, name: "retries", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 7, name: "retries_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */ },
-    { no: 8, name: "body_text", kind: "scalar", T: 9 /* ScalarType.STRING */ },
+    { no: 3, name: "path", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "request_body", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 5, name: "initial_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 6, name: "retries", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 7, name: "retries_delay_milliseconds", kind: "scalar", T: 13 /* ScalarType.UINT32 */, opt: true },
+    { no: 8, name: "body_text", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
   ],
 );
 

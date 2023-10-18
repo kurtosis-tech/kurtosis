@@ -7237,43 +7237,43 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.serializeBinaryT
       f
     );
   }
-  f = message.getPath();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
     writer.writeString(
       3,
       f
     );
   }
-  f = message.getRequestBody();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
     writer.writeString(
       4,
       f
     );
   }
-  f = message.getInitialDelayMilliseconds();
-  if (f !== 0) {
+  f = /** @type {number} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
     writer.writeUint32(
       5,
       f
     );
   }
-  f = message.getRetries();
-  if (f !== 0) {
+  f = /** @type {number} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
     writer.writeUint32(
       6,
       f
     );
   }
-  f = message.getRetriesDelayMilliseconds();
-  if (f !== 0) {
+  f = /** @type {number} */ (jspb.Message.getField(message, 7));
+  if (f != null) {
     writer.writeUint32(
       7,
       f
     );
   }
-  f = message.getBodyText();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 8));
+  if (f != null) {
     writer.writeString(
       8,
       f
@@ -7332,7 +7332,25 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.getPat
  * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
  */
 proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.setPath = function(value) {
-  return jspb.Message.setProto3StringField(this, 3, value);
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.clearPath = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.hasPath = function() {
+  return jspb.Message.getField(this, 3) != null;
 };
 
 
@@ -7350,7 +7368,25 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.getReq
  * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
  */
 proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.setRequestBody = function(value) {
-  return jspb.Message.setProto3StringField(this, 4, value);
+  return jspb.Message.setField(this, 4, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.clearRequestBody = function() {
+  return jspb.Message.setField(this, 4, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.hasRequestBody = function() {
+  return jspb.Message.getField(this, 4) != null;
 };
 
 
@@ -7368,7 +7404,25 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.getIni
  * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
  */
 proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.setInitialDelayMilliseconds = function(value) {
-  return jspb.Message.setProto3IntField(this, 5, value);
+  return jspb.Message.setField(this, 5, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.clearInitialDelayMilliseconds = function() {
+  return jspb.Message.setField(this, 5, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.hasInitialDelayMilliseconds = function() {
+  return jspb.Message.getField(this, 5) != null;
 };
 
 
@@ -7386,7 +7440,25 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.getRet
  * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
  */
 proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.setRetries = function(value) {
-  return jspb.Message.setProto3IntField(this, 6, value);
+  return jspb.Message.setField(this, 6, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.clearRetries = function() {
+  return jspb.Message.setField(this, 6, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.hasRetries = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 
@@ -7404,7 +7476,25 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.getRet
  * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
  */
 proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.setRetriesDelayMilliseconds = function(value) {
-  return jspb.Message.setProto3IntField(this, 7, value);
+  return jspb.Message.setField(this, 7, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.clearRetriesDelayMilliseconds = function() {
+  return jspb.Message.setField(this, 7, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.hasRetriesDelayMilliseconds = function() {
+  return jspb.Message.getField(this, 7) != null;
 };
 
 
@@ -7422,7 +7512,25 @@ proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.getBod
  * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
  */
 proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.setBodyText = function(value) {
-  return jspb.Message.setProto3StringField(this, 8, value);
+  return jspb.Message.setField(this, 8, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs} returns this
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.clearBodyText = function() {
+  return jspb.Message.setField(this, 8, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.api_container_api.WaitForHttpPostEndpointAvailabilityArgs.prototype.hasBodyText = function() {
+  return jspb.Message.getField(this, 8) != null;
 };
 
 

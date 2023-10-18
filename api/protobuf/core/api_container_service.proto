@@ -379,17 +379,17 @@ message WaitForHttpPostEndpointAvailabilityArgs {
   //The port of the service to check. For instance 8080
   uint32 port = 2;
   //The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-  string path = 3;
+  optional string path = 3;
   //The content of the request body.
-  string request_body = 4;
+  optional string request_body = 4;
   //The number of milliseconds to wait until executing the first HTTP call
-  uint32 initial_delay_milliseconds = 5;
+  optional uint32 initial_delay_milliseconds = 5;
   //Max number of HTTP call attempts that this will execute until giving up and returning an error
-  uint32 retries = 6;
+  optional uint32 retries = 6;
   //Number of milliseconds to wait between retries
-  uint32 retries_delay_milliseconds = 7;
+  optional uint32 retries_delay_milliseconds = 7;
   //If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-  string body_text = 8;
+  optional string body_text = 8;
 }
 
 // ==============================================================================================
