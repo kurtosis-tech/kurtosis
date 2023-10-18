@@ -19,7 +19,7 @@ const LoadSinglePackageAutomatically = () => {
                     if (!r.package) {
                         setContent(
                             <AbsoluteCenter axis={"both"}>
-                                <Text>
+                                <Text color={"white"}>
                                     An error occurred while loading the package.
                                     <br/>
                                     Please verify the following url is correct:
