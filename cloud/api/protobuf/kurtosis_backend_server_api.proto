@@ -80,10 +80,18 @@ message PaymentMethod {
   string last_four = 3;
 }
 
+message Subscription {
+  int32 trial_end = 1;
+  string product_name = 2;
+  int32 product_price = 3;
+  string product_tax_code_name = 4;
+}
+
 message GetOrCreatePaymentConfigResponse {
   string user_id = 1;
   string client_secret = 2;
   PaymentMethod payment_method = 3;
+  Subscription subscription = 4;
 }
 
 message RefreshDefaultPaymentMethodArgs {
