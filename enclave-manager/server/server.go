@@ -163,25 +163,14 @@ func (c *WebServer) GetServiceLogs(
 	}
 
 	for engineClient.Receive() {
-		select {
-		case <-ctx.Done():
-			logrus.Debug("Closing the engine client after receiving abort signal from the client")
-			err := engineClient.Close()
-			if err != nil {
-				logrus.Errorf("Error ocurred: %+v", err)
-				return err
-			}
-			return nil
-		default:
-			resp := engineClient.Msg()
-			errWhileSending := str.Send(resp)
-			if errWhileSending != nil {
-				return errWhileSending
-			}
+		resp := engineClient.Msg()
+		errWhileSending := str.Send(resp)
+		if errWhileSending != nil {
+			return stacktrace.Propagate(errWhileSending, "An error occurred in the enclave manager server attempting to send services logs.")
 		}
 	}
 	if engineClient.Err() != nil {
-		return engineClient.Err()
+		return stacktrace.Propagate(engineClient.Err(), "An error occurred in the enclave manager server attempting to receive services logs.")
 	}
 
 	return nil
