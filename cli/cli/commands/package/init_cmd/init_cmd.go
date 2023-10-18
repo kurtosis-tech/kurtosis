@@ -24,6 +24,8 @@ const (
 	validPackageNameExample = "github.com/kurtosis-tech/ethereum-package"
 )
 
+// InitCmd we only fill in the required struct fields, hence the others remain nil
+// nolint: exhaustruct
 var InitCmd = &lowlevel.LowlevelKurtosisCommand{
 	CommandStr:       command_str_consts.InitCmdStr,
 	ShortDescription: "Creates a new Kurtosis package",
