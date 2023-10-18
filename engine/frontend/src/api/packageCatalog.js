@@ -11,6 +11,11 @@ export const getKurtosisPackages = async () => {
         )
         const {data} = response
         if ("packages" in data) {
+            data.packages.sort(function (a, b) {
+                if (a.name.toLowerCase() < b.name.toLowerCase()) return -1;
+                else if (a.name.toLowerCase() > b.name.toLowerCase()) return 1;
+                return 0;
+            });
             return data.packages
         }
         return []
@@ -65,10 +70,10 @@ export const getSinglePackageManuallyWithFullUrl = (fullUrl) => {
 
 export const getOwnerNameFromUrl = (fullUrl) => {
     const components = fullUrl.split('/');
-    if(components.length < 3) {
+    if (components.length < 3) {
         throw `Illegal url, invalid number of components: ${fullUrl}`
     }
-    if (components[1].length <1 || components[2].length < 1) {
+    if (components[1].length < 1 || components[2].length < 1) {
         throw `Illegal url, empty components: ${fullUrl}`
     }
     return {

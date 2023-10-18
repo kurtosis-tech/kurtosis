@@ -8,7 +8,7 @@ import {CodeEditor} from "./CodeEditor";
 import KeyValueTable from "./KeyValueTable";
 import {getStarlarkRunConfig} from "../api/api";
 import {useAppContext} from "../context/AppState";
-import {getKurtosisPackages} from "../api/packageCatalog";
+import {getKurtosisPackages, getSinglePackageManuallyWithFullUrl} from "../api/packageCatalog";
 
 const yaml = require("js-yaml")
 
@@ -405,7 +405,16 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
                                 if (matchedPackage) {
                                     updateThisPackage(matchedPackage, formData, errorData, existingParamsMap)
                                 } else {
-                                    console.error(`Was not able to match a package to the running enclave ${runConfig.name} for package id: ${runConfig.packageId}`)
+                                    console.warn(`Was not able to match an indexed package to the running enclave ${runConfig.name} for package id: ${runConfig.packageId}. Loading it manually...`)
+                                    getSinglePackageManuallyWithFullUrl(runConfig.packageId)
+                                        .then(loadedPackage => {
+                                            if (loadedPackage.package) {
+                                                updateThisPackage(loadedPackage.package, formData, errorData, existingParamsMap)
+                                                console.log(`Loaded a package manually from the indexer that matched the package name in the run config ${runConfig.packageId}`, loadedPackage.package)
+                                            } else {
+                                                console.error(`Was not able to match a package to the running enclave ${runConfig.name} for package id: ${runConfig.packageId}`)
+                                            }
+                                        })
                                 }
                             })
                     })

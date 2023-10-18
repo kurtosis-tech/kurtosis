@@ -1,6 +1,7 @@
 import {
-    Button, Code,
-    FormControl, FormErrorMessage, FormHelperText,
+    Button,
+    FormControl,
+    FormErrorMessage,
     FormLabel,
     Input,
     Modal,
@@ -12,13 +13,9 @@ import {
     ModalOverlay,
     useDisclosure
 } from "@chakra-ui/react";
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useState} from "react";
 import {useNavigate} from "react-router";
-import {
-    getOwnerNameFromUrl,
-    getSinglePackageManually,
-    getSinglePackageManuallyWithFullUrl
-} from "../api/packageCatalog";
+import {getOwnerNameFromUrl, getSinglePackageManuallyWithFullUrl} from "../api/packageCatalog";
 
 const LoadSinglePackageManually = () => {
     const {isOpen, onOpen, onClose} = useDisclosure()
@@ -68,13 +65,10 @@ const LoadSinglePackageManually = () => {
             setIsLoading(true)
             getSinglePackageManuallyWithFullUrl(input)
                 .then(r => {
-                        console.log(r)
-                        console.log(!r.package)
                         if (!r.package) {
                             setValidUrl(false)
                             setIsLoading(false)
                             setErrorMessage("No package was found at the entered URL")
-                            console.log("No package was downloaded")
                         } else {
                             navigate("/catalog/create", {state: {kurtosisPackage: r.package}})
                         }
