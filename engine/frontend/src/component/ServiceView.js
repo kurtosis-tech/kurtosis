@@ -59,13 +59,14 @@ const codeBox = (serviceUuid, serviceName, parameterName, data) => {
 
 const ServiceView = (service) => {
     const serviceInfo = service.service
+    console.log(serviceInfo)
     return (
         <TableContainer>
             <Table variant='simple' size='sm'>
                 <Tbody>
                     {tableRow("Name", () => serviceInfo.name)}
                     {tableRow("UUID", () => <pre>{serviceInfo.serviceUuid}</pre>)}
-                    {tableRow("Status", () => statusBadge(serviceInfo.getContainer().Status()))}
+                    {tableRow("Status", () => statusBadge(serviceInfo.container.status))}
                     {tableRow("Image", () => serviceInfo.container.imageName)}
                     {tableRow("Ports", () => codeBox(serviceInfo.shortenedUuid, serviceInfo.name, "ports", serviceInfo.ports, 0))}
                     {tableRow("ENTRYPOINT", () => codeBox(serviceInfo.shortenedUuid, serviceInfo.name, "entrypoint", serviceInfo.container.entrypointArgs, 1))}
