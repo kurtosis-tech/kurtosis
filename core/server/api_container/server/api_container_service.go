@@ -321,12 +321,12 @@ func (apicService *ApiContainerService) WaitForHttpGetEndpointAvailability(ctx c
 		serviceIdentifier,
 		http.MethodGet,
 		args.Port,
-		args.Path,
-		args.InitialDelayMilliseconds,
-		args.Retries,
-		args.RetriesDelayMilliseconds,
+		args.GetPath(),
+		args.GetInitialDelayMilliseconds(),
+		args.GetRetries(),
+		args.GetRetriesDelayMilliseconds(),
 		"",
-		args.BodyText); err != nil {
+		args.GetBodyText()); err != nil {
 		return nil, stacktrace.Propagate(
 			err,
 			"An error occurred waiting for HTTP endpoint '%v' to become available",

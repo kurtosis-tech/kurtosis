@@ -1120,37 +1120,37 @@ export declare class WaitForHttpGetEndpointAvailabilityArgs extends Message<Wait
   /**
    * The path of the service to check. It mustn't start with the first slash. For instance `service/health`
    *
-   * @generated from field: string path = 3;
+   * @generated from field: optional string path = 3;
    */
-  path: string;
+  path?: string;
 
   /**
    * The number of milliseconds to wait until executing the first HTTP call
    *
-   * @generated from field: uint32 initial_delay_milliseconds = 4;
+   * @generated from field: optional uint32 initial_delay_milliseconds = 4;
    */
-  initialDelayMilliseconds: number;
+  initialDelayMilliseconds?: number;
 
   /**
    * Max number of HTTP call attempts that this will execute until giving up and returning an error
    *
-   * @generated from field: uint32 retries = 5;
+   * @generated from field: optional uint32 retries = 5;
    */
-  retries: number;
+  retries?: number;
 
   /**
    * Number of milliseconds to wait between retries
    *
-   * @generated from field: uint32 retries_delay_milliseconds = 6;
+   * @generated from field: optional uint32 retries_delay_milliseconds = 6;
    */
-  retriesDelayMilliseconds: number;
+  retriesDelayMilliseconds?: number;
 
   /**
    * If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
    *
-   * @generated from field: string body_text = 7;
+   * @generated from field: optional string body_text = 7;
    */
-  bodyText: string;
+  bodyText?: string;
 
   constructor(data?: PartialMessage<WaitForHttpGetEndpointAvailabilityArgs>);
 

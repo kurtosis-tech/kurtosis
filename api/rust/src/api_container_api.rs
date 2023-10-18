@@ -460,20 +460,20 @@ pub struct WaitForHttpGetEndpointAvailabilityArgs {
     #[prost(uint32, tag = "2")]
     pub port: u32,
     /// The path of the service to check. It mustn't start with the first slash. For instance `service/health`
-    #[prost(string, tag = "3")]
-    pub path: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "3")]
+    pub path: ::core::option::Option<::prost::alloc::string::String>,
     /// The number of milliseconds to wait until executing the first HTTP call
-    #[prost(uint32, tag = "4")]
-    pub initial_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "4")]
+    pub initial_delay_milliseconds: ::core::option::Option<u32>,
     /// Max number of HTTP call attempts that this will execute until giving up and returning an error
-    #[prost(uint32, tag = "5")]
-    pub retries: u32,
+    #[prost(uint32, optional, tag = "5")]
+    pub retries: ::core::option::Option<u32>,
     /// Number of milliseconds to wait between retries
-    #[prost(uint32, tag = "6")]
-    pub retries_delay_milliseconds: u32,
+    #[prost(uint32, optional, tag = "6")]
+    pub retries_delay_milliseconds: ::core::option::Option<u32>,
     /// If the endpoint returns this value, the service will be marked as available (e.g. Hello World).
-    #[prost(string, tag = "7")]
-    pub body_text: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "7")]
+    pub body_text: ::core::option::Option<::prost::alloc::string::String>,
 }
 /// ==============================================================================================
 ///                            Wait For HTTP Post Endpoint Availability
