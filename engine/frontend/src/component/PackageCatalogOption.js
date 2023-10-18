@@ -39,7 +39,7 @@ const PackageCatalogOption = ({catalog}) => {
                         color='white'
                         bg="#24BA27"
                         p="2"
-                        onClick={() => navigate("/enclave/load")}
+                        onClick={() => navigate("/enclave/load-manually")}
                 >
                     Load Custom Package
                 </Center>

@@ -332,7 +332,6 @@ const parseList = (data, rawDataType) => {
 
 const loadPackageRunConfig = async (host, port, token, apiHost) => {
     const data = await getStarlarkRunConfig(host, port, token, apiHost)
-    // consoloe.log(data)
     return data;
 }
 
@@ -367,7 +366,6 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
         const updateThisPackage = (currentPackage, formData, errorData, existingParamsMap) => {
             let initialFormData = {}
             let initialErrorData = {}
-            console.log("currentPackage", currentPackage)
             currentPackage.args.forEach(
                 (arg, index) => {
                     if (arg.name !== "plan") {
@@ -391,7 +389,6 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
         useEffect(() => {
             if (mode === "create") {
                 const {kurtosisPackage} = state
-                console.log(kurtosisPackage)
                 updateThisPackage(kurtosisPackage, formData, errorData, null)
             } else if (isEditMode()) {
                 const {name, host, port, enclave} = state

@@ -5,6 +5,7 @@ import {CreateEnclaveLog} from "./log/CreateEnclaveLog";
 import {Route, Routes, useNavigate} from 'react-router-dom';
 import {useAppContext} from "../context/AppState";
 import LoadSinglePackageManually from "./LoadSinglePackageManually";
+import LoadSinglePackageAutomatically from "./LoadSinglePackageAutomatically";
 
 const CreateEnclave = ({addEnclave}) => {
     const navigate = useNavigate()
@@ -41,11 +42,8 @@ const CreateEnclave = ({addEnclave}) => {
                            />
                        }
                 />
-                <Route path="/load"
-                       element={
-                           <LoadSinglePackageManually />
-                }
-                />
+                <Route path="/load-manually" element={<LoadSinglePackageManually/>}/>
+                <Route path="/load-automatically" element={<LoadSinglePackageAutomatically/>}/>
                 <Route path="/progress" element={
                     <CreateEnclaveLog
                         args={args}

@@ -1,7 +1,7 @@
 import {
     Button,
     FormControl,
-    FormErrorMessage, FormHelperText,
+    FormErrorMessage,
     FormLabel,
     Input,
     Modal,
@@ -27,8 +27,6 @@ const LoadSinglePackageManually = () => {
     const [modal, setModal] = useState(<></>)
     const handleInputChange = (e) => setInput(e.target.value)
 
-    // github.com/adschwartz/text
-
     useEffect(() => {
         if (input === '') {
             setErrorMessage("")
@@ -46,7 +44,7 @@ const LoadSinglePackageManually = () => {
     }, [input])
 
     const isError = () => {
-        if(validUrl !== null && !validUrl) {
+        if (validUrl !== null && !validUrl) {
             return true
         }
         if (input === "") {
