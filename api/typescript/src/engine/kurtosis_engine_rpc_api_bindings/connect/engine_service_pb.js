@@ -88,10 +88,10 @@ export const GetEngineInfoResponse = proto3.makeMessageType(
 export const CreateEnclaveArgs = proto3.makeMessageType(
   "engine_api.CreateEnclaveArgs",
   () => [
-    { no: 1, name: "enclave_name", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 2, name: "api_container_version_tag", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 3, name: "api_container_log_level", kind: "scalar", T: 9 /* ScalarType.STRING */ },
-    { no: 4, name: "mode", kind: "enum", T: proto3.getEnumType(EnclaveMode) },
+    { no: 1, name: "enclave_name", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 2, name: "api_container_version_tag", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 3, name: "api_container_log_level", kind: "scalar", T: 9 /* ScalarType.STRING */, opt: true },
+    { no: 4, name: "mode", kind: "enum", T: proto3.getEnumType(EnclaveMode), opt: true },
   ],
 );
 

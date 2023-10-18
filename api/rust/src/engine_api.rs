@@ -15,17 +15,19 @@ pub struct GetEngineInfoResponse {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CreateEnclaveArgs {
     /// The name of the new Kurtosis Enclave
-    #[prost(string, tag = "1")]
-    pub enclave_name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "1")]
+    pub enclave_name: ::core::option::Option<::prost::alloc::string::String>,
     /// The image tag of the API container that should be used inside the enclave
     /// If blank, will use the default version that the engine server uses
-    #[prost(string, tag = "2")]
-    pub api_container_version_tag: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "2")]
+    pub api_container_version_tag: ::core::option::Option<
+        ::prost::alloc::string::String,
+    >,
     /// The API container log level
-    #[prost(string, tag = "3")]
-    pub api_container_log_level: ::prost::alloc::string::String,
-    #[prost(enumeration = "EnclaveMode", tag = "4")]
-    pub mode: i32,
+    #[prost(string, optional, tag = "3")]
+    pub api_container_log_level: ::core::option::Option<::prost::alloc::string::String>,
+    #[prost(enumeration = "EnclaveMode", optional, tag = "4")]
+    pub mode: ::core::option::Option<i32>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

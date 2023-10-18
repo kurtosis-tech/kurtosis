@@ -43,14 +43,14 @@ message GetEngineInfoResponse {
 // ==============================================================================================
 message CreateEnclaveArgs {
   // The name of the new Kurtosis Enclave
-  string enclave_name = 1;
+  optional string enclave_name = 1;
   // The image tag of the API container that should be used inside the enclave
   // If blank, will use the default version that the engine server uses
-  string api_container_version_tag = 2;
+  optional string api_container_version_tag = 2;
   // The API container log level
-  string api_container_log_level = 3;
+  optional string api_container_log_level = 3;
 
-  EnclaveMode mode = 4;
+  optional EnclaveMode mode = 4;
 }
 
 enum EnclaveMode {

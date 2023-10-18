@@ -25,15 +25,23 @@ export namespace GetEngineInfoResponse {
 export class CreateEnclaveArgs extends jspb.Message {
   getEnclaveName(): string;
   setEnclaveName(value: string): CreateEnclaveArgs;
+  hasEnclaveName(): boolean;
+  clearEnclaveName(): CreateEnclaveArgs;
 
   getApiContainerVersionTag(): string;
   setApiContainerVersionTag(value: string): CreateEnclaveArgs;
+  hasApiContainerVersionTag(): boolean;
+  clearApiContainerVersionTag(): CreateEnclaveArgs;
 
   getApiContainerLogLevel(): string;
   setApiContainerLogLevel(value: string): CreateEnclaveArgs;
+  hasApiContainerLogLevel(): boolean;
+  clearApiContainerLogLevel(): CreateEnclaveArgs;
 
   getMode(): EnclaveMode;
   setMode(value: EnclaveMode): CreateEnclaveArgs;
+  hasMode(): boolean;
+  clearMode(): CreateEnclaveArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CreateEnclaveArgs.AsObject;
@@ -45,10 +53,30 @@ export class CreateEnclaveArgs extends jspb.Message {
 
 export namespace CreateEnclaveArgs {
   export type AsObject = {
-    enclaveName: string,
-    apiContainerVersionTag: string,
-    apiContainerLogLevel: string,
-    mode: EnclaveMode,
+    enclaveName?: string,
+    apiContainerVersionTag?: string,
+    apiContainerLogLevel?: string,
+    mode?: EnclaveMode,
+  }
+
+  export enum EnclaveNameCase { 
+    _ENCLAVE_NAME_NOT_SET = 0,
+    ENCLAVE_NAME = 1,
+  }
+
+  export enum ApiContainerVersionTagCase { 
+    _API_CONTAINER_VERSION_TAG_NOT_SET = 0,
+    API_CONTAINER_VERSION_TAG = 2,
+  }
+
+  export enum ApiContainerLogLevelCase { 
+    _API_CONTAINER_LOG_LEVEL_NOT_SET = 0,
+    API_CONTAINER_LOG_LEVEL = 3,
+  }
+
+  export enum ModeCase { 
+    _MODE_NOT_SET = 0,
+    MODE = 4,
   }
 }
 

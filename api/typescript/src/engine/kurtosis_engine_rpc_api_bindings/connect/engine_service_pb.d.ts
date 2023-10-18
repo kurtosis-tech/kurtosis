@@ -153,29 +153,29 @@ export declare class CreateEnclaveArgs extends Message<CreateEnclaveArgs> {
   /**
    * The name of the new Kurtosis Enclave
    *
-   * @generated from field: string enclave_name = 1;
+   * @generated from field: optional string enclave_name = 1;
    */
-  enclaveName: string;
+  enclaveName?: string;
 
   /**
    * The image tag of the API container that should be used inside the enclave
    * If blank, will use the default version that the engine server uses
    *
-   * @generated from field: string api_container_version_tag = 2;
+   * @generated from field: optional string api_container_version_tag = 2;
    */
-  apiContainerVersionTag: string;
+  apiContainerVersionTag?: string;
 
   /**
    * The API container log level
    *
-   * @generated from field: string api_container_log_level = 3;
+   * @generated from field: optional string api_container_log_level = 3;
    */
-  apiContainerLogLevel: string;
+  apiContainerLogLevel?: string;
 
   /**
-   * @generated from field: engine_api.EnclaveMode mode = 4;
+   * @generated from field: optional engine_api.EnclaveMode mode = 4;
    */
-  mode: EnclaveMode;
+  mode?: EnclaveMode;
 
   constructor(data?: PartialMessage<CreateEnclaveArgs>);
 

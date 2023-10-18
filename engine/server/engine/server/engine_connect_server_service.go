@@ -75,21 +75,21 @@ func (service *EngineConnectServerService) GetEngineInfo(context.Context, *conne
 func (service *EngineConnectServerService) CreateEnclave(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CreateEnclaveResponse], error) {
 	args := connectArgs.Msg
 	logrus.Debugf("args: %+v", args)
-	apiContainerLogLevel, err := logrus.ParseLevel(args.ApiContainerLogLevel)
+	apiContainerLogLevel, err := logrus.ParseLevel(args.GetApiContainerLogLevel())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred parsing the log level string '%v':", args.ApiContainerLogLevel)
 	}
 
 	isProduction := false
-	if args.Mode == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
+	if args.GetMode() == kurtosis_engine_rpc_api_bindings.EnclaveMode_PRODUCTION {
 		isProduction = true
 	}
 	enclaveInfo, err := service.enclaveManager.CreateEnclave(
 		ctx,
 		service.imageVersionTag,
-		args.ApiContainerVersionTag,
+		args.GetApiContainerVersionTag(),
 		apiContainerLogLevel,
-		args.EnclaveName,
+		args.GetEnclaveName(),
 		isProduction,
 	)
 	if err != nil {

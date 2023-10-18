@@ -672,29 +672,29 @@ proto.engine_api.CreateEnclaveArgs.prototype.serializeBinary = function() {
  */
 proto.engine_api.CreateEnclaveArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getEnclaveName();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 1));
+  if (f != null) {
     writer.writeString(
       1,
       f
     );
   }
-  f = message.getApiContainerVersionTag();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 2));
+  if (f != null) {
     writer.writeString(
       2,
       f
     );
   }
-  f = message.getApiContainerLogLevel();
-  if (f.length > 0) {
+  f = /** @type {string} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
     writer.writeString(
       3,
       f
     );
   }
-  f = message.getMode();
-  if (f !== 0.0) {
+  f = /** @type {!proto.engine_api.EnclaveMode} */ (jspb.Message.getField(message, 4));
+  if (f != null) {
     writer.writeEnum(
       4,
       f
@@ -717,7 +717,25 @@ proto.engine_api.CreateEnclaveArgs.prototype.getEnclaveName = function() {
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setEnclaveName = function(value) {
-  return jspb.Message.setProto3StringField(this, 1, value);
+  return jspb.Message.setField(this, 1, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.clearEnclaveName = function() {
+  return jspb.Message.setField(this, 1, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.hasEnclaveName = function() {
+  return jspb.Message.getField(this, 1) != null;
 };
 
 
@@ -735,7 +753,25 @@ proto.engine_api.CreateEnclaveArgs.prototype.getApiContainerVersionTag = functio
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setApiContainerVersionTag = function(value) {
-  return jspb.Message.setProto3StringField(this, 2, value);
+  return jspb.Message.setField(this, 2, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.clearApiContainerVersionTag = function() {
+  return jspb.Message.setField(this, 2, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.hasApiContainerVersionTag = function() {
+  return jspb.Message.getField(this, 2) != null;
 };
 
 
@@ -753,7 +789,25 @@ proto.engine_api.CreateEnclaveArgs.prototype.getApiContainerLogLevel = function(
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setApiContainerLogLevel = function(value) {
-  return jspb.Message.setProto3StringField(this, 3, value);
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.clearApiContainerLogLevel = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.hasApiContainerLogLevel = function() {
+  return jspb.Message.getField(this, 3) != null;
 };
 
 
@@ -771,7 +825,25 @@ proto.engine_api.CreateEnclaveArgs.prototype.getMode = function() {
  * @return {!proto.engine_api.CreateEnclaveArgs} returns this
  */
 proto.engine_api.CreateEnclaveArgs.prototype.setMode = function(value) {
-  return jspb.Message.setProto3EnumField(this, 4, value);
+  return jspb.Message.setField(this, 4, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CreateEnclaveArgs} returns this
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.clearMode = function() {
+  return jspb.Message.setField(this, 4, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CreateEnclaveArgs.prototype.hasMode = function() {
+  return jspb.Message.getField(this, 4) != null;
 };
 
 
