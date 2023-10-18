@@ -1,6 +1,6 @@
 import axios from "axios"
 
-const host = "http://localhost:9770"// "https://cloud.kurtosis.com:9770"
+const host = "https://cloud.kurtosis.com:9770"
 
 export const getKurtosisPackages = async () => {
     try {
