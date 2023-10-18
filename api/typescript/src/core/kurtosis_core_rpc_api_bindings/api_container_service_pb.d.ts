@@ -239,6 +239,8 @@ export class RunStarlarkPackageArgs extends jspb.Message {
 
   getSerializedParams(): string;
   setSerializedParams(value: string): RunStarlarkPackageArgs;
+  hasSerializedParams(): boolean;
+  clearSerializedParams(): RunStarlarkPackageArgs;
 
   getDryRun(): boolean;
   setDryRun(value: boolean): RunStarlarkPackageArgs;
@@ -257,9 +259,13 @@ export class RunStarlarkPackageArgs extends jspb.Message {
 
   getRelativePathToMainFile(): string;
   setRelativePathToMainFile(value: string): RunStarlarkPackageArgs;
+  hasRelativePathToMainFile(): boolean;
+  clearRelativePathToMainFile(): RunStarlarkPackageArgs;
 
   getMainFunctionName(): string;
   setMainFunctionName(value: string): RunStarlarkPackageArgs;
+  hasMainFunctionName(): boolean;
+  clearMainFunctionName(): RunStarlarkPackageArgs;
 
   getExperimentalFeaturesList(): Array<KurtosisFeatureFlag>;
   setExperimentalFeaturesList(value: Array<KurtosisFeatureFlag>): RunStarlarkPackageArgs;
@@ -291,12 +297,12 @@ export namespace RunStarlarkPackageArgs {
     packageId: string,
     local: Uint8Array | string,
     remote: boolean,
-    serializedParams: string,
+    serializedParams?: string,
     dryRun?: boolean,
     parallelism?: number,
     clonePackage?: boolean,
-    relativePathToMainFile: string,
-    mainFunctionName: string,
+    relativePathToMainFile?: string,
+    mainFunctionName?: string,
     experimentalFeaturesList: Array<KurtosisFeatureFlag>,
     cloudInstanceId?: string,
     cloudUserId?: string,
@@ -306,6 +312,11 @@ export namespace RunStarlarkPackageArgs {
     STARLARK_PACKAGE_CONTENT_NOT_SET = 0,
     LOCAL = 3,
     REMOTE = 4,
+  }
+
+  export enum SerializedParamsCase { 
+    _SERIALIZED_PARAMS_NOT_SET = 0,
+    SERIALIZED_PARAMS = 5,
   }
 
   export enum DryRunCase { 
@@ -321,6 +332,16 @@ export namespace RunStarlarkPackageArgs {
   export enum ClonePackageCase { 
     _CLONE_PACKAGE_NOT_SET = 0,
     CLONE_PACKAGE = 8,
+  }
+
+  export enum RelativePathToMainFileCase { 
+    _RELATIVE_PATH_TO_MAIN_FILE_NOT_SET = 0,
+    RELATIVE_PATH_TO_MAIN_FILE = 9,
+  }
+
+  export enum MainFunctionNameCase { 
+    _MAIN_FUNCTION_NAME_NOT_SET = 0,
+    MAIN_FUNCTION_NAME = 10,
   }
 
   export enum CloudInstanceIdCase { 

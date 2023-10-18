@@ -177,7 +177,7 @@ message RunStarlarkPackageArgs {
 
   // Serialized parameters data for the Starlark package main function
   // This should be a valid JSON string
-  string serialized_params = 5;
+  optional string serialized_params = 5;
 
   // Defaults to false
   optional bool dry_run = 6;
@@ -192,10 +192,10 @@ message RunStarlarkPackageArgs {
   optional bool clone_package = 8;
 
   // The relative main file filepath, the default value is the "main.star" file in the root of a package
-  string relative_path_to_main_file = 9;
+  optional string relative_path_to_main_file = 9;
 
   // The name of the main function, the default value is "run"
-  string main_function_name = 10;
+  optional string main_function_name = 10;
 
   repeated KurtosisFeatureFlag experimental_features = 11;
 

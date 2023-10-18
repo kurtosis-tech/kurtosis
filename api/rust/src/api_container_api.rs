@@ -186,8 +186,8 @@ pub struct RunStarlarkPackageArgs {
     pub package_id: ::prost::alloc::string::String,
     /// Serialized parameters data for the Starlark package main function
     /// This should be a valid JSON string
-    #[prost(string, tag = "5")]
-    pub serialized_params: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "5")]
+    pub serialized_params: ::core::option::Option<::prost::alloc::string::String>,
     /// Defaults to false
     #[prost(bool, optional, tag = "6")]
     pub dry_run: ::core::option::Option<bool>,
@@ -201,11 +201,13 @@ pub struct RunStarlarkPackageArgs {
     #[prost(bool, optional, tag = "8")]
     pub clone_package: ::core::option::Option<bool>,
     /// The relative main file filepath, the default value is the "main.star" file in the root of a package
-    #[prost(string, tag = "9")]
-    pub relative_path_to_main_file: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "9")]
+    pub relative_path_to_main_file: ::core::option::Option<
+        ::prost::alloc::string::String,
+    >,
     /// The name of the main function, the default value is "run"
-    #[prost(string, tag = "10")]
-    pub main_function_name: ::prost::alloc::string::String,
+    #[prost(string, optional, tag = "10")]
+    pub main_function_name: ::core::option::Option<::prost::alloc::string::String>,
     #[prost(enumeration = "KurtosisFeatureFlag", repeated, tag = "11")]
     pub experimental_features: ::prost::alloc::vec::Vec<i32>,
     /// Defaults to empty

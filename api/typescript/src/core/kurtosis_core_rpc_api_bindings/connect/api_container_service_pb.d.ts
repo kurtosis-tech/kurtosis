@@ -399,9 +399,9 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
    * Serialized parameters data for the Starlark package main function
    * This should be a valid JSON string
    *
-   * @generated from field: string serialized_params = 5;
+   * @generated from field: optional string serialized_params = 5;
    */
-  serializedParams: string;
+  serializedParams?: string;
 
   /**
    * Defaults to false
@@ -430,16 +430,16 @@ export declare class RunStarlarkPackageArgs extends Message<RunStarlarkPackageAr
   /**
    * The relative main file filepath, the default value is the "main.star" file in the root of a package
    *
-   * @generated from field: string relative_path_to_main_file = 9;
+   * @generated from field: optional string relative_path_to_main_file = 9;
    */
-  relativePathToMainFile: string;
+  relativePathToMainFile?: string;
 
   /**
    * The name of the main function, the default value is "run"
    *
-   * @generated from field: string main_function_name = 10;
+   * @generated from field: optional string main_function_name = 10;
    */
-  mainFunctionName: string;
+  mainFunctionName?: string;
 
   /**
    * @generated from field: repeated api_container_api.KurtosisFeatureFlag experimental_features = 11;
