@@ -59,7 +59,6 @@ const codeBox = (serviceUuid, serviceName, parameterName, data) => {
 
 const ServiceView = (service) => {
     const serviceInfo = service.service
-    console.log(serviceInfo)
     return (
         <TableContainer>
             <Table variant='simple' size='sm'>
