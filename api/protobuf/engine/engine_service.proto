@@ -188,7 +188,7 @@ message DestroyEnclaveArgs {
 // ==============================================================================================
 message CleanArgs {
   // If true, It will clean even the running enclaves
-  bool should_clean_all = 1;
+  optional bool should_clean_all = 1;
 }
 
 message EnclaveNameAndUuid {

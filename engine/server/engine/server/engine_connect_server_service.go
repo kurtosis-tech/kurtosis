@@ -144,11 +144,11 @@ func (service *EngineConnectServerService) DestroyEnclave(ctx context.Context, c
 
 func (service *EngineConnectServerService) Clean(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.CleanArgs]) (*connect.Response[kurtosis_engine_rpc_api_bindings.CleanResponse], error) {
 	args := connectArgs.Msg
-	removedEnclaveUuidsAndNames, err := service.enclaveManager.Clean(ctx, args.ShouldCleanAll)
+	removedEnclaveUuidsAndNames, err := service.enclaveManager.Clean(ctx, args.GetShouldCleanAll())
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred while cleaning enclaves")
 	}
-	if args.ShouldCleanAll {
+	if args.GetShouldCleanAll() {
 		if err = service.logFileManager.RemoveAllLogs(); err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred removing all logs.")
 		}

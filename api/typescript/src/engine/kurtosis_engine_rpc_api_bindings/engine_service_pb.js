@@ -2656,8 +2656,8 @@ proto.engine_api.CleanArgs.prototype.serializeBinary = function() {
  */
 proto.engine_api.CleanArgs.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
-  f = message.getShouldCleanAll();
-  if (f) {
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 1));
+  if (f != null) {
     writer.writeBool(
       1,
       f
@@ -2680,7 +2680,25 @@ proto.engine_api.CleanArgs.prototype.getShouldCleanAll = function() {
  * @return {!proto.engine_api.CleanArgs} returns this
  */
 proto.engine_api.CleanArgs.prototype.setShouldCleanAll = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 1, value);
+  return jspb.Message.setField(this, 1, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.CleanArgs} returns this
+ */
+proto.engine_api.CleanArgs.prototype.clearShouldCleanAll = function() {
+  return jspb.Message.setField(this, 1, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.CleanArgs.prototype.hasShouldCleanAll = function() {
+  return jspb.Message.getField(this, 1) != null;
 };
 
 

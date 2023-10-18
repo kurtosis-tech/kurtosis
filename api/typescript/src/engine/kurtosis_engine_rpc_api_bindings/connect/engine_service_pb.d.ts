@@ -545,9 +545,9 @@ export declare class CleanArgs extends Message<CleanArgs> {
   /**
    * If true, It will clean even the running enclaves
    *
-   * @generated from field: bool should_clean_all = 1;
+   * @generated from field: optional bool should_clean_all = 1;
    */
-  shouldCleanAll: boolean;
+  shouldCleanAll?: boolean;
 
   constructor(data?: PartialMessage<CleanArgs>);
 

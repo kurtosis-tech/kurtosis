@@ -223,7 +223,7 @@ export const DestroyEnclaveArgs = proto3.makeMessageType(
 export const CleanArgs = proto3.makeMessageType(
   "engine_api.CleanArgs",
   () => [
-    { no: 1, name: "should_clean_all", kind: "scalar", T: 8 /* ScalarType.BOOL */ },
+    { no: 1, name: "should_clean_all", kind: "scalar", T: 8 /* ScalarType.BOOL */, opt: true },
   ],
 );
 

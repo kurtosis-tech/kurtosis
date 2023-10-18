@@ -153,8 +153,8 @@ pub struct DestroyEnclaveArgs {
 #[derive(Clone, PartialEq, ::prost::Message)]
 pub struct CleanArgs {
     /// If true, It will clean even the running enclaves
-    #[prost(bool, tag = "1")]
-    pub should_clean_all: bool,
+    #[prost(bool, optional, tag = "1")]
+    pub should_clean_all: ::core::option::Option<bool>,
 }
 #[allow(clippy::derive_partial_eq_without_eq)]
 #[derive(Clone, PartialEq, ::prost::Message)]

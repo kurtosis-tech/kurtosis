@@ -311,6 +311,8 @@ export namespace DestroyEnclaveArgs {
 export class CleanArgs extends jspb.Message {
   getShouldCleanAll(): boolean;
   setShouldCleanAll(value: boolean): CleanArgs;
+  hasShouldCleanAll(): boolean;
+  clearShouldCleanAll(): CleanArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): CleanArgs.AsObject;
@@ -322,7 +324,12 @@ export class CleanArgs extends jspb.Message {
 
 export namespace CleanArgs {
   export type AsObject = {
-    shouldCleanAll: boolean,
+    shouldCleanAll?: boolean,
+  }
+
+  export enum ShouldCleanAllCase { 
+    _SHOULD_CLEAN_ALL_NOT_SET = 0,
+    SHOULD_CLEAN_ALL = 1,
   }
 }
 
