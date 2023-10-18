@@ -41,7 +41,7 @@ const PackageCatalogOption = ({catalog}) => {
                         p="2"
                         onClick={() => navigate("/enclave/load")}
                 >
-                    Custom Package
+                    Load Custom Package
                 </Center>
             </GridItem>
         </Grid>

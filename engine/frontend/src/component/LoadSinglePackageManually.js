@@ -1,7 +1,7 @@
 import {
     Button,
     FormControl,
-    FormErrorMessage,
+    FormErrorMessage, FormHelperText,
     FormLabel,
     Input,
     Modal,
@@ -94,8 +94,9 @@ const LoadSinglePackageManually = () => {
                     <ModalCloseButton/>
                     <ModalBody pb={6}>
                         <FormControl isInvalid={isError()}>
-                            <FormLabel>Enter Github URL</FormLabel>
+                            <FormLabel>Enter Github URL to package</FormLabel>
                             <Input value={input} onChange={handleInputChange} placeholder='github.com/owner/repo'/>
+                            {/*<FormHelperText>Example with nested package:`github.com/kurtosis-tech/awesome-kurtosis/quickstart`</FormHelperText>*/}
                             <FormErrorMessage>{errorMessage}</FormErrorMessage>
                         </FormControl>
                     </ModalBody>
