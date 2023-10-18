@@ -110,7 +110,7 @@ func (kurtosisCtx *KurtosisContext) CreateEnclave(
 	enclaveName string,
 ) (*enclaves.EnclaveContext, error) {
 
-	createEnclaveArgs := getCreateEnclaveArgsWithDefaultValues(enclaveName)
+	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName)
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
@@ -131,7 +131,7 @@ func (kurtosisCtx *KurtosisContext) CreateProductionEnclave(
 	enclaveName string,
 ) (*enclaves.EnclaveContext, error) {
 
-	createEnclaveArgs := getCreateEnclaveArgsWithDefaultValues(enclaveName)
+	createEnclaveArgs := newCreateEnclaveArgsWithDefaultValues(enclaveName)
 
 	response, err := kurtosisCtx.engineClient.CreateEnclave(ctx, createEnclaveArgs)
 	if err != nil {
@@ -509,10 +509,10 @@ func newGetServiceLogsArgs(
 	getUserServiceLogsArgs := &kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs{
 		EnclaveIdentifier:  enclaveIdentifier,
 		ServiceUuidSet:     userServiceUuuidSet,
-		FollowLogs:         shouldFollowLogs,
+		FollowLogs:         &shouldFollowLogs,
 		ConjunctiveFilters: grpcConjunctiveFilters,
-		ReturnAllLogs:      shouldReturnAllLogs,
-		NumLogLines:        numLogLines,
+		ReturnAllLogs:      &shouldReturnAllLogs,
+		NumLogLines:        &numLogLines,
 	}
 
 	return getUserServiceLogsArgs, nil
@@ -589,7 +589,7 @@ func newServiceLogsStreamContentFromGrpcStreamResponse(
 	return newServiceLogsStreamContentObj
 }
 
-func getCreateEnclaveArgsWithDefaultValues(enclaveName string) *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs {
+func newCreateEnclaveArgsWithDefaultValues(enclaveName string) *kurtosis_engine_rpc_api_bindings.CreateEnclaveArgs {
 
 	defaultApiContainerVersionTag := defaultApiContainerVersionTagStr
 	defaultApiContainerLogLevel := defaultApiContainerLogLevelStr

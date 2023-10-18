@@ -377,6 +377,8 @@ export class GetServiceLogsArgs extends jspb.Message {
 
   getFollowLogs(): boolean;
   setFollowLogs(value: boolean): GetServiceLogsArgs;
+  hasFollowLogs(): boolean;
+  clearFollowLogs(): GetServiceLogsArgs;
 
   getConjunctiveFiltersList(): Array<LogLineFilter>;
   setConjunctiveFiltersList(value: Array<LogLineFilter>): GetServiceLogsArgs;
@@ -385,9 +387,13 @@ export class GetServiceLogsArgs extends jspb.Message {
 
   getReturnAllLogs(): boolean;
   setReturnAllLogs(value: boolean): GetServiceLogsArgs;
+  hasReturnAllLogs(): boolean;
+  clearReturnAllLogs(): GetServiceLogsArgs;
 
   getNumLogLines(): number;
   setNumLogLines(value: number): GetServiceLogsArgs;
+  hasNumLogLines(): boolean;
+  clearNumLogLines(): GetServiceLogsArgs;
 
   serializeBinary(): Uint8Array;
   toObject(includeInstance?: boolean): GetServiceLogsArgs.AsObject;
@@ -401,10 +407,25 @@ export namespace GetServiceLogsArgs {
   export type AsObject = {
     enclaveIdentifier: string,
     serviceUuidSetMap: Array<[string, boolean]>,
-    followLogs: boolean,
+    followLogs?: boolean,
     conjunctiveFiltersList: Array<LogLineFilter.AsObject>,
-    returnAllLogs: boolean,
-    numLogLines: number,
+    returnAllLogs?: boolean,
+    numLogLines?: number,
+  }
+
+  export enum FollowLogsCase { 
+    _FOLLOW_LOGS_NOT_SET = 0,
+    FOLLOW_LOGS = 3,
+  }
+
+  export enum ReturnAllLogsCase { 
+    _RETURN_ALL_LOGS_NOT_SET = 0,
+    RETURN_ALL_LOGS = 5,
+  }
+
+  export enum NumLogLinesCase { 
+    _NUM_LOG_LINES_NOT_SET = 0,
+    NUM_LOG_LINES = 6,
   }
 }
 

@@ -3153,8 +3153,8 @@ proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, 
   if (f && f.getLength() > 0) {
     f.serializeBinary(2, writer, jspb.BinaryWriter.prototype.writeString, jspb.BinaryWriter.prototype.writeBool);
   }
-  f = message.getFollowLogs();
-  if (f) {
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 3));
+  if (f != null) {
     writer.writeBool(
       3,
       f
@@ -3168,15 +3168,15 @@ proto.engine_api.GetServiceLogsArgs.serializeBinaryToWriter = function(message, 
       proto.engine_api.LogLineFilter.serializeBinaryToWriter
     );
   }
-  f = message.getReturnAllLogs();
-  if (f) {
+  f = /** @type {boolean} */ (jspb.Message.getField(message, 5));
+  if (f != null) {
     writer.writeBool(
       5,
       f
     );
   }
-  f = message.getNumLogLines();
-  if (f !== 0) {
+  f = /** @type {number} */ (jspb.Message.getField(message, 6));
+  if (f != null) {
     writer.writeUint32(
       6,
       f
@@ -3239,7 +3239,25 @@ proto.engine_api.GetServiceLogsArgs.prototype.getFollowLogs = function() {
  * @return {!proto.engine_api.GetServiceLogsArgs} returns this
  */
 proto.engine_api.GetServiceLogsArgs.prototype.setFollowLogs = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 3, value);
+  return jspb.Message.setField(this, 3, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.clearFollowLogs = function() {
+  return jspb.Message.setField(this, 3, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.hasFollowLogs = function() {
+  return jspb.Message.getField(this, 3) != null;
 };
 
 
@@ -3295,7 +3313,25 @@ proto.engine_api.GetServiceLogsArgs.prototype.getReturnAllLogs = function() {
  * @return {!proto.engine_api.GetServiceLogsArgs} returns this
  */
 proto.engine_api.GetServiceLogsArgs.prototype.setReturnAllLogs = function(value) {
-  return jspb.Message.setProto3BooleanField(this, 5, value);
+  return jspb.Message.setField(this, 5, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.clearReturnAllLogs = function() {
+  return jspb.Message.setField(this, 5, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.hasReturnAllLogs = function() {
+  return jspb.Message.getField(this, 5) != null;
 };
 
 
@@ -3313,7 +3349,25 @@ proto.engine_api.GetServiceLogsArgs.prototype.getNumLogLines = function() {
  * @return {!proto.engine_api.GetServiceLogsArgs} returns this
  */
 proto.engine_api.GetServiceLogsArgs.prototype.setNumLogLines = function(value) {
-  return jspb.Message.setProto3IntField(this, 6, value);
+  return jspb.Message.setField(this, 6, value);
+};
+
+
+/**
+ * Clears the field making it undefined.
+ * @return {!proto.engine_api.GetServiceLogsArgs} returns this
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.clearNumLogLines = function() {
+  return jspb.Message.setField(this, 6, undefined);
+};
+
+
+/**
+ * Returns whether this field is set.
+ * @return {boolean}
+ */
+proto.engine_api.GetServiceLogsArgs.prototype.hasNumLogLines = function() {
+  return jspb.Message.getField(this, 6) != null;
 };
 
 

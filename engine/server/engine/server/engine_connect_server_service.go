@@ -172,9 +172,9 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 	}
 	serviceUuidStrSet := args.GetServiceUuidSet()
 	requestedServiceUuids := make(map[user_service.ServiceUUID]bool, len(serviceUuidStrSet))
-	shouldFollowLogs := args.FollowLogs
-	shouldReturnAllLogs := args.ReturnAllLogs
-	numLogLines := args.NumLogLines
+	shouldFollowLogs := args.GetFollowLogs()
+	shouldReturnAllLogs := args.GetReturnAllLogs()
+	numLogLines := args.GetNumLogLines()
 
 	for serviceUuidStr := range serviceUuidStrSet {
 		serviceUuid := user_service.ServiceUUID(serviceUuidStr)

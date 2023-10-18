@@ -644,9 +644,9 @@ export declare class GetServiceLogsArgs extends Message<GetServiceLogsArgs> {
   /**
    * If true, It will follow the container logs
    *
-   * @generated from field: bool follow_logs = 3;
+   * @generated from field: optional bool follow_logs = 3;
    */
-  followLogs: boolean;
+  followLogs?: boolean;
 
   /**
    * The conjunctive log lines filters, the first filter is applied over the found log lines, the second filter is applied over the filter one result and so on (like grep)
@@ -658,16 +658,16 @@ export declare class GetServiceLogsArgs extends Message<GetServiceLogsArgs> {
   /**
    * If true, return all log lines
    *
-   * @generated from field: bool return_all_logs = 5;
+   * @generated from field: optional bool return_all_logs = 5;
    */
-  returnAllLogs: boolean;
+  returnAllLogs?: boolean;
 
   /**
    * If [return_all_logs] is false, return [num_log_lines]
    *
-   * @generated from field: uint32 num_log_lines = 6;
+   * @generated from field: optional uint32 num_log_lines = 6;
    */
-  numLogLines: number;
+  numLogLines?: number;
 
   constructor(data?: PartialMessage<GetServiceLogsArgs>);
 
