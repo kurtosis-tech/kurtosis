@@ -8,18 +8,20 @@ import (
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_framework/lowlevel/flags"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/command_str_consts"
 	"github.com/kurtosis-tech/kurtosis/cli/cli/kurtosis_package"
+	"github.com/kurtosis-tech/kurtosis/cli/cli/user_support_constants"
 	"github.com/kurtosis-tech/stacktrace"
 	"os"
 )
 
 const (
 	packageNameArgKey          = "package-name"
-	packageNameArgDefaultValue = ""
-	packageNameArgIsOptional   = false
+	packageNameArgDefaultValue = "github.com/random-org/random-package"
+	packageNameArgIsOptional   = true
 	packageNameArgIsGreedy     = false
 
-	executablePackageFlagKey          = "main"
-	executablePackageFlagDefaultValue = "false"
+	alwaysCreateExecutablePackage = true
+
+	validPackageNameExample = "github.com/kurtosis-tech/ethereum-package"
 )
 
 var InitCmd = &lowlevel.LowlevelKurtosisCommand{
@@ -35,14 +37,6 @@ var InitCmd = &lowlevel.LowlevelKurtosisCommand{
 			ValidationFunc: validatePackageNameArg,
 		},
 	},
-	Flags: []*flags.FlagConfig{
-		{
-			Key:     executablePackageFlagKey,
-			Usage:   "indicates that the created package is an executable package, and generates a 'main.star' if one does not already exist.",
-			Type:    flags.FlagType_Bool,
-			Default: executablePackageFlagDefaultValue,
-		},
-	},
 	PreValidationAndRunFunc:  nil,
 	RunFunc:                  run,
 	PostValidationAndRunFunc: nil,
@@ -54,17 +48,12 @@ func run(ctx context.Context, flags *flags.ParsedFlags, args *args.ParsedArgs) e
 		return stacktrace.Propagate(err, "an error occurred getting the value of argument with key '%v'", packageNameArgKey)
 	}
 
-	executablePackageFlag, err := flags.GetBool(executablePackageFlagKey)
-	if err != nil {
-		return stacktrace.Propagate(err, "an error occurred getting the value of flag '%v'", executablePackageFlagKey)
-	}
-
 	packageDestinationDirpath, err := os.Getwd()
 	if err != nil {
 		return stacktrace.Propagate(err, "An error occurred getting the current working directory for creating the Kurtosis package")
 	}
 
-	if err := kurtosis_package.InitializeKurtosisPackage(packageDestinationDirpath, packageNameArg, executablePackageFlag); err != nil {
+	if err := kurtosis_package.InitializeKurtosisPackage(packageDestinationDirpath, packageNameArg, alwaysCreateExecutablePackage); err != nil {
 		return stacktrace.Propagate(err, "An error occurred initializing the Kurtosis package '%s' in '%s'", packageNameArg, packageDestinationDirpath)
 	}
 
@@ -78,7 +67,7 @@ func validatePackageNameArg(_ context.Context, _ *flags.ParsedFlags, args *args.
 	}
 
 	if _, err := shared_utils.ParseGitURL(packageNameArg); err != nil {
-		return stacktrace.Propagate(err, "An erro occurred validating package name '%v', invalid GitHub URL", packageNameArg)
+		return stacktrace.Propagate(err, "An error occurred validating package name '%v', invalid GitHub URL, the package name has to be a valid GitHub URL like '%s'. You can see more here: '%s' ", packageNameArg, validPackageNameExample, user_support_constants.StarlarkPackagesReferenceURL)
 	}
 
 	return nil
