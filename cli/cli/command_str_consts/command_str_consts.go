@@ -70,6 +70,8 @@ const (
 	VersionCmdStr           = "version"
 	ImportCmdStr            = "import"
 	GatewayCmdStr           = "gateway"
+	PackageCmdStr           = "package"
+	InitCmdStr              = "init"
 	PortCmdStr              = "port"
 	PortPrintCmdStr         = "print"
 	WebCmdStr               = "web"

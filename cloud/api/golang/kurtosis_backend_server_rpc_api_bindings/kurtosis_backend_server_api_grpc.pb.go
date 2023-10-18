@@ -20,12 +20,13 @@ import (
 const _ = grpc.SupportPackageIsVersion7
 
 const (
-	KurtosisCloudBackendServer_IsAvailable_FullMethodName              = "/kurtosis_cloud.KurtosisCloudBackendServer/IsAvailable"
-	KurtosisCloudBackendServer_CreateCloudInstance_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/CreateCloudInstance"
-	KurtosisCloudBackendServer_GetCloudInstanceConfig_FullMethodName   = "/kurtosis_cloud.KurtosisCloudBackendServer/GetCloudInstanceConfig"
-	KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName        = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateApiKey"
-	KurtosisCloudBackendServer_GetOrCreateInstance_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
-	KurtosisCloudBackendServer_GetOrCreatePaymentConfig_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreatePaymentConfig"
+	KurtosisCloudBackendServer_IsAvailable_FullMethodName                 = "/kurtosis_cloud.KurtosisCloudBackendServer/IsAvailable"
+	KurtosisCloudBackendServer_CreateCloudInstance_FullMethodName         = "/kurtosis_cloud.KurtosisCloudBackendServer/CreateCloudInstance"
+	KurtosisCloudBackendServer_GetCloudInstanceConfig_FullMethodName      = "/kurtosis_cloud.KurtosisCloudBackendServer/GetCloudInstanceConfig"
+	KurtosisCloudBackendServer_GetOrCreateApiKey_FullMethodName           = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateApiKey"
+	KurtosisCloudBackendServer_GetOrCreateInstance_FullMethodName         = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreateInstance"
+	KurtosisCloudBackendServer_GetOrCreatePaymentConfig_FullMethodName    = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreatePaymentConfig"
+	KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_FullMethodName = "/kurtosis_cloud.KurtosisCloudBackendServer/RefreshDefaultPaymentMethod"
 )
 
 // KurtosisCloudBackendServerClient is the client API for KurtosisCloudBackendServer service.
@@ -38,6 +39,7 @@ type KurtosisCloudBackendServerClient interface {
 	GetOrCreateApiKey(ctx context.Context, in *GetOrCreateApiKeyRequest, opts ...grpc.CallOption) (*GetOrCreateApiKeyResponse, error)
 	GetOrCreateInstance(ctx context.Context, in *GetOrCreateInstanceRequest, opts ...grpc.CallOption) (*GetOrCreateInstanceResponse, error)
 	GetOrCreatePaymentConfig(ctx context.Context, in *GetOrCreatePaymentConfigArgs, opts ...grpc.CallOption) (*GetOrCreatePaymentConfigResponse, error)
+	RefreshDefaultPaymentMethod(ctx context.Context, in *RefreshDefaultPaymentMethodArgs, opts ...grpc.CallOption) (*emptypb.Empty, error)
 }
 
 type kurtosisCloudBackendServerClient struct {
@@ -102,6 +104,15 @@ func (c *kurtosisCloudBackendServerClient) GetOrCreatePaymentConfig(ctx context.
 	return out, nil
 }
 
+func (c *kurtosisCloudBackendServerClient) RefreshDefaultPaymentMethod(ctx context.Context, in *RefreshDefaultPaymentMethodArgs, opts ...grpc.CallOption) (*emptypb.Empty, error) {
+	out := new(emptypb.Empty)
+	err := c.cc.Invoke(ctx, KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KurtosisCloudBackendServerServer is the server API for KurtosisCloudBackendServer service.
 // All implementations should embed UnimplementedKurtosisCloudBackendServerServer
 // for forward compatibility
@@ -112,6 +123,7 @@ type KurtosisCloudBackendServerServer interface {
 	GetOrCreateApiKey(context.Context, *GetOrCreateApiKeyRequest) (*GetOrCreateApiKeyResponse, error)
 	GetOrCreateInstance(context.Context, *GetOrCreateInstanceRequest) (*GetOrCreateInstanceResponse, error)
 	GetOrCreatePaymentConfig(context.Context, *GetOrCreatePaymentConfigArgs) (*GetOrCreatePaymentConfigResponse, error)
+	RefreshDefaultPaymentMethod(context.Context, *RefreshDefaultPaymentMethodArgs) (*emptypb.Empty, error)
 }
 
 // UnimplementedKurtosisCloudBackendServerServer should be embedded to have forward compatible implementations.
@@ -135,6 +147,9 @@ func (UnimplementedKurtosisCloudBackendServerServer) GetOrCreateInstance(context
 }
 func (UnimplementedKurtosisCloudBackendServerServer) GetOrCreatePaymentConfig(context.Context, *GetOrCreatePaymentConfigArgs) (*GetOrCreatePaymentConfigResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetOrCreatePaymentConfig not implemented")
+}
+func (UnimplementedKurtosisCloudBackendServerServer) RefreshDefaultPaymentMethod(context.Context, *RefreshDefaultPaymentMethodArgs) (*emptypb.Empty, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method RefreshDefaultPaymentMethod not implemented")
 }
 
 // UnsafeKurtosisCloudBackendServerServer may be embedded to opt out of forward compatibility for this service.
@@ -256,6 +271,24 @@ func _KurtosisCloudBackendServer_GetOrCreatePaymentConfig_Handler(srv interface{
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RefreshDefaultPaymentMethodArgs)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KurtosisCloudBackendServerServer).RefreshDefaultPaymentMethod(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KurtosisCloudBackendServerServer).RefreshDefaultPaymentMethod(ctx, req.(*RefreshDefaultPaymentMethodArgs))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KurtosisCloudBackendServer_ServiceDesc is the grpc.ServiceDesc for KurtosisCloudBackendServer service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -286,6 +319,10 @@ var KurtosisCloudBackendServer_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetOrCreatePaymentConfig",
 			Handler:    _KurtosisCloudBackendServer_GetOrCreatePaymentConfig_Handler,
+		},
+		{
+			MethodName: "RefreshDefaultPaymentMethod",
+			Handler:    _KurtosisCloudBackendServer_RefreshDefaultPaymentMethod_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
