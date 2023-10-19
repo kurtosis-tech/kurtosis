@@ -1250,6 +1250,7 @@ func (manager *DockerManager) FetchLatestImage(ctx context.Context, dockerImage 
 func (manager *DockerManager) FetchImage(ctx context.Context, image string, download_mode image_download_mode.ImageDownloadMode) (bool, error) {
 	var err error
 	var pulledFromRemote bool = true
+	logrus.Infof("Fetching image '%s' is running in '%s' mode", image, download_mode)
 
 	switch image_pulling := download_mode; image_pulling {
 	case image_download_mode.Always:
