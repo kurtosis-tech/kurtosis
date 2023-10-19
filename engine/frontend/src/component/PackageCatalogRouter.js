@@ -2,12 +2,10 @@ import {Route, Routes, useNavigate} from 'react-router-dom';
 import PackageCatalogForm from './PackageCatalogForm';
 import PackageCatalog from './PackageCatalog';
 import PackageCatalogProgress from "./PackageCatalogProgress";
-import {useEffect} from 'react';
+import {useEffect, useState} from 'react';
 import {getKurtosisPackages} from "../api/packageCatalog";
 import {createEnclave} from "../api/enclave";
-import {useState} from "react";
 import {useAppContext} from "../context/AppState";
-import {getStarlarkRunConfig} from "../api/api";
 
 const PackageCatalogRouter = ({addEnclave}) => {
     const navigate = useNavigate()

@@ -1,9 +1,16 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {useNavigate} from 'react-router-dom';
 import NoData from './NoData';
 
-const Main = ({totalEnclaves}) => {
+const Main = ({totalEnclaves, preloadedPackage}) => {
     const navigate = useNavigate()
+
+    useEffect(() => {
+        if (preloadedPackage) {
+            navigate(`/enclave/load-automatically`, {state: {preloadedPackage: preloadedPackage}})
+        }
+    }, [])
+
     const handleCreateEnvClick = () => {
         navigate("/catalog")
     }
