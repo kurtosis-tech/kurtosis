@@ -261,11 +261,6 @@ func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageAlways(
 	return builder
 }
 
-func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageNever() *CreateAndStartContainerArgsBuilder {
-	builder.imageDownloadMode = image_download_mode.Never
-	return builder
-}
-
 func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageOnMissing() *CreateAndStartContainerArgsBuilder {
 	builder.imageDownloadMode = image_download_mode.Missing
 	return builder

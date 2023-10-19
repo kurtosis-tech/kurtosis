@@ -1257,7 +1257,7 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 		err = manager.FetchLatestImage(ctx, image)
 	case image_download_mode.Missing:
 		pulledFromRemote, err = manager.FetchImageMissing(ctx, image)
-	case image_download_mode.Never:
+	default:
 		return false, stacktrace.NewError("Undefined image pulling mode: '%v'", image_pulling)
 	}
 

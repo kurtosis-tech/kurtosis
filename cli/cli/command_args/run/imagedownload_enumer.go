@@ -7,11 +7,11 @@ import (
 	"strings"
 )
 
-const _ImageDownloadName = "NEVERALWAYSMISSING"
+const _ImageDownloadName = "ALWAYSMISSING"
 
-var _ImageDownloadIndex = [...]uint8{0, 5, 11, 18}
+var _ImageDownloadIndex = [...]uint8{0, 6, 13}
 
-const _ImageDownloadLowerName = "neveralwaysmissing"
+const _ImageDownloadLowerName = "alwaysmissing"
 
 func (i ImageDownload) String() string {
 	if i < 0 || i >= ImageDownload(len(_ImageDownloadIndex)-1) {
@@ -24,26 +24,22 @@ func (i ImageDownload) String() string {
 // Re-run the stringer command to generate them again.
 func _ImageDownloadNoOp() {
 	var x [1]struct{}
-	_ = x[never-(0)]
-	_ = x[always-(1)]
-	_ = x[missing-(2)]
+	_ = x[always-(0)]
+	_ = x[missing-(1)]
 }
 
-var _ImageDownloadValues = []ImageDownload{never, always, missing}
+var _ImageDownloadValues = []ImageDownload{always, missing}
 
 var _ImageDownloadNameToValueMap = map[string]ImageDownload{
-	_ImageDownloadName[0:5]:        never,
-	_ImageDownloadLowerName[0:5]:   never,
-	_ImageDownloadName[5:11]:       always,
-	_ImageDownloadLowerName[5:11]:  always,
-	_ImageDownloadName[11:18]:      missing,
-	_ImageDownloadLowerName[11:18]: missing,
+	_ImageDownloadName[0:6]:       always,
+	_ImageDownloadLowerName[0:6]:  always,
+	_ImageDownloadName[6:13]:      missing,
+	_ImageDownloadLowerName[6:13]: missing,
 }
 
 var _ImageDownloadNames = []string{
-	_ImageDownloadName[0:5],
-	_ImageDownloadName[5:11],
-	_ImageDownloadName[11:18],
+	_ImageDownloadName[0:6],
+	_ImageDownloadName[6:13],
 }
 
 // ImageDownloadString retrieves an enum value from the enum constants string name.

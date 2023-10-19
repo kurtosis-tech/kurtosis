@@ -196,7 +196,7 @@ var StarlarkRunCmd = &engine_consuming_kurtosis_command.EngineConsumingKurtosisC
 		},
 		{
 			Key:     imageDownloadFlagKey,
-			Usage:   "If unset, it defaults to `missing` for fetching the latest image only if not available in local cache. Use `never` to only use local cached image (never fetch new images) and `always` to always fetch the latest image.",
+			Usage:   "If unset, it defaults to `missing` for fetching the latest image only if not available in local cache. Use `always` to always fetch the latest image.",
 			Type:    flags.FlagType_String,
 			Default: defaultImageDownload,
 		},

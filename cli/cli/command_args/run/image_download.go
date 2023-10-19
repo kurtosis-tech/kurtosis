@@ -4,7 +4,6 @@ package run
 type ImageDownload int
 
 const (
-	never ImageDownload = iota
-	always
+	always ImageDownload = iota
 	missing
 )
