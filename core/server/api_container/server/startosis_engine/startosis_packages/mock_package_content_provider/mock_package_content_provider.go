@@ -1,7 +1,7 @@
 package mock_package_content_provider
 
 import (
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/commons/yaml_parser"
 	"github.com/kurtosis-tech/stacktrace"
@@ -81,7 +81,7 @@ func (provider *MockPackageContentProvider) GetAbsoluteLocatorForRelativeLocator
 		return "", startosis_errors.NewInterpretationError("Cannot use local absolute locators")
 	}
 
-	if strings.HasPrefix(relativeOrAbsoluteModulePath, startosis_constants.GithubDomainPrefix) {
+	if strings.HasPrefix(relativeOrAbsoluteModulePath, shared_utils.GithubDomainPrefix) {
 		return relativeOrAbsoluteModulePath, nil
 	}
 	return provider.packageId, nil
