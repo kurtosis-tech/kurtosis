@@ -699,9 +699,8 @@ impl ServiceStatus {
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, ::prost::Enumeration)]
 #[repr(i32)]
 pub enum ImageDownloadMode {
-    Never = 0,
-    Always = 1,
-    Missing = 2,
+    Always = 0,
+    Missing = 1,
 }
 impl ImageDownloadMode {
     /// String value of the enum field names used in the ProtoBuf definition.
@@ -710,7 +709,6 @@ impl ImageDownloadMode {
     /// (if the ProtoBuf definition does not change) and safe for programmatic use.
     pub fn as_str_name(&self) -> &'static str {
         match self {
-            ImageDownloadMode::Never => "never",
             ImageDownloadMode::Always => "always",
             ImageDownloadMode::Missing => "missing",
         }
@@ -718,7 +716,6 @@ impl ImageDownloadMode {
     /// Creates an enum from field names used in the ProtoBuf definition.
     pub fn from_str_name(value: &str) -> ::core::option::Option<Self> {
         match value {
-            "never" => Some(Self::Never),
             "always" => Some(Self::Always),
             "missing" => Some(Self::Missing),
             _ => None,

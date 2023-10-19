@@ -1303,9 +1303,8 @@ export enum ServiceStatus {
   UNKNOWN = 2,
 }
 export enum ImageDownloadMode { 
-  NEVER = 0,
-  ALWAYS = 1,
-  MISSING = 2,
+  ALWAYS = 0,
+  MISSING = 1,
 }
 export enum Connect { 
   CONNECT = 0,

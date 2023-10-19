@@ -10059,9 +10059,8 @@ proto.api_container_api.ServiceStatus = {
  * @enum {number}
  */
 proto.api_container_api.ImageDownloadMode = {
-  NEVER: 0,
-  ALWAYS: 1,
-  MISSING: 2
+  ALWAYS: 0,
+  MISSING: 1
 };
 
 /**

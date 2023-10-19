@@ -31,19 +31,14 @@ export declare enum ServiceStatus {
  */
 export declare enum ImageDownloadMode {
   /**
-   * @generated from enum value: never = 0;
+   * @generated from enum value: always = 0;
    */
-  never = 0,
+  always = 0,
 
   /**
-   * @generated from enum value: always = 1;
+   * @generated from enum value: missing = 1;
    */
-  always = 1,
-
-  /**
-   * @generated from enum value: missing = 2;
-   */
-  missing = 2,
+  missing = 1,
 }
 
 /**

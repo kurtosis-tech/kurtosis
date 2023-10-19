@@ -95,9 +95,8 @@ enum ServiceStatus {
 }
 
 enum ImageDownloadMode {
-	never   = 0;
-	always  = 1;
-	missing = 2;
+	always  = 0;
+	missing = 1;
 }
 
 message ServiceInfo {

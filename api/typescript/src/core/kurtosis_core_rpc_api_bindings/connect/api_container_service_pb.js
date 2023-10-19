@@ -23,9 +23,8 @@ export const ServiceStatus = proto3.makeEnum(
 export const ImageDownloadMode = proto3.makeEnum(
   "api_container_api.ImageDownloadMode",
   [
-    {no: 0, name: "never"},
-    {no: 1, name: "always"},
-    {no: 2, name: "missing"},
+    {no: 0, name: "always"},
+    {no: 1, name: "missing"},
   ],
 );
 
