@@ -1205,6 +1205,7 @@ func testServiceConfig(imageName string) *service.ServiceConfig {
 		"",
 		0,
 		0,
+		map[string]string{},
 	)
 }
 

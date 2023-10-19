@@ -623,6 +623,7 @@ func createStartServiceOperation(
 			serviceUUID,
 			privateIpAddr,
 			privatePorts,
+			serviceConfig.GetLabels(),
 		)
 		if err != nil {
 			return nil, stacktrace.Propagate(err, "An error occurred while trying to get the user service container attributes for user service with UUID '%v'", serviceUUID)
@@ -688,7 +689,9 @@ func createStartServiceOperation(
 			volumeMounts,
 		).WithLoggingDriver(
 			fluentdLoggingDriverCnfg,
-		).WithRestartPolicy(restartPolicy)
+		).WithRestartPolicy(
+			restartPolicy,
+		)
 
 		if entrypointArgs != nil {
 			createAndStartArgsBuilder.WithEntrypointArgs(entrypointArgs)

@@ -7,7 +7,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_object_name"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/port_spec"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
@@ -45,6 +44,7 @@ type DockerEnclaveObjectAttributesProvider interface {
 		serviceUuid service.ServiceUUID,
 		privateIpAddr net.IP,
 		privatePorts map[string]*port_spec.PortSpec,
+		userLabels map[string]string,
 	) (DockerObjectAttributes, error)
 	ForFilesArtifactsExpanderContainer(
 		serviceUUID service.ServiceUUID,
@@ -110,8 +110,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveNetwork(enc
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave network using ID '%v'", provider.enclaveId)
 	}
 
-	labels[label_key_consts.EnclaveCreationTimeLabelKey] = creationTimeLabelValue
-	labels[label_key_consts.EnclaveNameDockerLabelKey] = enclaveNameLabelValue
+	labels[docker_label_key.EnclaveCreationTimeLabelKey] = creationTimeLabelValue
+	labels[docker_label_key.EnclaveNameDockerLabelKey] = enclaveNameLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -134,7 +134,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForEnclaveDataVolume(
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.EnclaveDataVolumeTypeDockerLabelValue
+	labels[docker_label_key.VolumeTypeDockerLabelKey] = label_value_consts.EnclaveDataVolumeTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -173,8 +173,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	}
 
 	labels := provider.getLabelsForEnclaveObject()
-	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.APIContainerContainerTypeDockerLabelValue
-	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
+	labels[docker_label_key.ContainerTypeDockerLabelKey] = label_value_consts.APIContainerContainerTypeDockerLabelValue
+	labels[docker_label_key.PrivateIPDockerLabelKey] = privateIpLabelValue
 
 	usedPorts := map[string]*port_spec.PortSpec{
 		privateGrpcPortId: privateGrpcPortSpec,
@@ -183,7 +183,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForApiContainer(
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following API container ports object to a string for storing in the ports label: %+v", usedPorts)
 	}
-	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
+	labels[docker_label_key.PortSpecsDockerLabelKey] = serializedPortsSpec
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -203,6 +203,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	serviceUuid service.ServiceUUID,
 	privateIpAddr net.IP,
 	privatePorts map[string]*port_spec.PortSpec,
+	userLabels map[string]string,
 ) (DockerObjectAttributes, error) {
 	name, err := provider.getNameForUserServiceContainer(
 		serviceName,
@@ -232,9 +233,22 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting labels for enclave object with UUID '%v'", serviceUuid)
 	}
-	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
-	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
-	labels[label_key_consts.PrivateIPDockerLabelKey] = privateIpLabelValue
+	labels[docker_label_key.ContainerTypeDockerLabelKey] = label_value_consts.UserServiceContainerTypeDockerLabelValue
+	labels[docker_label_key.PortSpecsDockerLabelKey] = serializedPortsSpec
+	labels[docker_label_key.PrivateIPDockerLabelKey] = privateIpLabelValue
+
+	// add user custom label
+	for userLabelKey, userLabelValue := range userLabels {
+		dockerLabelKey, err := docker_label_key.CreateNewDockerUserCustomLabelKey(userLabelKey)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a new Docker label key '%s'", userLabelKey)
+		}
+		dockerLabelValue, err := docker_label_value.CreateNewDockerLabelValue(userLabelValue)
+		if err != nil {
+			return nil, stacktrace.Propagate(err, "An error occurred creating a new Docker label value '%s'", userLabelValue)
+		}
+		labels[dockerLabelKey] = dockerLabelValue
+	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -280,8 +294,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSingleFilesArtifac
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceUuidStr)
 	}
-	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
-	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue
+	labels[docker_label_key.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
+	labels[docker_label_key.VolumeTypeDockerLabelKey] = label_value_consts.FilesArtifactExpansionVolumeTypeDockerLabelValue
 	// TODO Create a KurtosisResourceDockerLabelKey object, like Kubernetes, and apply the "user-service" label here?
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
@@ -329,8 +343,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForSinglePersistentDi
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceUuidStr)
 	}
-	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
-	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.PersistentDirectoryVolumeTypeDockerLabelValue
+	labels[docker_label_key.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
+	labels[docker_label_key.VolumeTypeDockerLabelKey] = label_value_consts.PersistentDirectoryVolumeTypeDockerLabelValue
 	// TODO Create a KurtosisResourceDockerLabelKey object, like Kubernetes, and apply the "user-service" label here?
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
@@ -373,8 +387,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForFilesArtifactsExpa
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from service GUID string '%v'", serviceUuidStr)
 	}
-	labels[label_key_consts.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
-	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeDockerLabelValue
+	labels[docker_label_key.UserServiceGUIDDockerLabelKey] = serviceUuidLabelValue
+	labels[docker_label_key.ContainerTypeDockerLabelKey] = label_value_consts.FilesArtifactExpanderContainerTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -401,8 +415,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForLogsCollector(tcpP
 		return nil, stacktrace.Propagate(err, "An error occurred serializing the following logs-collector-server-ports to a string for storing in the ports label: %+v", usedPorts)
 	}
 
-	labels[label_key_consts.ContainerTypeDockerLabelKey] = label_value_consts.LogsCollectorTypeDockerLabelValue
-	labels[label_key_consts.PortSpecsDockerLabelKey] = serializedPortsSpec
+	labels[docker_label_key.ContainerTypeDockerLabelKey] = label_value_consts.LogsCollectorTypeDockerLabelValue
+	labels[docker_label_key.PortSpecsDockerLabelKey] = serializedPortsSpec
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -420,7 +434,7 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForLogsCollectorVolum
 
 	labels := provider.getLabelsForEnclaveObject()
 
-	labels[label_key_consts.VolumeTypeDockerLabelKey] = label_value_consts.LogsCollectorVolumeTypeDockerLabelValue
+	labels[docker_label_key.VolumeTypeDockerLabelKey] = label_value_consts.LogsCollectorVolumeTypeDockerLabelValue
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
 	if err != nil {
@@ -466,8 +480,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getNameForUserService
 
 func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveObject() map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue {
 	return map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.EnclaveUUIDDockerLabelKey:     provider.enclaveId,
-		label_key_consts.LogsEnclaveUUIDDockerLabelKey: provider.enclaveId,
+		docker_label_key.EnclaveUUIDDockerLabelKey:     provider.enclaveId,
+		docker_label_key.LogsEnclaveUUIDDockerLabelKey: provider.enclaveId,
 	}
 }
 
@@ -482,9 +496,9 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a short GUID Docker label value from GUID string '%v'", guid)
 	}
-	labels[label_key_consts.GUIDDockerLabelKey] = guidLabelValue
-	labels[label_key_consts.LogsServiceUUIDDockerLabelKey] = guidLabelValue
-	labels[label_key_consts.LogsServiceShortUUIDDockerLabelKey] = shortGuidLabelValue
+	labels[docker_label_key.GUIDDockerLabelKey] = guidLabelValue
+	labels[docker_label_key.LogsServiceUUIDDockerLabelKey] = guidLabelValue
+	labels[docker_label_key.LogsServiceShortUUIDDockerLabelKey] = shortGuidLabelValue
 	return labels, nil
 }
 
@@ -497,8 +511,8 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) getLabelsForEnclaveOb
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred creating a Docker label value from ID string '%v'", id)
 	}
-	labels[label_key_consts.IDDockerLabelKey] = idLabelValue
-	labels[label_key_consts.LogsServiceNameDockerLabelKey] = idLabelValue
+	labels[docker_label_key.IDDockerLabelKey] = idLabelValue
+	labels[docker_label_key.LogsServiceNameDockerLabelKey] = idLabelValue
 	return labels, nil
 }
 

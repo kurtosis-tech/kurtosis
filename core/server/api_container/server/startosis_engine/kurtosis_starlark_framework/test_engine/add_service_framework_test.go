@@ -44,6 +44,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddService() {
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
+				map[string]string{},
 			)
 
 			actualServiceConfig := serviceConfig

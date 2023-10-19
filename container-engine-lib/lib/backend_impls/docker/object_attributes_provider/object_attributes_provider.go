@@ -5,7 +5,6 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_label_value"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_object_name"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/docker_port_spec_serializer"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_key_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/docker/object_attributes_provider/label_value_consts"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/enclave"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/engine"
@@ -78,10 +77,10 @@ func (provider *dockerObjectAttributesProviderImpl) ForEngineServer(
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.ContainerTypeDockerLabelKey: label_value_consts.EngineContainerTypeDockerLabelValue,
-		label_key_consts.PortSpecsDockerLabelKey:     serializedPortsSpec,
-		label_key_consts.IDDockerLabelKey:            idLabelValue,
-		label_key_consts.GUIDDockerLabelKey:          guidLabelValue,
+		docker_label_key.ContainerTypeDockerLabelKey: label_value_consts.EngineContainerTypeDockerLabelValue,
+		docker_label_key.PortSpecsDockerLabelKey:     serializedPortsSpec,
+		docker_label_key.IDDockerLabelKey:            idLabelValue,
+		docker_label_key.GUIDDockerLabelKey:          guidLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
@@ -109,7 +108,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsAggregator() (DockerO
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.ContainerTypeDockerLabelKey: label_value_consts.LogsAggregatorTypeDockerLabelValue,
+		docker_label_key.ContainerTypeDockerLabelKey: label_value_consts.LogsAggregatorTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)
@@ -126,7 +125,7 @@ func (provider *dockerObjectAttributesProviderImpl) ForLogsStorageVolume() (Dock
 	}
 
 	labels := map[*docker_label_key.DockerLabelKey]*docker_label_value.DockerLabelValue{
-		label_key_consts.VolumeTypeDockerLabelKey: label_value_consts.LogsStorageVolumeTypeDockerLabelValue,
+		docker_label_key.VolumeTypeDockerLabelKey: label_value_consts.LogsStorageVolumeTypeDockerLabelValue,
 	}
 
 	objectAttributes, err := newDockerObjectAttributesImpl(name, labels)

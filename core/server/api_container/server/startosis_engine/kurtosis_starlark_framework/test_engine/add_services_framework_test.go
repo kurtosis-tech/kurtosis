@@ -60,6 +60,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
+				map[string]string{},
 			)
 			actualServiceConfig1 := configs[testServiceName]
 			suite.Assert().Equal(expectedServiceConfig1, actualServiceConfig1)
@@ -78,6 +79,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				service_config.DefaultPrivateIPAddrPlaceholder,
 				0,
 				0,
+				map[string]string{},
 			)
 			actualServiceConfig2 := configs[testServiceName2]
 			suite.Assert().Equal(expectedServiceConfig2, actualServiceConfig2)

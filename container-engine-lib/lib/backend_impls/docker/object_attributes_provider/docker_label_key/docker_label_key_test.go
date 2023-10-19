@@ -15,18 +15,24 @@ var testLabelsWithValidity = map[string]bool{
 	"a99a9":                   true,
 	"a.7.3.5":                 true,
 	"com.kurtosistech.app-id": true,
+	"kurtosistech.com/app-id": false, // kubernetes labels standard not allowed
 }
 
 func TestEdgeCaseLabels(t *testing.T) {
 	for label, shouldPass := range testLabelsWithValidity {
-		_, err := CreateNewDockerLabelKey(label)
+		_, err := createNewDockerLabelKey(label)
 		didPass := err == nil
-		require.Equal(t, shouldPass, didPass, "Expected label key string '%v' validity to be '%v' but was '%v'", shouldPass, didPass)
+		require.Equal(t, shouldPass, didPass, "Expected label key string '%v' validity to be '%v' but was '%v'", label, shouldPass, didPass)
+		_, err = CreateNewDockerUserCustomLabelKey(label)
+		didPass = err == nil
+		require.Equal(t, shouldPass, didPass, "Expected user custom label key string '%v' validity to be '%v' but was '%v'", label, shouldPass, didPass)
 	}
 }
 
 func TestTooLongLabel(t *testing.T) {
 	invalidLabel := strings.Repeat("a", 9999)
-	_, err := CreateNewDockerLabelKey(invalidLabel)
+	_, err := createNewDockerLabelKey(invalidLabel)
+	require.Error(t, err)
+	_, err = CreateNewDockerUserCustomLabelKey(invalidLabel)
 	require.Error(t, err)
 }

@@ -50,6 +50,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		"",
 		0,
 		0,
+		map[string]string{},
 	)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -89,6 +90,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		"",
 		0,
 		0,
+		map[string]string{},
 	)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -130,6 +132,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		"",
 		0,
 		0,
+		map[string]string{},
 	)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
@@ -172,6 +175,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 		"",
 		0,
 		0,
+		map[string]string{},
 	)
 
 	replacedServiceName, _, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)

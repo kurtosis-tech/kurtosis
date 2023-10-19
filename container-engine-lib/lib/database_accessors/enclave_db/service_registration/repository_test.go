@@ -316,6 +316,10 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 		"IP-ADDRESS",
 		100,
 		512,
+		map[string]string{
+			"test-label-key":        "test-label-value",
+			"test-second-label-key": "test-second-label-value",
+		},
 	)
 }
 

@@ -20,16 +20,25 @@ type DockerLabelKey struct {
 }
 
 // NOTE: This is ONLY for areas where the label is declared statically!! Any sort of dynamic/runtime label creation
-// should use CreateNewDockerLabelKey
+// should use createNewDockerLabelKey
 func MustCreateNewDockerLabelKey(str string) *DockerLabelKey {
-	key, err := CreateNewDockerLabelKey(str)
+	key, err := createNewDockerLabelKey(str)
 	if err != nil {
 		panic(err)
 	}
 	return key
 }
 
-func CreateNewDockerLabelKey(str string) (*DockerLabelKey, error) {
+// CreateNewDockerUserCustomLabelKey creates a custom uer Docker label with the Kurtosis custom user prefix
+func CreateNewDockerUserCustomLabelKey(str string) (*DockerLabelKey, error) {
+	if str == "" || str == " " {
+		return nil, stacktrace.NewError("Received an empty user custom label key")
+	}
+	labelKeyStr := customUserLabelsKeyPrefixStr + str
+	return createNewDockerLabelKey(labelKeyStr)
+}
+
+func createNewDockerLabelKey(str string) (*DockerLabelKey, error) {
 	if !dockerLabelKeyRegex.MatchString(str) {
 		return nil, stacktrace.NewError("Label key string '%v' doesn't match Docker label key regex '%v'", str, dockerLabelKeyRegexStr)
 	}

@@ -50,6 +50,7 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 		service_config.DefaultPrivateIPAddrPlaceholder,
 		0,
 		0,
+		map[string]string{},
 	)
 	require.Equal(t, expectedServiceConfig, serviceConfig)
 }

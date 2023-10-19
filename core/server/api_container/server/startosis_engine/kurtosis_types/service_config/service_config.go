@@ -175,7 +175,7 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              LabelsAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
-					Validator:         nil,
+					Validator:         nil, //TODO agregar la validación
 				},
 			},
 		},

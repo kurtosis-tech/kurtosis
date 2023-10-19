@@ -76,7 +76,7 @@ func NewServiceConfig(
 		// The minimum resources specification is only available for kubernetes
 		MinCpuAllocationMilliCpus:    minCpuMilliCores,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
-		Labels:                       labels,
+		Labels:                       labels, //TODO validate labels with Kubernetes and Docker regex
 	}
 	return &ServiceConfig{internalServiceConfig}
 }
