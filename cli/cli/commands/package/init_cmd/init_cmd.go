@@ -15,7 +15,7 @@ import (
 
 const (
 	packageNameArgKey          = "package-name"
-	packageNameArgDefaultValue = "github.com/random-org/random-package"
+	packageNameArgDefaultValue = "github.com/example-org/example-package"
 	packageNameArgIsOptional   = true
 	packageNameArgIsGreedy     = false
 
