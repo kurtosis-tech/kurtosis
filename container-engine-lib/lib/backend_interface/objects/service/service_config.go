@@ -41,6 +41,8 @@ type privateServiceConfig struct {
 	MinCpuAllocationMilliCpus uint64
 
 	MinMemoryAllocationMegabytes uint64
+
+	Labels map[string]string
 }
 
 func NewServiceConfig(
@@ -57,6 +59,7 @@ func NewServiceConfig(
 	privateIPAddrPlaceholder string,
 	minCpuMilliCores uint64,
 	minMemoryMegaBytes uint64,
+	labels map[string]string,
 ) *ServiceConfig {
 	internalServiceConfig := &privateServiceConfig{
 		ContainerImageName:        containerImageName,
@@ -73,6 +76,7 @@ func NewServiceConfig(
 		// The minimum resources specification is only available for kubernetes
 		MinCpuAllocationMilliCpus:    minCpuMilliCores,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
+		Labels:                       labels,
 	}
 	return &ServiceConfig{internalServiceConfig}
 }
@@ -129,6 +133,10 @@ func (serviceConfig *ServiceConfig) GetMinCPUAllocationMillicpus() uint64 {
 // only available for Kubernetes
 func (serviceConfig *ServiceConfig) GetMinMemoryAllocationMegabytes() uint64 {
 	return serviceConfig.privateServiceConfig.MinMemoryAllocationMegabytes
+}
+
+func (serviceConfig *ServiceConfig) GetLabels() map[string]string {
+	return serviceConfig.privateServiceConfig.Labels
 }
 
 func (serviceConfig *ServiceConfig) MarshalJSON() ([]byte, error) {

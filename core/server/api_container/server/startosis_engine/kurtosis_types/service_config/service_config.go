@@ -38,6 +38,7 @@ const (
 	MinMemoryMegaBytesAttr          = "min_memory"
 	MaxCpuMilliCoresAttr            = "max_cpu"
 	MaxMemoryMegaBytesAttr          = "max_memory"
+	LabelsAttr                      = "labels"
 
 	DefaultPrivateIPAddrPlaceholder = "KURTOSIS_IP_ADDR_PLACEHOLDER"
 
@@ -168,6 +169,12 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              ReadyConditionsAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*ReadyCondition],
+					Validator:         nil,
+				},
+				{
+					Name:              LabelsAttr,
+					IsOptional:        true,
+					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
 					Validator:         nil,
 				},
 			},
@@ -442,6 +449,18 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		minMemory = 0
 	}
 
+	labels := map[string]string{}
+	labelsStarlark, found, interpretationErr := kurtosis_type_constructor.ExtractAttrValue[*starlark.Dict](config.KurtosisValueTypeDefault, LabelsAttr)
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+	if found && labelsStarlark.Len() > 0 {
+		labels, interpretationErr = kurtosis_types.SafeCastToMapStringString(labelsStarlark, LabelsAttr)
+		if interpretationErr != nil {
+			return nil, interpretationErr
+		}
+	}
+
 	return service.NewServiceConfig(
 		imageName,
 		privatePorts,
@@ -456,6 +475,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		privateIpAddressPlaceholder,
 		minCpu,
 		minMemory,
+		labels,
 	), nil
 }
 
