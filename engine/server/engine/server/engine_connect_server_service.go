@@ -245,10 +245,10 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 			}
 
 			getServiceLogsResponse := newLogsResponse(requestedServiceUuids, serviceLogsByServiceUuid, notFoundServiceUuids)
-			if err := stream.Send(getServiceLogsResponse); err != nil { // is this guy potentially buffering?
-				return stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
-			}
-			for i := 0; i < 100; i++ {
+			for i := 0; i < 50; i++ {
+				if err := stream.Send(getServiceLogsResponse); err != nil { // is this guy potentially buffering?
+					return stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
+				}
 				logrus.Infof("Sent log for service '%v' in enclave '%v': %v", requestedServiceUuids, enclaveIdentifier, getServiceLogsResponse)
 			}
 		//client cancel ctx case
