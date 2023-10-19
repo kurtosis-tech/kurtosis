@@ -133,6 +133,7 @@ func NewRunStarlarkRemotePackageArgs(
 		MainFunctionName:       mainFunctionName,
 		ExperimentalFeatures:   experimentalFeatures,
 		CloudInstanceId:        cloudInstanceIdCopy,
+		CloudUserId:            cloudUserIdCopy,
 		ImageDownloadMode:      imageDownloadModeCopy,
 	}
 }
