@@ -637,7 +637,7 @@ func parseImageDownloadFlag(flags *flags.ParsedFlags) (kurtosis_core_rpc_api_bin
 	if err != nil {
 		return defaultImageMode, stacktrace.Propagate(err, "Invalid image-download value: '%s'. Possible values are %s", imageDownloadStr, strings.Join(command_args_run.ImageDownloadStrings(), ", "))
 	}
-	imageDownloadRPC := kurtosis_core_rpc_api_bindings.ImageDownloadMode(kurtosis_core_rpc_api_bindings.ImageDownloadMode_value[imageDownload.String()])
+	imageDownloadRPC := kurtosis_core_rpc_api_bindings.ImageDownloadMode(kurtosis_core_rpc_api_bindings.ImageDownloadMode_value[strings.ToLower(imageDownload.String())])
 	return imageDownloadRPC, nil
 }
 
