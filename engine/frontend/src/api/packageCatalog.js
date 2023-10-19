@@ -1,7 +1,7 @@
 import axios from "axios"
 
 const host = "https://cloud.kurtosis.com:9770"
-
+const NumberOfRequiredGithubUrlComponents = 3
 export const getKurtosisPackages = async () => {
     try {
         const response = await axios.post(
@@ -70,7 +70,7 @@ export const getSinglePackageManuallyWithFullUrl = (fullUrl) => {
 
 export const getOwnerNameFromUrl = (fullUrl) => {
     const components = fullUrl.split('/');
-    if (components.length < 3) {
+    if (components.length < NumberOfRequiredGithubUrlComponents) {
         throw `Illegal url, invalid number of components: ${fullUrl}`
     }
     if (components[1].length < 1 || components[2].length < 1) {
