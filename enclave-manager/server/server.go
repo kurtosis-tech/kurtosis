@@ -157,20 +157,25 @@ func (c *WebServer) GetServiceLogs(
 	req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
 	str *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) error {
-	engineClient, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
+	engineServiceClient := kurtosis_engine_rpc_api_bindingsconnect.NewEngineServiceClient(
+		http.DefaultClient,
+		engineHostUrl,
+	)
+
+	engineServiceLogsStream, err := engineServiceClient.GetServiceLogs(ctx, req)
 	if err != nil {
-		return err
+		return stacktrace.Propagate(err, "An error occurred attempting to get service logs stream from engine.")
 	}
 
-	for engineClient.Receive() {
-		resp := engineClient.Msg()
+	for engineServiceLogsStream.Receive() {
+		resp := engineServiceLogsStream.Msg()
 		errWhileSending := str.Send(resp)
 		if errWhileSending != nil {
 			return stacktrace.Propagate(errWhileSending, "An error occurred in the enclave manager server attempting to send services logs.")
 		}
 	}
-	if engineClient.Err() != nil {
-		return stacktrace.Propagate(engineClient.Err(), "An error occurred in the enclave manager server attempting to receive services logs.")
+	if engineServiceLogsStream.Err() != nil {
+		return stacktrace.Propagate(engineServiceLogsStream.Err(), "An error occurred in the enclave manager server attempting to receive services logs.")
 	}
 
 	return nil
