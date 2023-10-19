@@ -10,7 +10,7 @@ lang_root_dirpath="$(dirname "${script_dirpath}")"
 #                                             Main Logic
 # ==================================================================================================
 cd "${lang_root_dirpath}"
-yarn install
+yarn install --frozen-lockfile
 # There are no unit tests currently
 # CGO_ENABLED=0 yarn test
 yarn build
