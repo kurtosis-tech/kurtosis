@@ -158,7 +158,6 @@ func (service *EngineConnectServerService) Clean(ctx context.Context, connectArg
 }
 
 func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, connectArgs *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs], stream *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse]) error {
-
 	args := connectArgs.Msg
 	enclaveIdentifier := args.GetEnclaveIdentifier()
 	enclaveUuid, err := service.enclaveManager.GetEnclaveUuidForEnclaveIdentifier(context.Background(), enclaveIdentifier)
@@ -180,6 +179,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		serviceUuid := user_service.ServiceUUID(serviceUuidStr)
 		requestedServiceUuids[serviceUuid] = true
 	}
+	logrus.Infof("Received get service logs request for service '%v' in enclave '%v'", requestedServiceUuids, enclaveIdentifier)
 
 	if service.perWeekLogsDatabaseClient == nil || service.perFileLogsDatabaseClient == nil {
 		return stacktrace.NewError("It's not possible to return service logs because there is no logs database client; this is bug in Kurtosis")
@@ -233,6 +233,7 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 		}
 	}()
 
+	logrus.Infof("Starting to stream logs for service '%v' in enclave '%v'...", requestedServiceUuids, enclaveIdentifier)
 	for {
 		select {
 		//stream case
@@ -244,12 +245,16 @@ func (service *EngineConnectServerService) GetServiceLogs(ctx context.Context, c
 			}
 
 			getServiceLogsResponse := newLogsResponse(requestedServiceUuids, serviceLogsByServiceUuid, notFoundServiceUuids)
-			if err := stream.Send(getServiceLogsResponse); err != nil {
+			if err := stream.Send(getServiceLogsResponse); err != nil { // is this guy potentially buffering?
 				return stacktrace.Propagate(err, "An error occurred sending the stream logs for service logs response '%+v'", getServiceLogsResponse)
+			}
+			for i := 0; i < 100; i++ {
+				logrus.Infof("Sent log for service '%v' in enclave '%v': %v", requestedServiceUuids, enclaveIdentifier, getServiceLogsResponse)
 			}
 		//client cancel ctx case
 		case <-contextWithCancel.Done():
-			logrus.Debug("The user service logs stream has done")
+			logrus.Info("Exiting the stream after finishing streaming service logs.")
+			logrus.Debug("Exiting the stream after finishing streaming service logs.")
 			return nil
 		//error from logs database case
 		case err, isChanOpen := <-errChan:

@@ -215,16 +215,16 @@ func getFilepathStr(year, week int, enclaveUuid, serviceIdentifier string) strin
 // creates a directory path of format /<filepath_base>/year/week/<enclave>/
 func getEnclaveLogsDirPath(year, week int, enclaveUuid string) string {
 	logsDirPathForYearAndWeek := getLogsDirPathForWeek(year, week)
-	return fmt.Sprintf("%s/%s/", logsDirPathForYearAndWeek, enclaveUuid)
+	return fmt.Sprintf("%s%s/", logsDirPathForYearAndWeek, enclaveUuid)
 }
 
 // creates a directory path of format /<filepath_base>/year/week/
 func getLogsDirPathForWeek(year, week int) string {
 	logsDirPathForYear := getLogsDirPathForYear(year)
-	return fmt.Sprintf("%s/%s/", logsDirPathForYear, strconv.Itoa(week))
+	return fmt.Sprintf("%s%s/", logsDirPathForYear, strconv.Itoa(week))
 }
 
 // creates a directory path of format /<filepath_base>/year/
 func getLogsDirPathForYear(year int) string {
-	return fmt.Sprintf("%s/%s/", volume_consts.LogsStorageDirpath, strconv.Itoa(year))
+	return fmt.Sprintf("%s%s/", volume_consts.LogsStorageDirpath, strconv.Itoa(year))
 }

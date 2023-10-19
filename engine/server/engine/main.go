@@ -149,7 +149,7 @@ func runMain() error {
 
 	// TODO: Move logFileManager into LogsDatabaseClient
 	logFileManager := log_file_manager.NewLogFileManager(kurtosisBackend, osFs, realTime)
-	logFileManager.StartLogFileManagement(ctx)
+	//logFileManager.StartLogFileManagement(ctx)
 
 	enclaveManager, err := getEnclaveManager(kurtosisBackend, serverArgs.KurtosisBackendType, serverArgs.ImageVersionTag, serverArgs.PoolSize, serverArgs.EnclaveEnvVars, logFileManager, serverArgs.MetricsUserID, serverArgs.DidUserAcceptSendingMetrics)
 	if err != nil {
