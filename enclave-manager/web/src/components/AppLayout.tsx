@@ -9,7 +9,7 @@ export const AppLayout = ({ Nav, children }: AppLayoutProps) => {
   return (
     <Flex flexDirection={"row"}>
       {Nav}
-      <Flex w={"100%"} p={"1rem"}>
+      <Flex as="main" w={"100%"} p={"3rem 3rem 3rem 3rem"} className={"app-container"}>
         {children}
       </Flex>
     </Flex>
