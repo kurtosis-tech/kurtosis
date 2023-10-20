@@ -5,12 +5,15 @@ import { Navbar } from "./Navbar";
 import { KurtosisThemeProvider } from "../components/KurtosisThemeProvider";
 import { createBrowserRouter, Outlet, RouterProvider } from "react-router-dom";
 import { enclaveRoutes } from "./enclaves/Enclaves";
+import { KurtosisClientProvider } from "../client/KurtosisClientContext";
 
 const router = createBrowserRouter([
   {
     element: (
       <AppLayout Nav={<Navbar />}>
-        <Outlet />
+        <KurtosisClientProvider>
+          <Outlet />
+        </KurtosisClientProvider>
       </AppLayout>
     ),
     children: [

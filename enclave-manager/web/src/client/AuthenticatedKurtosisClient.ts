@@ -9,9 +9,18 @@ function constructGatewayURL(host: string): string {
 }
 
 export class AuthenticatedKurtosisClient extends KurtosisClient {
+  private token: string;
+
   constructor(host: string, token: string) {
     super(
       createPromiseClient(KurtosisEnclaveManagerServer, createConnectTransport({ baseUrl: constructGatewayURL(host) })),
     );
+    this.token = token;
+  }
+
+  getHeaderOptions(): { headers?: Headers } {
+    const headers = new Headers();
+    headers.set("Authorization", `Bearer ${this.token}`);
+    return { headers: headers };
   }
 }

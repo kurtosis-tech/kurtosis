@@ -1,2 +1,3 @@
 export const KURTOSIS_DEFAULT_HOST = "localhost";
 export const KURTOSIS_DEFAULT_PORT = 8081;
+export const KURTOSIS_DEFAULT_URL = `http://${KURTOSIS_DEFAULT_HOST}:${KURTOSIS_DEFAULT_PORT}`;
