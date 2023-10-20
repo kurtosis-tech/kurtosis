@@ -34,7 +34,7 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 	fileArtifact1 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNameAttr, testFilesArtifactName1)
 	fileArtifact2 := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.ArtifactNameAttr, testFilesArtifactName2)
 	persistentDirectory := fmt.Sprintf("%s(%s=%q)", directory.DirectoryTypeName, directory.PersistentKeyAttr, testPersistentDirectoryKey)
-	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s)",
+	starlarkCode := fmt.Sprintf("%s(%s=%q, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%s, %s=%q, %s=%d, %s=%d, %s=%d, %s=%d, %s=%s, %s=%v)",
 		service_config.ServiceConfigTypeName,
 		service_config.ImageAttr, testContainerImageName,
 		service_config.PortsAttr, fmt.Sprintf("{%q: PortSpec(number=%d, transport_protocol=%q, application_protocol=%q, wait=%q)}", testPrivatePortId, testPrivatePortNumber, testPrivatePortProtocolStr, testPrivateApplicationProtocol, testWaitConfiguration),
@@ -50,6 +50,7 @@ func (t *serviceConfigFullTestCase) GetStarlarkCode() string {
 		service_config.MinMemoryMegaBytesAttr, testMinMemoryMegabytes,
 		service_config.ReadyConditionsAttr,
 		getDefaultReadyConditionsScriptPart(),
+		service_config.LabelsAttr, fmt.Sprintf("{%q: %q, %q: %q}", testServiceConfigLabelsKey1, testServiceConfigLabelsValue1, testServiceConfigLabelsKey2, testServiceConfigLabelsValue2),
 	)
 	return starlarkCode
 }
@@ -107,4 +108,6 @@ func (t *serviceConfigFullTestCase) Assert(typeValue builtin_argument.KurtosisVa
 	require.Equal(t, testCpuAllocation, serviceConfig.GetCPUAllocationMillicpus())
 	require.Equal(t, testMinMemoryMegabytes, serviceConfig.GetMinMemoryAllocationMegabytes())
 	require.Equal(t, testMinCpuMilliCores, serviceConfig.GetMinCPUAllocationMillicpus())
+
+	require.Equal(t, testServiceConfigLabels, serviceConfig.GetLabels())
 }

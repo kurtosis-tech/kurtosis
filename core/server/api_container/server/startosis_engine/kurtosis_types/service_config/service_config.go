@@ -175,7 +175,9 @@ func NewServiceConfigType() *kurtosis_type_constructor.KurtosisTypeConstructor {
 					Name:              LabelsAttr,
 					IsOptional:        true,
 					ZeroValueProvider: builtin_argument.ZeroValueProvider[*starlark.Dict],
-					Validator:         nil, //TODO agregar la validación
+					Validator: func(value starlark.Value) *startosis_errors.InterpretationError {
+						return builtin_argument.ServiceConfigLabels(value, LabelsAttr)
+					},
 				},
 			},
 		},
@@ -461,7 +463,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		}
 	}
 
-	return service.CreateServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		privatePorts,
 		publicPorts,
@@ -476,7 +478,11 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		minCpu,
 		minMemory,
 		labels,
-	), nil
+	)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating a service config")
+	}
+	return serviceConfig, nil
 }
 
 func (config *ServiceConfig) GetReadyCondition() (*ReadyCondition, *startosis_errors.InterpretationError) {

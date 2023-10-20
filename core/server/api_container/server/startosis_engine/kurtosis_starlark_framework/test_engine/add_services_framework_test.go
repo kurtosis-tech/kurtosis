@@ -46,7 +46,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 			suite.Require().Contains(configs, testServiceName)
 			suite.Require().Contains(configs, testServiceName2)
 
-			expectedServiceConfig1 := service.CreateServiceConfig(
+			expectedServiceConfig1, err := service.CreateServiceConfig(
 				testContainerImageName,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
@@ -62,10 +62,12 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				0,
 				map[string]string{},
 			)
+			require.NoError(suite.T(), err)
+
 			actualServiceConfig1 := configs[testServiceName]
 			suite.Assert().Equal(expectedServiceConfig1, actualServiceConfig1)
 
-			expectedServiceConfig2 := service.CreateServiceConfig(
+			expectedServiceConfig2, err := service.CreateServiceConfig(
 				testContainerImageName,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
@@ -81,6 +83,8 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 				0,
 				map[string]string{},
 			)
+			require.NoError(suite.T(), err)
+
 			actualServiceConfig2 := configs[testServiceName2]
 			suite.Assert().Equal(expectedServiceConfig2, actualServiceConfig2)
 			return true
