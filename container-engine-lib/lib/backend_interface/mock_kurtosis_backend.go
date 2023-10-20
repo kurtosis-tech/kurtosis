@@ -802,23 +802,23 @@ func (_c *MockKurtosisBackend_DumpKurtosis_Call) RunAndReturn(run func(context.C
 	return _c
 }
 
-// FetchImage provides a mock function with given fields: ctx, image, download_mode
-func (_m *MockKurtosisBackend) FetchImage(ctx context.Context, image string, download_mode image_download_mode.ImageDownloadMode) (bool, error) {
-	ret := _m.Called(ctx, image, download_mode)
+// FetchImage provides a mock function with given fields: ctx, image, downloadMode
+func (_m *MockKurtosisBackend) FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, error) {
+	ret := _m.Called(ctx, image, downloadMode)
 
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, image_download_mode.ImageDownloadMode) (bool, error)); ok {
-		return rf(ctx, image, download_mode)
+		return rf(ctx, image, downloadMode)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, image_download_mode.ImageDownloadMode) bool); ok {
-		r0 = rf(ctx, image, download_mode)
+		r0 = rf(ctx, image, downloadMode)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, image_download_mode.ImageDownloadMode) error); ok {
-		r1 = rf(ctx, image, download_mode)
+		r1 = rf(ctx, image, downloadMode)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -834,12 +834,12 @@ type MockKurtosisBackend_FetchImage_Call struct {
 // FetchImage is a helper method to define mock.On call
 //   - ctx context.Context
 //   - image string
-//   - download_mode image_download_mode.ImageDownloadMode
-func (_e *MockKurtosisBackend_Expecter) FetchImage(ctx interface{}, image interface{}, download_mode interface{}) *MockKurtosisBackend_FetchImage_Call {
-	return &MockKurtosisBackend_FetchImage_Call{Call: _e.mock.On("FetchImage", ctx, image, download_mode)}
+//   - downloadMode image_download_mode.ImageDownloadMode
+func (_e *MockKurtosisBackend_Expecter) FetchImage(ctx interface{}, image interface{}, downloadMode interface{}) *MockKurtosisBackend_FetchImage_Call {
+	return &MockKurtosisBackend_FetchImage_Call{Call: _e.mock.On("FetchImage", ctx, image, downloadMode)}
 }
 
-func (_c *MockKurtosisBackend_FetchImage_Call) Run(run func(ctx context.Context, image string, download_mode image_download_mode.ImageDownloadMode)) *MockKurtosisBackend_FetchImage_Call {
+func (_c *MockKurtosisBackend_FetchImage_Call) Run(run func(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode)) *MockKurtosisBackend_FetchImage_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		run(args[0].(context.Context), args[1].(string), args[2].(image_download_mode.ImageDownloadMode))
 	})

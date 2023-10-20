@@ -48,7 +48,7 @@ func NewStartosisValidator(kurtosisBackend *backend_interface.KurtosisBackend, s
 	}
 }
 
-func (validator *StartosisValidator) Validate(ctx context.Context, instructionsSequence []*instructions_plan.ScheduledInstruction, image_download_mode image_download_mode.ImageDownloadMode) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
+func (validator *StartosisValidator) Validate(ctx context.Context, instructionsSequence []*instructions_plan.ScheduledInstruction, imageDownloadMode image_download_mode.ImageDownloadMode) <-chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine {
 	starlarkRunResponseLineStream := make(chan *kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine)
 	go func() {
 		defer close(starlarkRunResponseLineStream)
@@ -88,7 +88,7 @@ func (validator *StartosisValidator) Validate(ctx context.Context, instructionsS
 			availableCpuInMilliCores,
 			availableMemoryInMegaBytes,
 			isResourceInformationComplete,
-			image_download_mode)
+			imageDownloadMode)
 
 		isValidationFailure = isValidationFailure ||
 			validator.validateAndUpdateEnvironment(instructionsSequence, environment, starlarkRunResponseLineStream)

@@ -22,7 +22,7 @@ type ValidatorEnvironment struct {
 	imageDownloadMode             image_download_mode.ImageDownloadMode
 }
 
-func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool, image_download_mode image_download_mode.ImageDownloadMode) *ValidatorEnvironment {
+func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifactNames map[string]bool, serviceNameToPrivatePortIds map[service.ServiceName][]string, availableCpuInMilliCores compute_resources.CpuMilliCores, availableMemoryInMegaBytes compute_resources.MemoryInMegaBytes, isResourceInformationComplete bool, imageDownloadMode image_download_mode.ImageDownloadMode) *ValidatorEnvironment {
 	serviceNamesWithComponentExistence := map[service.ServiceName]ComponentExistence{}
 	for serviceName := range serviceNames {
 		serviceNamesWithComponentExistence[serviceName] = ComponentExistedBeforePackageRun
@@ -41,7 +41,7 @@ func NewValidatorEnvironment(serviceNames map[service.ServiceName]bool, artifact
 		isResourceInformationComplete: isResourceInformationComplete,
 		minMemoryByServiceName:        map[service.ServiceName]compute_resources.MemoryInMegaBytes{},
 		minCPUByServiceName:           map[service.ServiceName]compute_resources.CpuMilliCores{},
-		imageDownloadMode:             image_download_mode,
+		imageDownloadMode:             imageDownloadMode,
 	}
 }
 

@@ -31,7 +31,7 @@ type KurtosisBackend interface {
 	// FetchImage always attempts to retrieve the latest image.
 	// If retrieving the latest [dockerImage] fails, the local image will be used.
 	// Returns True is it was retrieved from cloud or False if it's a local image
-	FetchImage(ctx context.Context, image string, download_mode image_download_mode.ImageDownloadMode) (bool, error)
+	FetchImage(ctx context.Context, image string, downloadMode image_download_mode.ImageDownloadMode) (bool, error)
 
 	PruneUnusedImages(ctx context.Context) ([]string, error)
 
