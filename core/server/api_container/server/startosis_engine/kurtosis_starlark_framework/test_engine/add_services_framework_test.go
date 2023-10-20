@@ -46,7 +46,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 			suite.Require().Contains(configs, testServiceName)
 			suite.Require().Contains(configs, testServiceName2)
 
-			expectedServiceConfig1 := service.NewServiceConfig(
+			expectedServiceConfig1 := service.CreateServiceConfig(
 				testContainerImageName,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},
@@ -65,7 +65,7 @@ func (suite *KurtosisPlanInstructionTestSuite) TestAddServices() {
 			actualServiceConfig1 := configs[testServiceName]
 			suite.Assert().Equal(expectedServiceConfig1, actualServiceConfig1)
 
-			expectedServiceConfig2 := service.NewServiceConfig(
+			expectedServiceConfig2 := service.CreateServiceConfig(
 				testContainerImageName,
 				map[string]*port_spec.PortSpec{},
 				map[string]*port_spec.PortSpec{},

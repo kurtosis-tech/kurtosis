@@ -302,7 +302,7 @@ func getServiceRegistrationWithDataForTest(
 }
 
 func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceConfig {
-	return service.NewServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		imageName,
 		testPrivatePorts(t),
 		testPublicPorts(t),
@@ -321,6 +321,8 @@ func getServiceConfigForTest(t *testing.T, imageName string) *service.ServiceCon
 			"test-second-label-key": "test-second-label-value",
 		},
 	)
+	require.NoError(t, err)
+	return serviceConfig
 }
 
 func testPersistentDirectory() *service_directory.PersistentDirectories {

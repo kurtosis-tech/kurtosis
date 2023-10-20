@@ -165,7 +165,7 @@ func replaceMagicStrings(
 		}
 	}
 
-	renderedServiceConfig := service.NewServiceConfig(
+	renderedServiceConfig, err := service.CreateServiceConfig(
 		serviceConfig.GetContainerImageName(),
 		serviceConfig.GetPrivatePorts(),
 		serviceConfig.GetPublicPorts(),
@@ -181,6 +181,10 @@ func replaceMagicStrings(
 		serviceConfig.GetMinMemoryAllocationMegabytes(),
 		serviceConfig.GetLabels(),
 	)
+	if err != nil {
+		return "", nil, stacktrace.Propagate(err, "An error occurred creating a service config")
+	}
+
 	return service.ServiceName(serviceNameStr), renderedServiceConfig, nil
 }
 

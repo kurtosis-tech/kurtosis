@@ -36,7 +36,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig := service.NewServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		nil,
 		nil,
@@ -52,6 +52,7 @@ func TestAddServiceShared_EntryPointArgsRuntimeValueAreReplaced(t *testing.T) {
 		0,
 		map[string]string{},
 	)
+	require.NoError(t, err)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
@@ -76,7 +77,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig := service.NewServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		nil,
 		nil,
@@ -92,6 +93,7 @@ func TestAddServiceShared_CmdArgsRuntimeValueAreReplaced(t *testing.T) {
 		0,
 		map[string]string{},
 	)
+	require.NoError(t, err)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
@@ -116,7 +118,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 	runtimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, runtimeValueName)
 
 	serviceName := service.ServiceName("example-datastore-server-2")
-	serviceConfig := service.NewServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		nil,
 		nil,
@@ -134,6 +136,7 @@ func TestAddServiceShared_EnvVarsWithRuntimeValueAreReplaced(t *testing.T) {
 		0,
 		map[string]string{},
 	)
+	require.NoError(t, err)
 
 	replacedServiceName, replacedServiceConfig, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)
@@ -161,7 +164,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 	stringRuntimeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, stringValueUuid, valueName)
 
 	serviceName := service.ServiceName(stringRuntimeValue)
-	serviceConfig := service.NewServiceConfig(
+	serviceConfig, err := service.CreateServiceConfig(
 		testContainerImageName,
 		nil,
 		nil,
@@ -177,6 +180,7 @@ func TestAddServiceShared_ServiceNameWithRuntimeValuesAreReplaced(t *testing.T) 
 		0,
 		map[string]string{},
 	)
+	require.NoError(t, err)
 
 	replacedServiceName, _, err := replaceMagicStrings(runtimeValueStore, serviceName, serviceConfig)
 	require.Nil(t, err)

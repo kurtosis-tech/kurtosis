@@ -36,7 +36,7 @@ func (t *serviceConfigMinimalTestCase) Assert(typeValue builtin_argument.Kurtosi
 	serviceConfig, err := serviceConfigStarlark.ToKurtosisType(t.serviceNetwork)
 	require.Nil(t, err)
 
-	expectedServiceConfig := service.NewServiceConfig(
+	expectedServiceConfig := service.CreateServiceConfig(
 		testContainerImageName,
 		map[string]*port_spec.PortSpec{},
 		map[string]*port_spec.PortSpec{},

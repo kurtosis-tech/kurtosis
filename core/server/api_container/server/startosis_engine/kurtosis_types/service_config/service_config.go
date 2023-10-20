@@ -461,7 +461,7 @@ func (config *ServiceConfig) ToKurtosisType(serviceNetwork service_network.Servi
 		}
 	}
 
-	return service.NewServiceConfig(
+	return service.CreateServiceConfig(
 		imageName,
 		privatePorts,
 		publicPorts,

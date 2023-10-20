@@ -45,7 +45,7 @@ type privateServiceConfig struct {
 	Labels map[string]string
 }
 
-func NewServiceConfig(
+func CreateServiceConfig(
 	containerImageName string,
 	privatePorts map[string]*port_spec.PortSpec,
 	publicPorts map[string]*port_spec.PortSpec,
@@ -60,7 +60,12 @@ func NewServiceConfig(
 	minCpuMilliCores uint64,
 	minMemoryMegaBytes uint64,
 	labels map[string]string,
-) *ServiceConfig {
+) (*ServiceConfig, error) {
+
+	if err := ValidateServiceConfigLabels(labels); err != nil {
+		return nil, stacktrace.Propagate(err, "Invalid service config labels '%+v'", labels)
+	}
+
 	internalServiceConfig := &privateServiceConfig{
 		ContainerImageName:        containerImageName,
 		PrivatePorts:              privatePorts,
@@ -76,9 +81,9 @@ func NewServiceConfig(
 		// The minimum resources specification is only available for kubernetes
 		MinCpuAllocationMilliCpus:    minCpuMilliCores,
 		MinMemoryAllocationMegabytes: minMemoryMegaBytes,
-		Labels:                       labels, //TODO validate labels with Kubernetes and Docker regex
+		Labels:                       labels,
 	}
-	return &ServiceConfig{internalServiceConfig}
+	return &ServiceConfig{internalServiceConfig}, nil
 }
 
 func (serviceConfig *ServiceConfig) GetContainerImageName() string {

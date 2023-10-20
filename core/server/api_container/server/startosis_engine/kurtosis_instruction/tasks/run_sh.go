@@ -146,7 +146,10 @@ func (builtin *RunShCapabilities) Interpret(_ string, arguments *builtin_argumen
 	}
 
 	// build a service config from image and files artifacts expansion.
-	builtin.serviceConfig = getServiceConfig(image, filesArtifactExpansion)
+	builtin.serviceConfig, err = getServiceConfig(image, filesArtifactExpansion)
+	if err != nil {
+		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred creating service config using image '%s'", image)
+	}
 
 	if arguments.IsSet(StoreFilesArgName) {
 		pathToFileArtifacts, fileArtifactNames, interpretationErr := parseStoreFilesArg(builtin.serviceNetwork, arguments)

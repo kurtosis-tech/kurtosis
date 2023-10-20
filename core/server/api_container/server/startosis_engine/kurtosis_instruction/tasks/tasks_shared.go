@@ -229,8 +229,8 @@ func resultMapToString(resultMap map[string]starlark.Comparable, builtinNameForL
 	return fmt.Sprintf("Command returned with exit code '%v' and the following output: %v", exitCode, outputStr)
 }
 
-func getServiceConfig(image string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion) *service.ServiceConfig {
-	return service.NewServiceConfig(
+func getServiceConfig(image string, filesArtifactExpansion *service_directory.FilesArtifactsExpansion) (*service.ServiceConfig, error) {
+	serviceConfig, err := service.CreateServiceConfig(
 		image,
 		nil,
 		nil,
@@ -251,6 +251,10 @@ func getServiceConfig(image string, filesArtifactExpansion *service_directory.Fi
 		0,
 		map[string]string{},
 	)
+	if err != nil {
+		return nil, stacktrace.Propagate(err, "An error occurred creating service config")
+	}
+	return serviceConfig, nil
 }
 
 func formatErrorMessage(errorMessage string, errorFromExec string) string {
