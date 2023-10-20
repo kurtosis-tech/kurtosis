@@ -6,6 +6,10 @@ import (
 	"testing"
 )
 
+const (
+	oneRandomChar = "a"
+)
+
 var testLabelsWithValidity = map[string]bool{
 	"":                        false,
 	" ":                       false, // whitespace not allowed
@@ -34,5 +38,23 @@ func TestTooLongLabel(t *testing.T) {
 	_, err := createNewDockerLabelKey(invalidLabel)
 	require.Error(t, err)
 	_, err = CreateNewDockerUserCustomLabelKey(invalidLabel)
+	require.Error(t, err)
+}
+
+func TestMaxAllowedLabel(t *testing.T) {
+	validMaxLabel := strings.Repeat(oneRandomChar, maxLabelLength)
+	_, err := createNewDockerLabelKey(validMaxLabel)
+	require.NoError(t, err)
+
+	overValidMaxLabel := validMaxLabel + oneRandomChar
+	_, err = createNewDockerLabelKey(overValidMaxLabel)
+	require.Error(t, err)
+
+	userCustomValidMaxLabel := strings.Repeat(oneRandomChar, maxLabelLength-len(customUserLabelsKeyPrefixStr))
+	_, err = CreateNewDockerUserCustomLabelKey(userCustomValidMaxLabel)
+	require.NoError(t, err)
+
+	overUserCustomValidMaxLabel := userCustomValidMaxLabel + oneRandomChar
+	_, err = CreateNewDockerUserCustomLabelKey(overUserCustomValidMaxLabel)
 	require.Error(t, err)
 }
