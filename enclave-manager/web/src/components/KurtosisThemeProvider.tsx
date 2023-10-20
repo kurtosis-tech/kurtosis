@@ -3,7 +3,7 @@ import { ChakraProvider, extendTheme, StyleFunctionProps, ThemeConfig } from "@c
 import { PropsWithChildren } from "react";
 import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider";
 import { tabsTheme } from "./theme/tabsTheme";
-import Fonts from "./Fonts";
+import Fonts from "./theme/Fonts";
 
 const config: ThemeConfig = {
   initialColorMode: "dark",
@@ -14,8 +14,8 @@ const config: ThemeConfig = {
 const theme = extendTheme({
   config,
   fonts: {
-    heading: `'Gilroy', sans-serif`,
-    body: `'Gilroy', sans-serif`,
+    heading: `'Inter', sans-serif`,
+    body: `'Inter', sans-serif`,
   },
   colors: {
     kurtosis: {
