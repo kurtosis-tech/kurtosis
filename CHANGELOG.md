@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.84.9](https://github.com/kurtosis-tech/kurtosis/compare/0.84.8...0.84.9) (2023-10-19)
+
+
+### Features
+
+* Cloud backend method to refresh the default payment method ([#1569](https://github.com/kurtosis-tech/kurtosis/issues/1569)) ([9f3d808](https://github.com/kurtosis-tech/kurtosis/commit/9f3d808264fa1d83d6fd0d2ea3dde3b5d3f9e48e))
+* get package on demand ([#1590](https://github.com/kurtosis-tech/kurtosis/issues/1590)) ([0af4086](https://github.com/kurtosis-tech/kurtosis/commit/0af4086da6887aa80d7a1b06d232254178a022e7))
+
+## [0.84.8](https://github.com/kurtosis-tech/kurtosis/compare/0.84.7...0.84.8) (2023-10-17)
+
+
+### Features
+
+* kurtosis package init command ([#1547](https://github.com/kurtosis-tech/kurtosis/issues/1547)) ([6411c8f](https://github.com/kurtosis-tech/kurtosis/commit/6411c8f8b8f2ed3737d04c6d8a7a0938f7486aa3))
+
+
+### Bug Fixes
+
+* correct the link to kurtosis upgrade docs ([#1574](https://github.com/kurtosis-tech/kurtosis/issues/1574)) ([11d1dba](https://github.com/kurtosis-tech/kurtosis/commit/11d1dba7541fc87fdf0e6bee3efe345edd732c23))
+* error clearly if there are no nodes on the Kubernetes cluster ([#1553](https://github.com/kurtosis-tech/kurtosis/issues/1553)) ([77f9ad4](https://github.com/kurtosis-tech/kurtosis/commit/77f9ad42ba18f00faea5937bf3a971056ea8720b))
+
 ## [0.84.7](https://github.com/kurtosis-tech/kurtosis/compare/0.84.6...0.84.7) (2023-10-16)
 
 

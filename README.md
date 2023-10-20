@@ -27,6 +27,10 @@ Kurtosis shines when creating, working with, and destroying self-contained distr
 
 If you're in web3, we have even more specific web3 usecases [here](https://web3.kurtosis.com).
 
+Check out an introductory demo video here:
+
+<video width="630" height="300" src="https://github.com/kurtosis-tech/kurtosis/assets/11703004/f908aa4a-b340-44c8-b948-46993dcdb96e"></video>
+
 How do I get going?
 ===================
 To see Kurtosis in action, first install it using the instructions [here](https://docs.kurtosis.com/install). _Note that we're working on a cloud-hosted version of Kurtosis that doesn't require any local installation; if this is interesting to you then let us know [here](https://mp2k8nqxxgj.typeform.com/to/U1HcXT1H) and we'll let you know when it's available._

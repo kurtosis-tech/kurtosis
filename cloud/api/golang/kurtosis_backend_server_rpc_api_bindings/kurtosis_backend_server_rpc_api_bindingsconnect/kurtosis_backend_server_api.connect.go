@@ -53,6 +53,9 @@ const (
 	// KurtosisCloudBackendServerGetOrCreatePaymentConfigProcedure is the fully-qualified name of the
 	// KurtosisCloudBackendServer's GetOrCreatePaymentConfig RPC.
 	KurtosisCloudBackendServerGetOrCreatePaymentConfigProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/GetOrCreatePaymentConfig"
+	// KurtosisCloudBackendServerRefreshDefaultPaymentMethodProcedure is the fully-qualified name of the
+	// KurtosisCloudBackendServer's RefreshDefaultPaymentMethod RPC.
+	KurtosisCloudBackendServerRefreshDefaultPaymentMethodProcedure = "/kurtosis_cloud.KurtosisCloudBackendServer/RefreshDefaultPaymentMethod"
 )
 
 // KurtosisCloudBackendServerClient is a client for the kurtosis_cloud.KurtosisCloudBackendServer
@@ -64,6 +67,7 @@ type KurtosisCloudBackendServerClient interface {
 	GetOrCreateApiKey(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse], error)
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
 	GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error)
+	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerClient constructs a client for the
@@ -106,17 +110,23 @@ func NewKurtosisCloudBackendServerClient(httpClient connect.HTTPClient, baseURL 
 			baseURL+KurtosisCloudBackendServerGetOrCreatePaymentConfigProcedure,
 			opts...,
 		),
+		refreshDefaultPaymentMethod: connect.NewClient[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs, emptypb.Empty](
+			httpClient,
+			baseURL+KurtosisCloudBackendServerRefreshDefaultPaymentMethodProcedure,
+			opts...,
+		),
 	}
 }
 
 // kurtosisCloudBackendServerClient implements KurtosisCloudBackendServerClient.
 type kurtosisCloudBackendServerClient struct {
-	isAvailable              *connect.Client[emptypb.Empty, emptypb.Empty]
-	createCloudInstance      *connect.Client[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse]
-	getCloudInstanceConfig   *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
-	getOrCreateApiKey        *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse]
-	getOrCreateInstance      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
-	getOrCreatePaymentConfig *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse]
+	isAvailable                 *connect.Client[emptypb.Empty, emptypb.Empty]
+	createCloudInstance         *connect.Client[kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.CreateCloudInstanceConfigResponse]
+	getCloudInstanceConfig      *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetCloudInstanceConfigResponse]
+	getOrCreateApiKey           *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse]
+	getOrCreateInstance         *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest, kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse]
+	getOrCreatePaymentConfig    *connect.Client[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs, kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse]
+	refreshDefaultPaymentMethod *connect.Client[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs, emptypb.Empty]
 }
 
 // IsAvailable calls kurtosis_cloud.KurtosisCloudBackendServer.IsAvailable.
@@ -150,6 +160,12 @@ func (c *kurtosisCloudBackendServerClient) GetOrCreatePaymentConfig(ctx context.
 	return c.getOrCreatePaymentConfig.CallUnary(ctx, req)
 }
 
+// RefreshDefaultPaymentMethod calls
+// kurtosis_cloud.KurtosisCloudBackendServer.RefreshDefaultPaymentMethod.
+func (c *kurtosisCloudBackendServerClient) RefreshDefaultPaymentMethod(ctx context.Context, req *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error) {
+	return c.refreshDefaultPaymentMethod.CallUnary(ctx, req)
+}
+
 // KurtosisCloudBackendServerHandler is an implementation of the
 // kurtosis_cloud.KurtosisCloudBackendServer service.
 type KurtosisCloudBackendServerHandler interface {
@@ -159,6 +175,7 @@ type KurtosisCloudBackendServerHandler interface {
 	GetOrCreateApiKey(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateApiKeyResponse], error)
 	GetOrCreateInstance(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceRequest]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreateInstanceResponse], error)
 	GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error)
+	RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewKurtosisCloudBackendServerHandler builds an HTTP handler from the service implementation. It
@@ -197,6 +214,11 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 		svc.GetOrCreatePaymentConfig,
 		opts...,
 	)
+	kurtosisCloudBackendServerRefreshDefaultPaymentMethodHandler := connect.NewUnaryHandler(
+		KurtosisCloudBackendServerRefreshDefaultPaymentMethodProcedure,
+		svc.RefreshDefaultPaymentMethod,
+		opts...,
+	)
 	return "/kurtosis_cloud.KurtosisCloudBackendServer/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case KurtosisCloudBackendServerIsAvailableProcedure:
@@ -211,6 +233,8 @@ func NewKurtosisCloudBackendServerHandler(svc KurtosisCloudBackendServerHandler,
 			kurtosisCloudBackendServerGetOrCreateInstanceHandler.ServeHTTP(w, r)
 		case KurtosisCloudBackendServerGetOrCreatePaymentConfigProcedure:
 			kurtosisCloudBackendServerGetOrCreatePaymentConfigHandler.ServeHTTP(w, r)
+		case KurtosisCloudBackendServerRefreshDefaultPaymentMethodProcedure:
+			kurtosisCloudBackendServerRefreshDefaultPaymentMethodHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -242,4 +266,8 @@ func (UnimplementedKurtosisCloudBackendServerHandler) GetOrCreateInstance(contex
 
 func (UnimplementedKurtosisCloudBackendServerHandler) GetOrCreatePaymentConfig(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigArgs]) (*connect.Response[kurtosis_backend_server_rpc_api_bindings.GetOrCreatePaymentConfigResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.GetOrCreatePaymentConfig is not implemented"))
+}
+
+func (UnimplementedKurtosisCloudBackendServerHandler) RefreshDefaultPaymentMethod(context.Context, *connect.Request[kurtosis_backend_server_rpc_api_bindings.RefreshDefaultPaymentMethodArgs]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("kurtosis_cloud.KurtosisCloudBackendServer.RefreshDefaultPaymentMethod is not implemented"))
 }

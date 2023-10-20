@@ -3,10 +3,9 @@ package startosis_constants
 type StarlarkContextParam string
 
 const (
-	MainFileName       = "main.star"
-	KurtosisYamlName   = "kurtosis.yml"
-	GithubDomainPrefix = "github.com"
-	EmptyInputArgs     = "{}" // empty JSON
+	MainFileName     = "main.star"
+	KurtosisYamlName = "kurtosis.yml"
+	EmptyInputArgs   = "{}" // empty JSON
 
 	NoOutputObject = ""
 

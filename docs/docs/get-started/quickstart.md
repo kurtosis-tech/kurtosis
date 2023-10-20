@@ -90,7 +90,7 @@ Spin up your system!
 --------------------
 Great! You're now ready to bring up your own network. Simply run:
 ```console
-kurtosis run github.com/kurtosis-tech/ethereum-package --args-file ~/network_params.json --enclave eth-network"
+kurtosis run github.com/kurtosis-tech/ethereum-package --args-file ~/network_params.json --enclave eth-network
 ```
 
 Kurtosis will then begin to spin up your private Ethereum testnet by interpreting the instructions in the Kurtosis package, validating the plan to ensure there are no conflicts or obvious errors, and then finally executes the plan (read more about multi-phase runs [here][multi-phase-runs-reference]). Kurtosis first spins up an isolated, ephemeral environment on your machine called an [enclave][enclaves-reference] where all the services and [files artifacts][files-artifacts-reference] for your system will reside in. Then, those services will be bootstrapped and required files generated to start up the system.

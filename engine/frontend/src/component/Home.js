@@ -105,6 +105,7 @@ const Home = () => {
     const searchParams = new URLSearchParams(window.location.search);
     const requireAuth = queryParamToBool(searchParams.get("require_authentication"))
     const requestedApiHost = searchParams.get("api_host")
+    const preloadedPackage = searchParams.get("package")
 
     useEffect(() => {
         // At this time requireAuth=true means we are running remote which means connection is going through a TLS protected LB
@@ -167,7 +168,7 @@ const Home = () => {
             <Route path="/" element={checkAuth(<Layout/>)}>
                 <Route
                     path="/enclaves"
-                    element={<Enclaves 
+                    element={<Enclaves
                         enclaves={enclaves}
                         isLoading={enclaveLoading}
                         handleDeleteClick={handleDeleteClick}
@@ -179,23 +180,23 @@ const Home = () => {
                     element={<CreateEnclave addEnclave={addEnclave}/>}
                 />
                 <Route path="/enclaves/:name"
-                    element={<EnclaveInfo enclaves={enclaves}/>}
+                       element={<EnclaveInfo enclaves={enclaves}/>}
                 />
                 <Route path="/enclaves/:name/services/:uuid/*"
-                    element={<ServiceInfo/>}
+                       element={<ServiceInfo/>}
                 />
                 <Route path="/enclaves/:name/files/:fileArtifactName"
-                    element={<FileArtifactInfo enclaves={enclaves}/>}
+                       element={<FileArtifactInfo enclaves={enclaves}/>}
                 />
                 <Route
                     path="/catalog/*"
                     element={<PackageCatalogRouter addEnclave={addEnclave}/>}
                 />
                 <Route exact
-                    path="/"
-                    element={<Main totalEnclaves={enclaves.length}/>}
+                       path="/"
+                       element={<Main totalEnclaves={enclaves.length} preloadedPackage={preloadedPackage}/>}
                 />
-            </Route>     
+            </Route>
         </>
     )
 
@@ -208,7 +209,7 @@ const Home = () => {
 
     return (
         <div className="h-screen flex flex-col bg-[#171923]">
-            <RouterProvider router={router} />
+            <RouterProvider router={router}/>
         </div>
     );
 }

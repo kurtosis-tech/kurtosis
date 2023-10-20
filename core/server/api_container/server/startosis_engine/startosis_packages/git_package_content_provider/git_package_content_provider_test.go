@@ -2,6 +2,7 @@ package git_package_content_provider
 
 import (
 	"fmt"
+	"github.com/kurtosis-tech/kurtosis/api/golang/core/lib/shared_utils"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/database_accessors/enclave_db"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_constants"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
@@ -315,13 +316,13 @@ func TestGetAbsoluteLocatorForRelativeModuleLocator_LocalPackagehReplaceSucceeds
 
 func Test_getPathToPackageRoot(t *testing.T) {
 	githubUrlWithKurtosisPackageInSubfolder := "github.com/sample/sample-package/folder/subpackage"
-	parsedGitUrl, err := parseGitURL(githubUrlWithKurtosisPackageInSubfolder)
+	parsedGitUrl, err := shared_utils.ParseGitURL(githubUrlWithKurtosisPackageInSubfolder)
 	require.Nil(t, err, "Unexpected error occurred while parsing git url")
 	actual := getPathToPackageRoot(parsedGitUrl)
 	require.Equal(t, "sample/sample-package/folder/subpackage", actual)
 
 	githubUrlWithRootKurtosisPackage := "github.com/sample/sample-package"
-	parsedGitUrl, err = parseGitURL(githubUrlWithRootKurtosisPackage)
+	parsedGitUrl, err = shared_utils.ParseGitURL(githubUrlWithRootKurtosisPackage)
 	require.Nil(t, err, "Unexpected error occurred while parsing git url")
 	actual = getPathToPackageRoot(parsedGitUrl)
 	require.Equal(t, "sample/sample-package", actual)
