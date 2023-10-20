@@ -631,12 +631,18 @@ func parseImageDownloadFlag(flags *flags.ParsedFlags) (*kurtosis_core_rpc_api_bi
 	if err != nil {
 		return nil, stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
 	}
-	imageDownload, err := command_args_run.ImageDownloadString(imageDownloadStr)
-	if err != nil {
-		return nil, stacktrace.Propagate(err, "Invalid image-download value: '%s'. Possible values are %s", imageDownloadStr, strings.Join(command_args_run.ImageDownloadStrings(), ", "))
+
+	imageDownloadCode := kurtosis_core_rpc_api_bindings.ImageDownloadMode_value[strings.ToLower(imageDownloadStr)]
+	if imageDownloadCode >= 1 {
+		imageDownloadRPC := kurtosis_core_rpc_api_bindings.ImageDownloadMode(imageDownloadCode)
+		return &imageDownloadRPC, nil
+	} else {
+		keys := make([]string, 0, len(kurtosis_core_rpc_api_bindings.ImageDownloadMode_value))
+		for k := range kurtosis_core_rpc_api_bindings.ImageDownloadMode_value {
+			keys = append(keys, k)
+		}
+		return nil, stacktrace.NewError("Invalid image-download value: '%s'. Possible values are: '%s'", imageDownloadStr, strings.Join(keys, "', '"))
 	}
-	imageDownloadRPC := kurtosis_core_rpc_api_bindings.ImageDownloadMode(kurtosis_core_rpc_api_bindings.ImageDownloadMode_value[strings.ToLower(imageDownload.String())])
-	return &imageDownloadRPC, nil
 }
 
 // parseExperimentalFlag parses the sert of experimental features enabled for this run
