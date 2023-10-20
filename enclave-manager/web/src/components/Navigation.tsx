@@ -1,9 +1,12 @@
-import { Flex, IconButton, IconButtonProps, Tooltip } from "@chakra-ui/react";
+import { Box, Flex, IconButton, IconButtonProps, Image, Tooltip } from "@chakra-ui/react";
 import { PropsWithChildren } from "react";
 
 export const Navigation = ({ children }: PropsWithChildren) => {
   return (
     <Flex as={"nav"} className={"primaryNav"} flexDirection={"column"} gap={"1rem"} h={"100vh"} p={"3rem 1rem"}>
+      <Box boxSize={"12"} textAlign={"center"}>
+        <Image src={"/logo.png"} />
+      </Box>
       {children}
     </Flex>
   );
