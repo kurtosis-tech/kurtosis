@@ -19,10 +19,6 @@
     "react-scripts": "5.0.1"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "^5.14.1",
-    "@testing-library/react": "^13.0.0",
-    "@testing-library/user-event": "^13.2.1",
-    "@types/jest": "^27.0.1",
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
@@ -30,12 +26,12 @@
     "typescript": "^4.4.2"
   },
   "scripts": {
-    "prebuild": "rm -r ../server/webapp",
+    "clean": "rm -rf build",
+    "cleanInstall": "rm -rf node_modules; yarn install",
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "postbuild": "cp -r build/ ../server/webapp",
     "prettier": "prettier . --check",
-    "prettier:fix": "pretteri . --check",
+    "prettier:fix": "prettier . --check",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
