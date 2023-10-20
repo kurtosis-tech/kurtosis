@@ -13,4 +13,5 @@ cd "${lang_root_dirpath}"
 yarn install --frozen-lockfile
 # There are no unit tests currently
 # CGO_ENABLED=0 yarn test
+yarn clean
 yarn build

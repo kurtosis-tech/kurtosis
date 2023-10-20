@@ -5,6 +5,7 @@
     "description": "This repo contains a Typescript client for communicating with the Enclave Manager API server.",
     "types": "./build/index",
     "scripts": {
+        "clean": "rm -rf build",
         "build": "tsc",
         "test": "echo 'The Enclave Manager Typescript API does not have any tests.'"
     },
