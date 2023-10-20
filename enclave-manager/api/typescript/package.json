@@ -5,9 +5,10 @@
     "description": "This repo contains a Typescript client for communicating with the Enclave Manager API server.",
     "types": "./build/index",
     "scripts": {
-        "clean": "rm -rf build",
+        "clean": "rm -rf build src/api_container* src/engine_service*",
+        "prebuild": "cp -R ../../../api/typescript/src/core/kurtosis_core_rpc_api_bindings/connect/* ../../../api/typescript/src/engine/kurtosis_engine_rpc_api_bindings/connect/* ./src",
         "build": "tsc",
-        "postbuild": "cp -R ../../../api/typescript/src/core/kurtosis_core_rpc_api_bindings/connect/* ./build && cp -R ../../../api/typescript/src/engine/kurtosis_engine_rpc_api_bindings/connect/* ./build/",
+        "postbuild": "cp -R ../../../api/typescript/src/core/kurtosis_core_rpc_api_bindings/connect/* ../../../api/typescript/src/engine/kurtosis_engine_rpc_api_bindings/connect/* ./build/ && rm src/api_container* src/engine_service*",
         "test": "jest"
     },
     "files": [
