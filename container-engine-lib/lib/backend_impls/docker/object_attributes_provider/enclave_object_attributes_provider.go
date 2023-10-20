@@ -241,11 +241,11 @@ func (provider *dockerEnclaveObjectAttributesProviderImpl) ForUserServiceContain
 	for userLabelKey, userLabelValue := range userLabels {
 		dockerLabelKey, err := docker_label_key.CreateNewDockerUserCustomLabelKey(userLabelKey)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating a new Docker label key '%s'", userLabelKey)
+			return nil, stacktrace.Propagate(err, "An error occurred creating a new user custom Docker label key '%s'", userLabelKey)
 		}
 		dockerLabelValue, err := docker_label_value.CreateNewDockerLabelValue(userLabelValue)
 		if err != nil {
-			return nil, stacktrace.Propagate(err, "An error occurred creating a new Docker label value '%s'", userLabelValue)
+			return nil, stacktrace.Propagate(err, "An error occurred creating a new user custom Docker label value '%s'", userLabelValue)
 		}
 		labels[dockerLabelKey] = dockerLabelValue
 	}

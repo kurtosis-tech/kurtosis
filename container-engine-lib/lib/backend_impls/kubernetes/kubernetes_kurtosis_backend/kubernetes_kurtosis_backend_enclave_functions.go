@@ -3,7 +3,7 @@ package kubernetes_kurtosis_backend
 import (
 	"context"
 	"fmt"
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/label_key_consts"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"strings"
 	"time"
 
@@ -59,8 +59,8 @@ func (backend *KubernetesKurtosisBackend) CreateEnclave(
 	teardownContext := context.Background()
 
 	searchNamespaceLabels := map[string]string{
-		label_key_consts.AppIDKubernetesLabelKey.GetString():       label_value_consts.AppIDKubernetesLabelValue.GetString(),
-		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(): string(enclaveUuid),
+		kubernetes_label_key.AppIDKubernetesLabelKey.GetString():       label_value_consts.AppIDKubernetesLabelValue.GetString(),
+		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString(): string(enclaveUuid),
 	}
 	namespaceList, err := backend.kubernetesManager.GetNamespacesByLabels(ctx, searchNamespaceLabels)
 	if err != nil {
@@ -449,7 +449,7 @@ func (backend *KubernetesKurtosisBackend) getMatchingEnclaveKubernetesResources(
 		ctx,
 		backend.kubernetesManager,
 		enclaveMatchLabels,
-		label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(),
+		kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString(),
 		enclaveIdsStrSet,
 	)
 	if err != nil {
@@ -514,8 +514,8 @@ func (backend *KubernetesKurtosisBackend) createGetEnclaveResourcesOperation(
 
 		namespaceName := namespace.GetName()
 		enclaveWithIDMatchLabels := map[string]string{
-			label_key_consts.AppIDKubernetesLabelKey.GetString():       label_value_consts.AppIDKubernetesLabelValue.GetString(),
-			label_key_consts.EnclaveUUIDKubernetesLabelKey.GetString(): enclaveIdStr,
+			kubernetes_label_key.AppIDKubernetesLabelKey.GetString():       label_value_consts.AppIDKubernetesLabelValue.GetString(),
+			kubernetes_label_key.EnclaveUUIDKubernetesLabelKey.GetString(): enclaveIdStr,
 		}
 
 		// Pods and Services

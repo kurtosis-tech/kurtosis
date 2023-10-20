@@ -1,7 +1,6 @@
-package label_key_consts
+package kubernetes_label_key
 
 import (
-	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_impls/kubernetes/object_attributes_provider/kubernetes_label_key"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -23,7 +22,7 @@ var crossVersionLabelKeyStringsToEnsure = map[string]string{
 }
 
 // These are the publicly accessible keys that correspond to the private string constants. They need to stay the same.
-var crossVersionLabelKeysToEnsure = map[*kubernetes_label_key.KubernetesLabelKey]string{
+var crossVersionLabelKeysToEnsure = map[*KubernetesLabelKey]string{
 	AppIDKubernetesLabelKey:                expectedAppIdLabelKeyStr,
 	KurtosisResourceTypeKubernetesLabelKey: expectedResourceTypeLabelKeyStr,
 }

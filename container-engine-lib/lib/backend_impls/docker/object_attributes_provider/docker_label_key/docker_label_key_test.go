@@ -15,7 +15,7 @@ var testLabelsWithValidity = map[string]bool{
 	"a99a9":                   true,
 	"a.7.3.5":                 true,
 	"com.kurtosistech.app-id": true,
-	"kurtosistech.com/app-id": false, // kubernetes labels standard not allowed
+	"kurtosistech.com/app-id": false, // Kubernetes labels standard not allowed
 }
 
 func TestEdgeCaseLabels(t *testing.T) {

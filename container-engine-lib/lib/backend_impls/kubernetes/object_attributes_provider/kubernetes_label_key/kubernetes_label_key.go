@@ -12,15 +12,25 @@ type KubernetesLabelKey struct {
 }
 
 // NOTE: This is ONLY for areas where the label is declared statically!! Any sort of dynamic/runtime label creation
-// should use CreateNewKubernetesLabelKey
+// should use createNewKubernetesLabelKey
 func MustCreateNewKubernetesLabelKey(str string) *KubernetesLabelKey {
-	key, err := CreateNewKubernetesLabelKey(str)
+	key, err := createNewKubernetesLabelKey(str)
 	if err != nil {
 		panic(err)
 	}
 	return key
 }
-func CreateNewKubernetesLabelKey(str string) (*KubernetesLabelKey, error) {
+
+// CreateNewKubernetesUserCustomLabelKey creates a custom uer Kubernetes label with the Kurtosis custom user prefix
+func CreateNewKubernetesUserCustomLabelKey(str string) (*KubernetesLabelKey, error) {
+	if str == "" || str == " " {
+		return nil, stacktrace.NewError("Received an empty user custom label key")
+	}
+	labelKeyStr := customUserLabelsKeyPrefixStr + str
+	return createNewKubernetesLabelKey(labelKeyStr)
+}
+
+func createNewKubernetesLabelKey(str string) (*KubernetesLabelKey, error) {
 	if err := validateLabelKey(str); err != nil {
 		return nil, stacktrace.Propagate(err, "Label value string '%v' doesn't pass validation of being a Kubernetes label key", str)
 	}
