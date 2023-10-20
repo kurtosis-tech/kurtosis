@@ -23,15 +23,26 @@ func MustCreateNewKubernetesLabelKey(str string) *KubernetesLabelKey {
 
 // CreateNewKubernetesUserCustomLabelKey creates a custom uer Kubernetes label with the Kurtosis custom user prefix
 func CreateNewKubernetesUserCustomLabelKey(str string) (*KubernetesLabelKey, error) {
-	if str == "" || str == " " {
+	if err := validateNotEmptyUserCustomLabelKey(str); err != nil {
 		return nil, stacktrace.NewError("Received an empty user custom label key")
 	}
 	labelKeyStr := customUserLabelsKeyPrefixStr + str
 	return createNewKubernetesLabelKey(labelKeyStr)
 }
 
+func ValidateUserCustomLabelKey(str string) error {
+	if err := validateNotEmptyUserCustomLabelKey(str); err != nil {
+		return stacktrace.Propagate(err, "Received an empty user custom label key")
+	}
+	labelKeyStr := customUserLabelsKeyPrefixStr + str
+	if err := validate(labelKeyStr); err != nil {
+		return stacktrace.Propagate(err, "User custom label key '%s' is not valid", str)
+	}
+	return nil
+}
+
 func createNewKubernetesLabelKey(str string) (*KubernetesLabelKey, error) {
-	if err := validateLabelKey(str); err != nil {
+	if err := validate(str); err != nil {
 		return nil, stacktrace.Propagate(err, "Label value string '%v' doesn't pass validation of being a Kubernetes label key", str)
 	}
 
@@ -41,12 +52,18 @@ func (key *KubernetesLabelKey) GetString() string {
 	return key.value
 }
 
-func validateLabelKey(str string) error {
+func validateNotEmptyUserCustomLabelKey(str string) error {
+	if str == "" || str == " " {
+		return stacktrace.NewError("User custom label key can't be an empty string")
+	}
+	return nil
+}
+
+func validate(str string) error {
 	validationErrs := validation.IsQualifiedName(str)
 	if len(validationErrs) > 0 {
 		errString := strings.Join(validationErrs, "\n\n")
 		return stacktrace.NewError("Expected label string '%v' to be a valid Kubernetes label key, instead it failed validation:\n%+v", str, errString)
 	}
 	return nil
-
 }

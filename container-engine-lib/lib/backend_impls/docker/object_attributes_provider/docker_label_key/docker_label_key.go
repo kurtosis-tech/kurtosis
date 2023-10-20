@@ -31,23 +31,48 @@ func MustCreateNewDockerLabelKey(str string) *DockerLabelKey {
 
 // CreateNewDockerUserCustomLabelKey creates a custom uer Docker label with the Kurtosis custom user prefix
 func CreateNewDockerUserCustomLabelKey(str string) (*DockerLabelKey, error) {
-	if str == "" || str == " " {
+	if err := validateNotEmptyUserCustomLabelKey(str); err != nil {
 		return nil, stacktrace.NewError("Received an empty user custom label key")
 	}
 	labelKeyStr := customUserLabelsKeyPrefixStr + str
 	return createNewDockerLabelKey(labelKeyStr)
 }
 
-func createNewDockerLabelKey(str string) (*DockerLabelKey, error) {
-	if !dockerLabelKeyRegex.MatchString(str) {
-		return nil, stacktrace.NewError("Label key string '%v' doesn't match Docker label key regex '%v'", str, dockerLabelKeyRegexStr)
+func ValidateUserCustomLabelKey(str string) error {
+	if err := validateNotEmptyUserCustomLabelKey(str); err != nil {
+		return stacktrace.Propagate(err, "Received an empty user custom label key")
 	}
-	if len(str) > maxLabelLength {
-		return nil, stacktrace.NewError("Label key string '%v' is longer than max label key length '%v'", str, maxLabelLength)
+	labelKeyStr := customUserLabelsKeyPrefixStr + str
+	if err := validate(labelKeyStr); err != nil {
+		return stacktrace.Propagate(err, "User custom label key '%s' is not valid", str)
+	}
+	return nil
+}
+
+func createNewDockerLabelKey(str string) (*DockerLabelKey, error) {
+	if err := validate(str); err != nil {
+		return nil, stacktrace.NewError("Label key string '%v' is not valid", str)
 	}
 	return &DockerLabelKey{value: str}, nil
 }
 
 func (key *DockerLabelKey) GetString() string {
 	return key.value
+}
+
+func validateNotEmptyUserCustomLabelKey(str string) error {
+	if str == "" || str == " " {
+		return stacktrace.NewError("User custom label key can't be an empty string")
+	}
+	return nil
+}
+
+func validate(str string) error {
+	if !dockerLabelKeyRegex.MatchString(str) {
+		return stacktrace.NewError("Label key string '%v' doesn't match Docker label key regex '%v'", str, dockerLabelKeyRegexStr)
+	}
+	if len(str) > maxLabelLength {
+		return stacktrace.NewError("Label key string '%v' is longer than max label key length '%v'", str, maxLabelLength)
+	}
+	return nil
 }
