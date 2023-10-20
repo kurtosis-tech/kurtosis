@@ -19,6 +19,7 @@ var testLabelsWithValidity = map[string]bool{
 	"a99a9":                   true,
 	"a.7.3.5":                 true,
 	"com.kurtosistech.app-id": true,
+	"com.kurtosistech.app_id": true,
 	"kurtosistech.com/app-id": false, // Kubernetes labels standard not allowed
 }
 

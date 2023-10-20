@@ -20,6 +20,7 @@ var testLabelsWithValidity = map[string][]bool{
 	"a99a9":                   {true, true},
 	"a.7.3.5":                 {true, true},
 	"kurtosistech.com/app-id": {true, false},
+	"kurtosistech.com/app_id": {true, false},
 	"foo_blah":                {true, true},
 	"com.kurtosistech.app-id": {true, true}, // Docker labels standard allowed
 }
