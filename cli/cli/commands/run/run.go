@@ -344,7 +344,7 @@ func run(
 		starlark_run_config.WithSerializedParams(packageArgs),
 		starlark_run_config.WithCloudUserId(cloudUserId),
 		starlark_run_config.WithCloudInstanceId(cloudInstanceId),
-		starlark_run_config.WithImageDownloadMode(imageDownload),
+		starlark_run_config.WithImageDownloadMode(*imageDownload),
 	)
 
 	kurtosisCtx, err := kurtosis_context.NewKurtosisContextFromLocalEngine()
@@ -625,20 +625,18 @@ func parseVerbosityFlag(flags *flags.ParsedFlags) (command_args_run.Verbosity, e
 }
 
 // Get the image download flag is present, and parse it to a valid ImageDownload value
-func parseImageDownloadFlag(flags *flags.ParsedFlags) (kurtosis_core_rpc_api_bindings.ImageDownloadMode, error) {
-
-	defaultImageMode := kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing
+func parseImageDownloadFlag(flags *flags.ParsedFlags) (*kurtosis_core_rpc_api_bindings.ImageDownloadMode, error) {
 
 	imageDownloadStr, err := flags.GetString(imageDownloadFlagKey)
 	if err != nil {
-		return defaultImageMode, stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
+		return nil, stacktrace.Propagate(err, "An error occurred getting the image-download using flag key '%s'", imageDownloadFlagKey)
 	}
 	imageDownload, err := command_args_run.ImageDownloadString(imageDownloadStr)
 	if err != nil {
-		return defaultImageMode, stacktrace.Propagate(err, "Invalid image-download value: '%s'. Possible values are %s", imageDownloadStr, strings.Join(command_args_run.ImageDownloadStrings(), ", "))
+		return nil, stacktrace.Propagate(err, "Invalid image-download value: '%s'. Possible values are %s", imageDownloadStr, strings.Join(command_args_run.ImageDownloadStrings(), ", "))
 	}
 	imageDownloadRPC := kurtosis_core_rpc_api_bindings.ImageDownloadMode(kurtosis_core_rpc_api_bindings.ImageDownloadMode_value[strings.ToLower(imageDownload.String())])
-	return imageDownloadRPC, nil
+	return &imageDownloadRPC, nil
 }
 
 // parseExperimentalFlag parses the sert of experimental features enabled for this run
