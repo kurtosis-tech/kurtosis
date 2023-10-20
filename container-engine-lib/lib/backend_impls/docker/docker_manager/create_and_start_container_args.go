@@ -256,12 +256,12 @@ func (builder *CreateAndStartContainerArgsBuilder) WithContainerInitEnabled(cont
 	return builder
 }
 
-func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageAlways() *CreateAndStartContainerArgsBuilder {
+func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageAlways() *CreateAndStartContainerArgsBuilder {
 	builder.imageDownloadMode = image_download_mode.Always
 	return builder
 }
 
-func (builder *CreateAndStartContainerArgsBuilder) WithPullingLatestImageOnMissing() *CreateAndStartContainerArgsBuilder {
+func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageIfMissing() *CreateAndStartContainerArgsBuilder {
 	builder.imageDownloadMode = image_download_mode.Missing
 	return builder
 }

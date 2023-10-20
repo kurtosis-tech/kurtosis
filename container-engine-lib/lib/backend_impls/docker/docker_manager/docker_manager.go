@@ -1182,10 +1182,10 @@ func (manager *DockerManager) GetContainersByLabels(ctx context.Context, labels 
 	return result, nil
 }
 
-// [FetchImageMissing] uses the local [dockerImage] if it's available.
+// [FetchImageIfMissing] uses the local [dockerImage] if it's available.
 // If unavailable, will attempt to fetch the latest image.
 // Returns error if local [dockerImage] is unavailable and pulling image fails.
-func (manager *DockerManager) FetchImageMissing(ctx context.Context, dockerImage string) (bool, error) {
+func (manager *DockerManager) FetchImageIfMissing(ctx context.Context, dockerImage string) (bool, error) {
 	// if the image name doesn't have version information we concatenate `:latest`
 	// this behavior is similar to CreateAndStartContainer above
 	// this allows us to be deterministic in our behaviour
@@ -1252,13 +1252,13 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 	var pulledFromRemote bool = true
 	logrus.Infof("Fetching image '%s' is running in '%s' mode", image, download_mode)
 
-	switch image_pulling := download_mode; image_pulling {
+	switch image_fetching := download_mode; image_fetching {
 	case image_download_mode.Always:
 		err = manager.FetchLatestImage(ctx, image)
 	case image_download_mode.Missing:
-		pulledFromRemote, err = manager.FetchImageMissing(ctx, image)
+		pulledFromRemote, err = manager.FetchImageIfMissing(ctx, image)
 	default:
-		return false, stacktrace.NewError("Undefined image pulling mode: '%v'", image_pulling)
+		return false, stacktrace.NewError("Undefined image pulling mode: '%v'", image_fetching)
 	}
 
 	if err != nil {
