@@ -15,7 +15,7 @@ export const Breadcrumbs = ({ crumbs }: EnclaveBreadcrumbsProps) => {
   return (
     <Breadcrumb variant={"topNavigation"} separator={<ChevronRightIcon h={"24px"} />}>
       {crumbs.map(({ name, destination }, i, arr) => (
-        <BreadcrumbItem isCurrentPage={i === arr.length - 1}>
+        <BreadcrumbItem key={i} isCurrentPage={i === arr.length - 1}>
           <BreadcrumbLink as={i === arr.length - 1 ? undefined : Link}>{name}</BreadcrumbLink>
         </BreadcrumbItem>
       ))}

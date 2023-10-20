@@ -3,15 +3,17 @@
   "version": "0.2.0",
   "private": true,
   "dependencies": {
-    "@connectrpc/connect": "^0.13.0",
-    "@connectrpc/connect-web": "^0.13.0",
     "@chakra-ui/icons": "^2.1.1",
     "@chakra-ui/react": "^2.8.1",
+    "@connectrpc/connect": "^0.13.0",
+    "@connectrpc/connect-web": "^0.13.0",
     "@emotion/react": "^11.11.1",
     "@emotion/styled": "^11.11.0",
+    "@tanstack/react-table": "^8.10.7",
     "enclave-manager-sdk": "file:../api/typescript",
     "framer-motion": "^10.16.4",
     "kurtosis-sdk": "file:../../api/typescript",
+    "luxon": "^3.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-icons": "^4.11.0",
@@ -19,6 +21,7 @@
     "react-scripts": "5.0.1"
   },
   "devDependencies": {
+    "@types/luxon": "^3.3.3",
     "@types/node": "^16.7.13",
     "@types/react": "^18.0.0",
     "@types/react-dom": "^18.0.0",
