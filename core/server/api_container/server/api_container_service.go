@@ -142,7 +142,7 @@ func (apicService *ApiContainerService) RunStarlarkScript(args *kurtosis_core_rp
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 
-	downloadMode := image_download_mode.FromAPI(ApiDownloadMode)
+	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 
 	metricsErr := apicService.metricsClient.TrackKurtosisRun(startosis_constants.PackageIdPlaceholderForStandaloneScript, isNotRemote, dryRun, isScript, cloudInstanceID, cloudUserId)
 	if metricsErr != nil {
@@ -244,7 +244,7 @@ func (apicService *ApiContainerService) RunStarlarkPackage(args *kurtosis_core_r
 	cloudInstanceID := shared_utils.GetOrDefaultString(args.CloudInstanceId, defaultCloudInstanceId)
 	ApiDownloadMode := shared_utils.GetOrDefault(args.ImageDownloadMode, defaultImageDownloadMode)
 
-	downloadMode := image_download_mode.FromAPI(ApiDownloadMode)
+	downloadMode := convertFromImageDownloadModeAPI(ApiDownloadMode)
 
 	if relativePathToMainFile == "" {
 		relativePathToMainFile = startosis_constants.MainFileName
@@ -960,5 +960,16 @@ func convertContainerStatusToServiceInfoContainerStatus(containerStatus containe
 		return kurtosis_core_rpc_api_bindings.Container_STOPPED, nil
 	default:
 		return kurtosis_core_rpc_api_bindings.Container_UNKNOWN, stacktrace.NewError("Failed to convert container status %v", containerStatus)
+	}
+}
+
+func convertFromImageDownloadModeAPI(api_mode kurtosis_core_rpc_api_bindings.ImageDownloadMode) image_download_mode.ImageDownloadMode {
+	switch api_mode {
+	case kurtosis_core_rpc_api_bindings.ImageDownloadMode_always:
+		return image_download_mode.ImageDownloadMode_Always
+	case kurtosis_core_rpc_api_bindings.ImageDownloadMode_missing:
+		return image_download_mode.ImageDownloadMode_Missing
+	default:
+		panic(stacktrace.NewError("Failed to convert image download mode %v", api_mode))
 	}
 }

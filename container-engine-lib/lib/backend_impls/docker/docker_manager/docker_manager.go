@@ -1253,9 +1253,9 @@ func (manager *DockerManager) FetchImage(ctx context.Context, image string, down
 	logrus.Infof("Fetching image '%s' is running in '%s' mode", image, download_mode)
 
 	switch image_fetching := download_mode; image_fetching {
-	case image_download_mode.Always:
+	case image_download_mode.ImageDownloadMode_Always:
 		err = manager.FetchLatestImage(ctx, image)
-	case image_download_mode.Missing:
+	case image_download_mode.ImageDownloadMode_Missing:
 		pulledFromRemote, err = manager.FetchImageIfMissing(ctx, image)
 	default:
 		return false, stacktrace.NewError("Undefined image pulling mode: '%v'", image_fetching)

@@ -92,7 +92,7 @@ func NewCreateAndStartContainerArgsBuilder(dockerImage string, name string, netw
 		skipAddingToBridgeNetworkIfStaticIpIsSet: false,
 		containerInitEnabled:                     false,
 		restartPolicy:                            NoRestart,
-		imageDownloadMode:                        image_download_mode.Missing,
+		imageDownloadMode:                        image_download_mode.ImageDownloadMode_Missing,
 	}
 }
 
@@ -257,11 +257,11 @@ func (builder *CreateAndStartContainerArgsBuilder) WithContainerInitEnabled(cont
 }
 
 func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageAlways() *CreateAndStartContainerArgsBuilder {
-	builder.imageDownloadMode = image_download_mode.Always
+	builder.imageDownloadMode = image_download_mode.ImageDownloadMode_Always
 	return builder
 }
 
 func (builder *CreateAndStartContainerArgsBuilder) WithFetchingLatestImageIfMissing() *CreateAndStartContainerArgsBuilder {
-	builder.imageDownloadMode = image_download_mode.Missing
+	builder.imageDownloadMode = image_download_mode.ImageDownloadMode_Missing
 	return builder
 }
