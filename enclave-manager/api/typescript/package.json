@@ -7,6 +7,7 @@
     "scripts": {
         "clean": "rm -rf build",
         "build": "tsc",
+        "postbuild": "cp -R ../../../api/typescript/src/core/kurtosis_core_rpc_api_bindings/connect/* ./build && cp -R ../../../api/typescript/src/engine/kurtosis_engine_rpc_api_bindings/connect/* ./build/",
         "test": "echo 'The Enclave Manager Typescript API does not have any tests.'"
     },
     "files": [
