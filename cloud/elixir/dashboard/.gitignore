@@ -35,3 +35,8 @@ dashboard-*.tar
 npm-debug.log
 /assets/node_modules/
 
+# dev db
+.pg_data
+
+# logfile
+logfile
