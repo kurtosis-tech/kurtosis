@@ -50,7 +50,12 @@ defmodule Dashboard.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:dns_cluster, "~> 0.1.1"},
-      {:plug_cowboy, "~> 2.5"}
+      {:plug_cowboy, "~> 2.5"},
+      {:protobuf, "~> 0.12.0"},
+      # Only for files generated from Google's protos.
+      # Can be ignored if you don't use Google's protos.
+      # Or you can generate the code by yourself.
+      {:google_protos, "~> 0.1"}
     ]
   end
 
