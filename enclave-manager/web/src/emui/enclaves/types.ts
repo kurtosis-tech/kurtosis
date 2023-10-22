@@ -1,16 +1,16 @@
-import { useMatches } from "react-router-dom";
-import { UIMatch } from "@remix-run/router";
+import { EnclaveInfo } from "enclave-manager-sdk/build/engine_service_pb";
+import { GetServicesResponse, GetStarlarkRunResponse } from "enclave-manager-sdk/build/api_container_service_pb";
 
-export type EnclaveData = {
-  name: string;
-};
+type NonFunctionKeyNames<T> = Exclude<
+  {
+    [key in keyof T]: T[key] extends Function ? never : key;
+  }[keyof T],
+  undefined
+>;
 
-export type EnclaveLoaderReturnType = { enclave: EnclaveData };
+type RemoveFunctions<T> = Pick<T, NonFunctionKeyNames<T>>;
 
-export type EnclaveRouteHandles = {
-  name: (data?: EnclaveLoaderReturnType) => string;
-};
-
-export const useEnclaveRouteMatches = () => {
-  return useMatches() as UIMatch<EnclaveLoaderReturnType, EnclaveRouteHandles>[];
+export type EnclaveFullInfo = RemoveFunctions<EnclaveInfo> & {
+  starlarkRun: RemoveFunctions<GetStarlarkRunResponse>;
+  services: RemoveFunctions<GetServicesResponse>;
 };

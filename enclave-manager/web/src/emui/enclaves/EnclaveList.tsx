@@ -1,24 +1,25 @@
 import { Button, ButtonGroup, Card, Flex, Icon, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useKurtosisClient } from "../../client/KurtosisClientContext";
-import { Suspense, useEffect, useState } from "react";
-import { GetEnclavesResponse } from "enclave-manager-sdk/build/engine_service_pb";
+import { useEffect, useState } from "react";
 import { isDefined } from "../../utils";
 import { EnclavesTable } from "../../components/enclaves/EnclavesTable";
 import { FiPlus, FiTrash2 } from "react-icons/fi";
+import { EnclaveFullInfo } from "./types";
 
 export const EnclaveList = () => {
   const kurtosisClient = useKurtosisClient();
-
-  const [encalvesResponse, setEnclavesResponse] = useState<GetEnclavesResponse>();
-
-  const enclaves = kurtosisClient.getEnclaves();
+  const [enclaves, setEnclaves] = useState<EnclaveFullInfo[]>();
 
   useEffect(() => {
     (async () => {
-      const enclaves = await kurtosisClient.getEnclaves();
-      kurtosisClient.getStarlarkRun(Object.values(enclaves.enclaveInfo)[0]!).then(console.log);
-      kurtosisClient.getServices(Object.values(enclaves.enclaveInfo)[0]!).then(console.log);
-      setEnclavesResponse(enclaves);
+      const enclavesResponse = await kurtosisClient.getEnclaves();
+      const enclaves = Object.values(enclavesResponse.enclaveInfo);
+      const [starlarkRuns, services] = await Promise.all([
+        Promise.all(enclaves.map((enclave) => kurtosisClient.getStarlarkRun(enclave))),
+        Promise.all(enclaves.map((enclave) => kurtosisClient.getServices(enclave))),
+      ]);
+
+      setEnclaves(enclaves.map((enclave, i) => ({ ...enclave, starlarkRun: starlarkRuns[i], services: services[i] })));
     })();
   }, []);
 
@@ -43,9 +44,7 @@ export const EnclaveList = () => {
           </Flex>
         </Flex>
         <TabPanels>
-          <TabPanel>
-            {isDefined(encalvesResponse) && <EnclavesTable enclavesData={encalvesResponse.enclaveInfo} />}
-          </TabPanel>
+          <TabPanel>{isDefined(enclaves) && <EnclavesTable enclavesData={enclaves} />}</TabPanel>
         </TabPanels>
       </Tabs>
     </Flex>

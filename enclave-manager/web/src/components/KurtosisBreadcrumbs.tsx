@@ -2,16 +2,16 @@ import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from 
 import { Link } from "react-router-dom";
 import { ChevronRightIcon } from "@chakra-ui/icons";
 
-export type EnclaveBreadCrumb = {
+export type KurtosisBreadcrumb = {
   name: string;
   destination: string;
 };
 
-type EnclaveBreadcrumbsProps = {
-  crumbs: EnclaveBreadCrumb[];
+type KurtosisBreadcrumbsProps = {
+  crumbs: KurtosisBreadcrumb[];
 };
 
-export const Breadcrumbs = ({ crumbs }: EnclaveBreadcrumbsProps) => {
+export const KurtosisBreadcrumbs = ({ crumbs }: KurtosisBreadcrumbsProps) => {
   return (
     <Breadcrumb variant={"topNavigation"} separator={<ChevronRightIcon h={"24px"} />}>
       {crumbs.map(({ name, destination }, i, arr) => (

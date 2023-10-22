@@ -4,6 +4,7 @@ import { PropsWithChildren } from "react";
 import type { ChakraProviderProps } from "@chakra-ui/react/dist/chakra-provider";
 import { tabsTheme } from "./theme/tabsTheme";
 import Fonts from "./theme/Fonts";
+import { tagTheme } from "./theme/tagsTheme";
 
 const config: ThemeConfig = {
   initialColorMode: "dark",
@@ -28,13 +29,15 @@ const theme = extendTheme({
       700: "#99f7aa",
     },
     kurtosisGray: {
-      50: "#111111",
-      100: "#1D1D1D",
+      50: "#111111", // ui background
+      100: "#1D1D1D", // selected background
       200: "#1E1E1E",
       300: "#2E2E2E",
       400: "#393B3E",
-      500: "#606770",
-      600: "#878787",
+      500: "#5B5B5B", // icon color
+      600: "#606770",
+      700: "#878787",
+      900: "#E3E3E3", // text
     },
   },
   styles: {
@@ -44,7 +47,7 @@ const theme = extendTheme({
       },
       main: {
         bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "kurtosisGray.50")(props),
-        color: "gray.200",
+        color: "kurtosisGray.900",
       },
     }),
   },
@@ -57,7 +60,7 @@ const theme = extendTheme({
             ...outline,
             _hover: { ...outline._hover, bg: "initial", borderColor: `${props.colorScheme}.400` },
             color: `${props.colorScheme}.400`,
-            borderColor: "kurtosisGray.500",
+            borderColor: "kurtosisGray.600",
           };
         },
         kurtosisGroupOutline: (props: StyleFunctionProps) => {
@@ -66,7 +69,7 @@ const theme = extendTheme({
             ...outline,
             _hover: { ...outline._hover, bg: "kurtosisGray.200" },
             color: `${props.colorScheme}.400`,
-            borderColor: "kurtosisGray.500",
+            borderColor: "kurtosisGray.600",
           };
         },
         nav: {
@@ -78,7 +81,7 @@ const theme = extendTheme({
             bg: "kurtosisGray.300",
             color: "white",
           },
-          color: "kurtosisGray.600",
+          color: "kurtosisGray.700",
         },
       },
     },
@@ -107,7 +110,19 @@ const theme = extendTheme({
         },
       },
     },
+    Table: {
+      variants: {
+        kurtosis: {
+          th: {
+            color: "kurtosisGray.900",
+            borderBottom: "1px solid",
+            borderColor: "kurtosisGray.400",
+          },
+        },
+      },
+    },
     Tabs: tabsTheme,
+    Tag: tagTheme,
   },
 });
 

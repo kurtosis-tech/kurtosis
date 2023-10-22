@@ -18,8 +18,9 @@ export abstract class KurtosisClient {
   }
 
   async getServices(enclave: EnclaveInfo) {
+    console.log(enclave);
     const apicInfo = enclave.apiContainerInfo;
-    assertDefined(apicInfo, `Cannot getStarlarkRun because the passed enclave does not have apicInfo`);
+    assertDefined(apicInfo, `Cannot getServices because the passed enclave '${enclave.name}' does not have apicInfo`);
     const request = new GetServicesRequest({
       apicIpAddress: apicInfo.bridgeIpAddress,
       apicPort: apicInfo.grpcPortInsideEnclave,
@@ -28,8 +29,12 @@ export abstract class KurtosisClient {
   }
 
   async getStarlarkRun(enclave: EnclaveInfo) {
+    console.log(enclave);
     const apicInfo = enclave.apiContainerInfo;
-    assertDefined(apicInfo, `Cannot getStarlarkRun because the passed enclave does not have apicInfo`);
+    assertDefined(
+      apicInfo,
+      `Cannot getStarlarkRun because the passed enclave '${enclave.name}' does not have apicInfo`,
+    );
     const request = new GetStarlarkRunRequest({
       apicIpAddress: apicInfo.bridgeIpAddress,
       apicPort: apicInfo.grpcPortInsideEnclave,

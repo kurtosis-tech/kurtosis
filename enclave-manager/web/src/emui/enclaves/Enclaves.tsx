@@ -1,8 +1,7 @@
 import { Flex } from "@chakra-ui/react";
 import { Outlet, RouteObject } from "react-router-dom";
-import { Enclave, enclaveLoader } from "./Enclave";
+import { Enclave, enclaveLoader, EnclaveLoaderReturnType } from "./Enclave";
 import { EnclaveBreadcrumbs } from "./EnclaveBreadcrumbs";
-import { EnclaveLoaderReturnType } from "./types";
 import { EnclaveList } from "./EnclaveList";
 
 export const enclaveRoutes: RouteObject[] = [

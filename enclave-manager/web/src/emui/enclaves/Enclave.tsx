@@ -1,6 +1,20 @@
-import { LoaderFunction, useLoaderData } from "react-router-dom";
+import { LoaderFunction, useLoaderData, useMatches } from "react-router-dom";
 import { Box } from "@chakra-ui/react";
-import { EnclaveLoaderReturnType } from "./types";
+import { UIMatch } from "@remix-run/router";
+
+export type EnclaveLoaderData = {
+  name: string;
+};
+
+export type EnclaveLoaderReturnType = { enclave: EnclaveLoaderData };
+
+export type EnclaveRouteHandles = {
+  name: (data?: EnclaveLoaderReturnType) => string;
+};
+
+export const useEnclaveRouteMatches = () => {
+  return useMatches() as UIMatch<EnclaveLoaderReturnType, EnclaveRouteHandles>[];
+};
 
 export const enclaveLoader: LoaderFunction = async ({ params }): Promise<EnclaveLoaderReturnType> => {
   return { enclave: { name: params.enclaveName || "Unknown" } };

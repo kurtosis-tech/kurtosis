@@ -32,7 +32,7 @@ export function DataTable<Data extends object>({ data, columns, defaultSorting }
   });
 
   return (
-    <Table>
+    <Table variant={"kurtosis"}>
       <Thead>
         {table.getHeaderGroups().map((headerGroup) => (
           <Tr key={headerGroup.id}>
