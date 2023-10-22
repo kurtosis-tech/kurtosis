@@ -18,13 +18,23 @@ const theme = extendTheme({
     body: `'Inter', sans-serif`,
   },
   colors: {
-    kurtosis: {
+    kurtosisGreen: {
+      100: "#005e11",
+      200: "#008c19",
+      300: "#00bb22",
+      400: "#00C223", // The true green
+      500: "#33ee55",
+      600: "#66f27f",
+      700: "#99f7aa",
+    },
+    kurtosisGray: {
       50: "#111111",
       100: "#1D1D1D",
       200: "#1E1E1E",
       300: "#2E2E2E",
       400: "#393B3E",
-      700: "#00C223",
+      500: "#606770",
+      600: "#878787",
     },
   },
   styles: {
@@ -33,7 +43,7 @@ const theme = extendTheme({
         bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "black")(props),
       },
       main: {
-        bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "kurtosis.50")(props),
+        bg: mode(props.theme.semanticTokens.colors["chakra-body-bg"]._light, "kurtosisGray.50")(props),
         color: "gray.200",
       },
     }),
@@ -41,14 +51,34 @@ const theme = extendTheme({
   components: {
     Button: {
       variants: {
+        kurtosisOutline: (props: StyleFunctionProps) => {
+          const outline = theme.components.Button.variants!.outline(props);
+          return {
+            ...outline,
+            _hover: { ...outline._hover, bg: "initial", borderColor: `${props.colorScheme}.400` },
+            color: `${props.colorScheme}.400`,
+            borderColor: "kurtosisGray.500",
+          };
+        },
+        kurtosisGroupOutline: (props: StyleFunctionProps) => {
+          const outline = theme.components.Button.variants!.outline(props);
+          return {
+            ...outline,
+            _hover: { ...outline._hover, bg: "kurtosisGray.200" },
+            color: `${props.colorScheme}.400`,
+            borderColor: "kurtosisGray.500",
+          };
+        },
         nav: {
           _active: {
-            bg: "kurtosis.300",
-            color: "kurtosis.700",
+            bg: "kurtosisGray.300",
+            color: "kurtosisGreen.400",
           },
-          color: "white",
-          borderWidth: "1px",
-          borderColor: "kurtosis.300",
+          _hover: {
+            bg: "kurtosisGray.300",
+            color: "white",
+          },
+          color: "kurtosisGray.600",
         },
       },
     },
@@ -69,9 +99,9 @@ const theme = extendTheme({
     Card: {
       baseStyle: {
         container: {
-          bg: "kurtosis.200",
+          bg: "kurtosisGray.200",
           borderWidth: "1px",
-          borderColor: "kurtosis.400",
+          borderColor: "kurtosisGray.400",
           borderRadius: "8px",
           padding: "1rem",
         },
