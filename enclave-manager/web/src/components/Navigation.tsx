@@ -3,11 +3,21 @@ import { PropsWithChildren } from "react";
 
 export const Navigation = ({ children }: PropsWithChildren) => {
   return (
-    <Flex as={"nav"} className={"primaryNav"} flexDirection={"column"} gap={"1rem"} h={"100vh"} p={"3rem 1rem"}>
-      <Box boxSize={"12"} textAlign={"center"}>
+    <Flex
+      as={"nav"}
+      className={"primaryNav"}
+      flexDirection={"column"}
+      alignItems={"center"}
+      gap={"36px"}
+      h={"100vh"}
+      p={"20px 16px"}
+    >
+      <Flex width={"40px"} height={"40px"} alignItems={"center"}>
         <Image src={"/logo.png"} />
-      </Box>
-      {children}
+      </Flex>
+      <Flex flexDirection={"column"} gap={"16px"}>
+        {children}
+      </Flex>
     </Flex>
   );
 };
