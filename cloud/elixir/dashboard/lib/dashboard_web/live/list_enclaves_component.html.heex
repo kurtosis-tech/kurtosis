@@ -1,0 +1,14 @@
+<div>
+  <ul>
+    <%= for item <- @items do %>
+      <li id={"item-#{item.enclave_uuid}"}>
+        <p class="todo_item">
+          <%= item.name %>
+        </p>
+        <button class="delete_btn">
+          Delete
+        </button>
+      </li>
+    <% end %>
+  </ul>
+</div>

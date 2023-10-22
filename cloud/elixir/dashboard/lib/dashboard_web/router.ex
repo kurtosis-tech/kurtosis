@@ -1,4 +1,5 @@
 defmodule DashboardWeb.Router do
+  alias DashboardWeb.EngineApp
   use DashboardWeb, :router
 
   pipeline :browser do
@@ -18,6 +19,8 @@ defmodule DashboardWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :home
+
+    live "/app", EngineApp
   end
 
   # Other scopes may use custom stacks.
