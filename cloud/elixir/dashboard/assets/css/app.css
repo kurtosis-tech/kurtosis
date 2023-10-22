@@ -3,3 +3,20 @@
 @import "tailwindcss/utilities";
 
 /* This file is for your main application CSS */
+@layer components {
+  .btn-color {
+    @apply bg-green-300 text-black border-white hover:text-white hover:border-transparent hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75;
+  }
+  
+  .btn-color-selected {
+    @apply bg-green-500 text-white border-transparent hover:border-white focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75;
+  }
+
+  .btn-primary {
+    @apply inline-block text-sm px-4 py-2 leading-none border rounded mt-4 lg:mt-0 btn-color;
+  }
+
+  .btn-primary-selected {
+    @apply inline-block text-sm px-4 py-2 leading-none border rounded mt-4 lg:mt-0 btn-color-selected;
+  }
+}

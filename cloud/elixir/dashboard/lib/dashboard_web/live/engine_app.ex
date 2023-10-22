@@ -1,5 +1,4 @@
 defmodule DashboardWeb.DashboardWeb.EngineApp do
-  alias DashboardWeb.DashboardWeb.EngineApp
   use DashboardWeb, :live_view
 
   def mount(_params, _session, socket) do
@@ -7,7 +6,8 @@ defmodule DashboardWeb.DashboardWeb.EngineApp do
     {:ok, assign(socket, :enclaves, enclaves)}
   end
 
-  def handle_event("inc_temperature", _params, socket) do
-    {:noreply, update(socket, :temperature, &(&1 + 1))}
+  def handle_event(ev, _params, socket) do
+    IO.inspect("Got event #{ev}")
+    {:noreply, socket}
   end
 end
