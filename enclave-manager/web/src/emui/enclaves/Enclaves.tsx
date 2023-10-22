@@ -9,7 +9,7 @@ export const enclaveRoutes: RouteObject[] = [
   {
     path: "/",
     element: (
-      <Flex direction={"column"} gap={"1.5rem"} width={"100%"}>
+      <Flex direction={"column"} gap={"36px"} width={"100%"}>
         <EnclaveBreadcrumbs />
         <Outlet />
       </Flex>
