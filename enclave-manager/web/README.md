@@ -1,15 +1,21 @@
 # Enclave Manager UI (EMUI)
 
 This codebase produces the enclave manager UI (ie `kurtosis web`). The `src` directory contains:
-* `components` - components that can be shared between the EMUI and Kurtosis Cloud. This includes theme definitions and application context definitions
+* `components` - components used in the application. This includes theme definitions and application context definitions
 * `client` - libraries for interacting with the local `kurtosis` backend - used to instantiate a `KurtosisAppContext` and interacted with using `useKurtosis`
-* `emui` - the composition of the above to produce the Enclave Manager UI
-
-At a later date we will explore splitting these directories to individual packages so that they can be shared to Kurtosis Cloud.
+* `emui` - the composition of the above to produce the Enclave Manager UI using react router
 
 ## Available Scripts
 
 In the project directory, you can run:
+
+### `yarn cleanInstall`
+
+Removes `node_modules` and runs `yarn install`.
+
+### `yarn clean`
+
+Removes the build output if present.
 
 ### `yarn start`
 
