@@ -1,16 +1,4 @@
-import {
-  Button,
-  ButtonGroup,
-  Card,
-  Flex,
-  Icon,
-  Spinner,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
-} from "@chakra-ui/react";
+import { Button, ButtonGroup, Flex, Spinner, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
 import { useKurtosisClient } from "../../client/KurtosisClientContext";
 import { useEffect, useState } from "react";
 import { isDefined } from "../../utils";
@@ -42,7 +30,7 @@ export const EnclaveList = () => {
         })),
       );
     })();
-  }, []);
+  }, [kurtosisClient]);
 
   return (
     <Flex direction="column">

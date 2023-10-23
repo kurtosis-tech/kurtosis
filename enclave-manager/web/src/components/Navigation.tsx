@@ -1,4 +1,4 @@
-import { Box, Flex, IconButton, IconButtonProps, Image, Tooltip } from "@chakra-ui/react";
+import { Flex, IconButton, IconButtonProps, Image, Tooltip } from "@chakra-ui/react";
 import { PropsWithChildren } from "react";
 
 export const Navigation = ({ children }: PropsWithChildren) => {

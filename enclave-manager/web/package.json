@@ -12,7 +12,6 @@
     "@tanstack/react-table": "^8.10.7",
     "enclave-manager-sdk": "file:../api/typescript",
     "framer-motion": "^10.16.4",
-    "kurtosis-sdk": "file:../../api/typescript",
     "luxon": "^3.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

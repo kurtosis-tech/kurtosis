@@ -1,4 +1,4 @@
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbSeparator } from "@chakra-ui/react";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink } from "@chakra-ui/react";
 import { Link } from "react-router-dom";
 import { ChevronRightIcon } from "@chakra-ui/icons";
 

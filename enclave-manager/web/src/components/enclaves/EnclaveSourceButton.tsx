@@ -1,4 +1,4 @@
-import { Button, Flex, Icon } from "@chakra-ui/react";
+import { Button, Icon } from "@chakra-ui/react";
 import { IoLogoGithub } from "react-icons/io";
 
 type EnclaveSourceProps = {

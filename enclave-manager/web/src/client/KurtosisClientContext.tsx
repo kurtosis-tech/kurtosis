@@ -36,6 +36,7 @@ export const KurtosisClientProvider = ({ children }: PropsWithChildren) => {
     const searchParams = new URLSearchParams(window.location.search);
     const requireAuth = isStringTrue(searchParams.get("require_authentication"));
     const requestedApiHost = searchParams.get("api_host");
+    // eslint-disable-next-line
     const preloadedPackage = searchParams.get("package");
     try {
       setError(undefined);
