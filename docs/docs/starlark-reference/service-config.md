@@ -129,14 +129,12 @@ If you have defined the pod label key:value pair in `ServiceConfig` to be:
 
 ```py
 config = ServiceConfig(
-
-		...
-
-		labels = {
-				"name": "alice",
-				"age": "20",
-				"height": "175"
-		}
+    ...
+    labels = {
+        "name": "alice",
+	"age": "20",
+	"height": "175"
+    }
 )
 ```
 
