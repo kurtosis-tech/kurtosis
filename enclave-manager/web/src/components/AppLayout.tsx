@@ -9,7 +9,7 @@ export const AppLayout = ({ Nav, children }: AppLayoutProps) => {
   return (
     <Flex flexDirection={"row"}>
       {Nav}
-      <Flex as="main" w={"100%"} justifyContent={"center"} p={"20px"} className={"app-container"}>
+      <Flex as="main" w={"100%"} justifyContent={"flex-start"} p={"20px 40px"} className={"app-container"}>
         <Flex maxWidth={"1320px"} w={"100%"}>
           {children}
         </Flex>
