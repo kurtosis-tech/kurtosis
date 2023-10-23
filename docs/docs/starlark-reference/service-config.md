@@ -97,8 +97,8 @@ config = ServiceConfig(
     ready_conditions = ReadyCondition(...),
 
     # This field is used to specify custom labels at the container level in Docker and Pod level in Kubernetes.
-    # For Docker, the label syntax and format will follow: com.kurtosistech.custom.key=value
-    # For Kubernetes, the label syntax & format will follow: kurtosistech.com.custom/key: value
+    # For Docker, the label syntax and format will follow: "com.kurtosistech.custom.key": "value"
+    # For Kubernetes, the label syntax & format will follow: kurtosistech.com.custom/key=value
 
     # Labels must follow the label standards outlined in [RFC-1035](https://datatracker.ietf.org/doc/html/rfc1035), 
     # meaning that both the label key and label value must contain at most 63 characters, contain only lowercase 
@@ -143,17 +143,17 @@ config = ServiceConfig(
 then the labels for the pods on Kubernetes will look like:
 ```
 labels:
-	kurtosistech.com.custom/name: alice
-	kurtosistech.com.custom/age: 20
-	kurotsistech.com.custom/height: 175
+	kurtosistech.com.custom/name=alice
+	kurtosistech.com.custom/age=20
+	kurotsistech.com.custom/height=175
 ```
 
 while on Docker, the container labels will look like:
 ```
 labels:
-	com.kurtosistech.custom.name=alice
-	com.kurtosistech.custom.age=20
-	com.kurtosistech.custom.height=175
+	"com.kurtosistech.custom.name": "alice"
+	"com.kurtosistech.custom.age": "20"
+	"com.kurtosistech.custom.height": "175"
 ```
 :::
 
