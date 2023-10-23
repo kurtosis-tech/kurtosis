@@ -141,7 +141,7 @@ echo "${BREW_PREFIX}/bin/bash" | sudo tee -a /etc/shells
 # Optional: make bash your default shell
 chsh -s "${BREW_PREFIX}/bin/bash"
 ```
-  
+
 #### Git
 
 On MacOS:
@@ -149,7 +149,7 @@ On MacOS:
 # Install modern version of git, the one that ships on MacOS can be too old
 brew install git
 ```
- 
+
 #### Docker
 
 On MacOS:
@@ -168,11 +168,26 @@ PATH="${BREW_PREFIX}/opt/go@1.19/bin:$PATH"
 PATH="${HOME}/go/bin:$PATH"
 ```
 
+On Ubuntu:
+```bash
+wget https://go.dev/dl/go1.19.13.linux-amd64.tar.gz
+tar -C /usr/local -zxf go1.19.13.linux-amd64.tar.gz
+# Add the following to your bashrc or equivalent.
+export PATH=$PATH:/usr/local/go/bin
+```
+
 #### Goreleaser
 
 On MacOS:
 ```bash
 brew install goreleaser/tap/goreleaser
+```
+
+On Ubuntu:
+```bash
+echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+sudo apt update
+sudo apt install goreleaser
 ```
 
 #### Node (16.14 or above) and Yarn
@@ -185,9 +200,17 @@ nvm install 16.14.0
 npm install -g yarn
 ```
 
+On Ubuntu, using `NVM`:
+```bash
+curl https://raw.githubusercontent.com/creationix/nvm/master/install.sh | bash
+source ~/.bashrc
+nvm install 16.14.0
+npm install -g yarn
+```
+
 #### Rust
 
-On MacOS:
+On MacOS, Ubuntu:
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 ```
@@ -199,8 +222,17 @@ On MacOS:
 brew install protoc-gen-go
 brew install protoc-gen-go-grpc
 go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
-npm install -g ts-protoc-gen
-npm install -g grpc-tools
+yarn global add ts-protoc-gen
+yarn global add grpc-tools
+```
+
+On Ubuntu:
+```bash
+go install google.golang.org/grpc/cmd/protoc-gen-go@latest
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+go install connectrpc.com/connect/cmd/protoc-gen-connect-go@latest
+yarn global add ts-protoc-gen
+yarn global add grpc-tools
 ```
 
 Build Instructions

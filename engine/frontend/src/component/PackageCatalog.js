@@ -1,28 +1,33 @@
 import {useEffect, useState} from "react";
-import { 
-    Grid, 
-    GridItem, 
-    Center, 
-    List, 
-    ListItem, 
-    InputGroup, 
-    InputLeftElement, 
-    Input, 
+import {
+    Box,
     Button,
-    Text
+    Center,
+    Grid,
+    GridItem,
+    Input,
+    InputGroup,
+    InputLeftElement,
+    List,
+    ListItem,
+    Stack,
+    Text,
+    Tooltip
 } from '@chakra-ui/react'
 
-import { SearchIcon } from '@chakra-ui/icons'
+import {SearchIcon} from '@chakra-ui/icons'
 import PackageCatalogOption from "./PackageCatalogOption";
 import PackageCatalogMainComponent from "./PackageCatalogMainComponent";
-import { useNavigate } from "react-router";
+import {useNavigate} from "react-router";
+import {getOwnerNameFromUrl} from "../api/packageCatalog";
+import Moment from "react-moment";
 
 const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
     const navigate = useNavigate()
     const [kurtosisPackages, setKurtosisPackages] = useState([])
     const [chosenPackage, setChosenPackage] = useState({})
 
-    useEffect(()=> {
+    useEffect(() => {
         setKurtosisPackages(defaultPackages)
     }, [defaultPackages.length])
 
@@ -55,16 +60,43 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
         setKurtosisPackages(filteredPackages)
     }
 
+    const getOwner = (packageName) => {
+        const {owner} = getOwnerNameFromUrl(packageName)
+        return owner
+    }
+
+    const getName = (packageName) => {
+        const {name} = getOwnerNameFromUrl(packageName)
+        return name
+    }
+
     const renderKurtosisPackages = () => (
-        kurtosisPackages.map( (kurtosisPackage, index) => {
+        kurtosisPackages.map((kurtosisPackage, index) => {
             const bgcolor = (kurtosisPackage.name === chosenPackage.name) ? '#24BA27' : 'gray.300'
             if ("name" in kurtosisPackage) {
+                const date = new Date(kurtosisPackage.parsingTime)
                 return (
                     <ListItem bg={bgcolor} key={index} onClick={() => selectPackage(kurtosisPackage)}>
-                        <Center h="70px" w="100%">
-                            <Text fontSize={"2xl"} color='blue.800' fontWeight={"bold"}> {kurtosisPackage.name} </Text>
+                        <Center h="60px" w="100%">
+                            <Stack>
+                                <Tooltip label={
+                                    <Box>
+                                        Indexed <Moment fromNow={true} date={date.toJSON()}/>
+                                        <br />
+                                        (<Moment fromNow={true} format="YYYY-MM-DD HH:mm:ss" date={date.toJSON()}/>)
+                                    </Box>
+                                }>
+                                    <Text
+                                        fontSize={"sm"}
+                                        color='blue.800'
+                                        fontWeight={"bold"}
+                                    >
+                                        {getOwner(kurtosisPackage.name)} / {getName(kurtosisPackage.name)}
+                                    </Text>
+                                </Tooltip>
+                            </Stack>
                         </Center>
-                    </ListItem> 
+                    </ListItem>
                 )
             }
         })
@@ -73,10 +105,15 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
     return (
         <div className='w-screen'>
             <Grid
-                templateAreas={`"option"
-                                "search"
-                                "main"
-                                "configure"`}
+                templateAreas={
+                    `
+                    "option"
+                    "search"
+                    "main"
+                    "configure"
+                    "load"
+                    `
+                }
                 gridTemplateRows={'60px 60px 1fr 60px'}
                 gridTemplateColumns={'1fr'}
                 h='100%'
@@ -90,29 +127,33 @@ const PackageCatalog = ({kurtosisPackages: defaultPackages}) => {
                 </GridItem>
                 <GridItem area={'search'} m="10px">
                     <InputGroup>
-                        <InputLeftElement pointerEvents='none' >
+                        <InputLeftElement pointerEvents='none'>
                             <SearchIcon color='gray.300'/>
                         </InputLeftElement>
                         <Input placeholder='Package Name' color='gray.300' onChange={handleSearchEvent}/>
                     </InputGroup>
                 </GridItem>
-                <GridItem area={'main'} h="100%" overflowY={"scroll"}> 
+                <GridItem area={'main'} h="100%" overflowY={"scroll"}>
                     {
-                        "name" in chosenPackage ? 
-                            <PackageCatalogMainComponent renderKurtosisPackages={renderKurtosisPackages} selectedKurtosisPackage={chosenPackage}/>
-                        : <List spacing={1} padding="10px" h="100%">
-                            {renderKurtosisPackages()}
-                        </List>
-                    } 
+                        "name" in chosenPackage ?
+                            <PackageCatalogMainComponent
+                                renderKurtosisPackages={renderKurtosisPackages}
+                                selectedKurtosisPackage={chosenPackage}
+                            />
+                            : <List spacing={1} padding="10px" h="100%">
+                                {renderKurtosisPackages()}
+                            </List>
+                    }
                 </GridItem>
                 <GridItem area={'configure'} m="10px">
-                    <Button bg='#24BA27' w="100%" isDisabled={Object.keys(chosenPackage).length === 0} onClick={handleConfigureButtonClick} >Configure >> </Button>
+                    <Button bg='#24BA27' w="100%" isDisabled={Object.keys(chosenPackage).length === 0}
+                            onClick={handleConfigureButtonClick}>Configure >> </Button>
                 </GridItem>
             </Grid>
         </div>
     );
-  };
-  export default PackageCatalog;
+};
+export default PackageCatalog;
 
 
 

@@ -12,7 +12,7 @@ const PackageCatalogOption = ({catalog}) => {
 
     return (
         <Grid
-            templateAreas={`"catalog manual"`}
+            templateAreas={`"catalog load"`}
             gridTemplateRows={'1fr'}
             gridTemplateColumns={'1fr 1fr'}
             h='100%'
@@ -22,13 +22,26 @@ const PackageCatalogOption = ({catalog}) => {
             gap={2}
         >
             <GridItem area={'catalog'}>
-                <Center border={catalog ? "2px": null} h="100%" w="100%" color='white' bg="#24BA27" p="2" onClick={handleCatalogForm}> 
+                <Center border={catalog ? "2px" : null}
+                        h="100%"
+                        w="100%"
+                        color='white'
+                        bg="#24BA27"
+                        p="2"
+                        onClick={handleCatalogForm}
+                >
                     Catalog
                 </Center>
             </GridItem>
-            <GridItem area={'manual'}>
-                <Center h="100%" w="100%" color='white' bg="#24BA27" p="2" onClick={ () => navigate("/enclave/create")}>
-                    Manual
+            <GridItem area={'load'}>
+                <Center h="100%"
+                        w="100%"
+                        color='white'
+                        bg="#24BA27"
+                        p="2"
+                        onClick={() => navigate("/enclave/load-manually")}
+                >
+                    Load Custom Package
                 </Center>
             </GridItem>
         </Grid>
