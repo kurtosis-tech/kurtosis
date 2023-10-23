@@ -34,6 +34,9 @@ const theme = extendTheme({
     body: `'Inter', sans-serif`,
   },
   colors: {
+    kurtosisSelected: {
+      100: "#1a365D16",
+    },
     kurtosisGreen: {
       100: "#005e11",
       200: "#008c19",

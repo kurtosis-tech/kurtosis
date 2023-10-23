@@ -7,18 +7,43 @@ import {
   ColumnDef,
   SortingState,
   getSortedRowModel,
-  SortingOptions,
+  TableState,
 } from "@tanstack/react-table";
 import { useState } from "react";
+import { assertDefined, isDefined } from "../utils";
+import { type OnChangeFn } from "@tanstack/table-core/src/types";
+import { type RowSelectionState } from "@tanstack/table-core/src/features/RowSelection";
 
 export type DataTableProps<Data extends object> = {
   data: Data[];
   columns: ColumnDef<Data, any>[];
   defaultSorting?: SortingState;
+  rowSelection?: Record<string, boolean>;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
 };
 
-export function DataTable<Data extends object>({ data, columns, defaultSorting }: DataTableProps<Data>) {
+export function DataTable<Data extends object>({
+  data,
+  columns,
+  defaultSorting,
+  rowSelection,
+  onRowSelectionChange,
+}: DataTableProps<Data>) {
+  if (isDefined(rowSelection) || isDefined(onRowSelectionChange)) {
+    assertDefined(
+      rowSelection,
+      `rowSelection and onRowSelectionChange must both be defined in DataTable if either are defined.`,
+    );
+    assertDefined(
+      onRowSelectionChange,
+      `rowSelection and onRowSelectionChange must both be defined in DataTable if either are defined.`,
+    );
+  }
   const [sorting, setSorting] = useState<SortingState>(defaultSorting || []);
+  const tableState: Partial<TableState> = { sorting };
+  if (isDefined(rowSelection)) {
+    tableState["rowSelection"] = rowSelection;
+  }
   const table = useReactTable({
     columns,
     data,
@@ -26,9 +51,9 @@ export function DataTable<Data extends object>({ data, columns, defaultSorting }
     getCoreRowModel: getCoreRowModel(),
     onSortingChange: setSorting,
     getSortedRowModel: getSortedRowModel(),
-    state: {
-      sorting,
-    },
+    enableRowSelection: isDefined(rowSelection),
+    onRowSelectionChange: onRowSelectionChange,
+    state: tableState,
   });
 
   return (
@@ -59,7 +84,7 @@ export function DataTable<Data extends object>({ data, columns, defaultSorting }
       </Thead>
       <Tbody>
         {table.getRowModel().rows.map((row) => (
-          <Tr key={row.id}>
+          <Tr key={row.id} bg={row.getIsSelected() ? "kurtosisSelected.100" : ""}>
             {row.getVisibleCells().map((cell) => {
               // see https://tanstack.com/table/v8/docs/api/core/column-def#meta to type this correctly
               const meta: any = cell.column.columnDef.meta;

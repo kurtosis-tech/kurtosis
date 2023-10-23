@@ -1,4 +1,16 @@
-import { Button, ButtonGroup, Card, Flex, Icon, Tab, TabList, TabPanel, TabPanels, Tabs } from "@chakra-ui/react";
+import {
+  Button,
+  ButtonGroup,
+  Card,
+  Flex,
+  Icon,
+  Spinner,
+  Tab,
+  TabList,
+  TabPanel,
+  TabPanels,
+  Tabs,
+} from "@chakra-ui/react";
 import { useKurtosisClient } from "../../client/KurtosisClientContext";
 import { useEffect, useState } from "react";
 import { isDefined } from "../../utils";
@@ -9,17 +21,26 @@ import { EnclaveFullInfo } from "./types";
 export const EnclaveList = () => {
   const kurtosisClient = useKurtosisClient();
   const [enclaves, setEnclaves] = useState<EnclaveFullInfo[]>();
+  const [selectedEnclaves, setSelectedEnclaves] = useState<EnclaveFullInfo[]>([]);
 
   useEffect(() => {
     (async () => {
       const enclavesResponse = await kurtosisClient.getEnclaves();
       const enclaves = Object.values(enclavesResponse.enclaveInfo);
-      const [starlarkRuns, services] = await Promise.all([
+      const [starlarkRuns, services, filesAndArtifacts] = await Promise.all([
         Promise.all(enclaves.map((enclave) => kurtosisClient.getStarlarkRun(enclave))),
         Promise.all(enclaves.map((enclave) => kurtosisClient.getServices(enclave))),
+        Promise.all(enclaves.map((enclave) => kurtosisClient.listFilesArtifactNamesAndUuids(enclave))),
       ]);
 
-      setEnclaves(enclaves.map((enclave, i) => ({ ...enclave, starlarkRun: starlarkRuns[i], services: services[i] })));
+      setEnclaves(
+        enclaves.map((enclave, i) => ({
+          ...enclave,
+          starlarkRun: starlarkRuns[i],
+          services: services[i],
+          filesAndArtifacts: filesAndArtifacts[i],
+        })),
+      );
     })();
   }, []);
 
@@ -29,11 +50,12 @@ export const EnclaveList = () => {
         <Flex justifyContent={"space-between"}>
           <TabList>
             <Tab>Enclaves</Tab>
-            <Tab>Overview</Tab>
           </TabList>
           <Flex gap={"24px"} alignItems={"center"}>
             <ButtonGroup isAttached variant={"kurtosisGroupOutline"} size={"sm"}>
-              <Button colorScheme={"blue"}>3 selected</Button>
+              <Button colorScheme={"blue"} onClick={() => setSelectedEnclaves([])}>
+                {selectedEnclaves.length} selected
+              </Button>
               <Button colorScheme={"red"} leftIcon={<FiTrash2 />}>
                 Delete
               </Button>
@@ -44,7 +66,20 @@ export const EnclaveList = () => {
           </Flex>
         </Flex>
         <TabPanels>
-          <TabPanel>{isDefined(enclaves) && <EnclavesTable enclavesData={enclaves} />}</TabPanel>
+          <TabPanel>
+            {isDefined(enclaves) && (
+              <EnclavesTable
+                enclavesData={enclaves}
+                selection={selectedEnclaves}
+                onSelectionChange={setSelectedEnclaves}
+              />
+            )}
+            {!isDefined(enclaves) && (
+              <Flex justifyContent={"center"} p={"20px"}>
+                <Spinner size={"xl"} />
+              </Flex>
+            )}
+          </TabPanel>
         </TabPanels>
       </Tabs>
     </Flex>

@@ -1,7 +1,11 @@
 import { PromiseClient } from "@connectrpc/connect";
 import { KurtosisEnclaveManagerServer } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_connect";
 import { EnclaveInfo } from "enclave-manager-sdk/build/engine_service_pb";
-import { GetServicesRequest, GetStarlarkRunRequest } from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
+import {
+  GetListFilesArtifactNamesAndUuidsRequest,
+  GetServicesRequest,
+  GetStarlarkRunRequest,
+} from "enclave-manager-sdk/build/kurtosis_enclave_manager_api_pb";
 import { assertDefined } from "../utils";
 
 export abstract class KurtosisClient {
@@ -18,7 +22,6 @@ export abstract class KurtosisClient {
   }
 
   async getServices(enclave: EnclaveInfo) {
-    console.log(enclave);
     const apicInfo = enclave.apiContainerInfo;
     assertDefined(apicInfo, `Cannot getServices because the passed enclave '${enclave.name}' does not have apicInfo`);
     const request = new GetServicesRequest({
@@ -29,7 +32,6 @@ export abstract class KurtosisClient {
   }
 
   async getStarlarkRun(enclave: EnclaveInfo) {
-    console.log(enclave);
     const apicInfo = enclave.apiContainerInfo;
     assertDefined(
       apicInfo,
@@ -40,5 +42,18 @@ export abstract class KurtosisClient {
       apicPort: apicInfo.grpcPortInsideEnclave,
     });
     return this.client.getStarlarkRun(request, this.getHeaderOptions());
+  }
+
+  async listFilesArtifactNamesAndUuids(enclave: EnclaveInfo) {
+    const apicInfo = enclave.apiContainerInfo;
+    assertDefined(
+      apicInfo,
+      `Cannot listFilesArtifactNamesAndUuids because the passed enclave '${enclave.name}' does not have apicInfo`,
+    );
+    const request = new GetListFilesArtifactNamesAndUuidsRequest({
+      apicIpAddress: apicInfo.bridgeIpAddress,
+      apicPort: apicInfo.grpcPortInsideEnclave,
+    });
+    return this.client.listFilesArtifactNamesAndUuids(request, this.getHeaderOptions());
   }
 }
