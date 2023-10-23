@@ -10,9 +10,9 @@ The `package init` command converts the current directory into a [Kurtosis packa
 kurtosis package init $PACKAGE_NAME
 ```
 
-The optional `#PACKAGE_NAME` argument is the [locator][locators] to the package, in the format `github.com/USER/REPO`.
+The optional `$PACKAGE_NAME` argument is the [locator][locators] to the package, in the format `github.com/USER/REPO`.
 
-<!----------------------
+<!---------------------->
 [package]: ../concepts-reference/packages.md
 [kurtosis-yml]: ../concepts-reference/kurtosis-yml.md
 [locators]: ../concepts-reference/locators.md
