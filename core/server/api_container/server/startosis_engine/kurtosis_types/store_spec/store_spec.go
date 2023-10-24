@@ -59,23 +59,6 @@ type StoreSpec struct {
 	*kurtosis_type_constructor.KurtosisValueTypeDefault
 }
 
-func CreateStoreSpec(src string, name string) (*StoreSpec, *startosis_errors.InterpretationError) {
-	args := []starlark.Value{
-		starlark.String(src),
-		starlark.String(name),
-	}
-
-	argumentDefinitions := NewStoreSpecType().KurtosisBaseBuiltin.Arguments
-	argumentValuesSet := builtin_argument.NewArgumentValuesSet(argumentDefinitions, args)
-	kurtosisDefaultValue, interpretationErr := kurtosis_type_constructor.CreateKurtosisStarlarkTypeDefault(StoreSpecTypeName, argumentValuesSet)
-	if interpretationErr != nil {
-		return nil, interpretationErr
-	}
-	return &StoreSpec{
-		KurtosisValueTypeDefault: kurtosisDefaultValue,
-	}, nil
-}
-
 func (storeSpecObj *StoreSpec) Copy() (builtin_argument.KurtosisValueType, error) {
 	copiedValueType, err := storeSpecObj.KurtosisValueTypeDefault.Copy()
 	if err != nil {

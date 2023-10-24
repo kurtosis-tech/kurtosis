@@ -136,8 +136,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.S
 
 func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string]string, imageName string) *startosis_errors.ValidationError {
 	if storeSpecList != nil {
-		err := validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList)
-		if err != nil {
+		if err := validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList); err != nil {
 			return startosis_errors.WrapWithValidationError(err, "error occurred while validating file paths to copy into file artifact")
 		}
 
