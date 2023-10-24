@@ -157,31 +157,20 @@ func (c *WebServer) GetServiceLogs(
 	req *connect.Request[kurtosis_engine_rpc_api_bindings.GetServiceLogsArgs],
 	str *connect.ServerStream[kurtosis_engine_rpc_api_bindings.GetServiceLogsResponse],
 ) error {
-	engineClient, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
+	serviceLogsStream, err := (*c.engineServiceClient).GetServiceLogs(ctx, req)
 	if err != nil {
 		return err
 	}
 
-	for engineClient.Receive() {
-		select {
-		case <-ctx.Done():
-			logrus.Debug("Closing the engine client after receiving abort signal from the client")
-			err := engineClient.Close()
-			if err != nil {
-				logrus.Errorf("Error ocurred: %+v", err)
-				return err
-			}
-			return nil
-		default:
-			resp := engineClient.Msg()
-			errWhileSending := str.Send(resp)
-			if errWhileSending != nil {
-				return errWhileSending
-			}
+	for serviceLogsStream.Receive() {
+		resp := serviceLogsStream.Msg()
+		errWhileSending := str.Send(resp)
+		if errWhileSending != nil {
+			return stacktrace.Propagate(errWhileSending, "An error occurred in the enclave manager server attempting to send services logs.")
 		}
 	}
-	if engineClient.Err() != nil {
-		return engineClient.Err()
+	if serviceLogsStream.Err() != nil {
+		return stacktrace.Propagate(serviceLogsStream.Err(), "An error occurred in the enclave manager server attempting to receive services logs.")
 	}
 
 	return nil
@@ -216,9 +205,8 @@ func (c *WebServer) ListFilesArtifactNamesAndUuids(ctx context.Context, req *con
 func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request[kurtosis_enclave_manager_api_bindings.RunStarlarkPackageRequest], str *connect.ServerStream[kurtosis_core_rpc_api_bindings.StarlarkRunResponseLine]) error {
 	apiContainerServiceClient, err := c.createAPICClient(req.Msg.ApicIpAddress, req.Msg.ApicPort)
 	runPackageArgs := req.Msg.RunStarlarkPackageArgs
-	boolean := true
-	runPackageArgs.ClonePackage = &boolean
-
+	shouldClonePackage := true
+	runPackageArgs.ClonePackage = &shouldClonePackage
 	if err != nil {
 		return stacktrace.Propagate(err, "Failed to create the APIC client")
 	}
@@ -226,21 +214,19 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 		Msg: req.Msg.RunStarlarkPackageArgs,
 	}
 
-	apiClient, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
+	starlarkLogsStream, err := (*apiContainerServiceClient).RunStarlarkPackage(ctx, serviceRequest)
 
-	for apiClient.Receive() {
-		resp := apiClient.Msg()
-		errWhileSending := str.Send(resp)
-		if errWhileSending != nil {
-			logrus.Errorf("Error occurred while sending stream frome enclave manager to the UI: %+v", errWhileSending)
-			return stacktrace.Propagate(errWhileSending, "Error occurred while sending streams")
+	for starlarkLogsStream.Receive() {
+		resp := starlarkLogsStream.Msg()
+		err = str.Send(resp)
+		if err != nil {
+			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to send run starlark package logs.")
 		}
 	}
-
-	if errWhileReceive := apiClient.Err(); errWhileReceive != nil {
-		logrus.Errorf("Error occurred while enclave manger is receiving streams from engine: %+v", errWhileReceive)
-		return stacktrace.Propagate(errWhileReceive, "Error occurred while receiving data from engine")
+	if err = starlarkLogsStream.Err(); err != nil {
+		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to receive run starlark package logs.")
 	}
+
 	return nil
 }
 
@@ -277,7 +263,6 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 			EnclaveInfo: result.Msg.EnclaveInfo,
 		},
 	}
-	logrus.Infof("Create Enclave: %+v", resp)
 	return resp, nil
 }
 
