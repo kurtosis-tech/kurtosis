@@ -17,12 +17,14 @@ def run(plan):
 `
 	runshStarlarkFileArtifact = `
 def run(plan):
-  result = plan.run_sh(run="mkdir -p /src && echo kurtosis > /src/tech.txt", store=["/src/tech.txt", "/src"], image="ethpandaops/ethereum-genesis-generator:1.0.14")
+  result = plan.run_sh(run="mkdir -p /src && echo kurtosis > /src/tech.txt && echo example > /src/example.txt", store=["/src/tech.txt", StoreSpec(src="/src", name="src"), StoreSpec(src="/src/example.txt")], image="ethpandaops/ethereum-genesis-generator:1.0.14")
   file_artifacts = result.files_artifacts
   result2 = plan.run_sh(run="cat /temp/tech.txt", files={"/temp": file_artifacts[0]})
   plan.verify(result2.output, "==", "kurtosis\n")
   result3 = plan.run_sh(run="cat /task/src/tech.txt", files={"/task": file_artifacts[1]})
   plan.verify(result3.output, "==", "kurtosis\n")
+  result4 = plan.run_sh(run = "cat /task/example.txt", files={"/task": file_artifacts[2]})
+  plan.verify(result4.output, "==", "example\n")
 `
 
 	runshStarlarkFileArtifactFailure = `
@@ -55,8 +57,9 @@ func TestStarlark_RunshTaskSimple(t *testing.T) {
 
 func TestStarlark_RunshTaskFileArtifact(t *testing.T) {
 	ctx := context.Background()
-	runResult, _ := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkFileArtifact)
-	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nVerification succeeded. Value is '\"kurtosis\\n\"'.\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nVerification succeeded. Value is '\"kurtosis\\n\"'.\n"
+	runResult, err := test_helpers.SetupSimpleEnclaveAndRunScript(t, ctx, runshTest, runshStarlarkFileArtifact)
+	require.Nil(t, err)
+	expectedOutput := "Command returned with exit code '0' with no output\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nVerification succeeded. Value is '\"kurtosis\\n\"'.\nCommand returned with exit code '0' and the following output:\n--------------------\nkurtosis\n\n--------------------\nVerification succeeded. Value is '\"kurtosis\\n\"'.\nCommand returned with exit code '0' and the following output:\n--------------------\nexample\n\n--------------------\nVerification succeeded. Value is '\"example\\n\"'.\n"
 	require.Equal(t, expectedOutput, string(runResult.RunOutput))
 }
 
