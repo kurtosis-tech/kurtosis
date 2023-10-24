@@ -59,9 +59,9 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 	}
 
 	for i := 0; i < storeFilesList.Len(); i++ {
-		item := storeFilesList.Index(i)
+		rawStoreSpec := storeFilesList.Index(i)
 
-		storeSpecObjStarlarkType, isStoreSpecObj := item.(*store_spec_starlark_type.StoreSpec)
+		storeSpecObjStarlarkType, isStoreSpecObj := rawStoreSpec.(*store_spec_starlark_type.StoreSpec)
 		if isStoreSpecObj {
 			storeSpecObj, interpretationErr := storeSpecObjStarlarkType.ToKurtosisType()
 			if interpretationErr != nil {
@@ -80,7 +80,7 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 		}
 
 		// this is a pure string
-		storeFilesSrcStr, interpretationErr := kurtosis_types.SafeCastToString(item, StoreFilesArgName)
+		storeFilesSrcStr, interpretationErr := kurtosis_types.SafeCastToString(rawStoreSpec, StoreFilesArgName)
 		if interpretationErr == nil {
 			uniqueNameForArtifact, artifactCreationErr := serviceNetwork.GetUniqueNameForFileArtifact()
 			if artifactCreationErr != nil {
@@ -91,7 +91,7 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 			continue
 		}
 
-		return nil, startosis_errors.NewInterpretationError("Couldn't convert '%v' to StoreSpec type", item)
+		return nil, startosis_errors.NewInterpretationError("Couldn't convert '%v' to StoreSpec type", rawStoreSpec)
 	}
 
 	return result, nil

@@ -417,15 +417,22 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
             "/path/to/file/2": files_artifact_2,
         },
 
-        # list of paths to directories or files that will be copied to a file artifact
-        # CAUTION: all the paths in this list must be unique 
-        # OPTIONAL (Default:[])
+        # A list of filepaths to store inside files artifacts after the run_python finishes
+        # Entries in the list can either be a string containing the path to store, or a
+        # StoreSpec object that can optionally name the files artifact.
+        # CAUTION: Both the paths in `src` and the files artifact names must be unique!
+        # OPTIONAL (Default: [])
         store = [
-            # copies a file into a file artifact
-            "/src/kurtosis.txt", 
+            # EXAMPLE: Creates a files artifact named `kurtosis_txt` containing the `kurtosis.txt` file
+            StoreSpec(src = "/src/kurtosis.txt", name = "kurtosis_txt"),
             
-            # copies the entire directory into a file artifact
-            "/src",
+            # EXAMPLE: Creates a files artifact with an automatically-generated name containing `genesis.json`
+            StoreSpec(src = "/genesis.json"),
+
+            # EXAMPLE: Creates a files artifact with an automatically-generated name containing `address.json`
+            # This is just syntactic sugar for:
+            # StoreSpec(src = "/counbase/address.json")
+	        "/coinbase/address.json"
         ],
 
         # The time to allow for the command to complete. If the Python script takes longer than this,
@@ -478,15 +485,22 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
             "/path/to/file/2": files_artifact_2,
         },
 
-        # list of paths to directories or files that will be copied to a file artifact
-        # CAUTION: all the paths in this list must be unique 
-        # OPTIONAL (Default:[])
+        # A list of filepaths to store inside files artifacts after the run_sh finishes
+        # Entries in the list can either be a string containing the path to store, or a
+        # StoreSpec object that can optionally name the files artifact.
+        # CAUTION: Both the paths in `src` and the files artifact names must be unique!
+        # OPTIONAL (Default: [])
         store = [
-            # copies a file into a file artifact
-            "/src/kurtosis.txt", 
+            # EXAMPLE: Creates a files artifact named `kurtosis_txt` containing the `kurtosis.txt` file
+            StoreSpec(src = "/src/kurtosis.txt", name = "kurtosis_txt"),
             
-            # copies the entire directory into a file artifact
-            "/src",
+            # EXAMPLE: Creates a files artifact with an automatically-generated name containing `genesis.json`
+            StoreSpec(src = "/genesis.json"),
+
+            # EXAMPLE: Creates a files artifact with an automatically-generated name containing `address.json`
+            # This is just syntactic sugar for:
+            # StoreSpec(src = "/counbase/address.json")
+	        "/coinbase/address.json"
         ],
 
         # The time to allow for the command to complete. If the command takes longer than this,
