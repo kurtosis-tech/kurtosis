@@ -220,13 +220,11 @@ func (c *WebServer) RunStarlarkPackage(ctx context.Context, req *connect.Request
 		resp := starlarkLogsStream.Msg()
 		err = str.Send(resp)
 		if err != nil {
-			logrus.Errorf("Error occurred while receiving stream from enclave manager to the UI: %+v", err)
-			return stacktrace.Propagate(err, "Error occurred while sending streams")
+			return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to send run starlark package logs.")
 		}
 	}
 	if err = starlarkLogsStream.Err(); err != nil {
-		logrus.Errorf("Error occurred while enclave manger is receiving streams from engine: %+v", err)
-		return stacktrace.Propagate(err, "Error occurred while receiving data from engine")
+		return stacktrace.Propagate(err, "An error occurred in the enclave manager server attempting to receive run starlark package logs.")
 	}
 
 	return nil
@@ -265,7 +263,6 @@ func (c *WebServer) CreateEnclave(ctx context.Context, req *connect.Request[kurt
 			EnclaveInfo: result.Msg.EnclaveInfo,
 		},
 	}
-	logrus.Infof("Create Enclave: %+v", resp)
 	return resp, nil
 }
 
