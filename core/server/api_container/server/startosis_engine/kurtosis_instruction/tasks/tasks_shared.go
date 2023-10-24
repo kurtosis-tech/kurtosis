@@ -69,9 +69,9 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 			}
 			// is a StoreSpecObj but no name was provided
 			if storeSpecObj.GetName() == "" {
-				uniqueNameForArtifact, err := serviceNetwork.GetUniqueNameForFileArtifact()
-				if err != nil {
-					return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
+				uniqueNameForArtifact, artifactCreationErr := serviceNetwork.GetUniqueNameForFileArtifact()
+				if artifactCreationErr != nil {
+					return nil, startosis_errors.WrapWithInterpretationError(artifactCreationErr, "error occurred while generating unique name for file artifact")
 				}
 				storeSpecObj.SetName(uniqueNameForArtifact)
 			}
@@ -82,14 +82,11 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 		// this is a pure string
 		storeFilesSrcStr, interpretationErr := kurtosis_types.SafeCastToString(item, StoreFilesArgName)
 		if interpretationErr == nil {
-			uniqueNameForArtifact, err := serviceNetwork.GetUniqueNameForFileArtifact()
-			if err != nil {
-				return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
+			uniqueNameForArtifact, artifactCreationErr := serviceNetwork.GetUniqueNameForFileArtifact()
+			if artifactCreationErr != nil {
+				return nil, startosis_errors.WrapWithInterpretationError(artifactCreationErr, "error occurred while generating unique name for file artifact")
 			}
 			storeSpecObj := store_spec.NewStoreSpec(storeFilesSrcStr, uniqueNameForArtifact)
-			if interpretationErr != nil {
-				return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "an error occurred while generating store_spec")
-			}
 			result = append(result, storeSpecObj)
 			continue
 		}
