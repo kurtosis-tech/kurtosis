@@ -52,7 +52,9 @@ export const Log = ({logs, fileName, currentExecutionStatus, executionStatusText
 
     const handleScrollToBottom = () => {
         virtuosoRef.current.scrollToIndex({
-            index: displayLogs.length - 1, behavior: 'smooth', align: "end"
+            index: displayLogs.length - 1,
+            behavior: 'auto',
+            align: "end",
         });
     }
 
