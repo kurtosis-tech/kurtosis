@@ -29,7 +29,7 @@ func MustCreateNewDockerLabelKey(str string) *DockerLabelKey {
 	return key
 }
 
-// CreateNewDockerUserCustomLabelKey creates a custom uer Docker label with the Kurtosis custom user prefix
+// CreateNewDockerUserCustomLabelKey creates a custom user Docker label with the Kurtosis custom user prefix
 func CreateNewDockerUserCustomLabelKey(str string) (*DockerLabelKey, error) {
 	if err := validateNotEmptyUserCustomLabelKey(str); err != nil {
 		return nil, stacktrace.NewError("Received an empty user custom label key")
