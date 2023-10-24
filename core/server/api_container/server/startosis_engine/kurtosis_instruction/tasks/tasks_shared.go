@@ -42,6 +42,8 @@ const (
 	runFilesArtifactsKey = "files_artifacts"
 
 	shellWrapperCommand = "/bin/sh"
+	noNameSet           = ""
+	uniqueNameGenErrStr = "error occurred while generating unique name for the file artifact"
 )
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
@@ -61,17 +63,17 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 	for i := 0; i < storeFilesList.Len(); i++ {
 		rawStoreSpec := storeFilesList.Index(i)
 
-		storeSpecObjStarlarkType, isStoreSpecObj := rawStoreSpec.(*store_spec_starlark_type.StoreSpec)
-		if isStoreSpecObj {
+		storeSpecObjStarlarkType, isStoreSpecObjStarlarkType := rawStoreSpec.(*store_spec_starlark_type.StoreSpec)
+		if isStoreSpecObjStarlarkType {
 			storeSpecObj, interpretationErr := storeSpecObjStarlarkType.ToKurtosisType()
 			if interpretationErr != nil {
-				return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "an error occurred while converting StoreSpec starlark type to raw type")
+				return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "an error occurred while converting StoreSpec Starlark type to raw type")
 			}
 			// is a StoreSpecObj but no name was provided
-			if storeSpecObj.GetName() == "" {
+			if storeSpecObj.GetName() == noNameSet {
 				uniqueNameForArtifact, artifactCreationErr := serviceNetwork.GetUniqueNameForFileArtifact()
 				if artifactCreationErr != nil {
-					return nil, startosis_errors.WrapWithInterpretationError(artifactCreationErr, "error occurred while generating unique name for file artifact")
+					return nil, startosis_errors.WrapWithInterpretationError(artifactCreationErr, uniqueNameGenErrStr)
 				}
 				storeSpecObj.SetName(uniqueNameForArtifact)
 			}
@@ -84,7 +86,7 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 		if interpretationErr == nil {
 			uniqueNameForArtifact, artifactCreationErr := serviceNetwork.GetUniqueNameForFileArtifact()
 			if artifactCreationErr != nil {
-				return nil, startosis_errors.WrapWithInterpretationError(artifactCreationErr, "error occurred while generating unique name for file artifact")
+				return nil, startosis_errors.WrapWithInterpretationError(artifactCreationErr, uniqueNameGenErrStr)
 			}
 			storeSpecObj := store_spec.NewStoreSpec(storeFilesSrcStr, uniqueNameForArtifact)
 			result = append(result, storeSpecObj)
@@ -123,6 +125,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.S
 	artifactNamesList := &starlark.List{}
 	if len(storeSpecList) > 0 {
 		for _, storeSpec := range storeSpecList {
+			// purposely not checking error for list because it's mutable so should not throw any errors until this point
 			_ = artifactNamesList.Append(starlark.String(storeSpec.GetName()))
 		}
 	}
