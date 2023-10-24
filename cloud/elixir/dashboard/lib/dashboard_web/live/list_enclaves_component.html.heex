@@ -9,6 +9,12 @@
           <p>
             <%= item.containers_status %>
           </p>
+          <p>
+            <%= Calendar.strftime(item.creation_time, "%y-%m-%d %I:%M:%S %p") %>
+          </p>
+          <%!-- <p>
+            <%= DateTime.diff(DateTime.utc_now, item.creation_time, :minute) %>
+          </p> --%>
           <div class="flex-row">
             <button
               class="btn-primary"

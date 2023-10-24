@@ -2,7 +2,7 @@ defmodule DashboardWeb.DashboardWeb.EngineApp do
   use DashboardWeb, :live_view
 
   def mount(_params, _session, socket) do
-    enclaves = Backend.Engine.list_enclaves()
+    enclaves = Backend.Engine.Enclave.list_enclaves()
     send(self(), :loop)
     {:ok, assign(socket, %{enclaves: enclaves, parent: self()})}
   end
@@ -13,7 +13,7 @@ defmodule DashboardWeb.DashboardWeb.EngineApp do
   end
 
   def handle_info(:refresh_enclaves, socket) do
-    enclaves = Backend.Engine.list_enclaves()
+    enclaves = Backend.Engine.Enclave.list_enclaves()
     {:noreply, assign(socket, %{enclaves: enclaves})}
   end
 
