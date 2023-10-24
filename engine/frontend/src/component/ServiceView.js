@@ -65,7 +65,7 @@ const ServiceView = (service) => {
                 <Tbody>
                     {tableRow("Name", () => serviceInfo.name)}
                     {tableRow("UUID", () => <pre>{serviceInfo.serviceUuid}</pre>)}
-                    {tableRow("Status", () => statusBadge(serviceInfo.serviceStatus))}
+                    {tableRow("Status", () => statusBadge(serviceInfo.container.status))}
                     {tableRow("Image", () => serviceInfo.container.imageName)}
                     {tableRow("Ports", () => codeBox(serviceInfo.shortenedUuid, serviceInfo.name, "ports", serviceInfo.ports, 0))}
                     {tableRow("ENTRYPOINT", () => codeBox(serviceInfo.shortenedUuid, serviceInfo.name, "entrypoint", serviceInfo.container.entrypointArgs, 1))}
