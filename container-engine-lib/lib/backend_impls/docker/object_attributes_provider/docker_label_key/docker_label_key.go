@@ -3,6 +3,7 @@ package docker_label_key
 import (
 	"github.com/kurtosis-tech/stacktrace"
 	"regexp"
+	"strings"
 )
 
 const (
@@ -61,7 +62,8 @@ func (key *DockerLabelKey) GetString() string {
 }
 
 func validateNotEmptyUserCustomLabelKey(str string) error {
-	if str == "" || str == " " {
+	str = strings.TrimSpace(str)
+	if str == "" {
 		return stacktrace.NewError("User custom label key can't be an empty string")
 	}
 	return nil

@@ -53,7 +53,8 @@ func (key *KubernetesLabelKey) GetString() string {
 }
 
 func validateNotEmptyUserCustomLabelKey(str string) error {
-	if str == "" || str == " " {
+	str = strings.TrimSpace(str)
+	if str == "" {
 		return stacktrace.NewError("User custom label key can't be an empty string")
 	}
 	return nil
