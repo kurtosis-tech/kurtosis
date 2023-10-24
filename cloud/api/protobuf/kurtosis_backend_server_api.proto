@@ -94,9 +94,9 @@ message PaymentSubscription {
 message GetOrCreatePaymentConfigResponse {
   string user_id = 1;
   string client_secret = 2;
-  PaymentMethod payment_method = 3;
+  optional PaymentMethod payment_method = 3;
   PaymentProduct product = 4;
-  PaymentSubscription subscription = 5;
+  optional PaymentSubscription subscription = 5;
   int32 trial_end = 6;
 }
 
