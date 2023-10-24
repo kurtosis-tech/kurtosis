@@ -8,11 +8,14 @@ require (
 	github.com/docker/go-connections v0.4.0
 	github.com/gammazero/workerpool v1.1.2
 	github.com/google/uuid v1.3.0
+	github.com/kurtosis-tech/kurtosis/api/golang v0.84.10
+	github.com/kurtosis-tech/kurtosis/contexts-config-store v0.0.0-20231024171600-4b759806cd52
+	github.com/kurtosis-tech/kurtosis/engine/launcher v0.0.0-20231024171600-4b759806cd52
 	github.com/kurtosis-tech/stacktrace v0.0.0-20211028211901-1c67a77b5409
 	github.com/sirupsen/logrus v1.9.0
 	github.com/stretchr/testify v1.8.4
 	go.etcd.io/bbolt v1.3.6
-	golang.org/x/term v0.11.0
+	golang.org/x/term v0.13.0
 	k8s.io/api v0.27.2
 	k8s.io/apimachinery v0.27.2
 	k8s.io/client-go v0.27.2
@@ -38,7 +41,6 @@ require (
 	github.com/imdario/mergo v0.3.16 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/moby/spdystream v0.2.0 // indirect
 	github.com/moby/term v0.0.0-20220808134915-39b0c02b01ae // indirect
@@ -54,10 +56,10 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/net v0.14.0 // indirect
+	golang.org/x/net v0.17.0 // indirect
 	golang.org/x/oauth2 v0.8.0 // indirect
-	golang.org/x/sys v0.11.0 // indirect
-	golang.org/x/text v0.12.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
+	golang.org/x/text v0.13.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	golang.org/x/tools v0.12.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
