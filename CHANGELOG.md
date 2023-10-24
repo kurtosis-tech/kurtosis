@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.84.10](https://github.com/kurtosis-tech/kurtosis/compare/0.84.9...0.84.10) (2023-10-23)
+
+
+### Bug Fixes
+
+* bug in portal forwarding via run ([#1598](https://github.com/kurtosis-tech/kurtosis/issues/1598)) ([bf534c3](https://github.com/kurtosis-tech/kurtosis/commit/bf534c35055f4ec3e19cc1f1e2e32e8d29e61b5a))
+
+## [0.84.9](https://github.com/kurtosis-tech/kurtosis/compare/0.84.8...0.84.9) (2023-10-19)
+
+
+### Features
+
+* Cloud backend method to refresh the default payment method ([#1569](https://github.com/kurtosis-tech/kurtosis/issues/1569)) ([9f3d808](https://github.com/kurtosis-tech/kurtosis/commit/9f3d808264fa1d83d6fd0d2ea3dde3b5d3f9e48e))
+* get package on demand ([#1590](https://github.com/kurtosis-tech/kurtosis/issues/1590)) ([0af4086](https://github.com/kurtosis-tech/kurtosis/commit/0af4086da6887aa80d7a1b06d232254178a022e7))
+
 ## [0.84.8](https://github.com/kurtosis-tech/kurtosis/compare/0.84.7...0.84.8) (2023-10-17)
 
 
