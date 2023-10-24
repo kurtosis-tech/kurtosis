@@ -431,7 +431,7 @@ The `run_python` instruction executes a one-time execution task. It runs the Pyt
 
             # EXAMPLE: Creates a files artifact with an automatically-generated name containing `address.json`
             # This is just syntactic sugar for:
-            # StoreSpec(src = "/counbase/address.json")
+            # StoreSpec(src = "/coinbase/address.json")
 	        "/coinbase/address.json"
         ],
 
@@ -499,7 +499,7 @@ The `run_sh` instruction executes a one-time execution task. It runs the bash co
 
             # EXAMPLE: Creates a files artifact with an automatically-generated name containing `address.json`
             # This is just syntactic sugar for:
-            # StoreSpec(src = "/counbase/address.json")
+            # StoreSpec(src = "/coinbase/address.json")
 	        "/coinbase/address.json"
         ],
 
