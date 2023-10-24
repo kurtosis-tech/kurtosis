@@ -1,6 +1,7 @@
 package store_spec
 
 import (
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/kurtosis_type_constructor"
@@ -101,4 +102,18 @@ func (storeSpecObj *StoreSpec) GetSrc() (string, *startosis_errors.Interpretatio
 		return "", interpretationErr
 	}
 	return src.GoString(), nil
+}
+
+func (storeSpecObj *StoreSpec) ToKurtosisType() (*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
+	name, interpretationErr := storeSpecObj.GetName()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	src, interpretationErr := storeSpecObj.GetSrc()
+	if interpretationErr != nil {
+		return nil, interpretationErr
+	}
+
+	return store_spec.NewStoreSpec(src, name), nil
 }

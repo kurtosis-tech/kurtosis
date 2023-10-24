@@ -6,6 +6,7 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
+	store_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
@@ -45,8 +46,8 @@ const (
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
 
-func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
-	var result []*store_spec.StoreSpec
+func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec2.StoreSpec, *startosis_errors.InterpretationError) {
+	var result []*store_spec2.StoreSpec
 
 	storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, StoreFilesArgName)
 	if err != nil {
@@ -60,47 +61,36 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 	for i := 0; i < storeFilesList.Len(); i++ {
 		item := storeFilesList.Index(i)
 
-		storeSpecObj, isStoreSpecObj := item.(*store_spec.StoreSpec)
+		storeSpecObjStarlarkType, isStoreSpecObj := item.(*store_spec.StoreSpec)
 		if isStoreSpecObj {
-			name, interpretationErr := storeSpecObj.GetName()
+			storeSpecObj, interpretationErr := storeSpecObjStarlarkType.ToKurtosisType()
 			if interpretationErr != nil {
-				return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "an error occurred while fetching the name")
+				return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "an error occurred while converting StoreSpec starlark type to raw type")
 			}
-			if name != "" {
-				result = append(result, storeSpecObj)
-				continue
+			// is a StoreSpecObj but no name was provided
+			if storeSpecObj.GetName() == "" {
+				uniqueNameForArtifact, err := serviceNetwork.GetUniqueNameForFileArtifact()
+				if err != nil {
+					return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
+				}
+				storeSpecObj.SetName(uniqueNameForArtifact)
 			}
-
-			src, interpretationErr := storeSpecObj.GetSrc()
-			if interpretationErr != nil {
-				return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "an error occurred while fetching the src")
-			}
-
-			uniqueNameForArtifact, err := serviceNetwork.GetUniqueNameForFileArtifact()
-			if err != nil {
-				return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
-			}
-			storeSpecObj, interpretationErr = store_spec.CreateStoreSpec(src, uniqueNameForArtifact)
-			if interpretationErr != nil {
-				return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while creating a storespec obj")
-			}
-
 			result = append(result, storeSpecObj)
 			continue
 		}
 
-		storeFilesSrcStr, interpretationErr := kurtosis_types.SafeCastToString(item, StoreFilesArgName)
 		// this is a pure string
+		storeFilesSrcStr, interpretationErr := kurtosis_types.SafeCastToString(item, StoreFilesArgName)
 		if interpretationErr == nil {
 			uniqueNameForArtifact, err := serviceNetwork.GetUniqueNameForFileArtifact()
 			if err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
 			}
-			newStoreSpec, interpretationErr := store_spec.CreateStoreSpec(storeFilesSrcStr, uniqueNameForArtifact)
+			storeSpecObj := store_spec2.NewStoreSpec(storeFilesSrcStr, uniqueNameForArtifact)
 			if interpretationErr != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "an error occurred while generating store_spec")
 			}
-			result = append(result, newStoreSpec)
+			result = append(result, storeSpecObj)
 			continue
 		}
 
@@ -124,7 +114,7 @@ func parseWaitArg(arguments *builtin_argument.ArgumentValuesSet) (string, *start
 	return waitTimeout, nil
 }
 
-func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.StoreSpec) *starlarkstruct.Struct {
+func createInterpretationResult(resultUuid string, storeSpecList []*store_spec2.StoreSpec) *starlarkstruct.Struct {
 	runCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultCodeKey)
 	runOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultOutputKey)
 
@@ -136,9 +126,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.S
 	artifactNamesList := &starlark.List{}
 	if len(storeSpecList) > 0 {
 		for _, storeSpec := range storeSpecList {
-			// purposely not checking error for list because it's mutable so should not throw any errors until this point
-			storeSpecName, _ := storeSpec.GetName()
-			_ = artifactNamesList.Append(starlark.String(storeSpecName))
+			_ = artifactNamesList.Append(starlark.String(storeSpec.GetName()))
 		}
 	}
 	dict[runFilesArtifactsKey] = artifactNamesList
@@ -146,7 +134,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.S
 	return result
 }
 
-func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string]string, imageName string) *startosis_errors.ValidationError {
+func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec2.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string]string, imageName string) *startosis_errors.ValidationError {
 	if storeSpecList != nil {
 		err := validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList)
 		if err != nil {
@@ -154,9 +142,7 @@ func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvi
 		}
 
 		for _, storeSpec := range storeSpecList {
-			// TODO check error
-			name, _ := storeSpec.GetName()
-			validatorEnvironment.AddArtifactName(name)
+			validatorEnvironment.AddArtifactName(storeSpec.GetName())
 		}
 	}
 
@@ -208,12 +194,11 @@ func executeWithWait(ctx context.Context, serviceNetwork service_network.Service
 	}
 }
 
-func validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList []*store_spec.StoreSpec) *startosis_errors.ValidationError {
+func validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList []*store_spec2.StoreSpec) *startosis_errors.ValidationError {
 	if len(storeSpecList) > 0 {
 		duplicates := map[string]uint16{}
 		for _, storeSpec := range storeSpecList {
-			// TODO check errors
-			filePath, _ := storeSpec.GetSrc()
+			filePath := storeSpec.GetSrc()
 			if duplicates[filePath] != 0 {
 				return startosis_errors.NewValidationError(
 					"error occurred while validating field: %v. The file paths in the array must be unique. Found multiple instances of %v", StoreFilesArgName, filePath)
@@ -224,18 +209,15 @@ func validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList []*store_spec.S
 	return nil
 }
 
-func copyFilesFromTask(ctx context.Context, serviceNetwork service_network.ServiceNetwork, serviceName string, storeSpecList []*store_spec.StoreSpec) error {
+func copyFilesFromTask(ctx context.Context, serviceNetwork service_network.ServiceNetwork, serviceName string, storeSpecList []*store_spec2.StoreSpec) error {
 	if storeSpecList == nil {
 		return nil
 	}
 
 	for _, storeSpec := range storeSpecList {
-		// TODO better names ; error check
-		path, _ := storeSpec.GetSrc()
-		name, _ := storeSpec.GetName()
-		_, err := serviceNetwork.CopyFilesFromService(ctx, serviceName, path, name)
+		_, err := serviceNetwork.CopyFilesFromService(ctx, serviceName, storeSpec.GetSrc(), storeSpec.GetName())
 		if err != nil {
-			return stacktrace.Propagate(err, fmt.Sprintf("error occurred while copying file or directory at path: %v", path))
+			return stacktrace.Propagate(err, fmt.Sprintf("error occurred while copying file or directory at path: %v", storeSpec.GetSrc()))
 		}
 	}
 	return nil
