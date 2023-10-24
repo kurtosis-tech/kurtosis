@@ -6,13 +6,13 @@ import (
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/exec_result"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service"
 	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/service_directory"
-	store_spec2 "github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
+	"github.com/kurtosis-tech/kurtosis/container-engine-lib/lib/backend_interface/objects/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/service_network"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_instruction/shared_helpers/magic_string_helper"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_starlark_framework/builtin_argument"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/service_config"
-	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/store_spec"
+	store_spec_starlark_type "github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/kurtosis_types/store_spec"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_errors"
 	"github.com/kurtosis-tech/kurtosis/core/server/api_container/server/startosis_engine/startosis_validator"
 	"github.com/kurtosis-tech/stacktrace"
@@ -46,8 +46,8 @@ const (
 
 var runTailCommandToPreventContainerToStopOnCreating = []string{"tail", "-f", "/dev/null"}
 
-func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec2.StoreSpec, *startosis_errors.InterpretationError) {
-	var result []*store_spec2.StoreSpec
+func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments *builtin_argument.ArgumentValuesSet) ([]*store_spec.StoreSpec, *startosis_errors.InterpretationError) {
+	var result []*store_spec.StoreSpec
 
 	storeFilesList, err := builtin_argument.ExtractArgumentValue[*starlark.List](arguments, StoreFilesArgName)
 	if err != nil {
@@ -61,7 +61,7 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 	for i := 0; i < storeFilesList.Len(); i++ {
 		item := storeFilesList.Index(i)
 
-		storeSpecObjStarlarkType, isStoreSpecObj := item.(*store_spec.StoreSpec)
+		storeSpecObjStarlarkType, isStoreSpecObj := item.(*store_spec_starlark_type.StoreSpec)
 		if isStoreSpecObj {
 			storeSpecObj, interpretationErr := storeSpecObjStarlarkType.ToKurtosisType()
 			if interpretationErr != nil {
@@ -86,7 +86,7 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 			if err != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(err, "error occurred while generating unique name for file artifact")
 			}
-			storeSpecObj := store_spec2.NewStoreSpec(storeFilesSrcStr, uniqueNameForArtifact)
+			storeSpecObj := store_spec.NewStoreSpec(storeFilesSrcStr, uniqueNameForArtifact)
 			if interpretationErr != nil {
 				return nil, startosis_errors.WrapWithInterpretationError(interpretationErr, "an error occurred while generating store_spec")
 			}
@@ -94,7 +94,7 @@ func parseStoreFilesArg(serviceNetwork service_network.ServiceNetwork, arguments
 			continue
 		}
 
-		return nil, startosis_errors.NewInterpretationError("Couldn't convert '%v' to '%v' type", item, store_spec.StoreSpecTypeName)
+		return nil, startosis_errors.NewInterpretationError("Couldn't convert '%v' to StoreSpec type", item)
 	}
 
 	return result, nil
@@ -114,7 +114,7 @@ func parseWaitArg(arguments *builtin_argument.ArgumentValuesSet) (string, *start
 	return waitTimeout, nil
 }
 
-func createInterpretationResult(resultUuid string, storeSpecList []*store_spec2.StoreSpec) *starlarkstruct.Struct {
+func createInterpretationResult(resultUuid string, storeSpecList []*store_spec.StoreSpec) *starlarkstruct.Struct {
 	runCodeValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultCodeKey)
 	runOutputValue := fmt.Sprintf(magic_string_helper.RuntimeValueReplacementPlaceholderFormat, resultUuid, runResultOutputKey)
 
@@ -134,7 +134,7 @@ func createInterpretationResult(resultUuid string, storeSpecList []*store_spec2.
 	return result
 }
 
-func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec2.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string]string, imageName string) *startosis_errors.ValidationError {
+func validateTasksCommon(validatorEnvironment *startosis_validator.ValidatorEnvironment, storeSpecList []*store_spec.StoreSpec, serviceDirpathsToArtifactIdentifiers map[string]string, imageName string) *startosis_errors.ValidationError {
 	if storeSpecList != nil {
 		err := validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList)
 		if err != nil {
@@ -194,7 +194,7 @@ func executeWithWait(ctx context.Context, serviceNetwork service_network.Service
 	}
 }
 
-func validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList []*store_spec2.StoreSpec) *startosis_errors.ValidationError {
+func validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList []*store_spec.StoreSpec) *startosis_errors.ValidationError {
 	if len(storeSpecList) > 0 {
 		duplicates := map[string]uint16{}
 		for _, storeSpec := range storeSpecList {
@@ -209,7 +209,7 @@ func validatePathIsUniqueWhileCreatingFileArtifact(storeSpecList []*store_spec2.
 	return nil
 }
 
-func copyFilesFromTask(ctx context.Context, serviceNetwork service_network.ServiceNetwork, serviceName string, storeSpecList []*store_spec2.StoreSpec) error {
+func copyFilesFromTask(ctx context.Context, serviceNetwork service_network.ServiceNetwork, serviceName string, storeSpecList []*store_spec.StoreSpec) error {
 	if storeSpecList == nil {
 		return nil
 	}
