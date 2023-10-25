@@ -50,6 +50,8 @@ const (
 	temporaryPythonDirectoryPrefix = "run-python-*"
 
 	successfulPipRunExitCode = 0
+
+	scriptArtifactFormat = "'%v'-python-script"
 )
 
 func NewRunPythonService(serviceNetwork service_network.ServiceNetwork, runtimeValueStore *runtime_value_store.RuntimeValueStore) *kurtosis_plan_instruction.KurtosisPlanInstruction {
@@ -160,10 +162,7 @@ func (builtin *RunPythonCapabilities) Interpret(_ string, arguments *builtin_arg
 		return nil, scriptCompressionInterpretationErr
 	}
 	defer compressedScript.Close()
-	uniqueFilesArtifactName, err := builtin.serviceNetwork.GetUniqueNameForFileArtifact()
-	if err != nil {
-		return nil, startosis_errors.NewInterpretationError("an error occurred while generating unique artifact name for python script")
-	}
+	uniqueFilesArtifactName := fmt.Sprintf(scriptArtifactFormat, builtin.name)
 	_, err = builtin.serviceNetwork.UploadFilesArtifact(compressedScript, compressedScriptMd5, uniqueFilesArtifactName)
 	if err != nil {
 		return nil, startosis_errors.WrapWithInterpretationError(err, "An error occurred while storing the python script to disk")
