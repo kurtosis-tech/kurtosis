@@ -62,6 +62,7 @@ export const getServiceLogs = async (ctrl, enclaveName, serviceUuid, apiHost, fo
         returnAllLogs: false,
         numLogLines: numLogLines,
     }
+    console.log("Sending GetServiceLogs Request with Args", args)
     return enclaveManagerClient.getServiceLogs(args, {signal: ctrl.signal});
 }
 

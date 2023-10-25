@@ -342,7 +342,7 @@ const PackageCatalogForm = ({createEnclave, mode}) => {
         const {state} = location;
         const [runningPackage, setRunningPackage] = useState(false)
         const [enclaveName, setEnclaveName] = useState("")
-        const [productionMode, setProductionMode] = useState(false)
+        const [productionMode, setProductionMode] = useState(true)
         const [thisKurtosisPackage, setThisKurtosisPackage] = useState({})
         const [formData, setFormData] = useState({})
         const [errorData, setErrorData] = useState({})
